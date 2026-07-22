@@ -51,6 +51,10 @@ type RoleValue = (typeof ROLES)[RoleKey];
 interface KafilRoleGuardParams {
   allowedRoles: readonly RoleValue[];
 }
+interface KafilRolePrincipal {
+  role?: string;
+  roles?: readonly string[];
+}
 
 /**
  * Najm access tokens publish role membership as a `roles` array. The package's
@@ -62,10 +66,14 @@ interface KafilRoleGuardParams {
 export class KafilRoleGuard {
   canActivate(
     @GuardParams() params: KafilRoleGuardParams,
-    @User("roles") userRoles?: readonly string[],
+    @User() user?: KafilRolePrincipal,
   ) {
-    if (!Array.isArray(userRoles)) return false;
-    const normalized = new Set(userRoles.map((role) => role.toLowerCase()));
+    if (!user) return false;
+    const normalized = new Set(
+      [user.role, ...(Array.isArray(user.roles) ? user.roles : [])]
+        .filter((role): role is string => typeof role === "string")
+        .map((role) => role.toLowerCase()),
+    );
     return params.allowedRoles.some((role) =>
       normalized.has(role.toLowerCase()),
     );

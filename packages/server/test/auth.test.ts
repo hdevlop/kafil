@@ -40,14 +40,17 @@ describe("Kafil auth definitions", () => {
     const guard = new KafilRoleGuard();
 
     expect(
-      guard.canActivate({ allowedRoles: ["operator"] }, ["operator"]),
+      guard.canActivate({ allowedRoles: ["operator"] }, { roles: ["operator"] }),
     ).toBe(true);
     expect(
-      guard.canActivate({ allowedRoles: ["operator", "admin"] }, ["admin"]),
+      guard.canActivate(
+        { allowedRoles: ["operator", "admin"] },
+        { role: "admin" },
+      ),
     ).toBe(true);
-    expect(guard.canActivate({ allowedRoles: ["family"] }, ["sponsor"])).toBe(
-      false,
-    );
+    expect(
+      guard.canActivate({ allowedRoles: ["family"] }, { role: "sponsor" }),
+    ).toBe(false);
     expect(guard.canActivate({ allowedRoles: ["sponsor"] }, undefined)).toBe(
       false,
     );
