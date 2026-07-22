@@ -10,6 +10,7 @@ import {
   own,
   type OwnershipToken,
   Policy,
+  UserValidator,
 } from "najm-auth";
 import { GuardParams, Service, User } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
@@ -51,32 +52,22 @@ type RoleValue = (typeof ROLES)[RoleKey];
 interface KafilRoleGuardParams {
   allowedRoles: readonly RoleValue[];
 }
-interface KafilRolePrincipal {
-  role?: string;
-  roles?: readonly string[];
-}
-
 /**
- * Najm access tokens publish role membership as a `roles` array. The package's
- * stock RoleGuard currently reads a singular `role` property, which rejects a
- * valid Kafil token after refresh. Keep the compatibility guard local until
- * the upstream claim/guard contract is aligned.
+ * Najm access tokens publish role membership as a `roles` array while the
+ * package's stock RoleGuard reads a singular `role` property. Resolve the
+ * authenticated user ID against the authoritative database role until the
+ * upstream claim/guard contract is aligned.
  */
 @Service()
 export class KafilRoleGuard {
-  canActivate(
+  constructor(private readonly users: UserValidator) {}
+
+  async canActivate(
     @GuardParams() params: KafilRoleGuardParams,
-    @User() user?: KafilRolePrincipal,
+    @User("id") userId?: string,
   ) {
-    if (!user) return false;
-    const normalized = new Set(
-      [user.role, ...(Array.isArray(user.roles) ? user.roles : [])]
-        .filter((role): role is string => typeof role === "string")
-        .map((role) => role.toLowerCase()),
-    );
-    return params.allowedRoles.some((role) =>
-      normalized.has(role.toLowerCase()),
-    );
+    if (!userId) return false;
+    return this.users.hasRole(userId, [...params.allowedRoles]);
   }
 }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import type { UserValidator } from "najm-auth";
 
 import {
   Document,
@@ -37,23 +38,26 @@ describe("Kafil auth definitions", () => {
   });
 
   it("authorizes the roles array published in Najm access tokens", () => {
-    const guard = new KafilRoleGuard();
+    const guard = new KafilRoleGuard({
+      hasRole: async (userId: string, roles: string[]) =>
+        userId === "operator-user" && roles.includes("operator"),
+    } as UserValidator);
 
-    expect(
-      guard.canActivate({ allowedRoles: ["operator"] }, { roles: ["operator"] }),
-    ).toBe(true);
     expect(
       guard.canActivate(
         { allowedRoles: ["operator", "admin"] },
-        { role: "admin" },
+        "operator-user",
       ),
-    ).toBe(true);
+    ).resolves.toBe(true);
     expect(
-      guard.canActivate({ allowedRoles: ["family"] }, { role: "sponsor" }),
-    ).toBe(false);
-    expect(guard.canActivate({ allowedRoles: ["sponsor"] }, undefined)).toBe(
-      false,
-    );
+      guard.canActivate(
+        { allowedRoles: ["family", "admin"] },
+        "operator-user",
+      ),
+    ).resolves.toBe(false);
+    expect(
+      guard.canActivate({ allowedRoles: ["sponsor"] }, undefined),
+    ).resolves.toBe(false);
   });
 
   it("uses API resource names for policy permission resolution", () => {
