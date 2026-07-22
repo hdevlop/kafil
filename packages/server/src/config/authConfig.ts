@@ -10,9 +10,8 @@ import {
   own,
   type OwnershipToken,
   Policy,
-  UserValidator,
 } from "najm-auth";
-import { GuardParams, Service, User } from "najm-core";
+import { GuardParams, Role as CurrentRole, Service } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
 
 import { envConfig } from "./envConfig";
@@ -53,21 +52,19 @@ interface KafilRoleGuardParams {
   allowedRoles: readonly RoleValue[];
 }
 /**
- * Najm access tokens publish role membership as a `roles` array while the
- * package's stock RoleGuard reads a singular `role` property. Resolve the
- * authenticated user ID against the authoritative database role until the
- * upstream claim/guard contract is aligned.
+ * Najm's resolver publishes the canonical database role through its dedicated
+ * guard ROLE context. The package's stock RoleGuard reads USER.role instead,
+ * which is not populated consistently after refresh.
  */
 @Service()
 export class KafilRoleGuard {
-  constructor(private readonly users: UserValidator) {}
-
-  async canActivate(
+  canActivate(
     @GuardParams() params: KafilRoleGuardParams,
-    @User("id") userId?: string,
+    @CurrentRole() userRole?: string,
   ) {
-    if (!userId) return false;
-    return this.users.hasRole(userId, [...params.allowedRoles]);
+    if (!userRole) return false;
+    const normalized = userRole.toLowerCase();
+    return params.allowedRoles.some((role) => role === normalized);
   }
 }
 
