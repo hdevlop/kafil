@@ -52,7 +52,10 @@ previous_image=""
 if [[ -n "${app_id}" ]]; then
   previous_image="$(docker inspect --format '{{.Config.Image}}' "${app_id}")"
 fi
-previous_release="$(readlink -f /opt/kafil/current 2>/dev/null || true)"
+previous_release=""
+if [[ -L /opt/kafil/current ]]; then
+  previous_release="$(readlink -f /opt/kafil/current)"
+fi
 
 "${compose[@]}" pull app migrate
 pulled_digest="$(docker image inspect "${KAFIL_IMAGE}" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
