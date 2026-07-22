@@ -27,7 +27,7 @@ RUN EMAIL_PROVIDER=console \
     FRONTEND_URL=https://demo.example.invalid \
     JWT_ACCESS_SECRET=build-only-access-secret-at-least-32-characters \
     JWT_REFRESH_SECRET=build-only-refresh-secret-at-least-32-characters \
-    NAJM_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000 \
+    NAJM_ENCRYPTION_KEY=1111111111111111111111111111111111111111111111111111111111111111 \
     bun run build
 
 FROM oven/bun:1.3.14 AS runtime
