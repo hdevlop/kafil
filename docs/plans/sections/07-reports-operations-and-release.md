@@ -224,6 +224,22 @@ notification never changes financial truth.
 
 ## Operations and Security
 
+Deployment infrastructure implementation (2026-07-22, activation pending):
+
+- [x] Added a database-aware `/api/system/readiness` probe with privacy-safe
+      failure output and focused success/failure coverage.
+- [x] Added pinned Bun Docker build, production Compose topology, Caddy config,
+      immutable-image deployment/verification scripts, pinned-SHA GitHub
+      Actions workflow, protected environment examples, and operations and
+      recovery runbooks.
+- [~] The audited VPS already has host Caddy on 80/443, so the safe documented
+      integration uses a loopback-only Kafil port and preserves the existing
+      site. Activation awaits hostname/DNS, credentials, restricted deploy
+      access, and explicit approval.
+- [ ] Redis application integration, off-VPS backup execution, isolated restore,
+      HTTPS smoke, deployment rollback rehearsal, and demo initialization have
+      not been claimed or performed.
+
 - Add database readiness check in addition to liveness.
 - Add metrics for request count/duration and domain queue sizes.
 - Preserve/request global request IDs.

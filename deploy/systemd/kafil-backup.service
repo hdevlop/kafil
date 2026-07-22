@@ -1,0 +1,12 @@
+[Unit]
+Description=Back up Kafil PostgreSQL and persistent storage off-VPS
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=kafil-deploy
+Group=kafil-deploy
+ExecStart=/opt/kafil/current/scripts/backupVps.sh
+PrivateTmp=true
+NoNewPrivileges=true

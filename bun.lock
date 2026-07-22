@@ -59,6 +59,9 @@
         "drizzle-orm": "0.45.2",
         "najm-auth": "2.0.2",
       },
+      "devDependencies": {
+        "zod": "4.4.3",
+      },
     },
     "packages/server": {
       "name": "@kafil/server",

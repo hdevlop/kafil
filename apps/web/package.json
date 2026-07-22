@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun --bun next typegen && tsc --noEmit",
     "test": "bun test",
     "test:e2e": "bun --env-file=../../.env scripts/run-phase6-e2e.ts",
     "test:e2e:form-fill": "bun scripts/run-form-fill-e2e.ts",

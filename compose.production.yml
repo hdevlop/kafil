@@ -1,0 +1,139 @@
+name: kafil
+
+x-app: &app
+  image: ${KAFIL_IMAGE:-ghcr.io/hdevlop/kafil:sha-0000000000000000000000000000000000000000}
+  env_file:
+    - path: /opt/kafil/env/app.env
+      required: false
+  volumes:
+    - type: bind
+      source: ${KAFIL_STORAGE_HOST_PATH:-/srv/kafil/storage-demo}
+      target: /srv/kafil/storage
+      bind:
+        create_host_path: false
+  networks:
+    - backend
+    - frontend
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "5"
+
+services:
+  app:
+    <<: *app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - 127.0.0.1:${KAFIL_LOOPBACK_PORT:-3300}:3000
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const r=await fetch('http://127.0.0.1:3000/api/system/readiness');process.exit(r.ok?0:1)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 4
+
+  migrate:
+    <<: *app
+    profiles: [tools]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["bun", "run", "db:migrate"]
+
+  postgres:
+    image: postgres:17.6-bookworm
+    restart: unless-stopped
+    env_file:
+      - path: /opt/kafil/env/infrastructure.env
+        required: false
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  redis:
+    image: redis:7.4.5-bookworm
+    profiles: [redis]
+    restart: unless-stopped
+    env_file:
+      - path: /opt/kafil/env/infrastructure.env
+        required: false
+    command: ["sh", "-ec", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -qx PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  caddy:
+    image: caddy:2.10.0-alpine
+    profiles: [edge]
+    restart: unless-stopped
+    environment:
+      KAFIL_HOSTNAME: ${KAFIL_HOSTNAME:-demo.example.invalid}
+      ACME_EMAIL: ${ACME_EMAIL:-ops@example.invalid}
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - frontend
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      app:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+networks:
+  backend:
+    internal: true
+  frontend:
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,19 @@
+{
+	email {$ACME_EMAIL:ops@example.invalid}
+	admin off
+}
+
+{$KAFIL_HOSTNAME:demo.example.invalid} {
+	encode zstd gzip
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+	}
+
+	reverse_proxy app:3000
+}

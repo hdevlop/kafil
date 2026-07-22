@@ -8,6 +8,7 @@ import {
   server,
   translations,
 } from "../src";
+import { databaseReadinessResponse } from "../src/modules/system/systemController";
 
 describe("Kafil server", () => {
   it("uses readable logs unless structured JSON is explicitly requested", async () => {
@@ -28,6 +29,29 @@ describe("Kafil server", () => {
     expect(await response.json()).toEqual({
       service: "kafil",
       status: "ok",
+      version: "0.1.0",
+    });
+  });
+
+  it("reports database-aware readiness without exposing connection errors", async () => {
+    const ready = await databaseReadinessResponse(async () => ({ rows: [{ "?column?": 1 }] }));
+    expect(ready.status).toBe(200);
+    expect(ready.headers.get("cache-control")).toBe("no-store");
+    expect(await ready.json()).toEqual({
+      checks: { database: "ok" },
+      service: "kafil",
+      status: "ready",
+      version: "0.1.0",
+    });
+
+    const unavailable = await databaseReadinessResponse(async () => {
+      throw new Error("postgresql://secret@database/kafil");
+    });
+    expect(unavailable.status).toBe(503);
+    expect(await unavailable.json()).toEqual({
+      checks: { database: "unavailable" },
+      service: "kafil",
+      status: "not_ready",
       version: "0.1.0",
     });
   });

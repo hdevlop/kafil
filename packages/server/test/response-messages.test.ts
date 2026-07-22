@@ -38,7 +38,7 @@ describe("server response message contract", () => {
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    expect(routes).toHaveLength(133);
+    expect(routes).toHaveLength(134);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));
