@@ -9,6 +9,7 @@ import {
   authConfig,
   hasRole,
   isInGroup,
+  KafilRoleGuard,
   ROLES,
 } from "../src/config/authConfig";
 
@@ -33,6 +34,23 @@ describe("Kafil auth definitions", () => {
 
   it("assigns public registration to the sponsor workflow", () => {
     expect(authConfig().config).toMatchObject({ defaultRole: "sponsor" });
+  });
+
+  it("authorizes the roles array published in Najm access tokens", () => {
+    const guard = new KafilRoleGuard();
+
+    expect(
+      guard.canActivate({ allowedRoles: ["operator"] }, ["operator"]),
+    ).toBe(true);
+    expect(
+      guard.canActivate({ allowedRoles: ["operator", "admin"] }, ["admin"]),
+    ).toBe(true);
+    expect(guard.canActivate({ allowedRoles: ["family"] }, ["sponsor"])).toBe(
+      false,
+    );
+    expect(guard.canActivate({ allowedRoles: ["sponsor"] }, undefined)).toBe(
+      false,
+    );
   });
 
   it("uses API resource names for policy permission resolution", () => {
