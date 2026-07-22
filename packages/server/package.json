@@ -1,0 +1,41 @@
+{
+  "name": "@kafil/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config/index.ts",
+    "./database": "./src/database/index.ts",
+    "./database/schema": "./src/database/schema.ts",
+    "./locales": "./src/locales/index.ts",
+    "./modules": "./src/modules/index.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test",
+    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "najm-auth": "2.0.2",
+    "najm-core": "2.0.3",
+    "najm-database": "2.0.2",
+    "najm-email": "2.0.2",
+    "najm-i18n": "2.0.2",
+    "najm-mcp": "2.0.2",
+    "najm-rate": "2.0.2",
+    "najm-validation": "2.0.2",
+    "pg": "8.22.0",
+    "reflect-metadata": "0.2.2",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/pg": "8.15.5",
+    "drizzle-kit": "0.31.10"
+  }
+}

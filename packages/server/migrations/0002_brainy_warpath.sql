@@ -1,0 +1,2 @@
+ALTER TABLE "operator_profiles" ADD CONSTRAINT "operator_profiles_phone_unique" UNIQUE("phone");--> statement-breakpoint
+ALTER TABLE "sponsor_profiles" ADD CONSTRAINT "sponsor_profiles_phone_unique" UNIQUE("phone");

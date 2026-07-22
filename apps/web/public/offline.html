@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2f6e42" />
+    <title>Kafil - Offline</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #f8faf7; color: #173421; }
+      main { width: min(30rem, calc(100% - 3rem)); text-align: center; }
+      img { width: 7rem; height: 7rem; border-radius: 1.5rem; }
+      h1 { margin: 1.25rem 0 0.5rem; }
+      p { line-height: 1.6; color: #476251; }
+      button { margin-top: 1rem; border: 0; border-radius: 0.75rem; padding: 0.8rem 1.2rem; background: #2f6e42; color: white; font: inherit; font-weight: 700; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #101812; color: #f4f8f4; }
+        p { color: #b9c9bc; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/kafil-192.png" alt="" />
+      <h1>You are offline</h1>
+      <p>Kafil needs a secure internet connection to load family and financial information.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

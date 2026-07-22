@@ -1,0 +1,29 @@
+{
+  "name": "@kafil/seed",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fakers": "./src/fakers/index.ts"
+  },
+  "scripts": {
+    "seed": "bun src/cli.ts",
+    "seed:full": "bun src/cli.ts full --yes",
+    "seed:demo": "bun src/cli.ts demo",
+    "seed:migrate": "bun src/cli.ts migrate",
+    "seed:admin": "bun src/cli.ts admin",
+    "seed:verify": "bun src/cli.ts verify",
+    "seed:images": "bun src/cli.ts images",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0",
+    "@faker-js/faker": "10.1.0",
+    "@kafil/server": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "najm-auth": "2.0.2"
+  }
+}

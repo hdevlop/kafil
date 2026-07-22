@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@import "najm-kit/theme.css";
+
+:root {
+  --background: oklch(0.982 0.006 145);
+  --foreground: oklch(0.235 0.02 150);
+  --neutral: oklch(0.556 0 0);
+  --neutral-foreground: oklch(0.32 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-cairo);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-cairo), Arial, Helvetica, sans-serif;
+  min-height: 100%;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

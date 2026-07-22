@@ -1,0 +1,132 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1784159551486,
+      "tag": "0000_curvy_hellion",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784202626146,
+      "tag": "0001_misty_jack_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784203356533,
+      "tag": "0002_brainy_warpath",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784219339987,
+      "tag": "0003_phase1_identity_families",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784220309308,
+      "tag": "0004_phase2_support_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784221115585,
+      "tag": "0005_phase3_budgets_and_contributions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784223342808,
+      "tag": "0006_phase4_catalog_inventory",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784223784792,
+      "tag": "0007_phase3_financial_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784225552376,
+      "tag": "0008_phase5_cart_orders_fulfillment",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784225590343,
+      "tag": "0009_phase5_order_lifecycle_timestamps",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784385403555,
+      "tag": "0010_configurable_family_funding",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784414496886,
+      "tag": "0011_fresh_shockwave",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784416319212,
+      "tag": "0012_harsh_professor_monster",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784460183968,
+      "tag": "0013_unify_family_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1784582912929,
+      "tag": "0014_access_email_phone",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1784594401118,
+      "tag": "0015_family_first_login_password",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1784634680397,
+      "tag": "0016_shallow_the_spike",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784720232909,
+      "tag": "0017_daily_blonde_phantom",
+      "breakpoints": true
+    }
+  ]
+}

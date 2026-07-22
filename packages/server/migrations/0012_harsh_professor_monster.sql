@@ -1,0 +1,2 @@
+ALTER TABLE "private_households" ADD COLUMN "guardian_cin" varchar(20);--> statement-breakpoint
+ALTER TABLE "private_households" ADD CONSTRAINT "private_households_guardian_cin_unique" UNIQUE("guardian_cin");
