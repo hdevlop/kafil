@@ -74,7 +74,7 @@ describe("Kafil auth definitions", () => {
       await guard.canActivate(
         { allowedRoles: ["sponsor", "admin"] },
         undefined,
-        { header: () => "Bearer signed-token" },
+        { req: { header: () => "Bearer signed-token" } },
       ),
     ).toMatchObject({ role: "sponsor" });
   });
@@ -88,7 +88,7 @@ describe("Kafil auth definitions", () => {
       await guard.canActivate(
         { allowedRoles: ["operator", "admin"] },
         { id: "operator-1" },
-        { header: () => "Bearer signed-token" },
+        { req: { header: () => "Bearer signed-token" } },
       ),
     ).toMatchObject({ role: "operator" });
   });
