@@ -11,7 +11,7 @@ import {
   type OwnershipToken,
   Policy,
 } from "najm-auth";
-import { Ctx, GuardParams, Service, User } from "najm-core";
+import { Ctx, Service, User } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
 
 import { envConfig } from "./envConfig";
@@ -71,43 +71,23 @@ export class KafilRoleGuard {
   constructor(private readonly tokens: TokenService) {}
 
   async canActivate(
-    @GuardParams() params: KafilRoleGuardParams,
-    @User() resolvedUser?: KafilAuthPrincipal,
-    @Ctx() context?: KafilGuardContext,
+    params: KafilRoleGuardParams,
+    resolvedUser?: KafilAuthPrincipal,
+    context?: KafilGuardContext,
   ) {
     let user = resolvedUser;
     const authorization = context?.req.header("authorization");
     if (!user?.role && authorization) {
       try {
         user = (await this.tokens.getUser(authorization)) as KafilAuthPrincipal;
-      } catch (error) {
-        console.warn("Kafil role guard token resolution failed", {
-          error: error instanceof Error ? error.name : "unknown",
-          hasAuthorization: true,
-          hasContext: Boolean(context),
-          hasResolvedUser: Boolean(resolvedUser),
-          hasResolvedRole: Boolean(resolvedUser?.role),
-        });
+      } catch {
         return false;
       }
     }
 
     const userRole = user?.role?.toLowerCase();
-    if (
-      !user ||
-      !userRole ||
-      !params.allowedRoles.some((role) => role === userRole)
-    ) {
-      console.warn("Kafil role guard denied request", {
-        allowedRoles: params.allowedRoles,
-        hasAuthorization: Boolean(authorization),
-        hasContext: Boolean(context),
-        hasResolvedUser: Boolean(resolvedUser),
-        resolvedRole: resolvedUser?.role ?? null,
-        userRole: userRole ?? null,
-      });
-      return false;
-    }
+    if (!user || !userRole) return false;
+    if (!params.allowedRoles.some((role) => role === userRole)) return false;
 
     return {
       user,
@@ -117,20 +97,77 @@ export class KafilRoleGuard {
   }
 }
 
-const Role = createGuard<KafilRoleGuardParams>(KafilRoleGuard);
+@Service()
+class AdminRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
 
-function roleGuard(keys: readonly RoleKey[]) {
-  const allowed = Array.from(
-    new Set([...keys.map((key) => ROLES[key]), ROLES.ADMIN]),
-  );
-  return composeGuards(Role({ allowedRoles: allowed }));
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate({ allowedRoles: [ROLES.ADMIN] }, user, context);
+  }
 }
 
-export const createGroupGuard = (keys: readonly RoleKey[]) => roleGuard(keys);
-export const isAdmin = roleGuard(["ADMIN"]);
-export const isOperator = roleGuard(["OPERATOR"]);
-export const isFamily = roleGuard(["FAMILY"]);
-export const isSponsor = roleGuard(["SPONSOR"]);
+@Service()
+class OperatorRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.OPERATOR, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
+@Service()
+class FamilyRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.FAMILY, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
+@Service()
+class SponsorRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.SPONSOR, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
+@Service()
+class SponsorImageViewerRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.OPERATOR, ROLES.SPONSOR, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
+const AdminRole = createGuard(AdminRoleGuard);
+const OperatorRole = createGuard(OperatorRoleGuard);
+const FamilyRole = createGuard(FamilyRoleGuard);
+const SponsorRole = createGuard(SponsorRoleGuard);
+const SponsorImageViewerRole = createGuard(SponsorImageViewerRoleGuard);
+
+export const isAdmin = composeGuards(AdminRole());
+export const isOperator = composeGuards(OperatorRole());
+export const isFamily = composeGuards(FamilyRole());
+export const isSponsor = composeGuards(SponsorRole());
 
 export function hasRole(userRole: string | null | undefined, ...keys: RoleKey[]) {
   if (!userRole) return false;
@@ -145,10 +182,7 @@ export const isInGroup = (
   keys: readonly RoleKey[],
 ) => hasRole(userRole, ...keys);
 
-export const isSponsorImageViewer = createGroupGuard([
-  "OPERATOR",
-  "SPONSOR",
-]);
+export const isSponsorImageViewer = composeGuards(SponsorImageViewerRole());
 
 export function definePolicy(
   table: unknown,

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import { getGuardMetadata } from "najm-guard";
 
 import {
+  DashboardController,
   Document,
   Operator,
   Sponsor,
@@ -97,5 +99,14 @@ describe("Kafil auth definitions", () => {
     expect(Operator.name).toBe("operators");
     expect(Sponsor.name).toBe("sponsors");
     expect(Document.name).toBe("documents");
+  });
+
+  it("keeps each dashboard role on isolated guard metadata", () => {
+    const guardName = (method: string) =>
+      getGuardMetadata(DashboardController, method)[0]?.guardClass.name;
+
+    expect(guardName("getOperator")).toBe("OperatorRoleGuard");
+    expect(guardName("getFamily")).toBe("FamilyRoleGuard");
+    expect(guardName("getSponsor")).toBe("SponsorRoleGuard");
   });
 });
