@@ -11,7 +11,7 @@ import {
   type OwnershipToken,
   Policy,
 } from "najm-auth";
-import { GuardParams, Headers, Service, User } from "najm-core";
+import { GuardParams, Req, Service, User } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
 
 import { envConfig } from "./envConfig";
@@ -56,6 +56,9 @@ interface KafilAuthPrincipal {
   role?: string | null;
   permissions?: string[];
 }
+interface KafilGuardRequest {
+  header(name: string): string | undefined;
+}
 /**
  * Resolve the bearer token inside the guard when Najm's auth middleware has
  * not yet published its request context. Returning the principal also makes
@@ -68,9 +71,10 @@ export class KafilRoleGuard {
   async canActivate(
     @GuardParams() params: KafilRoleGuardParams,
     @User() resolvedUser?: KafilAuthPrincipal,
-    @Headers("authorization") authorization?: string,
+    @Req() request?: KafilGuardRequest,
   ) {
     let user = resolvedUser;
+    const authorization = request?.header("authorization");
     if (!user?.role && authorization) {
       try {
         user = (await this.tokens.getUser(authorization)) as KafilAuthPrincipal;
