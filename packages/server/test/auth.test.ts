@@ -36,18 +36,47 @@ describe("Kafil auth definitions", () => {
     expect(authConfig().config).toMatchObject({ defaultRole: "sponsor" });
   });
 
-  it("authorizes the roles array published in Najm access tokens", () => {
-    const guard = new KafilRoleGuard();
+  it("authorizes the canonical role from an already resolved user", async () => {
+    const guard = new KafilRoleGuard({} as never);
 
     expect(
-      guard.canActivate({ allowedRoles: ["operator", "admin"] }, "operator"),
-    ).toBe(true);
+      await guard.canActivate(
+        { allowedRoles: ["operator", "admin"] },
+        { id: "operator-1", role: "operator", permissions: ["families:list"] },
+      ),
+    ).toEqual({
+      user: {
+        id: "operator-1",
+        role: "operator",
+        permissions: ["families:list"],
+      },
+      role: "operator",
+      permissions: ["families:list"],
+    });
     expect(
-      guard.canActivate({ allowedRoles: ["family", "admin"] }, "operator"),
+      await guard.canActivate(
+        { allowedRoles: ["family", "admin"] },
+        { id: "operator-1", role: "operator" },
+      ),
     ).toBe(false);
-    expect(guard.canActivate({ allowedRoles: ["sponsor"] }, undefined)).toBe(
-      false,
-    );
+  });
+
+  it("validates a bearer token when auth context is not populated", async () => {
+    const guard = new KafilRoleGuard({
+      getUser: async () => ({
+        id: "sponsor-1",
+        role: "sponsor",
+        permissions: ["contributions:create"],
+      }),
+    } as never);
+
+    expect(
+      await guard.canActivate(
+        { allowedRoles: ["sponsor", "admin"] },
+        undefined,
+        "Bearer signed-token",
+      ),
+    ).toMatchObject({ role: "sponsor" });
   });
 
   it("uses API resource names for policy permission resolution", () => {

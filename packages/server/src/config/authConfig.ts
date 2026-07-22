@@ -5,13 +5,13 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  isAuth,
+  TokenService,
   type OwnershipTokenOptions,
   own,
   type OwnershipToken,
   Policy,
 } from "najm-auth";
-import { GuardParams, Role as CurrentRole, Service } from "najm-core";
+import { GuardParams, Headers, Service, User } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
 
 import { envConfig } from "./envConfig";
@@ -51,20 +51,43 @@ type RoleValue = (typeof ROLES)[RoleKey];
 interface KafilRoleGuardParams {
   allowedRoles: readonly RoleValue[];
 }
+interface KafilAuthPrincipal {
+  id: string;
+  role?: string | null;
+  permissions?: string[];
+}
 /**
- * Najm's resolver publishes the canonical database role through its dedicated
- * guard ROLE context. The package's stock RoleGuard reads USER.role instead,
- * which is not populated consistently after refresh.
+ * Resolve the bearer token inside the guard when Najm's auth middleware has
+ * not yet published its request context. Returning the principal also makes
+ * it available to controller parameter decorators and subsequent guards.
  */
 @Service()
 export class KafilRoleGuard {
-  canActivate(
+  constructor(private readonly tokens: TokenService) {}
+
+  async canActivate(
     @GuardParams() params: KafilRoleGuardParams,
-    @CurrentRole() userRole?: string,
+    @User() resolvedUser?: KafilAuthPrincipal,
+    @Headers("authorization") authorization?: string,
   ) {
-    if (!userRole) return false;
-    const normalized = userRole.toLowerCase();
-    return params.allowedRoles.some((role) => role === normalized);
+    let user = resolvedUser;
+    if (!user && authorization) {
+      try {
+        user = (await this.tokens.getUser(authorization)) as KafilAuthPrincipal;
+      } catch {
+        return false;
+      }
+    }
+
+    const userRole = user?.role?.toLowerCase();
+    if (!user || !userRole) return false;
+    if (!params.allowedRoles.some((role) => role === userRole)) return false;
+
+    return {
+      user,
+      role: userRole,
+      permissions: user.permissions ?? [],
+    };
   }
 }
 
@@ -74,7 +97,7 @@ function roleGuard(keys: readonly RoleKey[]) {
   const allowed = Array.from(
     new Set([...keys.map((key) => ROLES[key]), ROLES.ADMIN]),
   );
-  return composeGuards(isAuth(), Role({ allowedRoles: allowed }));
+  return composeGuards(Role({ allowedRoles: allowed }));
 }
 
 export const createGroupGuard = (keys: readonly RoleKey[]) => roleGuard(keys);
