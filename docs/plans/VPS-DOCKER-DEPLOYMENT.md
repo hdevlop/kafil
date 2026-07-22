@@ -56,19 +56,18 @@ not invent them:
 | VPS distribution and version | `Ubuntu 24.04` |
 | VPS public IP | `<VPS_IP>` |
 | SSH port and non-root deploy user | `<SSH_PORT>`, `kafil-deploy` |
-| GitHub owner and repository | `<OWNER>/<REPOSITORY>` |
+| GitHub owner and repository | `hdevlop/kafil` |
 | Deployment branch | `main` |
 | Demo hostname | `demo.<DOMAIN>` |
 | Real-production hostname | `app.<DOMAIN>` |
-| GHCR image | `ghcr.io/<owner>/<repository>` |
+| GHCR image | `ghcr.io/hdevlop/kafil` |
 | Email provider and sender | `<PROVIDER>`, `<FROM_ADDRESS>` |
 | Backup destination | `<OFFSITE_BACKUP_TARGET>` |
 
-The current local workspace snapshot is not recognized by `git rev-parse`, and
-its `.git` directory appears incomplete. Before creating the workflow, verify
-the authoritative GitHub repository, default branch, remote, and whether the
-VPS should clone the repository at all. The recommended deployment does not
-need a source checkout on the VPS; it pulls images from GHCR.
+The authoritative repository is `https://github.com/hdevlop/kafil`, with
+`main` as its deployment branch. Verify the remote and branch again before
+creating the workflow. The recommended production deployment does not need a
+source checkout on the VPS; it pulls images from GHCR.
 
 ## 4. Target Architecture
 
