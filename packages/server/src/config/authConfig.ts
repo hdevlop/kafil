@@ -71,7 +71,7 @@ export class KafilRoleGuard {
     @Headers("authorization") authorization?: string,
   ) {
     let user = resolvedUser;
-    if (!user && authorization) {
+    if (!user?.role && authorization) {
       try {
         user = (await this.tokens.getUser(authorization)) as KafilAuthPrincipal;
       } catch {

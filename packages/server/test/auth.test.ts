@@ -79,6 +79,20 @@ describe("Kafil auth definitions", () => {
     ).toMatchObject({ role: "sponsor" });
   });
 
+  it("re-resolves a bearer token when middleware publishes partial claims", async () => {
+    const guard = new KafilRoleGuard({
+      getUser: async () => ({ id: "operator-1", role: "operator" }),
+    } as never);
+
+    expect(
+      await guard.canActivate(
+        { allowedRoles: ["operator", "admin"] },
+        { id: "operator-1" },
+        "Bearer signed-token",
+      ),
+    ).toMatchObject({ role: "operator" });
+  });
+
   it("uses API resource names for policy permission resolution", () => {
     expect(Operator.name).toBe("operators");
     expect(Sponsor.name).toBe("sponsors");
