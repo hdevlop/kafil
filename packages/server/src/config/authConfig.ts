@@ -80,14 +80,34 @@ export class KafilRoleGuard {
     if (!user?.role && authorization) {
       try {
         user = (await this.tokens.getUser(authorization)) as KafilAuthPrincipal;
-      } catch {
+      } catch (error) {
+        console.warn("Kafil role guard token resolution failed", {
+          error: error instanceof Error ? error.name : "unknown",
+          hasAuthorization: true,
+          hasContext: Boolean(context),
+          hasResolvedUser: Boolean(resolvedUser),
+          hasResolvedRole: Boolean(resolvedUser?.role),
+        });
         return false;
       }
     }
 
     const userRole = user?.role?.toLowerCase();
-    if (!user || !userRole) return false;
-    if (!params.allowedRoles.some((role) => role === userRole)) return false;
+    if (
+      !user ||
+      !userRole ||
+      !params.allowedRoles.some((role) => role === userRole)
+    ) {
+      console.warn("Kafil role guard denied request", {
+        allowedRoles: params.allowedRoles,
+        hasAuthorization: Boolean(authorization),
+        hasContext: Boolean(context),
+        hasResolvedUser: Boolean(resolvedUser),
+        resolvedRole: resolvedUser?.role ?? null,
+        userRole: userRole ?? null,
+      });
+      return false;
+    }
 
     return {
       user,
