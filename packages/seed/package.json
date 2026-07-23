@@ -24,7 +24,7 @@
     "@faker-js/faker": "10.1.0",
     "@kafil/server": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "najm-auth": "2.0.5"
+    "najm-auth": "2.0.6"
   },
   "devDependencies": {
     "zod": "4.4.3"
