@@ -204,6 +204,7 @@ The application environment must include reviewed production values for:
 
 - `DATABASE_URL`
 - `FRONTEND_URL`
+- `NAJM_AUTH_INTERNAL_URL=http://127.0.0.1:3000/api/auth/session/recover`
 - `JWT_ACCESS_SECRET`
 - `JWT_REFRESH_SECRET`
 - `NAJM_ENCRYPTION_KEY`

@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { AuthService, UserRepository, UserService } from "najm-auth";
+import { AuthService, UserService } from "najm-auth";
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 import { EmailService, emailVerificationTemplate } from "najm-email";
@@ -23,23 +23,18 @@ export class AccessService {
   constructor(
     private readonly auth: AuthService,
     private readonly users: UserService,
-    private readonly userRecords: UserRepository,
     private readonly email: EmailService,
     private readonly access: AccessRepository,
   ) {}
 
   async login({ identifier, password }: AccessLoginDto) {
-    let email = identifier;
-
-    if (!identifier.includes("@")) {
-      const phone = normalizePhone(identifier);
-      const user = phone ? await this.userRecords.findByPhone(phone) : undefined;
-      // Keep the missing-user path timing-safe by delegating to Najm Auth's
-      // normal dummy-hash login behavior.
-      email = user?.email ?? "missing-phone@invalid.kafil";
-    }
-
-    const result = await this.auth.loginUser({ email, password });
+    const normalizedIdentifier = identifier.includes("@")
+      ? identifier
+      : normalizePhone(identifier) ?? identifier;
+    const result = await this.auth.loginUser({
+      identifier: normalizedIdentifier,
+      password,
+    });
     const mustChangePassword =
       result.user.role === "family" &&
       (await this.access.requiresFamilyPasswordChange(result.user.id));

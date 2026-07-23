@@ -25,6 +25,7 @@ RUN test "${NEXT_PUBLIC_FORM_FILL_ENABLED}" = "false"
 RUN EMAIL_PROVIDER=console \
     EMAIL_DEFAULT_FROM=no-reply@example.invalid \
     FRONTEND_URL=https://demo.example.invalid \
+    NAJM_AUTH_INTERNAL_URL=http://127.0.0.1:3000/api/auth/session/recover \
     JWT_ACCESS_SECRET=build-only-access-secret-at-least-32-characters \
     JWT_REFRESH_SECRET=build-only-refresh-secret-at-least-32-characters \
     NAJM_ENCRYPTION_KEY=1111111111111111111111111111111111111111111111111111111111111111 \

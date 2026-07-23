@@ -2,7 +2,7 @@
 
 Status: **ACTIVE**
 
-Last updated: 2026-07-21
+Last updated: 2026-07-24
 
 This document is the source of truth for implementation order, phase status,
 and release gates. Detailed requirements live under
@@ -121,6 +121,8 @@ The current workspace already contains a useful foundation:
 - [x] Family profiles enforce one login per family through a unique `userId`
 - [x] Sponsor public onboarding and self-profile completion
 - [x] Email-or-phone authentication with globally normalized phone identities
+- [x] Najm Auth 2.0.10 identity-aware access throttling and explicit loopback
+      session recovery for the single Next.js production process
 - [x] One-time operator credential handoff for family and sponsor accounts
 - [x] Server-owned first-login password replacement for newly created families
 - [x] Pending public sponsor registration with email activation through

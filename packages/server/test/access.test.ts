@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   AuthService,
+  authIdentityRateLimitKey,
   CookieManager,
   EncryptionService,
   TokenService,
@@ -9,8 +10,10 @@ import {
   UserValidator,
 } from "najm-auth";
 import { EmailService } from "najm-email";
+import { getRateLimitOptions } from "najm-rate";
 
 import {
+  AccessController,
   AccessRepository,
   AccessService,
   FamilyPasswordService,
@@ -87,7 +90,15 @@ describe("accessible account credentials", () => {
 });
 
 describe("Kafil access service", () => {
-  it("resolves a phone identifier before delegating password checks to Najm", async () => {
+  it("buckets login attempts by Najm's normalized identity key", () => {
+    const options = getRateLimitOptions(AccessController, "login");
+
+    expect(options?.limit).toBe(5);
+    expect(options?.window).toBe("15m");
+    expect(options?.key).toBe(authIdentityRateLimitKey);
+  });
+
+  it("normalizes a phone identifier before delegating login to Najm", async () => {
     const logins: Record<string, unknown>[] = [];
     const service = accessService({
       auth: {
@@ -98,12 +109,6 @@ describe("Kafil access service", () => {
             refreshToken: "refresh",
             user: { id: "family-user", role: "family" },
           };
-        },
-      },
-      userRecords: {
-        findByPhone: async (phone: string) => {
-          expect(phone).toBe("+212612345678");
-          return { email: "family@example.test" };
         },
       },
       access: {
@@ -120,7 +125,7 @@ describe("Kafil access service", () => {
     });
     expect(result.mustChangePassword).toBe(true);
     expect(logins).toEqual([
-      { email: "family@example.test", password: "Secret1" },
+      { identifier: "+212612345678", password: "Secret1" },
     ]);
   });
 
@@ -254,14 +259,12 @@ describe("family first-login password change", () => {
 function accessService(overrides: {
   auth?: Record<string, unknown>;
   users?: Record<string, unknown>;
-  userRecords?: Record<string, unknown>;
   email?: Record<string, unknown>;
   access?: Record<string, unknown>;
 }) {
   return new AccessService(
     (overrides.auth ?? {}) as unknown as AuthService,
     (overrides.users ?? {}) as unknown as UserService,
-    (overrides.userRecords ?? {}) as unknown as UserRepository,
     (overrides.email ?? {}) as unknown as EmailService,
     (overrides.access ?? {}) as unknown as AccessRepository,
   );
