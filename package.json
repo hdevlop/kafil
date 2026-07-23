@@ -8,7 +8,10 @@
     "packages/*"
   ],
   "overrides": {
-    "najm-core": "2.0.3"
+    "najm-core": "2.0.4",
+    "najm-auth": "2.0.3",
+    "najm-database": "2.0.3",
+    "diject": "0.1.8"
   },
   "scripts": {
     "dev": "bun --env-file=.env -e \"const child=Bun.spawn({cmd:['bun','run','--cwd','apps/web','dev'],stdout:'inherit',stderr:'inherit',stdin:'inherit'}); process.exit(await child.exited);\"",
@@ -53,7 +56,7 @@
   "dependencies": {
     "@clack/core": "^1.4.3",
     "@clack/prompts": "^1.7.0",
-    "najm-core": "^2.0.3",
+    "najm-core": "^2.0.4",
     "najm-kit": "^2.1.23"
   }
 }

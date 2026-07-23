@@ -9,13 +9,13 @@ these assumptions.
 - Bun workspace
 - Next.js `16.2.10`
 - React `19.2.4`
-- `najm-auth` `2.0.1`
-- `najm-core` `2.0.1`
-- `najm-database` `2.0.1`
-- `najm-i18n` `2.0.1`
-- `najm-mcp` `2.0.1`
-- `najm-validation` `2.0.1`
-- `najm-kit` `2.1.4`
+- `najm-auth` `2.0.3`
+- `najm-core` `2.0.4`
+- `najm-database` `2.0.3`
+- `najm-i18n` `2.0.2`
+- `najm-mcp` `2.0.2`
+- `najm-validation` `2.0.2`
+- `najm-kit` `2.1.23`
 - Drizzle ORM `0.45.2`
 - PostgreSQL
 
@@ -60,10 +60,10 @@ email invitation behavior when no password is provided. Operator-created family
 and sponsor accounts receive a generated initial password; Kafil returns it once
 to the authorized operator and persists only Najm's hash. Phone-to-user mapping,
 phone-or-email login, and public sponsor email activation live in Kafil's small
-`access` module because `najm-auth@2.0.1` publishes phone storage but its login
+`access` module because `najm-auth@2.0.3` publishes phone storage but its login
 DTO remains email-only and it has no verification endpoint.
 
-`najm-email@2.0.1` is registered directly before auth. Local development uses
+`najm-email@2.0.2` is registered directly before auth. Local development uses
 the console provider; production selects a provider through environment
 variables. Public sponsor registration is pending until a hashed, expiring,
 one-time verification token is confirmed.
