@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, ResMsg, User } from "najm-core";
+import { authIdentityRateLimitKey } from "najm-auth";
 import { RateLimit } from "najm-rate";
 import { Validate } from "najm-validation";
 
@@ -26,7 +27,12 @@ export class AccessController {
   ) {}
 
   @Post("/login")
-  @RateLimit({ limit: 5, window: "15m", key: "ip" })
+  @RateLimit({
+    limit: 5,
+    window: "15m",
+    key: authIdentityRateLimitKey,
+    message: "Too many login attempts. Please try again later.",
+  })
   @Validate({ body: accessLoginDto })
   @ResMsg("access.success.login")
   login(@Body() body: AccessLoginDto) {
@@ -34,7 +40,7 @@ export class AccessController {
   }
 
   @Post("/register/sponsor")
-  @RateLimit({ limit: 5, window: "15m", key: "ip" })
+  @RateLimit({ limit: 5, window: "15m", key: authIdentityRateLimitKey })
   @Validate({ body: sponsorAccessRegistrationDto })
   @ResMsg("access.success.registered")
   registerSponsor(@Body() body: SponsorAccessRegistrationDto) {
@@ -42,7 +48,7 @@ export class AccessController {
   }
 
   @Post("/email-verification/request")
-  @RateLimit({ limit: 3, window: "15m", key: "ip" })
+  @RateLimit({ limit: 3, window: "15m", key: authIdentityRateLimitKey })
   @Validate({ body: requestEmailVerificationDto })
   @ResMsg("access.success.verificationRequested")
   requestVerification(@Body() body: RequestEmailVerificationDto) {

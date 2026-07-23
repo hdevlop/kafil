@@ -9,7 +9,7 @@ these assumptions.
 - Bun workspace
 - Next.js `16.2.10`
 - React `19.2.4`
-- `najm-auth` `2.0.3`
+- `najm-auth` `2.0.10`
 - `najm-core` `2.0.4`
 - `najm-database` `2.0.3`
 - `najm-i18n` `2.0.2`
@@ -58,10 +58,11 @@ Kafil-specific account services may call:
 `provisionUser()` supports both branches Kafil needs. Operator accounts keep the
 email invitation behavior when no password is provided. Operator-created family
 and sponsor accounts receive a generated initial password; Kafil returns it once
-to the authorized operator and persists only Najm's hash. Phone-to-user mapping,
-phone-or-email login, and public sponsor email activation live in Kafil's small
-`access` module because `najm-auth@2.0.3` publishes phone storage but its login
-DTO remains email-only and it has no verification endpoint.
+to the authorized operator and persists only Najm's hash. Moroccan local-phone
+normalization and public sponsor email activation remain in Kafil's small
+`access` module. `najm-auth@2.0.10` owns normalized email-or-phone credential
+resolution and identity-aware rate-limit keys, so Kafil forwards the normalized
+identifier instead of resolving it back to an email.
 
 `najm-email@2.0.2` is registered directly before auth. Local development uses
 the console provider; production selects a provider through environment

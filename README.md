@@ -78,6 +78,14 @@ family and sponsor accounts return a one-time initial credential for direct
 handoff. Public sponsor registrations remain pending until the sponsor opens the
 verification link sent by `najm-email`.
 
+Login, sponsor registration, and verification requests use a hashed normalized
+identity plus the client IP for rate-limit buckets. Production must keep session
+recovery on the same Next.js process:
+
+```env
+NAJM_AUTH_INTERNAL_URL=http://127.0.0.1:3000/api/auth/session/recover
+```
+
 Newly operator-created families are guided to replace the temporary password on
 their first login. That family-only replacement accepts an easy lowercase-letter
 and number password; all other account and password flows keep Najm's stronger
