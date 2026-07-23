@@ -9,7 +9,7 @@
   ],
   "overrides": {
     "najm-core": "2.0.4",
-    "najm-auth": "2.0.6",
+    "najm-auth": "2.0.9",
     "najm-database": "2.0.3",
     "diject": "0.1.8"
   },
