@@ -7,6 +7,7 @@ import {
   isCancel,
   log,
   outro,
+  password,
   select,
   text,
 } from "@clack/prompts";
@@ -18,6 +19,12 @@ import {
   type SeedCliCommand,
   seedCliHelp,
 } from "./seed-cli";
+import {
+  normalizeAdminEmail,
+  validateAdminEmail,
+  validateAdminPassword,
+  validateAdminPasswordConfirmation,
+} from "./seed-config";
 import { DEFAULT_DEMO_SEED_COUNTS } from "./scripts/demo/generator";
 
 const COMMAND_LABELS: Readonly<Record<SeedCliCommand, string>> = {
@@ -83,6 +90,16 @@ async function main() {
   }
 
   let passthrough = options.passthrough;
+  let childEnvironment: Record<string, string> | undefined;
+  if (terminalAvailable && command === "admin") {
+    const credentials = await promptAdminCredentials();
+    if (!credentials) return 0;
+    childEnvironment = {
+      KAFIL_ADMIN_EMAIL: credentials.email,
+      KAFIL_ADMIN_INTERACTIVE: "1",
+      KAFIL_ADMIN_PASSWORD: credentials.password,
+    };
+  }
   if (
     terminalAvailable &&
     (command === "demo" || command === "full") &&
@@ -110,11 +127,66 @@ async function main() {
     return exitCode;
   }
 
-  const exitCode = await runScript(COMMAND_SCRIPTS[command], passthrough);
+  const exitCode = await runScript(
+    COMMAND_SCRIPTS[command],
+    passthrough,
+    childEnvironment,
+  );
   if (interactive && exitCode === 0) {
     outro(`${COMMAND_LABELS[command]} completed.`);
   }
   return exitCode;
+}
+
+async function promptAdminCredentials() {
+  intro("Kafil admin seed");
+
+  const configuredEmail =
+    process.env.KAFIL_ADMIN_EMAIL ?? process.env.ADMIN_EMAIL;
+  const email = await text({
+    message: "Admin email",
+    initialValue: configuredEmail
+      ? normalizeAdminEmail(configuredEmail)
+      : undefined,
+    validate: (value) => validationMessage(() => validateAdminEmail(value)),
+  });
+  if (isCancel(email)) return cancelAdminSeed();
+
+  const adminPassword = await password({
+    message: "Admin password",
+    clearOnError: true,
+    validate: (value) =>
+      validationMessage(() => validateAdminPassword(value)),
+  });
+  if (isCancel(adminPassword)) return cancelAdminSeed();
+
+  const confirmation = await password({
+    message: "Confirm admin password",
+    clearOnError: true,
+    validate: (value) =>
+      validationMessage(() =>
+        validateAdminPasswordConfirmation(adminPassword, value),
+      ),
+  });
+  if (isCancel(confirmation)) return cancelAdminSeed();
+
+  return {
+    email: validateAdminEmail(email),
+    password: validateAdminPassword(adminPassword),
+  };
+}
+
+function validationMessage(validate: () => unknown) {
+  try {
+    validate();
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+function cancelAdminSeed() {
+  cancel("Admin seed cancelled; no data was changed.");
+  return undefined;
 }
 
 async function selectInteractiveCommand(): Promise<SeedCliCommand | undefined> {
@@ -203,14 +275,21 @@ async function confirmDestructiveCommand(command: "setup" | "full") {
   return isCancel(answer) ? false : answer;
 }
 
-async function runScript(script: string, args: readonly string[]) {
+async function runScript(
+  script: string,
+  args: readonly string[],
+  environmentOverrides?: Readonly<Record<string, string>>,
+) {
   const command = `${script}${args.length ? ` ${args.join(" ")}` : ""}`;
   if (process.stdout.isTTY) log.step(`Running ${command}`);
   else console.log(`Running: ${command}`);
   const child = Bun.spawn({
     cmd: [process.execPath, script, ...args],
     cwd: fileURLToPath(new URL("..", import.meta.url)),
-    env: process.env,
+    env: {
+      ...process.env,
+      ...environmentOverrides,
+    },
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

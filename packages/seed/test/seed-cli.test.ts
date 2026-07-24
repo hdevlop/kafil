@@ -77,5 +77,28 @@ describe("seed CLI", () => {
       expect(help).toContain(command);
     }
     expect(help).toContain("--yes");
+    expect(help).toContain("masked password");
+    expect(help).toContain("KAFIL_ADMIN_EMAIL/KAFIL_ADMIN_PASSWORD");
+    expect(help).toContain("does not");
+    expect(help).toContain("migrate");
+  });
+
+  it("routes admin directly without reset, migration, or demo work", async () => {
+    const cliSource = await Bun.file(
+      new URL("../src/cli.ts", import.meta.url),
+    ).text();
+    const adminSource = await Bun.file(
+      new URL("../src/scripts/seed-admin.ts", import.meta.url),
+    ).text();
+
+    expect(cliSource).toContain('admin: "src/scripts/seed-admin.ts"');
+    for (const forbiddenCall of [
+      "clearSeedData",
+      "clearSeedStorage",
+      "migrateDatabase",
+      "seedDemoData",
+    ]) {
+      expect(adminSource).not.toContain(forbiddenCall);
+    }
   });
 });

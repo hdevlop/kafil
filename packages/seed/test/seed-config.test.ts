@@ -1,6 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
 import {
+  validateAdminEmail,
+  validateAdminPassword,
+  validateAdminPasswordConfirmation,
   readDatabaseConfig,
   readSeedConfig,
   readSeedVerificationConfig,
@@ -29,6 +32,35 @@ describe("seed configuration", () => {
         DATABASE_URL: "postgresql://localhost/kafil",
       }).adminEmail,
     ).toBe("admin@example.test");
+  });
+
+  it("validates and normalizes admin email input", () => {
+    expect(validateAdminEmail(" Admin@Example.Test ")).toBe(
+      "admin@example.test",
+    );
+    expect(() => validateAdminEmail("")).toThrow("required");
+    expect(() => validateAdminEmail("not-an-email")).toThrow(
+      "valid email address",
+    );
+    expect(() =>
+      validateAdminEmail(`${"a".repeat(243)}@example.test`),
+    ).toThrow("at most 254");
+  });
+
+  it("validates admin passwords and exact confirmation", () => {
+    expect(validateAdminPassword("StrongPass1")).toBe("StrongPass1");
+    expect(() => validateAdminPassword("short")).toThrow(
+      "at least 8 characters",
+    );
+    expect(() => validateAdminPassword("a".repeat(72) + "A1")).toThrow(
+      "at most 72 characters",
+    );
+    expect(
+      validateAdminPasswordConfirmation("StrongPass1", "StrongPass1"),
+    ).toBe("StrongPass1");
+    expect(() =>
+      validateAdminPasswordConfirmation("StrongPass1", "StrongPass2"),
+    ).toThrow("match exactly");
   });
 
   it("allows migration-only configuration without admin credentials", () => {

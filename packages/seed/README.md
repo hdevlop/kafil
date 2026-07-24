@@ -43,6 +43,37 @@ use `--yes` only for intentional non-interactive execution:
 bun run seed -- full --yes
 ```
 
+### Bootstrap admin credentials
+
+In an interactive terminal, `bun run seed -- admin` asks for the admin email,
+a masked password, and a masked password confirmation before it starts any
+database work. The email defaults to the configured environment value when one
+exists; passwords are never pre-filled, displayed, or passed in command-line
+arguments.
+
+In non-interactive automation, provide the existing environment variables:
+
+```bash
+KAFIL_ADMIN_EMAIL=admin@example.com \
+KAFIL_ADMIN_PASSWORD='StrongPassword1' \
+bun run seed -- admin
+```
+
+The `admin` command creates or safely repairs the single bootstrap admin and
+the managed roles, permissions, and role-permission assignments. It may update
+that admin's email and password while preserving its user ID, and it revokes
+active admin sessions when credentials change. It does not migrate, reset,
+truncate, or seed application/demo data. Do not use the destructive `setup` or
+`full` commands for credential changes.
+
+Interactive values update the database for that execution only. The CLI does
+not rewrite environment files. For local development, update `.env` separately
+when it remains the desired secret source. On the VPS, update the protected
+`/opt/kafil/env/app.env` separately before a future non-interactive admin seed;
+otherwise the old environment credentials may be synchronized again. Do not
+mount that protected VPS file read-write into the normal web container merely
+to support this CLI.
+
 `demo` accepts configurable counts:
 
 ```bash

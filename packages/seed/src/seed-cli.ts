@@ -110,7 +110,15 @@ Demo/full options:
 
 The interactive demo/full workflows prompt for all four counts before running.
 
+Admin credentials:
+  Interactive terminals prompt for the admin email, masked password, and
+  masked password confirmation before starting the database-backed seed.
+  Non-interactive runs use KAFIL_ADMIN_EMAIL/KAFIL_ADMIN_PASSWORD or the
+  ADMIN_EMAIL/ADMIN_PASSWORD aliases.
+
 Safety:
+  admin repairs only the bootstrap admin and auth definitions; it does not
+  migrate, clear application data, or seed demo data.
   setup and full clear application data. Add --yes for non-interactive use.
   Use --help or -h to print this help.`;
 }

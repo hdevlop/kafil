@@ -15,6 +15,7 @@ import {
   AUTH_ROLES,
   type AuthRoleName,
 } from "./auth-definitions";
+import { reconcileAdminIdentity } from "./admin-identity";
 
 export interface AuthSeedVerification {
   admin: {
@@ -35,6 +36,7 @@ export async function seedAuthentication(
   adminEmail: string,
   adminPassword: string,
 ) {
+  const adminEmailChanged = await reconcileBootstrapAdminEmail(adminEmail);
   await clearManagedRolePermissions();
 
   const result = await seedAuthData({
@@ -57,10 +59,55 @@ export async function seedAuthentication(
   await syncRolePermissions();
 
   return {
+    adminEmailChanged,
     adminPasswordChanged,
     result,
     verification: await verifyAuthenticationSeed(adminEmail),
   };
+}
+
+async function reconcileBootstrapAdminEmail(desiredEmail: string) {
+  return db.transaction(async (tx) => {
+    const existingAdmins = await tx
+      .select({
+        email: usersTable.email,
+        id: usersTable.id,
+      })
+      .from(usersTable)
+      .innerJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
+      .where(eq(rolesTable.name, "admin"))
+      .limit(2);
+
+    return reconcileAdminIdentity({
+      desiredEmail,
+      existingAdmins,
+      findDesiredEmailOwner: async () => {
+        const [owner] = await tx
+          .select({ id: usersTable.id })
+          .from(usersTable)
+          .where(eq(usersTable.email, desiredEmail))
+          .limit(1);
+        return owner;
+      },
+      revokeActiveTokens: async (adminId) => {
+        await tx
+          .update(tokensTable)
+          .set({ status: "revoked" })
+          .where(
+            and(
+              eq(tokensTable.userId, adminId),
+              eq(tokensTable.status, "active"),
+            ),
+          );
+      },
+      updateEmail: async (adminId, email) => {
+        await tx
+          .update(usersTable)
+          .set({ email })
+          .where(eq(usersTable.id, adminId));
+      },
+    });
+  });
 }
 
 async function syncAdminCredentials(adminEmail: string, adminPassword: string) {
