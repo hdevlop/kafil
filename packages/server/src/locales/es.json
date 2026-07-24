@@ -269,7 +269,8 @@
       "updated": "Patrocinador : actualizado correctamente",
       "profileUpdated": "Patrocinador : operaci?n realizada correctamente",
       "deactivated": "Patrocinador : desactivado correctamente",
-      "reactivated": "Patrocinador : reactivado correctamente"
+      "reactivated": "Patrocinador : reactivado correctamente",
+      "overviewRetrieved": "Patrocinador : operaci?n realizada correctamente"
     }
   },
   "settings": {

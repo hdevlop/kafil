@@ -84,6 +84,19 @@ export class SponsorController {
     return this.sponsors.get(id);
   }
 
+  @Get("/:id/overview")
+  @isOperator()
+  @CanRead()
+  @Validate({ params: sponsorIdParams })
+  @McpTool({
+    description: "Read operator-authorized sponsor overview with metrics",
+    readOnly: true,
+  })
+  @ResMsg("sponsors.success.overviewRetrieved")
+  getOverview(@Params("id") id: string) {
+    return this.sponsors.getOverview(id);
+  }
+
   @Post()
   @isOperator()
   @CanCreate()

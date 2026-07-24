@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -8,7 +8,7 @@ import { budgetAccounts } from "../budgets/budgetSchema";
 import { children } from "../children/childSchema";
 import { contributions, contributionPlans } from "../contributions/contributionSchema";
 import { familyProfiles } from "../families/familySchema";
-import { orders } from "../orders/orderSchema";
+import { orders, orderItems } from "../orders/orderSchema";
 import { inventoryBalances, products } from "../catalog/catalogSchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
@@ -193,7 +193,7 @@ export class DashboardRepository {
 
   async sponsorIdentity(userId: string) {
     const [identity] = await this.db
-      .select({ id: sponsorProfiles.id, displayName: usersTable.name })
+      .select({ id: sponsorProfiles.id, displayName: usersTable.name, createdAt: sponsorProfiles.createdAt })
       .from(sponsorProfiles)
       .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
       .where(eq(sponsorProfiles.userId, userId))
@@ -204,18 +204,10 @@ export class DashboardRepository {
   async sponsorSummary(sponsorProfileId: string) {
     const [[assignmentRows], [planRows], [contributionRows], [orderRows]] = await Promise.all([
       this.db.select({
-        active: sql<number>`count(*) filter (where ${supportAssignments.status} = 'active')::int`,
+        active: sql<number>`count(*) filter (where ${supportAssignments.status} = 'active' AND ${supportAssignments.childId} IS NULL)::int`,
       }).from(supportAssignments).where(eq(supportAssignments.sponsorProfileId, sponsorProfileId)),
-      this.db
-        .select({ active: sql<number>`count(*) filter (where ${contributionPlans.status} = 'active')::int` })
-        .from(contributionPlans)
-        .innerJoin(supportAssignments, eq(contributionPlans.supportAssignmentId, supportAssignments.id))
-        .where(eq(supportAssignments.sponsorProfileId, sponsorProfileId)),
-      this.db.select({
-        pendingCount: sql<number>`count(*) filter (where ${contributions.status} = 'pending')::int`,
-        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending'), 0)::bigint`,
-        validatedMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'validated'), 0)::bigint`,
-      }).from(contributions).where(eq(contributions.sponsorProfileId, sponsorProfileId)),
+      this.sponsorPlanSummary(sponsorProfileId),
+      this.sponsorContributionSummary(sponsorProfileId),
       this.db
         .select({ count: sql<number>`count(distinct ${orders.id})::int` })
         .from(orders)
@@ -223,9 +215,37 @@ export class DashboardRepository {
         .where(and(
           eq(supportAssignments.sponsorProfileId, sponsorProfileId),
           eq(supportAssignments.status, "active"),
+          isNull(supportAssignments.childId),
         )),
     ]);
     return { assignments: assignmentRows, plans: planRows, contributions: contributionRows, orders: orderRows };
+  }
+
+  sponsorPlanSummary(sponsorProfileId: string) {
+    return this.db
+      .select({ active: sql<number>`count(*) filter (where ${contributionPlans.status} = 'active')::int` })
+      .from(contributionPlans)
+      .innerJoin(supportAssignments, eq(contributionPlans.supportAssignmentId, supportAssignments.id))
+      .where(and(
+        eq(supportAssignments.sponsorProfileId, sponsorProfileId),
+        eq(supportAssignments.status, "active"),
+        isNull(supportAssignments.childId),
+      ));
+  }
+
+  sponsorContributionSummary(sponsorProfileId: string) {
+    return this.db
+      .select({
+        pendingCount: sql<number>`count(*) filter (where ${contributions.status} = 'pending')::int`,
+        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending'), 0)::bigint`,
+        validatedMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'validated'), 0)::bigint`,
+      })
+      .from(contributions)
+      .innerJoin(supportAssignments, eq(contributions.supportAssignmentId, supportAssignments.id))
+      .where(and(
+        eq(contributions.sponsorProfileId, sponsorProfileId),
+        isNull(supportAssignments.childId),
+      ));
   }
 
   sponsorBudgetRows(sponsorProfileId: string) {
@@ -241,6 +261,7 @@ export class DashboardRepository {
       .where(and(
         eq(supportAssignments.sponsorProfileId, sponsorProfileId),
         eq(supportAssignments.status, "active"),
+        isNull(supportAssignments.childId),
       ));
   }
 
@@ -253,7 +274,12 @@ export class DashboardRepository {
         pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending'), 0)::bigint`,
       })
       .from(contributions)
-      .where(and(eq(contributions.sponsorProfileId, sponsorProfileId), gte(contributions.submittedAt, since)))
+      .innerJoin(supportAssignments, eq(contributions.supportAssignmentId, supportAssignments.id))
+      .where(and(
+        eq(contributions.sponsorProfileId, sponsorProfileId),
+        isNull(supportAssignments.childId),
+        gte(contributions.submittedAt, since),
+      ))
       .groupBy(month)
       .orderBy(asc(month));
   }
@@ -262,7 +288,11 @@ export class DashboardRepository {
     return this.db
       .select({ status: contributions.status, count: sql<number>`count(*)::int` })
       .from(contributions)
-      .where(eq(contributions.sponsorProfileId, sponsorProfileId))
+      .innerJoin(supportAssignments, eq(contributions.supportAssignmentId, supportAssignments.id))
+      .where(and(
+        eq(contributions.sponsorProfileId, sponsorProfileId),
+        isNull(supportAssignments.childId),
+      ))
       .groupBy(contributions.status)
       .orderBy(asc(contributions.status));
   }
@@ -276,8 +306,98 @@ export class DashboardRepository {
         submittedAt: contributions.submittedAt,
       })
       .from(contributions)
-      .where(eq(contributions.sponsorProfileId, sponsorProfileId))
+      .innerJoin(supportAssignments, eq(contributions.supportAssignmentId, supportAssignments.id))
+      .where(and(
+        eq(contributions.sponsorProfileId, sponsorProfileId),
+        isNull(supportAssignments.childId),
+      ))
       .orderBy(desc(contributions.submittedAt))
+      .limit(limit);
+  }
+
+  sponsorSupportedFamilies(sponsorProfileId: string) {
+    return this.db
+      .select({
+        assignmentId: supportAssignments.id,
+        familyProfileId: familyProfiles.id,
+        activeChildCount: sql<number>`(SELECT COUNT(*) FROM ${children} WHERE ${children.familyProfileId} = ${familyProfiles.id} AND ${children.status} = 'active')::int`,
+        startedAt: supportAssignments.startedAt,
+        fundingTargetMinor: familyProfiles.fundingTargetMinor,
+        fundingStatus: familyProfiles.fundingStatus,
+        fundingActivatedAt: familyProfiles.fundingActivatedAt,
+        fundedMinor: sql<number>`COALESCE((SELECT SUM(${contributions.amountMinor}) FROM ${contributions} WHERE ${contributions.familyProfileId} = ${familyProfiles.id} AND ${contributions.status} = 'validated'), 0)::bigint`,
+      })
+      .from(supportAssignments)
+      .innerJoin(familyProfiles, eq(supportAssignments.familyProfileId, familyProfiles.id))
+      .where(and(
+        eq(supportAssignments.sponsorProfileId, sponsorProfileId),
+        eq(supportAssignments.status, "active"),
+        isNull(supportAssignments.childId),
+      ))
+      .orderBy(asc(supportAssignments.startedAt));
+  }
+
+  sponsorEarliestPlan(sponsorProfileId: string) {
+    return this.db
+      .select({
+        planId: contributionPlans.id,
+        amountMinor: contributionPlans.amountMinor,
+        dueAt: contributionPlans.nextDueAt,
+      })
+      .from(contributionPlans)
+      .innerJoin(supportAssignments, eq(contributionPlans.supportAssignmentId, supportAssignments.id))
+      .where(and(
+        eq(supportAssignments.sponsorProfileId, sponsorProfileId),
+        eq(contributionPlans.status, "active"),
+        eq(supportAssignments.status, "active"),
+        isNull(supportAssignments.childId),
+        sql`${contributionPlans.nextDueAt} IS NOT NULL`,
+        sql`${contributionPlans.nextDueAt} >= now()`,
+      ))
+      .orderBy(asc(contributionPlans.nextDueAt))
+      .limit(1);
+  }
+
+  sponsorUpcomingPlans(sponsorProfileId: string, limit = 3) {
+    return this.db
+      .select({
+        planId: contributionPlans.id,
+        amountMinor: contributionPlans.amountMinor,
+        dueAt: contributionPlans.nextDueAt,
+        assignmentId: supportAssignments.id,
+      })
+      .from(contributionPlans)
+      .innerJoin(supportAssignments, eq(contributionPlans.supportAssignmentId, supportAssignments.id))
+      .where(and(
+        eq(supportAssignments.sponsorProfileId, sponsorProfileId),
+        eq(contributionPlans.status, "active"),
+        eq(supportAssignments.status, "active"),
+        isNull(supportAssignments.childId),
+        sql`${contributionPlans.nextDueAt} IS NOT NULL`,
+        sql`${contributionPlans.nextDueAt} >= now()`,
+      ))
+      .orderBy(asc(contributionPlans.nextDueAt))
+      .limit(limit);
+  }
+
+  sponsorRecentSupportedOrders(sponsorProfileId: string, limit = 5) {
+    return this.db
+      .selectDistinct({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        status: orders.status,
+        totalMinor: orders.totalMinor,
+        placedAt: orders.createdAt,
+        itemCount: sql<number>`COALESCE((SELECT SUM(${orderItems.quantity}) FROM ${orderItems} WHERE ${orderItems.orderId} = ${orders.id}), 0)::int`,
+      })
+      .from(orders)
+      .innerJoin(supportAssignments, eq(orders.familyProfileId, supportAssignments.familyProfileId))
+      .where(and(
+        eq(supportAssignments.sponsorProfileId, sponsorProfileId),
+        eq(supportAssignments.status, "active"),
+        isNull(supportAssignments.childId),
+      ))
+      .orderBy(desc(orders.createdAt))
       .limit(limit);
   }
 }

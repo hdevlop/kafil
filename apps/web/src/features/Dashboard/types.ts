@@ -48,28 +48,3 @@ export interface FamilyDashboardData {
     placedAt: string;
   }>;
 }
-
-export interface SponsorDashboardData {
-  displayName: string;
-  counts: {
-    activeAssignments: number;
-    activePlans: number;
-    pendingContributions: number;
-    supportedOrders: number;
-  };
-  money: {
-    validatedContributionMinor: number;
-    pendingContributionMinor: number;
-    supportedAvailableMinor: number;
-    supportedReservedMinor: number;
-    supportedSpentMinor: number;
-  };
-  contributionTrend: Array<{ month: string; validatedMinor: number; pendingMinor: number }>;
-  contributionStatuses: DashboardStatusCount[];
-  recentContributions: Array<{
-    id: string;
-    status: string;
-    amountMinor: number;
-    submittedAt: string;
-  }>;
-}

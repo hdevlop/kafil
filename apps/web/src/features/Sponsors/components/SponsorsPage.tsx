@@ -10,7 +10,7 @@ import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 
 import { SponsorCard } from "./SponsorCard";
-import { SponsorDetails } from "./SponsorDetails";
+import { SponsorOverviewDialogContent } from "./SponsorOverviewDialogContent";
 import { CreateSponsorDialogContent, DeleteSponsorDialogContent, SponsorStatusDialogContent, UpdateSponsorDialogContent } from "./SponsorForms";
 import { useSponsors } from "../hooks/useSponsors";
 import { useSponsorsTableColumns } from "../hooks/useSponsorsTableColumns";
@@ -55,11 +55,10 @@ export function SponsorsPage() {
 
   function openView(sponsor: SponsorRecord) {
     void dialog.openDialog({
-      title: sponsor.name,
-      description: t("operator.sponsors.detailsDescription"),
-      children: <SponsorDetails sponsor={sponsor} />,
+      title: t("operator.sponsors.overviewTitle"),
+      children: <SponsorOverviewDialogContent sponsorId={sponsor.id} />,
       showButtons: false,
-      size: "lg",
+      size: "full",
       height: "xl",
     });
   }

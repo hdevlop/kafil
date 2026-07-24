@@ -3,6 +3,7 @@ import { api } from "@/services/http";
 import type {
   CreateSponsorInput,
   CreatedSponsorRecord,
+  OperatorSponsorOverviewData,
   SponsorRecord,
   SponsorStatusInput,
   UpdateSponsorInput,
@@ -16,6 +17,10 @@ export function listSponsors(pagination: OffsetPagination) {
 
 export function getSponsor(id: string) {
   return api.get<SponsorRecord>(`/sponsors/${id}`);
+}
+
+export function getSponsorOverview(id: string) {
+  return api.get<OperatorSponsorOverviewData>(`/sponsors/${id}/overview`);
 }
 
 export function createSponsor(input: CreateSponsorInput) {

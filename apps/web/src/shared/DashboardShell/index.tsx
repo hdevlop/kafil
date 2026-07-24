@@ -19,7 +19,7 @@ import {
   WalletCards,
   Warehouse,
 } from "lucide-react";
-import { NButton, NSidebar, type NavItem } from "najm-kit";
+import { NButton, NajmScroll, NSidebar, type NavItem } from "najm-kit";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -227,8 +227,10 @@ export function DashboardShell({
           }
         />
 
-        <div className="flex h-full min-h-0 w-full flex-col gap-2">
-          {children}
+        <div className="flex h-full min-h-0 w-full flex-col">
+          <NajmScroll axis="y" className="min-h-0 flex-1">
+            {children}
+          </NajmScroll>
         </div>
       </div>
     </DashboardSidebarProvider>

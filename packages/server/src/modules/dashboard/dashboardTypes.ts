@@ -66,29 +66,109 @@ export interface FamilyDashboard {
 
 export interface SponsorDashboard {
   displayName: string;
-  counts: {
-    activeAssignments: number;
-    activePlans: number;
-    pendingContributions: number;
-    supportedOrders: number;
-  };
-  money: {
-    validatedContributionMinor: number;
-    pendingContributionMinor: number;
-    supportedAvailableMinor: number;
-    supportedReservedMinor: number;
-    supportedSpentMinor: number;
-  };
-  contributionTrend: Array<{
-    month: string;
-    validatedMinor: number;
-    pendingMinor: number;
-  }>;
+  memberSince: string;
+  counts: SponsorCounts;
+  money: SponsorMoney;
+  nextPlannedContribution: NextPlannedContribution | null;
+  supportedFamilies: SupportedFamilyProjection[];
+  contributionTrend: ContributionTrendPoint[];
   contributionStatuses: DashboardStatusCount[];
-  recentContributions: Array<{
-    id: string;
+  recentContributions: RecentContributionProjection[];
+  recentSupportedOrders: RecentOrderProjection[];
+  upcomingContributions: UpcomingContributionProjection[];
+}
+
+export interface SponsorMetrics {
+  counts: SponsorCounts;
+  money: SponsorMoney;
+  nextPlannedContribution: NextPlannedContribution | null;
+  contributionTrend: ContributionTrendPoint[];
+  contributionStatuses: DashboardStatusCount[];
+  recentContributions: RecentContributionProjection[];
+  recentSupportedOrders: RecentOrderProjection[];
+  upcomingContributions: UpcomingContributionProjection[];
+}
+
+export interface SponsorCounts {
+  activeSupportedFamilies: number;
+  activePlans: number;
+  pendingContributions: number;
+  supportedOrders: number;
+}
+
+export interface SponsorMoney {
+  validatedContributionMinor: number;
+  pendingContributionMinor: number;
+  supportedAvailableMinor: number;
+  supportedReservedMinor: number;
+  supportedSpentMinor: number;
+}
+
+export interface NextPlannedContribution {
+  planId: string;
+  amountMinor: number;
+  dueAt: string;
+}
+
+export interface SupportedFamilyProjection {
+  assignmentId: string;
+  supportReference: string;
+  activeChildCount: number;
+  startedAt: Date;
+  funding: {
+    targetMinor: number;
+    fundedMinor: number;
+    remainingMinor: number;
     status: string;
-    amountMinor: number;
-    submittedAt: Date;
-  }>;
+    activatedAt: string | null;
+  } | null;
+}
+
+export interface ContributionTrendPoint {
+  month: string;
+  validatedMinor: number;
+  pendingMinor: number;
+}
+
+export interface RecentContributionProjection {
+  id: string;
+  status: string;
+  amountMinor: number;
+  submittedAt: Date;
+}
+
+export interface RecentOrderProjection {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalMinor: number;
+  placedAt: Date;
+  itemCount: number;
+}
+
+export interface UpcomingContributionProjection {
+  planId: string;
+  amountMinor: number;
+  dueAt: Date;
+  supportReference: string;
+}
+
+export interface SponsorProfileProjection {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  status: string;
+  phone: string | null;
+  cin: string | null;
+  gender: "F" | "M" | null;
+  address: string | null;
+  dateOfBirth: string | null;
+  notes: string | null;
+  createdAt: Date;
+}
+
+export interface OperatorSponsorOverview {
+  sponsor: SponsorProfileProjection;
+  metrics: SponsorMetrics;
 }

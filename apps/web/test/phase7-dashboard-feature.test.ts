@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { dashboardKeys } from "../src/features/Dashboard/hooks/useDashboard";
+import { sponsorDashboardKeys } from "../src/features/SponsorDashboard/hooks/sponsorDashboardKeys";
 import { getUiTranslation } from "../src/i18n/translations";
 import { formatStatusLabel } from "../src/lib/format";
 import {
@@ -9,6 +10,19 @@ import {
 } from "../src/shared/DashboardShell";
 
 describe("Phase 7 dashboard presentation contracts", () => {
+  test("keeps dashboard pages inside the shared Najm smart scroll viewport", async () => {
+    const shellSource = await Bun.file(
+      new URL("../src/shared/DashboardShell/index.tsx", import.meta.url),
+    ).text();
+
+    expect(shellSource).toContain(
+      '<NajmScroll axis="y" className="min-h-0 flex-1">',
+    );
+    expect(shellSource).toContain(
+      'className="flex h-screen w-full overflow-hidden',
+    );
+  });
+
   test("uses flat icon-backed operator destinations with native sidebar sections", () => {
     const navigation = getDashboardNavigation("operator", ((key: string) => key) as never);
 
@@ -48,7 +62,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
   test("keeps independent role dashboard query caches", () => {
     expect(dashboardKeys.operator).toEqual(["dashboard", "operator"]);
     expect(dashboardKeys.family).toEqual(["dashboard", "family"]);
-    expect(dashboardKeys.sponsor).toEqual(["dashboard", "sponsor"]);
+    expect(sponsorDashboardKeys.overview).toEqual(["sponsor-dashboard", "overview"]);
   });
 
   test("ships dashboard and refunded-status labels in every supported language", () => {

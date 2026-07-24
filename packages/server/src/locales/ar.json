@@ -270,7 +270,8 @@
       "updated": "?????? : ?? ??????? ?????",
       "profileUpdated": "?????? : ??? ??????? ?????",
       "deactivated": "?????? : ?? ??????? ?????",
-      "reactivated": "?????? : ??? ????? ??????? ?????"
+      "reactivated": "?????? : ??? ????? ??????? ?????",
+      "overviewRetrieved": "?????? : ??? ????? ??????? ?????"
     }
   },
   "settings": {
@@ -525,7 +526,7 @@
         "subtitle": "تابع مساهماتك ونتائج الدعم الآمنة للخصوصية من مكان واحد.",
         "error": "تعذر تحميل لوحة تحكم الكفيل",
         "loading": "جارٍ تحميل لوحة تحكم الكفيل",
-        "validatedContributions": "المساهمات المتحقق منها",
+        "validatedContributions": "إجمالي المساهمات",
         "confirmedSupport": "مؤكد من كفيل",
         "pendingContributions": "المساهمات المعلقة",
         "activeAssignments": "التخصيصات النشطة",
@@ -540,7 +541,31 @@
         "supportBudgetUse": "استخدام ميزانية الدعم",
         "contributionStatuses": "حالات المساهمات",
         "recentContributions": "المساهمات الأخيرة",
-        "noContributions": "لا توجد مساهمات بعد. أنشئ خطة أو أرسل مساهمتك الأولى."
+        "noContributions": "لا توجد مساهمات بعد. أنشئ خطة أو أرسل مساهمتك الأولى.",
+        "pendingCount": "معلق",
+        "supportedFamilies": "الدعم النشط",
+        "activeSupport": "الأسر المدعومة",
+        "nextContribution": "المساهمة المخطط لها التالية",
+        "noActivePlan": "لا توجد خطة نشطة",
+        "memberSince": "عضو منذ",
+        "mySupportedFamilies": "الأسر التي أدعمها",
+        "activeChildren": "الأطفال النشطون",
+        "funded": "ممول",
+        "viewAllSupport": "عرض كل الدعم",
+        "findFamilyToSupport": "ابحث عن أسرة لدعمها",
+        "totalBudget": "إجمالي الميزانية",
+        "noSupportedBudget": "لا يوجد نشاط ميزانية مدعوم حتى الآن. ستظهر بيانات الميزانية هنا عندما يكون الدعم نشطًا.",
+        "viewAllBudgets": "عرض كل الميزانيات",
+        "contributionOverview": "نظرة عامة على المساهمات",
+        "last12Months": "آخر 12 شهرًا",
+        "viewAllContributions": "عرض كل المساهمات",
+        "recentSupportedOrders": "الطلبات المدعومة الأخيرة",
+        "noSupportedOrders": "لا توجد طلبات مدعومة بعد. ستظهر الطلبات هنا عندما تقدمها الأسر المدعومة.",
+        "items": "عناصر",
+        "viewAllOrders": "عرض كل الطلبات",
+        "upcomingContributions": "المساهمات القادمة",
+        "noUpcomingContributions": "لا توجد مساهمات قادمة. أنشئ خطة مساهمة نشطة لرؤية التواريخ المجدولة.",
+        "viewAllPlans": "عرض كل الخطط"
       }
     },
     "operator": {
@@ -767,6 +792,10 @@
         "createTitle": "إنشاء حساب كفيل",
         "createDescription": "أنشئ حساب كفيل وابدأ مسار الدعوة دون كلمة مرور.",
         "detailsDescription": "تفاصيل حساب الكفيل وملفه الخاص متاحة للمشغل فقط.",
+        "overviewDescription": "حساب الكفيل والمقايات ونظرة عامة على النشاط.",
+        "overviewTitle": "نظرة عامة على الكفيل",
+        "overviewError": "تعذر تحميل نظرة عامة على الكفيل",
+        "information": "معلومات الكفيل",
         "editTitle": "تعديل {name}",
         "editDescription": "يبقى الدور وكلمة المرور وحالة الحساب تحت تحكم الخادم.",
         "deactivateTitle": "تعطيل {name}",

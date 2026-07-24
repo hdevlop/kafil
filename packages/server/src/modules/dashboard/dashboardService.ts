@@ -6,6 +6,7 @@ import type {
   FamilyDashboard,
   OperatorDashboard,
   SponsorDashboard,
+  SponsorMetrics,
 } from "./dashboardTypes";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
@@ -119,14 +120,72 @@ export class DashboardService {
     const identity = await this.dashboard.sponsorIdentity(userId);
     if (!identity) HttpError.notFound("Sponsor dashboard not found");
 
-    const { firstMonth } = monthWindow();
-    const [summary, budgetRows, trendRows, statusRows, recentRows] = await Promise.all([
-      this.dashboard.sponsorSummary(identity.id),
-      this.dashboard.sponsorBudgetRows(identity.id),
-      this.dashboard.sponsorContributionTrend(identity.id, firstMonth),
-      this.dashboard.sponsorContributionStatuses(identity.id),
-      this.dashboard.sponsorRecentContributions(identity.id),
+    const [metrics, supportedFamiliesRows] = await Promise.all([
+      this.getSponsorMetrics(identity.id),
+      this.dashboard.sponsorSupportedFamilies(identity.id),
     ]);
+
+    return {
+      displayName: identity.displayName || "Sponsor",
+      memberSince: identity.createdAt?.toISOString() ?? "",
+      ...metrics,
+      supportedFamilies: supportedFamiliesRows.map((row) => {
+        const target = numberValue(row.fundingTargetMinor);
+        const funded = numberValue(row.fundedMinor);
+        return {
+          assignmentId: row.assignmentId,
+          supportReference: `Support ${row.assignmentId.slice(0, 8)}`,
+          activeChildCount: numberValue(row.activeChildCount),
+          startedAt: row.startedAt,
+          funding: target > 0
+            ? {
+                targetMinor: target,
+                fundedMinor: funded,
+                remainingMinor: Math.max(0, target - funded),
+                status: row.fundingStatus ?? "pending_funding",
+                activatedAt: row.fundingActivatedAt?.toISOString() ?? null,
+              }
+            : null,
+        };
+      }),
+    };
+  }
+
+  async getSponsorMetrics(sponsorProfileId: string): Promise<SponsorMetrics> {
+    const { firstMonth } = monthWindow();
+    const [
+      summary,
+      budgetRows,
+      trendRows,
+      statusRows,
+      recentContributionsRows,
+      earliestPlanRows,
+      upcomingPlansRows,
+      recentOrdersRows,
+    ] = await Promise.all([
+      this.dashboard.sponsorSummary(sponsorProfileId),
+      this.dashboard.sponsorBudgetRows(sponsorProfileId),
+      this.dashboard.sponsorContributionTrend(sponsorProfileId, firstMonth),
+      this.dashboard.sponsorContributionStatuses(sponsorProfileId),
+      this.dashboard.sponsorRecentContributions(sponsorProfileId),
+      this.dashboard.sponsorEarliestPlan(sponsorProfileId),
+      this.dashboard.sponsorUpcomingPlans(sponsorProfileId),
+      this.dashboard.sponsorRecentSupportedOrders(sponsorProfileId),
+    ]);
+
+    return this.buildSponsorMetrics(summary, budgetRows, trendRows, statusRows, recentContributionsRows, earliestPlanRows, upcomingPlansRows, recentOrdersRows);
+  }
+
+  private buildSponsorMetrics(
+    summary: Awaited<ReturnType<DashboardRepository["sponsorSummary"]>>,
+    budgetRows: Awaited<ReturnType<DashboardRepository["sponsorBudgetRows"]>>,
+    trendRows: Awaited<ReturnType<DashboardRepository["sponsorContributionTrend"]>>,
+    statusRows: Awaited<ReturnType<DashboardRepository["sponsorContributionStatuses"]>>,
+    recentContributionsRows: Awaited<ReturnType<DashboardRepository["sponsorRecentContributions"]>>,
+    earliestPlanRows: Awaited<ReturnType<DashboardRepository["sponsorEarliestPlan"]>>,
+    upcomingPlansRows: Awaited<ReturnType<DashboardRepository["sponsorUpcomingPlans"]>>,
+    recentOrdersRows: Awaited<ReturnType<DashboardRepository["sponsorRecentSupportedOrders"]>>,
+  ): SponsorMetrics {
     const budget = budgetRows.reduce(
       (totals, row) => ({
         availableMinor: totals.availableMinor + numberValue(row.availableMinor),
@@ -136,10 +195,11 @@ export class DashboardService {
       { availableMinor: 0, reservedMinor: 0, spentMinor: 0 },
     );
 
+    const earliestPlan = earliestPlanRows[0] ?? null;
+
     return {
-      displayName: identity.displayName || "Sponsor",
       counts: {
-        activeAssignments: numberValue(summary.assignments?.active),
+        activeSupportedFamilies: numberValue(summary.assignments?.active),
         activePlans: numberValue(summary.plans?.active),
         pendingContributions: numberValue(summary.contributions?.pendingCount),
         supportedOrders: numberValue(summary.orders?.count),
@@ -151,6 +211,13 @@ export class DashboardService {
         supportedReservedMinor: budget.reservedMinor,
         supportedSpentMinor: budget.spentMinor,
       },
+      nextPlannedContribution: earliestPlan
+        ? {
+            planId: earliestPlan.planId,
+            amountMinor: numberValue(earliestPlan.amountMinor),
+            dueAt: earliestPlan.dueAt?.toISOString() ?? "",
+          }
+        : null,
       contributionTrend: fillMonths(
         trendRows.map((row) => ({
           month: row.month,
@@ -160,7 +227,18 @@ export class DashboardService {
         (month) => ({ month, validatedMinor: 0, pendingMinor: 0 }),
       ),
       contributionStatuses: statusCounts(statusRows),
-      recentContributions: recentRows.map((row) => ({ ...row, amountMinor: numberValue(row.amountMinor) })),
+      recentContributions: recentContributionsRows.map((row) => ({ ...row, amountMinor: numberValue(row.amountMinor) })),
+      recentSupportedOrders: recentOrdersRows.map((row) => ({
+        ...row,
+        totalMinor: numberValue(row.totalMinor),
+        itemCount: numberValue(row.itemCount),
+      })),
+      upcomingContributions: upcomingPlansRows.map((row) => ({
+        planId: row.planId,
+        amountMinor: numberValue(row.amountMinor),
+        dueAt: row.dueAt ?? new Date(),
+        supportReference: `Support ${row.assignmentId.slice(0, 8)}`,
+      })),
     };
   }
 }

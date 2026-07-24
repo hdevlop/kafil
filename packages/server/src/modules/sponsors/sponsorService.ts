@@ -7,6 +7,7 @@ import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
 import { AuditService } from "../audit/auditService";
+import { DashboardService } from "../dashboard/dashboardService";
 import { generateInitialPassword } from "../access/initialPassword";
 import {
   type CreateOwnSponsorProfileDto,
@@ -35,6 +36,7 @@ export class SponsorService {
     private readonly sponsors: SponsorRepository,
     private readonly audits: AuditService,
     private readonly validator: SponsorValidator,
+    private readonly dashboard: DashboardService,
     private readonly userRecords?: UserRepository,
   ) {}
 
@@ -45,6 +47,29 @@ export class SponsorService {
 
   async get(id: string) {
     return this.validator.ensureExists(id);
+  }
+
+  async getOverview(sponsorProfileId: string) {
+    const sponsor = await this.validator.ensureExists(sponsorProfileId);
+    const metrics = await this.dashboard.getSponsorMetrics(sponsorProfileId);
+
+    return {
+      sponsor: {
+        id: sponsor.id,
+        name: sponsor.name,
+        email: sponsor.email,
+        image: sponsor.image,
+        status: sponsor.status,
+        phone: sponsor.phone,
+        cin: sponsor.cin,
+        gender: sponsor.gender,
+        address: sponsor.address,
+        dateOfBirth: sponsor.dateOfBirth,
+        notes: sponsor.notes,
+        createdAt: sponsor.createdAt,
+      },
+      metrics,
+    };
   }
 
   async getOwn(userId: string) {

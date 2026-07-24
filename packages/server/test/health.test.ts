@@ -168,6 +168,7 @@ describe("Kafil server", () => {
       "sponsors_list",
       "sponsors_get_own",
       "sponsors_get",
+      "sponsors_get_overview",
       "sponsors_create",
       "sponsors_create_own",
       "sponsors_update",

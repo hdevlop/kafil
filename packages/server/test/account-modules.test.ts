@@ -38,6 +38,7 @@ import {
   updateSponsorDto,
 } from "../src/modules/sponsors";
 import { AuditService } from "../src/modules/audit";
+import { DashboardService } from "../src/modules/dashboard";
 
 const operatorId = "00000000-0000-4000-8000-000000000001";
 const sponsorId = "00000000-0000-4000-8000-000000000002";
@@ -173,6 +174,7 @@ describe("account module controller validation", () => {
       "list",
       "getOwn",
       "get",
+      "getOverview",
       "create",
       "createOwn",
       "update",
@@ -316,6 +318,7 @@ describe("account module services", () => {
       profiles,
       auditService({}),
       sponsorValidator({}),
+      {} as unknown as DashboardService,
     );
 
     expect(await service.list({ limit: 25, offset: 5 })).toEqual([
@@ -349,6 +352,7 @@ describe("account module services", () => {
         },
       }),
       sponsorValidator({ ensureExists: async () => sponsorProfile() }),
+      {} as unknown as DashboardService,
     );
 
     await expect(service.delete(sponsorId, "admin-user")).resolves.toMatchObject({
@@ -373,6 +377,7 @@ describe("account module services", () => {
       sponsorRepository({ hasLinkedHistory: async () => true }),
       auditService({}),
       sponsorValidator({ ensureExists: async () => sponsorProfile() }),
+      {} as unknown as DashboardService,
     );
 
     await expect(service.delete(sponsorId, "admin-user")).rejects.toMatchObject({
@@ -405,6 +410,7 @@ describe("account module services", () => {
         ensurePhoneUnique: async () => {},
         ensureUserIdUnique: async () => {},
       }),
+      {} as unknown as DashboardService,
     );
 
     await service.create({

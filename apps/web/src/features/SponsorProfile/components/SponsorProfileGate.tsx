@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { SponsorDashboardPage } from "@/features/Dashboard";
+import { SponsorDashboardPage } from "@/features/SponsorDashboard";
 import { PageErrorState, PageLoadingState } from "@/shared/PageState";
 
 import { useOwnSponsorProfile } from "../hooks/useSponsorProfile";

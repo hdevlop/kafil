@@ -7,7 +7,11 @@ bounded implementation detail and decision records.
 
 - [`DECISIONS.md`](DECISIONS.md) - locked MVP product and architecture decisions
 - [`NAJM-STACK.md`](NAJM-STACK.md) - installed framework contracts to reuse
+- [`OPERATOR-SPONSOR-DETAIL-OVERVIEW.md`](OPERATOR-SPONSOR-DETAIL-OVERVIEW.md) -
+  internal-coder handoff for the reusable operator/admin sponsor overview dialog
 - [`SECTION-TEMPLATE.md`](SECTION-TEMPLATE.md) - template for future sections
+- [`SPONSOR-DASHBOARD-REDESIGN.md`](SPONSOR-DASHBOARD-REDESIGN.md) - bounded
+  internal-coder handoff for the sponsor overview redesign
 - [`VPS-DOCKER-DEPLOYMENT.md`](VPS-DOCKER-DEPLOYMENT.md) - implementation
   handoff for the production-like demo VPS, automated releases, and the later
   clean production-data transition

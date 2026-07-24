@@ -183,6 +183,7 @@ export function SupportAssignmentsPage() {
     },
     menuButton: true,
     manualPagination: true,
+    showPagination: false,
     pagination: { pageIndex, pageSize: pagination.limit },
     pageCount,
     onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),

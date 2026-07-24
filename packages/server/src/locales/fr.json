@@ -271,7 +271,8 @@
       "updated": "Parrain : mis ? jour avec succ?s",
       "profileUpdated": "Parrain : op?ration effectu?e avec succ?s",
       "deactivated": "Parrain : d?sactiv? avec succ?s",
-      "reactivated": "Parrain : r?activ? avec succ?s"
+      "reactivated": "Parrain : r?activ? avec succ?s",
+      "overviewRetrieved": "Parrain : op?ration effectu?e avec succ?s"
     }
   },
   "settings": {
@@ -526,7 +527,7 @@
         "subtitle": "Suivez vos contributions et les résultats de soutien respectueux de la vie privée.",
         "error": "Impossible de charger votre tableau de bord parrain",
         "loading": "Chargement de votre tableau de bord parrain",
-        "validatedContributions": "Contributions validées",
+        "validatedContributions": "Total des contributions",
         "confirmedSupport": "Confirmé par Kafil",
         "pendingContributions": "Contributions en attente",
         "activeAssignments": "Attributions actives",
@@ -541,7 +542,31 @@
         "supportBudgetUse": "Utilisation du budget soutenu",
         "contributionStatuses": "Statuts des contributions",
         "recentContributions": "Contributions récentes",
-        "noContributions": "Aucune contribution. Créez un plan ou envoyez votre première contribution."
+        "noContributions": "Aucune contribution. Créez un plan ou envoyez votre première contribution.",
+        "pendingCount": "en attente",
+        "supportedFamilies": "Soutien actif",
+        "activeSupport": "Familles soutenues",
+        "nextContribution": "Prochaine contribution prévue",
+        "noActivePlan": "Aucun plan actif",
+        "memberSince": "Membre depuis",
+        "mySupportedFamilies": "Mes familles soutenues",
+        "activeChildren": "Enfants actifs",
+        "funded": "financé",
+        "viewAllSupport": "Voir tout le soutien",
+        "findFamilyToSupport": "Trouver une famille à soutenir",
+        "totalBudget": "Budget total",
+        "noSupportedBudget": "Aucune activité budgétaire soutenue. Les données budgétaires apparaîtront ici lorsque le soutien est actif.",
+        "viewAllBudgets": "Voir tous les budgets",
+        "contributionOverview": "Aperçu des contributions",
+        "last12Months": "12 derniers mois",
+        "viewAllContributions": "Voir toutes les contributions",
+        "recentSupportedOrders": "Commandes soutenues récentes",
+        "noSupportedOrders": "Aucune commande soutenue. Les commandes apparaîtront ici lorsque les familles soutenues en passeront.",
+        "items": "articles",
+        "viewAllOrders": "Voir toutes les commandes",
+        "upcomingContributions": "Contributions à venir",
+        "noUpcomingContributions": "Aucune contribution à venir. Créez un plan de contribution actif pour voir les dates prévues.",
+        "viewAllPlans": "Voir tous les plans"
       }
     },
     "operator": {
@@ -768,6 +793,10 @@
         "createTitle": "Créer un compte parrain",
         "createDescription": "Créez un compte parrain et lancez le processus d'invitation sans mot de passe.",
         "detailsDescription": "Compte parrain et profil privé réservés aux opérateurs.",
+        "overviewDescription": "Compte parrain, métriques et aperçu d'activité.",
+        "overviewTitle": "Aperçu du parrain",
+        "overviewError": "Impossible de charger l'aperçu du parrain",
+        "information": "Informations du parrain",
         "editTitle": "Modifier {name}",
         "editDescription": "Le rôle, le mot de passe et le statut du compte restent contrôlés par le serveur.",
         "deactivateTitle": "Désactiver {name}",

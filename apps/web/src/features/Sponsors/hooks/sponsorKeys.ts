@@ -12,4 +12,7 @@ export const sponsorKeys = {
   detail(id: string) {
     return entityKeys.detail("sponsors", id);
   },
+  overview(id: string) {
+    return [...entityKeys.detail("sponsors", id), "overview"];
+  },
 };

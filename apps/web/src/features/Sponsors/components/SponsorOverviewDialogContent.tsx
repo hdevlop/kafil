@@ -1,0 +1,98 @@
+"use client";
+
+import { HandCoins, WalletCards } from "lucide-react";
+import { NCard, NGrid, NGridItem } from "najm-kit";
+
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+
+import { ContributionOverviewCard } from "@/features/SponsorOverview/components/ContributionOverviewCard";
+import { RecentContributionsCard } from "@/features/SponsorOverview/components/RecentContributionsCard";
+import { RecentSupportedOrdersCard } from "@/features/SponsorOverview/components/RecentSupportedOrdersCard";
+import { SponsorKpiGrid } from "@/features/SponsorOverview/components/SponsorKpiGrid";
+import { SupportBudgetCard } from "@/features/SponsorOverview/components/SupportBudgetCard";
+
+import { useSponsorOverview } from "../hooks/useSponsorOverview";
+import { buildOperatorSponsorOverviewViewModel } from "../lib/buildOperatorSponsorOverviewViewModel";
+import { SponsorInformationCard } from "./SponsorInformationCard";
+import { SponsorOverviewSkeleton } from "./SponsorOverviewSkeleton";
+
+export function SponsorOverviewDialogContent({
+  sponsorId,
+}: Readonly<{
+  sponsorId: string;
+}>) {
+  const overview = useSponsorOverview(sponsorId);
+  const { language, t: originalT } = useKafilLanguage();
+  const t = (key: string, params?: Record<string, string>) => originalT(key as Parameters<typeof originalT>[0], params);
+
+  if (overview.isError) {
+    return (
+      <NCard
+        error={overview.error}
+        empty={false}
+        errorText={t("operator.sponsors.overviewError")}
+        onRetry={() => void overview.refetch()}
+      />
+    );
+  }
+
+  if (overview.isPending || !overview.data) {
+    return <SponsorOverviewSkeleton />;
+  }
+
+  const vm = buildOperatorSponsorOverviewViewModel(overview.data, language, t);
+
+  return (
+    <div className="space-y-4">
+      <SponsorKpiGrid desktopColumns={4} kpis={vm.kpis} />
+
+      <SponsorInformationCard sponsor={vm.sponsorInfo} t={t} />
+
+      <NGrid cols={1} lgCols={12}>
+        <NGridItem span={1} lgSpan={5}>
+          <SupportBudgetCard
+            icon={WalletCards}
+            segments={vm.budgetSegments}
+            total={vm.budgetTotal}
+            title={t("dashboard.sponsor.supportBudgetUse")}
+            totalLabel={t("dashboard.sponsor.totalBudget")}
+            emptyLabel={t("dashboard.sponsor.noSupportedBudget")}
+            language={language}
+          />
+        </NGridItem>
+        <NGridItem span={1} lgSpan={7}>
+          <ContributionOverviewCard
+            data={vm.contributionTrend}
+            icon={HandCoins}
+            language={language}
+            series={vm.chartSeries}
+            title={t("dashboard.sponsor.contributionOverview")}
+            valueFormatter={vm.contributionValueFormatter}
+          />
+        </NGridItem>
+      </NGrid>
+
+      <NGrid cols={1} lgCols={2}>
+        <NGridItem span={1}>
+          <RecentContributionsCard
+            contributions={vm.recentContributions}
+            icon={HandCoins}
+            title={t("dashboard.sponsor.recentContributions")}
+            emptyLabel={t("dashboard.sponsor.noContributions")}
+            language={language}
+          />
+        </NGridItem>
+        <NGridItem span={1}>
+          <RecentSupportedOrdersCard
+            orders={vm.recentSupportedOrders}
+            icon={WalletCards}
+            title={t("dashboard.sponsor.recentSupportedOrders")}
+            emptyLabel={t("dashboard.sponsor.noSupportedOrders")}
+            language={language}
+            itemsLabel={t("dashboard.sponsor.items")}
+          />
+        </NGridItem>
+      </NGrid>
+    </div>
+  );
+}

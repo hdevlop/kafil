@@ -281,7 +281,8 @@
       "profileUpdated": "Sponsor profile updated successfully",
       "deleted": "Sponsor deleted successfully",
       "deactivated": "Sponsor deactivated successfully",
-      "reactivated": "Sponsor reactivated successfully"
+      "reactivated": "Sponsor reactivated successfully",
+      "overviewRetrieved": "Sponsor overview retrieved successfully"
     }
   },
   "settings": {
@@ -538,7 +539,7 @@
         "subtitle": "Track your contributions and privacy-safe support outcomes from one place.",
         "error": "We could not load your sponsor dashboard",
         "loading": "Loading your sponsor dashboard",
-        "validatedContributions": "Validated contributions",
+        "validatedContributions": "Total contribution",
         "confirmedSupport": "Confirmed by Kafil",
         "pendingContributions": "Pending contributions",
         "activeAssignments": "Active assignments",
@@ -553,7 +554,31 @@
         "supportBudgetUse": "Supported budget use",
         "contributionStatuses": "Contribution statuses",
         "recentContributions": "Recent contributions",
-        "noContributions": "No contributions yet. Create a plan or submit your first contribution."
+        "noContributions": "No contributions yet. Create a plan or submit your first contribution.",
+        "pendingCount": "pending",
+        "supportedFamilies": "Active support",
+        "activeSupport": "Supported families",
+        "nextContribution": "Next planned contribution",
+        "noActivePlan": "No active plan",
+        "memberSince": "Member since",
+        "mySupportedFamilies": "My supported families",
+        "activeChildren": "Active children",
+        "funded": "funded",
+        "viewAllSupport": "View all support",
+        "findFamilyToSupport": "Find a family to support",
+        "totalBudget": "Total budget",
+        "noSupportedBudget": "No supported budget activity yet. Budget data will appear here when support is active.",
+        "viewAllBudgets": "View all budgets",
+        "contributionOverview": "Contribution overview",
+        "last12Months": "Last 12 months",
+        "viewAllContributions": "View all contributions",
+        "recentSupportedOrders": "Recent supported orders",
+        "noSupportedOrders": "No supported orders yet. Orders will appear here when supported families place them.",
+        "items": "items",
+        "viewAllOrders": "View all orders",
+        "upcomingContributions": "Upcoming contributions",
+        "noUpcomingContributions": "No upcoming contributions. Create an active contribution plan to see scheduled dates.",
+        "viewAllPlans": "View all plans"
       }
     },
     "operator": {
@@ -800,6 +825,10 @@
         "createTitle": "Create sponsor account",
         "createDescription": "Provision a sponsor account and start the passwordless invitation flow.",
         "detailsDescription": "Operator-only sponsor account and private profile details.",
+        "overviewDescription": "Sponsor account, metrics, and activity overview.",
+        "overviewTitle": "Sponsor overview",
+        "overviewError": "We could not load the sponsor overview",
+        "information": "Sponsor information",
         "editTitle": "Edit {name}",
         "editDescription": "Role, password, and account status remain backend-controlled.",
         "deactivateTitle": "Deactivate {name}",
