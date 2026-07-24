@@ -85,7 +85,6 @@ export function SponsorDashboardPage() {
             data={vm.contributionTrend}
             icon={HandCoins}
             language={language}
-            periodLabel={tString("dashboard.sponsor.last12Months")}
             series={[
               { key: "validatedMinor", label: tString("dashboard.common.validated"), color: "var(--primary)" },
               { key: "pendingMinor", label: tString("dashboard.common.pending"), color: "var(--secondary)" },
