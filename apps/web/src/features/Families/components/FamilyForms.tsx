@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Baby, UserRoundPlus } from "lucide-react";
+import { Baby, House, UserRoundPlus } from "lucide-react";
 import {
   DynamicArray,
   FormInput,
@@ -9,18 +9,32 @@ import {
   NButton,
   NForm,
   NFormSectionHeader,
+  NajmScroll,
   WizardForm,
   useDialog,
 } from "najm-kit";
 import type { StepConfig } from "najm-kit";
+import { useWatch } from "react-hook-form";
 
-import { devFormTools, isDevFormFillEnabled } from "@/lib/devFormFill";
 import { minorUnitsToMadInput } from "@/features/Budgets/config/budgetSchemas";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { InitialCredentialsCard } from "@/shared/InitialCredentialsCard";
+import { localDateInput } from "@/lib/date";
+import {
+  buildDevFormFill,
+  useDevFormTools,
+  useFormFillEnabled,
+} from "@/lib/devFormFill";
+import {
+  deleteFamilyImage,
+  uploadFamilyImage,
+} from "@/services/familyApi";
+import { familyHousingItems } from "../config/housingOptions";
 
 import {
+  createFamilyChildrenStepSchema,
   createFamilyFormSchema,
+  createFamilyGuardianStepSchema,
+  createFamilyHouseholdStepSchema,
   familyStatusFormSchema,
   toCreateFamilyInput,
   toUpdateFamilyInput,
@@ -30,11 +44,7 @@ import {
   type UpdateFamilyFormValues,
 } from "../config/familySchemas";
 import { useFamilyCommands } from "../hooks/useFamilies";
-import type { FamilyRecord } from "../types";
-import {
-  deleteFamilyImage,
-  uploadFamilyImage,
-} from "@/services/familyApi";
+import type { FamilyRecord, FamilyStoredHousingSituation } from "../types";
 
 const MAX_FAMILY_IMAGE_SIZE = 5_000_000;
 const FAMILY_IMAGE_TYPES = new Set([
@@ -45,23 +55,26 @@ const FAMILY_IMAGE_TYPES = new Set([
   "image/webp",
 ]);
 
-function createFamilyDefaultValues(): CreateFamilyFormValues {
+export function createFamilyDefaultValues(): CreateFamilyFormValues {
   return {
     name: "",
     email: "",
     guardianCin: "",
     guardianDateOfBirth: "",
-    exactAddress: "",
-    phone: "",
-    activationTargetMad: "",
-    initialChildren: [],
     relationshipToChildren: "",
+    phone: "",
+    housingSituation: "" as CreateFamilyFormValues["housingSituation"],
+    registrationDate: localDateInput(),
+    supportPriority: "normal",
+    activationTargetMad: "",
     notes: "",
+    exactAddress: "",
+    initialChildren: [],
   };
 }
 
-function createFamilyDevFillValues(): CreateFamilyFormValues {
-  const generatedFamily = devFormTools(createFamilyFormSchema).fill();
+export function createFamilyDevFillValues(): CreateFamilyFormValues {
+  const generatedFamily = buildDevFormFill(createFamilyFormSchema);
   const firstChild = generatedFamily.initialChildren?.[0];
 
   if (!firstChild) {
@@ -74,7 +87,7 @@ function createFamilyDevFillValues(): CreateFamilyFormValues {
 
   const childCount = Math.floor(Math.random() * 4) + 1;
   const initialChildren = Array.from({ length: childCount }, () =>
-    devFormTools(createFamilyFormSchema).fill().initialChildren?.[0] ?? firstChild,
+    buildDevFormFill(createFamilyFormSchema).initialChildren?.[0] ?? firstChild,
   );
 
   return createFamilyFormSchema.parse({
@@ -156,7 +169,7 @@ function InitialChildFields() {
   );
 }
 
-function FamilyProfileFields({
+export function FamilyGuardianFields({
   disabled,
   image,
   imageError,
@@ -174,124 +187,203 @@ function FamilyProfileFields({
   const { t } = useKafilLanguage();
 
   return (
-    <>
+    <div className="space-y-4">
       {showSectionHeader ? (
         <NFormSectionHeader
           icon={UserRoundPlus}
-          title={t("operator.families.profile")}
+          title={t("operator.families.guardianStep")}
         />
       ) : null}
       <div className="space-y-2">
-          <ImageInput
-            accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
-            disabled={disabled}
-            imageVersion={imageVersion}
-            previewClassName="h-52 w-full"
-            value={image}
-            onChange={onImageChange}
-          />
-          {imageError ? (
-            <p className="text-center text-xs text-destructive">
-              {imageError}
-            </p>
-          ) : null}
+        <FormInput
+          name="image"
+          type="image"
+          formLabel={t("operator.families.imageUrl")}
+          formDescription={t("operator.families.imageUploadGuidance")}
+          accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+          allowClear
+          disabled={disabled}
+          imageSize="md"
+          imageVersion={imageVersion}
+          previewClassName="h-40 w-full overflow-hidden rounded-xl"
+          value={image}
+          onChange={onImageChange}
+        />
+        {imageError ? (
+          <p className="text-xs text-destructive">{imageError}</p>
+        ) : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-          <FormInput
-            name="name"
-            type="text"
-            formLabel={t("operator.families.guardianName")}
-            placeholder={t("operator.families.fullName")}
-            icon="User"
-            required
-          />
-          <FormInput
-            name="guardianCin"
-            type="text"
-            formLabel={t("operator.families.guardianCin")}
-            placeholder={t("operator.families.cinExample")}
-            icon="FileKey2"
-            required
-          />
-          <FormInput
-            name="email"
-            type="text"
-            formLabel={t("operator.families.email")}
-            placeholder="family@example.com"
-            icon="Mail"
-            required
-          />
-          <FormInput
-            name="guardianDateOfBirth"
-            type="date"
-            formLabel={t("operator.families.guardianDateOfBirth")}
-            icon="Calendar"
-            required
-          />
-          <FormInput
-            name="relationshipToChildren"
-            type="text"
-            formLabel={t("operator.families.relationship")}
-            placeholder={t("operator.families.relationshipExample")}
-            icon="HeartHandshake"
-          />
-          <FormInput
-            name="activationTargetMad"
-            type="text"
-            formLabel={t("operator.families.activationTarget")}
-            placeholder={t("operator.families.targetExample")}
-            icon="CircleDollarSign"
-            required
-          />
-          <FormInput
-            name="phone"
-            type="text"
-            formLabel={t("operator.families.householdPhone")}
-            placeholder={t("operator.families.optional")}
-            icon="Phone"
-            required
-          />
-          <div>
-            <FormInput
-              name="exactAddress"
-              type="textarea"
-              formLabel={t("operator.families.exactAddress")}
-              placeholder={t("operator.families.fullAddress")}
-              icon="MapPin"
-            />
-          </div>
-          <div>
-            <FormInput
-              name="notes"
-              type="textarea"
-              formLabel={t("operator.families.familyNotes")}
-              placeholder={t("operator.families.optionalOperatorNotes")}
-              icon="NotebookPen"
-            />
-          </div>
+        <FormInput
+          name="name"
+          type="text"
+          formLabel={t("operator.families.guardianName")}
+          placeholder={t("operator.families.fullName")}
+          icon="User"
+          required
+        />
+        <FormInput
+          name="guardianCin"
+          type="text"
+          formLabel={t("operator.families.guardianCin")}
+          placeholder={t("operator.families.cinExample")}
+          icon="FileKey2"
+          required
+        />
+        <FormInput
+          name="email"
+          type="text"
+          formLabel={t("operator.families.email")}
+          placeholder="family@example.com"
+          icon="Mail"
+          required
+        />
+        <FormInput
+          name="guardianDateOfBirth"
+          type="date"
+          formLabel={t("operator.families.guardianDateOfBirth")}
+          icon="Calendar"
+          required
+        />
+        <FormInput
+          name="relationshipToChildren"
+          type="text"
+          formLabel={t("operator.families.relationship")}
+          placeholder={t("operator.families.relationshipExample")}
+          icon="HeartHandshake"
+        />
+        <FormInput
+          name="phone"
+          type="text"
+          formLabel={t("operator.families.householdPhone")}
+          placeholder={t("operator.families.optional")}
+          icon="Phone"
+          required
+        />
       </div>
-    </>
+    </div>
   );
 }
 
-function FamilyChildrenFields({
+export function FamilyHouseholdFields({
+  disabled = false,
+  showSectionHeader = true,
+}: Readonly<{
+  disabled?: boolean;
+  showSectionHeader?: boolean;
+}>) {
+  const { t } = useKafilLanguage();
+  const housingSituation = useWatch({
+    name: "housingSituation",
+  }) as FamilyStoredHousingSituation | undefined;
+  const housingItems = familyHousingItems(
+    housingSituation,
+    {
+      hosted: t("operator.families.housingHosted"),
+      owned: t("operator.families.housingOwned"),
+      rented: t("operator.families.housingRented"),
+      temporary: t("operator.families.housingTemporary"),
+      unknown: t("operator.families.notRecorded"),
+    },
+    t("operator.families.notRecorded"),
+  );
+  const priorityItems = [
+    {
+      value: "normal",
+      label: t("operator.families.supportPriorityNormal"),
+    },
+    { value: "high", label: t("operator.families.supportPriorityHigh") },
+    { value: "urgent", label: t("operator.families.supportPriorityUrgent") },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {showSectionHeader ? (
+        <NFormSectionHeader icon={House} title={t("operator.families.householdStep")} />
+      ) : null}
+      <div className="grid gap-4 md:grid-cols-2">
+        <FormInput
+          name="housingSituation"
+          type="select"
+          formLabel={t("operator.families.housingSituation")}
+          placeholder={t("operator.families.chooseHousingSituation")}
+          items={housingItems}
+          icon="House"
+          disabled={disabled}
+          required
+        />
+        <FormInput
+          name="registrationDate"
+          type="date"
+          formLabel={t("operator.families.registrationDate")}
+          icon="CalendarDays"
+          disabled={disabled}
+          required
+        />
+        <FormInput
+          name="supportPriority"
+          type="select"
+          formLabel={t("operator.families.supportPriority")}
+          formDescription={t("operator.families.supportPriorityHelp")}
+          placeholder={t("operator.families.chooseSupportPriority")}
+          items={priorityItems}
+          icon="Flag"
+          disabled={disabled}
+          required
+        />
+        <FormInput
+          name="activationTargetMad"
+          type="text"
+          formLabel={t("operator.families.activationTarget")}
+          placeholder={t("operator.families.targetExample")}
+          icon="CircleDollarSign"
+          disabled={disabled}
+          required
+        />
+        <FormInput
+          name="notes"
+          type="textarea"
+          formLabel={t("operator.families.familyNotes")}
+          placeholder={t("operator.families.optionalOperatorNotes")}
+          icon="NotebookPen"
+          rows={4}
+          className="h-full"
+          disabled={disabled}
+        />
+        <FormInput
+          name="exactAddress"
+          type="textarea"
+          formLabel={t("operator.families.exactAddress")}
+          placeholder={t("operator.families.fullAddress")}
+          icon="MapPin"
+          rows={4}
+          className="h-full"
+          disabled={disabled}
+          required
+        />
+      </div>
+    </div>
+  );
+}
+
+export function FamilyChildrenFields({
   showSectionHeader = true,
 }: Readonly<{ showSectionHeader?: boolean }>) {
   const { t } = useKafilLanguage();
 
   return (
-    <>
+    <div className="space-y-4">
       {showSectionHeader ? (
         <NFormSectionHeader
           icon={Baby}
-          title={t("operator.families.initialChildren")}
+          title={t("operator.families.initialChildrenStep")}
         />
       ) : null}
       <DynamicArray
         name="initialChildren"
         title={t("operator.families.child")}
         addLabel={t("operator.families.addChild")}
-        emptyLabel={t("operator.families.noChild")}
+        emptyLabel={t("operator.families.childrenCanBeAddedLater")}
         onAdd={(append) =>
           append({
             legalName: "",
@@ -306,7 +398,7 @@ function FamilyChildrenFields({
       >
         <InitialChildFields />
       </DynamicArray>
-    </>
+    </div>
   );
 }
 
@@ -321,14 +413,11 @@ export function CreateFamilyDialogContent() {
   const [wizardDefaultValues, setWizardDefaultValues] = useState(
     createFamilyDefaultValues,
   );
-  const [credentials, setCredentials] = useState<{
-    password: string;
-    phone: string;
-  } | null>(null);
+  const formFillEnabled = useFormFillEnabled();
   const isSubmitting = create.isPending || isUploadingImage;
 
   useEffect(() => {
-    if (!isDevFormFillEnabled) return;
+    if (!formFillEnabled) return;
 
     function fillForm(event: KeyboardEvent) {
       if (event.key !== "F8") return;
@@ -342,25 +431,24 @@ export function CreateFamilyDialogContent() {
 
     window.addEventListener("keydown", fillForm, true);
     return () => window.removeEventListener("keydown", fillForm, true);
-  }, []);
+  }, [formFillEnabled]);
 
   const steps: StepConfig[] = [
     {
-      id: "family-profile",
-      title: t("operator.families.profile"),
+      id: "guardian",
+      title: t("operator.families.guardianStep"),
+      description: "",
       fields: [
         "name",
-        "email",
         "guardianCin",
+        "email",
         "guardianDateOfBirth",
-        "exactAddress",
-        "phone",
-        "activationTargetMad",
         "relationshipToChildren",
-        "notes",
+        "phone",
       ],
+      schema: createFamilyGuardianStepSchema,
       render: () => (
-        <FamilyProfileFields
+        <FamilyGuardianFields
           disabled={isSubmitting}
           image={familyImage}
           imageError={imageError}
@@ -370,10 +458,33 @@ export function CreateFamilyDialogContent() {
       ),
     },
     {
+      id: "household",
+      title: t("operator.families.householdStep"),
+      description: t("operator.families.householdStepDescription"),
+      fields: [
+        "housingSituation",
+        "registrationDate",
+        "supportPriority",
+        "activationTargetMad",
+        "notes",
+        "exactAddress",
+      ],
+      schema: createFamilyHouseholdStepSchema,
+      render: () => (
+        <FamilyHouseholdFields disabled={isSubmitting} showSectionHeader={false} />
+      ),
+    },
+    {
       id: "initial-children",
-      title: t("operator.families.initialChildren"),
+      title: t("operator.families.initialChildrenStep"),
+      description: t("operator.families.initialChildrenStepDescription"),
       fields: ["initialChildren"],
-      render: () => <FamilyChildrenFields showSectionHeader={false} />,
+      schema: createFamilyChildrenStepSchema,
+      render: () => (
+        <NajmScroll axis="y" className="min-h-0 flex-1">
+          <FamilyChildrenFields showSectionHeader={false} />
+        </NajmScroll>
+      ),
     },
   ];
 
@@ -395,6 +506,8 @@ export function CreateFamilyDialogContent() {
   }
 
   async function handleSubmit(values: CreateFamilyFormValues) {
+    if (imageError) throw new Error(imageError);
+
     let uploadedImagePath: string | null = null;
     setIsUploadingImage(Boolean(familyImage));
 
@@ -402,11 +515,11 @@ export function CreateFamilyDialogContent() {
       uploadedImagePath = familyImage
         ? await uploadFamilyImage(familyImage)
         : null;
-      const created = await create.mutateAsync({
+      await create.mutateAsync({
         ...toCreateFamilyInput(values),
         image: uploadedImagePath,
       });
-      setCredentials({ password: created.initialPassword, phone: values.phone });
+      await pop();
     } catch (error) {
       if (uploadedImagePath) {
         await deleteFamilyImage(uploadedImagePath).catch(() => undefined);
@@ -419,34 +532,26 @@ export function CreateFamilyDialogContent() {
 
   return (
     <div className="h-full min-h-0" aria-busy={isSubmitting}>
-      {credentials ? (
-        <InitialCredentialsCard
-          password={credentials.password}
-          phone={credentials.phone}
-          onDone={() => void pop()}
-        />
-      ) : (
       <WizardForm
-        key={wizardKey}
-        steps={steps}
-        schema={createFamilyFormSchema}
-        defaultValues={wizardDefaultValues}
-        onSubmit={handleSubmit}
-        nextLabel={t("operator.families.next")}
-        previousLabel={t("operator.families.previous")}
-        submitLabel={
-          isSubmitting
-            ? t("operator.families.creating")
-            : t("operator.families.createAndInvite")
-        }
-        className={isSubmitting ? "pointer-events-none select-none" : undefined}
-        classNames={{
-          root: "h-full min-h-0",
-          step: "pb-4",
-          footer: "sticky bottom-0 z-10 bg-background pt-3",
-        }}
+          key={wizardKey}
+          steps={steps}
+          schema={createFamilyFormSchema}
+          defaultValues={wizardDefaultValues}
+          onSubmit={handleSubmit}
+          nextLabel={t("operator.families.next")}
+          previousLabel={t("operator.families.previous")}
+          submitLabel={
+            isSubmitting
+              ? t("operator.families.creating")
+              : t("operator.families.createAndInvite")
+          }
+          className={isSubmitting ? "pointer-events-none select-none" : undefined}
+          classNames={{
+            root: "h-full min-h-0",
+            step: "min-h-0 flex-1 overflow-y-hidden pb-4",
+            footer: "sticky bottom-0 z-10 bg-transparent pt-3",
+          }}
       />
-      )}
     </div>
   );
 }
@@ -482,6 +587,8 @@ export function UpdateFamilyDialogContent({
   }
 
   async function handleSubmit(values: UpdateFamilyFormValues) {
+    if (imageError) throw new Error(imageError);
+
     let uploadedImagePath: string | null = null;
     setIsUploadingImage(Boolean(familyImage));
 
@@ -521,25 +628,33 @@ export function UpdateFamilyDialogContent({
         email: family.email,
         guardianCin: family.guardianCin ?? "",
         guardianDateOfBirth: family.guardianDateOfBirth ?? "",
-        exactAddress: family.exactAddress,
-        phone: family.phone ?? "",
         relationshipToChildren: family.relationshipToChildren ?? "",
-        notes: family.notes ?? "",
+        phone: family.phone ?? "",
+        housingSituation: family.housingSituation,
+        registrationDate: family.registrationDate,
+        supportPriority: family.supportPriority,
         activationTargetMad: family.funding
           ? minorUnitsToMadInput(family.funding.targetMinor)
           : "",
+        notes: family.notes ?? "",
+        exactAddress: family.exactAddress,
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(updateFamilyFormSchema)}
+      devTools={useDevFormTools(updateFamilyFormSchema, {
+        housingSituation: ["owned", "rented", "hosted", "temporary"],
+      })}
     >
-      <FamilyProfileFields
+      <FamilyGuardianFields
         disabled={update.isPending || isUploadingImage}
         image={removeFamilyImage ? null : familyImage ?? family.image}
         imageError={imageError}
         imageVersion={family.updatedAt}
         onImageChange={selectFamilyImage}
       />
-      <div className="flex justify-end pt-5">
+      <FamilyHouseholdFields
+        disabled={update.isPending || isUploadingImage}
+      />
+      <div className="flex justify-end pt-1">
         <NButton type="submit" disabled={update.isPending || isUploadingImage}>
           {update.isPending || isUploadingImage
             ? t("operator.families.saving")
@@ -573,13 +688,22 @@ export function FamilyStatusDialogContent({
       schema={familyStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(familyStatusFormSchema)}
+      devTools={useDevFormTools(familyStatusFormSchema)}
     >
       <FormInput
         name="reason"
         type="textarea"
         formLabel={t("operator.families.reason")}
-        placeholder={t("operator.families.reasonPlaceholder", { action: t(action === "deactivate" ? "operator.families.deactivate" : "operator.families.reactivate").toLowerCase() })}
+        placeholder={t(
+          "operator.families.reasonPlaceholder",
+          {
+            action: t(
+              action === "deactivate"
+                ? "operator.families.deactivate"
+                : "operator.families.reactivate",
+            ).toLowerCase(),
+          },
+        )}
         icon="MessageSquareText"
         required
       />
@@ -624,7 +748,9 @@ export function DeleteFamilyDialogContent({
           disabled={remove.isPending}
           onClick={() => void handleDelete()}
         >
-          {remove.isPending ? t("operator.families.deleting") : t("operator.families.deleteAccount")}
+          {remove.isPending
+            ? t("operator.families.deleting")
+            : t("operator.families.deleteAccount")}
         </NButton>
       </div>
     </div>

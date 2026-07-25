@@ -6,7 +6,9 @@ import { Validate } from "najm-validation";
 
 import { isOperator } from "../../config/authConfig";
 import {
+  type UpdateFormFillSettingDto,
   type UpdateFundingSettingDto,
+  updateFormFillSettingDto,
   updateFundingSettingDto,
 } from "./settingDto";
 import {
@@ -35,6 +37,16 @@ export class SettingController {
     return this.settings.getFunding();
   }
 
+  @Get("/form-fill")
+  @McpTool({
+    description: "Read whether the browser F8 form-fill shortcut is enabled",
+    readOnly: true,
+  })
+  @ResMsg("settings.success.retrieved")
+  getFormFill() {
+    return this.settings.getFormFill();
+  }
+
   @Put("/funding")
   @isOperator()
   @CanUpdate()
@@ -52,5 +64,24 @@ export class SettingController {
     @User("id") actorUserId: string,
   ) {
     return this.settings.updateFunding(body, actorUserId);
+  }
+
+  @Put("/form-fill")
+  @isOperator()
+  @CanUpdate()
+  @Validate({ body: updateFormFillSettingDto })
+  @McpTool({
+    description: "Enable or disable the browser F8 form-fill shortcut",
+    confirm: {
+      level: "warning",
+      message: "Change the F8 form-fill shortcut setting?",
+    },
+  })
+  @ResMsg("settings.success.formFillUpdated")
+  updateFormFill(
+    @Body() body: UpdateFormFillSettingDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.settings.updateFormFill(body, actorUserId);
   }
 }

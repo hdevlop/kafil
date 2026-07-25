@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleDollarSign, Settings2 } from "lucide-react";
+import { CircleDollarSign, Keyboard, Settings2 } from "lucide-react";
 import {
   FormInput,
   NButton,
@@ -10,37 +10,57 @@ import {
   NPageLayout,
 } from "najm-kit";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 import { formatMad } from "@/lib/format";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 
 import {
+  formFillSettingFormSchema,
   fundingSettingFormSchema,
   fundingTargetDefaultValue,
+  toFormFillSettingInput,
   toFundingSettingInput,
+  type FormFillSettingFormValues,
   type FundingSettingFormValues,
 } from "../config/settingSchemas";
 import {
+  useFormFillSetting,
   useFundingSetting,
   useSettingCommands,
 } from "../hooks/useSettings";
 
 export function SettingsPage() {
   const setting = useFundingSetting();
-  const { updateFunding } = useSettingCommands();
+  const formFillSetting = useFormFillSetting();
+  const { updateFormFill, updateFunding } = useSettingCommands();
+  const fundingDevTools = useDevFormTools(fundingSettingFormSchema);
 
   async function handleSubmit(values: FundingSettingFormValues) {
     await updateFunding.mutateAsync(toFundingSettingInput(values));
   }
 
-  if (setting.isPending) {
+  async function handleFormFillSubmit(values: FormFillSettingFormValues) {
+    await updateFormFill.mutateAsync(toFormFillSettingInput(values));
+  }
+
+  if (setting.isPending || formFillSetting.isPending) {
     return <NCard title="Loading settings" loading />;
   }
-  if (setting.isError || !setting.data) {
+  if (
+    setting.isError ||
+    !setting.data ||
+    formFillSetting.isError ||
+    !formFillSetting.data
+  ) {
     return (
       <NCard title="We could not load platform settings">
-        <NButton variant="outline" onClick={() => void setting.refetch()}>
+        <NButton
+          variant="outline"
+          onClick={() =>
+            void Promise.all([setting.refetch(), formFillSetting.refetch()])
+          }
+        >
           Try again
         </NButton>
       </NCard>
@@ -52,9 +72,57 @@ export function SettingsPage() {
       <NPageHeader
         icon={Settings2}
         title="Platform settings"
-        subtitle="Set the default target offered for new family accounts."
+        subtitle="Manage platform defaults and operator productivity tools."
         actions={<PageHeaderGlobalActions />}
       />
+      <NCard
+        title="F8 fake-data form fill"
+        description={
+          formFillSetting.data.enabled
+            ? "The F8 shortcut is currently enabled for browser forms."
+            : "The F8 shortcut is disabled by default."
+        }
+      >
+        <NForm
+          key={String(formFillSetting.data.enabled)}
+          id="form-fill-setting-form"
+          schema={formFillSettingFormSchema}
+          defaultValues={{
+            enabled: formFillSetting.data.enabled,
+            reason: "",
+          }}
+          onSubmit={handleFormFillSubmit}
+          className="space-y-5"
+        >
+          <NFormSectionHeader icon={Keyboard} title="Browser form shortcut" />
+          <p className="text-sm text-muted-foreground">
+            Enable this only when fake values are useful. The change is
+            immediate and does not require rebuilding or restarting Docker.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormInput
+              name="enabled"
+              type="switch"
+              formLabel="Enable F8 fake-data fill"
+              label="Allow F8 to fill supported forms"
+              helper="Disabled by default."
+            />
+            <FormInput
+              name="reason"
+              type="textarea"
+              formLabel="Reason"
+              placeholder="Why is the F8 shortcut changing?"
+              icon="MessageSquareText"
+              required
+            />
+          </div>
+          <div className="flex justify-end">
+            <NButton type="submit" disabled={updateFormFill.isPending}>
+              {updateFormFill.isPending ? "Saving..." : "Save F8 setting"}
+            </NButton>
+          </div>
+        </NForm>
+      </NCard>
       <NCard
         title="Default family activation target"
         description={`New families can override this default. Current default: ${formatMad(setting.data.familyFundingTargetMinor)}`}
@@ -69,7 +137,7 @@ export function SettingsPage() {
             reason: "",
           }}
           onSubmit={handleSubmit}
-          devTools={devFormTools(fundingSettingFormSchema)}
+          devTools={fundingDevTools}
           className="space-y-5"
         >
           <NFormSectionHeader

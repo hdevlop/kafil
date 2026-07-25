@@ -7,8 +7,8 @@ import { BudgetService } from "../budgets/budgetService";
 import { ChildRepository } from "../children/childRepository";
 import { FundingService } from "../settings/fundingService";
 import { SettingRepository } from "../settings/settingRepository";
-import { generateFamilyInitialPassword } from "../access/initialPassword";
 import { AccessRepository } from "../access/accessRepository";
+import { generateFamilyInitialPassword } from "../access/initialPassword";
 import {
   type AccountStatusDto,
   accountStatusDto,
@@ -53,7 +53,8 @@ export class FamilyService {
     for (const sponsor of activeSponsors) {
       if (!sponsor.sponsorName) continue;
 
-      const seenSponsors = seenSponsorsByFamily.get(sponsor.familyProfileId) ?? new Set<string>();
+      const seenSponsors =
+        seenSponsorsByFamily.get(sponsor.familyProfileId) ?? new Set<string>();
       if (seenSponsors.has(sponsor.sponsorProfileId)) continue;
 
       seenSponsors.add(sponsor.sponsorProfileId);
@@ -93,6 +94,9 @@ export class FamilyService {
       guardianLegalName: family.guardianLegalName,
       guardianDateOfBirth: family.guardianDateOfBirth,
       exactAddress: family.exactAddress,
+      housingSituation: family.housingSituation,
+      registrationDate: family.registrationDate,
+      supportPriority: family.supportPriority,
       phone: family.phone,
     };
   }
@@ -107,6 +111,9 @@ export class FamilyService {
       guardianDateOfBirth,
       exactAddress,
       phone,
+      housingSituation,
+      registrationDate,
+      supportPriority,
       fundingTargetMinor: requestedFundingTargetMinor,
       initialChildren,
       relationshipToChildren,
@@ -151,6 +158,9 @@ export class FamilyService {
       guardianDateOfBirth,
       exactAddress,
       phone: phone ?? null,
+      housingSituation,
+      registrationDate,
+      supportPriority,
       createdByUserId: actorUserId,
       fundingTargetMinor,
       relationshipToChildren: relationshipToChildren ?? null,
@@ -173,7 +183,11 @@ export class FamilyService {
     await this.audits.record({
       action: "family.created",
       actorUserId,
-      metadata: { childCount: initialChildren.length, fundingTargetMinor },
+      metadata: {
+        childCount: initialChildren.length,
+        fundingTargetMinor,
+        supportPriority,
+      },
       resource: "families",
       resourceId: family!.id,
     });
@@ -185,6 +199,7 @@ export class FamilyService {
     const current = await this.validator.ensureExists(id);
     const input = updateFamilyDto.parse(data);
     const { name, email, image, ...profile } = input;
+    const changedFields = familyChangedFields(current, input);
 
     await this.validator.ensureEmailUnique(email, current.userId);
     await this.validator.ensurePhoneUnique(input.phone, id, current.userId);
@@ -205,6 +220,19 @@ export class FamilyService {
       ...(name === undefined ? {} : { guardianLegalName: name }),
     });
 
+    const profileChangedFields = changedFields.filter(
+      (field) => field !== "fundingTargetMinor",
+    );
+    if (profileChangedFields.length > 0) {
+      await this.audits.record({
+        action: "family.updated",
+        actorUserId,
+        metadata: { changedFields: profileChangedFields.join(",") },
+        resource: "families",
+        resourceId: current.id,
+      });
+    }
+
     if (
       input.fundingTargetMinor !== undefined &&
       input.fundingTargetMinor !== current.fundingTargetMinor
@@ -219,10 +247,7 @@ export class FamilyService {
         resource: "families",
         resourceId: current.id,
       });
-      await this.funding.activateIfEligible(
-        current.id,
-        actorUserId,
-      );
+      await this.funding.activateIfEligible(current.id, actorUserId);
     }
 
     return updated;
@@ -279,4 +304,30 @@ export class FamilyService {
     });
     return this.validator.ensureExists(id);
   }
+}
+
+function familyChangedFields(current: unknown, input: unknown) {
+  const currentValues = current as Record<string, unknown>;
+  const inputValues = input as Record<string, unknown>;
+  const fields = [
+    "name",
+    "email",
+    "image",
+    "guardianCin",
+    "guardianDateOfBirth",
+    "exactAddress",
+    "phone",
+    "relationshipToChildren",
+    "notes",
+    "housingSituation",
+    "registrationDate",
+    "supportPriority",
+    "fundingTargetMinor",
+  ];
+
+  return fields.filter(
+    (field) =>
+      inputValues[field] !== undefined &&
+      inputValues[field] !== currentValues[field],
+  );
 }

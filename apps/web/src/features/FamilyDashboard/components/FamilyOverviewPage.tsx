@@ -1,7 +1,7 @@
 "use client";
 
 import { Baby, House, UsersRound } from "lucide-react";
-import { NButton, NCard, NPageLayout, NStatCard } from "najm-kit";
+import { NCard, NPageLayout, NStatCard, buttonVariants } from "najm-kit";
 import Link from "next/link";
 
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
@@ -54,9 +54,9 @@ export function FamilyOverviewPage() {
             <h2 className="text-lg font-semibold">Your children</h2>
             <p className="text-sm text-muted-foreground">Only records linked to your household are shown.</p>
           </div>
-          <NButton asChild variant="outline">
-            <Link href="/family/children">View all children</Link>
-          </NButton>
+          <Link className={buttonVariants({ variant: "outline" })} href="/family/children">
+            View all children
+          </Link>
         </div>
 
         {children.isPending ? (

@@ -3,7 +3,7 @@
 import { ShoppingCart, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { NButton, NCard, NPageLayout } from "najm-kit";
+import { NButton, NCard, NPageLayout, buttonVariants } from "najm-kit";
 
 import { formatMad } from "@/lib/format";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -33,7 +33,7 @@ export function FamilyCartPage() {
 
   const data = cart.data;
   if (!data?.items.length) {
-    return <PageEmptyState title={t("family.cart.emptyTitle")} description={t("family.cart.emptyDescription")} action={<NButton asChild><Link href="/family/catalog">{t("action.browseCatalog")}</Link></NButton>} />;
+    return <PageEmptyState title={t("family.cart.emptyTitle")} description={t("family.cart.emptyDescription")} action={<Link className={buttonVariants()} href="/family/catalog">{t("action.browseCatalog")}</Link>} />;
   }
 
   const fundingActive = budget.data?.funding.status === "active";

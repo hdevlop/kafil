@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  NButton,
   NEmptyState,
   NErrorState,
   NLoadingState,
   NPageLayout,
+  buttonVariants,
 } from "najm-kit";
 import Link from "next/link";
 
@@ -66,9 +66,9 @@ export function PageForbiddenState() {
       title={t("state.forbiddenTitle")}
       description={t("state.forbiddenDescription")}
       action={
-        <NButton asChild>
-          <Link href="/dashboard">{t("state.returnDashboard")}</Link>
-        </NButton>
+        <Link className={buttonVariants()} href="/dashboard">
+          {t("state.returnDashboard")}
+        </Link>
       }
     />
   );
@@ -81,9 +81,9 @@ export function PageNotFoundState() {
       title={t("state.notFoundTitle")}
       description={t("state.notFoundDescription")}
       action={
-        <NButton asChild>
-          <Link href="/dashboard">{t("state.returnDashboard")}</Link>
-        </NButton>
+        <Link className={buttonVariants()} href="/dashboard">
+          {t("state.returnDashboard")}
+        </Link>
       }
     />
   );

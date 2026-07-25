@@ -411,6 +411,19 @@ legacy-safe database column and unique constraint without destructive DDL;
 family self-service and sponsor projections omit it, audit/outbox metadata
 filters treat it as sensitive, and operator family cards/details mask it.
 
+Family-create wizard follow-up (2026-07-24): the demo seed rerun now
+repairs existing demo families' `housingSituation`, `registrationDate`, and
+`supportPriority` through `FamilyService.update` only when at least one of
+the three differs from the requested fixture, exposing the work in the
+returned `repaired` count. The household step exposes the `unknown` housing
+option only while the current selection is `unknown` and removes it the
+moment an operator records a real value, so the historical placeholder
+cannot be reselected. A new Playwright suite verifies the three wizard
+step labels, active-step validation, Back/Next value preservation, and
+responsive row pairing at desktop and mobile widths. Focused verification
+covers 46 seed tests, 12 family-feature tests, 160 server tests (one
+opt-in database skip), and green lint/typecheck across packages.
+
 The original Phase 1 closeout passed 53 tests, the production build, and smoke
 requests to `/`, `/dashboard`, and `/api/system/health`. Current local
 verification supersedes its old database caveat: PostgreSQL is configured and
@@ -672,6 +685,8 @@ Detailed active plan: [`plans/sections/06-web-dashboards.md`](plans/sections/06-
 - [x] Add family children, budget, catalog, cart, and order screens
 - [x] Show configured funding progress and disable pending-family submission
 - [x] Add sponsor support, contribution, usage, orders, and profile screens
+- [x] Add an audited, persisted F8 fake-data setting that is disabled by
+      default and changes without rebuilding or restarting Docker
 - [ ] Use Server Components for initial reads
 - [ ] Use narrow Client Components for forms and interactive cart controls
 - [ ] Keep authorization in the backend, not only in layouts/components

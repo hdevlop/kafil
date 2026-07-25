@@ -9,7 +9,7 @@ import {
   useDialog,
 } from "najm-kit";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 import {
@@ -53,7 +53,7 @@ export function RecordContributionDialogContent({
         externalReference: "",
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(recordContributionFormSchema, {
+      devTools={useDevFormTools(recordContributionFormSchema, {
         supportAssignmentId: assignmentOptions,
       })}
     >

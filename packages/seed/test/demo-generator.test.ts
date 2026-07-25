@@ -176,6 +176,50 @@ describe("demo seed generator", () => {
     ).toBe(true);
   });
 
+  it("generates deterministic household intake distributions and bounded dates", () => {
+    const referenceDate = new Date("2026-07-20T10:00:00.000Z");
+    const data = generateDemoSeedData(
+      { contributions: 0, families: 20, operators: 0, sponsors: 0 },
+      referenceDate,
+    );
+    const housing = countValues(data.families.map((family) => family.housingSituation));
+    const priorities = countValues(data.families.map((family) => family.supportPriority));
+
+    expect(housing).toEqual({ owned: 5, rented: 8, hosted: 5, temporary: 2 });
+    expect(priorities).toEqual({ normal: 10, high: 7, urgent: 3 });
+    expect(data.families.every((family) => String(family.housingSituation) !== "unknown")).toBe(
+      true,
+    );
+    expect(
+      data.families.every(
+        (family) =>
+          family.registrationDate >= "2024-07-20" &&
+          family.registrationDate <= "2026-07-20",
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps zero and small family counts valid", () => {
+    expect(
+      generateDemoSeedData({
+        contributions: 0,
+        families: 0,
+        operators: 0,
+        sponsors: 0,
+      }).families,
+    ).toEqual([]);
+    const [family] = generateDemoSeedData({
+      contributions: 0,
+      families: 1,
+      operators: 0,
+      sponsors: 0,
+    }).families;
+    expect(family).toMatchObject({
+      housingSituation: expect.any(String),
+      registrationDate: expect.any(String),
+      supportPriority: expect.any(String),
+    });
+  });
   it("requires relationships when contributions are requested", () => {
     expect(() =>
       generateDemoSeedData({
@@ -187,6 +231,13 @@ describe("demo seed generator", () => {
     ).toThrow("Contributions require at least one sponsor and one family");
   });
 });
+
+function countValues(values: readonly string[]) {
+  return values.reduce<Record<string, number>>((counts, value) => {
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
+}
 
 function fundingStates(
   data: ReturnType<typeof generateDemoSeedData>,

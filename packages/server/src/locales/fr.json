@@ -278,7 +278,8 @@
   "settings": {
     "success": {
       "retrieved": "Param?tres : r?cup?r? avec succ?s",
-      "fundingUpdated": "Param?tres : op?ration effectu?e avec succ?s"
+      "fundingUpdated": "Param?tres : op?ration effectu?e avec succ?s",
+      "formFillUpdated": "Param?tres F8 mis ? jour avec succ?s"
     }
   },
   "orders": {
@@ -755,7 +756,30 @@
         "status": "Statut",
         "searchAccount": "Rechercher le titulaire...",
         "searchGuardian": "Rechercher le tuteur...",
-        "filterStatus": "Filtrer par statut"
+        "filterStatus": "Filtrer par statut",
+        "guardianStep": "Tuteur",
+        "guardianStepDescription": "Saisissez l’identité et les coordonnées du tuteur.",
+        "householdStep": "Foyer",
+        "householdStepDescription": "Renseignez la situation du foyer et les informations opérationnelles.",
+        "initialChildrenStep": "Enfants initiaux",
+        "initialChildrenStepDescription": "Ajoutez de zéro à vingt enfants maintenant ; d’autres pourront être ajoutés plus tard.",
+        "imageUploadGuidance": "Facultatif. PNG, JPEG, WebP, AVIF ou GIF jusqu’à 5 Mo.",
+        "housingSituation": "Situation de logement",
+        "housingOwned": "Propriétaire",
+        "housingRented": "Locataire",
+        "housingHosted": "Hébergé",
+        "housingTemporary": "Hébergement temporaire",
+        "registrationDate": "Date d’inscription au programme",
+        "registrationDateFuture": "La date d’inscription ne peut pas être dans le futur.",
+        "supportPriority": "Priorité de soutien",
+        "supportPriorityNormal": "Normale",
+        "supportPriorityHigh": "Élevée",
+        "supportPriorityUrgent": "Urgente",
+        "supportPriorityHelp": "Évaluation de l’opérateur uniquement pour la priorisation opérationnelle.",
+        "notRecorded": "Non renseigné",
+        "chooseHousingSituation": "Choisir une situation de logement",
+        "chooseSupportPriority": "Choisir une priorité",
+        "childrenCanBeAddedLater": "Aucun enfant ajouté. Des enfants pourront être ajoutés plus tard."
       },
       "children": {
         "title": "Enfants",

@@ -13,6 +13,9 @@ const formSchema = z.object({
   email: z.email(),
   household: z.object({ guardianCin: z.string().min(8).max(20) }),
   dateOfBirth: z.iso.date(),
+  registrationDate: z.iso.date(),
+  housingSituation: z.enum(["owned", "rented", "hosted", "temporary"]),
+  supportPriority: z.enum(["normal", "high", "urgent"]),
   gender: z.enum(["M", "F"]),
   quantity: z.coerce.number().int().positive(),
   reason: z.string().min(3),
@@ -40,6 +43,22 @@ describe("development form fill generator", () => {
     expect(values.children).toHaveLength(1);
   });
 
+  it("generates registration dates as recent dates instead of adult birth dates", () => {
+    const values = buildFormFill(formSchema);
+    const today = new Date();
+    const todayInput = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    start.setDate(start.getDate() - 730);
+    const startInput = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+
+    expect(String(values.registrationDate) >= startInput).toBe(true);
+    expect(String(values.registrationDate) <= todayInput).toBe(true);
+    expect(values.registrationDate).not.toBe(values.dateOfBirth);
+    expect(["owned", "rented", "hosted", "temporary"]).toContain(
+      String(values.housingSituation),
+    );
+    expect(["normal", "high", "urgent"]).toContain(String(values.supportPriority));
+  });
   it("keeps generated person names consistent with generated gender", () => {
     const femaleNames = new Set<string>(MOROCCAN_FEMALE_FIRST_NAMES);
     const maleNames = new Set<string>(MOROCCAN_MALE_FIRST_NAMES);

@@ -120,10 +120,11 @@ beforeAll(async () => {
   const suffix = fixture.categoryId.slice(0, 8);
 
   await pool.query(
-    `INSERT INTO family_profiles
-       (id, user_id, guardian_legal_name, guardian_cin, exact_address,
-        created_by_user_id, funding_target_minor)
-     VALUES ($1, $2, $3, $4, $5, $2, 1000)`,
+     `INSERT INTO family_profiles
+        (id, user_id, guardian_legal_name, guardian_cin, exact_address,
+         housing_situation, registration_date, support_priority,
+         created_by_user_id, funding_target_minor)
+      VALUES ($1, $2, $3, $4, $5, 'rented', '2026-01-15', 'normal', $2, 1000)`,
     [
       fixture.familyProfileId,
       seededUserId,

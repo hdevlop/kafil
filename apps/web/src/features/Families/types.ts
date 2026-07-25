@@ -1,5 +1,22 @@
 import type { FamilyFundingProgress } from "@/types/funding";
 
+export const FAMILY_HOUSING_SITUATIONS = [
+  "owned",
+  "rented",
+  "hosted",
+  "temporary",
+] as const;
+export const FAMILY_STORED_HOUSING_SITUATIONS = [
+  ...FAMILY_HOUSING_SITUATIONS,
+  "unknown",
+] as const;
+export const FAMILY_SUPPORT_PRIORITIES = ["normal", "high", "urgent"] as const;
+
+export type FamilyHousingSituation = (typeof FAMILY_HOUSING_SITUATIONS)[number];
+export type FamilyStoredHousingSituation =
+  (typeof FAMILY_STORED_HOUSING_SITUATIONS)[number];
+export type FamilySupportPriority = (typeof FAMILY_SUPPORT_PRIORITIES)[number];
+
 export interface FamilyRecord {
   id: string;
   userId: string;
@@ -15,6 +32,9 @@ export interface FamilyRecord {
   guardianCin: string | null;
   guardianDateOfBirth: string | null;
   exactAddress: string;
+  housingSituation: FamilyStoredHousingSituation;
+  registrationDate: string;
+  supportPriority: FamilySupportPriority;
   phone: string | null;
   activeChildCount: number;
   activeSponsorCount: number;
@@ -41,6 +61,9 @@ export interface CreateFamilyInput {
   guardianCin: string;
   guardianDateOfBirth: string;
   exactAddress: string;
+  housingSituation: FamilyHousingSituation;
+  registrationDate: string;
+  supportPriority: FamilySupportPriority;
   phone: string;
   fundingTargetMinor: number;
   initialChildren: InitialChildInput[];
@@ -55,6 +78,9 @@ export interface UpdateFamilyInput {
   guardianCin?: string;
   guardianDateOfBirth?: string;
   exactAddress?: string;
+  housingSituation?: FamilyStoredHousingSituation;
+  registrationDate?: string;
+  supportPriority?: FamilySupportPriority;
   phone?: string | null;
   relationshipToChildren?: string | null;
   notes?: string | null;

@@ -66,7 +66,8 @@ require explicit approval. Demo fixture counts require separate approval.
    deploy/env/infrastructure.env.example -> /opt/kafil/env/infrastructure.env
    ```
 
-   Replace every placeholder. Keep `NEXT_PUBLIC_FORM_FILL_ENABLED=false`.
+   Replace every placeholder. The persisted F8 form-fill setting remains
+   disabled unless an operator or admin enables it in the dashboard.
    The database password embedded in `DATABASE_URL` must match the PostgreSQL
    password. Never copy a development `.env`.
 5. Authenticate the VPS to GHCR with a dedicated `read:packages` credential if

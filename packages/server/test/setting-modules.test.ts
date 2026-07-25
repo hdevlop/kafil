@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { getGuardMetadata } from "najm-guard";
 import { getMcpTools } from "najm-mcp";
 import { getValidationConfig } from "najm-validation";
 
@@ -14,6 +15,7 @@ import {
   SettingController,
   SettingRepository,
   SettingService,
+  updateFormFillSettingDto,
   updateFundingSettingDto,
 } from "../src/modules/settings";
 
@@ -40,14 +42,43 @@ describe("configurable family funding contracts", () => {
     ).toBe(false);
   });
 
+  it("accepts an explicit boolean form-fill setting with an audit reason", () => {
+    expect(
+      updateFormFillSettingDto.parse({
+        enabled: true,
+        reason: "Enable fake data for the demo",
+        ignored: "value",
+      }),
+    ).toEqual({
+      enabled: true,
+      reason: "Enable fake data for the demo",
+    });
+    expect(
+      updateFormFillSettingDto.safeParse({
+        enabled: "true",
+        reason: "Invalid boolean",
+      }).success,
+    ).toBe(false);
+  });
+
   it("exposes read and audited update commands only", () => {
     expect(getMcpTools(SettingController).map((tool) => tool.methodKey)).toEqual([
       "getFunding",
+      "getFormFill",
       "updateFunding",
+      "updateFormFill",
     ]);
     expect(
       getValidationConfig(SettingController.prototype, "updateFunding")?.body,
     ).toBe(updateFundingSettingDto);
+    expect(
+      getValidationConfig(SettingController.prototype, "updateFormFill")?.body,
+    ).toBe(updateFormFillSettingDto);
+    expect(
+      getGuardMetadata(SettingController, "updateFormFill").map(
+        (guard) => guard.guardClass.name,
+      ),
+    ).toContain("OperatorRoleGuard");
   });
 });
 
@@ -135,6 +166,43 @@ describe("configurable family funding workflow", () => {
       }),
     ]);
   });
+
+  it("updates and audits the runtime F8 form-fill setting", async () => {
+    const audits: Record<string, unknown>[] = [];
+    const service = new SettingService(
+      {
+        lock: async () => settingRecord(500000, false),
+        updateFormFill: async (enabled: boolean) =>
+          settingRecord(500000, enabled),
+      } as unknown as SettingRepository,
+      {
+        record: async (event: Record<string, unknown>) => {
+          audits.push(event);
+          return event;
+        },
+      } as unknown as AuditService,
+    );
+
+    await expect(
+      service.updateFormFill(
+        {
+          enabled: true,
+          reason: "Enable fake data for the production demo",
+        },
+        "operator-user",
+      ),
+    ).resolves.toEqual({ enabled: true });
+    expect(audits).toEqual([
+      expect.objectContaining({
+        action: "settings.formFillUpdated",
+        metadata: {
+          previousEnabled: false,
+          enabled: true,
+          reason: "Enable fake data for the production demo",
+        },
+      }),
+    ]);
+  });
 });
 
 function fundingService({
@@ -184,10 +252,14 @@ function fundingService({
   );
 }
 
-function settingRecord(familyFundingTargetMinor: number) {
+function settingRecord(
+  familyFundingTargetMinor: number,
+  formFillEnabled = false,
+) {
   return {
     id: "platform",
     familyFundingTargetMinor,
+    formFillEnabled,
     currency: "MAD",
     updatedByUserId: null,
     createdAt: new Date("2026-07-18T00:00:00.000Z"),

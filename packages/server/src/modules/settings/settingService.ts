@@ -3,7 +3,9 @@ import { Transaction } from "najm-database";
 
 import { AuditService } from "../audit/auditService";
 import {
+  type UpdateFormFillSettingDto,
   type UpdateFundingSettingDto,
+  updateFormFillSettingDto,
   updateFundingSettingDto,
 } from "./settingDto";
 import { SettingRepository } from "./settingRepository";
@@ -19,6 +21,12 @@ export class SettingService {
     const setting = await this.settings.find();
     if (!setting) HttpError.notFound("Platform funding setting not found");
     return setting;
+  }
+
+  async getFormFill() {
+    const setting = await this.settings.find();
+    if (!setting) HttpError.notFound("Platform setting not found");
+    return { enabled: setting.formFillEnabled };
   }
 
   @Transaction({ retries: 2 })
@@ -48,5 +56,34 @@ export class SettingService {
       resourceId: setting.id,
     });
     return setting;
+  }
+
+  @Transaction({ retries: 2 })
+  async updateFormFill(
+    data: UpdateFormFillSettingDto,
+    actorUserId: string,
+  ) {
+    const input = updateFormFillSettingDto.parse(data);
+    const current = await this.settings.lock();
+    if (!current) HttpError.notFound("Platform setting not found");
+
+    const setting = await this.settings.updateFormFill(
+      input.enabled,
+      actorUserId,
+    );
+    if (!setting) HttpError.notFound("Platform setting not found");
+
+    await this.audits.record({
+      action: "settings.formFillUpdated",
+      actorUserId,
+      metadata: {
+        previousEnabled: current.formFillEnabled,
+        enabled: setting.formFillEnabled,
+        reason: input.reason,
+      },
+      resource: "settings",
+      resourceId: setting.id,
+    });
+    return { enabled: setting.formFillEnabled };
   }
 }

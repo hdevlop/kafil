@@ -1074,3 +1074,24 @@ Extension validation evidence:
 | `bun run --cwd packages/server lint` | passed with 0 warnings |
 | focused `packages/server/test/family-modules.test.ts` | 14 passed, 0 failed; image routes registered with operator guards |
 | `bun run build` | Next.js 16.2.10 production build passed with 36 routes |
+
+## Runtime F8 Setting Extension — 2026-07-25
+
+The F8 fake-data shortcut is now a singleton platform setting rather than a
+build-time environment flag. It is disabled by default. Operators and bootstrap
+admins can change it from `/operator/settings`; the update is validated,
+audited, and persisted. Browser forms read the narrow public flag dynamically
+and refresh it while mounted, so enabling or disabling F8 does not require a
+Docker rebuild or container restart.
+
+Extension validation evidence:
+
+| Command | Result |
+| --- | --- |
+| `bun run lint` | passed across web, server, and seed; 2 existing web image optimization warnings |
+| `bun run test` | web 129 passed; server 163 passed with 1 opt-in database test skipped; seed 46 passed |
+| `bun run --cwd apps/web test:e2e:form-fill` | 2 passed: enabled fills the form, disabled leaves it unchanged |
+| `bun run --cwd packages/server typecheck` | passed |
+| `bun run db:generate` | migration `0019_lovely_rawhide_kid.sql` generated, then no schema drift |
+| `bun run typecheck` | blocked by the pre-existing uncommitted Family image `value` prop at `FamilyForms.tsx:207` |
+| `bun run build` | compiled successfully, then hit the same pre-existing Family image type error |

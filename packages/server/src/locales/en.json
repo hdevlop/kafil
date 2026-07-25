@@ -288,7 +288,8 @@
   "settings": {
     "success": {
       "retrieved": "Settings retrieved successfully",
-      "fundingUpdated": "Settings funding updated successfully"
+      "fundingUpdated": "Settings funding updated successfully",
+      "formFillUpdated": "F8 form fill setting updated successfully"
     }
   },
   "orders": {
@@ -787,7 +788,30 @@
         "status": "Status",
         "searchAccount": "Search account holder...",
         "searchGuardian": "Search guardian...",
-        "filterStatus": "Filter by status"
+        "filterStatus": "Filter by status",
+        "guardianStep": "Guardian",
+        "guardianStepDescription": "Record the guardian's identity and contact details.",
+        "householdStep": "Household",
+        "householdStepDescription": "Capture the household arrangement and operational intake details.",
+        "initialChildrenStep": "Initial children",
+        "initialChildrenStepDescription": "Add zero to twenty children now; more can be added later.",
+        "imageUploadGuidance": "Optional. PNG, JPEG, WebP, AVIF, or GIF up to 5 MB.",
+        "housingSituation": "Housing situation",
+        "housingOwned": "Owned",
+        "housingRented": "Rented",
+        "housingHosted": "Hosted",
+        "housingTemporary": "Temporary arrangement",
+        "registrationDate": "Programme registration date",
+        "registrationDateFuture": "Registration date cannot be in the future.",
+        "supportPriority": "Support priority",
+        "supportPriorityNormal": "Normal",
+        "supportPriorityHigh": "High",
+        "supportPriorityUrgent": "Urgent",
+        "supportPriorityHelp": "Operator assessment for operational prioritisation only.",
+        "notRecorded": "Not recorded",
+        "chooseHousingSituation": "Choose a housing situation",
+        "chooseSupportPriority": "Choose a priority",
+        "childrenCanBeAddedLater": "No children added yet. Children can be added later."
       },
       "children": {
         "title": "Children",

@@ -15,11 +15,24 @@ const logger: LoggerConfig = {
   colors: !process.env.NO_COLOR && Boolean(process.stdout.isTTY),
 };
 
-export const server = new Server({ logger })
-  .use(database({ default: db }))
-  .use(i18nConfig())
-  .use(emailConfig())
-  .use(authConfig())
-  .use(mcpConfig())
-  .base("/api")
-  .load(modules);
+function createServer() {
+  return new Server({ logger })
+    .use(database({ default: db }))
+    .use(i18nConfig())
+    .use(emailConfig())
+    .use(authConfig())
+    .use(mcpConfig())
+    .base("/api")
+    .load(modules);
+}
+
+// Next development reloads modules without replacing the Node.js process.
+const serverKey = Symbol.for("kafil:server");
+const globalState = globalThis as typeof globalThis & {
+  [serverKey]?: ReturnType<typeof createServer>;
+};
+
+export const server =
+  process.env.NODE_ENV === "production"
+    ? createServer()
+    : (globalState[serverKey] ??= createServer());

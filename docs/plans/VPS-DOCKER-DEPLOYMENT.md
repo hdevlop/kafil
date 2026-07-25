@@ -211,7 +211,7 @@ The application environment must include reviewed production values for:
 - `KAFIL_STORAGE_PATH`
 - `LOG_FORMAT=json`
 - `LOG_LEVEL`
-- `NEXT_PUBLIC_FORM_FILL_ENABLED=false`
+- keep the persisted F8 form-fill setting disabled unless the demo needs it
 - the selected non-console email provider and sender settings
 - Redis/cache settings after verifying the installed Najm package contract
 - trusted proxy, secure-cookie, and rate-limit settings after verifying their

@@ -349,8 +349,11 @@ describe("Phase 2 support assignment workflow", () => {
       }),
     ]);
     expect(JSON.stringify(catalog)).not.toContain("exactAddress");
-    expect(JSON.stringify(catalog)).not.toContain("guardianCin");
-    expect(JSON.stringify(catalog)).not.toContain("guardianDateOfBirth");
+     expect(JSON.stringify(catalog)).not.toContain("guardianCin");
+     expect(JSON.stringify(catalog)).not.toContain("guardianDateOfBirth");
+     expect(JSON.stringify(catalog)).not.toContain("housingSituation");
+     expect(JSON.stringify(catalog)).not.toContain("registrationDate");
+     expect(JSON.stringify(catalog)).not.toContain("supportPriority");
   });
 
   it("returns a sponsor-safe family projection only", async () => {
@@ -384,8 +387,11 @@ describe("Phase 2 support assignment workflow", () => {
       },
     });
     expect(JSON.stringify(summary)).not.toContain("exactAddress");
-    expect(JSON.stringify(summary)).not.toContain("guardianDateOfBirth");
-    expect(JSON.stringify(summary)).not.toContain("notes");
+     expect(JSON.stringify(summary)).not.toContain("guardianDateOfBirth");
+     expect(JSON.stringify(summary)).not.toContain("notes");
+     expect(JSON.stringify(summary)).not.toContain("housingSituation");
+     expect(JSON.stringify(summary)).not.toContain("registrationDate");
+     expect(JSON.stringify(summary)).not.toContain("supportPriority");
   });
 
   it("does not allow an ended relationship to retain sponsor summary access", () => {

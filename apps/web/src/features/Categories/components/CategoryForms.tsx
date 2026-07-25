@@ -4,7 +4,7 @@ import { ListOrdered, Tags } from "lucide-react";
 import { FormInput, ImageInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 import { useState } from "react";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   categoryStatusFormSchema,
@@ -128,7 +128,7 @@ export function CreateCategoryDialogContent() {
       schema={createCategoryFormSchema}
       defaultValues={{ name: "", description: "", sortOrder: 0 }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(createCategoryFormSchema)}
+      devTools={useDevFormTools(createCategoryFormSchema)}
     >
       <NFormSectionHeader icon={Tags} title="Catalog category" />
       <CategoryFields
@@ -219,7 +219,7 @@ export function UpdateCategoryDialogContent({ category }: Readonly<{ category: C
         sortOrder: category.sortOrder,
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(updateCategoryFormSchema)}
+      devTools={useDevFormTools(updateCategoryFormSchema)}
     >
       <NFormSectionHeader icon={ListOrdered} title="Category details" />
       <CategoryFields
@@ -260,7 +260,7 @@ export function CategoryStatusDialogContent({
       schema={categoryStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(categoryStatusFormSchema)}
+      devTools={useDevFormTools(categoryStatusFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

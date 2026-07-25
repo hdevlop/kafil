@@ -4,7 +4,7 @@ import { HeartHandshake } from "lucide-react";
 import { FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   createSupportAssignmentFormSchema,
@@ -59,7 +59,7 @@ export function CreateSupportAssignmentDialogContent({
         notes: "",
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(createSupportAssignmentFormSchema, {
+      devTools={useDevFormTools(createSupportAssignmentFormSchema, {
         sponsorProfileId: sponsorOptions,
         familyProfileId: familyOptions,
       })}
@@ -119,7 +119,7 @@ export function EndSupportAssignmentDialogContent({
       schema={endSupportAssignmentFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(endSupportAssignmentFormSchema)}
+      devTools={useDevFormTools(endSupportAssignmentFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">
@@ -155,7 +155,7 @@ export function EditSupportAssignmentDialogContent({
       schema={updateSupportAssignmentNotesFormSchema}
       defaultValues={{ notes: assignment.notes ?? "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(updateSupportAssignmentNotesFormSchema)}
+      devTools={useDevFormTools(updateSupportAssignmentNotesFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

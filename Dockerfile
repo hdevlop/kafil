@@ -11,17 +11,14 @@ RUN bun install --frozen-lockfile
 FROM oven/bun:1.3.14 AS build
 WORKDIR /app
 
-ARG NEXT_PUBLIC_FORM_FILL_ENABLED=false
 ARG OCI_CREATED
 ARG OCI_REVISION
-ENV NEXT_PUBLIC_FORM_FILL_ENABLED=${NEXT_PUBLIC_FORM_FILL_ENABLED}
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=dependencies /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=dependencies /app/packages/server/node_modules ./packages/server/node_modules
 COPY --from=dependencies /app/packages/seed/node_modules ./packages/seed/node_modules
 COPY . .
-RUN test "${NEXT_PUBLIC_FORM_FILL_ENABLED}" = "false"
 RUN EMAIL_PROVIDER=console \
     EMAIL_DEFAULT_FROM=no-reply@example.invalid \
     FRONTEND_URL=https://demo.example.invalid \

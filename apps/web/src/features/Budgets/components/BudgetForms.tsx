@@ -4,7 +4,7 @@ import { CalendarDays, SlidersHorizontal } from "lucide-react";
 import { FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   currentMonthFirstDay,
@@ -50,7 +50,7 @@ export function MonthlyBudgetLimitDialogContent({
         reason: "",
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(monthlyBudgetLimitFormSchema)}
+      devTools={useDevFormTools(monthlyBudgetLimitFormSchema)}
       className="space-y-5"
     >
       <NFormSectionHeader icon={CalendarDays} title={t("operator.budgets.monthlyLimit")} />
@@ -103,7 +103,7 @@ export function ManualBudgetAdjustmentDialogContent({
       schema={manualBudgetAdjustmentFormSchema}
       defaultValues={{ amountMad: "", reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(manualBudgetAdjustmentFormSchema)}
+      devTools={useDevFormTools(manualBudgetAdjustmentFormSchema)}
       className="space-y-5"
     >
       <NFormSectionHeader icon={SlidersHorizontal} title={t("operator.budgets.manualAdjustment")} />

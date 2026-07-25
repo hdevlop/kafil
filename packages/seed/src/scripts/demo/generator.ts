@@ -46,6 +46,9 @@ export interface DemoChild {
 export interface DemoFamily {
   email: string;
   exactAddress: string;
+  housingSituation: "owned" | "rented" | "hosted" | "temporary";
+  registrationDate: string;
+  supportPriority: "normal" | "high" | "urgent";
   fundingTargetMinor: number;
   guardianCin: string;
   guardianDateOfBirth: string;
@@ -104,6 +107,17 @@ const FAMILY_FUNDING_RATIOS = {
   pending: 0.5,
   zero: 0.2,
 } as const satisfies Record<DemoFamilyFundingState, number>;
+const FAMILY_HOUSING_RATIOS = {
+  owned: 0.25,
+  rented: 0.4,
+  hosted: 0.25,
+  temporary: 0.1,
+} as const;
+const FAMILY_PRIORITY_RATIOS = {
+  normal: 0.5,
+  high: 0.35,
+  urgent: 0.15,
+} as const;
 const CITIES = [
   "Agadir",
   "Casablanca",
@@ -167,7 +181,7 @@ export function generateDemoSeedData(
     sponsor(index, adultName),
   );
   const families = Array.from({ length: counts.families }, (_, index) =>
-    family(index, adultName),
+    family(index, adultName, referenceDate, counts.families),
   );
   const assignments = generateAssignments(sponsors, families);
 
@@ -441,7 +455,12 @@ function sponsor(index: number, adultName: AdultNameGenerator): DemoSponsor {
   };
 }
 
-function family(index: number, adultName: AdultNameGenerator): DemoFamily {
+function family(
+  index: number,
+  adultName: AdultNameGenerator,
+  referenceDate: Date,
+  familyCount: number,
+): DemoFamily {
   const guardianGender = alternatingGender(index);
   const guardianName = adultName(guardianGender);
   const childCount = 1 + (index % 3);
@@ -454,6 +473,19 @@ function family(index: number, adultName: AdultNameGenerator): DemoFamily {
     guardianCin: seedCin("FM", index),
     guardianDateOfBirth: adultBirthDate(index + 19),
     exactAddress: moroccanAddress(),
+    housingSituation: distributionValue(
+      index,
+      familyCount,
+      FAMILY_HOUSING_RATIOS,
+      ["owned", "rented", "hosted", "temporary"],
+    ),
+    registrationDate: registrationDateFor(index, referenceDate),
+    supportPriority: distributionValue(
+      index,
+      familyCount,
+      FAMILY_PRIORITY_RATIOS,
+      ["normal", "high", "urgent"],
+    ),
     phone: seedPhone(30, index),
     relationshipToChildren: guardianGender === "F" ? "Mother" : "Father",
     notes: "Generated Kafil demo family.",
@@ -481,6 +513,68 @@ function child(
     shoeSize: String(28 + ((familyIndex + childIndex) % 15)),
     notes: "Generated Kafil demo child.",
   };
+}
+
+function distributionValue<T extends string>(
+  index: number,
+  total: number,
+  ratios: Readonly<Record<T, number>>,
+  values: readonly T[],
+): T {
+  if (values.length === 0 || total <= 0) {
+    throw new Error("A distribution requires a positive record count.");
+  }
+
+  const exactCounts = values.map((value, valueIndex) => {
+    const exact = total * ratios[value];
+    return {
+      count: Math.floor(exact),
+      index: valueIndex,
+      remainder: exact - Math.floor(exact),
+    };
+  });
+  let assigned = exactCounts.reduce((sum, item) => sum + item.count, 0);
+  for (const item of [...exactCounts].sort(
+    (left, right) =>
+      right.remainder - left.remainder || left.index - right.index,
+  )) {
+    if (assigned >= total) break;
+    item.count += 1;
+    assigned += 1;
+  }
+
+  let cursor = index % total;
+  for (const item of exactCounts) {
+    if (cursor < item.count) return values[item.index]!;
+    cursor -= item.count;
+  }
+  return values[values.length - 1]!;
+}
+
+function registrationDateFor(index: number, referenceDate: Date) {
+  const reference = new Date(
+    Date.UTC(
+      referenceDate.getUTCFullYear(),
+      referenceDate.getUTCMonth(),
+      referenceDate.getUTCDate(),
+    ),
+  );
+  const start = new Date(
+    Date.UTC(
+      referenceDate.getUTCFullYear(),
+      referenceDate.getUTCMonth() - 24,
+      referenceDate.getUTCDate(),
+    ),
+  );
+  const spanDays = Math.max(
+    0,
+    Math.floor((reference.getTime() - start.getTime()) / 86_400_000),
+  );
+  const daysAgo = spanDays === 0 ? 0 : (index * 37 + 11) % (spanDays + 1);
+  const registration = new Date(reference.getTime() - daysAgo * 86_400_000);
+  return `${registration.getUTCFullYear()}-${String(
+    registration.getUTCMonth() + 1,
+  ).padStart(2, "0")}-${String(registration.getUTCDate()).padStart(2, "0")}`;
 }
 
 function readCount(

@@ -121,6 +121,17 @@ function dateInput(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function localDateInput(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function recentRegistrationDate() {
+  const today = new Date();
+  const date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  date.setDate(date.getDate() - faker.number.int({ min: 0, max: 730 }));
+  return localDateInput(date);
+}
+
 function moroccanName(gender?: unknown) {
   return moroccanFullName(gender === "F" || gender === "M" ? gender : undefined);
 }
@@ -158,6 +169,7 @@ function fieldValue(
     return `https://picsum.photos/seed/${faker.string.alphanumeric(10)}/800/600`;
   }
   if (key === "month") return `${new Date().toISOString().slice(0, 7)}-01`;
+  if (key === "registrationdate") return recentRegistrationDate();
   if (format === "date" || key.includes("dateofbirth")) {
     const child =
       siblingFields.has("schoolLevel") || siblingFields.has("clothingSize");

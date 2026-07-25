@@ -277,7 +277,8 @@
   "settings": {
     "success": {
       "retrieved": "????????? : ?? ????????? ?????",
-      "fundingUpdated": "????????? : ??? ??????? ?????"
+      "fundingUpdated": "????????? : ??? ??????? ?????",
+      "formFillUpdated": "?? ????? ????? F8 ?????"
     }
   },
   "orders": {
@@ -754,7 +755,30 @@
         "status": "Status",
         "searchAccount": "البحث عن صاحب الحساب...",
         "searchGuardian": "البحث عن الولي...",
-        "filterStatus": "التصفية حسب الحالة"
+        "filterStatus": "التصفية حسب الحالة",
+        "guardianStep": "بيانات الولي",
+        "guardianStepDescription": "سجّل هوية الولي وبيانات التواصل معه.",
+        "householdStep": "الأسرة",
+        "householdStepDescription": "أدخل وضع السكن وبيانات التسجيل التشغيلية.",
+        "initialChildrenStep": "الأطفال الأوائل",
+        "initialChildrenStepDescription": "أضف من صفر إلى عشرين طفلًا الآن، ويمكن إضافة المزيد لاحقًا.",
+        "imageUploadGuidance": "اختياري. PNG أو JPEG أو WebP أو AVIF أو GIF حتى 5 ميغابايت.",
+        "housingSituation": "وضع السكن",
+        "housingOwned": "مملوك",
+        "housingRented": "مستأجر",
+        "housingHosted": "مستضاف",
+        "housingTemporary": "سكن مؤقت",
+        "registrationDate": "تاريخ التسجيل في البرنامج",
+        "registrationDateFuture": "لا يمكن أن يكون تاريخ التسجيل في المستقبل.",
+        "supportPriority": "أولوية الدعم",
+        "supportPriorityNormal": "عادية",
+        "supportPriorityHigh": "مرتفعة",
+        "supportPriorityUrgent": "عاجلة",
+        "supportPriorityHelp": "تقييم المشغّل للأولوية التشغيلية فقط.",
+        "notRecorded": "غير مسجل",
+        "chooseHousingSituation": "اختر وضع السكن",
+        "chooseSupportPriority": "اختر الأولوية",
+        "childrenCanBeAddedLater": "لم تتم إضافة أطفال بعد. يمكن إضافة الأطفال لاحقًا."
       },
       "children": {
         "title": "الأطفال",

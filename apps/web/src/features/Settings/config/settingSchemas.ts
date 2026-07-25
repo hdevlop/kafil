@@ -5,7 +5,10 @@ import {
   parseMadAmount,
 } from "@/features/Budgets/config/budgetSchemas";
 
-import type { UpdateFundingSettingInput } from "../types";
+import type {
+  UpdateFormFillSettingInput,
+  UpdateFundingSettingInput,
+} from "../types";
 
 export const fundingSettingFormSchema = z.object({
   targetMad: z
@@ -34,4 +37,22 @@ export function toFundingSettingInput(
 
 export function fundingTargetDefaultValue(targetMinor: number) {
   return minorUnitsToMadInput(targetMinor);
+}
+
+export const formFillSettingFormSchema = z.object({
+  enabled: z.boolean(),
+  reason: z.string().trim().min(3, "Give a short reason").max(500),
+});
+
+export type FormFillSettingFormValues = z.infer<
+  typeof formFillSettingFormSchema
+>;
+
+export function toFormFillSettingInput(
+  values: FormFillSettingFormValues,
+): UpdateFormFillSettingInput {
+  return {
+    enabled: values.enabled,
+    reason: values.reason,
+  };
 }

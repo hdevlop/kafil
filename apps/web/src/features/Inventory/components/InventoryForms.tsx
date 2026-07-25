@@ -3,7 +3,7 @@
 import { Boxes, SlidersHorizontal } from "lucide-react";
 import { FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   inventoryAdjustmentFormSchema,
@@ -35,7 +35,7 @@ export function InventoryRestockDialogContent({
       schema={inventoryRestockFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(inventoryRestockFormSchema)}
+      devTools={useDevFormTools(inventoryRestockFormSchema)}
       className="space-y-5"
     >
       <NFormSectionHeader icon={Boxes} title="Stock receipt" />
@@ -70,7 +70,7 @@ export function InventoryAdjustmentDialogContent({
       schema={inventoryAdjustmentFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(inventoryAdjustmentFormSchema)}
+      devTools={useDevFormTools(inventoryAdjustmentFormSchema)}
       className="space-y-5"
     >
       <NFormSectionHeader icon={SlidersHorizontal} title="Manual stock adjustment" />

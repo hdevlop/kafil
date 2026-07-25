@@ -29,10 +29,10 @@ bun run dev:https
 Opening `next dev --experimental-https` directly inside `apps/web` bypasses the
 root `.env` loader and leaves required services such as email unconfigured.
 
-While developing, open a dashboard data-entry form and press `F8` to fill it
-with generated Moroccan-friendly test data. Set
-`NEXT_PUBLIC_FORM_FILL_ENABLED=false` to disable this shortcut; production
-builds disable it automatically.
+The persisted F8 form-fill shortcut is disabled by default. An operator or
+admin can enable it from `/operator/settings` to fill supported browser forms
+with generated Moroccan-friendly test data. Changes take effect without
+rebuilding or restarting Docker.
 
 Available routes:
 

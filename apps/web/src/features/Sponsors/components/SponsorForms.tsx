@@ -5,7 +5,7 @@ import { FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-k
 import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   createSponsorFormSchema,
@@ -70,6 +70,7 @@ export function CreateSponsorDialogContent() {
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { create } = useSponsorCommands();
+  const devTools = useDevFormTools(createSponsorFormSchema);
   const [credentials, setCredentials] = useState<{
     password: string;
     phone: string;
@@ -96,7 +97,7 @@ export function CreateSponsorDialogContent() {
       schema={createSponsorFormSchema}
       defaultValues={{ name: "", email: "", phone: "", cin: "", gender: "F", address: "", dateOfBirth: "", notes: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(createSponsorFormSchema)}
+      devTools={devTools}
     >
       <SponsorAccountFields profileRequired />
       <div className="flex justify-end pt-5">
@@ -133,7 +134,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
         notes: sponsor.notes ?? "",
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(updateSponsorFormSchema)}
+      devTools={useDevFormTools(updateSponsorFormSchema)}
     >
       <SponsorAccountFields />
       <div className="flex justify-end pt-5">
@@ -168,7 +169,7 @@ export function SponsorStatusDialogContent({
       schema={sponsorStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(sponsorStatusFormSchema)}
+      devTools={useDevFormTools(sponsorStatusFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

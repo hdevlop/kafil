@@ -127,6 +127,20 @@
       "when": 1784720232909,
       "tag": "0017_daily_blonde_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784923156100,
+      "tag": "0018_flawless_king_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784942522630,
+      "tag": "0019_lovely_rawhide_kid",
+      "breakpoints": true
     }
   ]
 }

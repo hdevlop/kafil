@@ -43,4 +43,17 @@ export class SettingRepository {
       .returning();
     return setting;
   }
+
+  async updateFormFill(enabled: boolean, updatedByUserId: string) {
+    const [setting] = await this.db
+      .update(platformSettings)
+      .set({
+        formFillEnabled: enabled,
+        updatedByUserId,
+        updatedAt: new Date(),
+      })
+      .where(eq(platformSettings.id, PLATFORM_SETTINGS_ID))
+      .returning();
+    return setting;
+  }
 }

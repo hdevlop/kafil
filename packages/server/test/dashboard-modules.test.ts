@@ -190,8 +190,11 @@ describe("Phase 7 dashboard report boundaries", () => {
     expect(json).not.toContain("cin");
     expect(json).not.toContain("address");
     expect(json).not.toContain("documents");
-    expect(json).not.toContain("notes");
-    expect(json).not.toContain("childName");
+     expect(json).not.toContain("notes");
+     expect(json).not.toContain("housingSituation");
+     expect(json).not.toContain("registrationDate");
+     expect(json).not.toContain("supportPriority");
+     expect(json).not.toContain("childName");
     expect(json).not.toContain("familyName");
   });
 });

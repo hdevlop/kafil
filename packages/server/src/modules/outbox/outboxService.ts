@@ -29,7 +29,7 @@ function sanitizePayload(
   const sanitized: Record<string, string | number | boolean | null> = {};
   for (const [key, value] of Object.entries(payload)) {
     if (
-      !/(password|token|secret|authorization|address|cin|document)/i.test(key) &&
+      !/(password|token|secret|authorization|address|cin|document|housing|registration|priority|notes|phone|email|birth|guardian)/i.test(key) &&
       (value === null ||
         typeof value === "string" ||
         typeof value === "number" ||

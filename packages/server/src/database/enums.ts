@@ -6,6 +6,18 @@ export const familyFundingStatusEnum = pgEnum("family_funding_status", [
   "pending_funding",
   "active",
 ]);
+export const familyHousingSituationEnum = pgEnum("family_housing_situation", [
+  "owned",
+  "rented",
+  "hosted",
+  "temporary",
+  "unknown",
+]);
+export const familySupportPriorityEnum = pgEnum("family_support_priority", [
+  "normal",
+  "high",
+  "urgent",
+]);
 export const supportAssignmentStatusEnum = pgEnum(
   "support_assignment_status",
   ["active", "ended"],

@@ -9,7 +9,7 @@ import {
   useDialog,
 } from "najm-kit";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 import {
@@ -120,7 +120,7 @@ export function CreateChildDialogContent() {
         notes: "",
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(createChildFormSchema, {
+      devTools={useDevFormTools(createChildFormSchema, {
         familyProfileId: familyOptions,
       })}
     >
@@ -175,7 +175,7 @@ export function UpdateChildDialogContent({
         notes: child.notes ?? "",
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(updateChildFormSchema)}
+      devTools={useDevFormTools(updateChildFormSchema)}
     >
       <NFormSectionHeader icon={Baby} title="Child profile" />
       <ChildFields />
@@ -210,7 +210,7 @@ export function ChildStatusDialogContent({
       schema={childStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(childStatusFormSchema)}
+      devTools={useDevFormTools(childStatusFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

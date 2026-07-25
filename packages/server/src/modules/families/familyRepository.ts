@@ -31,6 +31,9 @@ const familySelection = {
   userId: familyProfiles.userId,
   relationshipToChildren: familyProfiles.relationshipToChildren,
   notes: familyProfiles.notes,
+  housingSituation: familyProfiles.housingSituation,
+  registrationDate: familyProfiles.registrationDate,
+  supportPriority: familyProfiles.supportPriority,
   createdAt: familyProfiles.createdAt,
   updatedAt: familyProfiles.updatedAt,
   name: usersTable.name,
@@ -163,6 +166,9 @@ export class FamilyRepository {
         NewFamilyProfile,
         | "relationshipToChildren"
         | "notes"
+        | "housingSituation"
+        | "registrationDate"
+        | "supportPriority"
         | "fundingTargetMinor"
         | "guardianLegalName"
         | "guardianCin"

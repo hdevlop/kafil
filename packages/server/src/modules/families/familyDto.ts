@@ -6,6 +6,54 @@ import { FAMILY_IMAGE_SERVE_PREFIX } from "./familyImageController";
 import { createInitialChildDto } from "../children/childDto";
 import { phoneDto } from "../access/phone";
 
+export const FAMILY_HOUSING_SITUATIONS = [
+  "owned",
+  "rented",
+  "hosted",
+  "temporary",
+] as const;
+export const FAMILY_STORED_HOUSING_SITUATIONS = [
+  ...FAMILY_HOUSING_SITUATIONS,
+  "unknown",
+] as const;
+export const FAMILY_SUPPORT_PRIORITIES = ["normal", "high", "urgent"] as const;
+
+export type FamilyHousingSituation =
+  (typeof FAMILY_STORED_HOUSING_SITUATIONS)[number];
+export type FamilySupportPriority = (typeof FAMILY_SUPPORT_PRIORITIES)[number];
+
+function casablancaDateValue(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Africa/Casablanca",
+    year: "numeric",
+  }).formatToParts(date);
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  return `${year}-${month}-${day}`;
+}
+
+export const familyHousingSituationDto = z.enum(
+  FAMILY_STORED_HOUSING_SITUATIONS,
+);
+export const createFamilyHousingSituationDto = z.enum(
+  FAMILY_HOUSING_SITUATIONS,
+);
+export const familySupportPriorityDto = z.enum(FAMILY_SUPPORT_PRIORITIES);
+export const familyRegistrationDateDto = z.iso
+  .date()
+  .refine((value) => value <= casablancaDateValue(new Date()), {
+    message: "Registration date cannot be in the future.",
+  });
+
+const updateFamilyHousingSituationDto = familyHousingSituationDto
+  .optional()
+  .refine((value) => value !== "unknown", {
+    message: "Choose a recorded housing situation.",
+  });
+
 const familyIdentityFields = z.object({
   guardianCin: z.string().trim().min(8).max(20).toUpperCase(),
   guardianDateOfBirth: z.iso.date(),
@@ -37,6 +85,9 @@ export const createFamilyDto = createUserDto
     image: familyImage.nullish(),
     fundingTargetMinor: positiveMinorAmountDto.optional(),
     initialChildren: z.array(createInitialChildDto).max(20).default([]),
+    housingSituation: createFamilyHousingSituationDto,
+    registrationDate: familyRegistrationDateDto,
+    supportPriority: familySupportPriorityDto,
     ...familyIdentityFields.shape,
     ...familyProfileFields.shape,
   });
@@ -50,6 +101,9 @@ export const updateFamilyDto = updateUserDto
   })
   .extend({
     image: familyImage.nullish(),
+    housingSituation: updateFamilyHousingSituationDto,
+    registrationDate: familyRegistrationDateDto.optional(),
+    supportPriority: familySupportPriorityDto.optional(),
     ...familyIdentityFields.partial().shape,
     ...familyProfileFields.partial().shape,
     fundingTargetMinor: positiveMinorAmountDto.optional(),

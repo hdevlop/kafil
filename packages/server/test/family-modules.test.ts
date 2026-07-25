@@ -39,11 +39,14 @@ describe("Phase 1 DTO and controller boundaries", () => {
       password: "CallerChosen1",
       role: "operator",
       roleId: "operator-role",
-      status: "active",
-      guardianCin: "ab123456",
-      guardianDateOfBirth: "1987-03-12",
-      exactAddress: "Private address in Rabat",
-      phone: "+212600000001",
+       status: "active",
+       guardianCin: "ab123456",
+       guardianDateOfBirth: "1987-03-12",
+       exactAddress: "Private address in Rabat",
+       housingSituation: "rented",
+       registrationDate: "2026-01-15",
+       supportPriority: "normal",
+       phone: "+212600000001",
       initialChildren: [
         {
           legalName: "Child Name",
@@ -72,6 +75,9 @@ describe("Phase 1 DTO and controller boundaries", () => {
         guardianCin: "AB123456",
         guardianDateOfBirth: "1987-03-12",
         exactAddress: "Private address in Rabat",
+      housingSituation: "rented",
+      registrationDate: "2026-01-15",
+      supportPriority: "normal",
         phone: "+212600000001",
       }).success,
     ).toBe(true);
@@ -81,6 +87,9 @@ describe("Phase 1 DTO and controller boundaries", () => {
         image: "not-a-url",
         guardianCin: "AB123456",
         exactAddress: "Private address in Rabat",
+      housingSituation: "rented",
+      registrationDate: "2026-01-15",
+      supportPriority: "normal",
       }).success,
     ).toBe(false);
 
@@ -91,8 +100,11 @@ describe("Phase 1 DTO and controller boundaries", () => {
         image: "/api/family-images/files/serve/family.webp",
         guardianCin: "ST123456",
         guardianDateOfBirth: "1987-03-12",
-        exactAddress: "10 Storage Street",
-        phone: "+212600000002",
+         exactAddress: "10 Storage Street",
+         housingSituation: "hosted",
+         registrationDate: "2026-02-10",
+         supportPriority: "high",
+         phone: "+212600000002",
       }).success,
     ).toBe(true);
   });
@@ -104,8 +116,11 @@ describe("Phase 1 DTO and controller boundaries", () => {
       image: "/api/family-images/files/serve/00000000-0000-4000-8000-000000000031.webp",
       guardianCin: "cd987654",
       guardianDateOfBirth: "1982-09-21",
-      exactAddress: "Updated address in Rabat",
-      phone: "+212600000009",
+       exactAddress: "Updated address in Rabat",
+       housingSituation: "hosted",
+       registrationDate: "2026-02-02",
+       supportPriority: "high",
+       phone: "+212600000009",
       relationshipToChildren: "Guardian",
       notes: "Updated intake notes",
       fundingTargetMinor: 640000,
@@ -168,6 +183,73 @@ describe("Phase 1 DTO and controller boundaries", () => {
     expect(getValidationConfig(ChildController.prototype, "create")?.body).toBe(
       createChildDto,
     );
+  });
+
+  it("requires valid household intake fields for new family records", () => {
+    const base = {
+      name: "Amina El Amrani",
+      email: "family-fields@example.test",
+      guardianCin: "AB123457",
+      guardianDateOfBirth: "1987-03-12",
+      exactAddress: "Private address in Rabat",
+      phone: "+212600000003",
+      initialChildren: [],
+    };
+
+    expect(createFamilyDto.safeParse(base).success).toBe(false);
+    expect(
+      createFamilyDto.safeParse({
+        ...base,
+        housingSituation: "unknown",
+        registrationDate: "2026-01-15",
+        supportPriority: "normal",
+      }).success,
+    ).toBe(false);
+    expect(
+      createFamilyDto.safeParse({
+        ...base,
+        housingSituation: "owned",
+        registrationDate: "2999-01-01",
+        supportPriority: "normal",
+      }).success,
+    ).toBe(false);
+
+    for (const housingSituation of ["owned", "rented", "hosted", "temporary"] as const) {
+      expect(
+        createFamilyDto.safeParse({
+          ...base,
+          housingSituation,
+          registrationDate: "2026-01-15",
+          supportPriority: "normal",
+        }).success,
+      ).toBe(true);
+    }
+    for (const supportPriority of ["normal", "high", "urgent"] as const) {
+      expect(
+        createFamilyDto.safeParse({
+          ...base,
+          housingSituation: "rented",
+          registrationDate: "2026-01-15",
+          supportPriority,
+        }).success,
+      ).toBe(true);
+    }
+  });
+
+  it("rejects unknown housing as an update choice while accepting stored values for reads", () => {
+    expect(
+      updateFamilyDto.safeParse({
+        housingSituation: "unknown",
+        registrationDate: "2026-01-15",
+      }).success,
+    ).toBe(false);
+    expect(
+      updateFamilyDto.safeParse({
+        housingSituation: "hosted",
+        registrationDate: "2026-01-15",
+        supportPriority: "urgent",
+      }).success,
+    ).toBe(true);
   });
 
 });
@@ -236,6 +318,9 @@ describe("Phase 1 family workflow", () => {
         guardianCin: "ab123456",
         guardianDateOfBirth: "1987-03-12",
         exactAddress: "Private address in Rabat",
+      housingSituation: "rented",
+      registrationDate: "2026-01-15",
+      supportPriority: "normal",
         phone: "+212600000001",
         initialChildren: [
           {
@@ -275,7 +360,11 @@ describe("Phase 1 family workflow", () => {
       expect.objectContaining({
         action: "family.created",
         actorUserId: "operator-user",
-        metadata: { childCount: 1, fundingTargetMinor: 720000 },
+         metadata: {
+           childCount: 1,
+           fundingTargetMinor: 720000,
+           supportPriority: "normal",
+         },
         resource: "families",
         resourceId: familyId,
       }),
@@ -361,8 +450,8 @@ describe("Phase 1 family workflow", () => {
 
     expect(own).toMatchObject({
       guardianLegalName: "Family Guardian",
-      exactAddress: "Private address in Rabat",
-      phone: "+212600000001",
+              exactAddress: "Private address in Rabat",
+              phone: "+212600000001",
     });
     expect(own).not.toHaveProperty("notes");
     expect(own).not.toHaveProperty("guardianCin");
@@ -449,12 +538,12 @@ describe("Phase 1 family workflow", () => {
           profileUpdates.push(input);
           return familyProfile(input);
         },
-      } as unknown as FamilyRepository,
-      {} as ChildRepository,
-      {} as BudgetService,
-      {} as AuditService,
-      {
-        ensureExists: async () => familyProfile(),
+       } as unknown as FamilyRepository,
+       {} as ChildRepository,
+       {} as BudgetService,
+       { record: async () => ({}) } as unknown as AuditService,
+       {
+         ensureExists: async () => familyProfile(),
         ensureEmailUnique: async () => {},
         ensureGuardianCinUnique: async () => {},
         ensurePhoneUnique: async () => {},
@@ -470,9 +559,12 @@ describe("Phase 1 family workflow", () => {
         email: "updated@example.test",
         image: "/api/family-images/files/serve/00000000-0000-4000-8000-000000000031.webp",
         guardianCin: "cd987654",
-        guardianDateOfBirth: "1982-09-21",
-        exactAddress: "Updated address in Rabat",
-        phone: "+212600000009",
+         guardianDateOfBirth: "1982-09-21",
+         exactAddress: "Updated address in Rabat",
+         housingSituation: "hosted",
+         registrationDate: "2026-02-02",
+         supportPriority: "high",
+         phone: "+212600000009",
         relationshipToChildren: "Guardian",
         notes: "Updated intake notes",
       },
@@ -490,12 +582,65 @@ describe("Phase 1 family workflow", () => {
       expect.objectContaining({
         guardianLegalName: "Updated Guardian",
         guardianCin: "CD987654",
-        exactAddress: "Updated address in Rabat",
-        phone: "+212600000009",
+         exactAddress: "Updated address in Rabat",
+         housingSituation: "hosted",
+         registrationDate: "2026-02-02",
+         supportPriority: "high",
+         phone: "+212600000009",
         relationshipToChildren: "Guardian",
         notes: "Updated intake notes",
       }),
     ]);
+  });
+
+  it("audits changed field names without household values", async () => {
+    const auditEvents: Record<string, unknown>[] = [];
+    const service = new FamilyService(
+      {} as AuthService,
+      {} as UserService,
+      {
+        update: async (_id: string, input: Record<string, unknown>) =>
+          familyProfile(input),
+      } as unknown as FamilyRepository,
+      {} as ChildRepository,
+      {} as BudgetService,
+      {
+        record: async (input: Record<string, unknown>) => {
+          auditEvents.push(input);
+          return input;
+        },
+      } as unknown as AuditService,
+      {
+        ensureExists: async () => familyProfile(),
+        ensureEmailUnique: async () => {},
+        ensureGuardianCinUnique: async () => {},
+        ensurePhoneUnique: async () => {},
+      } as unknown as FamilyValidator,
+      {} as FundingService,
+      {} as SettingRepository,
+    );
+
+    await service.update(
+      familyId,
+      {
+        housingSituation: "temporary",
+        registrationDate: "2026-03-01",
+        supportPriority: "urgent",
+        notes: "private safeguarding note",
+      },
+      "operator-user",
+    );
+
+    expect(auditEvents).toEqual([
+      expect.objectContaining({
+        action: "family.updated",
+        metadata: {
+          changedFields: expect.stringContaining("housingSituation"),
+        },
+      }),
+    ]);
+    expect(JSON.stringify(auditEvents)).not.toContain("private safeguarding note");
+    expect(JSON.stringify(auditEvents)).not.toContain("temporary");
   });
 
   it("rolls back family provisioning when a later child write fails", async () => {
@@ -572,14 +717,17 @@ describe("Phase 1 family workflow", () => {
     try {
       await expect(
         (wiredService.create as FamilyService["create"]) (
-          {
-            name: "Amina El Amrani",
-            email: "family@example.test",
-            fundingTargetMinor: 720000,
-            guardianCin: "AB123456",
-            guardianDateOfBirth: "1987-03-12",
-            exactAddress: "Private address in Rabat",
-            phone: "+212600000001",
+           {
+             name: "Amina El Amrani",
+             email: "family@example.test",
+             fundingTargetMinor: 720000,
+             housingSituation: "rented",
+             registrationDate: "2026-01-15",
+             supportPriority: "normal",
+             guardianCin: "AB123456",
+             guardianDateOfBirth: "1987-03-12",
+exactAddress: "Private address in Rabat",
+              phone: "+212600000001",
             initialChildren: [
               {
                 legalName: "Child Name",
@@ -805,8 +953,12 @@ describe("Phase 1 child and audit safety", () => {
       metadata: {
         reason: "Duplicate intake",
         cin: "CD987654",
-        guardianCin: "AB123456",
-        password: "never-store-this",
+         guardianCin: "AB123456",
+         housingSituation: "temporary",
+         registrationDate: "2026-03-01",
+         notes: "private note",
+         phone: "+212600000001",
+         password: "never-store-this",
         nested: { unsafe: true },
       },
       resource: "families",
@@ -842,6 +994,9 @@ function familyProfile(overrides: Record<string, unknown> = {}) {
     guardianCin: "AB123456",
     guardianDateOfBirth: "1987-03-12",
     exactAddress: "Private address in Rabat",
+    housingSituation: "rented" as const,
+    registrationDate: "2026-01-15",
+    supportPriority: "normal" as const,
     phone: "+212600000001",
     ...overrides,
   };

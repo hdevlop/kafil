@@ -19,8 +19,13 @@ describe("durable outbox", () => {
       payload: {
         amountMinor: 500,
         token: "must-not-persist",
-        exactAddress: "must-not-persist",
-        nested: { unsupported: true },
+         exactAddress: "must-not-persist",
+         housingSituation: "temporary",
+         registrationDate: "2026-03-01",
+         supportPriority: "urgent",
+         notes: "must-not-persist",
+         phone: "+212600000001",
+         nested: { unsupported: true },
       },
     });
 

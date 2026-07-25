@@ -1,0 +1,1 @@
+ALTER TABLE "platform_settings" ADD COLUMN "form_fill_enabled" boolean DEFAULT false NOT NULL;

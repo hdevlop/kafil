@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  formFillSettingFormSchema,
   fundingSettingFormSchema,
   fundingTargetDefaultValue,
+  toFormFillSettingInput,
   toFundingSettingInput,
 } from "../src/features/Settings/config/settingSchemas";
 import { fundingProgressPercent } from "../src/shared/FundingProgressCard";
@@ -61,5 +63,22 @@ describe("configurable family funding web contracts", () => {
     expect(
       getDashboardNavigation("operator", t).map((item) => item.href),
     ).toContain("/operator/settings");
+  });
+
+  test("requires an explicit F8 setting and audit reason", () => {
+    const values = formFillSettingFormSchema.parse({
+      enabled: true,
+      reason: "Enable fake data for the demo",
+    });
+
+    expect(toFormFillSettingInput(values)).toEqual({
+      enabled: true,
+      reason: "Enable fake data for the demo",
+    });
+    expect(
+      formFillSettingFormSchema.safeParse({
+        reason: "Missing enabled state",
+      }).success,
+    ).toBe(false);
   });
 });

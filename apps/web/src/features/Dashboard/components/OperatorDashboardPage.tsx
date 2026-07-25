@@ -10,7 +10,7 @@ import {
   UsersRound,
   WalletCards,
 } from "lucide-react";
-import { NCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard } from "najm-kit";
+import { NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard } from "najm-kit";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -20,7 +20,7 @@ import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 
 import { useOperatorDashboard } from "../hooks/useDashboard";
-import { DonutBreakdown, MonthlyLineChart, PieBreakdown, StatusBreakdown } from "./DashboardCharts";
+import { MonthlyLineChart, PieBreakdown, StatusBreakdown } from "./DashboardCharts";
 
 export function OperatorDashboardPage() {
   const dashboard = useOperatorDashboard();
@@ -104,15 +104,16 @@ export function OperatorDashboardPage() {
           />
         </NGridItem>
         <NGridItem span={1} xlSpan={2}>
-          <DonutBreakdown
-            data={[
-              { label: t("dashboard.common.available"), value: data.money.availableBudgetMinor, color: "var(--primary)" },
-              { label: t("dashboard.common.reserved"), value: data.money.reservedBudgetMinor, color: "var(--secondary)" },
-              { label: t("dashboard.common.spent"), value: data.money.spentBudgetMinor, color: "var(--destructive)" },
-            ]}
+          <NDonutCard
+            className="h-full"
             icon={WalletCards}
-            totalLabel={t("family.cart.total")}
+            items={[
+              { id: "available", label: t("dashboard.common.available"), value: data.money.availableBudgetMinor, color: "var(--primary)" },
+              { id: "reserved", label: t("dashboard.common.reserved"), value: data.money.reservedBudgetMinor, color: "var(--secondary)" },
+              { id: "spent", label: t("dashboard.common.spent"), value: data.money.spentBudgetMinor, color: "var(--destructive)" },
+            ]}
             title={t("dashboard.operator.budgetPosition")}
+            totalLabel={t("family.cart.total")}
             valueFormatter={money}
           />
         </NGridItem>

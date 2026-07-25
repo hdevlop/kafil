@@ -276,7 +276,8 @@
   "settings": {
     "success": {
       "retrieved": "Configuraci?n : recuperado correctamente",
-      "fundingUpdated": "Configuraci?n : operaci?n realizada correctamente"
+      "fundingUpdated": "Configuraci?n : operaci?n realizada correctamente",
+      "formFillUpdated": "Configuraci?n de F8 actualizada correctamente"
     }
   },
   "orders": {
@@ -727,9 +728,32 @@
         "account": "Family account",
         "fundingProgress": "Funding progress",
         "status": "Status",
-        "searchAccount": "Search account holder...",
-        "searchGuardian": "Search guardian...",
-        "filterStatus": "Filter by status"
+        "searchAccount": "Buscar titular de la cuenta...",
+        "searchGuardian": "Buscar tutor...",
+        "filterStatus": "Filtrar por estado",
+        "guardianStep": "Tutor",
+        "guardianStepDescription": "Registra la identidad y los datos de contacto del tutor.",
+        "householdStep": "Hogar",
+        "householdStepDescription": "Captura la situación del hogar y los datos operativos de registro.",
+        "initialChildrenStep": "Hijos iniciales",
+        "initialChildrenStepDescription": "Añade de cero a veinte hijos ahora; se pueden añadir más adelante.",
+        "imageUploadGuidance": "Opcional. PNG, JPEG, WebP, AVIF o GIF de hasta 5 MB.",
+        "housingSituation": "Situación de vivienda",
+        "housingOwned": "Propia",
+        "housingRented": "Alquilada",
+        "housingHosted": "Alojada",
+        "housingTemporary": "Alojamiento temporal",
+        "registrationDate": "Fecha de registro en el programa",
+        "registrationDateFuture": "La fecha de registro no puede estar en el futuro.",
+        "supportPriority": "Prioridad de apoyo",
+        "supportPriorityNormal": "Normal",
+        "supportPriorityHigh": "Alta",
+        "supportPriorityUrgent": "Urgente",
+        "supportPriorityHelp": "Evaluación del operador solo para la priorización operativa.",
+        "notRecorded": "No registrado",
+        "chooseHousingSituation": "Elige una situación de vivienda",
+        "chooseSupportPriority": "Elige una prioridad",
+        "childrenCanBeAddedLater": "Aún no se han añadido hijos. Se pueden añadir más adelante."
       },
       "children": {
         "title": "Children",

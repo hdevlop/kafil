@@ -3,7 +3,7 @@
 import { AlertTriangle } from "lucide-react";
 import { FormInput, NButton, NForm, useDialog } from "najm-kit";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 import {
@@ -69,7 +69,7 @@ export function ContributionReasonDialogContent({
       schema={contributionReasonFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(contributionReasonFormSchema)}
+      devTools={useDevFormTools(contributionReasonFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

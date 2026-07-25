@@ -309,4 +309,38 @@ describe("initial PostgreSQL migration", () => {
     expect(migration).not.toContain("DROP COLUMN");
     expect(migration).not.toContain("DROP TABLE");
   });
+
+  it("adds family intake fields with an honest historical backfill", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0018_flawless_king_bedlam.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'CREATE TYPE "public"."family_housing_situation"',
+    );
+    expect(migration).toContain(
+      'CREATE TYPE "public"."family_support_priority"',
+    );
+    expect(migration).toContain(
+      '"created_at" AT TIME ZONE \'Africa/Casablanca\'',
+    );
+    expect(migration).toContain("SET \"housing_situation\" = 'unknown'");
+    expect(migration).toContain(
+      'ALTER TABLE "family_profiles" ALTER COLUMN "registration_date" SET NOT NULL',
+    );
+    expect(migration).not.toContain('DROP COLUMN "housing_situation"');
+    expect(migration).not.toContain('DROP TABLE "family_profiles"');
+  });
+
+  it("adds the runtime F8 setting disabled by default", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0019_lovely_rawhide_kid.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'ADD COLUMN "form_fill_enabled" boolean DEFAULT false NOT NULL',
+    );
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
 });

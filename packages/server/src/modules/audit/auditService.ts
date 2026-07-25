@@ -11,8 +11,16 @@ const SENSITIVE_METADATA_KEYS = new Set([
   "cin",
   "guardianCin",
   "exactAddress",
+  "address",
   "document",
   "documentId",
+  "notes",
+  "phone",
+  "email",
+  "dateOfBirth",
+  "guardianDateOfBirth",
+  "housingSituation",
+  "registrationDate",
 ]);
 
 export interface RecordAuditEventInput {

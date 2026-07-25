@@ -230,6 +230,36 @@ or rejected.
 - Drizzle generation reports no schema changes. Server verification passes
   112 tests with the opt-in database concurrency test skipped.
 
+2026-07-24 family-create wizard follow-up:
+
+- Existing demo families now have their three intake fields repaired on every
+  `bun run seed -- demo` rerun. `seedFamilyGroup` reads the stored
+  `housingSituation`, `registrationDate`, and `supportPriority` for every
+  demo family, calls `FamilyService.update(...)` only when at least one of
+  the three differs, and exposes the `repaired` count in the seed summary.
+  Unknown housing is never produced by the persisted generator; the rerun
+  path only migrates old `unknown` rows by writing real values.
+- The create-wizard edit form now keeps the `unknown` housing option visible
+  only while the current selection is `unknown`. The `FamilyHouseholdFields`
+  helper watches the field through `useWatch` and appends the `Not recorded`
+  option exactly once. Once an operator selects a real housing value the
+  option disappears, so the historical placeholder cannot be reselected.
+  The unit suite exercises `familyHousingItems` for the open, mid-edit, and
+  post-correction states.
+- A new Playwright suite (`family-create-wizard.e2e.ts`) opens the create
+  dialog from the operator families page, asserts the three step labels
+  render, validates the active step on Next, preserves guardian and household
+  values across Back/Next navigation, submits the wizard with one initial
+  child, and verifies that the household grid collapses to one column on a
+  375 px viewport and keeps paired rows on a 1280 px viewport.
+- Focused verification: `bun run --cwd packages/seed test` (46 tests passing),
+  `bun run --cwd apps/web test phase6-families-feature` (12 tests passing),
+  `bun run --cwd packages/server test` (160 tests passing, 1 database skip),
+  and `bun run --cwd packages/server typecheck` / `bun run --cwd apps/web
+  typecheck` / `bun run --cwd packages/server lint` / `bun run --cwd
+  apps/web lint` all green. The new Playwright suite is wired into the
+  `test:e2e` runner alongside the existing closeout suite.
+
 2026-07-19 primary guardian CIN extension:
 
 - New family intake requires an uppercase CIN; repository and

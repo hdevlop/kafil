@@ -8,6 +8,12 @@ import {
   toUpdateFamilyInput,
   updateFamilyFormSchema,
 } from "../src/features/Families/config/familySchemas";
+import { familyHousingItems } from "../src/features/Families/config/housingOptions";
+import {
+  createFamilyDefaultValues,
+  createFamilyDevFillValues,
+} from "../src/features/Families/components/FamilyForms";
+import { localDateInput } from "../src/lib/date";
 import { familyKeys } from "../src/features/Families/hooks/familyKeys";
 
 describe("Phase 6C family invitation form", () => {
@@ -16,9 +22,12 @@ describe("Phase 6C family invitation form", () => {
       name: "Amina Guardian",
       email: "amina@example.com",
       guardianCin: "ab123456",
-      guardianDateOfBirth: "1987-03-12",
-      exactAddress: "12 Example Street, Casablanca",
-      phone: "+212600000001",
+       guardianDateOfBirth: "1987-03-12",
+       exactAddress: "12 Example Street, Casablanca",
+       housingSituation: "rented",
+       registrationDate: "2026-01-15",
+       supportPriority: "normal",
+       phone: "+212600000001",
       activationTargetMad: "7200",
       initialChildren: [],
       relationshipToChildren: "Mother",
@@ -31,9 +40,12 @@ describe("Phase 6C family invitation form", () => {
       name: "Amina Guardian",
       email: "amina@example.com",
       guardianCin: "AB123456",
-      guardianDateOfBirth: "1987-03-12",
-      exactAddress: "12 Example Street, Casablanca",
-      phone: "+212600000001",
+       guardianDateOfBirth: "1987-03-12",
+       exactAddress: "12 Example Street, Casablanca",
+       housingSituation: "rented",
+       registrationDate: "2026-01-15",
+       supportPriority: "normal",
+       phone: "+212600000001",
       fundingTargetMinor: 720000,
       initialChildren: [],
       relationshipToChildren: "Mother",
@@ -49,9 +61,12 @@ describe("Phase 6C family invitation form", () => {
       name: "Youssef Guardian",
       email: "youssef@example.com",
       guardianCin: "cd987654",
-      guardianDateOfBirth: "1982-09-21",
-      exactAddress: "12 Example Street, Casablanca",
-      phone: "+212600000002",
+       guardianDateOfBirth: "1982-09-21",
+       exactAddress: "12 Example Street, Casablanca",
+       housingSituation: "hosted",
+       registrationDate: "2026-02-10",
+       supportPriority: "high",
+       phone: "+212600000002",
       activationTargetMad: "8500.50",
       initialChildren: [
         {
@@ -72,9 +87,12 @@ describe("Phase 6C family invitation form", () => {
       name: "Youssef Guardian",
       email: "youssef@example.com",
       guardianCin: "CD987654",
-      guardianDateOfBirth: "1982-09-21",
-      exactAddress: "12 Example Street, Casablanca",
-      phone: "+212600000002",
+       guardianDateOfBirth: "1982-09-21",
+       exactAddress: "12 Example Street, Casablanca",
+       housingSituation: "hosted",
+       registrationDate: "2026-02-10",
+       supportPriority: "high",
+       phone: "+212600000002",
       fundingTargetMinor: 850050,
       initialChildren: [
         {
@@ -133,9 +151,83 @@ describe("Phase 6C family invitation form", () => {
     ).toBe(false);
   });
 
+  test("defaults the household step to a local registration date and explicit priority", () => {
+    const defaults = createFamilyDefaultValues();
+
+    expect(String(defaults.housingSituation)).toBe("");
+    expect(defaults.registrationDate).toBe(localDateInput());
+    expect(defaults.supportPriority).toBe("normal");
+  });
+
+  test("fills all three family steps with create-valid household data", () => {
+    const values = createFamilyDevFillValues();
+
+    expect(createFamilyFormSchema.safeParse(values).success).toBe(true);
+    expect(["owned", "rented", "hosted", "temporary"]).toContain(
+      values.housingSituation,
+    );
+    expect(values.housingSituation).not.toBe("unknown");
+    expect(["normal", "high", "urgent"]).toContain(values.supportPriority);
+    expect(values.initialChildren.length).toBeGreaterThanOrEqual(1);
+    expect(values.initialChildren.length).toBeLessThanOrEqual(4);
+  });
   test("masks guardian CIN in operator displays", () => {
     expect(maskGuardianCin("AB123456")).toBe("AB****56");
     expect(maskGuardianCin(null)).toBe("Not provided");
+  });
+});
+
+describe("family housing select options", () => {
+  const labels = {
+    hosted: "Hosted",
+    owned: "Owned",
+    rented: "Rented",
+    temporary: "Temporary",
+    unknown: "Not recorded",
+  };
+
+  test("offers create-valid housing values when no historical unknown is selected", () => {
+    const items = familyHousingItems("rented", labels, "Not recorded");
+
+    expect(items.map((item) => item.value)).toEqual([
+      "owned",
+      "rented",
+      "hosted",
+      "temporary",
+    ]);
+    expect(items.map((item) => item.label)).toEqual([
+      "Owned",
+      "Rented",
+      "Hosted",
+      "Temporary",
+    ]);
+  });
+
+  test("keeps the unknown option visible while editing a historical unknown family", () => {
+    const items = familyHousingItems("unknown", labels, "Not recorded");
+
+    expect(items.map((item) => item.value)).toEqual([
+      "owned",
+      "rented",
+      "hosted",
+      "temporary",
+      "unknown",
+    ]);
+    expect(items.at(-1)?.label).toBe("Not recorded");
+  });
+
+  test("removes the unknown option once a recorded value is chosen", () => {
+    const opening = familyHousingItems("unknown", labels, "Not recorded");
+    expect(opening.some((item) => item.value === "unknown")).toBe(true);
+
+    const afterCorrection = familyHousingItems(
+      "rented",
+      labels,
+      "Not recorded",
+    );
+    expect(afterCorrection.some((item) => item.value === "unknown")).toBe(
+      false,
+    );
   });
 });
 
@@ -145,9 +237,12 @@ describe("Phase 6C family lifecycle contracts", () => {
       name: "Amina Guardian",
       email: "amina@example.com",
       guardianCin: "ab123456",
-      guardianDateOfBirth: "1987-03-12",
-      exactAddress: "12 Example Street, Casablanca",
-      phone: "+212600000001",
+       guardianDateOfBirth: "1987-03-12",
+       exactAddress: "12 Example Street, Casablanca",
+       housingSituation: "rented",
+       registrationDate: "2026-01-15",
+       supportPriority: "normal",
+       phone: "+212600000001",
       relationshipToChildren: "Legal guardian",
       notes: "  ",
       activationTargetMad: "6400",
@@ -157,9 +252,12 @@ describe("Phase 6C family lifecycle contracts", () => {
       name: "Amina Guardian",
       email: "amina@example.com",
       guardianCin: "AB123456",
-      guardianDateOfBirth: "1987-03-12",
-      exactAddress: "12 Example Street, Casablanca",
-      phone: "+212600000001",
+       guardianDateOfBirth: "1987-03-12",
+       exactAddress: "12 Example Street, Casablanca",
+       housingSituation: "rented",
+       registrationDate: "2026-01-15",
+       supportPriority: "normal",
+       phone: "+212600000001",
       relationshipToChildren: "Legal guardian",
       notes: null,
       fundingTargetMinor: 640000,

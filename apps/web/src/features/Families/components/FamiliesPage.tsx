@@ -7,7 +7,7 @@ import {
   UserRoundCheck,
   UserRoundX,
 } from "lucide-react";
-import { useUser } from "najm-auth/client/react";
+import { usePermissions } from "najm-auth/client/react";
 import {
   NButton,
   NPageLayout,
@@ -58,7 +58,7 @@ function FamiliesIcon({ className }: Readonly<{ className?: string }>) {
 export function FamiliesPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
-  const user = useUser();
+  const { hasRole } = usePermissions();
   const families = useFamilies({ limit: FAMILY_LIST_LIMIT, offset: 0 });
   const columns = useFamiliesTableColumns();
   const filters = useFamiliesTableFilters();
@@ -66,11 +66,11 @@ export function FamiliesPage() {
 
   function openCreate() {
     void dialog.openDialog({
-      title: t("operator.families.createTitle"),
-      children: <CreateFamilyDialogContent />,
+       title: t("operator.families.createTitle"),
+       children: <CreateFamilyDialogContent />,
       showButtons: false,
       size: "xl",
-      height: "full",
+      height: "xl",
     });
   }
 
@@ -165,7 +165,7 @@ export function FamiliesPage() {
           },
         ];
 
-        if (user?.role === "admin") {
+        if (hasRole("admin")) {
           actions.push({
             label: t("operator.families.delete"),
             icon: Trash2,

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormInput, NButton, NForm, toast } from "najm-kit";
 import { useState } from "react";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 import { sponsorRegistrationSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import type { RegistrationValues } from "@/app/(auth)/types";
@@ -17,6 +17,10 @@ export function SponsorRegistrationForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const devTools = useDevFormTools(sponsorRegistrationSchema, {
+    password: "KafilDev123",
+    confirmPassword: "KafilDev123",
+  });
 
   async function handleSubmit(values: RegistrationValues) {
     setIsLoading(true);
@@ -84,10 +88,7 @@ export function SponsorRegistrationForm() {
           confirmPassword: "",
         }}
         onSubmit={handleSubmit}
-        devTools={devFormTools(sponsorRegistrationSchema, {
-          password: "KafilDev123",
-          confirmPassword: "KafilDev123",
-        })}
+        devTools={devTools}
         className="mt-6 h-auto space-y-4"
       >
         <FormInput

@@ -12,7 +12,11 @@ import {
 import { usersTable } from "najm-auth/pg";
 
 import { timestamps } from "../../database/columns";
-import { familyFundingStatusEnum } from "../../database/enums";
+import {
+  familyFundingStatusEnum,
+  familyHousingSituationEnum,
+  familySupportPriorityEnum,
+} from "../../database/enums";
 
 export const familyProfiles = pgTable(
   "family_profiles",
@@ -26,6 +30,11 @@ export const familyProfiles = pgTable(
     guardianCin: varchar("guardian_cin", { length: 20 }).notNull().unique(),
     guardianDateOfBirth: date("guardian_date_of_birth"),
     exactAddress: text("exact_address").notNull(),
+    housingSituation: familyHousingSituationEnum("housing_situation").notNull(),
+    registrationDate: date("registration_date").notNull(),
+    supportPriority: familySupportPriorityEnum("support_priority")
+      .default("normal")
+      .notNull(),
     phone: varchar("phone", { length: 40 }),
     createdByUserId: text("created_by_user_id")
       .notNull()

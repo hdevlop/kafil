@@ -9,3 +9,11 @@ export interface UpdateFundingSettingInput {
   familyFundingTargetMinor: number;
   reason: string;
 }
+
+export interface FormFillSetting {
+  enabled: boolean;
+}
+
+export interface UpdateFormFillSettingInput extends FormFillSetting {
+  reason: string;
+}

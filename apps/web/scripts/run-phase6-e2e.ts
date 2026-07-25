@@ -49,7 +49,7 @@ try {
   await waitForWebServer(webServer);
 
   const tests = Bun.spawn({
-    cmd: ["bunx", "playwright", "test", "test/e2e/phase6-closeout.e2e.ts"],
+    cmd: ["bunx", "playwright", "test", "test/e2e/phase6-closeout.e2e.ts", "test/e2e/family-create-wizard.e2e.ts"],
     ...childOptions,
   });
   testExitCode = await tests.exited;

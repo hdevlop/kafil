@@ -147,7 +147,7 @@ Public registration creates sponsor accounts only. Family accounts are created b
 
 ## Form-fill shortcut
 
-In dev mode (`NEXT_PUBLIC_FORM_FILL_ENABLED` not `false`), pressing `F8` in a dashboard data-entry form fills it with Moroccan-friendly test data. Production builds disable this automatically.
+The persisted F8 form-fill shortcut is disabled by default. Operators and admins can enable it from `/operator/settings`; supported browser forms then fill with Moroccan-friendly test data without a Docker rebuild or restart.
 
 ## Roadmap
 

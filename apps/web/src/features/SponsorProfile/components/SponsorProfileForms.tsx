@@ -3,7 +3,7 @@
 import { Contact } from "lucide-react";
 import { FormInput, NButton, NForm, NFormSectionHeader } from "najm-kit";
 
-import { devFormTools } from "@/lib/devFormFill";
+import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   createOwnSponsorProfileFormSchema,
@@ -53,7 +53,7 @@ export function CreateOwnSponsorProfileForm() {
       schema={createOwnSponsorProfileFormSchema}
       defaultValues={{ phone: "", cin: "", gender: "F", address: "", dateOfBirth: "" }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(createOwnSponsorProfileFormSchema)}
+      devTools={useDevFormTools(createOwnSponsorProfileFormSchema)}
     >
       <NFormSectionHeader icon={Contact} title="Complete your sponsor profile" />
       <SponsorProfileFields required />
@@ -91,7 +91,7 @@ export function UpdateOwnSponsorProfileForm({
         dateOfBirth: dateInputValue(profile.dateOfBirth),
       }}
       onSubmit={handleSubmit}
-      devTools={devFormTools(updateOwnSponsorProfileFormSchema)}
+      devTools={useDevFormTools(updateOwnSponsorProfileFormSchema)}
     >
       <NFormSectionHeader icon={Contact} title="Your sponsor profile" />
       <SponsorProfileFields />

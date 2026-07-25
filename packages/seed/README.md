@@ -129,9 +129,9 @@ and are never deleted by a database reset.
 ## Development form data
 
 Kafil data-entry forms use `buildFormFill` from `@kafil/seed/fakers`. In a
-development build, open a form and press `F8` to replace its current values
+supported browser form, open it and press `F8` to replace its current values
 with realistic fake data. Relation fields are selected from options already
 loaded by that form.
 
-Set `NEXT_PUBLIC_FORM_FILL_ENABLED=false` before starting Next.js to disable
-the shortcut. It is disabled automatically in production builds.
+Use `/operator/settings` to enable or disable the shortcut. The persisted
+setting is disabled by default and applies without a Docker restart.

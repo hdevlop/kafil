@@ -42,7 +42,6 @@ redis_password="$(openssl rand -hex 32)"
   printf 'KAFIL_ADMIN_PASSWORD=%s\n' "${admin_password}"
   printf 'KAFIL_STORAGE_PATH=/srv/kafil/storage\n'
   printf 'LOG_FORMAT=json\nLOG_LEVEL=info\nNO_COLOR=1\n'
-  printf 'NEXT_PUBLIC_FORM_FILL_ENABLED=false\n'
   printf 'EMAIL_PROVIDER=console\n'
   printf 'EMAIL_DEFAULT_FROM=Kafil Demo <%s>\n' "${contact_email}"
 } >"${app_env}"

@@ -4,21 +4,41 @@ import {
 } from "@kafil/seed/fakers";
 import type { z } from "zod";
 
-const disabledValues = new Set(["0", "false", "off", "no"]);
+import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { getFormFillSetting } from "@/services/settingApi";
 
-export const isDevFormFillEnabled =
-  process.env.NODE_ENV === "development" &&
-  !disabledValues.has(
-    String(process.env.NEXT_PUBLIC_FORM_FILL_ENABLED ?? "true").toLowerCase(),
-  );
+const formFillSettingKey = ["settings", "form-fill"] as const;
 
-export function devFormTools<TSchema extends z.ZodType>(
+function useRuntimeFormFillEnabled() {
+  const setting = useEntityQuery({
+    queryKey: formFillSettingKey,
+    queryFn: getFormFillSetting,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+  return setting.data?.enabled === true;
+}
+
+export function useDevFormTools<TSchema extends z.ZodType>(
   schema: TSchema,
   overrides: FormFillOverrides = {},
 ) {
+  const enabled = useRuntimeFormFillEnabled();
+
   return {
-    enabled: isDevFormFillEnabled,
-    fill: () =>
-      buildFormFill(schema, overrides) as Partial<z.infer<TSchema>>,
+    enabled,
+    fill: () => buildDevFormFill(schema, overrides),
   };
+}
+
+export function useFormFillEnabled() {
+  return useRuntimeFormFillEnabled();
+}
+
+export function buildDevFormFill<TSchema extends z.ZodType>(
+  schema: TSchema,
+  overrides: FormFillOverrides = {},
+) {
+  return buildFormFill(schema, overrides) as Partial<z.infer<TSchema>>;
 }

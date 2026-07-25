@@ -27,6 +27,7 @@ import type {
   DemoSponsor,
   DemoSupportAssignment,
 } from "./scripts/demo/generator";
+import { familyIntakeNeedsRepair } from "./scripts/demo/familyRepair";
 
 type DemoKind = "family" | "operator" | "sponsor";
 
@@ -89,12 +90,12 @@ export async function seedDemoData(
     summary.sponsors,
     (item) => services.sponsors.create(item),
   );
-  await seedGroup(
-    "families",
+  await seedFamilyGroup(
     data.families,
     existing,
+    services,
+    actorUserId,
     summary.families,
-    (item) => services.families.create(item, actorUserId),
   );
   await syncDemoAccountImages(data);
 
@@ -416,6 +417,56 @@ async function seedGroup<T extends { email: string }>(
   }
 }
 
+async function seedFamilyGroup(
+  items: readonly DemoFamily[],
+  existing: ReadonlySet<string>,
+  services: DemoServices,
+  actorUserId: string,
+  result: SeedResult,
+) {
+  const profileIds = items.map((family) => family.id);
+  const storedRows = profileIds.length
+    ? await db
+        .select({
+          housingSituation: familyProfiles.housingSituation,
+          id: familyProfiles.id,
+          registrationDate: familyProfiles.registrationDate,
+          supportPriority: familyProfiles.supportPriority,
+        })
+        .from(familyProfiles)
+        .where(inArray(familyProfiles.id, profileIds))
+    : [];
+  const storedById = new Map(storedRows.map((row) => [row.id, row]));
+
+  for (const [index, family] of items.entries()) {
+    if (existing.has(family.email)) {
+      const stored = storedById.get(family.id);
+      if (familyIntakeNeedsRepair(family, stored)) {
+        await services.families.update(
+          family.id,
+          {
+            housingSituation: family.housingSituation,
+            registrationDate: family.registrationDate,
+            supportPriority: family.supportPriority,
+          },
+          actorUserId,
+        );
+        result.repaired += 1;
+      } else {
+        result.skipped += 1;
+      }
+    } else {
+      await services.families.create(family, actorUserId);
+      result.inserted += 1;
+    }
+
+    const processed = index + 1;
+    if (processed === items.length || processed % 10 === 0) {
+      console.log(`  families: ${processed}/${items.length}`);
+    }
+  }
+}
+
 async function loadExistingAccounts(
   identities: readonly DemoAccountIdentity[],
 ): Promise<Set<string>> {
@@ -558,11 +609,33 @@ async function verifyDemoData(
       childCounts.map((row) => [row.familyProfileId, row.total]),
     );
 
+    const familyRows = await db
+      .select({
+        id: familyProfiles.id,
+        housingSituation: familyProfiles.housingSituation,
+        registrationDate: familyProfiles.registrationDate,
+        supportPriority: familyProfiles.supportPriority,
+      })
+      .from(familyProfiles)
+      .where(inArray(familyProfiles.id, families.map((family) => family.id)));
+    const familyRowsById = new Map(familyRows.map((row) => [row.id, row]));
+
     for (const family of families) {
       const actual = countsByFamily.get(family.id) ?? 0;
       if (actual < family.initialChildren.length) {
         throw new Error(
           `Demo family '${family.email}' expected at least ${family.initialChildren.length} children, found ${actual}.`,
+        );
+      }
+      const stored = familyRowsById.get(family.id);
+      if (
+        !stored ||
+        stored.housingSituation !== family.housingSituation ||
+        stored.registrationDate !== family.registrationDate ||
+        stored.supportPriority !== family.supportPriority
+      ) {
+        throw new Error(
+          `Demo family '${family.email}' has incorrect household intake fields after seeding.`,
         );
       }
     }

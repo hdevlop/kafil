@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm";
-import { bigint, check, pgTable, text, varchar } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  boolean,
+  check,
+  pgTable,
+  text,
+  varchar,
+} from "drizzle-orm/pg-core";
 import { usersTable } from "najm-auth/pg";
 
 import { timestamps } from "../../database/columns";
@@ -13,6 +20,7 @@ export const platformSettings = pgTable(
     familyFundingTargetMinor: bigint("family_funding_target_minor", {
       mode: "number",
     }).notNull(),
+    formFillEnabled: boolean("form_fill_enabled").default(false).notNull(),
     currency: varchar("currency", { length: 3 }).default("MAD").notNull(),
     updatedByUserId: text("updated_by_user_id").references(() => usersTable.id, {
       onDelete: "set null",

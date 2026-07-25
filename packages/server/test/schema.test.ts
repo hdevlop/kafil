@@ -105,9 +105,12 @@ describe("Kafil database schema", () => {
         "userId",
         "guardianLegalName",
         "guardianCin",
-        "guardianDateOfBirth",
-        "exactAddress",
-        "phone",
+         "guardianDateOfBirth",
+         "exactAddress",
+         "housingSituation",
+         "registrationDate",
+         "supportPriority",
+         "phone",
         "createdByUserId",
         "relationshipToChildren",
         "notes",
@@ -119,6 +122,9 @@ describe("Kafil database schema", () => {
     expect(familyColumns.userId.notNull).toBe(true);
     expect(familyColumns.guardianCin.notNull).toBe(true);
     expect(familyColumns.fundingTargetMinor.notNull).toBe(true);
+    expect(familyColumns.housingSituation.notNull).toBe(true);
+    expect(familyColumns.registrationDate.notNull).toBe(true);
+    expect(familyColumns.supportPriority.notNull).toBe(true);
     expect(Object.keys(childColumns)).toEqual(
       expect.arrayContaining([
         "familyProfileId",
@@ -365,11 +371,14 @@ describe("Kafil database schema", () => {
     expect(Object.keys(columns)).toEqual(
       expect.arrayContaining([
         "familyFundingTargetMinor",
+        "formFillEnabled",
         "currency",
         "updatedByUserId",
       ]),
     );
     expect(columns.familyFundingTargetMinor.notNull).toBe(true);
+    expect(columns.formFillEnabled.notNull).toBe(true);
+    expect(columns.formFillEnabled.hasDefault).toBe(true);
   });
 
   it("composes support assignments with lifecycle and privacy boundaries", () => {
