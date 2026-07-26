@@ -1,8 +1,12 @@
-import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
+import {
+  cartItems,
+  orderItems,
+} from "../orders/orderSchema";
 import {
   categories,
   inventoryBalances,
@@ -10,6 +14,7 @@ import {
   type NewCategory,
   type NewInventoryLedgerEntry,
   type NewProduct,
+  type Product,
   products,
 } from "./catalogSchema";
 
@@ -84,6 +89,19 @@ export class CategoryRepository {
     const [category] = await this.db
       .update(categories)
       .set({ status, updatedAt: new Date() })
+      .where(eq(categories.id, id))
+      .returning();
+    return category;
+  }
+
+  /**
+   * Hard-delete the category row. Caller is responsible for emptying dependents
+   * (products, their cart items and inventory balances) and for validating
+   * pristineness beforehand. Runs inside the surrounding service transaction.
+   */
+  async hardDelete(id: string) {
+    const [category] = await this.db
+      .delete(categories)
       .where(eq(categories.id, id))
       .returning();
     return category;
@@ -170,6 +188,89 @@ export class ProductRepository {
       .returning();
     return product;
   }
+
+  /** Locks all products under a category for the duration of the surrounding
+   * transaction. Reads id + name + imageUrl so the caller can audit / cleanup. */
+  async lockByCategoryIdForDelete(categoryId: string) {
+    return this.db
+      .select({
+        id: products.id,
+        name: products.name,
+        imageUrl: products.imageUrl,
+        sku: products.sku,
+      })
+      .from(products)
+      .where(eq(products.categoryId, categoryId))
+      .for("update");
+  }
+
+  /** Count order_items referencing any of the given product ids. */
+  async countOrderItemsByProductIds(productIds: string[]) {
+    if (!productIds.length) return 0;
+    const rows = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(orderItems)
+      .where(inArray(orderItems.productId, productIds));
+    return rows[0]?.count ?? 0;
+  }
+
+  async productIdsWithOrderHistory(productIds: string[]) {
+    if (!productIds.length) return [];
+    const rows = await this.db
+      .selectDistinct({ productId: orderItems.productId })
+      .from(orderItems)
+      .where(inArray(orderItems.productId, productIds));
+    return rows.map(({ productId }) => productId);
+  }
+
+  /** Count inventory_ledger_entries referencing any of the given product ids.
+   * This MUST stay as a positive assertion that a delete path is forbidden. */
+  async countInventoryLedgerByProductIds(productIds: string[]) {
+    if (!productIds.length) return 0;
+    const rows = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(inventoryLedgerEntries)
+      .where(inArray(inventoryLedgerEntries.productId, productIds));
+    return rows[0]?.count ?? 0;
+  }
+
+  async productIdsWithInventoryLedger(productIds: string[]) {
+    if (!productIds.length) return [];
+    const rows = await this.db
+      .selectDistinct({ productId: inventoryLedgerEntries.productId })
+      .from(inventoryLedgerEntries)
+      .where(inArray(inventoryLedgerEntries.productId, productIds));
+    return rows.map(({ productId }) => productId);
+  }
+
+  /** Hard-delete the product row. Caller empties cart items + inventory
+   * balance first and runs validation upfront. */
+  async hardDelete(id: string): Promise<Product | undefined> {
+    const [product] = await this.db
+      .delete(products)
+      .where(eq(products.id, id))
+      .returning();
+    return product;
+  }
+
+  /** Hard-delete a batch of product rows by id. Used when a category is being
+   * deleted and its empty (pristine) products cascade with it. */
+  async hardDeleteByIds(ids: string[]): Promise<number> {
+    if (!ids.length) return 0;
+    const result = await this.db
+      .delete(products)
+      .where(inArray(products.id, ids));
+    return result.rowCount ?? 0;
+  }
+
+  /** Removes all cart items referencing any of the supplied products. */
+  async deleteCartItemsByProductIds(productIds: string[]) {
+    if (!productIds.length) return 0;
+    const result = await this.db
+      .delete(cartItems)
+      .where(inArray(cartItems.productId, productIds));
+    return result.rowCount ?? 0;
+  }
 }
 
 @Repository("default")
@@ -244,6 +345,29 @@ export class InventoryRepository {
       .values(data)
       .returning();
     return entry;
+  }
+
+  /** List zero-or-more balance rows for the supplied product ids with
+   *  `FOR UPDATE`. The caller is expected to own the surrounding transaction
+   *  so the locks are released on commit/rollback. */
+  async lockBalancesByProductIds(productIds: string[]) {
+    if (!productIds.length) return [];
+    return this.db
+      .select()
+      .from(inventoryBalances)
+      .where(inArray(inventoryBalances.productId, productIds))
+      .for("update");
+  }
+
+  /** Deletes the inventory_balances rows for the supplied product ids.
+   *  Intended for use only on pristine products — the validator must guarantee
+   *  no order history, no ledger activity, zero balance before this runs. */
+  async deleteBalancesByProductIds(productIds: string[]) {
+    if (!productIds.length) return 0;
+    const result = await this.db
+      .delete(inventoryBalances)
+      .where(inArray(inventoryBalances.productId, productIds));
+    return result.rowCount ?? 0;
   }
 }
 

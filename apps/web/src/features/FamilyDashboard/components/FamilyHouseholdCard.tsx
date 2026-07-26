@@ -35,7 +35,7 @@ export function FamilyHouseholdCard({
           <NDetailList
             items={[
               {
-                label: "Relationship to children",
+                label: "Relationship",
                 value: profile.relationshipToChildren || "Not provided",
               },
             ]}

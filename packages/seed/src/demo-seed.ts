@@ -17,7 +17,7 @@ import {
   supportAssignments,
   usersTable,
 } from "@kafil/server/database";
-import { and, count, eq, inArray, isNull, or, sum } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import type {
   DemoContribution,
@@ -65,6 +65,7 @@ export async function seedDemoData(
   data: DemoSeedData,
   actorUserId: string,
   services: DemoServices,
+  expiresAt: Date = new Date(Date.now() + 72 * 60 * 60 * 1000),
 ): Promise<DemoSeedSummary> {
   const identities = demoIdentities(data);
   const existing = await loadExistingAccounts(identities);
@@ -111,6 +112,7 @@ export async function seedDemoData(
     actorUserId,
     services.contributions,
     summary.contributions,
+    expiresAt,
   );
 
   await verifyDemoData(identities, data.families, data.contributions, assignments);
@@ -125,12 +127,20 @@ async function syncDemoAccountImages(data: DemoSeedData) {
 
   for (let offset = 0; offset < accounts.length; offset += 50) {
     await Promise.all(
-      accounts.slice(offset, offset + 50).map((account) =>
-        db
+      accounts.slice(offset, offset + 50).map(async (account) => {
+        if (!account.image) {
+          const [current] = await db
+            .select({ image: usersTable.image })
+            .from(usersTable)
+            .where(eq(usersTable.id, account.userId))
+            .limit(1);
+          if (current?.image) return;
+        }
+        await db
           .update(usersTable)
           .set({ image: account.image ?? null })
-          .where(eq(usersTable.id, account.userId)),
-      ),
+          .where(eq(usersTable.id, account.userId));
+      }),
     );
   }
 }
@@ -194,6 +204,7 @@ async function seedContributions(
   actorUserId: string,
   service: ContributionService,
   result: SeedResult,
+  expiresAt: Date,
 ) {
   if (desired.length === 0) return;
   const references = desired.map((item) => item.externalReference);
@@ -256,7 +267,7 @@ async function seedContributions(
       );
       result.inserted += 1;
     }
-    await alignManagedContributionTimeline(contributionId, item);
+    await alignManagedContributionTimeline(contributionId, item, expiresAt);
     logProgress("contributions", index + 1, desired.length);
   }
 }
@@ -285,6 +296,12 @@ async function createManagedContribution(
       { reason: "Generated demo contribution rejection." },
       actorUserId,
     );
+  } else if (item.expectedStatus === "expired") {
+    await db
+      .update(contributions)
+      .set({ expiresAt: new Date(0) })
+      .where(eq(contributions.id, created!.id));
+    await service.expireDue(new Date(), 100);
   }
   return created!.id;
 }
@@ -292,6 +309,7 @@ async function createManagedContribution(
 async function alignManagedContributionTimeline(
   contributionId: string,
   item: DemoContribution,
+  expiresAt: Date,
 ) {
   const paidAt = new Date(`${item.paidAt}T12:00:00.000Z`);
   const lifecycleAt = new Date(paidAt.getTime() + 6 * 60 * 60 * 1_000);
@@ -300,6 +318,8 @@ async function alignManagedContributionTimeline(
       ? { validatedAt: lifecycleAt }
       : item.expectedStatus === "rejected"
         ? { rejectedAt: lifecycleAt }
+        : item.expectedStatus === "expired"
+          ? { expiresAt: paidAt, expiredAt: lifecycleAt }
         : {};
 
   await db
@@ -309,6 +329,8 @@ async function alignManagedContributionTimeline(
       paidAt,
       submittedAt: paidAt,
       updatedAt: lifecycleAt,
+      expiresAt: item.expectedStatus === "expired" ? paidAt : expiresAt,
+      expiredAt: item.expectedStatus === "expired" ? lifecycleAt : null,
       ...statusTimestamp,
     })
     .where(eq(contributions.id, contributionId));
@@ -437,6 +459,7 @@ async function seedFamilyGroup(
         .where(inArray(familyProfiles.id, profileIds))
     : [];
   const storedById = new Map(storedRows.map((row) => [row.id, row]));
+  const desiredChildImages = collectDesiredChildImages(items);
 
   for (const [index, family] of items.entries()) {
     if (existing.has(family.email)) {
@@ -460,10 +483,56 @@ async function seedFamilyGroup(
       result.inserted += 1;
     }
 
+    await alignExistingChildImages(family, desiredChildImages);
+
     const processed = index + 1;
     if (processed === items.length || processed % 10 === 0) {
       console.log(`  families: ${processed}/${items.length}`);
     }
+  }
+}
+
+function collectDesiredChildImages(items: readonly DemoFamily[]) {
+  const map = new Map<string, { childIndex: number; image: string | null }>();
+  for (const family of items) {
+    family.initialChildren.forEach((child, childIndex) => {
+      map.set(`${family.id}:${childIndex}`, {
+        childIndex,
+        image: child.image ?? null,
+      });
+    });
+  }
+  return map;
+}
+
+async function alignExistingChildImages(
+  family: DemoFamily,
+  desiredImages: ReadonlyMap<string, { childIndex: number; image: string | null }>,
+) {
+  const familyKey = family.id;
+  const rows = await db
+    .select({
+      createdAt: children.createdAt,
+      id: children.id,
+      image: children.image,
+    })
+    .from(children)
+    .where(eq(children.familyProfileId, familyKey))
+    .orderBy(asc(children.createdAt));
+
+  for (const [offset, row] of rows.entries()) {
+    const desired = desiredImages.get(`${familyKey}:${offset}`);
+    if (!desired) continue;
+    if (desired.image) {
+      if (row.image !== desired.image) {
+        await db
+          .update(children)
+          .set({ image: desired.image, updatedAt: new Date() })
+          .where(eq(children.id, row.id));
+      }
+      continue;
+    }
+    if (row.image) continue;
   }
 }
 
@@ -609,6 +678,22 @@ async function verifyDemoData(
       childCounts.map((row) => [row.familyProfileId, row.total]),
     );
 
+    const childImageRows = await db
+      .select({
+        familyProfileId: children.familyProfileId,
+        id: children.id,
+        image: children.image,
+      })
+      .from(children)
+      .where(inArray(children.familyProfileId, families.map((family) => family.id)))
+      .orderBy(asc(children.familyProfileId), asc(children.createdAt));
+    const childrenByFamily = new Map<string, Array<{ id: string; image: string | null }>>();
+    for (const row of childImageRows) {
+      const list = childrenByFamily.get(row.familyProfileId) ?? [];
+      list.push({ id: row.id, image: row.image });
+      childrenByFamily.set(row.familyProfileId, list);
+    }
+
     const familyRows = await db
       .select({
         id: familyProfiles.id,
@@ -638,20 +723,45 @@ async function verifyDemoData(
           `Demo family '${family.email}' has incorrect household intake fields after seeding.`,
         );
       }
+      const existingChildren = childrenByFamily.get(family.id) ?? [];
+      family.initialChildren.forEach((desired, childIndex) => {
+        const stored = existingChildren[childIndex];
+        if (!stored) return;
+        if (desired.image && stored.image !== desired.image) {
+          throw new Error(
+            `Demo family '${family.email}' child ${childIndex} image is '${stored.image ?? "null"}', expected '${desired.image}'.`,
+          );
+        }
+      });
     }
 
+    const verificationNow = new Date();
     const fundingRows = await db
       .select({
         familyProfileId: familyProfiles.id,
         targetMinor: familyProfiles.fundingTargetMinor,
-        validatedMinor: sum(contributions.amountMinor).mapWith(Number),
+        validatedMinor:
+          sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'validated'), 0)::bigint`.mapWith(
+            Number,
+          ),
+        livePendingMinor:
+          sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending' AND ${contributions.expiresAt} > ${verificationNow}), 0)::bigint`.mapWith(
+            Number,
+          ),
+        livePendingCount:
+          sql<number>`count(*) filter (where ${contributions.status} = 'pending' AND ${contributions.expiresAt} > ${verificationNow})::int`.mapWith(
+            Number,
+          ),
+        expiredCount:
+          sql<number>`count(*) filter (where ${contributions.status} = 'expired')::int`.mapWith(
+            Number,
+          ),
       })
       .from(familyProfiles)
       .leftJoin(
         contributions,
         and(
           eq(contributions.familyProfileId, familyProfiles.id),
-          eq(contributions.status, "validated"),
           inArray(
             contributions.externalReference,
             managedContributionReferences,
@@ -661,23 +771,24 @@ async function verifyDemoData(
       .where(inArray(familyProfiles.id, families.map((family) => family.id)))
       .groupBy(familyProfiles.id, familyProfiles.fundingTargetMinor);
     const exceeded = fundingRows.filter(
-      (row) => (row.validatedMinor ?? 0) > row.targetMinor,
+      (row) =>
+        row.validatedMinor + row.livePendingMinor > row.targetMinor,
     );
     if (exceeded.length > 0) {
       throw new Error(
-        `${exceeded.length} demo families have validated contributions above their funding target.`,
+        `${exceeded.length} demo families have validated plus live pending contributions above their funding target.`,
       );
     }
     const maximumPercent = Math.max(
       0,
       ...fundingRows.map((row) =>
         Math.round(
-          ((row.validatedMinor ?? 0) / row.targetMinor) * 10_000,
+          (row.validatedMinor / row.targetMinor) * 10_000,
         ) / 100,
       ),
     );
     console.log(
-      `  funding caps: ${fundingRows.length} families verified, 0 exceeded, maximum ${maximumPercent}%.`,
+      `  funding caps: ${fundingRows.length} families verified, 0 exceeded, maximum ${maximumPercent}%; ${fundingRows.reduce((total, row) => total + row.livePendingCount, 0)} live pending and ${fundingRows.reduce((total, row) => total + row.expiredCount, 0)} expired.`,
     );
   }
 

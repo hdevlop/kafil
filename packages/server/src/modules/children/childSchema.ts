@@ -18,6 +18,7 @@ export const children = pgTable(
     clothingSize: varchar("clothing_size", { length: 40 }),
     shoeSize: varchar("shoe_size", { length: 40 }),
     notes: text("notes"),
+    image: text("image"),
     status: childStatusEnum("status").default("active").notNull(),
     ...timestamps(),
   },

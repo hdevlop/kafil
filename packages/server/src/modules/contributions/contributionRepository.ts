@@ -17,7 +17,7 @@ import {
 
 export interface ContributionFilters {
   familyProfileId?: string;
-  status?: "pending" | "validated" | "rejected" | "refunded";
+  status?: "pending" | "validated" | "rejected" | "refunded" | "expired";
 }
 
 export interface ContributionPlanFilters {
@@ -35,6 +35,8 @@ const ownContributionSelection = {
   status: contributions.status,
   submittedAt: contributions.submittedAt,
   paidAt: contributions.paidAt,
+  expiresAt: contributions.expiresAt,
+  expiredAt: contributions.expiredAt,
   validatedAt: contributions.validatedAt,
   rejectedAt: contributions.rejectedAt,
   createdAt: contributions.createdAt,
@@ -53,6 +55,8 @@ const operatorContributionSelection = {
   status: contributions.status,
   submittedAt: contributions.submittedAt,
   paidAt: contributions.paidAt,
+  expiresAt: contributions.expiresAt,
+  expiredAt: contributions.expiredAt,
   validatedByUserId: contributions.validatedByUserId,
   validatedAt: contributions.validatedAt,
   rejectedByUserId: contributions.rejectedByUserId,
@@ -250,6 +254,41 @@ export class ContributionRepository {
     return contribution;
   }
 
+  async expire(id: string, expiredAt: Date) {
+    const [contribution] = await this.db
+      .update(contributions)
+      .set({ status: "expired", expiredAt, updatedAt: expiredAt })
+      .where(eq(contributions.id, id))
+      .returning();
+    return contribution;
+  }
+
+  /**
+   * Conditional transition. Only flips pending -> expired if the row is still
+   * pending and its stored expires_at has not moved. This makes the claim
+   * lock from `duePendingContributionIds` atomic with the mutation, so
+   * two workers observing the same row can never produce duplicate audit
+   * and outbox effects.
+   */
+  async expireIfStillDue(
+    id: string,
+    dueBefore: Date,
+    expiredAt: Date,
+  ) {
+    const rows = await this.db
+      .update(contributions)
+      .set({ status: "expired", expiredAt, updatedAt: expiredAt })
+      .where(
+        and(
+          eq(contributions.id, id),
+          eq(contributions.status, "pending"),
+          sql`${contributions.expiresAt} <= ${dueBefore.toISOString()}::timestamptz`,
+        ),
+      )
+      .returning({ id: contributions.id });
+    return rows.length > 0;
+  }
+
   async delete(id: string) {
     const [contribution] = await this.db
       .delete(contributions)
@@ -397,5 +436,23 @@ export class ContributionPlanRepository {
 
   completeOneTime(planId: string) {
     return this.setStatus(planId, "completed", new Date());
+  }
+
+  async completeFamilyActiveAndPaused(familyProfileId: string) {
+    const endedAt = new Date();
+    const updated = await this.db
+      .update(contributionPlans)
+      .set({ status: "completed", endedAt, updatedAt: endedAt })
+      .where(
+        sql`${contributionPlans.status} = 'active' AND ${contributionPlans.id} IN (
+          SELECT plan.id FROM ${contributionPlans} AS plan
+          INNER JOIN ${supportAssignments} AS assignment
+            ON assignment.id = plan.support_assignment_id
+          WHERE assignment.family_profile_id = ${familyProfileId}
+            AND assignment.status = 'active'
+        )`,
+      )
+      .returning({ id: contributionPlans.id });
+    return updated.length;
   }
 }

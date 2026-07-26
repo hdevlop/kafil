@@ -33,12 +33,21 @@ function SponsorFamilyCard({
   onContribute: (assignmentId: string) => void;
 }>) {
   const { t } = useKafilLanguage();
+  const capacity = family.funding?.capacityStatus ?? "open";
+  const closedByFunding = capacity === "funded" || capacity === "reserved";
+  const buttonLabel = closedByFunding
+    ? capacity === "funded"
+      ? t("sponsor.directory.targetReached")
+      : t("sponsor.directory.coveredByPending")
+    : assignmentId
+      ? t("sponsor.directory.contribute")
+      : t("sponsor.directory.support");
 
   return (
     <article className="space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="relative h-40 overflow-hidden rounded-xl bg-muted">
         <Image
-          src={getFamilyAvatarImage(family.image, null)}
+          src={getFamilyAvatarImage(family.image)}
           alt={family.reference}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
@@ -57,9 +66,11 @@ function SponsorFamilyCard({
       {family.funding ? <FundingProgressBar inline progress={family.funding} /> : null}
       <NButton
         className="w-full"
-        disabled={disabled}
+        disabled={disabled || closedByFunding}
+        title={closedByFunding ? buttonLabel : undefined}
         leftIcon={HeartHandshake}
         onClick={() => {
+          if (closedByFunding) return;
           if (assignmentId) {
             onContribute(assignmentId);
             return;
@@ -67,9 +78,7 @@ function SponsorFamilyCard({
           onSupport(family.id);
         }}
       >
-        {assignmentId
-          ? t("sponsor.directory.contribute")
-          : t("sponsor.directory.support")}
+        {buttonLabel}
       </NButton>
     </article>
   );

@@ -1,8 +1,7 @@
 const PERSON_IMAGE_PATHS = {
   childFemale: "/images/people/child-female.png",
   childMale: "/images/people/child-male.png",
-  parentFemale: "/images/people/parent-female.png",
-  parentMale: "/images/people/parent-male.png",
+  family: "/images/people/family.png",
   sponsorFemale: "/images/people/sponsor_female.png",
   sponsorMale: "/images/people/sponsor_male.png",
 } as const;
@@ -13,27 +12,29 @@ export function getChildPersonImage(gender: string) {
     : PERSON_IMAGE_PATHS.childMale;
 }
 
-export function getParentPersonImage(relationship: string | null) {
-  const normalizedRelationship = relationship?.trim().toLowerCase() ?? "";
-  const isFemaleGuardian =
-    normalizedRelationship.includes("mother") ||
-    normalizedRelationship.includes("female");
-
-  return isFemaleGuardian
-    ? PERSON_IMAGE_PATHS.parentFemale
-    : PERSON_IMAGE_PATHS.parentMale;
-}
-
-export function getFamilyAvatarImage(
-  image: string | null,
-  relationship: string | null,
+export function getChildAvatarImage(
+  image: string | null | undefined,
+  gender: string,
 ) {
   const normalizedImage = image?.trim() ?? "";
   const isPlaceholder = /(^|\/)noavatar\.png(?:$|[?#])/i.test(normalizedImage);
 
   return normalizedImage && !isPlaceholder
     ? normalizedImage
-    : getParentPersonImage(relationship);
+    : getChildPersonImage(gender);
+}
+
+export function getFamilyPersonImage() {
+  return PERSON_IMAGE_PATHS.family;
+}
+
+export function getFamilyAvatarImage(image: string | null) {
+  const normalizedImage = image?.trim() ?? "";
+  const isPlaceholder = /(^|\/)noavatar\.png(?:$|[?#])/i.test(normalizedImage);
+
+  return normalizedImage && !isPlaceholder
+    ? normalizedImage
+    : PERSON_IMAGE_PATHS.family;
 }
 
 export function getSponsorAvatarImage(

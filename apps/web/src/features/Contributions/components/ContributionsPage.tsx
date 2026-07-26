@@ -201,8 +201,13 @@ export function ContributionsPage({
           onSelect: () => openDelete(contribution),
           disabled: remove.isPending,
         };
+        const isPending = contribution.status === "pending";
+        const isEffectivelyExpired =
+          isPending &&
+          Boolean(contribution.expiresAt) &&
+          new Date(contribution.expiresAt!).getTime() <= Date.now();
 
-        if (contribution.status === "pending") {
+        if (isPending) {
           const actions = [
             viewAction,
             {
@@ -210,7 +215,10 @@ export function ContributionsPage({
               icon: BadgeCheck,
               separatorBefore: true,
               onSelect: () => openValidate(contribution),
-              disabled: validate.isPending,
+              disabled: validate.isPending || isEffectivelyExpired,
+              title: isEffectivelyExpired
+                ? t("operator.contributions.expiredWarning")
+                : undefined,
             },
             {
               label: t("operator.contributions.reject"),

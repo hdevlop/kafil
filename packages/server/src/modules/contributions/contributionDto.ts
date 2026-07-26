@@ -13,7 +13,7 @@ export const contributionPlanIdParams = z.object({ id });
 
 export const contributionListQuery = z.object({
   familyProfileId: id.optional(),
-  status: z.enum(["pending", "validated", "rejected", "refunded"]).optional(),
+  status: z.enum(["pending", "validated", "rejected", "refunded", "expired"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -42,14 +42,16 @@ export const createContributionPlanDto = z
     }
   });
 
-export const createContributionDto = z.object({
-  supportAssignmentId: id,
-  contributionPlanId: id.optional(),
-  amountMinor: positiveMinorAmountDto,
-  paymentMethod: z.string().trim().min(2).max(80),
-  externalReference: z.string().trim().min(1).max(160).nullish(),
-  paidAt: z.coerce.date().optional(),
-});
+export const createContributionDto = z
+  .object({
+    supportAssignmentId: id,
+    contributionPlanId: id.optional(),
+    amountMinor: positiveMinorAmountDto,
+    paymentMethod: z.string().trim().min(2).max(80),
+    externalReference: z.string().trim().min(1).max(160).nullish(),
+    paidAt: z.coerce.date().optional(),
+  })
+  .strict();
 
 export const recordContributionDto = createContributionDto
   .extend({

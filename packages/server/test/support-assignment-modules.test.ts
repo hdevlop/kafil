@@ -155,6 +155,13 @@ describe("Phase 2 support assignment workflow", () => {
           validatorCalls.push("duplicate");
         },
       } as unknown as SupportAssignmentValidator,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as never,
+      {
+        ensureAssignmentCapacity: async () => undefined,
+      } as never,
     );
 
     await service.create(
@@ -209,6 +216,13 @@ describe("Phase 2 support assignment workflow", () => {
       {
         ensureExists: async () => assignmentRecord(),
       } as unknown as SupportAssignmentValidator,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as never,
+      {
+        ensureAssignmentCapacity: async () => undefined,
+      } as never,
     );
 
     await service.updateNotes(
@@ -247,6 +261,8 @@ describe("Phase 2 support assignment workflow", () => {
       } as unknown as SupportAssignmentRepository,
       {} as AuditService,
       {} as SupportAssignmentValidator,
+      {} as never,
+      {} as never,
     );
     const validator = new SupportAssignmentValidator(
       {
@@ -290,6 +306,13 @@ describe("Phase 2 support assignment workflow", () => {
         ensureSponsorAssignable: async () => undefined,
         ensureFamilyExists: async () => ({ status: "active" }),
       } as unknown as SupportAssignmentValidator,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as never,
+      {
+        ensureAssignmentCapacity: async () => undefined,
+      } as never,
     );
 
     await service.selectFamilyForSponsor({ familyProfileId: householdId }, "sponsor-user");
@@ -326,6 +349,7 @@ describe("Phase 2 support assignment workflow", () => {
       } as unknown as SupportAssignmentRepository,
       {} as AuditService,
       {} as SupportAssignmentValidator,
+      {} as never,
       {
         getProgressForFamilies: async () => new Map([
           [householdId, {
@@ -369,6 +393,13 @@ describe("Phase 2 support assignment workflow", () => {
         ensureOwnedBy: async () => assignmentRecord(),
         ensureActive: () => {},
       } as unknown as SupportAssignmentValidator,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as never,
+      {
+        ensureAssignmentCapacity: async () => undefined,
+      } as never,
     );
 
     const summary = await service.getSupportedFamilySummary(
@@ -404,6 +435,51 @@ describe("Phase 2 support assignment workflow", () => {
     expect(() => validator.ensureActive("ended")).toThrow(
       "Support assignment is already ended",
     );
+  });
+
+  it("returns a sponsor-safe child projection only", async () => {
+    const service = new SupportAssignmentService(
+      {
+        findChildSummaryByAssignmentId: async () => ({
+          childId: "00000000-0000-4000-8000-000000000044",
+          dateOfBirth: "2014-04-12",
+        }),
+      } as unknown as SupportAssignmentRepository,
+      {} as AuditService,
+      {
+        ensureOwnedBy: async () => assignmentRecord({ childId: "00000000-0000-4000-8000-000000000044" }),
+        ensureActive: () => {},
+      } as unknown as SupportAssignmentValidator,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as never,
+      {
+        ensureAssignmentCapacity: async () => undefined,
+      } as never,
+    );
+
+    const summary = await service.getSupportedChildSummary(
+      assignmentId,
+      "sponsor-user",
+    );
+
+    expect(summary).toEqual({
+      assignment: {
+        id: assignmentId,
+        startedAt: expect.any(Date),
+      },
+      child: {
+        label: "Supported child",
+        ageBand: "6-12",
+      },
+    });
+    const serialized = JSON.stringify(summary);
+    expect(serialized).not.toContain("image");
+    expect(serialized).not.toContain("legalName");
+    expect(serialized).not.toContain("gender");
+    expect(serialized).not.toContain("dateOfBirth");
+    expect(serialized).not.toContain("/api/child-images");
   });
 });
 

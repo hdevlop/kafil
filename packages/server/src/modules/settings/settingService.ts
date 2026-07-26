@@ -1,14 +1,13 @@
 import { HttpError, Service } from "najm-core";
-import { Transaction } from "najm-database";
 
 import { AuditService } from "../audit/auditService";
+import type { UpdateSettingsDto } from "./settingDto";
+import { updateSettingsDto } from "./settingDto";
 import {
-  type UpdateFormFillSettingDto,
-  type UpdateFundingSettingDto,
-  updateFormFillSettingDto,
-  updateFundingSettingDto,
-} from "./settingDto";
-import { SettingRepository } from "./settingRepository";
+  SettingRepository,
+  type PlatformSettingsPatch,
+} from "./settingRepository";
+import { DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS } from "./settingSchema";
 
 @Service()
 export class SettingService {
@@ -17,9 +16,9 @@ export class SettingService {
     private readonly audits: AuditService,
   ) {}
 
-  async getFunding() {
+  async getSettings() {
     const setting = await this.settings.find();
-    if (!setting) HttpError.notFound("Platform funding setting not found");
+    if (!setting) HttpError.notFound("Platform settings not found");
     return setting;
   }
 
@@ -29,61 +28,41 @@ export class SettingService {
     return { enabled: setting.formFillEnabled };
   }
 
-  @Transaction({ retries: 2 })
-  async updateFunding(
-    data: UpdateFundingSettingDto,
-    actorUserId: string,
-  ) {
-    const input = updateFundingSettingDto.parse(data);
-    const current = await this.settings.lock();
-    if (!current) HttpError.notFound("Platform funding setting not found");
+  async getPendingContributionExpiryHours() {
+    const setting = await this.settings.find();
+    if (!setting) return DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS;
+    return setting.pendingContributionExpiryHours;
+  }
 
-    const setting = await this.settings.updateFundingTarget(
-      input.familyFundingTargetMinor,
-      actorUserId,
-    );
-    if (!setting) HttpError.notFound("Platform funding setting not found");
-
-    await this.audits.record({
-      action: "settings.familyFundingTargetUpdated",
-      actorUserId,
-      metadata: {
-        previousTargetMinor: current.familyFundingTargetMinor,
-        targetMinor: setting.familyFundingTargetMinor,
-        reason: input.reason,
-      },
-      resource: "settings",
-      resourceId: setting.id,
+  async update(data: UpdateSettingsDto, actorUserId: string) {
+    const input = updateSettingsDto.parse(data);
+    const previous = await this.settings.find();
+    const setting = await this.settings.update({
+      familyFundingTargetMinor: input.familyFundingTargetMinor,
+      pendingContributionExpiryHours: input.pendingContributionExpiryHours,
+      formFillEnabled: input.formFillEnabled,
+      updatedByUserId: actorUserId,
     });
+    if (!setting) HttpError.notFound("Platform settings not found");
+    if (
+      previous &&
+      previous.pendingContributionExpiryHours !== input.pendingContributionExpiryHours
+    ) {
+      await this.audits.record({
+        action: "settings.pendingContributionExpiryUpdated",
+        actorUserId,
+        metadata: {
+          previousHours: previous.pendingContributionExpiryHours,
+          expiryHours: input.pendingContributionExpiryHours,
+        },
+        resource: "platformSettings",
+        resourceId: PLATFORM_SETTINGS_REFERENCE,
+      });
+    }
     return setting;
   }
-
-  @Transaction({ retries: 2 })
-  async updateFormFill(
-    data: UpdateFormFillSettingDto,
-    actorUserId: string,
-  ) {
-    const input = updateFormFillSettingDto.parse(data);
-    const current = await this.settings.lock();
-    if (!current) HttpError.notFound("Platform setting not found");
-
-    const setting = await this.settings.updateFormFill(
-      input.enabled,
-      actorUserId,
-    );
-    if (!setting) HttpError.notFound("Platform setting not found");
-
-    await this.audits.record({
-      action: "settings.formFillUpdated",
-      actorUserId,
-      metadata: {
-        previousEnabled: current.formFillEnabled,
-        enabled: setting.formFillEnabled,
-        reason: input.reason,
-      },
-      resource: "settings",
-      resourceId: setting.id,
-    });
-    return { enabled: setting.formFillEnabled };
-  }
 }
+
+export const PLATFORM_SETTINGS_REFERENCE = "platform";
+
+export type { PlatformSettingsPatch };

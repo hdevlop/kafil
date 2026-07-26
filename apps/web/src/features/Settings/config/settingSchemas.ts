@@ -5,12 +5,12 @@ import {
   parseMadAmount,
 } from "@/features/Budgets/config/budgetSchemas";
 
-import type {
-  UpdateFormFillSettingInput,
-  UpdateFundingSettingInput,
-} from "../types";
+import type { UpdateSettingsInput } from "../types";
 
-export const fundingSettingFormSchema = z.object({
+export const MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS = 1;
+export const MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS = 720;
+
+export const settingsFormSchema = z.object({
   targetMad: z
     .string()
     .trim()
@@ -18,41 +18,44 @@ export const fundingSettingFormSchema = z.object({
       const minor = parseMadAmount(value);
       return minor !== null && minor > 0;
     }, "Enter a positive MAD amount with up to two decimals"),
-  reason: z.string().trim().min(3, "Give a short reason").max(500),
+  pendingContributionExpiryHours: z.coerce
+    .number()
+    .int()
+    .min(MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS, "Expiry must be at least 1 hour")
+    .max(MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS, "Expiry cannot exceed 720 hours"),
+  formFillEnabled: z.boolean(),
+  timeZone: z.string().min(1),
 });
 
-export type FundingSettingFormValues = z.infer<
-  typeof fundingSettingFormSchema
->;
+export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
-export function toFundingSettingInput(
-  values: FundingSettingFormValues,
-): UpdateFundingSettingInput {
+export function toSettingsInput(
+  values: SettingsFormValues,
+): UpdateSettingsInput {
   const familyFundingTargetMinor = parseMadAmount(values.targetMad);
   if (familyFundingTargetMinor === null || familyFundingTargetMinor <= 0) {
     throw new Error("Invalid family funding target");
   }
-  return { familyFundingTargetMinor, reason: values.reason };
-}
-
-export function fundingTargetDefaultValue(targetMinor: number) {
-  return minorUnitsToMadInput(targetMinor);
-}
-
-export const formFillSettingFormSchema = z.object({
-  enabled: z.boolean(),
-  reason: z.string().trim().min(3, "Give a short reason").max(500),
-});
-
-export type FormFillSettingFormValues = z.infer<
-  typeof formFillSettingFormSchema
->;
-
-export function toFormFillSettingInput(
-  values: FormFillSettingFormValues,
-): UpdateFormFillSettingInput {
   return {
-    enabled: values.enabled,
-    reason: values.reason,
+    familyFundingTargetMinor,
+    pendingContributionExpiryHours: values.pendingContributionExpiryHours,
+    formFillEnabled: values.formFillEnabled,
+  };
+}
+
+export function settingsFormDefault(
+  setting: {
+    familyFundingTargetMinor: number;
+    pendingContributionExpiryHours?: number;
+    formFillEnabled: boolean;
+  },
+  timeZone?: string,
+) {
+  return {
+    targetMad: minorUnitsToMadInput(setting.familyFundingTargetMinor),
+    pendingContributionExpiryHours:
+      setting.pendingContributionExpiryHours ?? 72,
+    formFillEnabled: setting.formFillEnabled,
+    ...(timeZone ? { timeZone } : {}),
   };
 }

@@ -152,7 +152,10 @@ describe("Phase 3 contribution transactions", () => {
         },
       } as unknown as ContributionRepository,
       {} as ContributionPlanRepository,
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       {
         record: async (event: Record<string, unknown>) => {
@@ -173,7 +176,20 @@ describe("Phase 3 contribution transactions", () => {
           status: "active",
         }),
       } as unknown as ContributionValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     const result = await service.record(
@@ -262,7 +278,18 @@ describe("Phase 3 contribution transactions", () => {
       } as unknown as ContributionValidator,
       {
         activateIfEligible: async () => ({ status: "pending_funding" }),
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
       } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     const result = await service.validate(contributionId, "operator-user");
@@ -287,12 +314,28 @@ describe("Phase 3 contribution transactions", () => {
     const service = new ContributionService(
       { lockById: async () => contributionRecord({ status: "validated" }) } as unknown as ContributionRepository,
       {} as ContributionPlanRepository,
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       {} as AuditService,
       {} as never,
       {} as ContributionValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     await expect(service.validate(contributionId, "operator-user")).resolves.toMatchObject({
@@ -312,12 +355,28 @@ describe("Phase 3 contribution transactions", () => {
         },
       } as unknown as ContributionRepository,
       {} as ContributionPlanRepository,
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       { record: async (event: Record<string, unknown>) => audits.push(event) } as unknown as AuditService,
       {} as never,
       {} as ContributionValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     await service.delete(contributionId, "admin-user");
@@ -348,12 +407,28 @@ describe("Phase 3 contribution transactions", () => {
         },
       } as unknown as ContributionRepository,
       {} as ContributionPlanRepository,
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       { record: async (event: Record<string, unknown>) => audits.push(event) } as unknown as AuditService,
       {} as never,
       {} as ContributionValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     await service.deleteMany([secondContributionId, contributionId], "admin-user");
@@ -404,7 +479,20 @@ describe("Phase 3 contribution transactions", () => {
       { record: async () => undefined } as unknown as AuditService,
       {} as never,
       {} as ContributionValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     await service.delete(contributionId, "admin-user");
@@ -425,12 +513,28 @@ describe("Phase 3 contribution transactions", () => {
     const service = new ContributionService(
       { lockById: async () => contributionRecord({ status: "validated" }) } as unknown as ContributionRepository,
       {} as ContributionPlanRepository,
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       {} as AuditService,
       {} as never,
       {} as ContributionValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     await expect(service.delete(contributionId, "admin-user")).rejects.toMatchObject({
@@ -462,12 +566,21 @@ describe("Phase 3 contribution transactions", () => {
         ],
       } as unknown as ContributionRepository,
       {} as ContributionPlanRepository,
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       {} as AuditService,
       {} as never,
       {} as ContributionValidator,
       { getProgress: async () => null } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     const summary = await service.getOwnSummary("sponsor-user");
@@ -501,12 +614,28 @@ describe("Phase 3 contribution transactions", () => {
         },
       } as unknown as ContributionRepository,
       {} as ContributionPlanRepository,
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       { record: async () => undefined } as unknown as AuditService,
       { enqueue: async () => undefined } as never,
       { ensurePending: () => undefined } as unknown as ContributionValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
+      {
+        getPendingContributionExpiryHours: async () => 72,
+      } as never,
+      {
+        duePendingContributionIds: async () => [],
+      } as never,
     );
 
     await service.reject(
@@ -519,7 +648,10 @@ describe("Phase 3 contribution transactions", () => {
 
   it("reports reconciliation from the immutable latest ledger snapshot", async () => {
     const service = new BudgetService(
-      {} as BudgetAccountRepository,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {
         findLatestByAccountId: async () => ({
           availableAfterMinor: 1500,
@@ -533,7 +665,14 @@ describe("Phase 3 contribution transactions", () => {
       {
         ensureAccountForFamily: async () => accountRecord({ availableMinor: 1500 }),
       } as unknown as BudgetValidator,
-      {} as FundingService,
+      {
+        ensureContributionFits: async () => undefined,
+        ensureContributionCanValidate: async () => undefined,
+        ensureAssignmentCapacity: async () => undefined,
+        ensureTargetCanLower: async () => undefined,
+        getProgress: async () => null,
+        activateIfEligible: async () => undefined,
+      } as unknown as FundingService,
     );
 
     await expect(service.reconcile(householdId)).resolves.toMatchObject({

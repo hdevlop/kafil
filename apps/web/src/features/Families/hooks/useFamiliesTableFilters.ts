@@ -13,11 +13,6 @@ export function useFamiliesTableFilters() {
         placeholder: t("operator.families.searchAccount"),
       },
       {
-        type: "text",
-        name: "guardianLegalName",
-        placeholder: t("operator.families.searchGuardian"),
-      },
-      {
         type: "select",
         name: "status",
         placeholder: t("operator.families.filterStatus"),

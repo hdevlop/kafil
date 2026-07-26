@@ -85,6 +85,7 @@ describe("seed data reset", () => {
     });
 
     expect(SEED_STORAGE_DIRECTORIES).toEqual([
+      "child-images",
       "family-images",
       "sponsor-images",
     ]);

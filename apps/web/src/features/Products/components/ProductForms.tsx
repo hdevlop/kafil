@@ -321,3 +321,37 @@ export function ProductStatusDialogContent({
     </NForm>
   );
 }
+
+export function DeleteProductDialogContent({
+  product,
+}: Readonly<{ product: ProductRecord }>) {
+  const { pop } = useDialog();
+  const { remove } = useProductCommands();
+
+  async function handleDelete() {
+    await remove.mutateAsync(product.id);
+    await pop();
+  }
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-muted-foreground">
+        Permanently deletes this product, its cart entries, its inventory
+        balance, and the related storage image. Has no effect on the
+        inventory ledger, order history, or audit log. The command refuses
+        with a 409 if the product has ever been ordered or stocked — use
+        deactivate instead.
+      </p>
+      <div className="flex justify-end pt-5">
+        <NButton
+          type="button"
+          variant="destructive"
+          disabled={remove.isPending}
+          onClick={() => void handleDelete()}
+        >
+          {remove.isPending ? "Deleting..." : "Delete product permanently"}
+        </NButton>
+      </div>
+    </div>
+  );
+}

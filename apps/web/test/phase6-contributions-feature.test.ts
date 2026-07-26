@@ -77,6 +77,7 @@ describe("Phase 6D contribution command contracts", () => {
         sponsorName: "Sponsor One",
         sponsorEmail: "one@example.com",
         familyName: "Family One",
+        funding: null,
       },
       {
         id: "assignment-2",
@@ -85,6 +86,7 @@ describe("Phase 6D contribution command contracts", () => {
         sponsorName: "Sponsor Two",
         sponsorEmail: "two@example.com",
         familyName: "Family Two",
+        funding: null,
       },
     ];
 
@@ -92,16 +94,28 @@ describe("Phase 6D contribution command contracts", () => {
       {
         value: "assignment-1",
         label: "Sponsor One (one@example.com)",
+        funding: null,
+        maxAmountMinor: 0,
+        disabled: false,
+        disabledReason: null,
       },
     ]);
     expect(buildContributionRecordingOptions(assignments)).toEqual([
       {
         value: "assignment-1",
         label: "Sponsor One — Family One (one@example.com)",
+        funding: null,
+        maxAmountMinor: 0,
+        disabled: false,
+        disabledReason: null,
       },
       {
         value: "assignment-2",
         label: "Sponsor Two — Family Two (two@example.com)",
+        funding: null,
+        maxAmountMinor: 0,
+        disabled: false,
+        disabledReason: null,
       },
     ]);
   });

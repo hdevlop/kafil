@@ -37,6 +37,7 @@ export interface DemoChild {
   clothingSize: string;
   dateOfBirth: string;
   gender: "F" | "M";
+  image?: string | null;
   legalName: string;
   notes: string;
   schoolLevel: string;
@@ -52,6 +53,7 @@ export interface DemoFamily {
   fundingTargetMinor: number;
   guardianCin: string;
   guardianDateOfBirth: string;
+  guardianGender: "F" | "M";
   id: string;
   image?: string | null;
   initialChildren: DemoChild[];
@@ -70,7 +72,7 @@ export interface DemoSupportAssignment {
 
 export interface DemoContribution {
   amountMinor: number;
-  expectedStatus: "pending" | "rejected" | "validated";
+  expectedStatus: "expired" | "pending" | "rejected" | "validated";
   externalReference: string;
   familyProfileId: string;
   paidAt: string;
@@ -247,6 +249,16 @@ function generateContributions(
   const fundingRemaining = new Map(
     activeFundingPlans.map((plan) => [plan.family.id, plan.targetMinor]),
   );
+  const pendingPlans = activeFundingPlans.filter(
+    (plan) => plan.state === "pending",
+  );
+  const pendingRemaining = new Map(
+    pendingPlans.map((plan) => [
+      plan.family.id,
+      plan.family.fundingTargetMinor - plan.targetMinor,
+    ]),
+  );
+  let pendingIndex = 0;
 
   for (const plan of contributionPlans) {
     if (plan.expectedStatus !== "validated") continue;
@@ -258,7 +270,7 @@ function generateContributions(
   }
 
   return Array.from({ length: count }, (_, index) => {
-    const { assignment, expectedStatus } = contributionPlans[index]!;
+    let { assignment, expectedStatus } = contributionPlans[index]!;
     let amountMinor = 50_000 + (index % 5) * 25_000;
 
     if (expectedStatus === "validated") {
@@ -274,6 +286,30 @@ function generateContributions(
             );
       validatedRemaining.set(familyId, contributionCount - 1);
       fundingRemaining.set(familyId, remaining - amountMinor);
+    } else if (expectedStatus === "pending") {
+      const plan = Array.from(
+        { length: pendingPlans.length },
+        (_, offset) => pendingPlans[(pendingIndex + offset) % pendingPlans.length],
+      ).find(
+        (candidate) =>
+          candidate &&
+          (pendingRemaining.get(candidate.family.id) ?? 0) > 1,
+      );
+      if (!plan) {
+        expectedStatus = "expired";
+      } else {
+        assignment = assignmentsByFamilyId.get(plan.family.id)!;
+        const remaining = pendingRemaining.get(plan.family.id)!;
+        amountMinor = Math.min(amountMinor, remaining - 1);
+        pendingRemaining.set(plan.family.id, remaining - amountMinor);
+        pendingIndex =
+          (pendingPlans.indexOf(plan) + 1) % Math.max(1, pendingPlans.length);
+      }
+    }
+    if (expectedStatus === "expired" && pendingPlans.length > 0) {
+      const plan = pendingPlans[pendingIndex % pendingPlans.length]!;
+      assignment = assignmentsByFamilyId.get(plan.family.id)!;
+      amountMinor = 1;
     }
 
     return contribution(
@@ -386,6 +422,10 @@ function contribution(
   };
 }
 
+export function demoContributionExpiry(referenceDate: Date) {
+  return new Date(referenceDate.getTime() + 72 * 60 * 60 * 1000);
+}
+
 function contributionPaidDate(index: number, referenceDate: Date) {
   const monthOffset = 11 - (index % 12);
   const month = new Date(
@@ -415,8 +455,10 @@ function contributionStatus(
   const lifecycle = index % 10;
   return lifecycle === 0
     ? "rejected"
-    : lifecycle <= 2
+    : lifecycle === 1
       ? "pending"
+      : lifecycle === 2
+        ? "expired"
       : "validated";
 }
 
@@ -472,6 +514,7 @@ function family(
     email: seedEmail("family", index),
     guardianCin: seedCin("FM", index),
     guardianDateOfBirth: adultBirthDate(index + 19),
+    guardianGender,
     exactAddress: moroccanAddress(),
     housingSituation: distributionValue(
       index,

@@ -17,11 +17,28 @@ const childListSelection = {
   clothingSize: children.clothingSize,
   shoeSize: children.shoeSize,
   notes: children.notes,
+  image: children.image,
   status: children.status,
   createdAt: children.createdAt,
   updatedAt: children.updatedAt,
   familyStatus: usersTable.status,
   guardianLegalName: familyProfiles.guardianLegalName,
+};
+
+const childFamilySelection = {
+  id: children.id,
+  familyProfileId: children.familyProfileId,
+  legalName: children.legalName,
+  dateOfBirth: children.dateOfBirth,
+  gender: children.gender,
+  schoolLevel: children.schoolLevel,
+  clothingSize: children.clothingSize,
+  shoeSize: children.shoeSize,
+  notes: children.notes,
+  image: children.image,
+  status: children.status,
+  createdAt: children.createdAt,
+  updatedAt: children.updatedAt,
 };
 
 @Repository("default")
@@ -57,10 +74,23 @@ export class ChildRepository {
 
   listByFamilyId(familyProfileId: string) {
     return this.db
-      .select()
+      .select(childFamilySelection)
       .from(children)
       .where(eq(children.familyProfileId, familyProfileId))
       .orderBy(asc(children.createdAt));
+  }
+
+  async findByImagePath(imagePath: string) {
+    const [child] = await this.db
+      .select({
+        id: children.id,
+        familyProfileId: children.familyProfileId,
+        image: children.image,
+      })
+      .from(children)
+      .where(eq(children.image, imagePath))
+      .limit(1);
+    return child;
   }
 
   async create(data: NewChild) {
@@ -80,6 +110,7 @@ export class ChildRepository {
         | "clothingSize"
         | "shoeSize"
         | "notes"
+        | "image"
         | "status"
       >
     >,

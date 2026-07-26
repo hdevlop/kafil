@@ -276,8 +276,14 @@
   "settings": {
     "success": {
       "retrieved": "Configuraci?n : recuperado correctamente",
-      "fundingUpdated": "Configuraci?n : operaci?n realizada correctamente",
-      "formFillUpdated": "Configuraci?n de F8 actualizada correctamente"
+      "updated": "Configuraci?n : operaci?n realizada correctamente"
+    }
+  },
+  "appearance": {
+    "success": {
+      "retrieved": "Apariencia recuperada correctamente",
+      "updated": "Apariencia actualizada correctamente",
+      "reset": "Apariencia restablecida correctamente"
     }
   },
   "orders": {
@@ -393,6 +399,34 @@
       "french": "French",
       "arabic": "Arabic"
     },
+    "display": {
+      "title": "Preferencias de visualización",
+      "subtitle": "Personaliza el formato de fechas, horas e importes.",
+      "timeZone": {
+        "label": "Zona horaria",
+        "helper": "Se usa para mostrar fechas y horas. La moneda sigue siendo MAD.",
+        "preview": "Hora actual en {zone}: {date}",
+        "saved": "Zona horaria actualizada.",
+        "saveFailed": "No se pudo actualizar la zona horaria."
+      }
+    },
+    "funding": {
+      "progress": "Progreso de financiación",
+      "target": "Objetivo: {amount}",
+      "aria": "Progreso de financiación familiar",
+      "percentFunded": "{percent}% financiado",
+      "familyTitle": "Financiación familiar",
+      "fundedOfTarget": "{funded} de {target}",
+      "reachedDescription": "Se alcanzó el objetivo de financiación. Los pedidos del hogar están habilitados.",
+      "reservedDescription": "Los pagos pendientes reservan el objetivo restante. Los nuevos patrocinios están pausados.",
+      "openDescription": "Faltan {amount} para habilitar los pedidos del hogar.",
+      "pendingReservation": "Reserva pendiente",
+      "availableToContribute": "Disponible para contribuir",
+      "open": "Abierto",
+      "reserved": "Los pagos pendientes cubren el objetivo",
+      "funded": "Objetivo alcanzado",
+      "earliestExpiry": "Primera caducidad pendiente: {date}"
+    },
     "nav": {
       "overview": "Overview",
       "families": "Families",
@@ -466,6 +500,7 @@
       "stopped": "Stopped",
       "ended": "Ended",
       "refunded": "Refunded",
+      "expired": "Expired",
       "validated": "Validated"
     },
     "dashboard": {
@@ -545,6 +580,63 @@
       }
     },
     "operator": {
+      "settings": {
+        "loading": "Cargando ajustes",
+        "loadError": "No se pudieron cargar los ajustes de la plataforma",
+        "title": "Ajustes de la plataforma",
+        "subtitle": "Gestiona los valores predeterminados y las herramientas del operador.",
+        "defaultsTitle": "Valores predeterminados y acceso F8",
+        "defaultsDescription": "Las familias nuevas usan {amount} salvo que se indique otro valor. El acceso F8 está {state} para los formularios.",
+        "enabled": "activado",
+        "disabled": "desactivado",
+        "shortcutTitle": "Acceso rápido de formularios",
+        "shortcutHelp": "Actívalo solo cuando los datos ficticios sean útiles. El cambio es inmediato y no requiere reconstruir ni reiniciar Docker.",
+        "shortcutLabel": "Activar datos ficticios con F8",
+        "shortcutControl": "Permitir que F8 rellene los formularios compatibles",
+        "shortcutDisabled": "Desactivado por defecto.",
+        "targetTitle": "Objetivo predeterminado para familias nuevas",
+        "targetHelp": "Cada familia guarda su propio objetivo. Este valor solo se usa por defecto cuando no se proporciona uno.",
+        "targetLabel": "Objetivo predeterminado (MAD)",
+        "targetPlaceholder": "Introduce un objetivo de activación predeterminado",
+"expiryTitle": "Caducidad de pagos pendientes (horas)",
+        "expiryHelp": "Los pagos pendientes nuevos reservan el objetivo familiar durante este tiempo. El cambio no altera los plazos existentes.",
+        "expiryLabel": "Caducidad de pagos pendientes (horas)",
+        "expiryPlaceholder": "Por ejemplo: 72",
+        "saving": "Guardando...",
+        "save": "Guardar ajustes",
+        "saveSuccess": "Ajustes de la plataforma actualizados.",
+        "saveError": "No se pudieron actualizar los ajustes de la plataforma.",
+        "close": "Cerrar",
+        "cancel": "Cancelar",
+        "sheetTitle": "Ajustes globales",
+        "sheetDescription": "Gestiona el tema de la plataforma y los valores predeterminados de la aplicación.",
+        "themeTab": "Tema",
+        "appTab": "Ajustes de la aplicación",
+        "lightMode": "Claro",
+        "darkMode": "Oscuro",
+        "previewMode": "Modo de vista previa",
+        "resetField": "Restablecer campo",
+        "resetSection": "Restablecer sección",
+        "themeSection": "Colores del tema",
+        "layoutSection": "Diseño",
+        "pageHeaderSection": "Encabezado de página",
+        "sidebarSection": "Barra lateral",
+        "tableSection": "Tablas",
+        "inputSection": "Campos",
+        "saveTheme": "Guardar tema",
+        "savingTheme": "Guardando tema...",
+        "resetTheme": "Restablecer tema de Kafil",
+        "themeSaveSuccess": "Tema actualizado.",
+        "themeSaveError": "No se pudo actualizar el tema.",
+        "themeResetSuccess": "Tema predeterminado restaurado.",
+        "themeResetError": "No se pudo restaurar el tema predeterminado.",
+        "discardTitle": "¿Descartar cambios sin guardar?",
+        "discardDescription": "Al cerrar los ajustes se descartarán los cambios sin guardar.",
+        "discard": "Descartar cambios",
+        "resetThemeTitle": "¿Restablecer el tema de Kafil?",
+        "resetThemeDescription": "Esto elimina el tema guardado y restaura el diseño predeterminado versionado."
+
+      },
       "contributions": {
         "title": "Contribuciones",
         "subtitle": "Valida los pagos de los patrocinadores, acredita los presupuestos familiares y gestiona las anulaciones auditadas.",
@@ -633,7 +725,14 @@
         "rejectSuccess": "La contribución fue rechazada.",
         "rejectError": "No se pudo rechazar esta contribución.",
         "refundSuccess": "La contribución se reembolsó y el presupuesto se revirtió.",
-        "refundError": "No se pudo reembolsar esta contribución."
+        "refundError": "No se pudo reembolsar esta contribución.",
+        "pendingDeadline": "Fecha límite",
+        "expiredAt": "Expirado el",
+        "expired": "Expirada",
+        "expiredWarning": "Esta contribución pendiente ha expirado y no puede ser validada.",
+        "maxAmountLabel": "Disponible para contribuir",
+        "availableAmount": "Máximo disponible: {amount}",
+        "noAssignmentOpen": "No hay asignaciones abiertas para contribuciones en este momento."
       },
       "orders": {
         "title": "Orders",
@@ -679,7 +778,7 @@
         "sponsors": "Sponsors",
         "notProvided": "Not provided",
         "profile": "Family profile",
-        "relationship": "Relationship to children",
+        "relationship": "Relación",
         "notes": "Internal notes",
         "created": "Created",
         "noNotes": "No internal notes",
@@ -955,7 +1054,15 @@
         "emptyTitle": "No contributions yet",
         "emptyDescription": "Submitted contributions remain pending until an operator validates them.",
         "monthly": "Monthly",
-        "oneTime": "One-time"
+        "oneTime": "Única",
+        "targetReached": "Objetivo de financiación alcanzado",
+        "coveredByPending": "Los pagos pendientes cubren el objetivo restante",
+        "availableAmount": "Disponible para contribuir: {amount}",
+        "amountTooHigh": "Introduce como máximo {amount}.",
+        "planReason": "Motivo de este cambio del plan",
+        "stopReason": "Motivo para detener este plan",
+        "pendingDeadline": "Pendiente hasta {date}",
+        "expiredAt": "Caducó el {date}"
       },
       "directory": {
         "title": "Families to support",
@@ -966,7 +1073,9 @@
         "loading": "Loading families",
         "error": "We could not load families",
         "emptyTitle": "No families available",
-        "emptyDescription": "There are no active families available for support right now."
+        "emptyDescription": "No hay familias activas disponibles para recibir apoyo en este momento.",
+        "targetReached": "Objetivo alcanzado",
+        "coveredByPending": "Cubierto por pagos pendientes"
       }
     }
   }

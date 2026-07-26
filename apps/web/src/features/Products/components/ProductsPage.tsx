@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CircleCheck, CircleOff, Eye, Package, Pencil } from "lucide-react";
+import { CircleCheck, CircleOff, Eye, Package, Pencil, Trash2 } from "lucide-react";
+import { usePermissions } from "najm-auth/client/react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -14,6 +15,7 @@ import { ProductCard } from "./ProductCard";
 import { ProductDetails } from "./ProductDetails";
 import {
   CreateProductDialogContent,
+  DeleteProductDialogContent,
   ProductStatusDialogContent,
   UpdateProductDialogContent,
 } from "./ProductForms";
@@ -24,6 +26,7 @@ import type { ProductRecord } from "../types";
 
 export function ProductsPage() {
   const dialog = useDialog();
+  const { hasRole } = usePermissions();
   const { t } = useKafilLanguage();
   const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
   const products = useProducts(pagination);
@@ -39,7 +42,7 @@ export function ProductsPage() {
       description: "Add an active product and initialize its inventory balance.",
       children: <CreateProductDialogContent />,
       showButtons: false,
-      size: "xl",
+      width: "lg",
       height: "auto",
     });
   }
@@ -50,7 +53,7 @@ export function ProductsPage() {
       description: "Operator-managed product details, catalog placement, and lifecycle.",
       children: <ProductDetails product={product} />,
       showButtons: false,
-      size: "lg",
+      width: "lg",
       height: "auto",
     });
   }
@@ -61,7 +64,7 @@ export function ProductsPage() {
       description: "Price and catalog details are editable; product status remains command-specific.",
       children: <UpdateProductDialogContent product={product} />,
       showButtons: false,
-      size: "xl",
+      width: "lg",
       height: "auto",
     });
   }
@@ -72,6 +75,17 @@ export function ProductsPage() {
       title: `${action === "deactivate" ? "Deactivate" : "Activate"} ${product.name}`,
       description: "This lifecycle command is audited by the backend.",
       children: <ProductStatusDialogContent action={action} product={product} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function openDelete(product: ProductRecord) {
+    void dialog.openDialog({
+      title: `Permanently delete ${product.name}?`,
+      description:
+        "Bootstrap administrators can permanently delete pristine products (no order history, no inventory ledger activity, zero balance).",
+      children: <DeleteProductDialogContent product={product} />,
       showButtons: false,
       size: "sm",
     });
@@ -91,25 +105,39 @@ export function ProductsPage() {
     renderEmpty: () => <PageEmptyState action={<NButton onClick={openCreate}>Create product</NButton>} title="No catalog product yet" description="Create the first product after adding an active category." />,
     renderError: (error) => <PageErrorState error={error} onRetry={() => void products.refetch()} />,
     menu: {
-      row: (product) => [
-        {
-          label: "View",
-          icon: Eye,
-          onSelect: () => openView(product),
-        },
-        {
-          label: "Edit",
-          icon: Pencil,
-          onSelect: () => openEdit(product),
-        },
-        {
-          label: product.status === "active" ? "Deactivate" : "Activate",
-          icon: product.status === "active" ? CircleOff : CircleCheck,
-          danger: product.status === "active",
-          separatorBefore: true,
-          onSelect: () => openStatus(product),
-        },
-      ],
+      row: (product) => {
+        const actions = [
+          {
+            label: "View",
+            icon: Eye,
+            onSelect: () => openView(product),
+          },
+          {
+            label: "Edit",
+            icon: Pencil,
+            onSelect: () => openEdit(product),
+          },
+          {
+            label: product.status === "active" ? "Deactivate" : "Activate",
+            icon: product.status === "active" ? CircleOff : CircleCheck,
+            danger: product.status === "active",
+            separatorBefore: true,
+            onSelect: () => openStatus(product),
+          },
+        ];
+
+        if (hasRole("admin")) {
+          actions.push({
+            label: "Delete permanently",
+            icon: Trash2,
+            danger: true,
+            separatorBefore: true,
+            onSelect: () => openDelete(product),
+          });
+        }
+
+        return actions;
+      },
     },
     menuButton: true,
     manualPagination: true,
@@ -118,7 +146,7 @@ export function ProductsPage() {
     onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),
     pageSizeOptions: [10, 25, 50, 100],
     responsiveCards: true,
-    defaultMode: "table",
+    defaultMode: "cards",
     addButtonText: "Create product",
     noDataText: "No catalog product found",
     loadingText: "Loading catalog products...",

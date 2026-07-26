@@ -19,22 +19,30 @@ export function currentContributionDate(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-export const recordContributionFormSchema = z.object({
-  supportAssignmentId: z.string().uuid("Choose a sponsor and supported family"),
-  amountMad: positiveMadAmount,
-  paymentMethod: z.enum([
-    "cash",
-    "bank_transfer",
-    "cheque",
-    "mobile_transfer",
-    "other",
-  ]),
-  paidOn: z.iso.date().refine(
-    (value) => value <= currentContributionDate(),
-    "Payment date cannot be in the future",
-  ),
-  externalReference: z.string().trim().max(160).optional(),
-});
+export const recordContributionFormSchema = z
+  .object({
+    supportAssignmentId: z.string().uuid("Choose a sponsor and supported family"),
+    amountMad: positiveMadAmount,
+    paymentMethod: z.enum([
+      "cash",
+      "bank_transfer",
+      "cheque",
+      "mobile_transfer",
+      "other",
+    ]),
+    paidOn: z.iso.date().refine(
+      (value) => value <= currentContributionDate(),
+      "Payment date cannot be in the future",
+    ),
+    externalReference: z.string().trim().max(160).optional(),
+  })
+  .refine(
+    (values) => {
+      const amount = parseMadAmount(values.amountMad);
+      return amount !== null && amount > 0;
+    },
+    { path: ["amountMad"], message: "Enter a positive MAD amount" },
+  );
 
 export const contributionReasonFormSchema = z.object({
   reason: z.string().trim().min(3, "Give a short reason").max(500),

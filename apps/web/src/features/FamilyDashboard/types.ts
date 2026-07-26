@@ -17,6 +17,7 @@ export interface FamilyChildRecord {
   legalName: string;
   dateOfBirth: string;
   gender: "F" | "M" | string;
+  image: string | null;
   schoolLevel: string | null;
   clothingSize: string | null;
   shoeSize: string | null;

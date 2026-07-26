@@ -278,8 +278,14 @@
   "settings": {
     "success": {
       "retrieved": "Param?tres : r?cup?r? avec succ?s",
-      "fundingUpdated": "Param?tres : op?ration effectu?e avec succ?s",
-      "formFillUpdated": "Param?tres F8 mis ? jour avec succ?s"
+      "updated": "Param?tres : op?ration effectu?e avec succ?s"
+    }
+  },
+  "appearance": {
+    "success": {
+      "retrieved": "Apparence récupérée avec succès",
+      "updated": "Apparence mise à jour avec succès",
+      "reset": "Apparence réinitialisée avec succès"
     }
   },
   "orders": {
@@ -395,6 +401,34 @@
       "french": "Français",
       "arabic": "Arabe"
     },
+    "display": {
+      "title": "Préférences d'affichage",
+      "subtitle": "Personnalisez le format des dates, heures et montants.",
+      "timeZone": {
+        "label": "Fuseau horaire",
+        "helper": "Utilisé pour afficher les dates et heures. La devise reste en MAD.",
+        "preview": "Heure actuelle à {zone} : {date}",
+        "saved": "Fuseau horaire mis à jour.",
+        "saveFailed": "Impossible de mettre à jour le fuseau horaire."
+      }
+    },
+    "funding": {
+      "progress": "Progression du financement",
+      "target": "Objectif : {amount}",
+      "aria": "Progression du financement familial",
+      "percentFunded": "{percent}% financé",
+      "familyTitle": "Financement familial",
+      "fundedOfTarget": "{funded} sur {target}",
+      "reachedDescription": "L'objectif de financement est atteint. Les commandes du foyer sont activées.",
+      "reservedDescription": "Les paiements en attente réservent le montant restant. Les nouveaux parrainages sont suspendus.",
+      "openDescription": "Il reste {amount} avant l'activation des commandes du foyer.",
+      "pendingReservation": "Réservation en attente",
+      "availableToContribute": "Disponible pour contribuer",
+      "open": "Ouvert",
+      "reserved": "Les paiements en attente couvrent l'objectif",
+      "funded": "Objectif atteint",
+      "earliestExpiry": "Première expiration en attente : {date}"
+    },
     "nav": {
       "overview": "Vue d’ensemble",
       "families": "Familles",
@@ -468,6 +502,7 @@
       "stopped": "Arrêté",
       "ended": "Terminé",
       "refunded": "Remboursée",
+      "expired": "Expiré",
       "validated": "Validé"
     },
     "dashboard": {
@@ -571,6 +606,63 @@
       }
     },
     "operator": {
+      "settings": {
+        "loading": "Chargement des paramètres",
+        "loadError": "Impossible de charger les paramètres de la plateforme",
+        "title": "Paramètres de la plateforme",
+        "subtitle": "Gérez les valeurs par défaut et les outils de productivité des opérateurs.",
+        "defaultsTitle": "Valeurs par défaut et raccourci F8",
+        "defaultsDescription": "Les nouvelles familles utilisent {amount} par défaut, sauf remplacement. Le raccourci F8 est {state} pour les formulaires.",
+        "enabled": "activé",
+        "disabled": "désactivé",
+        "shortcutTitle": "Raccourci de formulaire",
+        "shortcutHelp": "Activez-le uniquement lorsque les fausses données sont utiles. Le changement est immédiat et ne nécessite ni reconstruction ni redémarrage de Docker.",
+        "shortcutLabel": "Activer le remplissage factice avec F8",
+        "shortcutControl": "Autoriser F8 à remplir les formulaires pris en charge",
+        "shortcutDisabled": "Désactivé par défaut.",
+        "targetTitle": "Objectif par défaut des nouvelles familles",
+        "targetHelp": "Chaque famille conserve son propre objectif. Cette valeur est uniquement utilisée par défaut lorsqu'aucun objectif n'est fourni.",
+        "targetLabel": "Objectif par défaut (MAD)",
+        "targetPlaceholder": "Saisissez un objectif d'activation par défaut",
+"expiryTitle": "Expiration des paiements en attente (heures)",
+        "expiryHelp": "Les nouveaux paiements en attente réservent l'objectif d'une famille pendant cette durée. La modification n'affecte pas les échéances existantes.",
+        "expiryLabel": "Expiration des paiements en attente (heures)",
+        "expiryPlaceholder": "Par exemple : 72",
+        "saving": "Enregistrement...",
+        "save": "Enregistrer les paramètres",
+        "saveSuccess": "Paramètres de la plateforme mis à jour.",
+        "saveError": "Impossible de mettre à jour les paramètres de la plateforme.",
+        "close": "Fermer",
+        "cancel": "Annuler",
+        "sheetTitle": "Paramètres globaux",
+        "sheetDescription": "Gérez le thème de la plateforme et les valeurs par défaut de l’application.",
+        "themeTab": "Thème",
+        "appTab": "Paramètres de l’application",
+        "lightMode": "Clair",
+        "darkMode": "Sombre",
+        "previewMode": "Mode d’aperçu",
+        "resetField": "Réinitialiser le champ",
+        "resetSection": "Réinitialiser la section",
+        "themeSection": "Couleurs du thème",
+        "layoutSection": "Mise en page",
+        "pageHeaderSection": "En-tête de page",
+        "sidebarSection": "Barre latérale",
+        "tableSection": "Tableaux",
+        "inputSection": "Champs",
+        "saveTheme": "Enregistrer le thème",
+        "savingTheme": "Enregistrement du thème...",
+        "resetTheme": "Réinitialiser le thème Kafil",
+        "themeSaveSuccess": "Thème mis à jour.",
+        "themeSaveError": "Impossible de mettre à jour le thème.",
+        "themeResetSuccess": "Thème d’usine restauré.",
+        "themeResetError": "Impossible de restaurer le thème d’usine.",
+        "discardTitle": "Ignorer les modifications non enregistrées ?",
+        "discardDescription": "La fermeture des paramètres annulera vos modifications non enregistrées.",
+        "discard": "Ignorer les modifications",
+        "resetThemeTitle": "Réinitialiser le thème Kafil ?",
+        "resetThemeDescription": "Cette action supprime le thème enregistré et restaure le thème d’usine versionné."
+
+      },
       "contributions": {
         "title": "Contributions",
         "subtitle": "Validez les paiements des parrains, créditez les budgets des foyers et gérez les annulations auditées.",
@@ -659,7 +751,14 @@
         "rejectSuccess": "La contribution a été rejetée.",
         "rejectError": "Impossible de rejeter cette contribution.",
         "refundSuccess": "La contribution a été remboursée et le budget annulé.",
-        "refundError": "Impossible de rembourser cette contribution."
+        "refundError": "Impossible de rembourser cette contribution.",
+        "pendingDeadline": "Délai en attente",
+        "expiredAt": "Expiré le",
+        "expired": "Expirée",
+        "expiredWarning": "Cette contribution en attente a expiré et ne peut pas être validée.",
+        "maxAmountLabel": "Disponible à contribuer",
+        "availableAmount": "Maximum disponible : {amount}",
+        "noAssignmentOpen": "Aucune attribution n'est ouverte pour les contributions pour le moment."
       },
       "orders": {
         "title": "Commandes",
@@ -705,7 +804,7 @@
         "sponsors": "Parrains",
         "notProvided": "Non renseigné",
         "profile": "Profil familial",
-        "relationship": "Lien avec les enfants",
+        "relationship": "Lien",
         "notes": "Notes internes",
         "created": "Créé le",
         "noNotes": "Aucune note interne",
@@ -1051,7 +1150,15 @@
         "emptyTitle": "Aucune contribution",
         "emptyDescription": "Les contributions envoyées restent en attente jusqu’à leur validation par un opérateur.",
         "monthly": "Mensuel",
-        "oneTime": "Ponctuel"
+        "oneTime": "Ponctuel",
+        "targetReached": "Objectif de financement atteint",
+        "coveredByPending": "Les paiements en attente couvrent l'objectif restant",
+        "availableAmount": "Disponible pour contribuer : {amount}",
+        "amountTooHigh": "Saisissez au maximum {amount}.",
+        "planReason": "Motif de cette modification du plan",
+        "stopReason": "Motif de l'arrêt de ce plan",
+        "pendingDeadline": "En attente jusqu'au {date}",
+        "expiredAt": "Expirée le {date}"
       },
       "directory": {
         "title": "Familles à soutenir",
@@ -1062,7 +1169,9 @@
         "loading": "Chargement des familles",
         "error": "Impossible de charger les familles",
         "emptyTitle": "Aucune famille disponible",
-        "emptyDescription": "Aucune famille active n'est disponible pour le soutien actuellement."
+        "emptyDescription": "Aucune famille active n'est disponible pour le soutien actuellement.",
+        "targetReached": "Objectif atteint",
+        "coveredByPending": "Couvert par les paiements en attente"
       }
     }
   }

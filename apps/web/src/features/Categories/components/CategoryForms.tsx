@@ -277,3 +277,37 @@ export function CategoryStatusDialogContent({
     </NForm>
   );
 }
+
+export function DeleteCategoryDialogContent({
+  category,
+}: Readonly<{ category: CategoryRecord }>) {
+  const { pop } = useDialog();
+  const { remove } = useCategoryCommands();
+
+  async function handleDelete() {
+    await remove.mutateAsync(category.id);
+    await pop();
+  }
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-muted-foreground">
+        Permanently deletes this category, any products still under it, the
+        cart items that referenced those products, and the related storage
+        images. Has no effect on the inventory ledger, order history, or audit
+        log. The command refuses with a 409 if any product has been ordered or
+        stocked — use deactivate instead.
+      </p>
+      <div className="flex justify-end pt-5">
+        <NButton
+          type="button"
+          variant="destructive"
+          disabled={remove.isPending}
+          onClick={() => void handleDelete()}
+        >
+          {remove.isPending ? "Deleting..." : "Delete category permanently"}
+        </NButton>
+      </div>
+    </div>
+  );
+}

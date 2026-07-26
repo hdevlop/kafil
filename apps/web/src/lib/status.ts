@@ -18,6 +18,7 @@ export const KAFIL_STATUS_COLORS: Record<string, BadgeColor> = {
 
   rejected: "destructive",
   refunded: "destructive",
+  expired: "destructive",
 };
 
 export function getStatusColor(status: string): BadgeColor {

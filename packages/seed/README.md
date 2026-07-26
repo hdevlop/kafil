@@ -99,16 +99,23 @@ Use these source folders:
 packages/seed/images/
   family-01.jpg
   family-02.png
-  sponsor-01.webp
-  sponsor-02.jpg
+  family-03.png
+  sponsor-f-01.webp
+  sponsor-m-01.webp
+  child-f-01.png
+  child-m-01.png
 ```
 
-Keep one flat folder and use the exact `family-NN` or `sponsor-NN` prefix with a
-numeric suffix of at least two digits. Numbers must be unique within each kind,
-even when extensions differ. Files are assigned in numeric order. When fewer
-images exist than accounts, each image is used once and the remaining accounts
-keep an empty image so the normal fallback avatar is shown. A library with only
-the included README is valid and leaves every placeholder avatar in use.
+Keep one flat folder. Family images are neutral and represent the whole
+household. Use the exact `family-NN.ext` prefix with a numeric suffix of at
+least two digits. Sponsor and child images are gender-matched and use the
+`sponsor-g-NN.ext` or `child-g-NN.ext` prefix. The numeric suffix must be
+unique within the same kind and gender pool, even when extensions differ.
+Files are assigned in numeric order. When fewer images exist than accounts,
+each image is used once and the remaining accounts keep an empty image so the
+normal fallback avatar is shown. Records never borrow images from the opposite
+gender pool. A library with only the included README is valid and leaves every
+placeholder avatar in use.
 
 Supported formats are AVIF, GIF, JPEG, PNG, and WebP, with a 5 MB maximum per
 file. Nested folders and other filenames are rejected. Validate and preview the

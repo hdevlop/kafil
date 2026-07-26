@@ -3,6 +3,7 @@ import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
 import { AuditService } from "../audit/auditService";
+import { BudgetAccountRepository } from "../budgets/budgetRepository";
 import { BudgetService } from "../budgets/budgetService";
 import { ChildRepository } from "../children/childRepository";
 import { FundingService } from "../settings/fundingService";
@@ -32,6 +33,7 @@ export class FamilyService {
     private readonly families: FamilyRepository,
     private readonly children: ChildRepository,
     private readonly budgets: BudgetService,
+    private readonly accounts: BudgetAccountRepository,
     private readonly audits: AuditService,
     private readonly validator: FamilyValidator,
     private readonly funding: FundingService,
@@ -176,6 +178,7 @@ export class FamilyService {
         clothingSize: child.clothingSize ?? null,
         shoeSize: child.shoeSize ?? null,
         notes: child.notes ?? null,
+        image: child.image ?? null,
         status: "active",
       });
     }
@@ -204,6 +207,20 @@ export class FamilyService {
     await this.validator.ensureEmailUnique(email, current.userId);
     await this.validator.ensurePhoneUnique(input.phone, id, current.userId);
     await this.validator.ensureGuardianCinUnique(input.guardianCin, id);
+
+    if (
+      input.fundingTargetMinor !== undefined &&
+      input.fundingTargetMinor !== current.fundingTargetMinor
+    ) {
+      // Lock the family's budget account row before reading committed
+      // funding so concurrent submissions serialize against this update.
+      await this.accounts.createForFamily(id);
+      await this.accounts.lockByFamilyId(id);
+      await this.funding.ensureTargetCanLower(
+        id,
+        input.fundingTargetMinor,
+      );
+    }
 
     if (name !== undefined || email !== undefined || image !== undefined) {
       await this.users.update(current.userId, { name, email, image });
@@ -247,7 +264,7 @@ export class FamilyService {
         resource: "families",
         resourceId: current.id,
       });
-      await this.funding.activateIfEligible(current.id, actorUserId);
+      await this.funding.activateIfEligible(id, actorUserId);
     }
 
     return updated;

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { NAvatar, SimpleTooltip, type NTableProps } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
-import { getChildPersonImage } from "@/lib/personImages";
+import { getChildAvatarImage } from "@/lib/personImages";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ChildRecord } from "../types";
@@ -21,7 +21,7 @@ export function useChildrenTableColumns() {
             row.original.familyStatus !== "active";
           const avatar = (
             <NAvatar
-            src={getChildPersonImage(row.original.gender)}
+            src={getChildAvatarImage(row.original.image, row.original.gender)}
             title={row.original.legalName}
             subtitle={row.original.gender === "F" ? "Female" : "Male"}
             classNames={{

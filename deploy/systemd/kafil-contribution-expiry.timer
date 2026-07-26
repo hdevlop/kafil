@@ -1,0 +1,13 @@
+[Unit]
+Description=Expire due Kafil contributions every five minutes
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=5m
+AccuracySec=30s
+Persistent=true
+Unit=kafil-contribution-expiry.service
+
+[Install]
+WantedBy=timers.target
+

@@ -25,6 +25,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import {
+  canOpenGlobalSettings,
+  GlobalSettingsSheet,
+} from "@/features/Settings/components/GlobalSettingsSheet";
 import { DashboardSidebarProvider } from "./DashboardPageHeader";
 
 interface DashboardUser {
@@ -67,14 +71,6 @@ function operatorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
     { id: "/operator/products", href: "/operator/products", label: t("nav.products"), icon: ShoppingBag },
     { id: "/operator/inventory", href: "/operator/inventory", label: t("nav.inventory"), icon: Warehouse },
     { id: "/operator/orders", href: "/operator/orders", label: t("nav.orders"), icon: ClipboardCheck },
-    {
-      id: "/operator/settings",
-      href: "/operator/settings",
-      label: t("nav.settings"),
-      icon: Settings2,
-      sectionLabel: t("nav.platform"),
-      sectionIcon: Settings2,
-    },
   ];
 }
 
@@ -170,6 +166,7 @@ export function DashboardShell({
   const { t } = useKafilLanguage();
   const navItems = getDashboardNavigation(user.role, t);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <DashboardSidebarProvider openSidebar={() => setMobileOpen(true)}>
@@ -207,7 +204,21 @@ export function DashboardShell({
           onMobileOpenChange={setMobileOpen}
           showHamburgerButton={false}
           footer={
-            <div className="border-t border-sidebar-border px-1 pt-3">
+            <div className="space-y-1">
+              {canOpenGlobalSettings(user.role) ? (
+                <NButton
+                  className="w-full justify-start gap-2 lg:justify-center lg:px-0 xl:justify-start xl:px-3"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setSettingsOpen(true);
+                  }}
+                >
+                  <Settings2 className="size-4" />
+                  <span className="lg:hidden xl:inline">{t("nav.settings")}</span>
+                </NButton>
+              ) : null}
               <SignOutButton
                 onSuccess={() => {
                   router.replace("/login");
@@ -233,6 +244,13 @@ export function DashboardShell({
           </NajmScroll>
         </div>
       </div>
+      {pathname !== "/operator/settings" ? (
+        <GlobalSettingsSheet
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          role={user.role}
+        />
+      ) : null}
     </DashboardSidebarProvider>
   );
 }

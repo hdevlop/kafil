@@ -62,6 +62,7 @@ export function useContributionsTableFilters() {
           { value: "validated", label: t("operator.contributions.validated") },
           { value: "rejected", label: t("status.rejected") },
           { value: "refunded", label: t("status.refunded") },
+          { value: "expired", label: t("status.expired") },
         ],
       },
     ],

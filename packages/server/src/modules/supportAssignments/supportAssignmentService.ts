@@ -2,6 +2,7 @@ import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
 import { AuditService } from "../audit/auditService";
+import { BudgetAccountRepository } from "../budgets/budgetRepository";
 import { FundingService } from "../settings/fundingService";
 import {
   type CreateSupportAssignmentDto,
@@ -28,7 +29,8 @@ export class SupportAssignmentService {
     private readonly assignments: SupportAssignmentRepository,
     private readonly audits: AuditService,
     private readonly validator: SupportAssignmentValidator,
-    private readonly funding?: FundingService,
+    private readonly accounts: BudgetAccountRepository,
+    private readonly funding: FundingService,
   ) {}
 
   async list(query: SupportAssignmentListQuery) {
@@ -52,14 +54,14 @@ export class SupportAssignmentService {
   async listSponsorFamilyCatalog(query: SponsorFamilyCatalogQuery) {
     const { limit, offset } = sponsorFamilyCatalogQuery.parse(query ?? {});
     const families = await this.assignments.listSponsorFamilyCatalog(limit, offset);
-    const funding = await this.funding?.getProgressForFamilies(families);
+    const funding = await this.funding.getProgressForFamilies(families);
 
     return families.map((family) => ({
       id: family.id,
       image: family.image,
       reference: `Family ${family.id.slice(0, 8)}`,
       activeChildCount: family.activeChildCount,
-      funding: funding?.get(family.id) ?? null,
+      funding: funding.get(family.id) ?? null,
     }));
   }
 
@@ -115,6 +117,9 @@ export class SupportAssignmentService {
       input.familyProfileId,
       null,
     );
+    await this.accounts.createForFamily(input.familyProfileId);
+    await this.accounts.lockByFamilyId(input.familyProfileId);
+    await this.funding.ensureAssignmentCapacity(input.familyProfileId);
     const assignment = await this.assignments.create({
       sponsorProfileId: input.sponsorProfileId,
       familyProfileId: input.familyProfileId,
@@ -156,6 +161,10 @@ export class SupportAssignmentService {
     if (existing) {
       return existing;
     }
+
+    await this.accounts.createForFamily(familyProfileId);
+    await this.accounts.lockByFamilyId(familyProfileId);
+    await this.funding.ensureAssignmentCapacity(familyProfileId);
 
     const assignment = await this.assignments.create({
       sponsorProfileId: sponsor.id,

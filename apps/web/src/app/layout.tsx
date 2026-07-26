@@ -5,7 +5,8 @@ import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { PwaRegistration } from "@/components/PwaRegistration";
 import { auth } from "@/lib/auth";
 import { AppProviders } from "@/providers/AppProviders";
-import { normalizeKafilLanguage } from "@/lib/format";
+import { normalizeKafilLanguage, normalizeKafilTimeZone } from "@/lib/format";
+import { loadServerAppearance } from "@/lib/serverAppearance";
 import type { KafilTheme } from "@/providers/ThemePreferenceProvider";
 import "./globals.css";
 
@@ -40,23 +41,34 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth.getSession().catch(() => null);
-  const cookieStore = await cookies();
+  const [session, cookieStore, appearance] = await Promise.all([
+    auth.getSession().catch(() => null),
+    cookies(),
+    loadServerAppearance(),
+  ]);
   const language = normalizeKafilLanguage(
     cookieStore.get("kafil-ui-language")?.value ??
       (session?.user as { language?: unknown } | undefined)?.language,
   );
   const theme: KafilTheme = cookieStore.get("kafil-ui-theme")?.value === "dark" ? "dark" : "light";
+  const timeZone = normalizeKafilTimeZone(cookieStore.get("kafil-ui-timezone")?.value);
 
   return (
     <html
       dir={language === "ar" ? "rtl" : "ltr"}
       lang={language}
+      data-time-zone={timeZone}
       className={`${cairo.className} ${cairo.variable} ${theme === "dark" ? "dark " : ""}h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="h-screen w-screen">
-        <AppProviders initialLanguage={language} initialSession={session} initialTheme={theme}>
+        <AppProviders
+          initialAppearance={appearance}
+          initialLanguage={language}
+          initialSession={session}
+          initialTheme={theme}
+          initialTimeZone={timeZone}
+        >
           {children}
           <NajmClientRoot />
           <PwaRegistration />

@@ -44,6 +44,7 @@ WHERE NOT EXISTS (
 )`;
 
 export const SEED_STORAGE_DIRECTORIES = [
+  "child-images",
   "family-images",
   "sponsor-images",
 ] as const;

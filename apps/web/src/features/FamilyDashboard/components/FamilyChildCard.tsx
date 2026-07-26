@@ -1,9 +1,10 @@
 "use client";
 
 import { CalendarDays, GraduationCap, Ruler } from "lucide-react";
-import { NSectionInfo } from "najm-kit";
+import { NAvatar, NSectionInfo } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
+import { getChildAvatarImage } from "@/lib/personImages";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { FamilyChildRecord } from "../types";
@@ -14,9 +15,12 @@ export function FamilyChildCard({
   return (
     <article className="space-y-4 rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-          {child.legalName.slice(0, 1).toUpperCase()}
-        </div>
+        <NAvatar
+          src={getChildAvatarImage(child.image, child.gender)}
+          title={child.legalName}
+          subtitle={child.gender === "F" ? "Female" : "Male"}
+          classNames={{ avatar: "bg-muted" }}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{child.legalName}</p>
           <p className="text-sm text-muted-foreground">

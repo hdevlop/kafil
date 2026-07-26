@@ -16,6 +16,9 @@ import { supportAssignments } from "../supportAssignments/supportAssignmentSchem
 const monthExpression = (column: typeof contributions.submittedAt | typeof orders.createdAt) =>
   sql<string>`to_char(date_trunc('month', ${column}), 'YYYY-MM')`;
 
+const isLivePending = (now: Date) =>
+  sql`${contributions.status} = 'pending' AND ${contributions.expiresAt} > ${now.toISOString()}::timestamptz`;
+
 @Repository("default")
 export class DashboardRepository {
   @DB() private db!: KafilDatabase;
@@ -48,11 +51,13 @@ export class DashboardRepository {
     return { families, children: childRows, sponsors, assignments };
   }
 
-  async operatorMoneyCounts() {
+  async operatorMoneyCounts(now: Date = new Date()) {
     const [[contributionRows], [budgetRows], [orderRows], [inventoryRows]] = await Promise.all([
       this.db.select({
-        pendingCount: sql<number>`count(*) filter (where ${contributions.status} = 'pending')::int`,
-        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending'), 0)::bigint`,
+        pendingCount: sql<number>`count(*) filter (where ${isLivePending(now)})::int`,
+        expiredCount: sql<number>`count(*) filter (where ${contributions.status} = 'expired')::int`,
+        rejectedCount: sql<number>`count(*) filter (where ${contributions.status} = 'rejected')::int`,
+        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${isLivePending(now)}), 0)::bigint`,
         validatedMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'validated'), 0)::bigint`,
         refundedMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'refunded'), 0)::bigint`,
       }).from(contributions),
@@ -233,11 +238,13 @@ export class DashboardRepository {
       ));
   }
 
-  sponsorContributionSummary(sponsorProfileId: string) {
+  sponsorContributionSummary(sponsorProfileId: string, now: Date = new Date()) {
     return this.db
       .select({
-        pendingCount: sql<number>`count(*) filter (where ${contributions.status} = 'pending')::int`,
-        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending'), 0)::bigint`,
+        pendingCount: sql<number>`count(*) filter (where ${contributions.status} = 'pending' AND ${contributions.expiresAt} > ${now})::int`,
+        expiredCount: sql<number>`count(*) filter (where ${contributions.status} = 'expired')::int`,
+        rejectedCount: sql<number>`count(*) filter (where ${contributions.status} = 'rejected')::int`,
+        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending' AND ${contributions.expiresAt} > ${now}), 0)::bigint`,
         validatedMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'validated'), 0)::bigint`,
       })
       .from(contributions)
@@ -265,13 +272,17 @@ export class DashboardRepository {
       ));
   }
 
-  sponsorContributionTrend(sponsorProfileId: string, since: Date) {
+  sponsorContributionTrend(
+    sponsorProfileId: string,
+    since: Date,
+    now: Date = new Date(),
+  ) {
     const month = monthExpression(contributions.submittedAt);
     return this.db
       .select({
         month,
         validatedMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'validated'), 0)::bigint`,
-        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${contributions.status} = 'pending'), 0)::bigint`,
+        pendingMinor: sql<number>`coalesce(sum(${contributions.amountMinor}) filter (where ${isLivePending(now)}), 0)::bigint`,
       })
       .from(contributions)
       .innerJoin(supportAssignments, eq(contributions.supportAssignmentId, supportAssignments.id))

@@ -6,8 +6,13 @@ import { resolve } from "node:path";
 const phase6E2eEnvironment = {
   ...process.env,
   DATABASE_URL: Bun.env.DATABASE_URL,
+  EMAIL_DEFAULT_FROM: Bun.env.EMAIL_DEFAULT_FROM,
+  EMAIL_LOG_LEVEL: Bun.env.EMAIL_LOG_LEVEL,
+  EMAIL_PROVIDER: Bun.env.EMAIL_PROVIDER,
   JWT_ACCESS_SECRET: Bun.env.JWT_ACCESS_SECRET,
   JWT_REFRESH_SECRET: Bun.env.JWT_REFRESH_SECRET,
+  KAFIL_ADMIN_EMAIL: Bun.env.KAFIL_ADMIN_EMAIL,
+  KAFIL_ADMIN_PASSWORD: Bun.env.KAFIL_ADMIN_PASSWORD,
   NAJM_ENCRYPTION_KEY: Bun.env.NAJM_ENCRYPTION_KEY,
 };
 
@@ -29,7 +34,9 @@ async function waitForWebServer(server: ReturnType<typeof Bun.spawn>) {
       throw new Error(`Next.js E2E server exited with code ${server.exitCode}.`);
     }
     try {
-      const response = await fetch("http://127.0.0.1:3210/login");
+      const response = await fetch("https://127.0.0.1:3210/login", {
+        tls: { rejectUnauthorized: false },
+      });
       if (response.ok) return;
     } catch {
       // The server is still starting.
@@ -42,14 +49,33 @@ async function waitForWebServer(server: ReturnType<typeof Bun.spawn>) {
 try {
   await preparePhase6BrowserUsers();
   webServer = Bun.spawn({
-    cmd: [process.execPath, "node_modules/next/dist/bin/next", "start", "-p", "3210"],
+    cmd: [
+      process.execPath,
+      "node_modules/next/dist/bin/next",
+      "dev",
+      "-p",
+      "3210",
+      "--experimental-https",
+    ],
     cwd: resolve(import.meta.dir, ".."),
     ...childOptions,
   });
   await waitForWebServer(webServer);
 
+  const testCommand = [
+      "bunx",
+      "playwright",
+      "test",
+      "test/e2e/phase6-closeout.e2e.ts",
+      "test/e2e/family-create-wizard.e2e.ts",
+      "test/e2e/funding-cap-and-catalog-delete.e2e.ts",
+  ];
+  if (Bun.env.KAFIL_E2E_GREP) {
+    testCommand.push("--grep", Bun.env.KAFIL_E2E_GREP);
+  }
+
   const tests = Bun.spawn({
-    cmd: ["bunx", "playwright", "test", "test/e2e/phase6-closeout.e2e.ts", "test/e2e/family-create-wizard.e2e.ts"],
+    cmd: testCommand,
     ...childOptions,
   });
   testExitCode = await tests.exited;

@@ -13,7 +13,7 @@ import {
 } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
-import { getChildPersonImage } from "@/lib/personImages";
+import { getChildAvatarImage } from "@/lib/personImages";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -52,7 +52,7 @@ export function ChildCard({ data }: Readonly<{ data: ChildRecord }>) {
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
         <NAvatar
-          src={getChildPersonImage(data.gender)}
+          src={getChildAvatarImage(data.image, data.gender)}
           alt={data.legalName}
           size="xl"
           classNames={{ avatar: "size-20 bg-muted sm:size-16" }}

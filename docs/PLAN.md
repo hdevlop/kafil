@@ -589,14 +589,19 @@ Status: complete (2026-07-16)
 - [x] Add immutable inventory ledger entries
 - [x] Add stock adjustment commands with required reasons
 - [x] Add family-readable active catalog projections
-- [x] Prevent hard deletion of referenced categories/products
+- [x] Prevent hard deletion of catalog items with order or inventory history; admin-only pristine delete for items never ordered or stocked
 - [x] Test inactive products, price validation, and concurrent stock reservation
 
-Completion evidence (2026-07-16): migration
-`0006_phase4_catalog_inventory` adds categories, products, balance rows, and
-an append-only inventory ledger with non-negative/never-over-reserved database
-checks. Operator commands create, update, activate/deactivate, restock, and
-adjust; no catalog delete command exists. Family routes are role-limited and
+Completion evidence (2026-07-16; updated later for the prune carve-out):
+migration `0006_phase4_catalog_inventory` adds categories, products, balance
+rows, and an append-only inventory ledger with non-negative/never-over-reserved
+database checks. Operator commands create, update, activate/deactivate, restock,
+and adjust. Bootstrap admins additionally expose `deleteCategory` and
+`deleteProduct` for "added by mistake" cleanup, gated by an explicit
+pristineness check — items with order history, inventory ledger activity, or a
+non-zero balance are refused with HTTP 409 and the operator must deactivate.
+The inventory ledger is **never modified** by the delete path; cart items and
+product images are cleaned post-commit. Family routes are role-limited and
 query active categories/products only. Stock-changing paths use `FOR UPDATE`,
 unique idempotency keys, and ledger snapshots; the Phase 5 service can call
 internal reserve/release/allocate commands. Focused tests cover product price

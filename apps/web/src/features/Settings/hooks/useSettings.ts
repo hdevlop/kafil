@@ -2,46 +2,29 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import {
-  getFormFillSetting,
-  getFundingSetting,
-  updateFormFillSetting,
-  updateFundingSetting,
-} from "@/services/settingApi";
+import { entityKeys } from "@/hooks/queryKeys";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { getSettings, updateSettings } from "@/services/settingApi";
 
 export const settingKeys = {
-  all: ["settings"] as const,
-  funding: ["settings", "funding"] as const,
-  formFill: ["settings", "form-fill"] as const,
+  all: entityKeys.all("settings"),
 };
 
-export function useFundingSetting() {
+export function usePlatformSettings() {
   return useEntityQuery({
-    queryKey: settingKeys.funding,
-    queryFn: getFundingSetting,
-  });
-}
-
-export function useFormFillSetting() {
-  return useEntityQuery({
-    queryKey: settingKeys.formFill,
-    queryFn: getFormFillSetting,
+    queryKey: settingKeys.all,
+    queryFn: getSettings,
   });
 }
 
 export function useSettingCommands() {
+  const { t } = useKafilLanguage();
   return {
-    updateFunding: useEntityCommand({
-      mutationFn: updateFundingSetting,
+    updateSettings: useEntityCommand({
+      mutationFn: updateSettings,
       invalidate: [settingKeys.all],
-      successMessage: "Default family funding target updated.",
-      errorMessage: "Could not update the default family funding target.",
-    }),
-    updateFormFill: useEntityCommand({
-      mutationFn: updateFormFillSetting,
-      invalidate: [settingKeys.all],
-      successMessage: "F8 form fill setting updated.",
-      errorMessage: "Could not update the F8 form fill setting.",
+      successMessage: t("operator.settings.saveSuccess"),
+      errorMessage: t("operator.settings.saveError"),
     }),
   };
 }

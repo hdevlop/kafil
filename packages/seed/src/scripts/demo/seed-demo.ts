@@ -27,7 +27,13 @@ await runSeedCommand("Kafil demo data seed", async () => {
     `Preparing ${counts.families} families, ${counts.sponsors} sponsors, ${counts.operators} operators, and ${counts.contributions} contributions...`,
   );
   console.log(
-    `Profile images: ${imageSummary.families.assigned} families from ${imageSummary.families.available} files; ${imageSummary.sponsors.assigned} sponsors from ${imageSummary.sponsors.available} files.`,
+    `Family households: ${imageSummary.family.assigned} assigned / ${imageSummary.family.records} records / ${imageSummary.family.files} files`,
+  );
+  console.log(
+    `Sponsors: F ${imageSummary.sponsor.F.assigned} assigned / ${imageSummary.sponsor.F.records} records / ${imageSummary.sponsor.F.files} files; M ${imageSummary.sponsor.M.assigned} / ${imageSummary.sponsor.M.records} / ${imageSummary.sponsor.M.files}`,
+  );
+  console.log(
+    `Children: F ${imageSummary.child.F.assigned} assigned / ${imageSummary.child.F.records} records / ${imageSummary.child.F.files} files; M ${imageSummary.child.M.assigned} / ${imageSummary.child.M.records} / ${imageSummary.child.M.files}`,
   );
 
   await server.init();
@@ -47,7 +53,7 @@ await runSeedCommand("Kafil demo data seed", async () => {
       totals[contribution.expectedStatus] += 1;
       return totals;
     },
-    { pending: 0, rejected: 0, validated: 0 },
+    { expired: 0, pending: 0, rejected: 0, validated: 0 },
   );
 
   for (const [label, result] of Object.entries(summary)) {
@@ -57,6 +63,6 @@ await runSeedCommand("Kafil demo data seed", async () => {
   }
   console.log(`children: ${childCount} verified across demo families.`);
   console.log(
-    `contribution states: ${contributionStates.validated} validated, ${contributionStates.pending} pending, ${contributionStates.rejected} rejected.`,
+    `contribution states: ${contributionStates.validated} validated, ${contributionStates.pending} live pending, ${contributionStates.expired} expired, ${contributionStates.rejected} rejected.`,
   );
 });

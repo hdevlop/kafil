@@ -7,16 +7,19 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: "list",
+  workers: 1,
   use: {
-    baseURL: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210",
+    baseURL: process.env.KAFIL_E2E_BASE_URL ?? "https://127.0.0.1:3210",
     browserName: "chromium",
     channel: "chrome",
     headless: true,
+    ignoreHTTPSErrors: true,
   },
   webServer: process.env.KAFIL_E2E_MANAGED_SERVER === "1"
     ? undefined
     : {
-        command: "bun run start -- -p 3210",
+        command:
+          "bun --env-file=../../.env run dev -- -p 3210 --experimental-https",
         cwd: ".",
         reuseExistingServer: false,
         timeout: 60_000,

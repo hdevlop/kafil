@@ -7,7 +7,10 @@ import { getValidationConfig } from "najm-validation";
 
 import { AuditRepository, AuditService } from "../src/modules/audit";
 import { AccessRepository } from "../src/modules/access";
-import { BudgetService } from "../src/modules/budgets";
+import {
+  BudgetAccountRepository,
+  BudgetService,
+} from "../src/modules/budgets";
 import {
   childIdParams,
   ChildController,
@@ -148,6 +151,74 @@ describe("Phase 1 DTO and controller boundaries", () => {
     expect(parsed).not.toHaveProperty("initialChildren");
   });
 
+  it("accepts child images only from the Kafil child-image prefix on family creation", () => {
+    expect(
+      createFamilyDto.safeParse({
+        name: "Amina El Amrani",
+        email: "child-image-family@example.test",
+        guardianCin: "AB123459",
+        guardianDateOfBirth: "1987-03-12",
+        exactAddress: "10 Storage Street",
+        housingSituation: "rented",
+        registrationDate: "2026-02-10",
+        supportPriority: "normal",
+        phone: "+212600000010",
+        initialChildren: [
+          {
+            legalName: "Valid",
+            dateOfBirth: "2018-06-01",
+            gender: "F",
+            image: "/api/child-images/files/serve/00000000-0000-4000-8000-000000000050.png",
+          },
+        ],
+      }).success,
+    ).toBe(true);
+
+    expect(
+      createFamilyDto.safeParse({
+        name: "Amina El Amrani",
+        email: "child-image-family-rejected@example.test",
+        guardianCin: "AB123460",
+        guardianDateOfBirth: "1987-03-12",
+        exactAddress: "10 Storage Street",
+        housingSituation: "rented",
+        registrationDate: "2026-02-10",
+        supportPriority: "normal",
+        phone: "+212600000011",
+        initialChildren: [
+          {
+            legalName: "Invalid",
+            dateOfBirth: "2018-06-01",
+            gender: "F",
+            image: "https://example.com/photo.png",
+          },
+        ],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      createFamilyDto.safeParse({
+        name: "Amina El Amrani",
+        email: "child-image-family-orphan@example.test",
+        guardianCin: "AB123461",
+        guardianDateOfBirth: "1987-03-12",
+        exactAddress: "10 Storage Street",
+        housingSituation: "rented",
+        registrationDate: "2026-02-10",
+        supportPriority: "normal",
+        phone: "+212600000012",
+        initialChildren: [
+          {
+            legalName: "Cleared",
+            dateOfBirth: "2018-06-01",
+            gender: "F",
+            image: null,
+          },
+        ],
+      }).success,
+    ).toBe(true);
+  });
+
   it("exposes family and child commands as validated MCP tools", () => {
     expect(getMcpTools(FamilyController).map((tool) => tool.methodKey)).toEqual(
       [
@@ -285,6 +356,10 @@ describe("Phase 1 family workflow", () => {
         ensureForFamily: async () => {},
       } as unknown as BudgetService,
       {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
+      {
         record: async (input: Record<string, unknown>) => {
           auditEvents.push(input);
           return input;
@@ -378,7 +453,11 @@ describe("Phase 1 family workflow", () => {
       status: "pending_funding" as const,
       targetMinor: 720000,
       fundedMinor: 540000,
+      pendingMinor: 0,
       remainingMinor: 180000,
+      availableToContributeMinor: 180000,
+      capacityStatus: "open" as const,
+      nextPendingExpiryAt: null,
       activatedAt: null,
     };
     const service = new FamilyService(
@@ -409,6 +488,10 @@ describe("Phase 1 family workflow", () => {
       } as unknown as FamilyRepository,
       {} as ChildRepository,
       {} as BudgetService,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as AuditService,
       {} as FamilyValidator,
       {
@@ -440,6 +523,10 @@ describe("Phase 1 family workflow", () => {
       } as unknown as FamilyRepository,
       {} as ChildRepository,
       {} as BudgetService,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {} as AuditService,
       {} as FamilyValidator,
       {} as FundingService,
@@ -473,6 +560,10 @@ describe("Phase 1 family workflow", () => {
       {} as ChildRepository,
       {} as BudgetService,
       {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
+      {
         record: async (input: Record<string, unknown>) => {
           auditEvents.push(input);
           return input;
@@ -492,6 +583,7 @@ describe("Phase 1 family workflow", () => {
           activationChecks.push({ familyProfileId, actorUserId });
           return null;
         },
+        ensureTargetCanLower: async () => undefined,
       } as unknown as FundingService,
       {} as SettingRepository,
     );
@@ -538,12 +630,16 @@ describe("Phase 1 family workflow", () => {
           profileUpdates.push(input);
           return familyProfile(input);
         },
-       } as unknown as FamilyRepository,
+} as unknown as FamilyRepository,
        {} as ChildRepository,
        {} as BudgetService,
+       {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
        { record: async () => ({}) } as unknown as AuditService,
        {
-         ensureExists: async () => familyProfile(),
+          ensureExists: async () => familyProfile(),
         ensureEmailUnique: async () => {},
         ensureGuardianCinUnique: async () => {},
         ensurePhoneUnique: async () => {},
@@ -604,6 +700,10 @@ describe("Phase 1 family workflow", () => {
       } as unknown as FamilyRepository,
       {} as ChildRepository,
       {} as BudgetService,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       {
         record: async (input: Record<string, unknown>) => {
           auditEvents.push(input);
@@ -699,6 +799,10 @@ describe("Phase 1 family workflow", () => {
       budgets: {
         ensureForFamily: async () => {},
       } as unknown as BudgetService,
+      accounts: {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       audits: {
         record: async (input: Record<string, unknown>) => {
           auditEvents.push(input);
@@ -768,6 +872,10 @@ exactAddress: "Private address in Rabat",
       {} as ChildRepository,
       {} as BudgetService,
       {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
+      {
         record: async (input: Record<string, unknown>) => {
           auditEvents.push(input);
           return input;
@@ -814,6 +922,10 @@ exactAddress: "Private address in Rabat",
       } as unknown as FamilyRepository,
       {} as ChildRepository,
       {} as BudgetService,
+      {
+        createForFamily: async () => undefined,
+        lockByFamilyId: async () => ({ id: "account" }),
+      } as unknown as BudgetAccountRepository,
       { record: async () => ({}) } as unknown as AuditService,
       { ensureExists: async () => familyProfile() } as unknown as FamilyValidator,
       {} as FundingService,

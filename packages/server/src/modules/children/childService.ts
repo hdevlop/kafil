@@ -73,6 +73,7 @@ export class ChildService {
       clothingSize: input.clothingSize ?? null,
       shoeSize: input.shoeSize ?? null,
       notes: input.notes ?? null,
+      image: input.image ?? null,
     });
   }
 
@@ -86,6 +87,7 @@ export class ChildService {
       ...nullableUpdate(input, "clothingSize"),
       ...nullableUpdate(input, "shoeSize"),
       ...nullableUpdate(input, "notes"),
+      ...nullableImageUpdate(input),
     });
   }
 
@@ -144,4 +146,14 @@ function nullableUpdate<
   TKey extends keyof T,
 >(input: T, key: TKey) {
   return key in input ? { [key]: input[key] ?? null } : {};
+}
+
+function nullableImageUpdate<T extends { image?: string | null | undefined }>(
+  input: T,
+) {
+  if (!("image" in input)) return {};
+  const value = input.image;
+  if (value === null) return { image: null };
+  if (value === undefined) return {};
+  return { image: value };
 }

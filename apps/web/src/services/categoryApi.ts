@@ -39,6 +39,10 @@ export function deactivateCategory({ id, reason }: CategoryStatusInput) {
   return api.post<CategoryRecord>(`/catalog/categories/${id}/deactivate`, { reason });
 }
 
+export function deleteCategory(id: string) {
+  return api.delete<CategoryRecord>(`/catalog/categories/${id}`);
+}
+
 const CATEGORY_IMAGE_ROUTE = "/category-images/files/";
 
 function imageExtension(file: File) {

@@ -1,7 +1,8 @@
 "use client";
 
-import { Barcode, CalendarDays, FolderTree, Image, Package, ReceiptText } from "lucide-react";
+import { Barcode, CalendarDays, FolderTree, Image as ImageIcon, Package, ReceiptText } from "lucide-react";
 import { NDetailList, NSection } from "najm-kit";
+import Image from "next/image";
 
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
@@ -13,7 +14,14 @@ export function ProductDetails({ product }: Readonly<{ product: ProductRecord }>
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         {product.imageUrl ? (
-          <img alt={product.name} className="size-12 shrink-0 rounded-xl object-cover" src={product.imageUrl} />
+          <Image
+            alt={product.name}
+            className="size-12 shrink-0 rounded-xl object-cover"
+            height={48}
+            src={product.imageUrl}
+            unoptimized
+            width={48}
+          />
         ) : (
           <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
             <Package className="size-6" />
@@ -41,7 +49,7 @@ export function ProductDetails({ product }: Readonly<{ product: ProductRecord }>
         <NDetailList items={[{ label: "Description", value: product.description || "No description" }]} />
       </NSection>
 
-      <NSection icon={Image} title="Image">
+      <NSection icon={ImageIcon} title="Image">
         <NDetailList items={[{ label: "Image URL", value: product.imageUrl || "No image URL" }]} />
       </NSection>
 

@@ -1,19 +1,20 @@
-export interface FundingSetting {
+export interface PlatformSettings {
   id: string;
   familyFundingTargetMinor: number;
+  pendingContributionExpiryHours: number;
+  formFillEnabled: boolean;
   currency: "MAD" | string;
+  updatedByUserId: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
-export interface UpdateFundingSettingInput {
+export interface UpdateSettingsInput {
   familyFundingTargetMinor: number;
-  reason: string;
+  pendingContributionExpiryHours: number;
+  formFillEnabled: boolean;
 }
 
 export interface FormFillSetting {
   enabled: boolean;
-}
-
-export interface UpdateFormFillSettingInput extends FormFillSetting {
-  reason: string;
 }

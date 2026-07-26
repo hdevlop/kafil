@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+import { CHILD_IMAGE_SERVE_PREFIX } from "./childImageController";
+
+const childImageDto = z
+  .union([
+    z.literal(null),
+    z.string().startsWith(CHILD_IMAGE_SERVE_PREFIX).max(2_000),
+  ])
+  .optional();
+
 export const childFields = z.object({
   legalName: z.string().trim().min(2).max(200),
   dateOfBirth: z.iso.date(),
@@ -8,6 +17,7 @@ export const childFields = z.object({
   clothingSize: z.string().trim().max(40).nullish(),
   shoeSize: z.string().trim().max(40).nullish(),
   notes: z.string().trim().max(2_000).nullish(),
+  image: childImageDto,
   status: z.enum(["active", "inactive"]).default("active"),
 });
 

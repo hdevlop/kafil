@@ -5,7 +5,6 @@ import { Baby, House, UserRoundPlus } from "lucide-react";
 import {
   DynamicArray,
   FormInput,
-  ImageInput,
   NButton,
   NForm,
   NFormSectionHeader,
@@ -199,13 +198,13 @@ export function FamilyGuardianFields({
           name="image"
           type="image"
           formLabel={t("operator.families.imageUrl")}
-          formDescription={t("operator.families.imageUploadGuidance")}
+          subtitle={t("operator.families.imageUploadGuidance")}
           accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
           allowClear
           disabled={disabled}
           imageSize="md"
           imageVersion={imageVersion}
-          previewClassName="h-40 w-full overflow-hidden rounded-xl"
+          previewClassName="h-48 w-full overflow-hidden rounded-xl"
           value={image}
           onChange={onImageChange}
         />

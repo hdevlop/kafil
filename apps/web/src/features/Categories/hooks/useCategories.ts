@@ -2,11 +2,13 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
   activateCategory,
   createCategory,
   deactivateCategory,
+  deleteCategory,
   listCategories,
   updateCategory,
 } from "@/services/categoryApi";
@@ -21,7 +23,7 @@ export function useCategories(pagination: OffsetPagination) {
 }
 
 export function useCategoryCommands() {
-  const invalidate = [categoryKeys.all];
+  const invalidate = [...catalogWriteKeys];
 
   const create = useEntityCommand({
     mutationFn: createCategory,
@@ -47,6 +49,12 @@ export function useCategoryCommands() {
     successMessage: "Category deactivated.",
     errorMessage: "Could not deactivate the category.",
   });
+  const remove = useEntityCommand({
+    mutationFn: deleteCategory,
+    invalidate,
+    successMessage: "Category deleted permanently.",
+    errorMessage: "Could not delete the category. It may have order or inventory history.",
+  });
 
-  return { create, update, activate, deactivate };
+  return { create, update, activate, deactivate, remove };
 }

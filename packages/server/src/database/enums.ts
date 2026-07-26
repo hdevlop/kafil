@@ -47,6 +47,7 @@ export const contributionStatusEnum = pgEnum("contribution_status", [
   "validated",
   "rejected",
   "refunded",
+  "expired",
 ]);
 export const categoryStatusEnum = pgEnum("category_status", [
   "active",

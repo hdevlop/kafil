@@ -180,3 +180,12 @@ uppercase, unique, operator-only family identity field. Migration `0013`
 requires it for every family profile; family self-service responses omit it,
 operator UI displays mask it by default, and audit/outbox payloads must never
 retain it.
+
+### D-031 - Pending contributions reserve capacity until a server-owned deadline
+
+Every pending contribution receives an immutable deadline from the singleton
+platform setting at creation time. Only pending contributions whose deadline
+is still in the future reserve family funding capacity. A five-minute
+operations timer materializes due rows as `expired`, with audit and outbox
+records in the same transaction; capacity correctness remains time-aware and
+does not depend on the timer running exactly on schedule.

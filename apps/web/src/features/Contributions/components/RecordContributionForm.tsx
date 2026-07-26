@@ -8,8 +8,11 @@ import {
   NFormSectionHeader,
   useDialog,
 } from "najm-kit";
+import { useWatch } from "react-hook-form";
 
+import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";
 import { useDevFormTools } from "@/lib/devFormFill";
+import { formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 import {
@@ -18,11 +21,83 @@ import {
   toRecordContributionInput,
   type RecordContributionFormValues,
 } from "../config/contributionSchemas";
-import { buildContributionRecordingOptions } from "../config/contributionRecordingOptions";
+import {
+  buildContributionRecordingOptions,
+  type RecordingOptionView,
+} from "../config/contributionRecordingOptions";
 import {
   useContributionCommands,
   useContributionRecordingOptions,
 } from "../hooks/useContributions";
+
+function ContributionCapacityNotice({
+  options,
+}: Readonly<{ options: RecordingOptionView[] }>) {
+  const { t } = useKafilLanguage();
+  const assignmentId = useWatch({ name: "supportAssignmentId" });
+  const selected = options.find((option) => option.value === assignmentId);
+  const hasOpen = options.some((option) => !option.disabled);
+
+  if (selected?.maxAmountMinor) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("operator.contributions.availableAmount", {
+          amount: formatMad(selected.maxAmountMinor),
+        })}
+      </p>
+    );
+  }
+  if (!hasOpen && options.length > 0) {
+    return (
+      <p className="text-sm text-warning">
+        {t("operator.contributions.noAssignmentOpen")}
+      </p>
+    );
+  }
+  return null;
+}
+
+function ContributionSubmitButton({
+  options,
+  pending,
+}: Readonly<{ options: RecordingOptionView[]; pending: boolean }>) {
+  const { t } = useKafilLanguage();
+  const assignmentId = useWatch({ name: "supportAssignmentId" });
+  const amountMad = useWatch({ name: "amountMad" });
+  const selected = options.find((option) => option.value === assignmentId);
+  const amountMinor = parseMadAmount(String(amountMad ?? ""));
+  const exceedsCapacity = Boolean(
+    selected &&
+      amountMinor !== null &&
+      amountMinor > selected.maxAmountMinor,
+  );
+
+  return (
+    <div className="space-y-2 text-right">
+      {exceedsCapacity && selected ? (
+        <p className="text-sm font-medium text-destructive">
+          {t("sponsor.contributions.amountTooHigh", {
+            amount: formatMad(selected.maxAmountMinor),
+          })}
+        </p>
+      ) : null}
+      <NButton
+        type="submit"
+        disabled={
+          pending ||
+          !selected ||
+          selected.disabled ||
+          amountMinor === null ||
+          exceedsCapacity
+        }
+      >
+        {pending
+          ? t("operator.contributions.recording")
+          : t("operator.contributions.record")}
+      </NButton>
+    </div>
+  );
+}
 
 export function RecordContributionDialogContent({
   familyProfileId,
@@ -34,6 +109,10 @@ export function RecordContributionDialogContent({
   const assignmentOptions = buildContributionRecordingOptions(
     sources.data,
     familyProfileId,
+    {
+      funded: t("funding.funded"),
+      reserved: t("funding.reserved"),
+    },
   );
 
   async function handleSubmit(values: RecordContributionFormValues) {
@@ -90,6 +169,7 @@ export function RecordContributionDialogContent({
         disabled={sources.isPending}
         required
       />
+      <ContributionCapacityNotice options={assignmentOptions} />
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput
           name="amountMad"
@@ -132,12 +212,10 @@ export function RecordContributionDialogContent({
         {t("operator.contributions.recordHelp")}
       </p>
       <div className="flex justify-end pt-5">
-        <NButton
-          type="submit"
-          disabled={record.isPending || sources.isPending}
-        >
-          {record.isPending ? t("operator.contributions.recording") : t("operator.contributions.record")}
-        </NButton>
+        <ContributionSubmitButton
+          options={assignmentOptions}
+          pending={record.isPending || sources.isPending}
+        />
       </div>
     </NForm>
   );

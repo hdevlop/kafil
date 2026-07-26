@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Params, Post, Put, Query, User,
+import { Body, Controller, Delete, Get, Params, Post, Put, Query, User,
   ResMsg,
 } from "najm-core";
 import { McpTool, ToolGroup } from "najm-mcp";
 import { Validate } from "najm-validation";
 
-import { isFamily, isOperator } from "../../config/authConfig";
+import { isAdmin, isFamily, isOperator } from "../../config/authConfig";
+import { CanDelete, Catalog, Policy } from "./catalogGuards";
 import {
   type CategoryListQuery,
   categoryIdParams,
@@ -32,6 +33,7 @@ import {
 import { CatalogService } from "./catalogService";
 
 @ToolGroup("catalog")
+@Policy(Catalog)
 @Controller("/catalog")
 export class CatalogController {
   constructor(private readonly catalog: CatalogService) {}
@@ -212,5 +214,53 @@ export class CatalogController {
   @ResMsg("catalog.success.inventoryAdjusted")
   adjustInventory(@Params("id") id: string, @Body() body: InventoryAdjustmentDto, @User("id") userId: string) {
     return this.catalog.adjustInventory(id, body, userId);
+  }
+
+  @Delete("/categories/:id")
+  @isAdmin()
+  @CanDelete(Catalog)
+  @Validate({ params: categoryIdParams })
+  @McpTool({
+    description:
+      "Permanently delete a category and its pristine products (no order history, no inventory ledger activity, zero balance)",
+    destructive: true,
+    confirm: {
+      level: "danger",
+      message:
+        "Permanently delete this category and its pristine products? Cannot be undone.",
+    },
+  })
+  @ResMsg("catalog.success.deleted")
+  async deleteCategory(@Params("id") id: string, @User("id") actor: string) {
+    const result = await this.catalog.deleteCategory(id, actor);
+    await this.catalog.cleanupImagesAfterCommit({
+      categoryImagePath: result.categoryImagePath,
+      deletedProductImages: result.deletedProductImages,
+    });
+    return result;
+  }
+
+  @Delete("/products/:id")
+  @isAdmin()
+  @CanDelete(Catalog)
+  @Validate({ params: productIdParams })
+  @McpTool({
+    description:
+      "Permanently delete a pristine product (no order history, no inventory ledger activity, zero balance)",
+    destructive: true,
+    confirm: {
+      level: "danger",
+      message: "Permanently delete this product? Cannot be undone.",
+    },
+  })
+  @ResMsg("catalog.success.deleted")
+  async deleteProduct(@Params("id") id: string, @User("id") actor: string) {
+    const result = await this.catalog.deleteProduct(id, actor);
+    await this.catalog.cleanupImagesAfterCommit({
+      deletedProductImages: result.productImageUrl
+        ? [result.productImageUrl]
+        : [],
+    });
+    return result;
   }
 }

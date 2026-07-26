@@ -10,7 +10,7 @@ const browserUsers: Record<ProductRole, string> = {
 const browserPassword = "Phase6BrowserPass1!";
 
 async function useRole(page: Page, role: ProductRole, language = "en") {
-  await page.context().addCookies([{ name: "kafil-ui-language", value: language, url: "http://127.0.0.1:3210" }]);
+  await page.context().addCookies([{ name: "kafil-ui-language", value: language, url: "https://127.0.0.1:3210" }]);
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
@@ -346,8 +346,8 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-tablet-1024.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "en", url: "http://127.0.0.1:3210" },
-    { name: "kafil-ui-theme", value: "dark", url: "http://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: "en", url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-theme", value: "dark", url: "https://127.0.0.1:3210" },
   ]);
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/operator/sponsors");
@@ -356,8 +356,8 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-dark.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "fr", url: "http://127.0.0.1:3210" },
-    { name: "kafil-ui-theme", value: "light", url: "http://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: "fr", url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-theme", value: "light", url: "https://127.0.0.1:3210" },
   ]);
   await page.goto("/operator/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
@@ -365,8 +365,8 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-french.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "ar", url: "http://127.0.0.1:3210" },
-    { name: "kafil-ui-theme", value: "light", url: "http://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: "ar", url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-theme", value: "light", url: "https://127.0.0.1:3210" },
   ]);
   await page.goto("/operator/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
@@ -374,7 +374,7 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-arabic-rtl.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "en", url: "http://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: "en", url: "https://127.0.0.1:3210" },
   ]);
   await page.goto("/operator/sponsors");
   await openSponsorOverview(page, "Inactive Empty Sponsor");

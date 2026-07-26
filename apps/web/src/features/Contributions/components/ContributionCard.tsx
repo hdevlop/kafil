@@ -1,9 +1,9 @@
 "use client";
 
-import { CalendarClock, HandHeart, Hash, House } from "lucide-react";
+import { CalendarClock, HandHeart, Hash, House, Timer } from "lucide-react";
 import { NCard, NCardAction, NCardInfo, NCardSection } from "najm-kit";
 
-import { formatKafilDate, formatMad } from "@/lib/format";
+import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -13,6 +13,7 @@ export function ContributionCard({
   data,
 }: Readonly<{ data: ContributionRecord }>) {
   const { t } = useKafilLanguage();
+  const isPending = data.status === "pending";
   return (
     <NCard
       embedded
@@ -43,6 +44,20 @@ export function ContributionCard({
           label={t("operator.contributions.submitted")}
           value={formatKafilDate(data.submittedAt)}
         />
+        {isPending && data.expiresAt ? (
+          <NCardInfo
+            icon={Timer}
+            label={t("operator.contributions.pendingDeadline")}
+            value={formatDateTime(data.expiresAt)}
+          />
+        ) : null}
+        {data.status === "expired" && data.expiredAt ? (
+          <NCardInfo
+            icon={Timer}
+            label={t("operator.contributions.expiredAt")}
+            value={formatDateTime(data.expiredAt)}
+          />
+        ) : null}
       </NCardSection>
     </NCard>
   );

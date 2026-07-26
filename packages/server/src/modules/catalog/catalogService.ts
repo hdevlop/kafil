@@ -1,7 +1,17 @@
+import { unlink } from "node:fs/promises";
+import { join } from "node:path";
+
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
+import { envConfig } from "../../config/envConfig";
 import { AuditService } from "../audit/auditService";
+import {
+  CATEGORY_IMAGE_SERVE_PREFIX,
+} from "./categoryImageController";
+import {
+  PRODUCT_IMAGE_SERVE_PREFIX,
+} from "./productImageController";
 import {
   type CategoryListQuery,
   categoryListQuery,
@@ -227,6 +237,109 @@ export class CatalogService {
     return updated;
   }
 
+  /**
+   * Hard-delete a pristine product (no order history, no inventory ledger
+   * activity, zero balance). Cart items referencing it are removed before the
+   * inventory balance row. Image cleanup is reported to the caller so it runs
+   * once the surrounding transaction has committed.
+   */
+  @Transaction({ retries: 2 })
+  async deleteProduct(id: string, actorUserId: string) {
+    const product = await this.validator.ensureProductExists(id);
+    await this.validator.ensureProductPristine(id);
+    await this.products.deleteCartItemsByProductIds([product.id]);
+    await this.inventory.deleteBalancesByProductIds([product.id]);
+    const deleted = await this.products.hardDelete(id);
+    if (!deleted) {
+      HttpError.notFound("Product not found");
+    }
+    await this.audits.record({
+      action: "catalog.productDeleted",
+      actorUserId,
+      metadata: { permanent: true },
+      resource: "products",
+      resourceId: id,
+    });
+    return {
+      productId: id,
+      categoryId: product.categoryId,
+      productImageUrl: deleted.imageUrl ?? null,
+    };
+  }
+
+  /**
+   * Hard-delete a pristine category. Cascades its empty products (each of which
+   * must satisfy the product-pristineness rules) and their cart items / balance
+   * rows. Returns descriptors of every removed image so the controller can unlink
+   * them after commit.
+   */
+  @Transaction({ retries: 2 })
+  async deleteCategory(id: string, actorUserId: string) {
+    await this.validator.ensureCategoryExists(id);
+    await this.validator.ensureCategoryPristine(id);
+
+    const productsUnder = await this.products.lockByCategoryIdForDelete(id);
+    const productIds = productsUnder.map((p) => p.id);
+
+    if (productIds.length > 0) {
+      await this.products.deleteCartItemsByProductIds(productIds);
+      await this.inventory.deleteBalancesByProductIds(productIds);
+      await this.products.hardDeleteByIds(productIds);
+    }
+    const deleted = await this.categories.hardDelete(id);
+    if (!deleted) {
+      HttpError.notFound("Category not found");
+    }
+    await this.audits.record({
+      action: "catalog.categoryDeleted",
+      actorUserId,
+      metadata: { permanent: true, deletedProductIds: productIds },
+      resource: "categories",
+      resourceId: id,
+    });
+    return {
+      categoryId: id,
+      categoryImagePath: deleted.image ?? null,
+      deletedProductIds: productIds,
+      deletedProductImages: productsUnder
+        .map((p) => p.imageUrl)
+        .filter((u): u is string => Boolean(u)),
+    };
+  }
+
+  /**
+   * Best-effort post-commit image cleanup. Intentionally NOT in the
+   * transaction — filesystem unlink cannot be rolled back if the DB transaction
+   * commits and the file deletion later fails, so we run only AFTER the
+   * transaction has succeeded. Any ENOENT or read-only error is swallowed (the
+   * DB is already the source of truth); other errors are logged via console
+   * for ops visibility.
+   */
+  async cleanupImagesAfterCommit(input: {
+    categoryImagePath?: string | null;
+    deletedProductImages?: string[];
+  }) {
+    const paths: string[] = [];
+    if (input.categoryImagePath) {
+      paths.push(...catalogImagePathsFromUrl(input.categoryImagePath));
+    }
+    for (const url of input.deletedProductImages ?? []) {
+      paths.push(...productImagePathsFromUrl(url));
+    }
+    await Promise.all(
+      paths.map((path) =>
+        unlink(path).catch((error: NodeJS.ErrnoException) => {
+          if (error.code !== "ENOENT") {
+            console.warn(
+              `[catalog] failed to clean up image ${path}:`,
+              error.message,
+            );
+          }
+        }),
+      ),
+    );
+  }
+
   @Transaction({ retries: 2 })
   async restock(productId: string, data: RestockDto, actorUserId: string) {
     const input = restockDto.parse(data);
@@ -408,4 +521,20 @@ function applyInventoryDelta(
     HttpError.conflict("Inventory change would violate stock availability");
   }
   return next;
+}
+
+const FILE_NAME_REGEX = /^[0-9a-f-]{36}\.(?:avif|gif|jpg|png|webp)$/i;
+
+function catalogImagePathsFromUrl(url: string): string[] {
+  if (!url || !url.startsWith(CATEGORY_IMAGE_SERVE_PREFIX)) return [];
+  const fileName = decodeURIComponent(url.slice(CATEGORY_IMAGE_SERVE_PREFIX.length));
+  if (!FILE_NAME_REGEX.test(fileName)) return [];
+  return [join(envConfig.storage.basePath, "category-images", fileName)];
+}
+
+function productImagePathsFromUrl(url: string): string[] {
+  if (!url || !url.startsWith(PRODUCT_IMAGE_SERVE_PREFIX)) return [];
+  const fileName = decodeURIComponent(url.slice(PRODUCT_IMAGE_SERVE_PREFIX.length));
+  if (!FILE_NAME_REGEX.test(fileName)) return [];
+  return [join(envConfig.storage.basePath, "product-images", fileName)];
 }

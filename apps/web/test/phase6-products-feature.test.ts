@@ -9,6 +9,7 @@ import {
   updateProductFormSchema,
 } from "../src/features/Products/config/productSchemas";
 import { productKeys } from "../src/features/Products/hooks/productKeys";
+import { PRODUCT_TABLE_COLUMN_IDS } from "../src/features/Products/hooks/useProductsTableColumns";
 import type { ProductRecord } from "../src/features/Products/types";
 
 const product: ProductRecord = {
@@ -84,6 +85,11 @@ describe("Phase 6D product form contracts", () => {
 });
 
 describe("Phase 6D product lifecycle contracts", () => {
+  test("keeps an explicit SKU column for the SKU table filter", () => {
+    expect(PRODUCT_TABLE_COLUMN_IDS.sku).toBe("sku");
+    expect(Object.values(PRODUCT_TABLE_COLUMN_IDS)).toContain("sku");
+  });
+
   test("requires an audited reason for product activation changes", () => {
     expect(productStatusFormSchema.safeParse({ reason: "" }).success).toBe(false);
     const values = productStatusFormSchema.parse({ reason: "  Seasonal catalog review  " });

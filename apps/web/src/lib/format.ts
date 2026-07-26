@@ -11,6 +11,38 @@ function selectedKafilLanguage(): KafilLanguage {
   return normalizeKafilLanguage(document.documentElement.lang);
 }
 
+export const KAFIL_DEFAULT_TIME_ZONE = "Africa/Casablanca" as const;
+
+export const KAFIL_SUPPORTED_TIME_ZONES = [
+  "Africa/Casablanca",
+  "Africa/Tunis",
+  "Africa/Algiers",
+  "Africa/Cairo",
+  "Europe/Paris",
+  "Europe/Madrid",
+  "Europe/London",
+  "Europe/Berlin",
+  "Europe/Istanbul",
+  "America/New_York",
+  "America/Los_Angeles",
+  "UTC",
+] as const;
+
+export type KafilTimeZone = (typeof KAFIL_SUPPORTED_TIME_ZONES)[number];
+
+const kafilTimeZoneSet: ReadonlySet<string> = new Set(KAFIL_SUPPORTED_TIME_ZONES);
+
+export function normalizeKafilTimeZone(value: unknown): KafilTimeZone {
+  return typeof value === "string" && kafilTimeZoneSet.has(value)
+    ? (value as KafilTimeZone)
+    : KAFIL_DEFAULT_TIME_ZONE;
+}
+
+function selectedKafilTimeZone(): KafilTimeZone {
+  if (typeof document === "undefined") return KAFIL_DEFAULT_TIME_ZONE;
+  return normalizeKafilTimeZone(document.documentElement.dataset.timeZone);
+}
+
 const localeByLanguage: Record<KafilLanguage, string> = {
   ar: "ar-MA",
   en: "en-MA",
@@ -55,6 +87,7 @@ export function formatKafilNumber(
 export function formatKafilDate(
   value: Date | number | string | null | undefined,
   language: KafilLanguage = selectedKafilLanguage(),
+  timeZone: KafilTimeZone = selectedKafilTimeZone(),
 ) {
   if (value === null || value === undefined || value === "") return "—";
 
@@ -63,7 +96,24 @@ export function formatKafilDate(
 
   return new Intl.DateTimeFormat(getLocale(language), {
     dateStyle: "medium",
-    timeZone: "Africa/Casablanca",
+    timeZone,
+  }).format(date);
+}
+
+export function formatDateTime(
+  value: Date | number | string | null | undefined,
+  language: KafilLanguage = selectedKafilLanguage(),
+  timeZone: KafilTimeZone = selectedKafilTimeZone(),
+) {
+  if (value === null || value === undefined || value === "") return "—";
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return new Intl.DateTimeFormat(getLocale(language), {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone,
   }).format(date);
 }
 

@@ -2,11 +2,13 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
   activateProduct,
   createProduct,
   deactivateProduct,
+  deleteProduct,
   listProductCategories,
   listProducts,
   updateProduct,
@@ -30,7 +32,7 @@ export function useProductCategories(enabled = true) {
 }
 
 export function useProductCommands() {
-  const invalidate = [productKeys.all];
+  const invalidate = [...catalogWriteKeys];
 
   const create = useEntityCommand({
     mutationFn: createProduct,
@@ -56,6 +58,12 @@ export function useProductCommands() {
     successMessage: "Product deactivated.",
     errorMessage: "Could not deactivate the product.",
   });
+  const remove = useEntityCommand({
+    mutationFn: deleteProduct,
+    invalidate,
+    successMessage: "Product deleted permanently.",
+    errorMessage: "Could not delete the product. It may have order or inventory history.",
+  });
 
-  return { create, update, activate, deactivate };
+  return { create, update, activate, deactivate, remove };
 }

@@ -61,9 +61,7 @@
         "sidebar-ring": "oklch(0.72 0.16 130)"
       }
     },
-    "radius": "0.5rem",
-    "radiusScale": "uniform",
-    "spacing": "0.25rem"
+    "radius": "0.5rem"
   },
   "typography": {
     "fontSans": "var(--font-cairo), Cairo, sans-serif",

@@ -6,10 +6,8 @@ import { Validate } from "najm-validation";
 
 import { isOperator } from "../../config/authConfig";
 import {
-  type UpdateFormFillSettingDto,
-  type UpdateFundingSettingDto,
-  updateFormFillSettingDto,
-  updateFundingSettingDto,
+  type UpdateSettingsDto,
+  updateSettingsDto,
 } from "./settingDto";
 import {
   CanRead,
@@ -25,16 +23,16 @@ import { SettingService } from "./settingService";
 export class SettingController {
   constructor(private readonly settings: SettingService) {}
 
-  @Get("/funding")
+  @Get("/")
   @isOperator()
   @CanRead()
   @McpTool({
-    description: "Read the default funding target for new family accounts",
+    description: "Read the platform settings",
     readOnly: true,
   })
   @ResMsg("settings.success.retrieved")
-  getFunding() {
-    return this.settings.getFunding();
+  getSettings() {
+    return this.settings.getSettings();
   }
 
   @Get("/form-fill")
@@ -47,41 +45,22 @@ export class SettingController {
     return this.settings.getFormFill();
   }
 
-  @Put("/funding")
+  @Put("/")
   @isOperator()
   @CanUpdate()
-  @Validate({ body: updateFundingSettingDto })
+  @Validate({ body: updateSettingsDto })
   @McpTool({
-    description: "Update the default funding target for new family accounts",
+    description: "Update the platform settings including the pending contribution expiry window",
     confirm: {
       level: "warning",
-      message: "Update the default target for new family accounts?",
+      message: "Update the platform settings?",
     },
   })
-  @ResMsg("settings.success.fundingUpdated")
-  updateFunding(
-    @Body() body: UpdateFundingSettingDto,
+  @ResMsg("settings.success.updated")
+  updateSettings(
+    @Body() body: UpdateSettingsDto,
     @User("id") actorUserId: string,
   ) {
-    return this.settings.updateFunding(body, actorUserId);
-  }
-
-  @Put("/form-fill")
-  @isOperator()
-  @CanUpdate()
-  @Validate({ body: updateFormFillSettingDto })
-  @McpTool({
-    description: "Enable or disable the browser F8 form-fill shortcut",
-    confirm: {
-      level: "warning",
-      message: "Change the F8 form-fill shortcut setting?",
-    },
-  })
-  @ResMsg("settings.success.formFillUpdated")
-  updateFormFill(
-    @Body() body: UpdateFormFillSettingDto,
-    @User("id") actorUserId: string,
-  ) {
-    return this.settings.updateFormFill(body, actorUserId);
+    return this.settings.update(body, actorUserId);
   }
 }

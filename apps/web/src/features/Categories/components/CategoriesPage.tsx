@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CircleCheck, CircleOff, Eye, Pencil, Tags } from "lucide-react";
+import { CircleCheck, CircleOff, Eye, Pencil, Tags, Trash2 } from "lucide-react";
+import { usePermissions } from "najm-auth/client/react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
@@ -14,6 +15,7 @@ import { CategoryDetails } from "./CategoryDetails";
 import {
   CategoryStatusDialogContent,
   CreateCategoryDialogContent,
+  DeleteCategoryDialogContent,
   UpdateCategoryDialogContent,
 } from "./CategoryForms";
 import { useCategories } from "../hooks/useCategories";
@@ -23,6 +25,7 @@ import type { CategoryRecord } from "../types";
 
 export function CategoriesPage() {
   const dialog = useDialog();
+  const { hasRole } = usePermissions();
   const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
   const categories = useCategories(pagination);
   const columns = useCategoriesTableColumns();
@@ -37,7 +40,7 @@ export function CategoriesPage() {
       description: "Add an active category to the operator-managed catalog.",
       children: <CreateCategoryDialogContent />,
       showButtons: false,
-      size: "lg",
+      width: "lg",
       height: "auto",
     });
   }
@@ -48,7 +51,7 @@ export function CategoriesPage() {
       description: "Operator-managed catalog category details and history.",
       children: <CategoryDetails category={category} />,
       showButtons: false,
-      size: "lg",
+      width: "lg",
       height: "auto",
     });
   }
@@ -59,7 +62,7 @@ export function CategoriesPage() {
       description: "Use a dedicated lifecycle command to change the category status.",
       children: <UpdateCategoryDialogContent category={category} />,
       showButtons: false,
-      size: "lg",
+      width: "lg",
       height: "auto",
     });
   }
@@ -70,6 +73,17 @@ export function CategoriesPage() {
       title: `${action === "deactivate" ? "Deactivate" : "Activate"} ${category.name}`,
       description: "This lifecycle command is audited by the backend.",
       children: <CategoryStatusDialogContent action={action} category={category} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function openDelete(category: CategoryRecord) {
+    void dialog.openDialog({
+      title: `Permanently delete ${category.name}?`,
+      description:
+        "Bootstrap administrators can permanently delete pristine categories (no order history, no inventory ledger activity, zero balance).",
+      children: <DeleteCategoryDialogContent category={category} />,
       showButtons: false,
       size: "sm",
     });
@@ -89,25 +103,39 @@ export function CategoriesPage() {
     renderEmpty: () => <PageEmptyState action={<NButton onClick={openCreate}>Create category</NButton>} title="No catalog category yet" description="Create the first active category for your product catalog." />,
     renderError: (error) => <PageErrorState error={error} onRetry={() => void categories.refetch()} />,
     menu: {
-      row: (category) => [
-        {
-          label: "View",
-          icon: Eye,
-          onSelect: () => openView(category),
-        },
-        {
-          label: "Edit",
-          icon: Pencil,
-          onSelect: () => openEdit(category),
-        },
-        {
-          label: category.status === "active" ? "Deactivate" : "Activate",
-          icon: category.status === "active" ? CircleOff : CircleCheck,
-          danger: category.status === "active",
-          separatorBefore: true,
-          onSelect: () => openStatus(category),
-        },
-      ],
+      row: (category) => {
+        const actions = [
+          {
+            label: "View",
+            icon: Eye,
+            onSelect: () => openView(category),
+          },
+          {
+            label: "Edit",
+            icon: Pencil,
+            onSelect: () => openEdit(category),
+          },
+          {
+            label: category.status === "active" ? "Deactivate" : "Activate",
+            icon: category.status === "active" ? CircleOff : CircleCheck,
+            danger: category.status === "active",
+            separatorBefore: true,
+            onSelect: () => openStatus(category),
+          },
+        ];
+
+        if (hasRole("admin")) {
+          actions.push({
+            label: "Delete permanently",
+            icon: Trash2,
+            danger: true,
+            separatorBefore: true,
+            onSelect: () => openDelete(category),
+          });
+        }
+
+        return actions;
+      },
     },
     menuButton: true,
     manualPagination: true,
@@ -116,7 +144,7 @@ export function CategoriesPage() {
     onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),
     pageSizeOptions: [10, 25, 50, 100],
     responsiveCards: true,
-    defaultMode: "table",
+    defaultMode: "cards",
     addButtonText: "Create category",
     noDataText: "No catalog category found",
     loadingText: "Loading catalog categories...",

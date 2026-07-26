@@ -33,7 +33,8 @@
     "paused": "Paused",
     "stopped": "Stopped",
     "ended": "Ended",
-    "refunded": "Refunded"
+    "refunded": "Refunded",
+    "expired": "Expired"
   },
   "alerts": {
     "success": {
@@ -288,8 +289,14 @@
   "settings": {
     "success": {
       "retrieved": "Settings retrieved successfully",
-      "fundingUpdated": "Settings funding updated successfully",
-      "formFillUpdated": "F8 form fill setting updated successfully"
+      "updated": "Settings updated successfully"
+    }
+  },
+  "appearance": {
+    "success": {
+      "retrieved": "Appearance retrieved successfully",
+      "updated": "Appearance updated successfully",
+      "reset": "Appearance reset successfully"
     }
   },
   "orders": {
@@ -407,6 +414,34 @@
       "french": "French",
       "arabic": "Arabic"
     },
+    "display": {
+      "title": "Display preferences",
+      "subtitle": "Customize how dates, times, and currency are formatted for you.",
+      "timeZone": {
+        "label": "Time zone",
+        "helper": "Used to render dates and times across the dashboard. Currency stays in MAD.",
+        "preview": "Right now in {zone}: {date}",
+        "saved": "Time zone updated.",
+        "saveFailed": "Could not update time zone."
+      }
+    },
+    "funding": {
+      "progress": "Funding progress",
+      "target": "Target: {amount}",
+      "aria": "Family funding progress",
+      "percentFunded": "{percent}% funded",
+      "familyTitle": "Family funding",
+      "fundedOfTarget": "{funded} of {target}",
+      "reachedDescription": "Funding target reached. Household ordering is enabled.",
+      "reservedDescription": "Pending payments reserve the remaining target. New sponsorships are paused.",
+      "openDescription": "{amount} remains before household ordering is enabled.",
+      "pendingReservation": "Pending reservation",
+      "availableToContribute": "Available to contribute",
+      "open": "Open",
+      "reserved": "Pending payments cover target",
+      "funded": "Target reached",
+      "earliestExpiry": "Earliest pending expiry: {date}"
+    },
     "nav": {
       "overview": "Overview",
       "families": "Families",
@@ -480,6 +515,7 @@
       "stopped": "Stopped",
       "ended": "Ended",
       "refunded": "Refunded",
+      "expired": "Expired",
       "validated": "Validated"
     },
     "dashboard": {
@@ -583,6 +619,63 @@
       }
     },
     "operator": {
+      "settings": {
+        "loading": "Loading settings",
+        "loadError": "We could not load platform settings",
+        "title": "Platform settings",
+        "subtitle": "Manage platform defaults and operator productivity tools.",
+        "defaultsTitle": "Defaults & F8 shortcut",
+        "defaultsDescription": "New families default to {amount} unless overridden. The F8 shortcut is {state} for browser forms.",
+        "enabled": "enabled",
+        "disabled": "disabled",
+        "shortcutTitle": "Browser form shortcut",
+        "shortcutHelp": "Enable this only when fake values are useful. The change is immediate and does not require rebuilding or restarting Docker.",
+        "shortcutLabel": "Enable F8 fake-data fill",
+        "shortcutControl": "Allow F8 to fill supported forms",
+        "shortcutDisabled": "Disabled by default.",
+        "targetTitle": "New-family target default",
+        "targetHelp": "Each family stores its own target. This value is only the default for a new family when an API caller does not provide one.",
+        "targetLabel": "Default target (MAD)",
+        "targetPlaceholder": "Enter a default activation target",
+"expiryTitle": "Pending payment expiry (hours)",
+        "expiryHelp": "New pending payments reserve a family's target for this duration. Changing it does not alter existing payment deadlines.",
+        "expiryLabel": "Pending payment expiry (hours)",
+        "expiryPlaceholder": "For example: 72",
+        "saving": "Saving...",
+        "save": "Save settings",
+        "saveSuccess": "Platform settings updated.",
+        "saveError": "Could not update platform settings.",
+        "close": "Close",
+        "cancel": "Cancel",
+        "sheetTitle": "Global settings",
+        "sheetDescription": "Manage the platform theme and application defaults.",
+        "themeTab": "Theme",
+        "appTab": "App settings",
+        "lightMode": "Light",
+        "darkMode": "Dark",
+        "previewMode": "Preview mode",
+        "resetField": "Reset field",
+        "resetSection": "Reset section",
+        "themeSection": "Theme colors",
+        "layoutSection": "Layout",
+        "pageHeaderSection": "Page header",
+        "sidebarSection": "Sidebar",
+        "tableSection": "Tables",
+        "inputSection": "Inputs",
+        "saveTheme": "Save theme",
+        "savingTheme": "Saving theme...",
+        "resetTheme": "Reset Kafil theme",
+        "themeSaveSuccess": "Theme updated.",
+        "themeSaveError": "Could not update the theme.",
+        "themeResetSuccess": "Factory theme restored.",
+        "themeResetError": "Could not restore the factory theme.",
+        "discardTitle": "Discard unsaved changes?",
+        "discardDescription": "Closing settings will discard your unsaved changes.",
+        "discard": "Discard changes",
+        "resetThemeTitle": "Reset the Kafil theme?",
+        "resetThemeDescription": "This removes the saved platform theme and restores the version-controlled factory design."
+
+      },
       "contributions": {
         "title": "Contributions",
         "subtitle": "Validate sponsor payments, credit household budgets, and handle audited reversals.",
@@ -686,7 +779,14 @@
         "bulkDeleteContribution": "Delete selected contributions permanently",
         "bulkDeleting": "Deleting selected contributions...",
         "bulkDeleteSuccess": "Selected contributions permanently deleted.",
-        "bulkDeleteError": "Could not permanently delete the selected contributions."
+        "bulkDeleteError": "Could not permanently delete the selected contributions.",
+        "pendingDeadline": "Pending deadline",
+        "expiredAt": "Expired at",
+        "expired": "Expired",
+        "expiredWarning": "This pending contribution has expired and cannot be validated.",
+        "maxAmountLabel": "Available to contribute",
+        "availableAmount": "Maximum available: {amount}",
+        "noAssignmentOpen": "No assignments are open for contributions right now."
       },
       "orders": {
         "title": "Orders",
@@ -737,7 +837,7 @@
         "noSponsorContributions": "No sponsor contributions yet.",
         "notProvided": "Not provided",
         "profile": "Family profile",
-        "relationship": "Relationship to children",
+        "relationship": "Relationship",
         "notes": "Internal notes",
         "created": "Created",
         "noNotes": "No internal notes",
@@ -1083,7 +1183,15 @@
         "emptyTitle": "No contributions yet",
         "emptyDescription": "Submitted contributions remain pending until an operator validates them.",
         "monthly": "Monthly",
-        "oneTime": "One-time"
+        "oneTime": "One-time",
+        "targetReached": "Funding target reached",
+        "coveredByPending": "Pending payments cover the remaining target",
+        "availableAmount": "Available to contribute: {amount}",
+        "amountTooHigh": "Enter no more than {amount}.",
+        "planReason": "Reason for this plan change",
+        "stopReason": "Reason for stopping this plan",
+        "pendingDeadline": "Pending until {date}",
+        "expiredAt": "Expired on {date}"
       },
       "directory": {
         "title": "Families to support",
@@ -1094,7 +1202,9 @@
         "loading": "Loading families",
         "error": "We could not load families",
         "emptyTitle": "No families available",
-        "emptyDescription": "There are no active families available for support right now."
+        "emptyDescription": "There are no active families available for support right now.",
+        "targetReached": "Target reached",
+        "coveredByPending": "Covered by pending payments"
       }
     }
   }

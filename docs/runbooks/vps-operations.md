@@ -152,6 +152,41 @@ ln -sfn '<recorded rollback release>' /opt/kafil/current
 
 Never use `docker compose down -v`. Do not claim schema rollback.
 
+## Pending contribution expiry
+
+Funding capacity is calculated from the current time, so a delayed timer never
+keeps an expired payment reservation active. The timer materializes the
+terminal `expired` state, audit record, and outbox event for reporting and
+history.
+
+After migrations `0020_thin_captain_stacy` and
+`0021_happy_tony_stark` are applied, run one sweep and inspect its output:
+
+```bash
+docker compose --env-file /opt/kafil/env/infrastructure.env \
+  -f /opt/kafil/current/compose.production.yml --profile tools run --rm \
+  migrate bun run contributions:expire
+```
+
+Install the committed service and timer only after that manual sweep succeeds:
+
+```bash
+install -o root -g root -m 0644 \
+  /opt/kafil/current/deploy/systemd/kafil-contribution-expiry.service \
+  /etc/systemd/system/kafil-contribution-expiry.service
+install -o root -g root -m 0644 \
+  /opt/kafil/current/deploy/systemd/kafil-contribution-expiry.timer \
+  /etc/systemd/system/kafil-contribution-expiry.timer
+systemctl daemon-reload
+systemctl enable --now kafil-contribution-expiry.timer
+systemctl list-timers kafil-contribution-expiry.timer
+```
+
+Monitor `systemctl status kafil-contribution-expiry.timer` and
+`journalctl -u kafil-contribution-expiry.service`. The command is idempotent
+and concurrent workers use conditional transitions, but repeated failures must
+alert an operator because expiry history would remain unmaterialized.
+
 ## Demo initialization (manual, one time)
 
 Before any setup or demo command, prove the selected database is the new empty

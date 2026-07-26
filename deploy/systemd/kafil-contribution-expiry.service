@@ -1,0 +1,14 @@
+[Unit]
+Description=Materialize expired Kafil pending contributions
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=kafil-deploy
+Group=kafil-deploy
+WorkingDirectory=/opt/kafil/current
+ExecStart=/usr/bin/docker compose --env-file /opt/kafil/env/infrastructure.env -f /opt/kafil/current/compose.production.yml --profile tools run --rm migrate bun run contributions:expire
+PrivateTmp=true
+NoNewPrivileges=true
+

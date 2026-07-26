@@ -11,7 +11,7 @@ const browserPassword = "Phase6BrowserPass1!";
 
 async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: language, url: "http://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: language, url: "https://127.0.0.1:3210" },
   ]);
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);

@@ -78,6 +78,8 @@ export const contributions = pgTable(
     submittedAt: timestamp("submitted_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    expiredAt: timestamp("expired_at", { withTimezone: true }),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     validatedByUserId: text("validated_by_user_id").references(
       () => usersTable.id,
@@ -96,6 +98,14 @@ export const contributions = pgTable(
       "contributions_positive_amount_check",
       sql`${table.amountMinor} > 0`,
     ),
+    check(
+      "contributions_expired_state_check",
+      sql`(${table.status} = 'expired' AND ${table.expiredAt} IS NOT NULL) OR (${table.status} <> 'expired' AND ${table.expiredAt} IS NULL)`,
+    ),
+    check(
+      "contributions_expired_no_validation_check",
+      sql`${table.status} <> 'expired' OR (${table.validatedByUserId} IS NULL AND ${table.validatedAt} IS NULL)`,
+    ),
     index("contributions_assignment_status_idx").on(
       table.supportAssignmentId,
       table.status,
@@ -107,6 +117,15 @@ export const contributions = pgTable(
     index("contributions_family_status_idx").on(
       table.familyProfileId,
       table.status,
+    ),
+    index("contributions_status_expires_at_idx").on(
+      table.status,
+      table.expiresAt,
+    ),
+    index("contributions_family_status_expires_at_idx").on(
+      table.familyProfileId,
+      table.status,
+      table.expiresAt,
     ),
   ],
 );

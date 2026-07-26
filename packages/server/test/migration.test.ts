@@ -343,4 +343,79 @@ describe("initial PostgreSQL migration", () => {
     expect(migration).not.toContain("DROP COLUMN");
     expect(migration).not.toContain("DROP TABLE");
   });
+
+  it("adds the expired enum value in a dedicated commit so the constraint migration can reference it", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0020_thin_captain_stacy.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      `ALTER TYPE "public"."contribution_status" ADD VALUE 'expired'`,
+    );
+    expect(migration).not.toContain("ADD COLUMN \"expires_at\"");
+  });
+
+  it("adds pending contribution expiry window with a safe historical backfill", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0021_happy_tony_stark.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'ADD COLUMN "expires_at" timestamp with time zone',
+    );
+    expect(migration).toContain(
+      'ADD COLUMN "expired_at" timestamp with time zone',
+    );
+    expect(migration).toContain(
+      'ADD COLUMN "pending_contribution_expiry_hours" integer DEFAULT 72',
+    );
+    expect(migration).toContain(
+      "greatest(\n  \"submitted_at\" + interval '72 hours',\n  now() + interval '72 hours'\n)\nWHERE \"status\" = 'pending'",
+    );
+    expect(migration).toContain(
+      'ALTER COLUMN "expires_at" SET NOT NULL',
+    );
+    expect(migration).toContain(
+      "CHECK (\"platform_settings\".\"pending_contribution_expiry_hours\" BETWEEN 1 AND 720)",
+    );
+    expect(migration).toContain(
+      'CREATE INDEX "contributions_status_expires_at_idx"',
+    );
+    expect(migration).toContain(
+      'CREATE INDEX "contributions_family_status_expires_at_idx"',
+    );
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
+
+  it("idempotently repairs a deployed database missing the child image column", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0022_repair_children_image.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'ALTER TABLE "children" ADD COLUMN IF NOT EXISTS "image" text',
+    );
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
+
+  it("adds nullable theme persistence with a positive optimistic revision", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0023_appearance_theme_persistence.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'ADD COLUMN "design_config" jsonb',
+    );
+    expect(migration).toContain(
+      'ADD COLUMN "appearance_revision" integer DEFAULT 1 NOT NULL',
+    );
+    expect(migration).toContain(
+      'CONSTRAINT "platform_settings_positive_appearance_revision_check"',
+    );
+    expect(migration).not.toContain('"design_config" jsonb NOT NULL');
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
 });

@@ -126,9 +126,15 @@ items to families.
   stock-ledger entries, and indexes for slug, SKU, category/status, and name
   filtering.
 - Operators use explicit create/update/activate/deactivate/restock/adjustment
-  commands. Categories and products have no delete command; deactivation
-  preserves future order-history references. Product images are limited to a
-  catalog URL field, with no household-document or internal-storage field.
+  commands. Categories and products expose a bootstrap-admin-only pristine
+  delete (`deleteCategory`, `deleteProduct`). A record is deletable only when
+  it has no order history, no inventory ledger activity, and a zero balance;
+  otherwise the command returns HTTP 409 and the operator must deactivate
+  instead. Cart items and product images are cleaned up post-commit; the
+  inventory ledger, order snapshots, and audit log are never modified by the
+  delete path. Deactivation preserves future order-history references for
+  everything else. Product images are limited to a catalog URL field, with no
+  household-document or internal-storage field.
 - Families can read only active category/product projections. Stock mutation
   locks the balance row, records an idempotent ledger entry, and cannot make
   stock negative or lower than its reservations. Phase 5 can reuse the internal

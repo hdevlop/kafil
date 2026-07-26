@@ -85,10 +85,7 @@ export function FamilyDetails({ family }: Readonly<{ family: FamilyRecord }>) {
         <section className="space-y-2">
           <div className="relative h-52 overflow-hidden rounded-2xl bg-muted sm:h-60">
             <Image
-              src={getFamilyAvatarImage(
-                family.image,
-                family.relationshipToChildren,
-              )}
+              src={getFamilyAvatarImage(family.image)}
               alt={family.name}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"

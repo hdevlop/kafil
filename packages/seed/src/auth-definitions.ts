@@ -33,6 +33,11 @@ export const AUTH_PERMISSIONS = [
   ),
   permission("read", "budgets", "Read family budget summaries and ledgers"),
   permission("update", "budgets", "Set limits and apply budget adjustments"),
+  permission(
+    "delete",
+    "catalog",
+    "Permanently delete pristine categories and products (added by mistake)",
+  ),
   permission("read", "settings", "Read platform product settings"),
   permission("update", "settings", "Update platform product settings"),
   permission("read", "audit-events", "Read filtered audit events"),

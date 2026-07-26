@@ -52,11 +52,30 @@ function sanitizeMetadata(metadata: Record<string, unknown>) {
   return Object.fromEntries(
     Object.entries(metadata).filter(
       ([key, value]) =>
-        !SENSITIVE_METADATA_KEYS.has(key) &&
-        (value === null ||
-          typeof value === "boolean" ||
-          typeof value === "number" ||
-          typeof value === "string"),
+        !SENSITIVE_METADATA_KEYS.has(key) && isSafeMetadataValue(value),
     ),
+  );
+}
+
+function isSafeMetadataValue(value: unknown) {
+  if (
+    value === null ||
+    typeof value === "boolean" ||
+    typeof value === "number" ||
+    typeof value === "string"
+  ) {
+    return true;
+  }
+
+  return (
+    Array.isArray(value) &&
+    value.length <= 50 &&
+    value.every(
+      (item) =>
+        item === null ||
+        typeof item === "boolean" ||
+        typeof item === "number" ||
+        typeof item === "string",
+    )
   );
 }

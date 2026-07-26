@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { getGuardMetadata } from "najm-guard";
 import { getMcpTools } from "najm-mcp";
 
 import { AuditService } from "../src/modules/audit";
@@ -42,13 +43,25 @@ describe("Phase 4 catalog contracts", () => {
     ).toBe(false);
   });
 
-  it("has no hard-delete catalog command and exposes separate stock commands", () => {
+  it("exposes lifecycle, admin-only pristine delete, and separate stock commands", () => {
     const methods = getMcpTools(CatalogController).map((tool) => tool.methodKey);
     expect(methods).toContain("deactivateProduct");
     expect(methods).toContain("restock");
     expect(methods).toContain("adjustInventory");
-    expect(methods).not.toContain("deleteProduct");
-    expect(methods).not.toContain("deleteCategory");
+    expect(methods).toContain("deleteCategory");
+    expect(methods).toContain("deleteProduct");
+  });
+
+  it("requires both the bootstrap admin role and delete:catalog permission", () => {
+    for (const method of ["deleteCategory", "deleteProduct"]) {
+      const guards = getGuardMetadata(CatalogController, method);
+      expect(guards.map(({ guardClass }) => guardClass.name)).toEqual([
+        "AdminRoleGuard",
+        "AuthGuard",
+        "PermissionGuard",
+      ]);
+      expect(guards.at(-1)?.params).toBe("delete:catalog");
+    }
   });
 });
 

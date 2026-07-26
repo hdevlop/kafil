@@ -372,6 +372,8 @@ describe("Kafil database schema", () => {
       expect.arrayContaining([
         "familyFundingTargetMinor",
         "formFillEnabled",
+        "designConfig",
+        "appearanceRevision",
         "currency",
         "updatedByUserId",
       ]),
@@ -379,6 +381,9 @@ describe("Kafil database schema", () => {
     expect(columns.familyFundingTargetMinor.notNull).toBe(true);
     expect(columns.formFillEnabled.notNull).toBe(true);
     expect(columns.formFillEnabled.hasDefault).toBe(true);
+    expect(columns.designConfig.notNull).toBe(false);
+    expect(columns.appearanceRevision.notNull).toBe(true);
+    expect(columns.appearanceRevision.hasDefault).toBe(true);
   });
 
   it("composes support assignments with lifecycle and privacy boundaries", () => {

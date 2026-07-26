@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { usePermissions } from "najm-auth/client/react";
 import { NAvatar, type NTableProps } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
@@ -13,6 +14,7 @@ import type { FamilyRecord } from "../types";
 
 export function useFamiliesTableColumns() {
   const { t } = useKafilLanguage();
+  const { hasRole } = usePermissions();
   return useMemo<NTableProps<FamilyRecord>["columns"]>(
     () => [
       {
@@ -20,10 +22,7 @@ export function useFamiliesTableColumns() {
         header: t("operator.families.account"),
         cell: ({ row }) => (
           <NAvatar
-            src={getFamilyAvatarImage(
-              row.original.image,
-              row.original.relationshipToChildren,
-            )}
+            src={getFamilyAvatarImage(row.original.image)}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
           />
@@ -32,20 +31,28 @@ export function useFamiliesTableColumns() {
       {
         accessorKey: "email",
         header: t("operator.families.email"),
-      },
-      {
-        accessorKey: "guardianLegalName",
-        header: t("operator.families.guardian"),
+        meta: {
+          visible: hasRole("admin"),
+          hiddenBelow: "2xl",
+        },
       },
       {
         accessorKey: "phone",
         header: t("operator.families.phone"),
         cell: ({ getValue }) => getValue<string | null>() || "—",
+        meta: {
+          visible: hasRole("admin"),
+          hiddenBelow: "lg",
+        },
       },
       {
         accessorKey: "relationshipToChildren",
         header: t("operator.families.relationship"),
         cell: ({ getValue }) => getValue<string | null>() || "—",
+        meta: {
+          visible: hasRole("admin"),
+          hiddenBelow: "lg",
+        },
       },
       {
         id: "funding",
@@ -68,8 +75,12 @@ export function useFamiliesTableColumns() {
         accessorKey: "createdAt",
         header: t("operator.families.created"),
         cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        meta: {
+          visible: hasRole("admin"),
+          hiddenBelow: "lg",
+        },
       },
     ],
-    [t],
+    [hasRole, t],
   );
 }

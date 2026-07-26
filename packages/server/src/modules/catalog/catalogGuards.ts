@@ -1,5 +1,6 @@
 import {
   CanCreate,
+  CanDelete,
   CanList,
   CanRead,
   CanUpdate,
@@ -13,4 +14,4 @@ export const Catalog = definePolicy(products, "catalog", {
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 });
 
-export { CanCreate, CanList, CanRead, CanUpdate, Policy };
+export { CanCreate, CanDelete, CanList, CanRead, CanUpdate, Policy };

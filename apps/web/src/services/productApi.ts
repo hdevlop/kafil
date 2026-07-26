@@ -47,6 +47,10 @@ export function deactivateProduct({ id, reason }: ProductStatusInput) {
   return api.post<ProductCommandRecord>(`/catalog/products/${id}/deactivate`, { reason });
 }
 
+export function deleteProduct(id: string) {
+  return api.delete<ProductCommandRecord>(`/catalog/products/${id}`);
+}
+
 export const PRODUCT_IMAGE_SERVE_PREFIX = "/api/product-images/files/serve/" as const;
 const PRODUCT_IMAGE_ROUTE = "/product-images/files/";
 

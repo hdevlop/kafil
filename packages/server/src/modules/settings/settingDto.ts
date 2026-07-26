@@ -1,19 +1,21 @@
 import { z } from "zod";
 
 import { positiveMinorAmountDto } from "../budgets/money";
+import {
+  MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS,
+  MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS,
+} from "./settingSchema";
 
-export const updateFundingSettingDto = z.object({
+export const pendingContributionExpiryHoursDto = z.coerce
+  .number()
+  .int()
+  .min(MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS)
+  .max(MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS);
+
+export const updateSettingsDto = z.object({
   familyFundingTargetMinor: positiveMinorAmountDto,
-  reason: z.string().trim().min(3).max(500),
+  pendingContributionExpiryHours: pendingContributionExpiryHoursDto,
+  formFillEnabled: z.boolean(),
 });
 
-export type UpdateFundingSettingDto = z.input<typeof updateFundingSettingDto>;
-
-export const updateFormFillSettingDto = z.object({
-  enabled: z.boolean(),
-  reason: z.string().trim().min(3).max(500),
-});
-
-export type UpdateFormFillSettingDto = z.input<
-  typeof updateFormFillSettingDto
->;
+export type UpdateSettingsDto = z.input<typeof updateSettingsDto>;

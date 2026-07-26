@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Landmark, PencilLine, SlidersHorizontal } from "lucide-react";
+import { Landmark, PencilLine } from "lucide-react";
 import {
   Combobox,
   NButton,
@@ -23,10 +23,7 @@ import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/Dash
 
 import { RecordContributionDialogContent } from "@/features/Contributions/components/RecordContributionForm";
 import { BudgetLedgerCard } from "./BudgetLedgerCard";
-import {
-  ManualBudgetAdjustmentDialogContent,
-  MonthlyBudgetLimitDialogContent,
-} from "./BudgetForms";
+import { MonthlyBudgetLimitDialogContent } from "./BudgetForms";
 import { BudgetSummaryCards } from "./BudgetSummaryCards";
 import {
   useBudgetFamilies,
@@ -93,22 +90,7 @@ export function BudgetsPage() {
       ),
       showButtons: false,
       size: "md",
-      height: "xl",
-    });
-  }
-
-  function openAdjustment() {
-    void dialog.openDialog({
-      title: t("operator.budgets.manualAdjustmentTitle"),
-      description: t("operator.budgets.manualAdjustmentDescription"),
-      children: (
-        <ManualBudgetAdjustmentDialogContent
-          familyProfileId={familyProfileId}
-        />
-      ),
-      showButtons: false,
-      size: "md",
-      height: "xl",
+      height: "auto",
     });
   }
 
@@ -187,14 +169,6 @@ export function BudgetsPage() {
               >
                 <PencilLine className="size-4" />
                 {t("operator.budgets.setMonthlyLimit")}
-              </NButton>
-              <NButton
-                disabled={!summary.data}
-                variant="destructive"
-                onClick={openAdjustment}
-              >
-                <SlidersHorizontal className="size-4" />
-                {t("operator.budgets.manualAdjustment")}
               </NButton>
             </div>
           </>

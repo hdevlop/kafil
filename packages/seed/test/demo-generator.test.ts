@@ -127,6 +127,34 @@ describe("demo seed generator", () => {
     expect(fundingStates(data)).toEqual({ full: 0, pending: 1, zero: 0 });
   });
 
+  it("keeps live pending reservations under capacity and generates expired history", () => {
+    const data = generateDemoSeedData({
+      contributions: 100,
+      families: 10,
+      operators: 0,
+      sponsors: 10,
+    });
+    const expired = data.contributions.filter(
+      (contribution) => contribution.expectedStatus === "expired",
+    );
+
+    expect(expired.length).toBeGreaterThan(0);
+    for (const family of data.families) {
+      const committed = data.contributions
+        .filter(
+          (contribution) =>
+            contribution.familyProfileId === family.id &&
+            (contribution.expectedStatus === "validated" ||
+              contribution.expectedStatus === "pending"),
+        )
+        .reduce(
+          (total, contribution) => total + contribution.amountMinor,
+          0,
+        );
+      expect(committed).toBeLessThanOrEqual(family.fundingTargetMinor);
+    }
+  });
+
   it("uses a large Moroccan name pool without guardian and sponsor collisions", () => {
     const data = generateDemoSeedData({
       contributions: 0,

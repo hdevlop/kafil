@@ -69,7 +69,7 @@ export function FamiliesPage() {
        title: t("operator.families.createTitle"),
        children: <CreateFamilyDialogContent />,
       showButtons: false,
-      size: "xl",
+      width: "xl",
       height: "xl",
     });
   }
@@ -183,7 +183,7 @@ export function FamiliesPage() {
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
-      cards: "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
+      cards: "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
     },
     addButtonText: t("operator.families.create"),
     noDataText: t("operator.families.noData"),

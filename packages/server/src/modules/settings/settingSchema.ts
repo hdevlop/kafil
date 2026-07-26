@@ -3,15 +3,22 @@ import {
   bigint,
   boolean,
   check,
+  integer,
+  jsonb,
   pgTable,
   text,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { NajmDesignConfig } from "najm-kit";
 import { usersTable } from "najm-auth/pg";
 
 import { timestamps } from "../../database/columns";
 
 export const PLATFORM_SETTINGS_ID = "platform";
+export const DEFAULT_APPEARANCE_REVISION = 1;
+export const DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS = 72;
+export const MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS = 1;
+export const MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS = 720;
 
 export const platformSettings = pgTable(
   "platform_settings",
@@ -20,7 +27,16 @@ export const platformSettings = pgTable(
     familyFundingTargetMinor: bigint("family_funding_target_minor", {
       mode: "number",
     }).notNull(),
+    pendingContributionExpiryHours: integer(
+      "pending_contribution_expiry_hours",
+    )
+      .default(DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS)
+      .notNull(),
     formFillEnabled: boolean("form_fill_enabled").default(false).notNull(),
+    designConfig: jsonb("design_config").$type<NajmDesignConfig>(),
+    appearanceRevision: integer("appearance_revision")
+      .default(DEFAULT_APPEARANCE_REVISION)
+      .notNull(),
     currency: varchar("currency", { length: 3 }).default("MAD").notNull(),
     updatedByUserId: text("updated_by_user_id").references(() => usersTable.id, {
       onDelete: "set null",
@@ -34,6 +50,14 @@ export const platformSettings = pgTable(
       sql`${table.familyFundingTargetMinor} > 0`,
     ),
     check("platform_settings_currency_check", sql`${table.currency} = 'MAD'`),
+    check(
+      "platform_settings_positive_appearance_revision_check",
+      sql`${table.appearanceRevision} > 0`,
+    ),
+    check(
+      "platform_settings_pending_expiry_hours_check",
+      sql`${table.pendingContributionExpiryHours} BETWEEN ${MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS} AND ${MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS}`,
+    ),
   ],
 );
 

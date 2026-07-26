@@ -70,6 +70,9 @@ describe("Kafil server", () => {
 
     expect(discovery.name).toBe("kafil-mcp");
     expect(discovery.tools.map((tool) => tool.name).sort()).toEqual([
+      "appearance_get_appearance",
+      "appearance_update_appearance",
+      "appearance_reset_appearance",
       "budgets_get_own_summary",
       "budgets_list_own_ledger",
       "budgets_get_summary",
@@ -94,6 +97,8 @@ describe("Kafil server", () => {
       "catalog_update_product",
       "catalog_activate_product",
       "catalog_deactivate_product",
+      "catalog_delete_category",
+      "catalog_delete_product",
       "catalog_restock",
       "catalog_adjust_inventory",
       "children_list",
@@ -163,10 +168,9 @@ describe("Kafil server", () => {
       "orders_start_preparation",
       "orders_deliver",
       "orders_cancel",
-      "settings_get_funding",
+      "settings_get_settings",
       "settings_get_form_fill",
-      "settings_update_funding",
-      "settings_update_form_fill",
+      "settings_update_settings",
       "sponsors_list",
       "sponsors_get_own",
       "sponsors_get",

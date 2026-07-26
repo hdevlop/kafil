@@ -18,7 +18,10 @@ import {
 } from "najm-kit";
 
 import { CreateSupportAssignmentDialogContent } from "@/features/SupportAssignments/components/SupportAssignmentForms";
-import { FundingProgressBar } from "@/shared/FundingProgressCard";
+import {
+  fundingProgressPercent,
+  FundingProgressBar,
+} from "@/shared/FundingProgressCard";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -29,8 +32,19 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const fundingStatus = data.funding?.status === "active" ? "active" : "pending";
+  const capacityStatus = data.funding?.capacityStatus ?? "open";
+  const hasReachedTarget = data.funding ? fundingProgressPercent(data.funding) >= 100 : false;
+  const isClosed =
+    hasReachedTarget || capacityStatus === "reserved" || capacityStatus === "funded";
+  const disabledReason =
+    hasReachedTarget || capacityStatus === "funded"
+      ? t("funding.funded")
+      : capacityStatus === "reserved"
+        ? t("funding.reserved")
+        : null;
 
   function openSupport() {
+    if (isClosed) return;
     void dialog.openDialog({
       title: t("operator.assignments.createTitle"),
       description: t("operator.assignments.createDescription"),
@@ -59,7 +73,7 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
       >
         <NCardMedia variant="image" size={104}>
           <Image
-            src={getFamilyAvatarImage(data.image, data.relationshipToChildren)}
+            src={getFamilyAvatarImage(data.image)}
             alt={data.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 20vw"
@@ -92,8 +106,15 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
       <div className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4">
         {data.funding ? <FundingProgressBar inline progress={data.funding} /> : null}
         <NButton
-          className="w-full"
+          className={
+            isClosed
+              ? "w-full bg-gray-400/70 text-gray-700 hover:bg-gray-400/70 disabled:opacity-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+              : "w-full"
+          }
           leftIcon={HeartHandshake}
+          variant={isClosed ? "secondary" : "default"}
+          disabled={isClosed}
+          title={disabledReason ?? undefined}
           onClick={(event) => {
             event.stopPropagation();
             openSupport();

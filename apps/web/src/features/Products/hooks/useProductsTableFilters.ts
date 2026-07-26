@@ -2,15 +2,29 @@
 
 import { useMemo } from "react";
 
+import { PRODUCT_TABLE_COLUMN_IDS } from "./useProductsTableColumns";
+
 export function useProductsTableFilters() {
   return useMemo(
     () => [
-      { type: "text", name: "name", placeholder: "Search product name..." },
-      { type: "text", name: "sku", placeholder: "Search SKU..." },
-      { type: "text", name: "categoryName", placeholder: "Search category..." },
+      {
+        type: "text",
+        name: PRODUCT_TABLE_COLUMN_IDS.name,
+        placeholder: "Search product name...",
+      },
+      {
+        type: "text",
+        name: PRODUCT_TABLE_COLUMN_IDS.sku,
+        placeholder: "Search SKU...",
+      },
+      {
+        type: "text",
+        name: PRODUCT_TABLE_COLUMN_IDS.categoryName,
+        placeholder: "Search category...",
+      },
       {
         type: "select",
-        name: "status",
+        name: PRODUCT_TABLE_COLUMN_IDS.status,
         placeholder: "Filter by status",
         options: [
           { value: "active", label: "Active" },

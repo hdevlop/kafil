@@ -1,10 +1,12 @@
 import type { OffsetPagination } from "@/lib/pagination";
+import type { FamilyFundingProgress } from "@/types/funding";
 
 export type ContributionStatus =
   | "pending"
   | "validated"
   | "rejected"
-  | "refunded";
+  | "refunded"
+  | "expired";
 
 export interface ContributionRecord {
   id: string;
@@ -24,6 +26,8 @@ export interface ContributionRecord {
   status: ContributionStatus | string;
   submittedAt: string;
   paidAt: string | null;
+  expiresAt: string | null;
+  expiredAt: string | null;
   validatedByUserId: string | null;
   validatedAt: string | null;
   rejectedByUserId: string | null;
@@ -58,6 +62,7 @@ export interface ContributionRecordingOption {
   sponsorName: string;
   sponsorEmail: string;
   familyName: string;
+  funding: FamilyFundingProgress | null;
 }
 
 export interface ContributionLedgerEntry {

@@ -44,6 +44,7 @@ describe("auth seed definitions", () => {
       "delete:contributions",
       "read:budgets",
       "update:budgets",
+      "delete:catalog",
       "read:settings",
       "update:settings",
       "read:audit-events",
@@ -64,6 +65,8 @@ describe("auth seed definitions", () => {
     expect(AUTH_ROLE_PERMISSIONS.admin).toEqual(
       AUTH_PERMISSIONS.map((permission) => permission.name),
     );
+    expect(AUTH_ROLE_PERMISSIONS.admin).toContain("delete:catalog");
+    expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:catalog");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("read:sponsors");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("delete:documents");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("create:families");

@@ -277,8 +277,14 @@
   "settings": {
     "success": {
       "retrieved": "????????? : ?? ????????? ?????",
-      "fundingUpdated": "????????? : ??? ??????? ?????",
-      "formFillUpdated": "?? ????? ????? F8 ?????"
+      "updated": "????????? : ??? ??????? ?????"
+    }
+  },
+  "appearance": {
+    "success": {
+      "retrieved": "تم جلب المظهر بنجاح",
+      "updated": "تم تحديث المظهر بنجاح",
+      "reset": "تمت إعادة تعيين المظهر بنجاح"
     }
   },
   "orders": {
@@ -393,6 +399,34 @@
       "english": "الإنجليزية",
       "french": "الفرنسية",
       "arabic": "العربية"
+    },
+    "display": {
+      "title": "تفضيلات العرض",
+      "subtitle": "خصص طريقة عرض التواريخ والأوقات والمبالغ.",
+      "timeZone": {
+        "label": "المنطقة الزمنية",
+        "helper": "تُستخدم لعرض التواريخ والأوقات. تبقى العملة بالدرهم المغربي.",
+        "preview": "الوقت الحالي في {zone}: {date}",
+        "saved": "تم تحديث المنطقة الزمنية.",
+        "saveFailed": "تعذر تحديث المنطقة الزمنية."
+      }
+    },
+    "funding": {
+      "progress": "تقدم التمويل",
+      "target": "الهدف: {amount}",
+      "aria": "تقدم تمويل الأسرة",
+      "percentFunded": "تم تمويل {percent}%",
+      "familyTitle": "تمويل الأسرة",
+      "fundedOfTarget": "{funded} من {target}",
+      "reachedDescription": "تم بلوغ هدف التمويل. أصبحت طلبات الأسرة متاحة.",
+      "reservedDescription": "تحجز الدفعات المعلقة المبلغ المتبقي. تم إيقاف الكفالات الجديدة مؤقتاً.",
+      "openDescription": "يتبقى {amount} قبل إتاحة طلبات الأسرة.",
+      "pendingReservation": "الحجز المعلق",
+      "availableToContribute": "المتاح للمساهمة",
+      "open": "مفتوح",
+      "reserved": "تغطي الدفعات المعلقة الهدف",
+      "funded": "تم بلوغ الهدف",
+      "earliestExpiry": "أقرب انتهاء لدفعة معلقة: {date}"
     },
     "nav": {
       "overview": "نظرة عامة",
@@ -570,6 +604,63 @@
       }
     },
     "operator": {
+      "settings": {
+        "loading": "جارٍ تحميل الإعدادات",
+        "loadError": "تعذر تحميل إعدادات المنصة",
+        "title": "إعدادات المنصة",
+        "subtitle": "إدارة القيم الافتراضية وأدوات إنتاجية المشغل.",
+        "defaultsTitle": "القيم الافتراضية واختصار F8",
+        "defaultsDescription": "تستخدم الأسر الجديدة {amount} افتراضياً ما لم يتم تجاوزه. اختصار F8 {state} للنماذج.",
+        "enabled": "مفعّل",
+        "disabled": "معطّل",
+        "shortcutTitle": "اختصار تعبئة النماذج",
+        "shortcutHelp": "فعّله فقط عند الحاجة إلى بيانات تجريبية. يسري التغيير فوراً ولا يتطلب إعادة بناء Docker أو تشغيله.",
+        "shortcutLabel": "تفعيل تعبئة البيانات التجريبية عبر F8",
+        "shortcutControl": "السماح لـ F8 بتعبئة النماذج المدعومة",
+        "shortcutDisabled": "معطّل افتراضياً.",
+        "targetTitle": "الهدف الافتراضي للأسرة الجديدة",
+        "targetHelp": "تحتفظ كل أسرة بهدفها الخاص. تُستخدم هذه القيمة افتراضياً فقط عندما لا يحدد المستدعي هدفاً.",
+        "targetLabel": "الهدف الافتراضي (درهم)",
+        "targetPlaceholder": "أدخل هدف تفعيل افتراضي",
+"expiryTitle": "انتهاء الدفعات المعلقة (بالساعات)",
+        "expiryHelp": "تحجز الدفعات المعلقة الجديدة هدف الأسرة لهذه المدة. لا يغير التعديل مواعيد انتهاء الدفعات الحالية.",
+        "expiryLabel": "انتهاء الدفعات المعلقة (بالساعات)",
+        "expiryPlaceholder": "مثال: 72",
+        "saving": "جارٍ الحفظ...",
+        "save": "حفظ الإعدادات",
+        "saveSuccess": "تم تحديث إعدادات المنصة.",
+        "saveError": "تعذر تحديث إعدادات المنصة.",
+        "close": "إغلاق",
+        "cancel": "إلغاء",
+        "sheetTitle": "الإعدادات العامة",
+        "sheetDescription": "إدارة مظهر المنصة والقيم الافتراضية للتطبيق.",
+        "themeTab": "المظهر",
+        "appTab": "إعدادات التطبيق",
+        "lightMode": "فاتح",
+        "darkMode": "داكن",
+        "previewMode": "وضع المعاينة",
+        "resetField": "إعادة تعيين الحقل",
+        "resetSection": "إعادة تعيين القسم",
+        "themeSection": "ألوان المظهر",
+        "layoutSection": "التخطيط",
+        "pageHeaderSection": "رأس الصفحة",
+        "sidebarSection": "الشريط الجانبي",
+        "tableSection": "الجداول",
+        "inputSection": "حقول الإدخال",
+        "saveTheme": "حفظ المظهر",
+        "savingTheme": "جارٍ حفظ المظهر...",
+        "resetTheme": "إعادة تعيين مظهر كفيل",
+        "themeSaveSuccess": "تم تحديث المظهر.",
+        "themeSaveError": "تعذر تحديث المظهر.",
+        "themeResetSuccess": "تمت استعادة المظهر الافتراضي.",
+        "themeResetError": "تعذرت استعادة المظهر الافتراضي.",
+        "discardTitle": "تجاهل التغييرات غير المحفوظة؟",
+        "discardDescription": "سيؤدي إغلاق الإعدادات إلى تجاهل تغييراتك غير المحفوظة.",
+        "discard": "تجاهل التغييرات",
+        "resetThemeTitle": "إعادة تعيين مظهر كفيل؟",
+        "resetThemeDescription": "سيؤدي هذا إلى إزالة المظهر المحفوظ واستعادة المظهر الافتراضي المحفوظ في المشروع."
+
+      },
       "contributions": {
         "title": "المساهمات",
         "subtitle": "تحقّق من مدفوعات الكفلاء، وأضفها إلى ميزانيات الأسر، وتعامل مع عمليات الإلغاء المُدققة.",
@@ -658,7 +749,14 @@
         "rejectSuccess": "تم رفض المساهمة.",
         "rejectError": "تعذر رفض هذه المساهمة.",
         "refundSuccess": "تم استرداد المساهمة وعكس رصيد الميزانية.",
-        "refundError": "تعذر استرداد هذه المساهمة."
+        "refundError": "تعذر استرداد هذه المساهمة.",
+        "pendingDeadline": "الموعد النهائي المعلق",
+        "expiredAt": "منتهي الصلاحية في",
+        "expired": "منتهي الصلاحية",
+        "expiredWarning": "انتهت صلاحية هذه المساهمة المعلقة ولا يمكن التحقق منها.",
+        "maxAmountLabel": "المبلغ المتاح للمساهمة",
+        "availableAmount": "الحد الأقصى المتاح: {amount}",
+        "noAssignmentOpen": "لا توجد تخصيصات مفتوحة للمساهمات في الوقت الحالي."
       },
       "orders": {
         "title": "الطلبات",
@@ -704,7 +802,7 @@
         "sponsors": "الكفلاء",
         "notProvided": "غير متوفر",
         "profile": "ملف الأسرة",
-        "relationship": "الصلة بالأطفال",
+        "relationship": "الصلة",
         "notes": "ملاحظات داخلية",
         "created": "تاريخ الإنشاء",
         "noNotes": "No internal notes",
@@ -1050,7 +1148,15 @@
         "emptyTitle": "لا توجد مساهمات بعد",
         "emptyDescription": "تبقى المساهمات المرسلة معلقة إلى أن يتحقق منها المشغّل.",
         "monthly": "شهري",
-        "oneTime": "لمرة واحدة"
+        "oneTime": "لمرة واحدة",
+        "targetReached": "تم بلوغ هدف التمويل",
+        "coveredByPending": "تغطي الدفعات المعلقة الهدف المتبقي",
+        "availableAmount": "المتاح للمساهمة: {amount}",
+        "amountTooHigh": "أدخل مبلغاً لا يتجاوز {amount}.",
+        "planReason": "سبب تعديل هذه الخطة",
+        "stopReason": "سبب إيقاف هذه الخطة",
+        "pendingDeadline": "معلقة حتى {date}",
+        "expiredAt": "انتهت في {date}"
       },
       "directory": {
         "title": "الأسر المتاحة للدعم",
@@ -1061,7 +1167,9 @@
         "loading": "جارٍ تحميل الأسر",
         "error": "تعذر تحميل الأسر",
         "emptyTitle": "لا توجد أسر متاحة",
-        "emptyDescription": "لا توجد أسر نشطة متاحة للدعم الآن."
+        "emptyDescription": "لا توجد أسر نشطة متاحة للدعم الآن.",
+        "targetReached": "تم بلوغ الهدف",
+        "coveredByPending": "مغطى بالدفعات المعلقة"
       }
     }
   }

@@ -8,7 +8,9 @@ import {
 } from "../budgets/budgetRepository";
 import { applyBudgetBalanceDelta } from "../budgets/money";
 import { OutboxService } from "../outbox/outboxService";
+import { FundingRepository } from "../settings/fundingRepository";
 import { FundingService } from "../settings/fundingService";
+import { SettingService } from "../settings/settingService";
 import {
   type ContributionListQuery,
   contributionListQuery,
@@ -40,6 +42,8 @@ export class ContributionService {
     private readonly outbox: OutboxService,
     private readonly validator: ContributionValidator,
     private readonly funding: FundingService,
+    private readonly settings: SettingService,
+    private readonly fundingRepo: FundingRepository,
   ) {}
 
   list(query: ContributionListQuery) {
@@ -120,9 +124,15 @@ export class ContributionService {
     sponsorUserId: string,
   ) {
     const input = createContributionPlanDto.parse(data);
-    await this.validator.ensureActiveOwnedAssignment(
+    const assignment = await this.validator.ensureActiveOwnedAssignment(
       input.supportAssignmentId,
       sponsorUserId,
+    );
+    await this.accounts.createForFamily(assignment.familyProfileId);
+    await this.accounts.lockByFamilyId(assignment.familyProfileId);
+    await this.funding.ensureContributionFits(
+      assignment.familyProfileId,
+      input.amountMinor,
     );
     const startsAt = input.startsAt ?? new Date();
     const plan = await this.plans.create({
@@ -170,6 +180,15 @@ export class ContributionService {
     if (plan.status !== "paused") {
       HttpError.conflict("Only paused contribution plans can be resumed");
     }
+    const assignment = await this.validator.ensureActiveAssignment(
+      plan.supportAssignmentId,
+    );
+    await this.accounts.createForFamily(assignment.familyProfileId);
+    await this.accounts.lockByFamilyId(assignment.familyProfileId);
+    await this.funding.ensureContributionFits(
+      assignment.familyProfileId,
+      plan.amountMinor,
+    );
     const updated = await this.plans.setStatus(id, "active", null);
     await this.audits.record({
       action: "contributionPlan.resumed",
@@ -216,6 +235,13 @@ export class ContributionService {
         HttpError.conflict("Contribution amount must match the active plan");
       }
     }
+    await this.accounts.createForFamily(assignment.familyProfileId);
+    await this.accounts.lockByFamilyId(assignment.familyProfileId);
+    await this.funding.ensureContributionFits(
+      assignment.familyProfileId,
+      input.amountMinor,
+    );
+    const expiresAt = await this.computeDeadline(new Date());
     const contribution = await this.contributions.create({
       contributionPlanId: input.contributionPlanId ?? null,
       supportAssignmentId: assignment.id,
@@ -227,6 +253,7 @@ export class ContributionService {
       externalReference: input.externalReference ?? null,
       status: "pending",
       paidAt: input.paidAt ?? null,
+      expiresAt,
     });
     await this.audits.record({
       action: "contribution.submitted",
@@ -259,6 +286,13 @@ export class ContributionService {
         HttpError.conflict("Contribution amount must match the active plan");
       }
     }
+    await this.accounts.createForFamily(assignment.familyProfileId);
+    await this.accounts.lockByFamilyId(assignment.familyProfileId);
+    await this.funding.ensureContributionFits(
+      assignment.familyProfileId,
+      input.amountMinor,
+    );
+    const expiresAt = await this.computeDeadline(new Date());
     const contribution = await this.contributions.create({
       contributionPlanId: input.contributionPlanId ?? null,
       supportAssignmentId: assignment.id,
@@ -270,6 +304,7 @@ export class ContributionService {
       externalReference: input.externalReference ?? null,
       status: "pending",
       paidAt: input.paidAt,
+      expiresAt,
     });
     await this.audits.record({
       action: "contribution.recorded",
@@ -300,6 +335,14 @@ export class ContributionService {
       return contribution;
     }
     this.validator.ensurePending(contribution.status);
+    if (
+      contribution.expiresAt &&
+      contribution.expiresAt.getTime() <= Date.now()
+    ) {
+      HttpError.conflict(
+        "This pending contribution has expired and cannot be validated.",
+      );
+    }
     await this.validator.ensureHistoricalAssignment(contribution);
 
     await this.accounts.createForFamily(contribution.familyProfileId);
@@ -313,6 +356,10 @@ export class ContributionService {
     if (await this.ledger.findByIdempotencyKey(idempotencyKey)) {
       HttpError.conflict("Contribution credit already exists");
     }
+    await this.funding.ensureContributionCanValidate(
+      contribution.familyProfileId,
+      contribution.amountMinor,
+    );
 
     const balance = applyBudgetBalanceDelta(account, {
       availableMinor: contribution.amountMinor,
@@ -355,6 +402,10 @@ export class ContributionService {
       payload: { amountMinor: contribution.amountMinor },
     });
     const funding = await this.funding.activateIfEligible(
+      contribution.familyProfileId,
+      actorUserId,
+    );
+    await this.completeFamilyPlansIfFunded(
       contribution.familyProfileId,
       actorUserId,
     );
@@ -543,5 +594,78 @@ export class ContributionService {
       resourceId: id,
     });
     return deleted;
+  }
+
+  private async computeDeadline(now: Date) {
+    const hours = await this.settings.getPendingContributionExpiryHours();
+    return new Date(now.getTime() + hours * 60 * 60 * 1000);
+  }
+
+  private async completeFamilyPlansIfFunded(
+    familyProfileId: string,
+    actorUserId: string | null,
+  ) {
+    const progress = await this.funding.getProgress(familyProfileId);
+    if (!progress) return;
+    if (progress.fundedMinor < progress.targetMinor) return;
+    const updated = await this.plans.completeFamilyActiveAndPaused(
+      familyProfileId,
+    );
+    if (updated === 0) return;
+    await this.audits.record({
+      action: "contributionPlan.familyTargetReached",
+      actorUserId: actorUserId ?? null,
+      metadata: { familyProfileId, completedCount: updated },
+      resource: "contributionPlans",
+      resourceId: familyProfileId,
+    });
+  }
+
+  @Transaction({ retries: 0 })
+  async expireDueBatch(now: Date = new Date(), limit = 100) {
+    const dueRows = await this.fundingRepo.duePendingContributionIds(
+      now,
+      limit,
+    );
+    let expiredCount = 0;
+    for (const due of dueRows) {
+      const expiredAt = new Date();
+      const updated = await this.contributions.expireIfStillDue(
+        due.id,
+        now,
+        expiredAt,
+      );
+      if (!updated) continue;
+      await this.audits.record({
+        action: "contribution.expired",
+        actorUserId: null,
+        metadata: {
+          amountMinor: due.amountMinor,
+          expiresAt: due.expiresAt.toISOString(),
+        },
+        resource: "contributions",
+        resourceId: due.id,
+      });
+      await this.outbox.enqueue({
+        topic: "contribution.expired",
+        aggregateType: "contribution",
+        aggregateId: due.id,
+        payload: { amountMinor: due.amountMinor },
+      });
+      expiredCount += 1;
+    }
+    return expiredCount;
+  }
+
+  async expireDue(now: Date = new Date(), limit = 100) {
+    let totalExpired = 0;
+    let iterations = 0;
+    while (iterations < 100) {
+      const processed = await this.expireDueBatch(now, limit);
+      totalExpired += processed;
+      iterations += 1;
+      if (processed < limit) break;
+    }
+    return totalExpired;
   }
 }

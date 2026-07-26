@@ -8,35 +8,45 @@ import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ProductRecord } from "../types";
 
+export const PRODUCT_TABLE_COLUMN_IDS = {
+  categoryName: "categoryName",
+  name: "name",
+  priceMinor: "priceMinor",
+  sku: "sku",
+  status: "status",
+  updatedAt: "updatedAt",
+} as const;
+
 export function useProductsTableColumns() {
   return useMemo<NTableProps<ProductRecord>["columns"]>(
     () => [
       {
-        accessorKey: "name",
+        accessorKey: PRODUCT_TABLE_COLUMN_IDS.name,
         header: "Product",
-        cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="truncate font-medium">{row.original.name}</p>
-            <p className="truncate text-sm text-muted-foreground">{row.original.sku}</p>
-          </div>
+        cell: ({ getValue }) => (
+          <p className="truncate font-medium">{getValue<string>()}</p>
         ),
       },
       {
-        accessorKey: "categoryName",
+        accessorKey: PRODUCT_TABLE_COLUMN_IDS.sku,
+        header: "SKU",
+      },
+      {
+        accessorKey: PRODUCT_TABLE_COLUMN_IDS.categoryName,
         header: "Category",
       },
       {
-        accessorKey: "priceMinor",
+        accessorKey: PRODUCT_TABLE_COLUMN_IDS.priceMinor,
         header: "Price",
         cell: ({ getValue }) => formatMad(getValue<number>()),
       },
       {
-        accessorKey: "status",
+        accessorKey: PRODUCT_TABLE_COLUMN_IDS.status,
         header: "Status",
         cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
       },
       {
-        accessorKey: "updatedAt",
+        accessorKey: PRODUCT_TABLE_COLUMN_IDS.updatedAt,
         header: "Updated",
         cell: ({ getValue }) => formatKafilDate(getValue<string>()),
       },
