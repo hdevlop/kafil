@@ -15,11 +15,17 @@ import { Validate } from "najm-validation";
 
 import { isFamily, isOperator, isSponsor } from "../../config/authConfig";
 import {
+  type AssistedOrderDto,
+  assistedOrderDto,
   type CartItemDto,
   cartItemDto,
   cartProductIdParams,
+  type ConfirmDeliveryDto,
+  confirmDeliveryDto,
   type FamilyCancelOrderDto,
   familyCancelOrderDto,
+  type OperatorCancelOrderDto,
+  operatorCancelOrderDto,
   orderIdParams,
   type OrderListQuery,
   orderListQuery,
@@ -27,6 +33,10 @@ import {
   orderReasonDto,
   type OwnOrderListQuery,
   ownOrderListQuery,
+  type RecordPurchaseDto,
+  recordPurchaseDto,
+  type ReplacePurchaseDto,
+  replacePurchaseDto,
   type SetCartItemQuantityDto,
   setCartItemQuantityDto,
   type SubmitOrderDto,
@@ -98,6 +108,26 @@ export class OrderController {
     return this.orders.submit(userId, body);
   }
 
+  @Post("/assisted")
+  @isOperator()
+  @Validate({ body: assistedOrderDto })
+  @McpTool({
+    description:
+      "Create a pending, audited order for a family and reserve its budget",
+    idempotent: true,
+    confirm: {
+      level: "danger",
+      message: "Create this assisted family order and reserve its budget?",
+    },
+  })
+  @ResMsg("orders.success.assistedSubmitted")
+  submitAssisted(
+    @Body() body: AssistedOrderDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.orders.submitAssisted(body, actorUserId);
+  }
+
   @Get("/me")
   @isFamily()
   @Validate({ query: ownOrderListQuery })
@@ -162,7 +192,7 @@ export class OrderController {
   @Post("/:id/approve")
   @isOperator()
   @Validate({ params: orderIdParams })
-  @McpTool({ description: "Approve a pending order and capture its reserved money and stock", confirm: { level: "danger", message: "Approve this pending order?" } })
+  @McpTool({ description: "Approve a pending order while keeping its budget reserved", confirm: { level: "danger", message: "Approve this pending order for purchasing?" } })
   @ResMsg("orders.success.approved")
   approve(@Params("id") id: string, @User("id") userId: string) {
     return this.orders.approve(id, userId);
@@ -181,13 +211,77 @@ export class OrderController {
     return this.orders.reject(id, body, userId);
   }
 
-  @Post("/:id/preparation")
+  @Post("/:id/purchase")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: recordPurchaseDto })
+  @McpTool({
+    description: "Record an approved order purchase and settle its actual cost",
+    idempotent: true,
+    confirm: {
+      level: "danger",
+      message: "Record this purchase and settle the family budget?",
+    },
+  })
+  @ResMsg("orders.success.purchaseRecorded")
+  recordPurchase(
+    @Params("id") id: string,
+    @Body() body: RecordPurchaseDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.recordPurchase(id, body, userId);
+  }
+
+  @Post("/:id/purchase/replace")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: replacePurchaseDto })
+  @McpTool({
+    description: "Replace an order purchase while retaining its audit history",
+    idempotent: true,
+    destructive: true,
+    confirm: {
+      level: "danger",
+      message: "Reverse and replace this purchase record?",
+    },
+  })
+  @ResMsg("orders.success.purchaseReplaced")
+  replacePurchase(
+    @Params("id") id: string,
+    @Body() body: ReplacePurchaseDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.replacePurchase(id, body, userId);
+  }
+
+  @Post("/:id/delivery/start")
   @isOperator()
   @Validate({ params: orderIdParams })
-  @McpTool({ description: "Start preparing an approved order", confirm: { level: "warning", message: "Start order preparation?" } })
-  @ResMsg("orders.success.preparationStarted")
-  startPreparation(@Params("id") id: string, @User("id") userId: string) {
-    return this.orders.startPreparation(id, userId);
+  @McpTool({
+    description: "Start delivery for a purchased order",
+    confirm: { level: "warning", message: "Start delivery for this order?" },
+  })
+  @ResMsg("orders.success.deliveryStarted")
+  startDelivery(@Params("id") id: string, @User("id") userId: string) {
+    return this.orders.startDelivery(id, userId);
+  }
+
+  @Post("/:id/delivery/confirm")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: confirmDeliveryDto })
+  @McpTool({
+    description: "Confirm terminal delivery for an out-for-delivery order",
+    idempotent: true,
+    confirm: {
+      level: "danger",
+      message: "Confirm this order was delivered?",
+    },
+  })
+  @ResMsg("orders.success.delivered")
+  confirmDelivery(
+    @Params("id") id: string,
+    @Body() body: ConfirmDeliveryDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.confirmDelivery(id, body, userId);
   }
 
   @Post("/:id/deliver")
@@ -196,17 +290,17 @@ export class OrderController {
   @McpTool({ description: "Mark an in-preparation order as delivered", confirm: { level: "danger", message: "Mark this order delivered?" } })
   @ResMsg("orders.success.delivered")
   deliver(@Params("id") id: string, @User("id") userId: string) {
-    return this.orders.deliver(id, userId);
+    return this.orders.deliverLegacy(id, userId);
   }
 
   @Post("/:id/cancel")
   @isOperator()
-  @Validate({ params: orderIdParams, body: orderReasonDto })
+  @Validate({ params: orderIdParams, body: operatorCancelOrderDto })
   @McpTool({ description: "Cancel an operator-managed pending, approved, or preparing order", idempotent: true, destructive: true, confirm: { level: "danger", message: "Cancel this order and reverse its effects?" } })
   @ResMsg("orders.success.cancelled")
   cancel(
     @Params("id") id: string,
-    @Body() body: OrderReasonDto,
+    @Body() body: OperatorCancelOrderDto,
     @User("id") userId: string,
   ) {
     return this.orders.cancel(id, body, userId);

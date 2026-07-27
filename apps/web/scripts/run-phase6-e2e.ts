@@ -3,6 +3,11 @@ import { removePhase6BrowserUsers } from "./teardown-phase6-e2e";
 import { pool } from "@kafil/server/database";
 import { resolve } from "node:path";
 
+const useProductionServer = Bun.env.KAFIL_E2E_USE_PRODUCTION === "1";
+const baseUrl = useProductionServer
+  ? "http://127.0.0.1:3210"
+  : "https://127.0.0.1:3210";
+
 const phase6E2eEnvironment = {
   ...process.env,
   DATABASE_URL: Bun.env.DATABASE_URL,
@@ -14,6 +19,7 @@ const phase6E2eEnvironment = {
   KAFIL_ADMIN_EMAIL: Bun.env.KAFIL_ADMIN_EMAIL,
   KAFIL_ADMIN_PASSWORD: Bun.env.KAFIL_ADMIN_PASSWORD,
   NAJM_ENCRYPTION_KEY: Bun.env.NAJM_ENCRYPTION_KEY,
+  KAFIL_E2E_BASE_URL: baseUrl,
 };
 
 const childOptions = {
@@ -34,9 +40,9 @@ async function waitForWebServer(server: ReturnType<typeof Bun.spawn>) {
       throw new Error(`Next.js E2E server exited with code ${server.exitCode}.`);
     }
     try {
-      const response = await fetch("https://127.0.0.1:3210/login", {
-        tls: { rejectUnauthorized: false },
-      });
+      const response = await fetch(`${baseUrl}/login`, useProductionServer
+        ? undefined
+        : { tls: { rejectUnauthorized: false } });
       if (response.ok) return;
     } catch {
       // The server is still starting.
@@ -49,14 +55,22 @@ async function waitForWebServer(server: ReturnType<typeof Bun.spawn>) {
 try {
   await preparePhase6BrowserUsers();
   webServer = Bun.spawn({
-    cmd: [
-      process.execPath,
-      "node_modules/next/dist/bin/next",
-      "dev",
-      "-p",
-      "3210",
-      "--experimental-https",
-    ],
+    cmd: useProductionServer
+      ? [
+          process.execPath,
+          "node_modules/next/dist/bin/next",
+          "start",
+          "-p",
+          "3210",
+        ]
+      : [
+          process.execPath,
+          "node_modules/next/dist/bin/next",
+          "dev",
+          "-p",
+          "3210",
+          "--experimental-https",
+        ],
     cwd: resolve(import.meta.dir, ".."),
     ...childOptions,
   });

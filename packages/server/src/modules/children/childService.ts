@@ -93,6 +93,19 @@ export class ChildService {
 
   @Transaction({ retries: 2 })
   async delete(id: string, actorUserId: string) {
+    return this.deleteOne(id, actorUserId);
+  }
+
+  @Transaction({ retries: 2 })
+  async deleteMany(ids: string[], actorUserId: string) {
+    const deleted = [];
+    for (const id of [...ids].sort()) {
+      deleted.push(await this.deleteOne(id, actorUserId));
+    }
+    return deleted;
+  }
+
+  private async deleteOne(id: string, actorUserId: string) {
     const child = await this.validator.ensureExists(id);
     await this.children.delete(id);
     await this.audits.record({

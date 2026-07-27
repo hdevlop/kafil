@@ -8,6 +8,7 @@ export interface CategoryRecord {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  itemCount?: number;
 }
 
 export interface CategoryFields {

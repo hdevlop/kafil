@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./branding": "./src/branding.ts",
     "./config": "./src/config/index.ts",
     "./database": "./src/database/index.ts",
     "./database/schema": "./src/database/schema.ts",
@@ -18,11 +19,11 @@
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test",
-    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/appearance-database-concurrency.test.js"
+    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/appearance-database-concurrency.test.js ./dist/test/branding-database-concurrency.test.js ./dist/test/family-recreate-integration.test.js"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
-    "najm-auth": "2.0.10",
+    "najm-auth": "2.0.11",
     "najm-core": "2.0.4",
     "najm-database": "2.0.3",
     "najm-email": "2.0.2",

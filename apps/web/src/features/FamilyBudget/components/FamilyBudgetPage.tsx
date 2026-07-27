@@ -39,7 +39,7 @@ export function FamilyBudgetPage() {
     error: ledger.error,
     getRowId: (entry) => entry.id,
     renderCard: FamilyBudgetLedgerCard,
-    renderEmpty: () => <PageEmptyState title="No budget activity yet" description="Validated support and household order activity will appear here." />,
+    renderEmpty: () => <PageEmptyState icon={WalletCards} title="No budget activity yet" description="Validated support and household order activity will appear here." />,
     renderError: (error) => <PageErrorState error={error} title="We could not load your budget ledger" onRetry={() => void ledger.refetch()} />,
     manualPagination: true,
     pagination: { pageIndex, pageSize: pagination.limit },

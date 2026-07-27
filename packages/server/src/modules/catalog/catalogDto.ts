@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { positiveMinorAmountDto, signedMinorAmountDto } from "../budgets/money";
+import { positiveMinorAmountDto } from "../budgets/money";
 import { CATEGORY_IMAGE_SERVE_PREFIX } from "./categoryImageController";
 import { PRODUCT_IMAGE_SERVE_PREFIX } from "./productImageController";
 
@@ -64,23 +64,6 @@ export const statusReasonDto = z.object({
   reason: z.string().trim().min(3).max(500),
 });
 
-export const restockDto = z.object({
-  quantity: z.coerce.number().int().min(1).max(1_000_000),
-  idempotencyKey: z.string().trim().min(8).max(160),
-  reason: z.string().trim().min(3).max(500),
-});
-
-export const inventoryAdjustmentDto = z.object({
-  quantity: signedMinorAmountDto.max(1_000_000).min(-1_000_000),
-  idempotencyKey: z.string().trim().min(8).max(160),
-  reason: z.string().trim().min(3).max(500),
-});
-
-export const inventoryLedgerListQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-});
-
 export type CategoryListQuery = z.input<typeof categoryListQuery>;
 export type ProductListQuery = z.input<typeof productListQuery>;
 export type CreateCategoryDto = z.input<typeof createCategoryDto>;
@@ -88,6 +71,3 @@ export type UpdateCategoryDto = z.input<typeof updateCategoryDto>;
 export type CreateProductDto = z.input<typeof createProductDto>;
 export type UpdateProductDto = z.input<typeof updateProductDto>;
 export type StatusReasonDto = z.input<typeof statusReasonDto>;
-export type RestockDto = z.input<typeof restockDto>;
-export type InventoryAdjustmentDto = z.input<typeof inventoryAdjustmentDto>;
-export type InventoryLedgerListQuery = z.input<typeof inventoryLedgerListQuery>;

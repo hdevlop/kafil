@@ -432,6 +432,11 @@ databaseDescribe("funding-cap PostgreSQL concurrency", () => {
       isolatedRequest(() => contributions.validate(dueId, adminUserId)),
       isolatedRequest(() => contributions.expireDueBatch(new Date(), 100)),
     ]);
+    // A SKIP LOCKED expiry worker may pass while the validator briefly owns the
+    // row lock. The next worker pass must converge the already-due row.
+    await isolatedRequest(() =>
+      contributions.expireDueBatch(new Date(), 100),
+    );
     const result = await pool.query<{ status: string; credits: number }>(
       `SELECT c.status,
          (SELECT count(*)::int FROM budget_ledger_entries

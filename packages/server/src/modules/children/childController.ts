@@ -15,6 +15,8 @@ import { Validate } from "najm-validation";
 
 import { isAdmin, isFamily, isOperator } from "../../config/authConfig";
 import {
+  type BulkDeleteChildrenDto,
+  bulkDeleteChildrenDto,
   type ChildListQuery,
   childIdParams,
   childListQuery,
@@ -106,6 +108,26 @@ export class ChildController {
   @ResMsg("children.success.created")
   create(@Body() body: CreateChildDto) {
     return this.children.create(body);
+  }
+
+  @Post("/bulk-delete")
+  @isAdmin()
+  @CanDelete(Child)
+  @Validate({ body: bulkDeleteChildrenDto })
+  @McpTool({
+    description: "Permanently delete multiple child records",
+    destructive: true,
+    confirm: {
+      level: "danger",
+      message: "Permanently delete these child records? This cannot be undone.",
+    },
+  })
+  @ResMsg("children.success.deleted")
+  bulkDelete(
+    @Body() body: BulkDeleteChildrenDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.children.deleteMany(body.ids, actorUserId);
   }
 
   @Put("/:id")

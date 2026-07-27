@@ -56,15 +56,21 @@ function toChildFieldsInput(
 
 export function toCreateChildInput(
   values: CreateChildFormValues,
+  image: string | null,
 ): CreateChildInput {
   return {
     familyProfileId: values.familyProfileId,
+    image,
     ...toChildFieldsInput(values),
   };
 }
 
 export function toUpdateChildInput(
   values: UpdateChildFormValues,
+  image: string | null,
 ): UpdateChildInput {
-  return toChildFieldsInput(values);
+  return {
+    image,
+    ...toChildFieldsInput(values),
+  };
 }

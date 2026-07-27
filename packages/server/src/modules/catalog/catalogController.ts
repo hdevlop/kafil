@@ -14,15 +14,9 @@ import {
   createCategoryDto,
   type CreateProductDto,
   createProductDto,
-  type InventoryAdjustmentDto,
-  inventoryAdjustmentDto,
-  type InventoryLedgerListQuery,
-  inventoryLedgerListQuery,
   type ProductListQuery,
   productIdParams,
   productListQuery,
-  type RestockDto,
-  restockDto,
   type StatusReasonDto,
   statusReasonDto,
   type UpdateCategoryDto,
@@ -101,27 +95,6 @@ export class CatalogController {
     return this.catalog.getProduct(id);
   }
 
-  @Get("/products/:id/inventory")
-  @isOperator()
-  @Validate({ params: productIdParams })
-  @McpTool({ description: "Read an operator-managed inventory balance", readOnly: true })
-  @ResMsg("catalog.success.retrieved")
-  getInventory(@Params("id") id: string) {
-    return this.catalog.getInventory(id);
-  }
-
-  @Get("/products/:id/inventory/ledger")
-  @isOperator()
-  @Validate({ params: productIdParams, query: inventoryLedgerListQuery })
-  @McpTool({ description: "Read an operator-managed inventory ledger", readOnly: true })
-  @ResMsg("catalog.success.retrieved")
-  listInventoryLedger(
-    @Params("id") id: string,
-    @Query() query: InventoryLedgerListQuery,
-  ) {
-    return this.catalog.listInventoryLedger(id, query);
-  }
-
   @Post("/categories")
   @isOperator()
   @Validate({ body: createCategoryDto })
@@ -165,7 +138,7 @@ export class CatalogController {
   @Post("/products")
   @isOperator()
   @Validate({ body: createProductDto })
-  @McpTool({ description: "Create an active product and its inventory balance", confirm: { level: "warning", message: "Create this product?" } })
+  @McpTool({ description: "Create an active product the family can request", confirm: { level: "warning", message: "Create this product?" } })
   @ResMsg("catalog.success.created")
   createProduct(@Body() body: CreateProductDto, @User("id") userId: string) {
     return this.catalog.createProduct(body, userId);
@@ -198,31 +171,13 @@ export class CatalogController {
     return this.catalog.setProductStatus(id, "inactive", body, userId);
   }
 
-  @Post("/products/:id/inventory/restocks")
-  @isOperator()
-  @Validate({ params: productIdParams, body: restockDto })
-  @McpTool({ description: "Record an idempotent stock receipt", idempotent: true, confirm: { level: "warning", message: "Record this stock receipt?" } })
-  @ResMsg("catalog.success.restocked")
-  restock(@Params("id") id: string, @Body() body: RestockDto, @User("id") userId: string) {
-    return this.catalog.restock(id, body, userId);
-  }
-
-  @Post("/products/:id/inventory/adjustments")
-  @isOperator()
-  @Validate({ params: productIdParams, body: inventoryAdjustmentDto })
-  @McpTool({ description: "Record an audited, idempotent stock adjustment", idempotent: true, confirm: { level: "danger", message: "Apply this stock adjustment?" } })
-  @ResMsg("catalog.success.inventoryAdjusted")
-  adjustInventory(@Params("id") id: string, @Body() body: InventoryAdjustmentDto, @User("id") userId: string) {
-    return this.catalog.adjustInventory(id, body, userId);
-  }
-
   @Delete("/categories/:id")
   @isAdmin()
   @CanDelete(Catalog)
   @Validate({ params: categoryIdParams })
   @McpTool({
     description:
-      "Permanently delete a category and its pristine products (no order history, no inventory ledger activity, zero balance)",
+      "Permanently delete a category and its pristine products (no order history)",
     destructive: true,
     confirm: {
       level: "danger",
@@ -246,7 +201,7 @@ export class CatalogController {
   @Validate({ params: productIdParams })
   @McpTool({
     description:
-      "Permanently delete a pristine product (no order history, no inventory ledger activity, zero balance)",
+      "Permanently delete a pristine product (no order history)",
     destructive: true,
     confirm: {
       level: "danger",

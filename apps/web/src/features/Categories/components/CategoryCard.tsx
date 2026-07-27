@@ -1,38 +1,64 @@
 "use client";
 
-import { AlignJustify, ListOrdered, Tags } from "lucide-react";
+import { Package, Tags } from "lucide-react";
 import Image from "next/image";
-import { NCard, NCardAction, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
+import { cn, NCard, NCardMedia, NCardSection } from "najm-kit";
 
-import { StatusBadge } from "@/shared/StatusBadge";
+import { formatKafilNumber } from "@/lib/format";
 
 import type { CategoryRecord } from "../types";
 
 export function CategoryCard({ data }: Readonly<{ data: CategoryRecord }>) {
+  const isInactive = data.status !== "active";
+  const itemCount = Number(data.itemCount ?? 0);
+
   return (
-    <NCard embedded title={data.name} description={data.slug}>
-      <NCardMedia variant="avatar" size="sm">
+    <NCard
+      embedded
+      noPadding
+      classNames={{ content: "gap-0 px-4 py-4" }}
+      className={cn(
+        "w-full overflow-hidden transition-colors",
+        isInactive && "bg-muted/60 text-muted-foreground opacity-60 grayscale",
+      )}
+    >
+      <NCardMedia
+        variant="hero"
+        placement="top"
+        aspect="16/9"
+        className="mx-3 mt-3 aspect-[2/1] w-[calc(100%-1.5rem)] rounded-xl sm:mx-4 sm:mt-4 sm:w-[calc(100%-2rem)]"
+      >
         {data.image ? (
           <Image
-            alt={data.name}
-            className="size-14 shrink-0 rounded-xl object-cover"
+            alt={`Cover image for ${data.name}`}
+            className="size-full object-cover mix-blend-multiply dark:mix-blend-normal"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             src={data.image}
-            width={56}
-            height={56}
             unoptimized
           />
         ) : (
-          <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-            <Tags className="size-5" />
+          <div className="grid size-full place-items-center bg-muted text-muted-foreground">
+            <Tags aria-hidden="true" className="size-10" />
           </div>
         )}
       </NCardMedia>
-      <NCardAction>
-        <StatusBadge status={data.status} />
-      </NCardAction>
-      <NCardSection>
-        <NCardInfo icon={ListOrdered} label="Display order" value={String(data.sortOrder)} />
-        <NCardInfo icon={AlignJustify} label="Description" value={data.description || "No description"} />
+
+      <NCardSection
+        density="compact"
+        surface="plain"
+        className="flex min-h-6 items-center gap-3 space-y-0"
+      >
+        <Tags aria-hidden="true" className="size-5 shrink-0 self-center text-primary" />
+        <p className="min-w-0 flex-1 truncate text-base font-semibold leading-5 text-foreground">
+          {data.name}
+        </p>
+        <div className="flex shrink-0 items-center gap-1.5 text-primary">
+          <Package aria-hidden="true" className="size-4 shrink-0" />
+          <p className="text-sm font-semibold leading-5">
+            {formatKafilNumber(itemCount)} items
+          </p>
+        </div>
       </NCardSection>
     </NCard>
   );

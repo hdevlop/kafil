@@ -1,5 +1,7 @@
 "use client";
 
+import { Compass, ShieldOff } from "lucide-react";
+import React from "react";
 import {
   NEmptyState,
   NErrorState,
@@ -25,16 +27,32 @@ export function PageLoadingState({
 export function PageEmptyState({
   action,
   description,
+  icon,
   title,
 }: Readonly<{
   action?: React.ReactNode;
   description?: string;
+  icon?: React.ReactNode | React.ComponentType<{ className?: string }>;
   title?: string;
 }>) {
   const { t } = useKafilLanguage();
+  const iconNode = icon ? (
+    <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+      {React.isValidElement(icon)
+        ? icon
+        : React.createElement(icon as React.ElementType, {
+            className: "h-8 w-8",
+          })}
+    </div>
+  ) : null;
   return (
     <NPageLayout className="grid min-h-64 place-items-center">
-      <NEmptyState title={title ?? t("state.empty")} description={description} action={action} />
+      <NEmptyState
+        title={title ?? t("state.empty")}
+        description={description}
+        action={action}
+        icon={iconNode ?? undefined}
+      />
     </NPageLayout>
   );
 }
@@ -63,6 +81,7 @@ export function PageForbiddenState() {
   const { t } = useKafilLanguage();
   return (
     <PageEmptyState
+      icon={ShieldOff}
       title={t("state.forbiddenTitle")}
       description={t("state.forbiddenDescription")}
       action={
@@ -78,6 +97,7 @@ export function PageNotFoundState() {
   const { t } = useKafilLanguage();
   return (
     <PageEmptyState
+      icon={Compass}
       title={t("state.notFoundTitle")}
       description={t("state.notFoundDescription")}
       action={

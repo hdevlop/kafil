@@ -37,7 +37,7 @@ export function useProductCommands() {
   const create = useEntityCommand({
     mutationFn: createProduct,
     invalidate,
-    successMessage: "Product created with an inventory balance.",
+    successMessage: "Product created.",
     errorMessage: "Could not create the product.",
   });
   const update = useEntityCommand({
@@ -62,7 +62,7 @@ export function useProductCommands() {
     mutationFn: deleteProduct,
     invalidate,
     successMessage: "Product deleted permanently.",
-    errorMessage: "Could not delete the product. It may have order or inventory history.",
+    errorMessage: "Could not delete the product. It may have order history.",
   });
 
   return { create, update, activate, deactivate, remove };

@@ -22,11 +22,12 @@ describe("Phase 6C sponsor invitation form", () => {
       notes: " ",
     });
 
-    const input = toCreateSponsorInput(values);
+    const input = toCreateSponsorInput(values, null);
 
     expect(input).toEqual({
       name: "Amina Sponsor",
       email: "amina@example.com",
+      image: null,
       phone: "+212600000000",
       cin: "AB123456",
       gender: "F",
@@ -67,11 +68,12 @@ describe("Phase 6C sponsor update and lifecycle contracts", () => {
       notes: "  ",
     });
 
-    const input = toUpdateSponsorInput(values);
+    const input = toUpdateSponsorInput(values, null);
 
     expect(input).toEqual({
       name: "Amina Sponsor",
       email: "amina@example.com",
+      image: null,
       cin: "AB123456",
       gender: "F",
       address: "Casablanca",

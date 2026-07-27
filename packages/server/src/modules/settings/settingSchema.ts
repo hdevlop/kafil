@@ -16,6 +16,7 @@ import { timestamps } from "../../database/columns";
 
 export const PLATFORM_SETTINGS_ID = "platform";
 export const DEFAULT_APPEARANCE_REVISION = 1;
+export const DEFAULT_BRANDING_REVISION = 1;
 export const DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS = 72;
 export const MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS = 1;
 export const MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS = 720;
@@ -37,6 +38,13 @@ export const platformSettings = pgTable(
     appearanceRevision: integer("appearance_revision")
       .default(DEFAULT_APPEARANCE_REVISION)
       .notNull(),
+    sidebarLogoExpandedPath: text("sidebar_logo_expanded_path"),
+    sidebarLogoCollapsedPath: text("sidebar_logo_collapsed_path"),
+    authLogoPath: text("auth_logo_path"),
+    authHeroImagePath: text("auth_hero_image_path"),
+    brandingRevision: integer("branding_revision")
+      .default(DEFAULT_BRANDING_REVISION)
+      .notNull(),
     currency: varchar("currency", { length: 3 }).default("MAD").notNull(),
     updatedByUserId: text("updated_by_user_id").references(() => usersTable.id, {
       onDelete: "set null",
@@ -53,6 +61,10 @@ export const platformSettings = pgTable(
     check(
       "platform_settings_positive_appearance_revision_check",
       sql`${table.appearanceRevision} > 0`,
+    ),
+    check(
+      "platform_settings_positive_branding_revision_check",
+      sql`${table.brandingRevision} > 0`,
     ),
     check(
       "platform_settings_pending_expiry_hours_check",

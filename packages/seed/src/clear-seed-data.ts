@@ -9,6 +9,8 @@ export const SEED_DATA_TABLES = [
   "monthly_budget_limits",
   "contributions",
   "contribution_plans",
+  "order_purchase_reversals",
+  "order_purchase_records",
   "order_status_events",
   "order_items",
   "orders",
@@ -47,6 +49,7 @@ export const SEED_STORAGE_DIRECTORIES = [
   "child-images",
   "family-images",
   "sponsor-images",
+  "order-evidence",
 ] as const;
 
 interface SeedDataClient {

@@ -1,11 +1,15 @@
 "use client";
 
 import { UserRoundPlus } from "lucide-react";
-import { FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
-import { useState } from "react";
+import { AvatarFormInput, FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
+import { useRef, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useDevFormTools } from "@/lib/devFormFill";
+import {
+  deleteSponsorImage,
+  uploadSponsorImage,
+} from "@/services/sponsorApi";
 
 import {
   createSponsorFormSchema,
@@ -21,49 +25,42 @@ import { useSponsorCommands } from "../hooks/useSponsors";
 import type { SponsorRecord } from "../types";
 import { InitialCredentialsCard } from "@/shared/InitialCredentialsCard";
 
-function SponsorProfileFields({ required = false }: Readonly<{ required?: boolean }>) {
-  const { t } = useKafilLanguage();
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <FormInput name="phone" type="text" formLabel={t("operator.sponsors.phone")} placeholder="+212..." icon="Phone" required={required} />
-      <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" required={required} />
-      <FormInput
-        name="gender"
-        type="select"
-        formLabel={t("operator.sponsors.gender")}
-        items={[
-          { value: "F", label: t("operator.sponsors.female") },
-          { value: "M", label: t("operator.sponsors.male") },
-        ]}
-        icon="Users"
-        required={required}
-      />
-      <FormInput name="dateOfBirth" type="date" formLabel={t("operator.sponsors.dateOfBirth")} placeholder={t("operator.sponsors.datePlaceholder")} icon="Calendar" required={required} />
-      <div className="md:col-span-2">
-        <FormInput name="address" type="textarea" formLabel={t("operator.sponsors.address")} placeholder={t("operator.sponsors.addressPlaceholder")} icon="MapPin" required={required} />
-      </div>
-      <div className="md:col-span-2">
-        <FormInput name="notes" type="textarea" formLabel={t("operator.sponsors.operatorNotes")} placeholder={t("operator.sponsors.notesPlaceholder")} icon="NotebookPen" />
-      </div>
-    </div>
-  );
+const MAX_SPONSOR_IMAGE_SIZE = 5_000_000;
+const SPONSOR_IMAGE_TYPES = new Set([
+  "image/avif",
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+function sponsorImageError(file: File) {
+  if (!SPONSOR_IMAGE_TYPES.has(file.type)) {
+    return "Select a PNG, JPEG, WebP, AVIF, or GIF image.";
+  }
+  if (file.size > MAX_SPONSOR_IMAGE_SIZE) return "Image must be 5 MB or smaller.";
+  return null;
 }
 
-function SponsorAccountFields({
-  profileRequired = false,
-}: Readonly<{ profileRequired?: boolean }>) {
-  const { t } = useKafilLanguage();
+function selectSponsorImage(
+  file: File | null,
+  setImage: (file: File | null) => void,
+  setError: (message: string | null) => void,
+) {
+  if (!file) {
+    setImage(null);
+    setError(null);
+    return;
+  }
 
-  return (
-    <>
-      <NFormSectionHeader icon={UserRoundPlus} title={t("operator.sponsors.account")} />
-      <div className="grid gap-4 md:grid-cols-2">
-        <FormInput name="name" type="text" formLabel={t("operator.sponsors.fullName")} placeholder={t("operator.sponsors.fullNamePlaceholder")} icon="User" required />
-        <FormInput name="email" type="text" formLabel={t("operator.sponsors.email")} placeholder="sponsor@example.com" icon="Mail" required />
-      </div>
-      <SponsorProfileFields required={profileRequired} />
-    </>
-  );
+  const error = sponsorImageError(file);
+  if (error) {
+    setError(error);
+    return;
+  }
+
+  setImage(file);
+  setError(null);
 }
 
 export function CreateSponsorDialogContent() {
@@ -75,10 +72,33 @@ export function CreateSponsorDialogContent() {
     password: string;
     phone: string;
   } | null>(null);
+  const [sponsorImage, setSponsorImage] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const isSubmitting = create.isPending || isUploadingImage;
 
   async function handleSubmit(values: CreateSponsorFormValues) {
-    const created = await create.mutateAsync(toCreateSponsorInput(values));
-    setCredentials({ password: created.initialPassword, phone: values.phone });
+    if (imageError) throw new Error(imageError);
+
+    let uploadedImagePath: string | null = null;
+    setIsUploadingImage(Boolean(sponsorImage));
+
+    try {
+      uploadedImagePath = sponsorImage
+        ? await uploadSponsorImage(sponsorImage)
+        : null;
+      const created = await create.mutateAsync(
+        toCreateSponsorInput(values, uploadedImagePath),
+      );
+      setCredentials({ password: created.initialPassword, phone: values.phone });
+    } catch (error) {
+      if (uploadedImagePath) {
+        await deleteSponsorImage(uploadedImagePath).catch(() => undefined);
+      }
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
   }
 
   if (credentials) {
@@ -99,10 +119,51 @@ export function CreateSponsorDialogContent() {
       onSubmit={handleSubmit}
       devTools={devTools}
     >
-      <SponsorAccountFields profileRequired />
+      <NFormSectionHeader icon={UserRoundPlus} title={t("operator.sponsors.account")} />
+      <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
+        <div className="space-y-2">
+          <AvatarFormInput
+            name="image"
+            formLabel={t("operator.sponsors.imageUrl")}
+            subtitle={t("operator.sponsors.imageUploadGuidance")}
+            accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            allowClear
+            disabled={isSubmitting}
+            fill
+            radius="xl"
+            value={sponsorImage}
+            onChange={(file) => selectSponsorImage(file, setSponsorImage, setImageError)}
+          />
+          {imageError ? (
+            <p className="text-xs text-destructive">{imageError}</p>
+          ) : null}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormInput name="name" type="text" formLabel={t("operator.sponsors.fullName")} placeholder={t("operator.sponsors.fullNamePlaceholder")} icon="User" required />
+          <FormInput name="email" type="text" formLabel={t("operator.sponsors.email")} placeholder="sponsor@example.com" icon="Mail" required />
+          <FormInput name="phone" type="text" formLabel={t("operator.sponsors.phone")} placeholder="+212..." icon="Phone" required />
+          <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" required />
+        </div>
+      </div>
+      <div className="space-y-4">
+        <FormInput
+          name="gender"
+          type="select"
+          formLabel={t("operator.sponsors.gender")}
+          items={[
+            { value: "F", label: t("operator.sponsors.female") },
+            { value: "M", label: t("operator.sponsors.male") },
+          ]}
+          icon="Users"
+          required
+        />
+        <FormInput name="dateOfBirth" type="date" formLabel={t("operator.sponsors.dateOfBirth")} placeholder={t("operator.sponsors.datePlaceholder")} icon="Calendar" required />
+        <FormInput name="address" type="textarea" formLabel={t("operator.sponsors.address")} placeholder={t("operator.sponsors.addressPlaceholder")} icon="MapPin" required />
+        <FormInput name="notes" type="textarea" formLabel={t("operator.sponsors.operatorNotes")} placeholder={t("operator.sponsors.notesPlaceholder")} icon="NotebookPen" />
+      </div>
       <div className="flex justify-end pt-5">
-        <NButton type="submit" disabled={create.isPending}>
-          {create.isPending ? t("operator.sponsors.creating") : t("operator.sponsors.createAndInvite")}
+        <NButton type="submit" disabled={isSubmitting}>
+          {isSubmitting ? t("operator.sponsors.creating") : t("operator.sponsors.createAndInvite")}
         </NButton>
       </div>
     </NForm>
@@ -113,10 +174,62 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { update } = useSponsorCommands();
+  const [sponsorImage, setSponsorImage] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [removeSponsorImage, setRemoveSponsorImage] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const isSubmitting = update.isPending || isUploadingImage;
+
+  function selectSponsorImageUpdate(file: File | null) {
+    if (!file) {
+      setSponsorImage(null);
+      setImageError(null);
+      setRemoveSponsorImage(Boolean(sponsor.image));
+      return;
+    }
+
+    const error = sponsorImageError(file);
+    if (error) {
+      setImageError(error);
+      return;
+    }
+
+    setSponsorImage(file);
+    setImageError(null);
+    setRemoveSponsorImage(false);
+  }
 
   async function handleSubmit(values: UpdateSponsorFormValues) {
-    await update.mutateAsync({ id: sponsor.id, input: toUpdateSponsorInput(values) });
-    await pop();
+    if (imageError) throw new Error(imageError);
+
+    let uploadedImagePath: string | null = null;
+    setIsUploadingImage(Boolean(sponsorImage));
+
+    try {
+      uploadedImagePath = sponsorImage
+        ? await uploadSponsorImage(sponsorImage)
+        : null;
+      const image = uploadedImagePath ?? (removeSponsorImage ? null : sponsor.image);
+      await update.mutateAsync({
+        id: sponsor.id,
+        input: toUpdateSponsorInput(values, image),
+      });
+      if (
+        sponsor.image &&
+        sponsor.image !== image &&
+        sponsor.image.startsWith("/api/sponsor-images/files/serve/")
+      ) {
+        await deleteSponsorImage(sponsor.image).catch(() => undefined);
+      }
+      await pop();
+    } catch (error) {
+      if (uploadedImagePath) {
+        await deleteSponsorImage(uploadedImagePath).catch(() => undefined);
+      }
+      throw error;
+    } finally {
+      setIsUploadingImage(false);
+    }
   }
 
   return (
@@ -136,10 +249,51 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
       onSubmit={handleSubmit}
       devTools={useDevFormTools(updateSponsorFormSchema)}
     >
-      <SponsorAccountFields />
+      <NFormSectionHeader icon={UserRoundPlus} title={t("operator.sponsors.account")} />
+      <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
+        <div className="space-y-2">
+          <AvatarFormInput
+            name="image"
+            formLabel={t("operator.sponsors.imageUrl")}
+            subtitle={t("operator.sponsors.imageUploadGuidance")}
+            accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            allowClear
+            disabled={isSubmitting}
+            fill
+            radius="xl"
+            imageVersion={sponsor.updatedAt}
+            value={removeSponsorImage ? null : sponsorImage ?? sponsor.image}
+            onChange={selectSponsorImageUpdate}
+          />
+          {imageError ? (
+            <p className="text-xs text-destructive">{imageError}</p>
+          ) : null}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormInput name="name" type="text" formLabel={t("operator.sponsors.fullName")} placeholder={t("operator.sponsors.fullNamePlaceholder")} icon="User" required />
+          <FormInput name="email" type="text" formLabel={t("operator.sponsors.email")} placeholder="sponsor@example.com" icon="Mail" required />
+          <FormInput name="phone" type="text" formLabel={t("operator.sponsors.phone")} placeholder="+212..." icon="Phone" />
+          <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" />
+        </div>
+      </div>
+      <div className="space-y-4">
+        <FormInput
+          name="gender"
+          type="select"
+          formLabel={t("operator.sponsors.gender")}
+          items={[
+            { value: "F", label: t("operator.sponsors.female") },
+            { value: "M", label: t("operator.sponsors.male") },
+          ]}
+          icon="Users"
+        />
+        <FormInput name="dateOfBirth" type="date" formLabel={t("operator.sponsors.dateOfBirth")} placeholder={t("operator.sponsors.datePlaceholder")} icon="Calendar" />
+        <FormInput name="address" type="textarea" formLabel={t("operator.sponsors.address")} placeholder={t("operator.sponsors.addressPlaceholder")} icon="MapPin" />
+        <FormInput name="notes" type="textarea" formLabel={t("operator.sponsors.operatorNotes")} placeholder={t("operator.sponsors.notesPlaceholder")} icon="NotebookPen" />
+      </div>
       <div className="flex justify-end pt-5">
-        <NButton type="submit" disabled={update.isPending}>
-          {update.isPending ? t("operator.sponsors.saving") : t("operator.sponsors.saveProfile")}
+        <NButton type="submit" disabled={isSubmitting}>
+          {isSubmitting ? t("operator.sponsors.saving") : t("operator.sponsors.saveProfile")}
         </NButton>
       </div>
     </NForm>
@@ -210,6 +364,51 @@ export function DeleteSponsorDialogContent({
           onClick={() => void handleDelete()}
         >
           {remove.isPending ? t("operator.sponsors.deleting") : t("operator.sponsors.deleteAccount")}
+        </NButton>
+      </div>
+    </div>
+  );
+}
+
+export function BulkDeleteSponsorsDialogContent({
+  sponsorIds,
+  onDeleted,
+}: Readonly<{ sponsorIds: string[]; onDeleted: () => void }>) {
+  const { t } = useKafilLanguage();
+  const { pop } = useDialog();
+  const { bulkRemove } = useSponsorCommands();
+  const submittingRef = useRef(false);
+
+  async function handleDelete() {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
+    try {
+      await bulkRemove.mutateAsync(sponsorIds);
+      onDeleted();
+      await pop();
+    } catch {
+      submittingRef.current = false;
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-muted-foreground">
+        {t("operator.sponsors.bulkDeleteWarning", {
+          count: sponsorIds.length,
+        })}
+      </p>
+      <div className="flex justify-end pt-5">
+        <NButton
+          type="button"
+          variant="destructive"
+          disabled={bulkRemove.isPending}
+          onClick={() => void handleDelete()}
+        >
+          {bulkRemove.isPending
+            ? t("operator.sponsors.bulkDeleting")
+            : t("operator.sponsors.bulkDeleteAccount")}
         </NButton>
       </div>
     </div>

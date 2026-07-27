@@ -1,5 +1,6 @@
 import {
   AuthService,
+  TokenService,
   UserRepository,
   UserService,
 } from "najm-auth";
@@ -38,6 +39,7 @@ export class SponsorService {
     private readonly validator: SponsorValidator,
     private readonly dashboard: DashboardService,
     private readonly userRecords?: UserRepository,
+    private readonly tokens?: TokenService,
   ) {}
 
   async list(query: SponsorListQuery) {
@@ -218,6 +220,19 @@ export class SponsorService {
 
   @Transaction({ retries: 2 })
   async delete(id: string, actorUserId: string) {
+    return this.deleteOne(id, actorUserId);
+  }
+
+  @Transaction({ retries: 2 })
+  async deleteMany(ids: string[], actorUserId: string) {
+    const deleted = [];
+    for (const id of [...ids].sort()) {
+      deleted.push(await this.deleteOne(id, actorUserId));
+    }
+    return deleted;
+  }
+
+  private async deleteOne(id: string, actorUserId: string) {
     const sponsor = await this.validator.ensureExists(id);
     if (await this.sponsors.hasLinkedHistory(id)) {
       HttpError.conflict(
@@ -263,6 +278,10 @@ export class SponsorService {
     const sponsor = await this.validator.ensureExists(id);
     const { reason } = sponsorStatusDto.parse(data);
     await this.users.update(sponsor.userId, { status });
+    await this.tokens?.invalidateUserAccessTokens(sponsor.userId);
+    if (status === "inactive") {
+      await this.tokens?.revokeAllForUser(sponsor.userId);
+    }
     await this.audits.record({
       action: `sponsor.${status === "active" ? "reactivated" : "deactivated"}`,
       actorUserId,

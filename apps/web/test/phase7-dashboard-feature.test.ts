@@ -36,7 +36,6 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "/operator/budgets",
       "/operator/categories",
       "/operator/products",
-      "/operator/inventory",
       "/operator/orders",
     ]);
     expect(navigation.filter((item) => item.sectionLabel).map((item) => item.sectionLabel)).toEqual([

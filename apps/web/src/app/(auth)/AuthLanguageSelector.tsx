@@ -7,9 +7,10 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { KafilLanguage } from "@/lib/format";
 
 const languageOptions = [
-  { label: "English", value: "en" },
-  { label: "Fran\u00e7ais", value: "fr" },
-  { label: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629", value: "ar" },
+  { country: "us", label: "English", value: "en" },
+  { country: "fr", label: "Fran\u00e7ais", value: "fr" },
+  { country: "ma", label: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629", value: "ar" },
+  { country: "es", label: "Espa\u00f1ol", value: "es" },
 ] as const;
 
 export function AuthLanguageSelector() {

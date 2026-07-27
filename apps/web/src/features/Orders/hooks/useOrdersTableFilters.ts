@@ -19,6 +19,8 @@ export function useOrdersTableFilters() {
           { value: "pending", label: "Pending" },
           { value: "approved", label: "Approved" },
           { value: "in_preparation", label: "In preparation" },
+          { value: "purchased", label: "Purchased" },
+          { value: "out_for_delivery", label: "Out for delivery" },
           { value: "delivered", label: "Delivered" },
           { value: "rejected", label: "Rejected" },
           { value: "cancelled", label: "Cancelled" },

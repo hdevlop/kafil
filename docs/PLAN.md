@@ -2,7 +2,7 @@
 
 Status: **ACTIVE**
 
-Last updated: 2026-07-24
+Last updated: 2026-07-27
 
 This document is the source of truth for implementation order, phase status,
 and release gates. Detailed requirements live under
@@ -56,7 +56,8 @@ These decisions apply unless this plan is deliberately revised:
     permanently erase a mistaken contribution only when it is pending,
     rejected, or already fully refunded; a refunded erasure also removes its
     linked credit/refund ledger pair and rebuilds the account snapshots.
-14. Placing an order reserves budget and stock atomically.
+14. Placing an order reserves only budget; Kafil procures products on demand
+    and owns no physical stock.
 15. Order items keep product name, SKU, price, and address snapshots.
 16. Families cannot approve their own orders.
 17. Deactivation is the normal account-removal workflow. Bootstrap admins may
@@ -88,6 +89,16 @@ These decisions apply unless this plan is deliberately revised:
     their first login. The server owns this requirement; the family replacement
     may use lowercase letters and numbers, while every other role keeps Najm's
     stronger password policy.
+29. Operators and admins may create an attributed assisted order for an active
+    family without impersonating it or changing its personal cart.
+30. Approval keeps the estimated total reserved. A protected supermarket
+    receipt records the immutable actual purchase and settles lower/higher
+    variance explicitly.
+31. The active lifecycle is `pending -> approved -> purchased ->
+    out_for_delivery -> delivered`; raw receipt/proof files are operator-only.
+32. Admin access management is a Kafil privacy-safe facade over Najm users,
+    sessions, fixed roles, canonical permissions, and audited custom permissions.
+    User creation always completes the owning operator/family/sponsor profile.
 
 The full decision register is in
 [`docs/plans/DECISIONS.md`](plans/DECISIONS.md).
@@ -132,7 +143,7 @@ The current workspace already contains a useful foundation:
 - [x] Sponsor-family assignments
 - [x] Contribution plans and contribution validation
 - [x] Budget account, monthly limits, and immutable ledger
-- [x] Categories, products, and inventory
+- [x] Procurement categories and products; legacy inventory retained read-only
 - [x] Cart and order workflow
 - [x] Configurable family funding target, progress, and order-activation gate
 - [x] Operator-only family image upload with protected local filesystem serving
@@ -220,7 +231,8 @@ familyProfiles
   `-- orders -- orderItems
          +-- orderStatusEvents
          +-- budgetLedgerEntries
-         `-- inventoryLedgerEntries
+         +-- orderPurchaseRecords -- orderPurchaseReversals
+         `-- protected receipt and delivery evidence
 ```
 
 ## 7. Role Capability Matrix
@@ -236,11 +248,13 @@ familyProfiles
 | Adjust a family budget | Yes, reason required | No | No |
 | Manage platform funding target | Yes, audited | No | No |
 | View family budget | All | Own | Supported family summary |
-| Manage catalog and inventory | Yes | No | No |
-| Use cart and place orders | No | Own | No |
-| Approve/reject/prepare/deliver orders | Yes | No | No |
+| Manage procurement catalog | Yes | No | No |
+| Use cart and place orders | Assisted only | Own | No |
+| Approve/reject/purchase/deliver orders | Yes | No | No |
 | View orders | All | Own | Supported family summary |
 | Deactivate/reactivate accounts | Yes, except operators | No | No |
+| Inspect users, fixed roles, and permissions | Admin only | No | No |
+| Create domain users and custom permissions | Admin only | No | No |
 
 Every backend endpoint still requires its own secure policy. Hiding a button is
 not authorization.
@@ -274,7 +288,7 @@ orderable amount =
 Successful path:
 
 ```text
-pending -> approved -> in_preparation -> delivered
+pending -> approved -> purchased -> out_for_delivery -> delivered
 ```
 
 Alternative paths:
@@ -283,15 +297,20 @@ Alternative paths:
 pending -> rejected
 pending -> cancelled
 approved -> cancelled
-in_preparation -> cancelled   (operator exception with reason)
+purchased -> cancelled        (operator confirms goods are recoverable)
+out_for_delivery -> cancelled (operator confirms goods are recoverable)
+in_preparation -> delivered/cancelled (legacy compatibility only)
 ```
 
 Rules:
 
-- Submission creates `pending`, reserves budget, and reserves inventory.
-- Approval captures reserved budget as spent and allocates reserved inventory.
-- Rejection or pending cancellation releases budget and inventory.
-- Cancellation after approval creates explicit budget and inventory reversals.
+- Submission creates `pending` and reserves the catalog estimate from budget.
+- Approval keeps that estimate reserved.
+- Recording the protected receipt captures the actual purchase amount, releases
+  a lower variance, or explicitly reserves/captures a confirmed higher variance.
+- Rejection or pre-purchase cancellation releases the estimate.
+- Recoverable post-purchase cancellation refunds the active actual purchase.
+- Delivery transitions have no financial or inventory effect.
 - Delivered, rejected, and cancelled orders are terminal.
 - Status changes are command methods, never a generic status update.
 
@@ -303,8 +322,8 @@ Rules:
 | 1. Identity, families, children, audit | `[x]` | Family role and safe account lifecycle | [Section 01](plans/sections/01-identity-families-and-children.md) |
 | 2. Support assignments and privacy views | `[x]` | Sponsor-to-family relationships | [Section 02](plans/sections/02-support-assignments.md) |
 | 3. Budgets and contributions | `[x]` | Transactional contribution-to-budget flow | [Section 03](plans/sections/03-budgets-and-contributions.md) |
-| 4. Catalog and inventory | `[x]` | Orderable products with stock accounting | [Section 04](plans/sections/04-catalog-and-inventory.md) |
-| 5. Cart, orders, and fulfillment | `[x]` | Full family ordering state machine | [Section 05](plans/sections/05-cart-orders-and-fulfillment.md) |
+| 4. Procurement catalog | `[x]` | Orderable products without Kafil stock | [Section 04](plans/sections/04-catalog-and-inventory.md) |
+| 5. Cart, procurement, purchase, and delivery | `[x]` | Assisted/self-service orders with actual-cost settlement | [Section 05](plans/sections/05-cart-orders-and-fulfillment.md) |
 | 6. Role dashboards | `[x]` | Operator, family, and sponsor web applications | [Section 06](plans/sections/06-web-dashboards.md) |
 | 7. Reports, operations, and release | `[ ]` **ACTIVE** | Auditable and deployable first production release | [Section 07](plans/sections/07-reports-operations-and-release.md) |
 
@@ -319,7 +338,17 @@ and operational attention lists. Detailed reports and exports remain open.
 The installable-mobile slice landed on 2026-07-22 with a native Next.js web app
 manifest, branded standard/maskable/Apple icons, production service-worker
 registration, and a privacy-safe offline fallback that never caches API or
-authenticated page responses.
+authenticated page responses. The dynamic-branding-assets slice landed on
+2026-07-26: the `platform_settings` row now stores four nullable branding
+asset paths plus a `branding_revision` counter guarded by a positive-revision
+check, the new `/api/branding` module exposes a public read and
+admin-only upload, commit, reset, and delete endpoints with revision-locked
+commits, the sidebar, auth, and first-login layouts now consume the committed
+asset URLs (with a baked-in factory fallback on image error), and the global
+Settings sheet gained an admin-only Brand assets card with live previews,
+uncoordinated upload/discard/reset actions, and translations for en, fr, ar,
+and es. Detailed reports, exports, durable outbox delivery, rate limits,
+security headers, and backup rehearsals remain open.
 
 ## 11. Phase 1 - Identity, Families, Children, and Audit
 
@@ -576,23 +605,23 @@ Exit gate:
 - Concurrent credits and debits preserve account invariants.
 - Family and sponsor views expose only authorized financial data.
 
-## 14. Phase 4 - Catalog and Inventory
+## 14. Phase 4 - Procurement Catalog
 
-Goal: create an operator-managed catalog that can safely support order
-reservations.
+Goal: maintain the products Kafil is willing to procure after a family request.
 
 Status: complete (2026-07-16)
 
 - [x] Add categories with activation and ordering
 - [x] Add products with SKU, minor-unit price, image reference, and status
-- [x] Add inventory balances with on-hand and reserved quantities
-- [x] Add immutable inventory ledger entries
-- [x] Add stock adjustment commands with required reasons
+- [x] Retire stock balances, receipts, adjustments, navigation, APIs, and MCP
+      tools from active runtime behavior
 - [x] Add family-readable active catalog projections
-- [x] Prevent hard deletion of catalog items with order or inventory history; admin-only pristine delete for items never ordered or stocked
-- [x] Test inactive products, price validation, and concurrent stock reservation
+- [x] Prevent hard deletion of catalog items with order history; admin-only
+      pristine delete for items added by mistake
+- [x] Test inactive products, price validation, and orders without stock setup
 
-Completion evidence (2026-07-16; updated later for the prune carve-out):
+Historical implementation evidence (2026-07-16; inventory behavior superseded
+by the procurement retirement evidence below):
 migration `0006_phase4_catalog_inventory` adds categories, products, balance
 rows, and an append-only inventory ledger with non-negative/never-over-reserved
 database checks. Operator commands create, update, activate/deactivate, restock,
@@ -608,11 +637,18 @@ internal reserve/release/allocate commands. Focused tests cover product price
 validation, stock receipt locks, idempotency boundaries, and attempts to
 reduce on-hand stock below reservations.
 
+Procurement retirement evidence (2026-07-27): active inventory controllers,
+MCP tools, UI, navigation, dashboard projections, form-fill registrations, and
+all order effects were removed. New products do not receive a balance. The
+legacy inventory tables and enum remain untouched as read-only history; no
+runtime repository writes them. Catalog deletion now depends on order history,
+not the existence of a legacy balance.
+
 Exit gate:
 
-- Operators can maintain products and stock.
+- Operators can maintain an orderable procurement catalog.
 - Families can browse only active products.
-- Inventory cannot become negative or be over-reserved.
+- A funded order succeeds without an inventory balance.
 
 ## 15. Phase 5 - Cart, Orders, and Fulfillment
 
@@ -625,12 +661,15 @@ lifecycle.
 - [x] Add orders, immutable item snapshots, and status history
 - [x] Submit cart to order in one transaction
 - [x] Reject submission until the family's funding lifecycle is active
-- [x] Lock and reserve budget and inventory during submission
-- [x] Implement approve, reject, prepare, deliver, and cancel commands
-- [x] Release or reverse money and stock for rejected/cancelled orders
+- [x] Lock and reserve budget only during submission
+- [x] Add attributed assisted orders that leave the family cart untouched
+- [x] Keep approval reserved; record protected receipt and actual purchase
+- [x] Add explicit purchased, out-for-delivery, and delivered commands
+- [x] Release/refund only budget for rejected/cancelled orders
 - [x] Add family order history and tracking
 - [x] Add sponsor privacy-safe supported-family order views
-- [x] Add duplicate-submit, stale-price, low-budget, and low-stock tests
+- [x] Add duplicate-submit, stale-price, low-budget, variance, delivery,
+      evidence, privacy, and no-inventory tests
 
 Phase 5 evidence (2026-07-16): the `orders` module now owns one cart per
 family profile, current-price cart estimates, immutable order/item/address
@@ -640,19 +679,11 @@ snapshots, and append-only status events. Migrations
 status history, lifecycle timestamps, unique submission keys, and database
 checks/indexes without destructive DDL.
 
-Family routes are self-scoped for cart and order history; sponsor routes return
-only active-assignment order summaries with item snapshots, totals, and status,
-never family identifiers or delivery fields. Operator commands are explicit:
-approve captures reservations, reject/pending-cancel release them, and
-post-approval cancellation writes budget refunds and inventory returns. Each
-mutating path is transactional; submission locks the cart, reserves inventory
-in stable product-ID order, locks the budget account, and appends idempotent
-ledger entries plus audit/outbox/status-event records.
-
-All order lifecycle paths now use one cross-resource lock order: inventory
-first, then budget. This applies to submit, approve, reject, pending
-cancellation, and post-approval cancellation, avoiding inverted lock ordering
-between competing transactions.
+The original Phase 5 implementation reserved both stock and budget. That
+historical behavior and its lock-order evidence are retained in the record but
+were fully superseded on 2026-07-27: current submission reserves budget only,
+approval retains that reservation, purchase captures actual cost, and no active
+order path reads or writes inventory.
 
 Validation evidence (2026-07-16): `bun run lint` and `bun run typecheck`
 passed. `bun run check` passed with 95 server tests, 8 seed tests, one
@@ -669,9 +700,18 @@ exactly one of two competing reservations succeeds for a shared budget, and
 exactly one succeeds for the final stock unit. Final balances remain
 non-negative and neither resource is double-reserved.
 
+Workflow expansion evidence (2026-07-27): migration
+`0025_ambitious_abomination` adds attributed placement, immutable purchase and
+reversal records, protected evidence metadata, `purchased`, and
+`out_for_delivery`. Operator UI now creates assisted orders, records/replaces
+receipts, and tracks delivery. Family and sponsor views expose only safe
+milestones. Exact/lower/higher settlement, cart isolation, terminal delivery,
+evidence signature/cleanup, and account-access tests pass. The local migration
+and 16 PostgreSQL integration tests passed.
+
 Exit gate:
 
-- Two concurrent orders cannot spend the same budget or stock.
+- Two concurrent orders cannot spend the same budget.
 - Every allowed transition has the correct ledger effects.
 - Every forbidden transition returns a conflict and changes nothing.
 
@@ -686,7 +726,7 @@ Detailed active plan: [`plans/sections/06-web-dashboards.md`](plans/sections/06-
 - [x] Redirect `/dashboard` to the correct role dashboard
 - [x] Add operator navigation and management screens (Families, Children,
       Sponsors, SupportAssignments, Contributions, Budgets, Categories,
-      Products, Inventory, Orders, and platform Settings)
+      Products, Orders, admin Access management, and platform Settings)
 - [x] Add family children, budget, catalog, cart, and order screens
 - [x] Show configured funding progress and disable pending-family submission
 - [x] Add sponsor support, contribution, usage, orders, and profile screens
@@ -709,8 +749,8 @@ Exit gate:
 Goal: close the operational, privacy, and production-readiness surface.
 
 - [~] Add operator statistics and financial reports (live overview statistics,
-      contribution trend, budget position, order pipeline, and low-stock
-      attention are complete; detailed reports remain)
+      contribution trend, budget position, and order pipeline are complete;
+      detailed reports remain)
 - [~] Add sponsor contribution and usage reports (own contribution trend,
       statuses, supported budget use, and privacy-safe KPIs are complete;
       detailed reports remain)
@@ -722,6 +762,9 @@ Goal: close the operational, privacy, and production-readiness surface.
 - [x] Make the web application installable on Android and iPhone with a web app
       manifest, branded icons, standalone display, and a privacy-safe service
       worker/offline fallback
+- [x] Add admin-only Users, Roles, and Permissions views with safe account
+      lifecycle commands, session revocation, code-managed grant drift, and MCP
+- [x] Add protected receipt/delivery evidence reconciliation and orphan cleanup
 - [ ] Add CSV export with explicit permission and privacy filtering
 - [ ] Add durable outbox events for email and reminders
 - [ ] Add contribution, order-status, and account-activation notifications
@@ -730,8 +773,10 @@ Goal: close the operational, privacy, and production-readiness surface.
 - [ ] Add rate limits for sensitive and expensive commands
 - [ ] Add security headers and Content Security Policy
 - [ ] Add structured logs with request IDs and no sensitive payloads
-- [ ] Define backup, restore, migration rollback, and incident procedures
-- [ ] Run full unit, integration, authorization, concurrency, and browser tests
+- [x] Define database/storage backup, isolated restore, forward-migration, and
+      incident procedures, including protected order evidence
+- [~] Run full unit, integration, authorization, concurrency, and browser tests
+      (unit/build/database gates pass; production-like browser/staging smoke remains)
 - [ ] Complete staging smoke and release checklist
 
 Exit gate:
@@ -777,7 +822,7 @@ Financial and order features additionally require:
 
 - repeated request/idempotency tests
 - concurrent operation tests
-- insufficient budget/stock tests
+- insufficient budget and confirmed higher-variance tests
 - invalid state transition tests
 - ledger and balance reconciliation tests
 
@@ -817,7 +862,7 @@ The first production release is done only when:
 - [ ] All seven implementation phases are closed
 - [ ] There are no unresolved critical/high security findings
 - [ ] All role and ownership tests pass
-- [ ] Budget and inventory reconciliation tests pass
+- [ ] Budget and order/evidence reconciliation tests pass
 - [ ] No financial status or balance can be directly overwritten
 - [ ] Family private fields never appear in sponsor responses or logs
 - [ ] Database backup and restore have been rehearsed

@@ -17,6 +17,8 @@ import { isAdmin, isFamily, isOperator } from "../../config/authConfig";
 import {
   type AccountStatusDto,
   accountStatusDto,
+  type BulkDeleteFamiliesDto,
+  bulkDeleteFamiliesDto,
   type CreateFamilyDto,
   createFamilyDto,
   familyIdParams,
@@ -96,6 +98,26 @@ export class FamilyController {
     @User("id") actorUserId: string,
   ) {
     return this.families.create(body, actorUserId);
+  }
+
+  @Post("/bulk-delete")
+  @isAdmin()
+  @CanDelete(Family)
+  @Validate({ body: bulkDeleteFamiliesDto })
+  @McpTool({
+    description: "Permanently delete multiple family accounts and their linked records",
+    destructive: true,
+    confirm: {
+      level: "danger",
+      message: "Permanently delete these family accounts? This cannot be undone.",
+    },
+  })
+  @ResMsg("families.success.deleted")
+  bulkDelete(
+    @Body() body: BulkDeleteFamiliesDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.families.deleteMany(body.ids, actorUserId);
   }
 
   @Put("/:id")

@@ -31,6 +31,19 @@ export const updateChildDto = childFields
 export const childIdParams = z.object({
   id: z.string().uuid(),
 });
+export const bulkDeleteChildrenDto = z
+  .object({
+    ids: z.array(z.string().uuid()).min(1).max(100),
+  })
+  .superRefine((input, context) => {
+    if (new Set(input.ids).size !== input.ids.length) {
+      context.addIssue({
+        code: "custom",
+        message: "Each child can only be selected once.",
+        path: ["ids"],
+      });
+    }
+  });
 export const childListQuery = z.object({
   familyProfileId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -45,3 +58,4 @@ export type CreateInitialChildDto = z.input<typeof createInitialChildDto>;
 export type UpdateChildDto = z.input<typeof updateChildDto>;
 export type ChildListQuery = z.input<typeof childListQuery>;
 export type ChildStatusDto = z.input<typeof childStatusDto>;
+export type BulkDeleteChildrenDto = z.input<typeof bulkDeleteChildrenDto>;

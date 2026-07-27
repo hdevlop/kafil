@@ -1,11 +1,19 @@
-# Section 04 - Catalog and Inventory
+# Section 04 - Procurement Catalog and Legacy Inventory
 
 Status: complete (2026-07-16)
 
+Runtime update (2026-07-27): Kafil now procures on demand and owns no stock.
+Categories/products remain active catalog contracts, but inventory routes, MCP
+tools, UI, dashboard metrics, and order effects are retired. New products have
+no inventory balance. Existing inventory tables are retained unchanged as
+read-only legacy history pending a separately approved retention review. This
+update supersedes stock-operation requirements below, which are kept only as
+historical Phase 4 implementation evidence.
+
 ## Goal
 
-Provide an operator-managed product catalog with enough inventory accounting to
-reserve stock safely when a family places an order.
+Provide an operator-managed catalog of products Kafil is willing to purchase
+after an order is approved.
 
 ## Dependencies
 

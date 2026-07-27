@@ -5,11 +5,15 @@ import { useEntityQuery } from "@/hooks/useEntityQuery";
 import {
   approveOrder,
   cancelOrder,
+  confirmOrderDelivery,
+  createAssistedOrder,
   deliverOrder,
   getOrder,
   listOrders,
+  recordOrderPurchase,
   rejectOrder,
-  startOrderPreparation,
+  replaceOrderPurchase,
+  startOrderDelivery,
 } from "@/services/orderApi";
 
 import { orderKeys } from "./orderKeys";
@@ -36,20 +40,44 @@ export function useOrderCommands() {
   const approve = useEntityCommand({
     mutationFn: approveOrder,
     invalidate,
-    successMessage: "Order approved and reservations captured.",
+    successMessage: "Order approved. The estimated budget remains reserved.",
     errorMessage: "Could not approve this order.",
   });
   const reject = useEntityCommand({
     mutationFn: rejectOrder,
     invalidate,
-    successMessage: "Order rejected and reservations released.",
+    successMessage: "Order rejected and budget released.",
     errorMessage: "Could not reject this order.",
   });
-  const preparation = useEntityCommand({
-    mutationFn: startOrderPreparation,
+  const assisted = useEntityCommand({
+    mutationFn: createAssistedOrder,
     invalidate,
-    successMessage: "Order preparation started.",
-    errorMessage: "Could not start order preparation.",
+    successMessage: "Assisted family order created and budget reserved.",
+    errorMessage: "Could not create the assisted family order.",
+  });
+  const purchase = useEntityCommand({
+    mutationFn: recordOrderPurchase,
+    invalidate,
+    successMessage: "Purchase recorded and actual cost settled.",
+    errorMessage: "Could not record this purchase.",
+  });
+  const replacePurchase = useEntityCommand({
+    mutationFn: replaceOrderPurchase,
+    invalidate,
+    successMessage: "Purchase replaced and budget difference settled.",
+    errorMessage: "Could not replace this purchase.",
+  });
+  const startDelivery = useEntityCommand({
+    mutationFn: startOrderDelivery,
+    invalidate,
+    successMessage: "Order is out for delivery.",
+    errorMessage: "Could not start delivery.",
+  });
+  const confirmDelivery = useEntityCommand({
+    mutationFn: confirmOrderDelivery,
+    invalidate,
+    successMessage: "Delivery confirmed.",
+    errorMessage: "Could not confirm delivery.",
   });
   const deliver = useEntityCommand({
     mutationFn: deliverOrder,
@@ -60,9 +88,19 @@ export function useOrderCommands() {
   const cancel = useEntityCommand({
     mutationFn: cancelOrder,
     invalidate,
-    successMessage: "Order cancelled and its effects reversed.",
+    successMessage: "Order cancelled and its financial effects reversed.",
     errorMessage: "Could not cancel this order.",
   });
 
-  return { approve, reject, preparation, deliver, cancel };
+  return {
+    approve,
+    assisted,
+    reject,
+    purchase,
+    replacePurchase,
+    startDelivery,
+    confirmDelivery,
+    deliver,
+    cancel,
+  };
 }

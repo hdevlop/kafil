@@ -13,7 +13,7 @@ import { useOrderCommands } from "../hooks/useOrders";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { OrderRecord } from "../types";
 
-type ConfirmAction = "approve" | "preparation" | "deliver";
+type ConfirmAction = "approve" | "startDelivery" | "deliver";
 type ReasonAction = "reject" | "cancel";
 
 export function ConfirmOrderCommandDialogContent({
@@ -26,7 +26,7 @@ export function ConfirmOrderCommandDialogContent({
   const command = commands[action];
   const copy = {
     approve: { message: t("operator.orders.approveMessage"), button: t("action.approveOrder") },
-    preparation: { message: t("operator.orders.preparationMessage"), button: t("action.startPreparation") },
+    startDelivery: { message: "The purchase is recorded. Start the protected delivery timeline.", button: "Start delivery" },
     deliver: { message: t("operator.orders.deliverMessage"), button: t("action.markDelivered") },
   }[action];
 
@@ -60,7 +60,12 @@ export function OrderReasonDialogContent({
   const isCancellation = action === "cancel";
 
   async function handleSubmit(values: OrderReasonFormValues) {
-    await command.mutateAsync(toOrderReasonInput(order.id, values));
+    await command.mutateAsync({
+      ...toOrderReasonInput(order.id, values),
+      confirmRecoverableGoods: ["purchased", "out_for_delivery"].includes(
+        order.status,
+      ),
+    });
     await pop();
   }
 
@@ -75,8 +80,10 @@ export function OrderReasonDialogContent({
     >
       <p className="text-sm leading-6 text-muted-foreground">
         {isCancellation
-          ? "Cancellation releases pending reservations or reverses the captured budget and allocated stock. Explain why this order cannot continue."
-          : "Rejection releases this pending order's budget and inventory reservations. Explain why it cannot be fulfilled."}
+          ? ["purchased", "out_for_delivery"].includes(order.status)
+            ? "This confirms the purchased goods/payment are recoverable and refunds the actual captured amount. Explain why the order cannot continue."
+            : "Cancellation releases the pending budget reservation. Explain why this order cannot continue."
+          : "Rejection releases this pending order's budget reservation. Explain why it cannot be fulfilled."}
       </p>
       <FormInput
         name="reason"

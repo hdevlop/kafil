@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  type AnyPgColumn,
   check,
   index,
   integer,
@@ -14,7 +15,12 @@ import {
 import { usersTable } from "najm-auth/pg";
 
 import { timestamps } from "../../database/columns";
-import { orderStatusEnum } from "../../database/enums";
+import {
+  deliveryConfirmationMethodEnum,
+  orderAssistanceChannelEnum,
+  orderPlacementSourceEnum,
+  orderStatusEnum,
+} from "../../database/enums";
 import { products } from "../catalog/catalogSchema";
 import { familyProfiles } from "../families/familySchema";
 
@@ -68,6 +74,11 @@ export const orders = pgTable(
     familyProfileId: uuid("family_profile_id")
       .notNull()
       .references(() => familyProfiles.id),
+    placementSource: orderPlacementSourceEnum("placement_source")
+      .default("family_self_service")
+      .notNull(),
+    assistanceChannel: orderAssistanceChannelEnum("assistance_channel"),
+    assistanceNote: text("assistance_note"),
     status: orderStatusEnum("status").default("pending").notNull(),
     subtotalMinor: minorUnit("subtotal_minor").notNull(),
     totalMinor: minorUnit("total_minor").notNull(),
@@ -95,7 +106,29 @@ export const orders = pgTable(
     preparationStartedAt: timestamp("preparation_started_at", {
       withTimezone: true,
     }),
+    deliveryStartedAt: timestamp("delivery_started_at", {
+      withTimezone: true,
+    }),
+    deliveryStartedByUserId: text("delivery_started_by_user_id").references(
+      () => usersTable.id,
+    ),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    deliveredByUserId: text("delivered_by_user_id").references(
+      () => usersTable.id,
+    ),
+    deliveryConfirmationMethod: deliveryConfirmationMethodEnum(
+      "delivery_confirmation_method",
+    ),
+    deliveryNote: text("delivery_note"),
+    deliveryProofStoragePath: text("delivery_proof_storage_path"),
+    deliveryProofMediaType: varchar("delivery_proof_media_type", {
+      length: 100,
+    }),
+    deliveryProofByteSize: integer("delivery_proof_byte_size"),
+    deliveryConfirmationIdempotencyKey: varchar(
+      "delivery_confirmation_idempotency_key",
+      { length: 160 },
+    ).unique(),
     ...timestamps(),
   },
   (table) => [
@@ -108,11 +141,99 @@ export const orders = pgTable(
       "orders_positive_totals_check",
       sql`${table.subtotalMinor} > 0 AND ${table.totalMinor} > 0 AND ${table.subtotalMinor} = ${table.totalMinor}`,
     ),
+    check(
+      "orders_assistance_context_check",
+      sql`(
+        (${table.placementSource} = 'family_self_service' AND ${table.assistanceChannel} IS NULL AND ${table.assistanceNote} IS NULL)
+        OR
+        (${table.placementSource} = 'operator_assisted' AND ${table.assistanceChannel} IS NOT NULL)
+      )`,
+    ),
+    check(
+      "orders_delivery_proof_complete_check",
+      sql`(
+        (${table.deliveryProofStoragePath} IS NULL AND ${table.deliveryProofMediaType} IS NULL AND ${table.deliveryProofByteSize} IS NULL)
+        OR
+        (${table.deliveryProofStoragePath} IS NOT NULL AND ${table.deliveryProofMediaType} IS NOT NULL AND ${table.deliveryProofByteSize} > 0)
+      )`,
+    ),
     index("orders_family_created_at_idx").on(
       table.familyProfileId,
       table.createdAt,
     ),
     index("orders_status_created_at_idx").on(table.status, table.createdAt),
+  ],
+);
+
+export const orderPurchaseRecords = pgTable(
+  "order_purchase_records",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id),
+    merchantName: varchar("merchant_name", { length: 200 }).notNull(),
+    receiptNumber: varchar("receipt_number", { length: 120 }),
+    purchasedAt: timestamp("purchased_at", { withTimezone: true }).notNull(),
+    actualTotalMinor: minorUnit("actual_total_minor").notNull(),
+    currency: varchar("currency", { length: 3 }).default("MAD").notNull(),
+    receiptStoragePath: text("receipt_storage_path").notNull(),
+    receiptMediaType: varchar("receipt_media_type", { length: 100 }).notNull(),
+    receiptByteSize: integer("receipt_byte_size").notNull(),
+    recordedByUserId: text("recorded_by_user_id")
+      .notNull()
+      .references(() => usersTable.id),
+    idempotencyKey: varchar("idempotency_key", { length: 160 })
+      .notNull()
+      .unique(),
+    replacesPurchaseId: uuid("replaces_purchase_id").references(
+      (): AnyPgColumn => orderPurchaseRecords.id,
+    ),
+    createdAt: timestamps().createdAt,
+  },
+  (table) => [
+    check(
+      "order_purchase_records_positive_total_check",
+      sql`${table.actualTotalMinor} > 0`,
+    ),
+    check(
+      "order_purchase_records_currency_check",
+      sql`${table.currency} = 'MAD'`,
+    ),
+    check(
+      "order_purchase_records_positive_receipt_size_check",
+      sql`${table.receiptByteSize} > 0`,
+    ),
+    uniqueIndex("order_purchase_records_receipt_path_unique").on(
+      table.receiptStoragePath,
+    ),
+    index("order_purchase_records_order_created_at_idx").on(
+      table.orderId,
+      table.createdAt,
+    ),
+    index("order_purchase_records_purchased_at_idx").on(table.purchasedAt),
+  ],
+);
+
+export const orderPurchaseReversals = pgTable(
+  "order_purchase_reversals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    purchaseId: uuid("purchase_id")
+      .notNull()
+      .unique()
+      .references(() => orderPurchaseRecords.id),
+    reason: text("reason").notNull(),
+    reversedByUserId: text("reversed_by_user_id")
+      .notNull()
+      .references(() => usersTable.id),
+    idempotencyKey: varchar("idempotency_key", { length: 160 })
+      .notNull()
+      .unique(),
+    createdAt: timestamps().createdAt,
+  },
+  (table) => [
+    index("order_purchase_reversals_created_at_idx").on(table.createdAt),
   ],
 );
 
@@ -175,6 +296,11 @@ export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type OrderStatus = Order["status"];
 export type OrderStatusEvent = typeof orderStatusEvents.$inferSelect;
+export type OrderPurchaseRecord = typeof orderPurchaseRecords.$inferSelect;
+export type NewOrderPurchaseRecord = typeof orderPurchaseRecords.$inferInsert;
+export type OrderPurchaseReversal = typeof orderPurchaseReversals.$inferSelect;
+export type NewOrderPurchaseReversal =
+  typeof orderPurchaseReversals.$inferInsert;
 
 export const orderSchema = {
   carts,
@@ -182,4 +308,6 @@ export const orderSchema = {
   orders,
   orderItems,
   orderStatusEvents,
+  orderPurchaseRecords,
+  orderPurchaseReversals,
 };

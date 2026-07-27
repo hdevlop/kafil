@@ -40,12 +40,11 @@ export class DashboardService {
 
   async getOperator(): Promise<OperatorDashboard> {
     const { firstMonth } = monthWindow();
-    const [people, money, trendRows, orderRows, lowStockRows] = await Promise.all([
+    const [people, money, trendRows, orderRows] = await Promise.all([
       this.dashboard.operatorPeopleCounts(),
       this.dashboard.operatorMoneyCounts(),
       this.dashboard.operatorContributionTrend(firstMonth),
       this.dashboard.operatorOrderStatuses(),
-      this.dashboard.operatorLowStock(),
     ]);
 
     return {
@@ -59,7 +58,6 @@ export class DashboardService {
         activeAssignments: numberValue(people.assignments?.active),
         pendingContributions: numberValue(money.contributions?.pendingCount),
         openOrders: numberValue(money.orders?.openCount),
-        lowStockProducts: numberValue(money.inventory?.count),
       },
       money: {
         pendingContributionMinor: numberValue(money.contributions?.pendingMinor),
@@ -78,7 +76,6 @@ export class DashboardService {
         (month) => ({ month, validatedMinor: 0, refundedMinor: 0 }),
       ),
       orderStatuses: statusCounts(orderRows),
-      lowStock: lowStockRows.map((row) => ({ ...row, availableQuantity: numberValue(row.availableQuantity) })),
     };
   }
 

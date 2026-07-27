@@ -72,10 +72,26 @@ export const orderStatusEnum = pgEnum("order_status", [
   "pending",
   "approved",
   "in_preparation",
+  "purchased",
+  "out_for_delivery",
   "delivered",
   "rejected",
   "cancelled",
 ]);
+export const orderPlacementSourceEnum = pgEnum("order_placement_source", [
+  "family_self_service",
+  "operator_assisted",
+]);
+export const orderAssistanceChannelEnum = pgEnum("order_assistance_channel", [
+  "phone",
+  "in_person",
+  "home_visit",
+  "other",
+]);
+export const deliveryConfirmationMethodEnum = pgEnum(
+  "delivery_confirmation_method",
+  ["operator_confirmation", "recipient_signature", "photo"],
+);
 export const outboxEventStatusEnum = pgEnum("outbox_event_status", [
   "pending",
   "processing",

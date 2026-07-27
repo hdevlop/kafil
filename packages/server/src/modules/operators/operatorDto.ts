@@ -4,6 +4,7 @@ import {
 } from "najm-auth";
 import { z } from "zod";
 import { phoneDto } from "../access/phone";
+import { OPERATOR_IMAGE_SERVE_PREFIX } from "./operatorImageController";
 
 const operatorProfileDto = z.object({
   phone: phoneDto,
@@ -15,6 +16,11 @@ const operatorProfileDto = z.object({
   notes: z.string().trim().max(2_000).nullish(),
 });
 
+const operatorImage = z.union([
+  z.url().max(2_000),
+  z.string().startsWith(OPERATOR_IMAGE_SERVE_PREFIX).max(2_000),
+]);
+
 export const createOperatorDto = createUserDto
   .omit({
     emailVerified: true,
@@ -25,6 +31,7 @@ export const createOperatorDto = createUserDto
   .extend({
     id: z.string().uuid().optional(),
     userId: z.string().min(1).optional(),
+    image: operatorImage.nullish(),
     ...operatorProfileDto.shape,
   });
 export const updateOperatorDto = updateUserDto
@@ -35,6 +42,7 @@ export const updateOperatorDto = updateUserDto
     status: true,
   })
   .extend({
+    image: operatorImage.nullish(),
     ...operatorProfileDto.partial().shape,
   });
 export const operatorIdParams = z.object({

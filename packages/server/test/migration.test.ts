@@ -418,4 +418,30 @@ describe("initial PostgreSQL migration", () => {
     expect(migration).not.toContain("DROP COLUMN");
     expect(migration).not.toContain("DROP TABLE");
   });
+
+  it("adds assisted procurement, immutable purchases, and delivery without destructive DDL", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0025_ambitious_abomination.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      `CREATE TYPE "public"."order_placement_source" AS ENUM('family_self_service', 'operator_assisted')`,
+    );
+    expect(migration).toContain(
+      `ALTER TYPE "public"."order_status" ADD VALUE 'purchased'`,
+    );
+    expect(migration).toContain(
+      `ALTER TYPE "public"."order_status" ADD VALUE 'out_for_delivery'`,
+    );
+    expect(migration).toContain('CREATE TABLE "order_purchase_records"');
+    expect(migration).toContain('CREATE TABLE "order_purchase_reversals"');
+    expect(migration).toContain(
+      'CONSTRAINT "orders_assistance_context_check"',
+    );
+    expect(migration).toContain(
+      'CONSTRAINT "orders_delivery_proof_complete_check"',
+    );
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
 });

@@ -22,6 +22,8 @@
     "inactive": "Inactivo",
     "pending": "Pendiente",
     "approved": "Aprobado",
+    "purchased": "Comprado",
+    "out_for_delivery": "En reparto",
     "rejected": "Rechazado",
     "cancelled": "Cancelado",
     "completed": "Completado",
@@ -268,7 +270,7 @@
       "profileCreated": "Patrocinador : operaci?n realizada correctamente",
       "updated": "Patrocinador : actualizado correctamente",
       "profileUpdated": "Patrocinador : operaci?n realizada correctamente",
-      "deactivated": "Patrocinador : desactivado correctamente",
+
       "reactivated": "Patrocinador : reactivado correctamente",
       "overviewRetrieved": "Patrocinador : operaci?n realizada correctamente"
     }
@@ -286,6 +288,15 @@
       "reset": "Apariencia restablecida correctamente"
     }
   },
+  "branding": {
+    "success": {
+      "retrieved": "Marca recuperada correctamente",
+      "updated": "Marca actualizada correctamente",
+      "reset": "Marca restablecida correctamente",
+      "uploaded": "Recurso de marca cargado",
+      "deleted": "Recurso de marca eliminado"
+    }
+  },
   "orders": {
     "success": {
       "cartRetrieved": "Pedido : operaci?n realizada correctamente",
@@ -294,12 +305,28 @@
       "cartItemRemoved": "Pedido : operaci?n realizada correctamente",
       "cartCleared": "Pedido : operaci?n realizada correctamente",
       "submitted": "Pedido : operaci?n realizada correctamente",
+      "assistedSubmitted": "Pedido asistido creado correctamente",
       "retrieved": "Pedido : recuperado correctamente",
       "cancelled": "Pedido : cancelado correctamente",
       "approved": "Pedido : aprobado correctamente",
       "rejected": "Pedido : rechazado correctamente",
       "preparationStarted": "Pedido : operaci?n realizada correctamente",
+      "purchaseRecorded": "Compra del pedido registrada correctamente",
+      "purchaseReplaced": "Compra del pedido reemplazada correctamente",
+      "deliveryStarted": "Entrega del pedido iniciada correctamente",
+      "evidenceUploaded": "Comprobante del pedido subido correctamente",
+      "evidenceRetrieved": "Comprobante del pedido recuperado correctamente",
+      "evidenceDeleted": "Comprobante del pedido eliminado correctamente",
       "delivered": "Pedido : entregado correctamente"
+    }
+  },
+  "adminAccess": {
+    "success": {
+      "retrieved": "Datos de gestión de acceso recuperados correctamente",
+      "deactivated": "Usuario desactivado y sesiones revocadas correctamente",
+      "reactivated": "Usuario reactivado correctamente",
+      "sessionsRevoked": "Sesiones del usuario revocadas correctamente",
+      "permissionCreated": "Permiso personalizado creado correctamente"
     }
   },
   "operators": {
@@ -316,7 +343,7 @@
       "created": "Familia : creado correctamente",
       "updated": "Familia : actualizado correctamente",
       "deleted": "Familia : eliminado correctamente",
-      "deactivated": "Familia : desactivado correctamente",
+
       "reactivated": "Familia : reactivado correctamente"
     }
   },
@@ -353,7 +380,7 @@
       "created": "Ni?o : creado correctamente",
       "updated": "Ni?o : actualizado correctamente",
       "deleted": "Ni?o : eliminado correctamente",
-      "deactivated": "Ni?o : desactivado correctamente",
+
       "reactivated": "Ni?o : reactivado correctamente"
     }
   },
@@ -363,9 +390,7 @@
       "created": "Cat?logo : creado correctamente",
       "updated": "Cat?logo : actualizado correctamente",
       "activated": "Cat?logo : operaci?n realizada correctamente",
-      "deactivated": "Cat?logo : desactivado correctamente",
-      "restocked": "Cat?logo : operaci?n realizada correctamente",
-      "inventoryAdjusted": "Cat?logo : operaci?n realizada correctamente"
+      "deactivated": "Cat?logo : desactivado correctamente"
     }
   },
   "budgets": {
@@ -394,10 +419,11 @@
       }
     },
     "language": {
-      "label": "Language",
-      "english": "English",
-      "french": "French",
-      "arabic": "Arabic"
+      "label": "Idioma",
+      "english": "Inglés",
+      "french": "Francés",
+      "arabic": "Árabe",
+      "spanish": "Español"
     },
     "display": {
       "title": "Preferencias de visualización",
@@ -439,13 +465,16 @@
       "products": "Products",
       "productsSubtitle": "Administra los productos del catálogo, precios, ubicación por categoría activa y visibilidad auditada.",
       "catalog": "Catalog",
-      "inventory": "Inventory",
       "orders": "Orders",
       "cart": "Cart",
       "mySupport": "My support",
       "budgetUse": "Budget use",
       "profile": "Profile",
       "settings": "Settings",
+      "accessManagement": "Acceso",
+      "users": "Usuarios",
+      "roles": "Roles",
+      "permissions": "Permisos",
       "platform": "Platform",
       "supportOperations": "People",
       "finance": "Finance",
@@ -468,7 +497,7 @@
       "resume": "Resume",
       "stop": "Stop",
       "approveOrder": "Approve order",
-      "startPreparation": "Start preparation",
+      "startPreparation": "Start purchasing/preparation",
       "markDelivered": "Mark delivered",
       "saving": "Saving..."
     },
@@ -492,7 +521,9 @@
       "pending": "Pending",
       "pending_funding": "Pending funding",
       "approved": "Approved",
-      "in_preparation": "In Preparation",
+      "in_preparation": "Purchasing and preparation",
+      "purchased": "Comprado",
+      "out_for_delivery": "En reparto",
       "delivered": "Delivered",
       "rejected": "Rejected",
       "cancelled": "Cancelled",
@@ -512,13 +543,12 @@
         "recordsCount": "{count} records",
         "refunded": "Refunded",
         "reserved": "Reserved",
-        "reservedValue": "{value} reserved",
         "spent": "Spent",
         "validated": "Validated"
       },
       "operator": {
         "title": "Operator dashboard",
-        "subtitle": "Monitor support, money, inventory, and fulfillment from one live operational view.",
+        "subtitle": "Monitor support, money, and fulfillment from one live operational view.",
         "error": "We could not load the operator dashboard",
         "families": "Families",
         "children": "Children",
@@ -530,10 +560,6 @@
         "contributionTrend": "Contribution activity",
         "budgetPosition": "Budget",
         "orderPipeline": "Order pipeline",
-        "stockAttention": "Inventory requiring attention",
-        "unitsAvailable": "{count} available",
-        "stockHealthy": "Inventory is healthy",
-        "stockHealthyDescription": "No active product is at or below the low-stock threshold.",
         "communityBreakdown": "Community"
       },
       "family": {
@@ -542,7 +568,6 @@
         "error": "We could not load your family dashboard",
         "loading": "Loading your family dashboard",
         "readyToOrder": "Ready for eligible orders",
-        "reservedForOrders": "Held by open orders",
         "fulfilledSpending": "Captured from approved orders",
         "children": "Children",
         "openOrders": "Open orders",
@@ -634,8 +659,36 @@
         "discardDescription": "Al cerrar los ajustes se descartarán los cambios sin guardar.",
         "discard": "Descartar cambios",
         "resetThemeTitle": "¿Restablecer el tema de Kafil?",
-        "resetThemeDescription": "Esto elimina el tema guardado y restaura el diseño predeterminado versionado."
-
+        "resetThemeDescription": "Esto elimina el tema guardado y restaura el diseño predeterminado versionado.",
+        "branding": {
+          "cardTitle": "Recursos de marca",
+          "cardDescription": "",
+          "formatsSummary": "{formats} · Logotipos hasta {logoSize} MB · Hero hasta {heroSize} MB",
+          "expandedTitle": "Logotipo de la barra lateral expandida",
+          "collapsedTitle": "Logotipo de la barra lateral contraída",
+          "authLogoTitle": "Logotipo de inicio de sesión",
+          "heroTitle": "Imagen hero de inicio de sesión",
+          "replace": "Reemplazar",
+          "revertSlot": "Revertir este campo",
+          "revertAll": "Revertir todos los cambios",
+          "useDefault": "Usar predeterminado",
+          "useExpanded": "Usar logotipo expandido",
+          "statusDefault": "Predeterminado",
+          "statusInherited": "Heredado",
+          "statusCustom": "Personalizado",
+          "statusCustomNew": "Personalizado (nuevo)",
+          "noImage": "Sin imagen",
+          "ratioWide": "Ancho · 3:1",
+          "ratioSquare": "Cuadrado · 1:1",
+          "ratioLandscape": "Panel de altura completa",
+          "uploadingCount": "Subiendo {count} recurso(s)…",
+          "uploadSuccess": "Recurso de marca cargado",
+          "uploadError": "No se pudo cargar el recurso de marca",
+          "saveSuccess": "Recursos de marca actualizados",
+          "saveError": "No se pudieron guardar los recursos de marca",
+          "resetSuccess": "Recursos de marca predeterminados restaurados",
+          "resetError": "No se pudieron restaurar los recursos de marca predeterminados"
+        }
       },
       "contributions": {
         "title": "Contribuciones",
@@ -742,8 +795,8 @@
         "noData": "No order found",
         "loading": "Loading orders...",
         "snapshot": "Operator-only order snapshot, fulfillment details, and status timeline.",
-        "approveMessage": "This captures the reserved household budget and stock for this pending order.",
-        "preparationMessage": "This confirms that fulfillment work has started for the approved order.",
+        "approveMessage": "This captures the reserved household budget for this pending order.",
+        "preparationMessage": "This confirms that purchasing and preparation work has started for the approved order.",
         "deliverMessage": "This marks the in-preparation order as delivered. Delivery is a terminal state."
       },
       "families": {
@@ -875,7 +928,9 @@
         "noFamily": "No family found. Create a family account first.",
         "creating": "Creating child...",
         "operatorNotes": "Operator notes",
-        "optionalNotes": "Optional internal notes"
+        "optionalNotes": "Optional internal notes",
+        "imageUrl": "Avatar del niño",
+        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF o GIF · hasta 5 MB"
       },
       "sponsors": {
         "title": "Patrocinadores",
@@ -914,6 +969,8 @@
         "operatorNotes": "Notas del operador",
         "notes": "Notas",
         "notesPlaceholder": "Notas internas opcionales",
+        "imageUrl": "Avatar del patrocinador",
+        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF o GIF · hasta 5 MB",
         "creating": "Creando cuenta...",
         "createAndInvite": "Crear cuenta de patrocinador",
         "saving": "Guardando...",
@@ -1034,7 +1091,7 @@
         "unavailable": "no longer active",
         "remove": "Remove {name}",
         "reviewTitle": "Review your order",
-        "reviewDescription": "Submission reserves your current budget and stock only after server-side validation.",
+        "reviewDescription": "Submission reserves your current budget only after server-side validation. The operator will check products and prices at the supermarket before approving your order.",
         "items": "Items",
         "total": "Total"
       }
@@ -1076,6 +1133,130 @@
         "emptyDescription": "No hay familias activas disponibles para recibir apoyo en este momento.",
         "targetReached": "Objetivo alcanzado",
         "coveredByPending": "Cubierto por pagos pendientes"
+      }
+    },
+    "adminAccess": {
+      "common": {
+        "yes": "Sí",
+        "no": "No",
+        "none": "Ninguno",
+        "noRole": "Sin rol",
+        "bootstrapAccount": "Cuenta inicial",
+        "codeManaged": "Gestionado por código",
+        "inSync": "Sincronizado",
+        "grantDrift": "Diferencia de permisos"
+      },
+      "users": {
+        "title": "Usuarios",
+        "subtitle": "Busca cuentas y gestiona comandos seguros de ciclo de vida.",
+        "user": "Usuario",
+        "email": "Correo",
+        "role": "Rol",
+        "status": "Estado",
+        "verified": "Verificado",
+        "lastLogin": "Último acceso",
+        "unnamed": "Cuenta sin nombre",
+        "detailDescription": "Detalle de acceso respetuoso con la privacidad",
+        "search": "Buscar nombre o correo",
+        "searchAria": "Buscar usuarios",
+        "roleFilterAria": "Filtrar por rol",
+        "statusFilterAria": "Filtrar por estado",
+        "verificationFilterAria": "Filtrar por verificación",
+        "allRoles": "Todos los roles",
+        "admin": "Administrador",
+        "operator": "Operador",
+        "family": "Familia",
+        "sponsor": "Patrocinador",
+        "allStatuses": "Todos los estados",
+        "anyVerification": "Cualquier verificación",
+        "notVerified": "No verificado",
+        "view": "Ver",
+        "deactivate": "Desactivar",
+        "reactivate": "Reactivar",
+        "revokeSessions": "Revocar sesiones",
+        "create": "Agregar usuario",
+        "createTitle": "Crear usuario",
+        "createDescription": "Elige el tipo de cuenta Kafil y completa su perfil requerido.",
+        "createOperator": "Crear cuenta de operador",
+        "namePlaceholder": "Nombre completo del operador",
+        "emailPlaceholder": "operador@ejemplo.com",
+        "phonePlaceholder": "+212...",
+        "cinPlaceholder": "Número de identidad nacional",
+        "genderPlaceholder": "Elegir género",
+        "dateOfBirthPlaceholder": "Elige una fecha",
+        "jobTitlePlaceholder": "p. ej. Coordinador de campo",
+        "addressPlaceholder": "Dirección de oficina o correspondencia",
+        "notesPlaceholder": "Notas internas opcionales",
+        "imageUrl": "Avatar del operador",
+        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF o GIF · hasta 5 MB",
+        "jobTitle": "Cargo",
+        "creating": "Creando...",
+        "createAndInvite": "Crear e invitar",
+        "emptyTitle": "No se encontraron usuarios",
+        "emptyDescription": "Cambia los filtros o crea la cuenta mediante su flujo de incorporación.",
+        "noData": "Sin usuarios",
+        "loading": "Cargando usuarios..."
+      },
+      "roles": {
+        "title": "Roles",
+        "subtitle": "Roles fijos de Kafil gestionados por código y su acceso efectivo.",
+        "loading": "Cargando roles",
+        "fallbackDescription": "Rol de acceso fijo de Kafil",
+        "users": "{count} usuarios",
+        "permissions": "{count} permisos",
+        "emptyTitle": "No se encontraron roles",
+        "emptyDescription": "Ejecuta la semilla de autenticación revisada para restaurar los roles fijos."
+      },
+      "permissions": {
+        "title": "Permisos",
+        "subtitle": "Catálogo de solo lectura y diferencias entre permisos activos y código.",
+        "resource": "Recurso",
+        "action": "Acción",
+        "permission": "Permiso",
+        "liveRoles": "Roles activos",
+        "canonicalState": "Estado canónico",
+        "missingLiveGrant": "Falta permiso activo",
+        "unexpectedLiveGrant": "Permiso activo inesperado",
+        "custom": "Personalizado",
+        "create": "Agregar permiso",
+        "createTitle": "Crear permiso personalizado",
+        "createDescription": "Crea un permiso no canónico y concédelo opcionalmente a roles Kafil fijos.",
+        "resourcePlaceholder": "p. ej. familias",
+        "actionPlaceholder": "p. ej. aprobar",
+        "description": "Descripción",
+        "descriptionPlaceholder": "Descripción opcional",
+        "creating": "Creando...",
+        "emptyTitle": "No se encontraron permisos",
+        "emptyDescription": "Ejecuta la semilla de autenticación revisada para restaurar el catálogo canónico.",
+        "noData": "Sin permisos",
+        "loading": "Cargando permisos..."
+      },
+      "dialogs": {
+        "loadingAccount": "Cargando cuenta",
+        "emailVerified": "Correo verificado",
+        "linkedProfile": "Perfil vinculado",
+        "effectivePermissions": "Permisos efectivos",
+        "effectivePermissionsDescription": "Permisos de solo lectura heredados del rol fijo.",
+        "deactivateTitle": "Desactivar usuario",
+        "reactivateTitle": "Reactivar usuario",
+        "revokeTitle": "Revocar todas las sesiones",
+        "deactivateDescription": "La desactivación invalida inmediatamente el acceso y las sesiones.",
+        "reactivateDescription": "La reactivación requiere que el perfil Kafil vinculado siga siendo válido.",
+        "reason": "Motivo",
+        "saving": "Guardando...",
+        "revokeDescription": "Esto cierra la sesión de {name} en todos los dispositivos activos."
+      },
+      "messages": {
+        "deactivated": "Usuario desactivado y desconectado.",
+        "deactivateError": "No se pudo desactivar este usuario.",
+        "reactivated": "Usuario reactivado.",
+        "reactivateError": "No se pudo reactivar este usuario.",
+        "sessionsRevoked": "Se revocaron todas las sesiones.",
+        "sessionsError": "No se pudieron revocar las sesiones de este usuario.",
+        "userCreated": "Cuenta creada e invitada.",
+        "userCreateError": "No se pudo crear esta cuenta.",
+        "permissionCreated": "Permiso personalizado creado.",
+        "permissionCreateError": "No se pudo crear este permiso."
       }
     }
   }

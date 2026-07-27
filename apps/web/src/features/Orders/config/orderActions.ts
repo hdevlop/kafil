@@ -3,7 +3,10 @@ import type { OrderStatus } from "../types";
 export type OrderCommand =
   | "approve"
   | "reject"
-  | "preparation"
+  | "purchase"
+  | "replacePurchase"
+  | "startDelivery"
+  | "confirmDelivery"
   | "deliver"
   | "cancel";
 
@@ -32,8 +35,8 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
   ],
   approved: [
     {
-      command: "preparation",
-      label: "Start preparation",
+      command: "purchase",
+      label: "Record purchase",
       requiresReason: false,
     },
     {
@@ -52,6 +55,38 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
     {
       command: "cancel",
       label: "Cancel",
+      danger: true,
+      requiresReason: true,
+    },
+  ],
+  purchased: [
+    {
+      command: "startDelivery",
+      label: "Start delivery",
+      requiresReason: false,
+    },
+    {
+      command: "replacePurchase",
+      label: "Replace purchase",
+      danger: true,
+      requiresReason: false,
+    },
+    {
+      command: "cancel",
+      label: "Cancel and refund",
+      danger: true,
+      requiresReason: true,
+    },
+  ],
+  out_for_delivery: [
+    {
+      command: "confirmDelivery",
+      label: "Confirm delivery",
+      requiresReason: false,
+    },
+    {
+      command: "cancel",
+      label: "Cancel and refund",
       danger: true,
       requiresReason: true,
     },

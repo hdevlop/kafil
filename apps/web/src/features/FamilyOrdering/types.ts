@@ -1,6 +1,14 @@
 import type { OffsetPagination } from "@/lib/pagination";
 
-export type FamilyOrderStatus = "pending" | "approved" | "in_preparation" | "delivered" | "rejected" | "cancelled";
+export type FamilyOrderStatus =
+  | "pending"
+  | "approved"
+  | "in_preparation"
+  | "purchased"
+  | "out_for_delivery"
+  | "delivered"
+  | "rejected"
+  | "cancelled";
 
 export interface FamilyCartItem {
   id: string;
@@ -27,6 +35,16 @@ export interface FamilyOrder {
   orderNumber: string;
   status: FamilyOrderStatus | string;
   totalMinor: number;
+  requestedTotalMinor: number;
+  actualTotalMinor: number | null;
+  differenceMinor: number | null;
+  merchantName: string | null;
+  purchasedAt: string | null;
+  receiptRecorded: boolean;
+  deliveryStartedAt: string | null;
+  deliveredAt: string | null;
+  deliveryProofRecorded: boolean;
+  assisted: boolean;
   currency: "MAD" | string;
   createdAt: string;
   updatedAt: string;

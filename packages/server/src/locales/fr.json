@@ -22,6 +22,8 @@
     "inactive": "Inactif",
     "pending": "En attente",
     "approved": "Approuvé",
+    "purchased": "Achetée",
+    "out_for_delivery": "En cours de livraison",
     "rejected": "Rejeté",
     "cancelled": "Annulé",
     "completed": "Terminé",
@@ -288,6 +290,15 @@
       "reset": "Apparence réinitialisée avec succès"
     }
   },
+  "branding": {
+    "success": {
+      "retrieved": "Image de marque récupérée avec succès",
+      "updated": "Image de marque mise à jour avec succès",
+      "reset": "Image de marque réinitialisée avec succès",
+      "uploaded": "Ressource d'image de marque téléchargée",
+      "deleted": "Ressource d'image de marque supprimée"
+    }
+  },
   "orders": {
     "success": {
       "cartRetrieved": "Commande : op?ration effectu?e avec succ?s",
@@ -296,12 +307,28 @@
       "cartItemRemoved": "Commande : op?ration effectu?e avec succ?s",
       "cartCleared": "Commande : op?ration effectu?e avec succ?s",
       "submitted": "Commande : op?ration effectu?e avec succ?s",
+      "assistedSubmitted": "Commande assistée créée avec succès",
       "retrieved": "Commande : r?cup?r? avec succ?s",
       "cancelled": "Commande : annul? avec succ?s",
       "approved": "Commande : approuv? avec succ?s",
       "rejected": "Commande : rejet? avec succ?s",
-      "preparationStarted": "Commande : op?ration effectu?e avec succ?s",
+      "preparationStarted": "Commande : achat et préparation lancés avec succès",
+      "purchaseRecorded": "Achat de la commande enregistré avec succès",
+      "purchaseReplaced": "Achat de la commande remplacé avec succès",
+      "deliveryStarted": "Livraison de la commande démarrée avec succès",
+      "evidenceUploaded": "Justificatif de commande téléversé avec succès",
+      "evidenceRetrieved": "Justificatif de commande récupéré avec succès",
+      "evidenceDeleted": "Justificatif de commande supprimé avec succès",
       "delivered": "Commande : livr? avec succ?s"
+    }
+  },
+  "adminAccess": {
+    "success": {
+      "retrieved": "Données de gestion des accès récupérées avec succès",
+      "deactivated": "Utilisateur désactivé et sessions révoquées avec succès",
+      "reactivated": "Utilisateur réactivé avec succès",
+      "sessionsRevoked": "Sessions utilisateur révoquées avec succès",
+      "permissionCreated": "Autorisation personnalisée créée avec succès"
     }
   },
   "operators": {
@@ -361,13 +388,12 @@
   },
   "catalog": {
     "success": {
-      "retrieved": "Catalogue : r?cup?r? avec succ?s",
-      "created": "Catalogue : cr?? avec succ?s",
-      "updated": "Catalogue : mis ? jour avec succ?s",
-      "activated": "Catalogue : op?ration effectu?e avec succ?s",
-      "deactivated": "Catalogue : d?sactiv? avec succ?s",
-      "restocked": "Catalogue : op?ration effectu?e avec succ?s",
-      "inventoryAdjusted": "Catalogue : op?ration effectu?e avec succ?s"
+      "retrieved": "Catalogue récupéré avec succès",
+      "created": "Catalogue créé avec succès",
+      "updated": "Catalogue mis à jour avec succès",
+      "activated": "Catalogue activé avec succès",
+      "deactivated": "Catalogue désactivé avec succès",
+      "deleted": "Catalogue supprimé avec succès"
     }
   },
   "budgets": {
@@ -399,7 +425,8 @@
       "label": "Langue",
       "english": "Anglais",
       "french": "Français",
-      "arabic": "Arabe"
+      "arabic": "Arabe",
+      "spanish": "Espagnol"
     },
     "display": {
       "title": "Préférences d'affichage",
@@ -439,15 +466,18 @@
       "budgets": "Budgets",
       "categories": "Catégories",
       "products": "Produits",
-      "productsSubtitle": "Gérez les produits du catalogue, les prix, leur placement par catégorie active et leur visibilité auditée.",
+      "productsSubtitle": "Gérer les produits du catalogue, les prix, le placement actif et la visibilité auditée.",
       "catalog": "Catalogue",
-      "inventory": "Stock",
       "orders": "Commandes",
       "cart": "Panier",
       "mySupport": "Mon soutien",
       "budgetUse": "Utilisation du budget",
       "profile": "Profil",
       "settings": "Paramètres",
+      "accessManagement": "Accès",
+      "users": "Utilisateurs",
+      "roles": "Rôles",
+      "permissions": "Autorisations",
       "platform": "Plateforme",
       "supportOperations": "Personnes",
       "finance": "Finance",
@@ -470,7 +500,7 @@
       "resume": "Reprendre",
       "stop": "Arrêter",
       "approveOrder": "Approuver la commande",
-      "startPreparation": "Commencer la préparation",
+      "startPreparation": "Commencer l'achat et la préparation",
       "markDelivered": "Marquer comme livrée",
       "saving": "Enregistrement..."
     },
@@ -494,7 +524,9 @@
       "pending": "En attente",
       "pending_funding": "Financement en attente",
       "approved": "Approuvée",
-      "in_preparation": "En préparation",
+      "in_preparation": "Achat et préparation",
+      "purchased": "Achetée",
+      "out_for_delivery": "En cours de livraison",
       "delivered": "Livrée",
       "rejected": "Rejetée",
       "cancelled": "Annulée",
@@ -514,13 +546,12 @@
         "recordsCount": "{count} enregistrements",
         "refunded": "Remboursé",
         "reserved": "Réservé",
-        "reservedValue": "{value} réservé",
         "spent": "Dépensé",
         "validated": "Validé"
       },
       "operator": {
         "title": "Tableau de bord opérateur",
-        "subtitle": "Suivez le soutien, les finances, le stock et l’exécution depuis une vue opérationnelle en direct.",
+        "subtitle": "Suivez le soutien, les finances et l’exécution depuis une vue opérationnelle en direct.",
         "error": "Impossible de charger le tableau de bord opérateur",
         "families": "Familles",
         "children": "Enfants",
@@ -532,10 +563,6 @@
         "contributionTrend": "Activité des contributions",
         "budgetPosition": "Budget",
         "orderPipeline": "Suivi des commandes",
-        "stockAttention": "Stock nécessitant une attention",
-        "unitsAvailable": "{count} disponibles",
-        "stockHealthy": "Le stock est sain",
-        "stockHealthyDescription": "Aucun produit actif n’atteint le seuil de stock faible.",
         "communityBreakdown": "Communauté"
       },
       "family": {
@@ -544,7 +571,6 @@
         "error": "Impossible de charger votre tableau de bord familial",
         "loading": "Chargement de votre tableau de bord familial",
         "readyToOrder": "Disponible pour les commandes éligibles",
-        "reservedForOrders": "Réservé par les commandes ouvertes",
         "fulfilledSpending": "Prélevé pour les commandes approuvées",
         "children": "Enfants",
         "openOrders": "Commandes ouvertes",
@@ -660,8 +686,48 @@
         "discardDescription": "La fermeture des paramètres annulera vos modifications non enregistrées.",
         "discard": "Ignorer les modifications",
         "resetThemeTitle": "Réinitialiser le thème Kafil ?",
-        "resetThemeDescription": "Cette action supprime le thème enregistré et restaure le thème d’usine versionné."
-
+        "resetThemeDescription": "Cette action supprime le thème enregistré et restaure le thème d’usine versionné.",
+        "branding": {
+          "cardTitle": "Ressources de marque",
+          "cardDescription": "Téléversez les logos de la plateforme et l’image hero d’authentification. Les comptes opérateur ne peuvent pas les modifier.",
+          "expandedTitle": "Logo de la barre latérale déployée",
+          "expandedHelp": "Logo large pour la barre latérale déployée et le tiroir mobile.",
+          "collapsedTitle": "Logo de la barre latérale réduite",
+          "collapsedHelp": "Logo carré pour le rail réduit. Utilise le logo déployé par défaut.",
+          "authLogoTitle": "Logo d’authentification",
+          "authLogoHelp": "Logo affiché sur les pages de connexion, d’inscription et de première connexion.",
+          "heroTitle": "Image hero d’authentification",
+          "heroHelp": "Image d’arrière-plan du panneau latéral d’authentification.",
+          "chooseReplace": "Choisir / remplacer",
+          "remove": "Supprimer",
+          "restoreDefault": "Restaurer",
+          "followsExpanded": "Utilise le logo déployé de la barre latérale lorsqu’il n’est pas défini.",
+          "discardDraft": "Annuler le brouillon de marque",
+          "acceptedFormats": "Formats acceptés : {formats}",
+          "maxSize": "Jusqu’à {size} Mo",
+          "aspectRatio": "Ratio recommandé {ratio}",
+          "formatsSummary": "{formats} · Logos jusqu’à {logoSize} Mo · Hero jusqu’à {heroSize} Mo",
+          "replace": "Remplacer",
+          "revertSlot": "Annuler ce champ",
+          "revertAll": "Tout annuler",
+          "useDefault": "Par défaut",
+          "useExpanded": "Logo déployé",
+          "statusDefault": "Par défaut",
+          "statusInherited": "Hérité",
+          "statusCustom": "Personnalisé",
+          "statusCustomNew": "Personnalisé (nouveau)",
+          "noImage": "Aucune image",
+          "ratioWide": "Large · 3:1",
+          "ratioSquare": "Carré · 1:1",
+          "ratioLandscape": "Panneau pleine hauteur",
+          "uploadingCount": "Téléversement de {count} ressource(s)…",
+          "uploadSuccess": "Ressource de marque téléversée",
+          "uploadError": "Impossible de téléverser la ressource de marque",
+          "saveSuccess": "Ressources de marque mises à jour",
+          "saveError": "Impossible d’enregistrer les ressources de marque",
+          "resetSuccess": "Ressources de marque par défaut restaurées",
+          "resetError": "Impossible de restaurer les ressources de marque par défaut"
+        }
       },
       "contributions": {
         "title": "Contributions",
@@ -768,8 +834,8 @@
         "noData": "Aucune commande trouvée",
         "loading": "Chargement des commandes...",
         "snapshot": "Instantané réservé à l’opérateur, détails de traitement et historique des statuts.",
-        "approveMessage": "Cette action prélève le budget et le stock réservés pour cette commande en attente.",
-        "preparationMessage": "Cette action confirme que la préparation de la commande approuvée a commencé.",
+        "approveMessage": "Cette action prélève le budget réservé pour cette commande en attente.",
+        "preparationMessage": "Cette action confirme que l’achat et la préparation de la commande approuvée ont commencé.",
         "deliverMessage": "Cette action marque la commande en préparation comme livrée. La livraison est définitive."
       },
       "families": {
@@ -901,7 +967,9 @@
         "noFamily": "Aucune famille trouvée. Créez d’abord un compte famille.",
         "creating": "Création de l’enfant...",
         "operatorNotes": "Notes opérateur",
-        "optionalNotes": "Notes internes facultatives"
+        "optionalNotes": "Notes internes facultatives",
+        "imageUrl": "Avatar de l’enfant",
+        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF ou GIF · jusqu’à 5 Mo"
       },
       "sponsors": {
         "title": "Parrains",
@@ -944,6 +1012,8 @@
         "operatorNotes": "Notes de l'opérateur",
         "notes": "Notes",
         "notesPlaceholder": "Notes internes facultatives",
+        "imageUrl": "Avatar du parrain",
+        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF ou GIF · jusqu’à 5 Mo",
         "creating": "Création du compte...",
         "createAndInvite": "Créer le compte parrain",
         "saving": "Enregistrement...",
@@ -1130,7 +1200,7 @@
         "unavailable": "n’est plus actif",
         "remove": "Retirer {name}",
         "reviewTitle": "Vérifier votre commande",
-        "reviewDescription": "L’envoi réserve votre budget et le stock uniquement après validation côté serveur.",
+        "reviewDescription": "L’envoi réserve votre budget uniquement après validation côté serveur. L’opérateur vérifiera la disponibilité et les prix au supermarché avant d’approuver votre commande.",
         "items": "Articles",
         "total": "Total"
       }
@@ -1172,6 +1242,130 @@
         "emptyDescription": "Aucune famille active n'est disponible pour le soutien actuellement.",
         "targetReached": "Objectif atteint",
         "coveredByPending": "Couvert par les paiements en attente"
+      }
+    },
+    "adminAccess": {
+      "common": {
+        "yes": "Oui",
+        "no": "Non",
+        "none": "Aucun",
+        "noRole": "Aucun rôle",
+        "bootstrapAccount": "Compte d'amorçage",
+        "codeManaged": "Géré par le code",
+        "inSync": "Synchronisé",
+        "grantDrift": "Écart d'autorisations"
+      },
+      "users": {
+        "title": "Utilisateurs",
+        "subtitle": "Recherchez les comptes et gérez leur cycle de vie en toute sécurité.",
+        "user": "Utilisateur",
+        "email": "E-mail",
+        "role": "Rôle",
+        "status": "Statut",
+        "verified": "Vérifié",
+        "lastLogin": "Dernière connexion",
+        "unnamed": "Compte sans nom",
+        "detailDescription": "Détail du compte respectueux de la confidentialité",
+        "search": "Rechercher par nom ou e-mail",
+        "searchAria": "Rechercher des utilisateurs",
+        "roleFilterAria": "Filtrer par rôle",
+        "statusFilterAria": "Filtrer par statut",
+        "verificationFilterAria": "Filtrer par vérification",
+        "allRoles": "Tous les rôles",
+        "admin": "Administrateur",
+        "operator": "Opérateur",
+        "family": "Famille",
+        "sponsor": "Parrain",
+        "allStatuses": "Tous les statuts",
+        "anyVerification": "Toute vérification",
+        "notVerified": "Non vérifié",
+        "view": "Voir",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver",
+        "revokeSessions": "Révoquer les sessions",
+        "create": "Ajouter un utilisateur",
+        "createTitle": "Créer un utilisateur",
+        "createDescription": "Choisissez le type de compte Kafil et complétez son profil requis.",
+        "createOperator": "Créer un compte opérateur",
+        "namePlaceholder": "Nom complet de l'opérateur",
+        "emailPlaceholder": "operateur@exemple.com",
+        "phonePlaceholder": "+212...",
+        "cinPlaceholder": "Numéro d'identité nationale",
+        "genderPlaceholder": "Choisir le genre",
+        "dateOfBirthPlaceholder": "Choisir une date",
+        "jobTitlePlaceholder": "p. ex. Coordinateur terrain",
+        "addressPlaceholder": "Adresse du bureau ou de correspondance",
+        "notesPlaceholder": "Notes internes facultatives",
+        "imageUrl": "Avatar de l’opérateur",
+        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF ou GIF · jusqu’à 5 Mo",
+        "jobTitle": "Fonction",
+        "creating": "Création...",
+        "createAndInvite": "Créer et inviter",
+        "emptyTitle": "Aucun utilisateur trouvé",
+        "emptyDescription": "Modifiez les filtres ou créez le compte dans son parcours métier.",
+        "noData": "Aucun utilisateur",
+        "loading": "Chargement des utilisateurs..."
+      },
+      "roles": {
+        "title": "Rôles",
+        "subtitle": "Rôles Kafil fixes, gérés par le code, et leurs accès effectifs.",
+        "loading": "Chargement des rôles",
+        "fallbackDescription": "Rôle d'accès Kafil fixe",
+        "users": "{count} utilisateurs",
+        "permissions": "{count} autorisations",
+        "emptyTitle": "Aucun rôle trouvé",
+        "emptyDescription": "Exécutez le seed d'authentification révisé pour restaurer les rôles fixes."
+      },
+      "permissions": {
+        "title": "Autorisations",
+        "subtitle": "Catalogue en lecture seule et écarts entre les droits actifs et le code.",
+        "resource": "Ressource",
+        "action": "Action",
+        "permission": "Autorisation",
+        "liveRoles": "Rôles actifs",
+        "canonicalState": "État canonique",
+        "missingLiveGrant": "Droit actif manquant",
+        "unexpectedLiveGrant": "Droit actif inattendu",
+        "custom": "Personnalisée",
+        "create": "Ajouter une autorisation",
+        "createTitle": "Créer une autorisation personnalisée",
+        "createDescription": "Créez une autorisation non canonique et attribuez-la facultativement aux rôles Kafil fixes.",
+        "resourcePlaceholder": "p. ex. familles",
+        "actionPlaceholder": "p. ex. approuver",
+        "description": "Description",
+        "descriptionPlaceholder": "Description facultative",
+        "creating": "Création...",
+        "emptyTitle": "Aucune autorisation trouvée",
+        "emptyDescription": "Exécutez le seed d'authentification révisé pour restaurer le catalogue canonique.",
+        "noData": "Aucune autorisation",
+        "loading": "Chargement des autorisations..."
+      },
+      "dialogs": {
+        "loadingAccount": "Chargement du compte",
+        "emailVerified": "E-mail vérifié",
+        "linkedProfile": "Profil lié",
+        "effectivePermissions": "Autorisations effectives",
+        "effectivePermissionsDescription": "Droits en lecture seule hérités du rôle fixe.",
+        "deactivateTitle": "Désactiver l'utilisateur",
+        "reactivateTitle": "Réactiver l'utilisateur",
+        "revokeTitle": "Révoquer toutes les sessions",
+        "deactivateDescription": "La désactivation invalide immédiatement les accès et les sessions.",
+        "reactivateDescription": "La réactivation exige que le profil Kafil lié reste valide.",
+        "reason": "Motif",
+        "saving": "Enregistrement...",
+        "revokeDescription": "Cette action déconnecte {name} de tous les appareils actifs."
+      },
+      "messages": {
+        "deactivated": "Utilisateur désactivé et déconnecté.",
+        "deactivateError": "Impossible de désactiver cet utilisateur.",
+        "reactivated": "Utilisateur réactivé.",
+        "reactivateError": "Impossible de réactiver cet utilisateur.",
+        "sessionsRevoked": "Toutes les sessions ont été révoquées.",
+        "sessionsError": "Impossible de révoquer les sessions de cet utilisateur.",
+        "userCreated": "Compte utilisateur créé et invité.",
+        "userCreateError": "Impossible de créer ce compte utilisateur.",
+        "permissionCreated": "Autorisation personnalisée créée.",
+        "permissionCreateError": "Impossible de créer cette autorisation."
       }
     }
   }

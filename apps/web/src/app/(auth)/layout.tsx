@@ -1,11 +1,16 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
+
 import { auth } from "@/lib/auth";
+import { BrandingImage } from "@/features/Branding";
+import { loadServerBranding } from "@/lib/serverBranding";
 
-
-export default async function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-
-  const session = await auth.getSession();
+export default async function AuthLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  const [session, branding] = await Promise.all([
+    auth.getSession(),
+    loadServerBranding(),
+  ]);
 
   if (session?.user) {
     redirect("/dashboard");
@@ -15,22 +20,25 @@ export default async function AuthLayout({ children }: Readonly<{ children: Reac
     <section className="fixed inset-0 z-20 overflow-y-auto bg-background p-2 text-foreground lg:p-12">
       <div className="grid min-h-full overflow-hidden rounded-3xl bg-card text-card-foreground shadow-2xl shadow-foreground/15 lg:grid-cols-2">
         <aside className="relative xl:flex overflow-hidden hidden ">
-          <Image
+          <BrandingImage
+            slot="authHeroImage"
             alt="A family supported by the Kafil platform"
+            className="object-cover object-center"
             fill
             priority
             sizes="(min-width: 1024px) 50vw, 100vw"
-            src="/HeroA.png"
+            src={branding.authHeroImagePath}
           />
         </aside>
 
         <div className=" flex w-full h-full flex-col justify-center items-center p-2 md:px-8 2xl:px-44">
-          <Image
+          <BrandingImage
+            slot="authLogo"
             alt="Kafil platform"
             className="mb-8 w-48"
             height={233}
             priority
-            src="/logoExpanded.png"
+            src={branding.authLogoPath}
             width={701}
           />
           {children}

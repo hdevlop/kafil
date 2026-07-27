@@ -33,7 +33,7 @@ export function FamilyCartPage() {
 
   const data = cart.data;
   if (!data?.items.length) {
-    return <PageEmptyState title={t("family.cart.emptyTitle")} description={t("family.cart.emptyDescription")} action={<Link className={buttonVariants()} href="/family/catalog">{t("action.browseCatalog")}</Link>} />;
+    return <PageEmptyState icon={ShoppingCart} title={t("family.cart.emptyTitle")} description={t("family.cart.emptyDescription")} action={<Link className={buttonVariants()} href="/family/catalog">{t("action.browseCatalog")}</Link>} />;
   }
 
   const fundingActive = budget.data?.funding.status === "active";

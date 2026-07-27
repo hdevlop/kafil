@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { Eye, Pencil, Trash2, UserRoundCheck, UserRoundX } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
@@ -11,7 +12,7 @@ import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/Dash
 
 import { SponsorCard } from "./SponsorCard";
 import { SponsorOverviewDialogContent } from "./SponsorOverviewDialogContent";
-import { CreateSponsorDialogContent, DeleteSponsorDialogContent, SponsorStatusDialogContent, UpdateSponsorDialogContent } from "./SponsorForms";
+import { BulkDeleteSponsorsDialogContent, CreateSponsorDialogContent, DeleteSponsorDialogContent, SponsorStatusDialogContent, UpdateSponsorDialogContent } from "./SponsorForms";
 import { useSponsors } from "../hooks/useSponsors";
 import { useSponsorsTableColumns } from "../hooks/useSponsorsTableColumns";
 import { useSponsorsTableFilters } from "../hooks/useSponsorsTableFilters";
@@ -41,6 +42,9 @@ export function SponsorsPage() {
   const columns = useSponsorsTableColumns();
   const filters = useSponsorsTableFilters();
   const rows = sponsors.data ?? [];
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const bulkDeleteDialogOpenRef = useRef(false);
+  const isAdmin = user?.role === "admin";
 
   function openCreate() {
     void dialog.openDialog({
@@ -95,6 +99,28 @@ export function SponsorsPage() {
     });
   }
 
+  function openBulkDelete(sponsorIds: string[]) {
+    if (bulkDeleteDialogOpenRef.current) return;
+    bulkDeleteDialogOpenRef.current = true;
+
+    void dialog.openDialog({
+      title: t("operator.sponsors.bulkDeleteTitle", {
+        count: sponsorIds.length,
+      }),
+      description: t("operator.sponsors.bulkDeleteDescription"),
+      children: (
+        <BulkDeleteSponsorsDialogContent
+          sponsorIds={sponsorIds}
+          onDeleted={() => setRowSelection({})}
+        />
+      ),
+      showButtons: false,
+      size: "sm",
+    }).finally(() => {
+      bulkDeleteDialogOpenRef.current = false;
+    });
+  }
+
   const tableProps: NTableProps<SponsorRecord> = {
     data: rows,
     columns,
@@ -106,7 +132,7 @@ export function SponsorsPage() {
     onView: openView,
     onEdit: openEdit,
     renderCard: SponsorCard,
-    renderEmpty: () => <PageEmptyState action={<NButton onClick={openCreate}>{t("operator.sponsors.create")}</NButton>} title={t("operator.sponsors.emptyTitle")} description={t("operator.sponsors.emptyDescription")} />,
+    renderEmpty: () => <PageEmptyState icon={SponsorsIcon} action={<NButton onClick={openCreate}>{t("operator.sponsors.create")}</NButton>} title={t("operator.sponsors.emptyTitle")} description={t("operator.sponsors.emptyDescription")} />,
     renderError: (error) => <PageErrorState error={error} onRetry={() => void sponsors.refetch()} />,
     menu: {
       row: (sponsor) => {
@@ -132,7 +158,7 @@ export function SponsorsPage() {
           },
         ];
 
-        if (user?.role === "admin") {
+        if (isAdmin) {
           actions.push({
             label: t("operator.sponsors.delete"),
             icon: Trash2,
@@ -146,11 +172,15 @@ export function SponsorsPage() {
       },
     },
     menuButton: true,
+    showCheckbox: isAdmin,
+    rowSelection,
+    onRowSelectionChange: setRowSelection,
+    onBulkDelete: isAdmin ? openBulkDelete : undefined,
     showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
-      cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4",
+      cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
     },
     addButtonText: t("operator.sponsors.create"),
     noDataText: t("operator.sponsors.noData"),

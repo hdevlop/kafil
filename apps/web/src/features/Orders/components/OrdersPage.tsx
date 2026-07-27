@@ -6,11 +6,14 @@ import {
   Ban,
   CircleX,
   ClipboardCheck,
+  ClipboardPlus,
   Eye,
-  PackageCheck,
+  ReceiptText,
+  RefreshCw,
+  Send,
   Truck,
 } from "lucide-react";
-import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
@@ -22,6 +25,11 @@ import { getOrderActions, type OrderCommand } from "../config/orderActions";
 import { OrderCard } from "./OrderCard";
 import { OrderDetails } from "./OrderDetails";
 import { ConfirmOrderCommandDialogContent, OrderReasonDialogContent } from "./OrderForms";
+import {
+  ConfirmDeliveryDialogContent,
+  CreateAssistedOrderDialogContent,
+  PurchaseOrderDialogLoader,
+} from "./OrderWorkflowForms";
 import { useOrderCommands, useOrders } from "../hooks/useOrders";
 import { useOrdersTableColumns } from "../hooks/useOrdersTableColumns";
 import { useOrdersTableFilters } from "../hooks/useOrdersTableFilters";
@@ -33,8 +41,14 @@ function getOrderActionIcon(action: OrderCommand) {
       return BadgeCheck;
     case "reject":
       return CircleX;
-    case "preparation":
-      return PackageCheck;
+    case "purchase":
+      return ReceiptText;
+    case "replacePurchase":
+      return RefreshCw;
+    case "startDelivery":
+      return Send;
+    case "confirmDelivery":
+      return Truck;
     case "deliver":
       return Truck;
     case "cancel":
@@ -65,10 +79,10 @@ export function OrdersPage() {
     });
   }
 
-  function openConfirm(action: Extract<OrderCommand, "approve" | "preparation" | "deliver">, order: OrderRecord) {
+  function openConfirm(action: Extract<OrderCommand, "approve" | "startDelivery" | "deliver">, order: OrderRecord) {
     const labels = {
       approve: t("action.approveOrder"),
-      preparation: t("action.startPreparation"),
+      startDelivery: "Start delivery",
       deliver: t("action.markDelivered"),
     };
     void dialog.openDialog({
@@ -80,13 +94,59 @@ export function OrdersPage() {
     });
   }
 
+  function openWorkflow(
+    action: Extract<
+      OrderCommand,
+      "purchase" | "replacePurchase" | "confirmDelivery"
+    >,
+    order: OrderRecord,
+  ) {
+    const content =
+      action === "confirmDelivery" ? (
+        <ConfirmDeliveryDialogContent order={order} />
+      ) : (
+        <PurchaseOrderDialogLoader
+          orderId={order.id}
+          replace={action === "replacePurchase"}
+        />
+      );
+    void dialog.openDialog({
+      title:
+        action === "purchase"
+          ? "Record purchase"
+          : action === "replacePurchase"
+            ? "Replace purchase"
+            : "Confirm delivery",
+      description:
+        action === "confirmDelivery"
+          ? "Record the terminal delivery milestone and optional protected proof."
+          : "Record immutable protected receipt evidence and settle the actual amount.",
+      children: content,
+      showButtons: false,
+      size: "lg",
+      height: "xl",
+    });
+  }
+
+  function openAssistedOrder() {
+    void dialog.openDialog({
+      title: "Create assisted order",
+      description:
+        "Create a pending order for a family without impersonating it or changing its cart.",
+      children: <CreateAssistedOrderDialogContent />,
+      showButtons: false,
+      size: "xl",
+      height: "xl",
+    });
+  }
+
   function openReason(action: Extract<OrderCommand, "reject" | "cancel">, order: OrderRecord) {
     const isCancellation = action === "cancel";
     void dialog.openDialog({
       title: isCancellation ? "Cancel order" : "Reject order",
       description: isCancellation
-        ? "An audited cancellation reverses the order's current financial and stock effects."
-        : "An audited rejection releases this pending order's reservations.",
+        ? "An audited cancellation reverses the order's current financial effects."
+        : "An audited rejection releases this pending order's budget reservation.",
       children: <OrderReasonDialogContent action={action} order={order} />,
       showButtons: false,
       size: "sm",
@@ -102,7 +162,19 @@ export function OrdersPage() {
     getRowId: (order) => order.id,
     onView: openView,
     renderCard: OrderCard,
-    renderEmpty: () => <PageEmptyState title={t("operator.orders.emptyTitle")} description={t("operator.orders.emptyDescription")} />,
+      renderEmpty: () => (
+      <PageEmptyState
+        icon={ClipboardCheck}
+        title={t("operator.orders.emptyTitle")}
+        description={t("operator.orders.emptyDescription")}
+        action={
+          <NButton onClick={openAssistedOrder}>
+            <ClipboardPlus className="size-4" />
+            Create assisted order
+          </NButton>
+        }
+      />
+    ),
     renderError: (error) => <PageErrorState error={error} onRetry={() => void orders.refetch()} />,
     menu: {
       row: (order) => [
@@ -122,7 +194,27 @@ export function OrdersPage() {
               openReason(action.command as Extract<OrderCommand, "reject" | "cancel">, order);
               return;
             }
-            openConfirm(action.command as Extract<OrderCommand, "approve" | "preparation" | "deliver">, order);
+            if (
+              ["purchase", "replacePurchase", "confirmDelivery"].includes(
+                action.command,
+              )
+            ) {
+              openWorkflow(
+                action.command as Extract<
+                  OrderCommand,
+                  "purchase" | "replacePurchase" | "confirmDelivery"
+                >,
+                order,
+              );
+              return;
+            }
+            openConfirm(
+              action.command as Extract<
+                OrderCommand,
+                "approve" | "startDelivery" | "deliver"
+              >,
+              order,
+            );
           },
         })),
       ],

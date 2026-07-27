@@ -19,14 +19,8 @@ import {
   createCategoryDto,
   type CreateProductDto,
   createProductDto,
-  type InventoryAdjustmentDto,
-  inventoryAdjustmentDto,
-  type InventoryLedgerListQuery,
-  inventoryLedgerListQuery,
   type ProductListQuery,
   productListQuery,
-  type RestockDto,
-  restockDto,
   type StatusReasonDto,
   statusReasonDto,
   type UpdateCategoryDto,
@@ -36,36 +30,35 @@ import {
 } from "./catalogDto";
 import {
   CategoryRepository,
-  InventoryRepository,
   ProductRepository,
 } from "./catalogRepository";
 import { CatalogValidator } from "./catalogValidator";
-
-export interface InventoryReservationInput {
-  productId: string;
-  quantity: number;
-  sourceId: string;
-  idempotencyKey: string;
-}
 
 @Service()
 export class CatalogService {
   constructor(
     private readonly categories: CategoryRepository,
     private readonly products: ProductRepository,
-    private readonly inventory: InventoryRepository,
     private readonly audits: AuditService,
     private readonly validator: CatalogValidator,
   ) {}
 
-  listCategories(query: CategoryListQuery) {
+  async listCategories(query: CategoryListQuery) {
     const { limit, offset, ...filters } = categoryListQuery.parse(query ?? {});
-    return this.categories.list(limit, offset, filters);
+    const categoryRows = await this.categories.list(limit, offset, filters);
+    return categoryRows.map((category) => ({
+      ...category,
+      itemCount: Number(category.itemCount ?? 0),
+    }));
   }
 
-  listActiveCategories(query: CategoryListQuery) {
+  async listActiveCategories(query: CategoryListQuery) {
     const { limit, offset } = categoryListQuery.parse(query ?? {});
-    return this.categories.listActive(limit, offset);
+    const categoryRows = await this.categories.listActive(limit, offset);
+    return categoryRows.map((category) => ({
+      ...category,
+      itemCount: Number(category.itemCount ?? 0),
+    }));
   }
 
   getCategory(id: string) {
@@ -88,20 +81,6 @@ export class CatalogService {
 
   getActiveProduct(id: string) {
     return this.validator.ensureActiveProduct(id);
-  }
-
-  async getInventory(productId: string) {
-    await this.validator.ensureProductExists(productId);
-    return this.validator.ensureBalance(productId);
-  }
-
-  async listInventoryLedger(
-    productId: string,
-    query: InventoryLedgerListQuery,
-  ) {
-    const { limit, offset } = inventoryLedgerListQuery.parse(query ?? {});
-    await this.validator.ensureProductExists(productId);
-    return this.inventory.listLedger(productId, limit, offset);
   }
 
   @Transaction({ retries: 2 })
@@ -177,7 +156,6 @@ export class CatalogService {
       currency: "MAD",
       status: "active",
     });
-    await this.inventory.createForProduct(product.id);
     await this.audits.record({
       action: "catalog.productCreated",
       actorUserId,
@@ -238,17 +216,18 @@ export class CatalogService {
   }
 
   /**
-   * Hard-delete a pristine product (no order history, no inventory ledger
-   * activity, zero balance). Cart items referencing it are removed before the
-   * inventory balance row. Image cleanup is reported to the caller so it runs
-   * once the surrounding transaction has committed.
+   * Hard-delete a pristine product (no order history). Cart items referencing
+   * it are removed before the product row. Image cleanup is reported to the
+   * caller so it runs once the surrounding transaction has committed.
+   *
+   * Kafil is procurement-on-demand, so a product with no inventory balance
+   * is valid. The legacy inventory history tables are never queried here.
    */
   @Transaction({ retries: 2 })
   async deleteProduct(id: string, actorUserId: string) {
     const product = await this.validator.ensureProductExists(id);
     await this.validator.ensureProductPristine(id);
     await this.products.deleteCartItemsByProductIds([product.id]);
-    await this.inventory.deleteBalancesByProductIds([product.id]);
     const deleted = await this.products.hardDelete(id);
     if (!deleted) {
       HttpError.notFound("Product not found");
@@ -268,9 +247,9 @@ export class CatalogService {
   }
 
   /**
-   * Hard-delete a pristine category. Cascades its empty products (each of which
-   * must satisfy the product-pristineness rules) and their cart items / balance
-   * rows. Returns descriptors of every removed image so the controller can unlink
+   * Hard-delete a pristine category. Cascades its empty products (each of
+   * which must satisfy the product-pristineness rules) and their cart items.
+   * Returns descriptors of every removed image so the controller can unlink
    * them after commit.
    */
   @Transaction({ retries: 2 })
@@ -283,7 +262,6 @@ export class CatalogService {
 
     if (productIds.length > 0) {
       await this.products.deleteCartItemsByProductIds(productIds);
-      await this.inventory.deleteBalancesByProductIds(productIds);
       await this.products.hardDeleteByIds(productIds);
     }
     const deleted = await this.categories.hardDelete(id);
@@ -339,188 +317,6 @@ export class CatalogService {
       ),
     );
   }
-
-  @Transaction({ retries: 2 })
-  async restock(productId: string, data: RestockDto, actorUserId: string) {
-    const input = restockDto.parse(data);
-    return this.changeInventory({
-      productId,
-      quantity: input.quantity,
-      onHandDelta: input.quantity,
-      reservedDelta: 0,
-      entryType: "restock",
-      sourceType: "stock_receipt",
-      sourceId: productId,
-      idempotencyKey: input.idempotencyKey,
-      reason: input.reason,
-      actorUserId,
-    });
-  }
-
-  @Transaction({ retries: 2 })
-  async adjustInventory(
-    productId: string,
-    data: InventoryAdjustmentDto,
-    actorUserId: string,
-  ) {
-    const input = inventoryAdjustmentDto.parse(data);
-    return this.changeInventory({
-      productId,
-      quantity: input.quantity,
-      onHandDelta: input.quantity,
-      reservedDelta: 0,
-      entryType: "adjustment",
-      sourceType: "manual_adjustment",
-      sourceId: productId,
-      idempotencyKey: input.idempotencyKey,
-      reason: input.reason,
-      actorUserId,
-    });
-  }
-
-  @Transaction({ retries: 2 })
-  reserve(input: InventoryReservationInput) {
-    return this.changeInventory({
-      ...input,
-      onHandDelta: 0,
-      reservedDelta: input.quantity,
-      entryType: "order_reserve",
-      sourceType: "order",
-      reason: null,
-      actorUserId: null,
-    });
-  }
-
-  @Transaction({ retries: 2 })
-  release(input: InventoryReservationInput) {
-    return this.changeInventory({
-      ...input,
-      quantity: -input.quantity,
-      onHandDelta: 0,
-      reservedDelta: -input.quantity,
-      entryType: "order_release",
-      sourceType: "order",
-      reason: null,
-      actorUserId: null,
-    });
-  }
-
-  @Transaction({ retries: 2 })
-  allocate(input: InventoryReservationInput) {
-    return this.changeInventory({
-      ...input,
-      quantity: -input.quantity,
-      onHandDelta: -input.quantity,
-      reservedDelta: -input.quantity,
-      entryType: "order_allocate",
-      sourceType: "order",
-      reason: null,
-      actorUserId: null,
-    });
-  }
-
-  @Transaction({ retries: 2 })
-  returnAllocated(input: InventoryReservationInput) {
-    return this.changeInventory({
-      ...input,
-      onHandDelta: input.quantity,
-      reservedDelta: 0,
-      entryType: "order_return",
-      sourceType: "order",
-      reason: null,
-      actorUserId: null,
-    });
-  }
-
-  private async changeInventory(input: {
-    productId: string;
-    quantity: number;
-    onHandDelta: number;
-    reservedDelta: number;
-    entryType:
-      | "restock"
-      | "adjustment"
-      | "order_reserve"
-      | "order_release"
-      | "order_allocate"
-      | "order_return";
-    sourceType: string;
-    sourceId: string;
-    idempotencyKey: string;
-    reason: string | null;
-    actorUserId: string | null;
-  }) {
-    await this.validator.ensureProductExists(input.productId);
-    const existing = await this.inventory.findLedgerByIdempotencyKey(
-      input.idempotencyKey,
-    );
-    if (existing) {
-      this.validator.ensureSameProduct(input.productId, existing.productId);
-      return existing;
-    }
-    await this.inventory.createForProduct(input.productId);
-    const balance = await this.inventory.lockByProductId(input.productId);
-    if (!balance) {
-      HttpError.notFound("Inventory balance not found");
-    }
-    const repeated = await this.inventory.findLedgerByIdempotencyKey(
-      input.idempotencyKey,
-    );
-    if (repeated) {
-      this.validator.ensureSameProduct(input.productId, repeated.productId);
-      return repeated;
-    }
-    const next = applyInventoryDelta(balance, {
-      onHandQuantity: input.onHandDelta,
-      reservedQuantity: input.reservedDelta,
-    });
-    const updated = await this.inventory.updateBalance(input.productId, next);
-    if (!updated) {
-      HttpError.notFound("Inventory balance not found");
-    }
-    const entry = await this.inventory.appendLedger({
-      productId: input.productId,
-      entryType: input.entryType,
-      quantity: input.quantity,
-      onHandAfter: updated.onHandQuantity,
-      reservedAfter: updated.reservedQuantity,
-      sourceType: input.sourceType,
-      sourceId: input.sourceId,
-      idempotencyKey: input.idempotencyKey,
-      actorUserId: input.actorUserId,
-      reason: input.reason,
-    });
-    if (input.actorUserId) {
-      await this.audits.record({
-        action: `inventory.${input.entryType}`,
-        actorUserId: input.actorUserId,
-        metadata: { quantity: input.quantity },
-        resource: "inventoryLedgerEntries",
-        resourceId: entry.id,
-      });
-    }
-    return entry;
-  }
-}
-
-function applyInventoryDelta(
-  balance: { onHandQuantity: number; reservedQuantity: number },
-  delta: { onHandQuantity: number; reservedQuantity: number },
-) {
-  const next = {
-    onHandQuantity: balance.onHandQuantity + delta.onHandQuantity,
-    reservedQuantity: balance.reservedQuantity + delta.reservedQuantity,
-  };
-  if (
-    !Number.isSafeInteger(next.onHandQuantity) ||
-    !Number.isSafeInteger(next.reservedQuantity) ||
-    next.onHandQuantity < 0 ||
-    next.reservedQuantity < 0 ||
-    next.reservedQuantity > next.onHandQuantity
-  ) {
-    HttpError.conflict("Inventory change would violate stock availability");
-  }
-  return next;
 }
 
 const FILE_NAME_REGEX = /^[0-9a-f-]{36}\.(?:avif|gif|jpg|png|webp)$/i;

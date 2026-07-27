@@ -88,6 +88,7 @@ describe("seed data reset", () => {
       "child-images",
       "family-images",
       "sponsor-images",
+      "order-evidence",
     ]);
     expect(removals).toEqual(
       SEED_STORAGE_DIRECTORIES.map((directory) => ({

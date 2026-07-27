@@ -23,6 +23,31 @@ export function getSponsorOverview(id: string) {
   return api.get<OperatorSponsorOverviewData>(`/sponsors/${id}/overview`);
 }
 
+const SPONSOR_IMAGE_ROUTE = "/sponsor-images/files/";
+
+function imageExtension(file: File) {
+  const extensionByMimeType: Record<string, string> = {
+    "image/avif": "avif",
+    "image/gif": "gif",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  };
+
+  return extensionByMimeType[file.type] ?? "img";
+}
+
+export async function uploadSponsorImage(file: File) {
+  const fileName = `${crypto.randomUUID()}.${imageExtension(file)}`;
+  await api.upload(`${SPONSOR_IMAGE_ROUTE}${fileName}`, file);
+  return `/api${SPONSOR_IMAGE_ROUTE}serve/${fileName}`;
+}
+
+export function deleteSponsorImage(imagePath: string) {
+  const fileName = imagePath.slice(imagePath.lastIndexOf("/") + 1);
+  return api.deleteFile(`${SPONSOR_IMAGE_ROUTE}${encodeURIComponent(fileName)}`);
+}
+
 export function createSponsor(input: CreateSponsorInput) {
   return api.post<CreatedSponsorRecord>("/sponsors", input);
 }
@@ -39,6 +64,10 @@ export function updateSponsor({
 
 export function deleteSponsor(id: string) {
   return api.delete<SponsorRecord>(`/sponsors/${id}`);
+}
+
+export function bulkDeleteSponsors(ids: string[]) {
+  return api.post<SponsorRecord[]>("/sponsors/bulk-delete", { ids });
 }
 
 export function deactivateSponsor({ id, reason }: SponsorStatusInput) {

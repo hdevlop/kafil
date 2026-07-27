@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { CircleCheck, CircleOff, Eye, Package, Pencil, Trash2 } from "lucide-react";
 import { usePermissions } from "najm-auth/client/react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
+import { createOffsetPagination } from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
@@ -24,22 +23,21 @@ import { useProductsTableColumns } from "../hooks/useProductsTableColumns";
 import { useProductsTableFilters } from "../hooks/useProductsTableFilters";
 import type { ProductRecord } from "../types";
 
+const productListPagination = createOffsetPagination(0, 100);
+
 export function ProductsPage() {
   const dialog = useDialog();
   const { hasRole } = usePermissions();
   const { t } = useKafilLanguage();
-  const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
-  const products = useProducts(pagination);
+  const products = useProducts(productListPagination);
   const columns = useProductsTableColumns();
   const filters = useProductsTableFilters();
   const rows = products.data ?? [];
-  const pageIndex = getPageIndex(pagination);
-  const pageCount = hasPossibleNextPage(rows.length, pagination) ? pageIndex + 2 : pageIndex + 1;
 
   function openCreate() {
     void dialog.openDialog({
       title: "Create product",
-      description: "Add an active product and initialize its inventory balance.",
+      description: "Add an active product the family can request.",
       children: <CreateProductDialogContent />,
       showButtons: false,
       width: "lg",
@@ -84,7 +82,7 @@ export function ProductsPage() {
     void dialog.openDialog({
       title: `Permanently delete ${product.name}?`,
       description:
-        "Bootstrap administrators can permanently delete pristine products (no order history, no inventory ledger activity, zero balance).",
+        "Bootstrap administrators can permanently delete pristine products (no order history).",
       children: <DeleteProductDialogContent product={product} />,
       showButtons: false,
       size: "sm",
@@ -102,7 +100,7 @@ export function ProductsPage() {
     onView: openView,
     onEdit: openEdit,
     renderCard: ProductCard,
-    renderEmpty: () => <PageEmptyState action={<NButton onClick={openCreate}>Create product</NButton>} title="No catalog product yet" description="Create the first product after adding an active category." />,
+    renderEmpty: () => <PageEmptyState icon={Package} action={<NButton onClick={openCreate}>Create product</NButton>} title="No catalog product yet" description="Create the first product after adding an active category." />,
     renderError: (error) => <PageErrorState error={error} onRetry={() => void products.refetch()} />,
     menu: {
       row: (product) => {
@@ -140,13 +138,12 @@ export function ProductsPage() {
       },
     },
     menuButton: true,
-    manualPagination: true,
-    pagination: { pageIndex, pageSize: pagination.limit },
-    pageCount,
-    onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),
-    pageSizeOptions: [10, 25, 50, 100],
+    showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",
+    classNames: {
+      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-5",
+    },
     addButtonText: "Create product",
     noDataText: "No catalog product found",
     loadingText: "Loading catalog products...",

@@ -19,6 +19,8 @@ import {
   cartItems,
   carts,
   orderItems,
+  orderPurchaseRecords,
+  orderPurchaseReversals,
   orders,
   orderStatusEvents,
 } from "../orders/orderSchema";
@@ -211,6 +213,16 @@ export class FamilyRepository {
     await this.db
       .delete(orderStatusEvents)
       .where(inArray(orderStatusEvents.orderId, familyOrderIds));
+    const familyPurchaseIds = this.db
+      .select({ id: orderPurchaseRecords.id })
+      .from(orderPurchaseRecords)
+      .where(inArray(orderPurchaseRecords.orderId, familyOrderIds));
+    await this.db
+      .delete(orderPurchaseReversals)
+      .where(inArray(orderPurchaseReversals.purchaseId, familyPurchaseIds));
+    await this.db
+      .delete(orderPurchaseRecords)
+      .where(inArray(orderPurchaseRecords.orderId, familyOrderIds));
     await this.db
       .delete(orderItems)
       .where(inArray(orderItems.orderId, familyOrderIds));

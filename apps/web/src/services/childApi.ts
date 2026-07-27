@@ -18,6 +18,31 @@ export function getChild(id: string) {
   return api.get<ChildRecord>(`/children/${id}`);
 }
 
+const CHILD_IMAGE_ROUTE = "/child-images/files/";
+
+function imageExtension(file: File) {
+  const extensionByMimeType: Record<string, string> = {
+    "image/avif": "avif",
+    "image/gif": "gif",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  };
+
+  return extensionByMimeType[file.type] ?? "img";
+}
+
+export async function uploadChildImage(file: File) {
+  const fileName = `${crypto.randomUUID()}.${imageExtension(file)}`;
+  await api.upload(`${CHILD_IMAGE_ROUTE}${fileName}`, file);
+  return `/api${CHILD_IMAGE_ROUTE}serve/${fileName}`;
+}
+
+export function deleteChildImage(imagePath: string) {
+  const fileName = imagePath.slice(imagePath.lastIndexOf("/") + 1);
+  return api.deleteFile(`${CHILD_IMAGE_ROUTE}${encodeURIComponent(fileName)}`);
+}
+
 export function createChild(input: CreateChildInput) {
   return api.post<ChildRecord>("/children", input);
 }
@@ -34,6 +59,10 @@ export function updateChild({
 
 export function deleteChild(id: string) {
   return api.delete<ChildRecord>(`/children/${id}`);
+}
+
+export function bulkDeleteChildren(ids: string[]) {
+  return api.post<ChildRecord[]>("/children/bulk-delete", { ids });
 }
 
 export function deactivateChild({ id, reason }: ChildStatusInput) {

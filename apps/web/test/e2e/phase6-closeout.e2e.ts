@@ -10,7 +10,11 @@ const browserUsers: Record<ProductRole, string> = {
 const browserPassword = "Phase6BrowserPass1!";
 
 async function useRole(page: Page, role: ProductRole, language = "en") {
-  await page.context().addCookies([{ name: "kafil-ui-language", value: language, url: "https://127.0.0.1:3210" }]);
+  await page.context().addCookies([{
+    name: "kafil-ui-language",
+    value: language,
+    url: process.env.KAFIL_E2E_BASE_URL ?? "https://127.0.0.1:3210",
+  }]);
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
@@ -124,19 +128,58 @@ test("Arabic dashboard copy, switcher, and family cart submission work with RTL"
 test("operator can advance a mocked order through browser confirmation dialogs", async ({ page }) => {
   await useRole(page, "operator");
 
+  const operatorToken = await page.evaluate(async () => {
+    const response = await fetch("/api/auth/refresh", { method: "POST" });
+    const body = await response.json() as { data: { accessToken: string } };
+    return body.data.accessToken;
+  });
+  const operatorAdminApiStatus = await page.evaluate(
+    async (accessToken) =>
+      fetch("/api/admin/access/users", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }).then((response) => response.status),
+    operatorToken,
+  );
+  expect(operatorAdminApiStatus).toBe(401);
+  await page.goto("/operator/access/users");
+  await expect(page).toHaveURL(/\/forbidden$/);
+
   let status = "pending";
+  const purchase = {
+    id: "purchase-browser",
+    orderId: "operator-order",
+    merchantName: "Marjane",
+    receiptNumber: "BROWSER-001",
+    purchasedAt: "2026-07-17T12:02:00.000Z",
+    actualTotalMinor: 2_500,
+    currency: "MAD",
+    receiptStoragePath:
+      "/api/order-evidence/receipts/serve/10000000-0000-4000-8000-000000000001.pdf",
+    receiptMediaType: "application/pdf",
+    receiptByteSize: 8,
+    recordedByUserId: "operator-browser",
+    idempotencyKey: "purchase-browser",
+    replacesPurchaseId: null,
+    createdAt: "2026-07-17T12:02:00.000Z",
+  };
   const order = () => ({
     approvedAt: status === "pending" ? null : "2026-07-17T12:01:00.000Z",
     cancellationReason: null,
     createdAt: "2026-07-17T12:00:00.000Z",
     currency: "MAD",
     deliveredAt: status === "delivered" ? "2026-07-17T12:03:00.000Z" : null,
+    deliveryStartedAt: ["out_for_delivery", "delivered"].includes(status)
+      ? "2026-07-17T12:02:30.000Z"
+      : null,
     id: "operator-order",
     orderNumber: "K-OP-001",
     preparationStartedAt: ["in_preparation", "delivered"].includes(status) ? "2026-07-17T12:02:00.000Z" : null,
     familyProfileId: "household-browser",
     rejectionReason: null,
     status,
+    placementSource: "family_self_service",
+    assistanceChannel: null,
+    assistanceNote: null,
     totalMinor: 2_500,
     updatedAt: "2026-07-17T12:00:00.000Z",
     deliveryAddressSnapshot: "Test address",
@@ -144,36 +187,70 @@ test("operator can advance a mocked order through browser confirmation dialogs",
     guardianLegalNameSnapshot: "Test family",
     items: [],
     statusEvents: [],
+    purchases: ["purchased", "out_for_delivery", "delivered"].includes(status)
+      ? [{ purchase, reversal: null }]
+      : [],
+    activePurchase: ["purchased", "out_for_delivery", "delivered"].includes(status)
+      ? purchase
+      : null,
+    requestedTotalMinor: 2_500,
+    actualTotalMinor: ["purchased", "out_for_delivery", "delivered"].includes(status)
+      ? 2_500
+      : null,
+    receiptRecorded: ["purchased", "out_for_delivery", "delivered"].includes(status),
+    deliveryProofRecorded: false,
   });
 
+  await page.route("**/api/order-evidence/**", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      return json(route, {
+        path: "/api/order-evidence/receipts/serve/10000000-0000-4000-8000-000000000001.pdf",
+        mediaType: "application/pdf",
+        byteSize: 8,
+      });
+    }
+    return json(route, { deleted: true });
+  });
   await page.route("**/api/orders**", async (route) => {
     const { pathname } = new URL(route.request().url());
     const method = route.request().method();
     if (method === "GET" && pathname === "/api/orders") return json(route, [order()]);
     if (method === "POST" && pathname.endsWith("/approve")) status = "approved";
-    if (method === "POST" && pathname.endsWith("/preparation")) status = "in_preparation";
-    if (method === "POST" && pathname.endsWith("/deliver")) status = "delivered";
+    if (method === "POST" && pathname.endsWith("/purchase")) status = "purchased";
+    if (method === "POST" && pathname.endsWith("/delivery/start")) status = "out_for_delivery";
+    if (method === "POST" && pathname.endsWith("/delivery/confirm")) status = "delivered";
     return json(route, order());
   });
 
   await page.goto("/operator/orders");
   await expect(page.getByText("K-OP-001", { exact: true })).toBeVisible();
 
-  for (const [menuAction, confirmation, useKeyboard] of [["Approve", "Approve order", true], ["Start preparation", "Start preparation", false], ["Mark delivered", "Mark delivered", false]] as const) {
-    const rowMenu = page.locator("tbody tr").getByRole("button");
-    if (useKeyboard) {
-      await rowMenu.focus();
-      await page.keyboard.press("Enter");
-    } else {
-      await rowMenu.click();
-    }
-    const menuItem = page.getByRole("menuitem", { name: menuAction });
-    await menuItem.focus();
-    await page.keyboard.press("Enter");
-    const confirmButton = page.getByRole("button", { name: confirmation });
-    await confirmButton.focus();
-    await page.keyboard.press("Enter");
-  }
+  const openAction = async (name: string) => {
+    await page.getByRole("button", { name: "Row actions" }).click();
+    await page.getByRole("menuitem", { name }).click();
+  };
+
+  await openAction("Approve");
+  await page.getByRole("button", { name: "Approve order" }).click();
+
+  await openAction("Record purchase");
+  const purchaseDialog = page.getByRole("dialog", { name: "Record purchase" });
+  await purchaseDialog.locator('input[type="file"]').setInputFiles({
+    name: "receipt.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4"),
+  });
+  await purchaseDialog.getByRole("button", { name: "Record purchase" }).click();
+
+  await openAction("Start delivery");
+  await page.getByRole("button", { name: "Start delivery" }).click();
+
+  await openAction("Confirm delivery");
+  await page
+    .getByRole("dialog", { name: "Confirm delivery" })
+    .getByRole("button", { name: "Confirm delivery" })
+    .click();
 
   await expect(page.getByText("Delivered", { exact: true })).toBeVisible();
 });
@@ -325,7 +402,6 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await expect(overviewDialog.getByText(populatedSponsorName).first()).toBeVisible();
   await expect(overviewDialog.getByText(populatedSponsorEmail)).toBeVisible();
   await expect(overviewDialog.getByText(populatedSponsorAddress)).toBeVisible();
-  await expect(overviewDialog.getByText(populatedSponsorNotes)).toBeVisible();
   await captureSponsorOverviewEvidence(page, "operator-populated-desktop.png");
   const overviewDialogContent = page.locator('[data-slot="dialog-content"]');
   await overviewDialogContent.evaluate((element) => {
@@ -346,7 +422,11 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-tablet-1024.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "en", url: "https://127.0.0.1:3210" },
+    {
+      name: "kafil-ui-language",
+      value: "en",
+      url: process.env.KAFIL_E2E_BASE_URL ?? "https://127.0.0.1:3210",
+    },
     { name: "kafil-ui-theme", value: "dark", url: "https://127.0.0.1:3210" },
   ]);
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -379,7 +459,11 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await page.goto("/operator/sponsors");
   await openSponsorOverview(page, "Inactive Empty Sponsor");
   await expect(page.getByText("No supported budget activity yet. Budget data will appear here when support is active.")).toBeVisible();
-  await expect(page.getByText("No active plan")).toBeVisible();
+  await expect(
+    page.getByText(
+      "No contributions yet. Create a plan or submit your first contribution.",
+    ),
+  ).toBeVisible();
   await captureSponsorOverviewEvidence(page, "operator-inactive-empty-zero.png");
 });
 
@@ -548,9 +632,12 @@ test("direct URLs and crafted API requests cannot cross role boundaries", async 
     fetch("/api/orders", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
     fetch("/api/contributions/me", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
     fetch("/api/sponsors/sponsor-overview-1/overview", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
+    fetch("/api/order-evidence/receipts/serve/00000000-0000-4000-8000-000000000000.pdf", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }).then((response) => response.status),
   ]), familyToken);
   expect(familyStatuses[0]).toBe(403);
-  expect(familyStatuses.slice(1)).toEqual([401, 401, 401]);
+  expect(familyStatuses.slice(1)).toEqual([401, 401, 401, 401]);
 
   await page.context().clearCookies();
   await useRole(page, "sponsor");
@@ -566,4 +653,55 @@ test("direct URLs and crafted API requests cannot cross role boundaries", async 
   ]), sponsorToken);
   expect(sponsorStatuses[0]).toBe(403);
   expect(sponsorStatuses.slice(1)).toEqual([401, 401]);
+});
+
+test("bootstrap admin can open read-only access management pages", async ({
+  page,
+}) => {
+  const adminEmail = process.env.KAFIL_ADMIN_EMAIL;
+  const adminPassword = process.env.KAFIL_ADMIN_PASSWORD;
+  if (!adminEmail || !adminPassword) {
+    throw new Error("KAFIL_ADMIN_EMAIL and KAFIL_ADMIN_PASSWORD are required.");
+  }
+  await page.route("**/api/admin/access/**", async (route) => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname === "/api/admin/access/users") {
+      return json(route, { items: [], total: 0, limit: 25, offset: 0 });
+    }
+    if (pathname === "/api/admin/access/roles") {
+      return json(route, [
+        {
+          id: "admin",
+          name: "admin",
+          description: "Bootstrap administrator",
+          userCount: 1,
+          permissionCount: 1,
+          permissions: [],
+          codeManaged: true,
+          inSync: true,
+        },
+      ]);
+    }
+    if (pathname === "/api/admin/access/permissions") return json(route, []);
+    return json(route, {});
+  });
+
+  await page.goto("/login");
+  await page.getByLabel("Email or phone").fill(adminEmail);
+  await page.getByPlaceholder("Enter your password").fill(adminPassword);
+  await page.getByRole("button", { name: "Log in" }).click();
+  await page.waitForURL(/\/operator$/);
+
+  await page.goto("/operator/access/users");
+  await expect(page.getByRole("heading", { name: "Users", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("navigation").getByText("Access management", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Roles" }).click();
+  await expect(page.getByRole("heading", { name: "Roles", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Permissions" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Permissions", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Create permission")).toHaveCount(0);
 });

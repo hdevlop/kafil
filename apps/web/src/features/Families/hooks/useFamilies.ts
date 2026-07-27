@@ -4,6 +4,7 @@ import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
+  bulkDeleteFamilies,
   createFamily,
   deactivateFamily,
   deleteFamily,
@@ -45,6 +46,13 @@ export function useFamilyCommands() {
     errorMessage: "Could not permanently delete the family account.",
   });
 
+  const bulkRemove = useEntityCommand({
+    mutationFn: bulkDeleteFamilies,
+    invalidate,
+    successMessage: "Selected family accounts permanently deleted.",
+    errorMessage: "Could not permanently delete the selected family accounts.",
+  });
+
   const deactivate = useEntityCommand({
     mutationFn: deactivateFamily,
     invalidate: [familyKeys.all],
@@ -59,5 +67,5 @@ export function useFamilyCommands() {
     errorMessage: "Could not reactivate the family account.",
   });
 
-  return { create, update, remove, deactivate, reactivate };
+  return { create, update, remove, bulkRemove, deactivate, reactivate };
 }

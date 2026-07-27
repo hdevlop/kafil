@@ -22,6 +22,8 @@
     "inactive": "غير نشط",
     "pending": "قيد الانتظار",
     "approved": "معتمد",
+    "purchased": "تم الشراء",
+    "out_for_delivery": "قيد التوصيل",
     "rejected": "مرفوض",
     "cancelled": "ملغى",
     "completed": "مكتمل",
@@ -287,6 +289,15 @@
       "reset": "تمت إعادة تعيين المظهر بنجاح"
     }
   },
+  "branding": {
+    "success": {
+      "retrieved": "تم جلب العلامة التجارية بنجاح",
+      "updated": "تم تحديث العلامة التجارية بنجاح",
+      "reset": "تمت إعادة تعيين العلامة التجارية بنجاح",
+      "uploaded": "تم تحميل أصل العلامة التجارية",
+      "deleted": "تم حذف أصل العلامة التجارية"
+    }
+  },
   "orders": {
     "success": {
       "cartRetrieved": "????? : ??? ??????? ?????",
@@ -295,12 +306,28 @@
       "cartItemRemoved": "????? : ??? ??????? ?????",
       "cartCleared": "????? : ??? ??????? ?????",
       "submitted": "????? : ??? ??????? ?????",
+      "assistedSubmitted": "تم إنشاء طلب عائلي بمساعدة الموظف بنجاح",
       "retrieved": "????? : ?? ????????? ?????",
       "cancelled": "????? : ?? ??????? ?????",
       "approved": "????? : ??? ???????? ?????",
       "rejected": "????? : ?? ????? ?????",
-      "preparationStarted": "????? : ??? ??????? ?????",
+      "preparationStarted": "الطلب : تم بدء الشراء والتحضير بنجاح",
+      "purchaseRecorded": "تم تسجيل شراء الطلب بنجاح",
+      "purchaseReplaced": "تم استبدال سجل شراء الطلب بنجاح",
+      "deliveryStarted": "تم بدء توصيل الطلب بنجاح",
+      "evidenceUploaded": "تم رفع إثبات الطلب بنجاح",
+      "evidenceRetrieved": "تم استرجاع إثبات الطلب بنجاح",
+      "evidenceDeleted": "تم حذف إثبات الطلب بنجاح",
       "delivered": "????? : ?? ??????? ?????"
+    }
+  },
+  "adminAccess": {
+    "success": {
+      "retrieved": "تم استرجاع بيانات إدارة الوصول بنجاح",
+      "deactivated": "تم تعطيل المستخدم وإلغاء جلساته بنجاح",
+      "reactivated": "تمت إعادة تفعيل المستخدم بنجاح",
+      "sessionsRevoked": "تم إلغاء جلسات المستخدم بنجاح",
+      "permissionCreated": "تم إنشاء الصلاحية المخصصة بنجاح"
     }
   },
   "operators": {
@@ -364,9 +391,7 @@
       "created": "???????? : ?? ??????? ?????",
       "updated": "???????? : ?? ??????? ?????",
       "activated": "???????? : ??? ??????? ?????",
-      "deactivated": "???????? : ?? ??????? ?????",
-      "restocked": "???????? : ??? ??????? ?????",
-      "inventoryAdjusted": "???????? : ??? ??????? ?????"
+      "deactivated": "???????? : ?? ??????? ?????"
     }
   },
   "budgets": {
@@ -398,7 +423,8 @@
       "label": "اللغة",
       "english": "الإنجليزية",
       "french": "الفرنسية",
-      "arabic": "العربية"
+      "arabic": "العربية",
+      "spanish": "الإسبانية"
     },
     "display": {
       "title": "تفضيلات العرض",
@@ -440,13 +466,16 @@
       "products": "المنتجات",
       "productsSubtitle": "أدر منتجات الكتالوج والأسعار ومواقعها حسب الفئة النشطة وإمكانية الرؤية المُراجَعة.",
       "catalog": "الكتالوج",
-      "inventory": "المخزون",
       "orders": "الطلبات",
       "cart": "السلة",
       "mySupport": "دعمي",
       "budgetUse": "استخدام الميزانية",
       "profile": "الملف الشخصي",
       "settings": "الإعدادات",
+      "accessManagement": "الوصول",
+      "users": "المستخدمون",
+      "roles": "الأدوار",
+      "permissions": "الصلاحيات",
       "platform": "المنصة",
       "supportOperations": "الأشخاص",
       "finance": "المالية",
@@ -469,7 +498,7 @@
       "resume": "استئناف",
       "stop": "إيقاف",
       "approveOrder": "اعتماد الطلب",
-      "startPreparation": "بدء التحضير",
+      "startPreparation": "بدء الشراء والتحضير",
       "markDelivered": "تحديد كمُسلّم",
       "saving": "جارٍ الحفظ..."
     },
@@ -493,7 +522,9 @@
       "pending": "قيد الانتظار",
       "pending_funding": "بانتظار التمويل",
       "approved": "معتمد",
-      "in_preparation": "قيد التحضير",
+      "in_preparation": "قيد الشراء والتحضير",
+      "purchased": "تم الشراء",
+      "out_for_delivery": "قيد التوصيل",
       "delivered": "تم التسليم",
       "rejected": "مرفوض",
       "cancelled": "ملغى",
@@ -512,13 +543,12 @@
         "recordsCount": "{count} سجلات",
         "refunded": "مسترد",
         "reserved": "محجوز",
-        "reservedValue": "{value} محجوز",
         "spent": "منفق",
         "validated": "متحقق منه"
       },
       "operator": {
         "title": "لوحة تحكم المشغّل",
-        "subtitle": "راقب الدعم والأموال والمخزون والتلبية من خلال عرض تشغيلي مباشر واحد.",
+        "subtitle": "راقب الدعم والأموال والتلبية من خلال عرض تشغيلي مباشر واحد.",
         "error": "تعذر تحميل لوحة تحكم المشغّل",
         "families": "الأسر",
         "children": "الأطفال",
@@ -530,10 +560,6 @@
         "contributionTrend": "نشاط المساهمات",
         "budgetPosition": "الميزانية",
         "orderPipeline": "مسار الطلبات",
-        "stockAttention": "مخزون يحتاج إلى متابعة",
-        "unitsAvailable": "{count} متاح",
-        "stockHealthy": "المخزون بحالة جيدة",
-        "stockHealthyDescription": "لا يوجد منتج نشط عند حد المخزون المنخفض أو دونه.",
         "communityBreakdown": "المجتمع"
       },
       "family": {
@@ -542,7 +568,6 @@
         "error": "تعذر تحميل لوحة تحكم الأسرة",
         "loading": "جارٍ تحميل لوحة تحكم الأسرة",
         "readyToOrder": "جاهز للطلبات المؤهلة",
-        "reservedForOrders": "محجوز للطلبات المفتوحة",
         "fulfilledSpending": "مقتطع من الطلبات المعتمدة",
         "children": "الأطفال",
         "openOrders": "الطلبات المفتوحة",
@@ -658,8 +683,48 @@
         "discardDescription": "سيؤدي إغلاق الإعدادات إلى تجاهل تغييراتك غير المحفوظة.",
         "discard": "تجاهل التغييرات",
         "resetThemeTitle": "إعادة تعيين مظهر كفيل؟",
-        "resetThemeDescription": "سيؤدي هذا إلى إزالة المظهر المحفوظ واستعادة المظهر الافتراضي المحفوظ في المشروع."
-
+        "resetThemeDescription": "سيؤدي هذا إلى إزالة المظهر المحفوظ واستعادة المظهر الافتراضي المحفوظ في المشروع.",
+        "branding": {
+          "cardTitle": "أصول العلامة التجارية",
+          "cardDescription": "قم بتحميل شعارات النظام وصورة البطل للمصادقة. لا يمكن لحسابات المشغل تغيير هذه الأصول.",
+          "expandedTitle": "شعار الشريط الجانبي الموسع",
+          "expandedHelp": "شعار عريض للشريط الجانبي الموسع ودرج الجوال.",
+          "collapsedTitle": "شعار الشريط الجانبي المطوي",
+          "collapsedHelp": "شعار مربع للسكة المطوية. يعود إلى الشعار الموسع افتراضيا.",
+          "authLogoTitle": "شعار المصادقة",
+          "authLogoHelp": "الشعار الذي يظهر على صفحات الدخول والتسجيل والدخول الأول.",
+          "heroTitle": "صورة بطل المصادقة",
+          "heroHelp": "صورة خلفية للوحة الجانبية للمصادقة.",
+          "chooseReplace": "اختيار / استبدال",
+          "remove": "إزالة",
+          "restoreDefault": "استعادة الافتراضي",
+          "followsExpanded": "يستخدم شعار الشريط الجانبي الموسع عند عدم التعيين.",
+          "discardDraft": "تجاهل مسودة العلامة",
+          "acceptedFormats": "الصيغ المقبولة: {formats}",
+          "maxSize": "حتى {size} ميغابايت",
+          "aspectRatio": "النسبة الموصى بها {ratio}",
+          "formatsSummary": "{formats} · الشعارات حتى {logoSize} ميغابايت · صورة البطل حتى {heroSize} ميغابايت",
+          "replace": "استبدال",
+          "revertSlot": "التراجع عن هذا الحقل",
+          "revertAll": "التراجع عن كل التغييرات",
+          "useDefault": "استخدم الافتراضي",
+          "useExpanded": "استخدم الشعار الموسع",
+          "statusDefault": "افتراضي",
+          "statusInherited": "موروث",
+          "statusCustom": "مخصص",
+          "statusCustomNew": "مخصص (جديد)",
+          "noImage": "لا توجد صورة",
+          "ratioWide": "عريض · 3:1",
+          "ratioSquare": "مربع · 1:1",
+          "ratioLandscape": "لوحة بارتفاع كامل",
+          "uploadingCount": "جارٍ تحميل {count} أصل/أصول…",
+          "uploadSuccess": "تم تحميل أصل العلامة التجارية",
+          "uploadError": "تعذر تحميل أصل العلامة التجارية",
+          "saveSuccess": "تم تحديث أصول العلامة التجارية",
+          "saveError": "تعذر حفظ أصول العلامة التجارية",
+          "resetSuccess": "تمت استعادة أصول العلامة الافتراضية",
+          "resetError": "تعذر استعادة أصول العلامة الافتراضية"
+        }
       },
       "contributions": {
         "title": "المساهمات",
@@ -766,8 +831,8 @@
         "noData": "لم يتم العثور على طلب",
         "loading": "جارٍ تحميل الطلبات...",
         "snapshot": "لقطة خاصة بالمشغّل وتفاصيل التلبية وسجل الحالة.",
-        "approveMessage": "يخصم هذا الإجراء الميزانية والمخزون المحجوزين لهذا الطلب المعلّق.",
-        "preparationMessage": "يؤكد هذا الإجراء بدء عمل التلبية للطلب المعتمد.",
+        "approveMessage": "يخصم هذا الإجراء الميزانية المحجوزة لهذا الطلب المعلّق.",
+        "preparationMessage": "يؤكد هذا الإجراء بدء الشراء والتحضير للطلب المعتمد.",
         "deliverMessage": "يحدد هذا الإجراء الطلب قيد التحضير كمُسلّم. التسليم حالة نهائية."
       },
       "families": {
@@ -899,7 +964,9 @@
         "noFamily": "لم يتم العثور على أسرة. أنشئ حساب أسرة أولاً.",
         "creating": "جارٍ إنشاء الطفل...",
         "operatorNotes": "ملاحظات المشغّل",
-        "optionalNotes": "ملاحظات داخلية اختيارية"
+        "optionalNotes": "ملاحظات داخلية اختيارية",
+        "imageUrl": "صورة الطفل",
+        "imageUploadGuidance": "PNG أو JPEG أو WebP أو AVIF أو GIF · حتى 5 ميغابايت"
       },
       "sponsors": {
         "title": "الكفلاء",
@@ -942,6 +1009,8 @@
         "operatorNotes": "ملاحظات المشغل",
         "notes": "ملاحظات",
         "notesPlaceholder": "ملاحظات داخلية اختيارية",
+        "imageUrl": "صورة الكفيل",
+        "imageUploadGuidance": "PNG أو JPEG أو WebP أو AVIF أو GIF · حتى 5 ميغابايت",
         "creating": "جارٍ إنشاء الحساب...",
         "createAndInvite": "إنشاء حساب الكفيل",
         "saving": "جارٍ الحفظ...",
@@ -1128,7 +1197,7 @@
         "unavailable": "لم يعد نشطًا",
         "remove": "إزالة {name}",
         "reviewTitle": "مراجعة طلبك",
-        "reviewDescription": "يحجز الإرسال ميزانيتك ومخزونك فقط بعد التحقق من جهة الخادم.",
+        "reviewDescription": "يحجز الإرسال ميزانيتك فقط بعد التحقق من جهة الخادم. سيتحقق المشغّل من توفر المنتجات وأسعارها في المتجر قبل اعتماد طلبك.",
         "items": "العناصر",
         "total": "الإجمالي"
       }
@@ -1170,6 +1239,130 @@
         "emptyDescription": "لا توجد أسر نشطة متاحة للدعم الآن.",
         "targetReached": "تم بلوغ الهدف",
         "coveredByPending": "مغطى بالدفعات المعلقة"
+      }
+    },
+    "adminAccess": {
+      "common": {
+        "yes": "نعم",
+        "no": "لا",
+        "none": "لا يوجد",
+        "noRole": "بدون دور",
+        "bootstrapAccount": "حساب التهيئة",
+        "codeManaged": "مُدار برمجياً",
+        "inSync": "متزامن",
+        "grantDrift": "اختلاف في الصلاحيات"
+      },
+      "users": {
+        "title": "المستخدمون",
+        "subtitle": "ابحث عن الحسابات ونفّذ إجراءات دورة الحياة الآمنة.",
+        "user": "المستخدم",
+        "email": "البريد الإلكتروني",
+        "role": "الدور",
+        "status": "الحالة",
+        "verified": "موثّق",
+        "lastLogin": "آخر دخول",
+        "unnamed": "حساب بلا اسم",
+        "detailDescription": "تفاصيل وصول تحافظ على الخصوصية",
+        "search": "البحث بالاسم أو البريد",
+        "searchAria": "البحث عن المستخدمين",
+        "roleFilterAria": "التصفية حسب الدور",
+        "statusFilterAria": "التصفية حسب الحالة",
+        "verificationFilterAria": "التصفية حسب التوثيق",
+        "allRoles": "كل الأدوار",
+        "admin": "مسؤول",
+        "operator": "مشغّل",
+        "family": "أسرة",
+        "sponsor": "كفيل",
+        "allStatuses": "كل الحالات",
+        "anyVerification": "أي حالة توثيق",
+        "notVerified": "غير موثّق",
+        "view": "عرض",
+        "deactivate": "تعطيل",
+        "reactivate": "إعادة التفعيل",
+        "revokeSessions": "إلغاء الجلسات",
+        "create": "إضافة مستخدم",
+        "createTitle": "إنشاء مستخدم",
+        "createDescription": "اختر نوع حساب كافل وأكمل الملف المطلوب.",
+        "createOperator": "إنشاء حساب مشغل",
+        "namePlaceholder": "الاسم الكامل للمشغل",
+        "emailPlaceholder": "operator@example.com",
+        "phonePlaceholder": "+212...",
+        "cinPlaceholder": "رقم الهوية الوطنية",
+        "genderPlaceholder": "اختر الجنس",
+        "dateOfBirthPlaceholder": "اختر تاريخًا",
+        "jobTitlePlaceholder": "مثال: منسق ميداني",
+        "addressPlaceholder": "عنوان المكتب أو المراسلة",
+        "notesPlaceholder": "ملاحظات داخلية اختيارية",
+        "imageUrl": "صورة المشغل",
+        "imageUploadGuidance": "PNG أو JPEG أو WebP أو AVIF أو GIF · حتى 5 ميغابايت",
+        "jobTitle": "المسمى الوظيفي",
+        "creating": "جارٍ الإنشاء...",
+        "createAndInvite": "إنشاء ودعوة",
+        "emptyTitle": "لم يتم العثور على مستخدمين",
+        "emptyDescription": "غيّر عوامل التصفية أو أنشئ الحساب من مسار الإعداد الخاص به.",
+        "noData": "لا يوجد مستخدمون",
+        "loading": "جارٍ تحميل المستخدمين..."
+      },
+      "roles": {
+        "title": "الأدوار",
+        "subtitle": "أدوار كافل ثابتة ومُدارة برمجياً مع صلاحياتها الفعلية.",
+        "loading": "جارٍ تحميل الأدوار",
+        "fallbackDescription": "دور وصول ثابت في كافل",
+        "users": "{count} مستخدم",
+        "permissions": "{count} صلاحية",
+        "emptyTitle": "لم يتم العثور على أدوار",
+        "emptyDescription": "شغّل بذرة المصادقة المراجعة لاستعادة الأدوار الثابتة."
+      },
+      "permissions": {
+        "title": "الصلاحيات",
+        "subtitle": "دليل صلاحيات للقراءة فقط ومقارنة بين المنح الفعلية والبرمجية.",
+        "resource": "المورد",
+        "action": "الإجراء",
+        "permission": "الصلاحية",
+        "liveRoles": "الأدوار الفعلية",
+        "canonicalState": "الحالة المعتمدة",
+        "missingLiveGrant": "منح فعلي مفقود",
+        "unexpectedLiveGrant": "منح فعلي غير متوقع",
+        "custom": "مخصصة",
+        "create": "إضافة صلاحية",
+        "createTitle": "إنشاء صلاحية مخصصة",
+        "createDescription": "أنشئ صلاحية غير معتمدة وامنحها اختيارياً لأدوار كافل.",
+        "resourcePlaceholder": "مثال: families",
+        "actionPlaceholder": "مثال: approve",
+        "description": "الوصف",
+        "descriptionPlaceholder": "وصف اختياري",
+        "creating": "جارٍ الإنشاء...",
+        "emptyTitle": "لم يتم العثور على صلاحيات",
+        "emptyDescription": "شغّل بذرة المصادقة المراجعة لاستعادة دليل الصلاحيات المعتمد.",
+        "noData": "لا توجد صلاحيات",
+        "loading": "جارٍ تحميل الصلاحيات..."
+      },
+      "dialogs": {
+        "loadingAccount": "جارٍ تحميل الحساب",
+        "emailVerified": "البريد موثّق",
+        "linkedProfile": "الملف المرتبط",
+        "effectivePermissions": "الصلاحيات الفعلية",
+        "effectivePermissionsDescription": "منح للقراءة فقط موروثة من الدور الثابت.",
+        "deactivateTitle": "تعطيل المستخدم",
+        "reactivateTitle": "إعادة تفعيل المستخدم",
+        "revokeTitle": "إلغاء كل الجلسات",
+        "deactivateDescription": "التعطيل يلغي فوراً صلاحية الوصول والجلسات.",
+        "reactivateDescription": "إعادة التفعيل متاحة فقط إذا ظل ملف كافل المرتبط صالحاً.",
+        "reason": "السبب",
+        "saving": "جارٍ الحفظ...",
+        "revokeDescription": "سيتم تسجيل خروج {name} من كل الأجهزة النشطة."
+      },
+      "messages": {
+        "deactivated": "تم تعطيل المستخدم وتسجيل خروجه.",
+        "deactivateError": "تعذر تعطيل هذا المستخدم.",
+        "reactivated": "تمت إعادة تفعيل المستخدم.",
+        "reactivateError": "تعذرت إعادة تفعيل هذا المستخدم.",
+        "sessionsRevoked": "تم إلغاء كل جلسات المستخدم.",
+        "sessionsError": "تعذر إلغاء جلسات هذا المستخدم.",
+        "userCreated": "تم إنشاء الحساب وإرسال الدعوة.",
+        "userCreateError": "تعذر إنشاء حساب المستخدم.",
+        "permissionCreated": "تم إنشاء الصلاحية المخصصة.",
+        "permissionCreateError": "تعذر إنشاء هذه الصلاحية."
       }
     }
   }

@@ -14,10 +14,6 @@ import {
   manualBudgetAdjustmentFormSchema,
   monthlyBudgetLimitFormSchema,
 } from "../src/features/Budgets/config/budgetSchemas";
-import {
-  inventoryAdjustmentFormSchema,
-  inventoryRestockFormSchema,
-} from "../src/features/Inventory/config/inventorySchemas";
 import { createCategoryFormSchema } from "../src/features/Categories/config/categorySchemas";
 import { createProductFormSchema } from "../src/features/Products/config/productSchemas";
 
@@ -53,11 +49,6 @@ describe("F8 development form fills", () => {
       [
         manualBudgetAdjustmentFormSchema,
         buildFormFill(manualBudgetAdjustmentFormSchema),
-      ],
-      [inventoryRestockFormSchema, buildFormFill(inventoryRestockFormSchema)],
-      [
-        inventoryAdjustmentFormSchema,
-        buildFormFill(inventoryAdjustmentFormSchema),
       ],
       [createCategoryFormSchema, buildFormFill(createCategoryFormSchema)],
       [

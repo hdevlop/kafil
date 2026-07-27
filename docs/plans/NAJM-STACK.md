@@ -55,6 +55,13 @@ Kafil-specific account services may call:
 - `UserService.update()` for allowed account/profile updates
 - Najm user status for activation/deactivation
 
+The admin-only Kafil Access management module is a privacy-safe facade over
+these Najm users, roles, permissions, token invalidation, and refresh-session
+revocation services. It does not duplicate auth tables and does not publish
+runtime role/permission editors. Kafil owns fixed-role policy, linked-profile
+eligibility, bootstrap/self protection, canonical grant drift, and audit
+metadata.
+
 `provisionUser()` supports both branches Kafil needs. Operator accounts keep the
 email invitation behavior when no password is provided. Operator-created family
 and sponsor accounts receive a generated initial password; Kafil returns it once

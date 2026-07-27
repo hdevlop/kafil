@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "najm-kit/theme.css";
+@import "flag-icons/css/flag-icons.min.css";
 
 :root {
   --background: oklch(0.982 0.006 145);
@@ -30,4 +31,16 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+/* User access filters use placeholder text alone while retaining select chevrons. */
+.admin-users-table
+  [data-ntable-desktop-filters]
+  div
+  > span:first-child:has(svg),
+.admin-users-table
+  [data-ntable-mobile-primary-filter]
+  div
+  > span:first-child:has(svg),
+[aria-label="Table filters"] .group > div > span:first-child:has(svg) {
+  display: none;
 }

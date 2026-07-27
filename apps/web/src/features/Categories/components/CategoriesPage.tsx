@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { CircleCheck, CircleOff, Eye, Pencil, Tags, Trash2 } from "lucide-react";
 import { usePermissions } from "najm-auth/client/react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
-import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
+import { createOffsetPagination } from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
@@ -23,16 +22,15 @@ import { useCategoriesTableColumns } from "../hooks/useCategoriesTableColumns";
 import { useCategoriesTableFilters } from "../hooks/useCategoriesTableFilters";
 import type { CategoryRecord } from "../types";
 
+const categoryListPagination = createOffsetPagination(0, 100);
+
 export function CategoriesPage() {
   const dialog = useDialog();
   const { hasRole } = usePermissions();
-  const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
-  const categories = useCategories(pagination);
+  const categories = useCategories(categoryListPagination);
   const columns = useCategoriesTableColumns();
   const filters = useCategoriesTableFilters();
   const rows = categories.data ?? [];
-  const pageIndex = getPageIndex(pagination);
-  const pageCount = hasPossibleNextPage(rows.length, pagination) ? pageIndex + 2 : pageIndex + 1;
 
   function openCreate() {
     void dialog.openDialog({
@@ -82,7 +80,7 @@ export function CategoriesPage() {
     void dialog.openDialog({
       title: `Permanently delete ${category.name}?`,
       description:
-        "Bootstrap administrators can permanently delete pristine categories (no order history, no inventory ledger activity, zero balance).",
+        "Bootstrap administrators can permanently delete pristine categories (no order history).",
       children: <DeleteCategoryDialogContent category={category} />,
       showButtons: false,
       size: "sm",
@@ -100,7 +98,7 @@ export function CategoriesPage() {
     onView: openView,
     onEdit: openEdit,
     renderCard: CategoryCard,
-    renderEmpty: () => <PageEmptyState action={<NButton onClick={openCreate}>Create category</NButton>} title="No catalog category yet" description="Create the first active category for your product catalog." />,
+    renderEmpty: () => <PageEmptyState icon={Tags} action={<NButton onClick={openCreate}>Create category</NButton>} title="No catalog category yet" description="Create the first active category for your product catalog." />,
     renderError: (error) => <PageErrorState error={error} onRetry={() => void categories.refetch()} />,
     menu: {
       row: (category) => {
@@ -138,11 +136,7 @@ export function CategoriesPage() {
       },
     },
     menuButton: true,
-    manualPagination: true,
-    pagination: { pageIndex, pageSize: pagination.limit },
-    pageCount,
-    onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),
-    pageSizeOptions: [10, 25, 50, 100],
+    showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",
     addButtonText: "Create category",

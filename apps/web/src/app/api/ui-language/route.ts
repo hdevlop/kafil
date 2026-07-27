@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { normalizeKafilLanguage } from "@/lib/format";
 
 const languageCookieName = "kafil-ui-language";
-const supportedLanguages = new Set(["en", "fr", "ar"]);
+const supportedLanguages = new Set(["en", "fr", "ar", "es"]);
 
 export async function POST(request: Request) {
   const body: unknown = await request.json().catch(() => null);

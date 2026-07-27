@@ -19,6 +19,15 @@ export function OrderCard({ data }: Readonly<{ data: OrderRecord }>) {
         <StatusBadge status={data.status} />
       </NCardAction>
       <NCardSection>
+        <NCardInfo
+          icon={ReceiptText}
+          label="Source"
+          value={
+            data.placementSource === "operator_assisted"
+              ? "Assisted"
+              : "Self-service"
+          }
+        />
         <NCardInfo icon={ReceiptText} label="Recipient" value={data.guardianLegalNameSnapshot} />
         <NCardInfo icon={MapPin} label="Delivery address" value={data.deliveryAddressSnapshot} />
         <NCardInfo icon={CalendarClock} label="Placed" value={formatKafilDate(data.createdAt)} />

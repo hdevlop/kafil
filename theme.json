@@ -79,7 +79,11 @@
     "sidebar": {
       "showSectionLabels": true,
       "showSectionSeparators": true,
-      "expandedWidth": { "base": 176, "lg": 176, "xl": 196 },
+      "expandedWidth": {
+        "base": 176,
+        "lg": 176,
+        "xl": 196
+      },
       "collapsedWidth": 64
     },
     "table": {

@@ -178,6 +178,8 @@ describe("Kafil database schema", () => {
         "monthlyBudgetLimits",
         "operatorProfiles",
         "orderItems",
+        "orderPurchaseRecords",
+        "orderPurchaseReversals",
         "orderStatusEvents",
         "orders",
         "outboxEvents",

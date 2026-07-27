@@ -28,16 +28,14 @@ describe("Phase 7 dashboard report boundaries", () => {
         contributions: { pendingCount: "1", pendingMinor: "1500", validatedMinor: "9000", refundedMinor: "500" },
         budgets: { availableMinor: "6000", reservedMinor: "1000", spentMinor: "2500" },
         orders: { openCount: "2" },
-        inventory: { count: "1" },
       }),
       operatorContributionTrend: async () => [{ month: "2026-07", validatedMinor: "9000", refundedMinor: "500" }],
       operatorOrderStatuses: async () => [{ status: "pending", count: "2" }],
-      operatorLowStock: async () => [{ productId: "product-1", name: "Shoes", sku: "SHOE-1", availableQuantity: "3" }],
     } as unknown as DashboardRepository);
 
     const result = await dashboard.getOperator();
 
-    expect(result.counts).toMatchObject({ families: 3, activeFamilies: 2, lowStockProducts: 1 });
+    expect(result.counts).toMatchObject({ families: 3, activeFamilies: 2, openOrders: 2 });
     expect(result.money.validatedContributionMinor).toBe(9000);
     expect(result.contributionTrend).toHaveLength(12);
     expect(result.contributionTrend.find((row) => row.month === "2026-07")).toEqual({

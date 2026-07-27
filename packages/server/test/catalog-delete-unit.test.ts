@@ -7,7 +7,6 @@ import {
 } from "../src/modules/catalog";
 import {
   CategoryRepository,
-  InventoryRepository,
   ProductRepository,
 } from "../src/modules/catalog/catalogRepository";
 import { CatalogValidator } from "../src/modules/catalog/catalogValidator";
@@ -45,6 +44,8 @@ function productRecord(
   return {
     id: productId,
     categoryId,
+    categoryName: "Cleanup category",
+    categorySlug: "cleanup-category",
     sku: "CLEAN-1",
     name: "Cleanup product",
     description: null,
@@ -52,8 +53,6 @@ function productRecord(
     currency: "MAD",
     imageUrl: null,
     status: "active",
-    categoryName: "Cleanup category",
-    categorySlug: "cleanup-category",
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -68,7 +67,6 @@ type Fake = Record<string, (...args: any[]) => any>;
 interface FakeDeps {
   categories: Fake;
   products: Fake;
-  inventory: Fake;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   audits: { record: (...args: any[]) => Promise<unknown> };
   validator: Fake;
@@ -78,7 +76,6 @@ function fakeService(deps: FakeDeps): CatalogService {
   return new CatalogService(
     deps.categories as unknown as CategoryRepository,
     deps.products as unknown as ProductRepository,
-    deps.inventory as unknown as InventoryRepository,
     deps.audits as unknown as AuditService,
     deps.validator as unknown as CatalogValidator,
   );
@@ -104,9 +101,8 @@ describe("catalog admin-only pristine delete (unit)", () => {
       originalTransaction;
   });
 
-  it("hard-deletes a pristine product, cascades cart items + balance, and audits", async () => {
+  it("hard-deletes a pristine product, cascades cart items, and audits", async () => {
     const deletedCartItems: string[][] = [];
-    const deletedBalances: string[][] = [];
     const deletedProducts: string[] = [];
     const auditEvents: Record<string, unknown>[] = [];
 
@@ -119,17 +115,9 @@ describe("catalog admin-only pristine delete (unit)", () => {
           return ids.length;
         },
         countOrderItemsByProductIds: async () => 0,
-        countInventoryLedgerByProductIds: async () => 0,
         hardDelete: async (id: string) => {
           deletedProducts.push(id);
           return productRecord();
-        },
-      },
-      inventory: {
-        lockBalancesByProductIds: async () => [],
-        deleteBalancesByProductIds: async (ids: string[]) => {
-          deletedBalances.push([...ids]);
-          return ids.length;
         },
       },
       audits: {
@@ -147,7 +135,6 @@ describe("catalog admin-only pristine delete (unit)", () => {
     const result = await service.deleteProduct(productId, OTHER_USER);
 
     expect(deletedCartItems).toEqual([[productId]]);
-    expect(deletedBalances).toEqual([[productId]]);
     expect(deletedProducts).toEqual([productId]);
     expect(auditEvents).toEqual([
       expect.objectContaining({
@@ -178,7 +165,6 @@ describe("catalog admin-only pristine delete (unit)", () => {
           return productRecord();
         },
       },
-      inventory: {},
       audits: {
         record: async () => {
           auditCalls += 1;
@@ -189,7 +175,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
         ensureProductExists: async () => productRecord(),
         ensureProductPristine: () => {
           HttpError.conflict(
-            "Catalog items have order or inventory history; deactivate instead (Cleanup product:order_history)",
+            "Catalog items have order history; deactivate instead (Cleanup product:order_history)",
           );
         },
       },
@@ -200,63 +186,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
     expect(auditCalls).toBe(0);
   });
 
-  it("refuses to delete a product with any inventory ledger activity", async () => {
-    let hardDeleteCalls = 0;
-
-    const service = fakeService({
-      categories: {},
-      products: {
-        findById: async () => productRecord(),
-        hardDelete: async () => {
-          hardDeleteCalls += 1;
-          return productRecord();
-        },
-      },
-      inventory: {},
-      audits: { record: async () => ({}) },
-      validator: {
-        ensureProductExists: async () => productRecord(),
-        ensureProductPristine: () => {
-          HttpError.conflict(
-            "Catalog items have order or inventory history; deactivate instead (Cleanup product:inventory_ledger)",
-          );
-        },
-      },
-    });
-
-    await expect(service.deleteProduct(productId, OTHER_USER)).rejects.toBeDefined();
-    expect(hardDeleteCalls).toBe(0);
-  });
-
-  it("refuses to delete a product with non-zero balance", async () => {
-    let hardDeleteCalls = 0;
-
-    const service = fakeService({
-      categories: {},
-      products: {
-        findById: async () => productRecord(),
-        hardDelete: async () => {
-          hardDeleteCalls += 1;
-          return productRecord();
-        },
-      },
-      inventory: {},
-      audits: { record: async () => ({}) },
-      validator: {
-        ensureProductExists: async () => productRecord(),
-        ensureProductPristine: () => {
-          HttpError.conflict(
-            "Catalog items have order or inventory history; deactivate instead (Cleanup product:non_zero_balance)",
-          );
-        },
-      },
-    });
-
-    await expect(service.deleteProduct(productId, OTHER_USER)).rejects.toBeDefined();
-    expect(hardDeleteCalls).toBe(0);
-  });
-
-  it("refuses a category whose product is non-pristine and surfaces the productId list", async () => {
+  it("refuses a category whose product has order history and surfaces the productId list", async () => {
     let hardDeleteCalls = 0;
     let auditCalls = 0;
     const auditEvents: Record<string, unknown>[] = [];
@@ -270,7 +200,6 @@ describe("catalog admin-only pristine delete (unit)", () => {
         },
       },
       products: {},
-      inventory: {},
       audits: {
         record: async (input: unknown) => {
           auditCalls += 1;
@@ -282,7 +211,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
         ensureCategoryExists: async () => categoryRecord(),
         ensureCategoryPristine: () => {
           HttpError.conflict(
-            "Catalog items have order or inventory history; deactivate instead",
+            "Catalog items have order history; deactivate instead",
           );
         },
       },
@@ -309,9 +238,6 @@ describe("catalog admin-only pristine delete (unit)", () => {
         lockByCategoryIdForDelete: async () => [],
         deleteCartItemsByProductIds: async () => 0,
         hardDeleteByIds: async () => 0,
-      },
-      inventory: {
-        deleteBalancesByProductIds: async () => 0,
       },
       audits: {
         record: async (input: unknown) => {
@@ -340,34 +266,26 @@ describe("catalog admin-only pristine delete (unit)", () => {
     expect(result.deletedProductIds).toEqual([]);
   });
 
-  it("does not delete inventory ledger entries in any flow", async () => {
-    // The repository exposes a count helper for the validator and a
-    // lockBalancesByProductIds helper for the transaction, but no
-    // deleteByProductIds. This test asserts that surface is intentional.
-    const repoProto = ProductRepository.prototype as unknown as Record<
+  it("exposes no inventory ledger mutation surface on the catalog service", () => {
+    const serviceProto = CatalogService.prototype as unknown as Record<
       string,
       unknown
     >;
-    expect(typeof repoProto.countInventoryLedgerByProductIds).toBe(
-      "function",
-    );
-    expect(repoProto.deleteLedgerByProductIds).toBeUndefined();
+    expect(serviceProto.restock).toBeUndefined();
+    expect(serviceProto.adjustInventory).toBeUndefined();
+    expect(serviceProto.reserve).toBeUndefined();
+    expect(serviceProto.release).toBeUndefined();
+    expect(serviceProto.allocate).toBeUndefined();
+    expect(serviceProto.returnAllocated).toBeUndefined();
   });
 
   it("propagates audit failure as a transaction rollback (audit not recorded)", async () => {
-    // The @Transaction decorator wraps the service method in db.transaction.
-    // We can verify the audit-records-on-failure semantics with a thrown
-    // audit: the surrounding Promise rejects, and any side effect inside the
-    // transaction is rolled back by @Transaction's catch path.
     const service = fakeService({
       categories: {},
       products: {
         findById: async () => productRecord(),
         deleteCartItemsByProductIds: async () => 0,
         hardDelete: async () => productRecord(),
-      },
-      inventory: {
-        deleteBalancesByProductIds: async () => 0,
       },
       audits: {
         record: async () => {

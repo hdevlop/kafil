@@ -2,6 +2,20 @@
 
 Status: **COMPLETE**
 
+Post-phase extension (2026-07-27): the operator Orders page now includes
+assisted ordering, protected receipt purchase/replacement, and delivery
+dialogs. Family and sponsor order pages show privacy-safe purchase/delivery
+milestones. Admins receive a localized Access management sidebar section with
+Users, Roles, and Permissions; its nested server layout requires `admin`, and
+normal operators do not receive those links. Users and Permissions expose
+functional NTable add actions: user creation delegates to complete domain
+onboarding, while custom permission creation preserves canonical seed grants.
+
+Inventory references in the historical Phase 6 evidence below describe the
+2026-07-16 warehouse UI and are superseded by the 2026-07-27 procurement
+extension: there is no active Inventory route, navigation entry, API, or MCP
+tool.
+
 Current implementation slice: **None — Phase 6 closed on 2026-07-17**
 
 ## Goal

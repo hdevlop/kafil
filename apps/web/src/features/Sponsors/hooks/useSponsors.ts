@@ -5,6 +5,7 @@ import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
+  bulkDeleteSponsors,
   createSponsor,
   deactivateSponsor,
   deleteSponsor,
@@ -47,6 +48,13 @@ export function useSponsorCommands() {
     errorMessage: t("operator.sponsors.deleteError"),
   });
 
+  const bulkRemove = useEntityCommand({
+    mutationFn: bulkDeleteSponsors,
+    invalidate,
+    successMessage: t("operator.sponsors.bulkDeleteSuccess"),
+    errorMessage: t("operator.sponsors.bulkDeleteError"),
+  });
+
   const deactivate = useEntityCommand({
     mutationFn: deactivateSponsor,
     invalidate,
@@ -61,5 +69,5 @@ export function useSponsorCommands() {
     errorMessage: t("operator.sponsors.reactivateError"),
   });
 
-  return { create, update, remove, deactivate, reactivate };
+  return { create, update, remove, bulkRemove, deactivate, reactivate };
 }

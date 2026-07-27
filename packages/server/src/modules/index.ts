@@ -1,4 +1,5 @@
 export * from "./access";
+export * from "./adminAccess";
 export * from "./audit";
 export * from "./budgets";
 export * from "./catalog";

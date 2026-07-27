@@ -10,7 +10,7 @@ export interface ChildRecord {
   shoeSize: string | null;
   notes: string | null;
   status: "active" | "inactive" | string;
-  familyStatus: "active" | "inactive" | string;
+  familyStatus?: string | null;
   guardianLegalName?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -36,9 +36,12 @@ export interface ChildFieldsInput {
 
 export interface CreateChildInput extends ChildFieldsInput {
   familyProfileId: string;
+  image?: string | null;
 }
 
-export type UpdateChildInput = ChildFieldsInput;
+export interface UpdateChildInput extends ChildFieldsInput {
+  image?: string | null;
+}
 
 export interface ChildStatusInput {
   id: string;

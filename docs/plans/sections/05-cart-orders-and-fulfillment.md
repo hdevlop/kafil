@@ -2,6 +2,22 @@
 
 Status: complete (2026-07-16)
 
+Workflow update completed 2026-07-27:
+
+- self-service and attributed assisted submissions share server-owned product
+  snapshots, idempotency, funding eligibility, and budget reservation;
+- approval keeps the estimate reserved;
+- a protected receipt records an immutable actual purchase and settles
+  exact/lower/higher variance;
+- corrections reverse and replace purchase records;
+- `purchased -> out_for_delivery -> delivered` is the active terminal path;
+- family/sponsor projections expose safe milestones but no private evidence,
+  assistance note, address, or delivery note;
+- the legacy `in_preparation` delivery command remains only for old rows;
+- no inventory read or write occurs.
+
+Migration: `0025_ambitious_abomination`.
+
 ## Goal
 
 Let a family build a cart, submit a funded order, and track the operator-managed
@@ -11,7 +27,7 @@ fulfillment lifecycle.
 
 - family ownership
 - budget account and ledger
-- catalog and inventory
+- procurement catalog
 - audit events
 
 ## Data Model
@@ -99,19 +115,17 @@ Validation:
 ## Submit Order Transaction
 
 1. Resolve the authenticated family profile.
-2. Lock the active cart and load items.
-3. Load and validate active products.
+2. For self-service, lock the active cart and load items; assisted placement
+   receives its own validated item request and never mutates that cart.
+3. Load and validate active procurement products.
 4. Recalculate all prices on the server.
-5. Lock all required inventory rows in stable product-ID order.
-6. Lock the family budget account.
-7. Check stock, available budget, and monthly remaining limit.
-8. Create order and item snapshots.
-9. Insert budget `order_reserve`.
-10. Insert inventory `order_reserve` entries.
-11. Update budget/inventory balances.
-12. Create initial status event and audit/outbox events.
-13. Clear cart.
-14. Commit.
+5. Lock the family budget account.
+6. Check available budget and the monthly remaining limit.
+7. Create attributed order and immutable item/address snapshots.
+8. Insert the budget `order_reserve` entry and update the budget account.
+9. Create the initial status event and privacy-safe audit/outbox events.
+10. Clear the cart only for self-service placement.
+11. Commit.
 
 Use a client-provided idempotency key so repeated submission does not create
 two orders.
@@ -122,36 +136,38 @@ two orders.
 
 - Operator only.
 - Require `pending`.
-- Move budget reserved to spent.
-- Move inventory reserved to allocated/on-hand consumed.
+- Keep the estimated budget amount reserved.
 - Record operator and status event.
 
 ### Reject
 
 - Operator only with reason.
 - Require `pending`.
-- Release reserved budget and inventory.
+- Release reserved budget.
 - Set terminal `rejected`.
 
-### Start preparation
+### Record purchase
 
 - Operator only.
 - Require `approved`.
-- No new financial effect.
+- Require a protected receipt and immutable purchase record.
+- Capture exact actual cost and release or reserve the price variance.
+- Move to `purchased`.
 
-### Deliver
+### Start and confirm delivery
 
 - Operator only.
-- Require `in_preparation`.
-- Record delivery time and terminal `delivered`.
+- Require `purchased` to start and `out_for_delivery` to confirm.
+- Record the confirmation method and optional protected proof.
+- Delivery has no financial effect; `delivered` is terminal.
 
 ### Cancel
 
 - Family may cancel only its own `pending` order.
-- Operator may cancel `pending`, `approved`, or `in_preparation` with reason.
+- Operator may cancel any non-terminal pre-delivery state with a reason.
 - Pending cancellation releases reservations.
-- Post-approval cancellation creates budget refund and inventory return
-  reversals when goods are recoverable.
+- Post-purchase cancellation requires explicit recoverable-goods confirmation
+  and refunds the captured purchase amount.
 - Cancellation service is idempotent.
 
 ## Read Models
@@ -185,16 +201,16 @@ Operator:
 - [x] Add transaction coordinator for submit
 - [x] Add explicit transition command services
 - [x] Add budget ledger integration
-- [x] Add inventory ledger integration
+- [x] Retire inventory ledger integration from active order paths
 - [x] Add status history and audit/outbox events
 - [x] Add family and sponsor projections
 - [x] Add idempotency tests
 - [x] Add stale-price tests
-- [x] Add low-budget/low-stock tests
+- [x] Add low-budget and no-stock-dependency tests
 - [x] Add concurrent order tests
 - [x] Add every allowed/forbidden transition test
 
-## Completion Evidence
+## Historical Completion Evidence (2026-07-16, inventory behavior superseded)
 
 2026-07-16:
 
@@ -230,16 +246,18 @@ Operator:
 
 ## Exit Gate
 
-- A family can place an order only within current budget and stock.
-- Concurrent orders cannot double-spend budget or inventory.
+- A family can place an order only within current budget and funding rules.
+- Concurrent orders cannot double-spend budget.
 - Approval/rejection/cancellation produce exactly the expected ledger effects.
+- Purchase variance and delivery transitions produce the expected immutable
+  evidence and financial effects.
 - Historical order data does not change when products or addresses change.
 - Family and sponsor order access is correctly scoped and privacy-safe.
 
 ## Configurable Funding Gate Extension — 2026-07-18
 
 Order submission now requires the family's separate funding status to be
-`active` before stock or budget effects begin. The server remains authoritative;
+`active` before budget effects begin. The server remains authoritative;
 the family cart also displays configured progress and disables submission while
-funding is pending. Available budget, monthly limit, and stock checks still run
-after this eligibility gate.
+funding is pending. Available budget and monthly-limit checks still run after
+this eligibility gate.

@@ -1,4 +1,5 @@
 export * from "./authConfig";
+export * from "./authDefinitions";
 export * from "./databaseConfig";
 export * from "./envConfig";
 export * from "./emailConfig";

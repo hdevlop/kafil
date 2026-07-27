@@ -1,4 +1,9 @@
-import { AuthService, UserRepository, UserService } from "najm-auth";
+import {
+  AuthService,
+  TokenService,
+  UserRepository,
+  UserService,
+} from "najm-auth";
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
@@ -40,6 +45,7 @@ export class FamilyService {
     private readonly settings: SettingRepository,
     private readonly userRecords?: UserRepository,
     private readonly access?: AccessRepository,
+    private readonly tokens?: TokenService,
   ) {}
 
   async list(query: FamilyListQuery) {
@@ -272,6 +278,19 @@ export class FamilyService {
 
   @Transaction({ retries: 2 })
   async delete(id: string, actorUserId: string) {
+    return this.deleteOne(id, actorUserId);
+  }
+
+  @Transaction({ retries: 2 })
+  async deleteMany(ids: string[], actorUserId: string) {
+    const deleted = [];
+    for (const id of [...ids].sort()) {
+      deleted.push(await this.deleteOne(id, actorUserId));
+    }
+    return deleted;
+  }
+
+  private async deleteOne(id: string, actorUserId: string) {
     const family = await this.validator.ensureExists(id);
     await this.families.deleteWithLinkedRecords(id);
     await this.users.delete(family.userId);
@@ -312,6 +331,10 @@ export class FamilyService {
     const family = await this.validator.ensureExists(id);
     const { reason } = accountStatusDto.parse(data);
     await this.users.update(family.userId, { status });
+    await this.tokens?.invalidateUserAccessTokens(family.userId);
+    if (status === "inactive") {
+      await this.tokens?.revokeAllForUser(family.userId);
+    }
     await this.audits.record({
       action: `family.${status === "active" ? "reactivated" : "deactivated"}`,
       actorUserId,

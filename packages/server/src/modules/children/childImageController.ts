@@ -1,21 +1,26 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 
 import {
+  ArrayBufferBody,
+  ContentType,
   Controller,
+  Delete,
   Get,
   HttpError,
   Params,
+  Post,
   ResMsg,
   Service,
   User,
 } from "najm-core";
 
-import { isChildImageViewer, ROLES } from "../../config/authConfig";
+import { isChildImageViewer, isOperator, ROLES } from "../../config/authConfig";
 import { envConfig } from "../../config/envConfig";
 import { FamilyRepository } from "../families/familyRepository";
 import { ChildRepository } from "./childRepository";
 
+const MAX_CHILD_IMAGE_SIZE = 5_000_000;
 const CHILD_IMAGE_TYPES = {
   ".avif": "image/avif",
   ".gif": "image/gif",
@@ -85,6 +90,35 @@ export class ChildImageAccess {
 export class ChildImageController {
   constructor(private readonly access: ChildImageAccess) {}
 
+  @Post("/files/:fileName")
+  @isOperator()
+  @ResMsg("children.success.updated")
+  async upload(
+    @Params("fileName") rawFileName: string,
+    @ArrayBufferBody() body: ArrayBuffer,
+    @ContentType() contentType: string | undefined,
+  ) {
+    const { directory, fileName } = resolveChildImagePath(rawFileName);
+    const expectedType = CHILD_IMAGE_TYPES[
+      extname(fileName).toLowerCase() as keyof typeof CHILD_IMAGE_TYPES
+    ];
+    if (!contentType || contentType.toLowerCase() !== expectedType) {
+      HttpError.create(415, "Unsupported child image type");
+    }
+    if (body.byteLength === 0 || body.byteLength > MAX_CHILD_IMAGE_SIZE) {
+      HttpError.create(413, "Child image must be between 1 byte and 5 MB");
+    }
+
+    await mkdir(directory, { recursive: true });
+    await writeFile(join(directory, fileName), new Uint8Array(body), {
+      flag: "wx",
+    });
+
+    return {
+      path: `${CHILD_IMAGE_SERVE_PREFIX}${encodeURIComponent(fileName)}`,
+    };
+  }
+
   @Get("/files/serve/:fileName")
   @isChildImageViewer()
   @ResMsg("children.success.retrieved")
@@ -114,5 +148,20 @@ export class ChildImageController {
       }
       throw error;
     }
+  }
+
+  @Delete("/files/:fileName")
+  @isOperator()
+  @ResMsg("children.success.deleted")
+  async remove(@Params("fileName") rawFileName: string) {
+    const { directory, fileName } = resolveChildImagePath(rawFileName);
+
+    try {
+      await unlink(join(directory, fileName));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+
+    return { deleted: true };
   }
 }

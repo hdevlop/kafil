@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 import { FormInput, NButton, NForm, useDialog } from "najm-kit";
 
@@ -149,11 +150,21 @@ export function BulkDeleteContributionsDialogContent({
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { bulkRemove } = useContributionCommands();
+  const submittingRef = useRef(false);
 
   async function handleDelete() {
-    await bulkRemove.mutateAsync(contributionIds);
-    onDeleted();
-    await pop();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
+    try {
+      await bulkRemove.mutateAsync(contributionIds);
+      onDeleted();
+      await pop();
+    } catch {
+      // useEntityCommand already displays the API error. Keep the dialog open
+      // for a safe retry without surfacing an unhandled runtime rejection.
+      submittingRef.current = false;
+    }
   }
 
   return (

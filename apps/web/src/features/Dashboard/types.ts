@@ -14,7 +14,6 @@ export interface OperatorDashboardData {
     activeAssignments: number;
     pendingContributions: number;
     openOrders: number;
-    lowStockProducts: number;
   };
   money: {
     pendingContributionMinor: number;
@@ -26,7 +25,6 @@ export interface OperatorDashboardData {
   };
   contributionTrend: Array<{ month: string; validatedMinor: number; refundedMinor: number }>;
   orderStatuses: DashboardStatusCount[];
-  lowStock: Array<{ productId: string; name: string; sku: string; availableQuantity: number }>;
 }
 
 export interface FamilyDashboardData {

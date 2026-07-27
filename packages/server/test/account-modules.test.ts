@@ -25,6 +25,7 @@ import {
   updateOperatorDto,
 } from "../src/modules/operators";
 import {
+  bulkDeleteSponsorsDto,
   createOwnSponsorProfileDto,
   createSponsorDto,
   sponsorIdParams,
@@ -55,6 +56,18 @@ const validIdentity = {
 };
 
 describe("account module DTOs", () => {
+  it("requires a unique non-empty UUID set for sponsor bulk deletion", () => {
+    const secondId = "00000000-0000-4000-8000-000000000003";
+
+    expect(bulkDeleteSponsorsDto.parse({ ids: [sponsorId, secondId] })).toEqual({
+      ids: [sponsorId, secondId],
+    });
+    expect(
+      bulkDeleteSponsorsDto.safeParse({ ids: [sponsorId, sponsorId] }).success,
+    ).toBe(false);
+    expect(bulkDeleteSponsorsDto.safeParse({ ids: [] }).success).toBe(false);
+  });
+
   it("keeps profile fields and strips caller-controlled auth fields", () => {
     const operator = createOperatorDto.parse({
       ...validAccount,
@@ -176,6 +189,7 @@ describe("account module controller validation", () => {
       "get",
       "getOverview",
       "create",
+      "bulkDelete",
       "createOwn",
       "update",
       "updateOwn",

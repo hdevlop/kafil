@@ -19,6 +19,18 @@ export class OrderValidator {
     return family;
   }
 
+  async ensureActiveFamilyById(familyProfileId: string) {
+    const family = await this.families.findById(familyProfileId);
+    if (
+      !family ||
+      family.role !== "family" ||
+      family.status !== "active"
+    ) {
+      HttpError.notFound("Active family order target not found");
+    }
+    return family;
+  }
+
   async ensureOrderExists(id: string) {
     const order = await this.orders.findById(id);
     if (!order) {
@@ -57,6 +69,23 @@ export class OrderValidator {
   ensureSameFamily(expected: string, actual: string) {
     if (expected !== actual) {
       HttpError.conflict("Idempotency key was already used for another household");
+    }
+  }
+
+  ensureIdempotencyContext(
+    order: Order,
+    expected: {
+      familyProfileId: string;
+      placementSource: Order["placementSource"];
+      placedByUserId: string;
+    },
+  ) {
+    if (
+      order.familyProfileId !== expected.familyProfileId ||
+      order.placementSource !== expected.placementSource ||
+      order.placedByUserId !== expected.placedByUserId
+    ) {
+      HttpError.conflict("Idempotency key was already used for another order");
     }
   }
 }

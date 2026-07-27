@@ -2,6 +2,20 @@
 
 Status: active
 
+## Procurement, Evidence, and Access Extension - Complete 2026-07-27
+
+- [x] Removed low-stock and inventory reconciliation from active reporting.
+- [x] Added order actual-cost, receipt marker, purchase, and delivery views.
+- [x] Added protected evidence orphan listing/cleanup MCP operations.
+- [x] Added admin-only Users, fixed Roles, canonical grant drift, complete
+      domain-user onboarding, and audited custom-permission creation.
+- [x] Added account deactivate/reactivate/session-revoke audit behavior.
+- [x] Added deterministic demo assisted purchase and photo-delivery evidence.
+- [x] Updated database/storage backup guidance for order evidence.
+- [x] Passed lint, typecheck, unit, build, schema-drift, migration, and
+      PostgreSQL concurrency gates; production staging/browser smoke remains a
+      separate Phase 7 release gate.
+
 ## Goal
 
 Close the reporting, notification, observability, privacy, recovery, and release
@@ -21,7 +35,7 @@ Completed on 2026-07-17:
       and sponsor views without changing the database schema.
 - [x] Added operator KPI cards for people, contributions, budget availability,
       and open orders, plus a 12-month contribution chart, budget breakdown,
-      order pipeline, and low-stock attention list.
+      and order pipeline.
 - [x] Added family KPI cards, a 12-month order-value chart, household budget
       breakdown, order pipeline, recent orders, and the existing household card.
 - [x] Added sponsor KPI cards, own contribution history/trend, privacy-safe
@@ -141,6 +155,73 @@ live production smoke returned `200` for the manifest, service worker, and app
 icon with the expected manifest and no-cache service-worker content types and
 headers.
 
+## Dynamic Branding Assets
+
+Completed on 2026-07-26:
+
+- [x] Extended `platform_settings` with `sidebar_logo_expanded_path`,
+      `sidebar_logo_collapsed_path`, `auth_logo_path`, `auth_hero_image_path`,
+      and `branding_revision` (positive-checked) and generated migration
+      `0024_bored_ozymandias.sql` (no deployed migration was edited).
+- [x] Added a `branding` feature in the settings module with public DTOs, an
+      `@Transaction({ retries: 2 })` revision-locked commit, slot/path
+      validators, post-commit cleanup of replaced files, and best-effort
+      rollback cleanup of new candidates when the commit fails.
+- [x] Added admin-only upload, public serve, and admin-only delete
+      endpoints with PNG/JPEG/WebP/AVIF magic-number checks, slot-aware byte
+      limits (2 MB for logos, 5 MB for the hero), and immutable
+      `public, max-age=31536000` cache headers on the serve endpoint.
+- [x] Recorded privacy-safe audit metadata
+      (`branding.assetsUpdated` and `branding.assetsReset`) with changed slot
+      names, the previous and new revisions, and no filesystem paths or image
+      bytes.
+- [x] Added a `KafilBrandingProvider` plus a server-side loader that falls
+      back to the bundled factory assets on any non-OK, malformed, or
+      unavailable server response.
+- [x] Mounted the new provider between `KafilAppearanceProvider` and
+      `KafilDesignProvider`, loaded the initial server-side branding in the
+      root layout, and rendered the new `Brand assets` card in the global
+      Settings sheet only for admin users; operators keep the existing
+      App settings form.
+- [x] Replaced the hard-coded `logoExpanded.png`, `HeroA.png`, and first-login
+      `logoExpanded.png` references in `DashboardShell`, the auth layout, and
+      the first-login layout with a new `BrandingImage` component that
+      automatically falls back to the bundled factory asset on any image
+      error without flashing custom branding.
+- [x] Added English, French, Arabic, and Spanish translations for the new
+      settings card and saved/commit/discard toasts.
+
+Validation: `bun run check` passed with web 179 tests (4 new branding tests,
+including consumer wiring, factory fallback, and provider integration),
+server 257 tests with 20 DB-integration skips (plus a new opt-in
+`branding-database-concurrency.test.ts` that asserts exactly one revision
+winner for a shared expected revision), seed 60 tests, and a successful
+production build. `bun run db:generate` reported no schema drift. The
+branding server loader's factory fallback is exercised in the build when
+the database is unreachable.
+
+Follow-up review on 2026-07-26 hardened the editor model and UI:
+
+- Added an admin-only `GET /branding/config` projection that returns both the
+  committed `customPath` and the resolved `path` per slot so the draft can
+  represent a slot as "inherit from expanded" without resolving it to a
+  factory file URL.
+- Fixed a critical bug where the save-failure cleanup deleted any submitted
+  managed upload, including paths that were still committed. The new cleanup
+  keeps every path that matches the previous committed value and only removes
+  the new candidates that the commit failed to land.
+- Added a `DELETE /branding/assets` admin endpoint and a `cancelDraft` path
+  on the provider that always delete orphan candidates from managed storage
+  on a discarded draft, not just on a successful close.
+- The brand assets card now renders one compact row per slot with a
+  `Default` / `Inherited` / `Custom` / `Custom (new)` status badge, an
+  explicit `Use default` or `Use expanded` fallback action, and a per-slot
+  revert action. The accepted formats, size limits, and per-slot ratio are
+  declared once. The card is hidden for non-admins; the redundant `Remove`
+  and nested `Discard brand draft` controls were removed in favor of the
+  sheet-level dirty-close confirmation. The sheet's `Save` button is now
+  disabled while any branding upload is in flight.
+
 ## Reports
 
 Operator reports:
@@ -151,7 +232,8 @@ Operator reports:
 - credited, reserved, spent, refunded, and available budget totals
 - monthly budget activity by family
 - order counts and value by status
-- inventory low-stock and movement report
+- estimated-versus-actual purchase and delivery report
+- protected-evidence orphan report
 - reconciliation exceptions
 
 Sponsor reports:
@@ -282,7 +364,7 @@ Required final suites:
 - row ownership with multiple families/sponsors
 - contribution idempotency and concurrency
 - budget reconciliation
-- inventory reconciliation
+- purchase/evidence reconciliation
 - full order state machine
 - privacy snapshot tests
 - browser end-to-end workflows
@@ -331,5 +413,5 @@ Then run role-specific browser tests and smoke:
 ## Exit Gate
 
 The MVP may ship only when all release checklist items are complete, staging
-supports the three end-to-end role stories, financial/inventory reconciliation
-is clean, and restore/rollback procedures have been proven.
+supports the three end-to-end role stories, financial and purchase/evidence
+reconciliation are clean, and restore/rollback procedures have been proven.

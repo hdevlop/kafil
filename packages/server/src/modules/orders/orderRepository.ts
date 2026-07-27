@@ -1,4 +1,13 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  lte,
+  sql,
+} from "drizzle-orm";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 
@@ -9,9 +18,13 @@ import { supportAssignments } from "../supportAssignments/supportAssignmentSchem
 import {
   cartItems,
   carts,
+  type NewOrderPurchaseRecord,
+  type NewOrderPurchaseReversal,
   type NewOrder,
   type NewOrderItem,
   orderItems,
+  orderPurchaseRecords,
+  orderPurchaseReversals,
   type OrderStatus,
   orderStatusEvents,
   orders,
@@ -181,7 +194,9 @@ export class OrderRepository {
         placedAt: orders.createdAt,
         approvedAt: orders.approvedAt,
         preparationStartedAt: orders.preparationStartedAt,
+        deliveryStartedAt: orders.deliveryStartedAt,
         deliveredAt: orders.deliveredAt,
+        deliveryProofRecorded: sql<boolean>`${orders.deliveryProofStoragePath} IS NOT NULL`,
       })
       .from(orders)
       .innerJoin(
@@ -284,7 +299,16 @@ export class OrderRepository {
         | "cancelledAt"
         | "cancellationReason"
         | "preparationStartedAt"
+        | "deliveryStartedAt"
+        | "deliveryStartedByUserId"
         | "deliveredAt"
+        | "deliveredByUserId"
+        | "deliveryConfirmationMethod"
+        | "deliveryNote"
+        | "deliveryProofStoragePath"
+        | "deliveryProofMediaType"
+        | "deliveryProofByteSize"
+        | "deliveryConfirmationIdempotencyKey"
       >
     >,
   ) {
@@ -294,6 +318,104 @@ export class OrderRepository {
       .where(eq(orders.id, id))
       .returning();
     return order;
+  }
+}
+
+@Repository("default")
+export class OrderPurchaseRepository {
+  @DB() private db!: KafilDatabase;
+
+  async findByIdempotencyKey(idempotencyKey: string) {
+    const [purchase] = await this.db
+      .select()
+      .from(orderPurchaseRecords)
+      .where(eq(orderPurchaseRecords.idempotencyKey, idempotencyKey))
+      .limit(1);
+    return purchase;
+  }
+
+  async findActiveByOrderId(orderId: string) {
+    const [purchase] = await this.db
+      .select({ purchase: orderPurchaseRecords })
+      .from(orderPurchaseRecords)
+      .leftJoin(
+        orderPurchaseReversals,
+        eq(orderPurchaseReversals.purchaseId, orderPurchaseRecords.id),
+      )
+      .where(
+        and(
+          eq(orderPurchaseRecords.orderId, orderId),
+          isNull(orderPurchaseReversals.id),
+        ),
+      )
+      .orderBy(desc(orderPurchaseRecords.createdAt))
+      .limit(1);
+    return purchase?.purchase;
+  }
+
+  listByOrderId(orderId: string) {
+    return this.db
+      .select({
+        purchase: orderPurchaseRecords,
+        reversal: orderPurchaseReversals,
+      })
+      .from(orderPurchaseRecords)
+      .leftJoin(
+        orderPurchaseReversals,
+        eq(orderPurchaseReversals.purchaseId, orderPurchaseRecords.id),
+      )
+      .where(eq(orderPurchaseRecords.orderId, orderId))
+      .orderBy(desc(orderPurchaseRecords.createdAt));
+  }
+
+  async create(data: NewOrderPurchaseRecord) {
+    const [purchase] = await this.db
+      .insert(orderPurchaseRecords)
+      .values(data)
+      .returning();
+    return purchase;
+  }
+
+  async reverse(data: NewOrderPurchaseReversal) {
+    const [reversal] = await this.db
+      .insert(orderPurchaseReversals)
+      .values(data)
+      .returning();
+    return reversal;
+  }
+
+  async isReceiptReferenced(path: string) {
+    const [purchase] = await this.db
+      .select({ id: orderPurchaseRecords.id })
+      .from(orderPurchaseRecords)
+      .where(eq(orderPurchaseRecords.receiptStoragePath, path))
+      .limit(1);
+    return Boolean(purchase);
+  }
+
+  async isDeliveryProofReferenced(path: string) {
+    const [order] = await this.db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.deliveryProofStoragePath, path))
+      .limit(1);
+    return Boolean(order);
+  }
+
+  async listReferencedEvidencePaths() {
+    const [receipts, proofs] = await Promise.all([
+      this.db
+        .select({ path: orderPurchaseRecords.receiptStoragePath })
+        .from(orderPurchaseRecords),
+      this.db
+        .select({ path: orders.deliveryProofStoragePath })
+        .from(orders)
+        .where(isNotNull(orders.deliveryProofStoragePath)),
+    ]);
+    return [
+      ...receipts.map(({ path }) => path),
+      ...proofs.flatMap(({ path }) => (path ? [path] : [])),
+    ];
   }
 }
 

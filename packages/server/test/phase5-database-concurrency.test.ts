@@ -19,34 +19,13 @@ const fixture = {
 
 let seededUserId = "";
 
-async function reserveOrder(
-  productId: string,
+async function reserveBudget(
   amountMinor: number,
 ): Promise<boolean> {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
-
-    const inventory = await client.query<{
-      on_hand_quantity: number;
-      reserved_quantity: number;
-    }>(
-      `SELECT on_hand_quantity, reserved_quantity
-       FROM inventory_balances
-       WHERE product_id = $1
-       FOR UPDATE`,
-      [productId],
-    );
-    const balance = inventory.rows[0];
-
-    if (
-      !balance ||
-      balance.on_hand_quantity - balance.reserved_quantity < 1
-    ) {
-      await client.query("ROLLBACK");
-      return false;
-    }
 
     const budget = await client.query<{ available_minor: string }>(
       `SELECT available_minor
@@ -62,12 +41,91 @@ async function reserveOrder(
     }
 
     await client.query(
-      `UPDATE inventory_balances
-       SET reserved_quantity = reserved_quantity + 1,
+      `UPDATE budget_accounts
+       SET available_minor = available_minor - $2,
+           reserved_minor = reserved_minor + $2,
            version = version + 1,
            updated_at = NOW()
-       WHERE product_id = $1`,
-      [productId],
+       WHERE id = $1`,
+      [fixture.budgetAccountId, amountMinor],
+    );
+    await client.query("COMMIT");
+    return true;
+  } catch (error) {
+    await rollbackQuietly(client);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function duplicateSubmission(
+  productId: string,
+  amountMinor: number,
+  idempotencyKey: string,
+): Promise<{ orderId: string | null }> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existing = await client.query<{ id: string }>(
+      `SELECT id FROM orders
+       WHERE submission_idempotency_key = $1
+       LIMIT 1`,
+      [idempotencyKey],
+    );
+    if (existing.rows[0]) {
+      await client.query("COMMIT");
+      return { orderId: existing.rows[0].id };
+    }
+
+    const budget = await client.query<{ available_minor: string }>(
+      `SELECT available_minor
+       FROM budget_accounts
+       WHERE id = $1
+       FOR UPDATE`,
+      [fixture.budgetAccountId],
+    );
+
+    const concurrentExisting = await client.query<{ id: string }>(
+      `SELECT id FROM orders
+       WHERE submission_idempotency_key = $1
+       LIMIT 1`,
+      [idempotencyKey],
+    );
+    if (concurrentExisting.rows[0]) {
+      await client.query("COMMIT");
+      return { orderId: concurrentExisting.rows[0].id };
+    }
+
+    if (!budget.rows[0] || Number(budget.rows[0].available_minor) < amountMinor) {
+      await client.query("ROLLBACK");
+      return { orderId: null };
+    }
+
+    const orderId = crypto.randomUUID();
+    await client.query(
+      `INSERT INTO orders
+         (id, order_number, submission_idempotency_key, family_profile_id,
+          subtotal_minor, total_minor, guardian_legal_name_snapshot,
+          delivery_address_snapshot, placed_by_user_id)
+       VALUES ($1, $2, $3, $4, $5, $5, 'Race family', 'Test-only address', $6)`,
+      [
+        orderId,
+        `RACE-${idempotencyKey}`,
+        idempotencyKey,
+        fixture.familyProfileId,
+        amountMinor,
+        seededUserId,
+      ],
+    );
+    await client.query(
+      `INSERT INTO order_items
+         (id, order_id, product_id, product_name_snapshot, sku_snapshot,
+          unit_price_minor, quantity, line_total_minor)
+       VALUES ($1, $2, $3, 'Race product', 'RACE', $4, 1, $4)`,
+      [crypto.randomUUID(), orderId, productId, amountMinor],
     );
     await client.query(
       `UPDATE budget_accounts
@@ -79,7 +137,7 @@ async function reserveOrder(
       [fixture.budgetAccountId, amountMinor],
     );
     await client.query("COMMIT");
-    return true;
+    return { orderId };
   } catch (error) {
     await rollbackQuietly(client);
     throw error;
@@ -158,20 +216,17 @@ beforeAll(async () => {
       `CONCURRENCY-B-${suffix}`,
     ],
   );
-  await pool.query(
-    `INSERT INTO inventory_balances
-       (product_id, on_hand_quantity, reserved_quantity)
-     VALUES ($1, 1, 0), ($2, 1, 0)`,
-    [fixture.firstProductId, fixture.secondProductId],
-  );
 });
 
 afterAll(async () => {
   if (process.env.KAFIL_RUN_DB_INTEGRATION === "1") {
     await pool.query(
-      `DELETE FROM inventory_balances
-       WHERE product_id = ANY($1::uuid[])`,
+      `DELETE FROM order_items WHERE product_id = ANY($1::uuid[])`,
       [[fixture.firstProductId, fixture.secondProductId]],
+    );
+    await pool.query(
+      `DELETE FROM orders WHERE family_profile_id = $1`,
+      [fixture.familyProfileId],
     );
     await pool.query(
       `DELETE FROM products WHERE id = ANY($1::uuid[])`,
@@ -192,14 +247,14 @@ afterAll(async () => {
 });
 
 databaseTest(
-  "serializes competing PostgreSQL reservations without overspending budget or stock",
+  "serializes competing PostgreSQL budget reservations without overspending",
   async () => {
-    const budgetRace = await Promise.all([
-      reserveOrder(fixture.firstProductId, 600),
-      reserveOrder(fixture.secondProductId, 600),
+    const race = await Promise.all([
+      reserveBudget(600),
+      reserveBudget(600),
     ]);
 
-    expect(budgetRace.filter(Boolean)).toHaveLength(1);
+    expect(race.filter(Boolean)).toHaveLength(1);
 
     const budgetAfterRace = await pool.query<{
       available_minor: string;
@@ -210,53 +265,40 @@ databaseTest(
        WHERE id = $1`,
       [fixture.budgetAccountId],
     );
-    const inventoryAfterRace = await pool.query<{ reserved_total: string }>(
-      `SELECT SUM(reserved_quantity)::text AS reserved_total
-       FROM inventory_balances
-       WHERE product_id = ANY($1::uuid[])`,
-      [[fixture.firstProductId, fixture.secondProductId]],
-    );
 
     expect(budgetAfterRace.rows[0]).toEqual({
       available_minor: "400",
       reserved_minor: "600",
     });
-    expect(inventoryAfterRace.rows[0]?.reserved_total).toBe("1");
+  },
+  15_000,
+);
 
+databaseTest(
+  "returns the same order for duplicate submission keys under contention",
+  async () => {
     await pool.query(
       `UPDATE budget_accounts
-       SET available_minor = 1200, reserved_minor = 0, version = 0
+       SET available_minor = 1000,
+           reserved_minor = 0,
+           spent_minor = 0
        WHERE id = $1`,
       [fixture.budgetAccountId],
     );
-    await pool.query(
-      `UPDATE inventory_balances
-       SET reserved_quantity = 0, version = 0
-       WHERE product_id = ANY($1::uuid[])`,
-      [[fixture.firstProductId, fixture.secondProductId]],
-    );
-
-    const stockRace = await Promise.all([
-      reserveOrder(fixture.firstProductId, 600),
-      reserveOrder(fixture.firstProductId, 600),
+    const idempotencyKey = `race-submit-${crypto.randomUUID()}`;
+    const [first, second] = await Promise.all([
+      duplicateSubmission(fixture.firstProductId, 600, idempotencyKey),
+      duplicateSubmission(fixture.firstProductId, 600, idempotencyKey),
     ]);
 
-    expect(stockRace.filter(Boolean)).toHaveLength(1);
+    expect(first.orderId).toBeTruthy();
+    expect(second.orderId).toBe(first.orderId);
 
-    const stockAfterRace = await pool.query<{
-      on_hand_quantity: number;
-      reserved_quantity: number;
-    }>(
-      `SELECT on_hand_quantity, reserved_quantity
-       FROM inventory_balances
-       WHERE product_id = $1`,
-      [fixture.firstProductId],
+    const orderCount = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM orders WHERE submission_idempotency_key = $1`,
+      [idempotencyKey],
     );
-
-    expect(stockAfterRace.rows[0]).toEqual({
-      on_hand_quantity: 1,
-      reserved_quantity: 1,
-    });
+    expect(orderCount.rows[0]?.count).toBe("1");
   },
   15_000,
 );

@@ -5,9 +5,8 @@ export * from "./catalogDto";
 export * from "./catalogGuards";
 export {
   CategoryRepository,
-  InventoryRepository,
   ProductRepository,
 } from "./catalogRepository";
 export * from "./catalogSchema";
-export { CatalogService, type InventoryReservationInput } from "./catalogService";
+export { CatalogService } from "./catalogService";
 export { CatalogValidator } from "./catalogValidator";

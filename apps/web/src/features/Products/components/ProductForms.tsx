@@ -309,7 +309,7 @@ export function ProductStatusDialogContent({
     >
       <p className="text-sm leading-6 text-muted-foreground">
         {action === "deactivate"
-          ? "Deactivation preserves product, inventory, and order history while removing this product from the active catalog."
+          ? "Deactivation preserves product and order history while removing this product from the active catalog."
           : "Activation requires the product's category to remain active."}
       </p>
       <FormInput name="reason" type="textarea" formLabel="Reason" placeholder={`Why should this product be ${action}d?`} icon="MessageSquareText" required />
@@ -336,11 +336,10 @@ export function DeleteProductDialogContent({
   return (
     <div className="space-y-5">
       <p className="text-sm leading-6 text-muted-foreground">
-        Permanently deletes this product, its cart entries, its inventory
-        balance, and the related storage image. Has no effect on the
-        inventory ledger, order history, or audit log. The command refuses
-        with a 409 if the product has ever been ordered or stocked — use
-        deactivate instead.
+        Permanently deletes this product, its cart entries, and the related
+        storage image. Has no effect on order history or the audit log. The
+        command refuses with a 409 if the product has ever been ordered —
+        use deactivate instead.
       </p>
       <div className="flex justify-end pt-5">
         <NButton

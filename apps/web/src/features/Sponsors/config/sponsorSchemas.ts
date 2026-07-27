@@ -66,16 +66,19 @@ function toProfileInput(values: CreateSponsorFormValues): SponsorProfileInput {
 
 export function toCreateSponsorInput(
   values: CreateSponsorFormValues,
+  image: string | null,
 ): CreateSponsorInput {
   return {
     name: values.name.trim(),
     email: values.email.trim(),
+    image,
     ...toProfileInput(values),
   };
 }
 
 export function toUpdateSponsorInput(
   values: UpdateSponsorFormValues,
+  image: string | null,
 ): UpdateSponsorInput {
   const phone = optional(values.phone);
   const cin = optional(values.cin);
@@ -85,6 +88,7 @@ export function toUpdateSponsorInput(
   return {
     name: values.name.trim(),
     email: values.email.trim(),
+    image,
     ...(phone ? { phone } : {}),
     ...(cin ? { cin: cin.toUpperCase() } : {}),
     ...(values.gender ? { gender: values.gender } : {}),

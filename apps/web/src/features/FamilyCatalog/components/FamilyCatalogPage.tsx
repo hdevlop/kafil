@@ -156,6 +156,7 @@ export function FamilyCatalogPage() {
         </>
       ) : (
         <PageEmptyState
+          icon={PackageSearch}
           description="Try a different search or category. Operators can publish catalog products when they are ready."
           title="No active products match your search"
         />

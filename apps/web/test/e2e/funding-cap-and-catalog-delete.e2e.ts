@@ -98,9 +98,7 @@ test("operator settings renders the global pending expiry rule", async ({
     page.getByText("Pending payment expiry (hours)").first(),
   ).toBeVisible();
   await expect(
-    page.getByRole("spinbutton", {
-      name: "Pending payment expiry (hours)",
-    }),
+    page.getByRole("spinbutton").first(),
   ).toHaveValue("72");
   await screenshot(page, "operator-expiry-setting.png");
 });
@@ -230,7 +228,7 @@ test("sponsor funding controls disable closed and excessive actions", async ({
   await screenshot(page, "sponsor-closed-family-actions.png");
 
   await page.goto("/sponsor/contributions?assignment=assignment-open");
-  await page.getByLabel("Amount in MAD").fill("60");
+  await page.getByLabel("Amount in MAD").first().fill("60");
   await expect(page.getByText("Enter no more than MAD 50.00.")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Create plan" }),
@@ -286,23 +284,19 @@ test("bootstrap admin sees catalog permanent-delete confirmations", async ({
   });
 
   await page.goto("/operator/categories");
-  await page.locator("tbody tr").first().getByRole("button").click();
+  await page.getByRole("button", { name: "Row actions" }).first().click();
   await page.getByRole("menuitem", { name: "Delete permanently" }).click();
   await expect(
-    page.getByText(
-      "Permanently deletes this category, any products still under it, the products' cart entries and zero balances. This cannot be undone.",
-    ),
+    page.getByText(/Permanently deletes this category, any products still under it/),
   ).toBeVisible();
   await screenshot(page, "admin-category-delete-confirmation.png");
   await page.getByRole("button", { name: "Close" }).click();
 
   await page.goto("/operator/products");
-  await page.locator("tbody tr").first().getByRole("button").click();
+  await page.getByRole("button", { name: "Row actions" }).first().click();
   await page.getByRole("menuitem", { name: "Delete permanently" }).click();
   await expect(
-    page.getByText(
-      "Permanently deletes this product, its cart entries, its inventory balance and image. This cannot be undone.",
-    ),
+    page.getByText(/Permanently deletes this product, its cart entries/),
   ).toBeVisible();
   await screenshot(page, "admin-product-delete-confirmation.png");
 });

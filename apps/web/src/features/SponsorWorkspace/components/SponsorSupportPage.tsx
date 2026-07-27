@@ -155,6 +155,7 @@ export function SponsorSupportPage() {
         </div>
       ) : (
         <PageEmptyState
+          icon={HeartHandshake}
           description={t("sponsor.directory.emptyDescription")}
           title={t("sponsor.directory.emptyTitle")}
         />

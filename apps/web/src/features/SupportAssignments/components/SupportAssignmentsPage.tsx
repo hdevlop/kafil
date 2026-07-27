@@ -145,7 +145,7 @@ export function SupportAssignmentsPage() {
     onCreate: openCreate,
     onView: openView,
     renderCard: SupportAssignmentCard,
-    renderEmpty: () => <PageEmptyState action={<NButton onClick={openCreate}>{t("operator.assignments.create")}</NButton>} title={t("operator.assignments.emptyTitle")} description={t("operator.assignments.emptyDescription")} />,
+    renderEmpty: () => <PageEmptyState icon={SupportAssignmentsIcon} action={<NButton onClick={openCreate}>{t("operator.assignments.create")}</NButton>} title={t("operator.assignments.emptyTitle")} description={t("operator.assignments.emptyDescription")} />,
     renderError: (currentError) => (
       <PageErrorState
         error={currentError}

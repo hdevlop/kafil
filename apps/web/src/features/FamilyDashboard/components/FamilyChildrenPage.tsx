@@ -34,7 +34,7 @@ export function FamilyChildrenPage() {
           {familyChildren.map((child) => <FamilyChildCard child={child} key={child.id} />)}
         </div>
       ) : (
-        <PageEmptyState title="No child records yet" description="An operator can add child records to your family profile." />
+        <PageEmptyState icon={Baby} title="No child records yet" description="An operator can add child records to your family profile." />
       )}
     </NPageLayout>
   );

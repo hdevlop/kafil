@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useKafilAppearance } from "@/providers/KafilAppearanceProvider";
+import { useKafilBranding } from "@/providers/KafilBrandingProvider";
 
 import { APP_SETTINGS_FORM_ID, AppSettingsPanel } from "./AppSettingsPanel";
 import { ThemeSettingsPanel } from "./ThemeSettingsPanel";
@@ -45,10 +46,11 @@ export function GlobalSettingsSheet({
     draft,
     beginDraft,
     setDraft,
-    cancelDraft,
+    cancelDraft: cancelAppearanceDraft,
     commitDraft,
     resetToFactory,
   } = useKafilAppearance();
+  const branding = useKafilBranding();
   const tabs = useMemo(() => getGlobalSettingsTabs(role), [role]);
   const [activeTab, setActiveTab] = useState<GlobalSettingsTab>(
     getGlobalSettingsTabs(role)[0] ?? "app",
@@ -62,11 +64,14 @@ export function GlobalSettingsSheet({
   const themeDirty = Boolean(
     draft && JSON.stringify(draft) !== JSON.stringify(appearance.designConfig),
   );
-  const dirty = themeDirty || appState.dirty;
+  const dirty = themeDirty || appState.dirty || branding.isDirty;
 
   useEffect(() => {
-    if (open && role === "admin") beginDraft();
-  }, [beginDraft, open, role]);
+    if (open && role === "admin") {
+      beginDraft();
+      branding.beginDraft();
+    }
+  }, [beginDraft, branding, open, role]);
 
   const tabItems = useMemo(
     () => tabs.map((tab) => ({
@@ -79,14 +84,15 @@ export function GlobalSettingsSheet({
           disabled={isSavingTheme}
         />
       ) : (
-        <AppSettingsPanel onStateChange={setAppState} />
+        <AppSettingsPanel onStateChange={setAppState} role={role} />
       ),
     })),
-    [draft, isSavingTheme, setDraft, t, tabs],
+    [draft, isSavingTheme, setDraft, t, tabs, role],
   );
 
   function closeNow() {
-    cancelDraft();
+    cancelAppearanceDraft();
+    void branding.cancelDraft();
     setActiveTab(tabs[0] ?? "app");
     setAppState({ dirty: false, saving: false });
     setConfirmClose(false);

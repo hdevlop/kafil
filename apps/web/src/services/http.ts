@@ -66,7 +66,7 @@ async function ensureAccessToken(path: string) {
   await pendingAccessTokenRefresh;
 }
 
-async function binaryRequest(
+async function binaryRequest<T = void>(
   method: "DELETE" | "POST",
   path: string,
   body?: Blob,
@@ -87,7 +87,7 @@ async function binaryRequest(
 
   if (response.status === 401 && !retried) {
     await auth.client.refresh();
-    return binaryRequest(method, path, body, true);
+    return binaryRequest<T>(method, path, body, true);
   }
 
   if (!response.ok) {
@@ -96,6 +96,12 @@ async function binaryRequest(
     } | null;
     throw new Error(payload?.message ?? `File request failed (${response.status})`);
   }
+
+  const payload = (await response.json().catch(() => undefined)) as
+    | T
+    | ApiResponseEnvelope<T>
+    | undefined;
+  return payload === undefined ? (undefined as T) : unwrapApiResponse(payload);
 }
 
 async function request<T>(
@@ -131,8 +137,8 @@ export const api = {
   delete<T>(path: string, body?: unknown) {
     return request<T>("delete", path, body);
   },
-  upload(path: string, file: File) {
-    return binaryRequest("POST", path, file);
+  upload<T = void>(path: string, file: File) {
+    return binaryRequest<T>("POST", path, file);
   },
   deleteFile(path: string) {
     return binaryRequest("DELETE", path);

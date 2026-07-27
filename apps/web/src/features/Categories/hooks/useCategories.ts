@@ -19,6 +19,9 @@ export function useCategories(pagination: OffsetPagination) {
   return useEntityQuery({
     queryKey: categoryKeys.list(pagination),
     queryFn: () => listCategories(pagination),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -53,7 +56,7 @@ export function useCategoryCommands() {
     mutationFn: deleteCategory,
     invalidate,
     successMessage: "Category deleted permanently.",
-    errorMessage: "Could not delete the category. It may have order or inventory history.",
+    errorMessage: "Could not delete the category. It may have order history.",
   });
 
   return { create, update, activate, deactivate, remove };

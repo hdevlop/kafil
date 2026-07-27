@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
   Baby,
   Eye,
@@ -25,6 +26,7 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { ChildCard } from "./ChildCard";
 import { ChildDetails } from "./ChildDetails";
 import {
+  BulkDeleteChildrenDialogContent,
   ChildStatusDialogContent,
   CreateChildDialogContent,
   DeleteChildDialogContent,
@@ -45,9 +47,13 @@ export function ChildrenPage() {
   const columns = useChildrenTableColumns();
   const filters = useChildrenTableFilters();
   const rows = children.data ?? [];
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const bulkDeleteDialogOpenRef = useRef(false);
+  const isAdmin = user?.role === "admin";
 
   const getRowClassName = (child: ChildRecord) =>
-    child.familyStatus !== undefined && child.familyStatus !== "active"
+    child.status === "inactive" ||
+    (child.familyStatus !== undefined && child.familyStatus !== "active")
       ? "bg-muted/60 text-muted-foreground opacity-60 grayscale hover:bg-muted/80 [&_td]:text-muted-foreground"
       : undefined;
 
@@ -104,6 +110,26 @@ export function ChildrenPage() {
     });
   }
 
+  function openBulkDelete(childIds: string[]) {
+    if (bulkDeleteDialogOpenRef.current) return;
+    bulkDeleteDialogOpenRef.current = true;
+
+    void dialog.openDialog({
+      title: `Permanently delete ${childIds.length} children?`,
+      description: "Only bootstrap administrators can permanently delete child records.",
+      children: (
+        <BulkDeleteChildrenDialogContent
+          childIds={childIds}
+          onDeleted={() => setRowSelection({})}
+        />
+      ),
+      showButtons: false,
+      size: "sm",
+    }).finally(() => {
+      bulkDeleteDialogOpenRef.current = false;
+    });
+  }
+
   const tableProps: NTableProps<ChildRecord> = {
     data: rows,
     columns,
@@ -117,13 +143,14 @@ export function ChildrenPage() {
     onRowClick: openView,
     renderCard: ChildCard,
     getRowClassName,
-    renderEmpty: () => (
-      <PageEmptyState
-        action={<NButton onClick={openCreate}>{t("operator.children.create")}</NButton>}
-        title={t("operator.children.emptyTitle")}
-        description={t("operator.children.emptyDescription")}
-      />
-    ),
+      renderEmpty: () => (
+        <PageEmptyState
+          action={<NButton onClick={openCreate}>{t("operator.children.create")}</NButton>}
+          icon={Baby}
+          title={t("operator.children.emptyTitle")}
+          description={t("operator.children.emptyDescription")}
+        />
+      ),
     renderError: (error) => (
       <PageErrorState error={error} onRetry={() => void children.refetch()} />
     ),
@@ -151,7 +178,7 @@ export function ChildrenPage() {
           },
         ];
 
-        if (user?.role === "admin") {
+        if (isAdmin) {
           actions.push({
             label: t("operator.children.delete"),
             icon: Trash2,
@@ -165,11 +192,15 @@ export function ChildrenPage() {
       },
     },
     menuButton: true,
+    showCheckbox: isAdmin,
+    rowSelection,
+    onRowSelectionChange: setRowSelection,
+    onBulkDelete: isAdmin ? openBulkDelete : undefined,
     showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
-      cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4",
+      cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
     },
     addButtonText: t("operator.children.create"),
     noDataText: t("operator.children.noData"),

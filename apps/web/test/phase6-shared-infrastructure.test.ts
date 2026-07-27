@@ -94,7 +94,7 @@ describe("Phase 6B formatters and status helpers", () => {
     expect(getStatusColor("pending")).toBe("warning");
     expect(getStatusColor("rejected")).toBe("destructive");
     expect(getStatusColor("future_status")).toBe("neutral");
-    expect(formatStatusLabel("in_preparation")).toBe("In Preparation");
+    expect(formatStatusLabel("in_preparation")).toBe("Purchasing and preparation");
   });
 });
 

@@ -42,6 +42,25 @@ Available routes:
 
 The API does not run on another port. `apps/web/src/app/api/[...route]/route.ts` imports the configured server from `packages/server` and exposes it through Najm's `handle(server)` adapter.
 
+## Order workflow
+
+Kafil is procurement-on-demand: active catalog products are requests Kafil is
+willing to buy, not warehouse stock. A family submits its cart, or an operator
+creates an attributed assisted order when the family cannot use the portal.
+Submission reserves the catalog estimate; approval keeps it reserved; the
+operator uploads the supermarket receipt to record the actual purchase, then
+starts and confirms delivery. Lower or explicitly confirmed higher prices are
+settled against the family budget. Kafil does not receive, count, or reserve
+physical stock.
+
+Raw receipts and delivery proofs are protected staff-only storage. Family and
+sponsor views receive only privacy-safe purchase/delivery milestones.
+
+Admins also receive `/operator/access/users`, `/roles`, and `/permissions`.
+These pages use Najm authentication data through a Kafil-safe facade. Roles and
+permissions are fixed and code-managed; user creation stays in the owning
+family, sponsor, operator, or seed workflow.
+
 ## Install on a phone
 
 Deploy Kafil over HTTPS, then open it in the phone browser. On Android, choose
@@ -149,6 +168,11 @@ Contributions require at least one family and one
 sponsor; use `--contributions=0` when intentionally seeding neither. To apply
 migrations, seed authentication, and then seed demo data in one command, run
 `bun run seed:full`.
+
+When at least one generated family reaches activation, the demo seed also
+creates one deterministic assisted grocery order, lower-price Marjane receipt,
+and photo-confirmed delivery through the real order services. Re-running the
+seed reuses the same idempotency keys and protected evidence.
 
 Optional demo images live together in `packages/seed/images` as files such as
 `family-01.jpg` and `sponsor-01.webp`. Run `bun run seed -- images` to validate

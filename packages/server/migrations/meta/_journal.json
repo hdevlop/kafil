@@ -169,6 +169,20 @@
       "when": 1785064094926,
       "tag": "0023_appearance_theme_persistence",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785099756686,
+      "tag": "0024_bored_ozymandias",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785115988614,
+      "tag": "0025_ambitious_abomination",
+      "breakpoints": true
     }
   ]
 }

@@ -28,12 +28,9 @@ const ids = {
   productCategory: crypto.randomUUID(),
   pristineProduct: crypto.randomUUID(),
   orderedProduct: crypto.randomUUID(),
-  ledgerProduct: crypto.randomUUID(),
-  stockedProduct: crypto.randomUUID(),
   rollbackProduct: crypto.randomUUID(),
   order: crypto.randomUUID(),
   orderItem: crypto.randomUUID(),
-  ledger: crypto.randomUUID(),
 };
 
 const categoryImageName = `${crypto.randomUUID()}.png`;
@@ -102,25 +99,19 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
     );
     await pool.query(
       `INSERT INTO products
-         (id, category_id, sku, name, price_minor, image_url)
+       (id, category_id, sku, name, price_minor, image_url)
        VALUES
-         ($1, $6, $7, 'Pristine product', 100, $12),
-         ($2, $6, $8, 'Ordered product', 100, NULL),
-         ($3, $6, $9, 'Ledger product', 100, NULL),
-         ($4, $6, $10, 'Stocked product', 100, NULL),
-         ($5, $6, $11, 'Rollback product', 100, NULL),
-         ($13, $14, $15, 'Category cascade product', 100, $12)`,
+         ($1, $4, $5, 'Pristine product', 100, $8),
+         ($2, $4, $6, 'Ordered product', 100, NULL),
+         ($3, $4, $7, 'Rollback product', 100, NULL),
+         ($9, $10, $11, 'Category cascade product', 100, $8)`,
       [
         ids.pristineProduct,
         ids.orderedProduct,
-        ids.ledgerProduct,
-        ids.stockedProduct,
         ids.rollbackProduct,
         ids.productCategory,
         `PRI-${suffix}`,
         `ORD-${suffix}`,
-        `LED-${suffix}`,
-        `STK-${suffix}`,
         `RBK-${suffix}`,
         productImagePath,
         ids.deleteCategoryProduct,
@@ -129,28 +120,12 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       ],
     );
     await pool.query(
-      `INSERT INTO inventory_balances
-         (product_id, on_hand_quantity, reserved_quantity)
-       VALUES
-         ($1, 0, 0), ($2, 0, 0), ($3, 1, 0),
-         ($4, 5, 1), ($5, 0, 0), ($6, 0, 0)`,
-      [
-        ids.pristineProduct,
-        ids.orderedProduct,
-        ids.ledgerProduct,
-        ids.stockedProduct,
-        ids.rollbackProduct,
-        ids.deleteCategoryProduct,
-      ],
-    );
-    await pool.query(
       `INSERT INTO cart_items (cart_id, product_id, quantity)
-       VALUES ($1, $2, 1), ($1, $3, 1), ($1, $4, 1)`,
+       VALUES ($1, $2, 1), ($1, $3, 1)`,
       [
         ids.cart,
         ids.pristineProduct,
         ids.rollbackProduct,
-        ids.deleteCategoryProduct,
       ],
     );
     await pool.query(
@@ -174,21 +149,6 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
           unit_price_minor, quantity, line_total_minor)
        VALUES ($1, $2, $3, 'Ordered product', $4, 100, 1, 100)`,
       [ids.orderItem, ids.order, ids.orderedProduct, `ORD-${suffix}`],
-    );
-    await pool.query(
-      `INSERT INTO inventory_ledger_entries
-         (id, product_id, entry_type, quantity, on_hand_after,
-          reserved_after, source_type, source_id, idempotency_key,
-          actor_user_id, reason)
-       VALUES ($1, $2, 'restock', 1, 1, 0, 'db-test', $3, $4, $5,
-               'Catalog delete integration fixture')`,
-      [
-        ids.ledger,
-        ids.ledgerProduct,
-        ids.ledger,
-        `catalog-ledger-${suffix}`,
-        actorUserId,
-      ],
     );
 
     const categoryDirectory = join(
@@ -220,24 +180,7 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       .query(`DELETE FROM orders WHERE id = $1`, [ids.order])
       .catch(() => undefined);
     await pool
-      .query(`DELETE FROM inventory_ledger_entries WHERE id = $1`, [ids.ledger])
-      .catch(() => undefined);
-    await pool
       .query(`DELETE FROM cart_items WHERE cart_id = $1`, [ids.cart])
-      .catch(() => undefined);
-    await pool
-      .query(
-        `DELETE FROM inventory_balances
-         WHERE product_id = ANY($1::uuid[])`,
-        [[
-          ids.pristineProduct,
-          ids.orderedProduct,
-          ids.ledgerProduct,
-          ids.stockedProduct,
-          ids.rollbackProduct,
-          ids.deleteCategoryProduct,
-        ]],
-      )
       .catch(() => undefined);
     await pool
       .query(
@@ -266,7 +209,7 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
     await pool.end();
   });
 
-  it("deletes a pristine product, its cart item and zero balance, then cleans its image", async () => {
+  it("deletes a pristine product, its cart item, and its image", async () => {
     const result = await service.deleteProduct(
       ids.pristineProduct,
       actorUserId,
@@ -281,7 +224,6 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       `SELECT
          (SELECT count(*) FROM products WHERE id = $1)::int AS products,
          (SELECT count(*) FROM cart_items WHERE product_id = $1)::int AS cart_items,
-         (SELECT count(*) FROM inventory_balances WHERE product_id = $1)::int AS balances,
          (SELECT count(*) FROM audit_events
           WHERE action = 'catalog.productDeleted' AND resource_id = $1::text)::int AS audits`,
       [ids.pristineProduct],
@@ -289,7 +231,6 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
     expect(rows.rows[0]).toEqual({
       products: 0,
       cart_items: 0,
-      balances: 0,
       audits: 1,
     });
     expect(
@@ -299,19 +240,13 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
     ).toBe(false);
   });
 
-  it("returns 409 for order history, ledger activity, and non-zero stock", async () => {
-    for (const productId of [
-      ids.orderedProduct,
-      ids.ledgerProduct,
-      ids.stockedProduct,
-    ]) {
-      await expect(
-        service.deleteProduct(productId, actorUserId),
-      ).rejects.toMatchObject({ status: 409 });
-    }
+  it("returns 409 for order history", async () => {
+    await expect(
+      service.deleteProduct(ids.orderedProduct, actorUserId),
+    ).rejects.toMatchObject({ status: 409 });
   });
 
-  it("rolls back cart, balance, and product deletion when the audit write fails", async () => {
+  it("rolls back cart and product deletion when the audit write fails", async () => {
     await expect(
       service.deleteProduct(
         ids.rollbackProduct,
@@ -322,14 +257,12 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
     const rows = await pool.query(
       `SELECT
          (SELECT count(*) FROM products WHERE id = $1)::int AS products,
-         (SELECT count(*) FROM cart_items WHERE product_id = $1)::int AS cart_items,
-         (SELECT count(*) FROM inventory_balances WHERE product_id = $1)::int AS balances`,
+         (SELECT count(*) FROM cart_items WHERE product_id = $1)::int AS cart_items`,
       [ids.rollbackProduct],
     );
     expect(rows.rows[0]).toEqual({
       products: 1,
       cart_items: 1,
-      balances: 1,
     });
   });
 
@@ -347,15 +280,13 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       `SELECT
          (SELECT count(*) FROM categories WHERE id = $1)::int AS categories,
          (SELECT count(*) FROM products WHERE id = $2)::int AS products,
-         (SELECT count(*) FROM cart_items WHERE product_id = $2)::int AS cart_items,
-         (SELECT count(*) FROM inventory_balances WHERE product_id = $2)::int AS balances`,
+         (SELECT count(*) FROM cart_items WHERE product_id = $2)::int AS cart_items`,
       [ids.deleteCategory, ids.deleteCategoryProduct],
     );
     expect(rows.rows[0]).toEqual({
       categories: 0,
       products: 0,
       cart_items: 0,
-      balances: 0,
     });
     expect(
       await exists(

@@ -20,7 +20,6 @@ export interface OperatorDashboard {
     activeAssignments: number;
     pendingContributions: number;
     openOrders: number;
-    lowStockProducts: number;
   };
   money: {
     pendingContributionMinor: number;
@@ -32,12 +31,6 @@ export interface OperatorDashboard {
   };
   contributionTrend: OperatorContributionTrendPoint[];
   orderStatuses: DashboardStatusCount[];
-  lowStock: Array<{
-    productId: string;
-    name: string;
-    sku: string;
-    availableQuantity: number;
-  }>;
 }
 
 export interface FamilyDashboard {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
   Eye,
   Pencil,
@@ -24,6 +25,7 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { FamilyCard } from "./FamilyCard";
 import { FamilyDetails } from "./FamilyDetails";
 import {
+  BulkDeleteFamiliesDialogContent,
   CreateFamilyDialogContent,
   DeleteFamilyDialogContent,
   FamilyStatusDialogContent,
@@ -63,13 +65,16 @@ export function FamiliesPage() {
   const columns = useFamiliesTableColumns();
   const filters = useFamiliesTableFilters();
   const rows = families.data ?? [];
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const bulkDeleteDialogOpenRef = useRef(false);
+  const isAdmin = hasRole("admin");
 
   function openCreate() {
     void dialog.openDialog({
        title: t("operator.families.createTitle"),
        children: <CreateFamilyDialogContent />,
       showButtons: false,
-      width: "xl",
+      width: "xxl",
       height: "xl",
     });
   }
@@ -91,7 +96,7 @@ export function FamiliesPage() {
       description: t("operator.families.editDescription"),
       children: <UpdateFamilyDialogContent family={family} />,
       showButtons: false,
-      size: "xl",
+      size: "xxl",
       height: "auto",
     });
   }
@@ -119,6 +124,28 @@ export function FamiliesPage() {
     });
   }
 
+  function openBulkDelete(familyIds: string[]) {
+    if (bulkDeleteDialogOpenRef.current) return;
+    bulkDeleteDialogOpenRef.current = true;
+
+    void dialog.openDialog({
+      title: t("operator.families.bulkDeleteTitle", {
+        count: familyIds.length,
+      }),
+      description: t("operator.families.bulkDeleteDescription"),
+      children: (
+        <BulkDeleteFamiliesDialogContent
+          familyIds={familyIds}
+          onDeleted={() => setRowSelection({})}
+        />
+      ),
+      showButtons: false,
+      size: "sm",
+    }).finally(() => {
+      bulkDeleteDialogOpenRef.current = false;
+    });
+  }
+
   const tableProps: NTableProps<FamilyRecord> = {
     data: rows,
     columns,
@@ -131,9 +158,10 @@ export function FamiliesPage() {
     onEdit: openEdit,
     onRowClick: openView,
     renderCard: FamilyCard,
-    renderEmpty: () => (
+      renderEmpty: () => (
       <PageEmptyState
         action={<NButton onClick={openCreate}>{t("operator.families.create")}</NButton>}
+        icon={FamiliesIcon}
         title={t("operator.families.emptyTitle")}
         description={t("operator.families.emptyDescription")}
       />
@@ -165,7 +193,7 @@ export function FamiliesPage() {
           },
         ];
 
-        if (hasRole("admin")) {
+        if (isAdmin) {
           actions.push({
             label: t("operator.families.delete"),
             icon: Trash2,
@@ -179,6 +207,10 @@ export function FamiliesPage() {
       },
     },
     menuButton: true,
+    showCheckbox: isAdmin,
+    rowSelection,
+    onRowSelectionChange: setRowSelection,
+    onBulkDelete: isAdmin ? openBulkDelete : undefined,
     showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",

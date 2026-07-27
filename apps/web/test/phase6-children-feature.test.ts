@@ -22,10 +22,11 @@ describe("Phase 6C child form contracts", () => {
       notes: " ",
     });
 
-    const input = toCreateChildInput(values);
+    const input = toCreateChildInput(values, null);
 
     expect(input).toEqual({
       familyProfileId: "9cc2c93f-f545-4e07-9f77-f79f08a71dd5",
+      image: null,
       legalName: "Sara Youssef",
       dateOfBirth: "2015-04-18",
       gender: "F",
@@ -59,9 +60,10 @@ describe("Phase 6C child form contracts", () => {
       notes: "School supplies needed",
     });
 
-    const input = toUpdateChildInput(values);
+    const input = toUpdateChildInput(values, null);
 
     expect(input).toEqual({
+      image: null,
       legalName: "Sara Youssef",
       dateOfBirth: "2015-04-18",
       gender: "F",

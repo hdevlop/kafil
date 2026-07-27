@@ -50,12 +50,17 @@ describe("global settings sheet", () => {
     const panel = readSource("../src/features/Settings/components/AppSettingsPanel.tsx");
     const page = readSource("../src/features/Settings/components/SettingsPage.tsx");
     const shell = readSource("../src/shared/DashboardShell/index.tsx");
+    const sheet = readSource("../src/features/Settings/components/GlobalSettingsSheet.tsx");
 
     expect(panel.match(/settingsFormSchema/g)?.length).toBeGreaterThan(1);
     expect(panel).toContain("useSettingCommands");
     expect(panel).toContain("form={form}");
+    expect(panel).toContain('branding.isAdmin');
+    expect(panel).toContain("<BrandAssetsPanel");
     expect(page).toContain("<GlobalSettingsSheet");
     expect(shell).toContain("<GlobalSettingsSheet");
     expect(shell).toContain("canOpenGlobalSettings(user.role)");
+    expect(sheet).toContain("branding.isDirty");
+    expect(sheet).toContain("branding.cancelDraft");
   });
 });

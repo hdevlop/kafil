@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BadgeCheck, CircleX, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import {
@@ -66,6 +66,7 @@ export function ContributionsPage({
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>(
     {},
   );
+  const bulkDeleteDialogOpenRef = useRef(false);
   const contributions = useContributions({ ...pagination, familyProfileId });
   const { validate, reject, refund, remove } = useContributionCommands();
   const columns = useContributionsTableColumns();
@@ -144,6 +145,9 @@ export function ContributionsPage({
   }
 
   function openBulkDelete(contributionIds: string[]) {
+    if (bulkDeleteDialogOpenRef.current) return;
+    bulkDeleteDialogOpenRef.current = true;
+
     void dialog.openDialog({
       title: t("operator.contributions.bulkDeleteTitle", {
         count: contributionIds.length,
@@ -157,6 +161,8 @@ export function ContributionsPage({
       ),
       showButtons: false,
       size: "sm",
+    }).finally(() => {
+      bulkDeleteDialogOpenRef.current = false;
     });
   }
 
@@ -172,9 +178,10 @@ export function ContributionsPage({
     onCreate: openRecord,
     onView: openView,
     renderCard: ContributionCard,
-    renderEmpty: () => (
+      renderEmpty: () => (
       <PageEmptyState
         action={<NButton onClick={openRecord}>{t("operator.contributions.record")}</NButton>}
+        icon={ContributionsIcon}
         title={t("operator.contributions.emptyTitle")}
         description={t("operator.contributions.emptyDescription")}
       />

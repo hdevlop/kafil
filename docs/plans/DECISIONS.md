@@ -104,8 +104,13 @@ snapshots. Later catalog changes do not rewrite historical orders.
 
 ### D-018 - Reservation at submission
 
-Submitting an order reserves budget and inventory atomically. Approval captures
-both; rejection and cancellation release or reverse them.
+Submitting an order reserves budget atomically. Approval captures the
+reserved budget; rejection and pending cancellation release it; cancellation
+after approval creates a budget refund.
+
+(Superseded by D-032 on 2026-07-27. The original wording also reserved
+inventory. Kafil is procurement-on-demand and no longer maintains physical
+stock. Historical inventory ledger entries are read-only legacy history.)
 
 ### D-019 - Explicit order commands
 
@@ -189,3 +194,65 @@ is still in the future reserve family funding capacity. A five-minute
 operations timer materializes due rows as `expired`, with audit and outbox
 records in the same transaction; capacity correctness remains time-aware and
 does not depend on the timer running exactly on schedule.
+
+### D-032 - Procurement-on-demand platform (replaces the warehouse model)
+
+Kafil is a procurement-on-demand platform. It does not own stock, receive
+stock, count stock, or reserve physical units. A family selects an active
+product from the catalog; submission reserves only the family's budget; the
+operator checks availability and price at the supermarket; the operator
+approves an order that can be purchased, or rejects it with a clear reason;
+approved products are bought, prepared, and delivered.
+
+The `inventory_balances` and `inventory_ledger_entries` tables plus the
+`inventory_ledger_entry_type` enum are retained as read-only legacy history.
+No runtime path writes a new inventory ledger entry, creates a balance for a
+new product, mutates an existing balance, or offers a stock command to any
+role. The catalog `deleteProduct` and `deleteCategory` pristine checks ignore
+inventory history. The operator dashboard, family cart, and order responses
+do not expose stock quantities or an `out of stock` state.
+
+`pending` is the supermarket availability and price check. The receipt and
+delivery decision below supersedes the original approval/capture and
+`in_preparation` wording in this decision.
+
+This decision supersedes the inventory portions of D-018 and the original
+Section 04 inventory rules. A separate, explicitly approved migration may
+later drop the legacy `inventory_*` tables after a retention review.
+
+### D-033 - Attributed assisted family orders without impersonation
+
+An operator or admin may submit an order for an active family through the same
+server-owned product snapshot, budget, monthly-limit, idempotency, audit, and
+outbox logic as self-service submission. The order records
+`operator_assisted`, the staff user, request channel, and an operator-private
+note. It belongs to the family and never reads, clears, or mutates that
+family's personal cart. Family views show only a neutral assisted marker;
+sponsor views do not receive the note.
+
+### D-034 - Actual-cost purchase records and explicit delivery
+
+Approval confirms procurement but leaves the estimated total reserved.
+Recording a protected supermarket receipt creates one immutable active purchase
+record and settles the actual amount. A lower price releases the difference; a
+higher price requires explicit confirmation and sufficient budget. Corrections
+reverse and replace rather than edit purchase history.
+
+The active lifecycle is `pending -> approved -> purchased ->
+out_for_delivery -> delivered`. Delivery confirmation is terminal and has no
+financial effect. Raw receipts, proof paths, delivery notes, and assistance
+notes are restricted to staff. Family and sponsor projections expose only safe
+amounts and milestone booleans. Protected files live under managed Kafil
+storage, are served only through guarded endpoints, and participate in orphan
+reconciliation, backup, and restore.
+
+### D-035 - Fixed, code-managed admin access visibility
+
+Kafil exposes an admin-only Access management facade over Najm authentication.
+It lists privacy-safe users, fixed roles, effective permissions, and
+live-versus-canonical grant drift. Explicit commands may deactivate/reactivate
+eligible non-admin accounts or revoke their sessions; deactivation invalidates
+access tokens and refresh sessions and writes a privacy-safe audit event.
+Self-action and bootstrap administrator targets are protected. Account creation
+stays in its family, sponsor, operator, or seed workflow, and runtime role or
+permission editing is not offered.

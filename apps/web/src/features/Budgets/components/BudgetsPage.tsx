@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Landmark, PencilLine } from "lucide-react";
+import { Landmark, PencilLine, ReceiptText } from "lucide-react";
 import {
   Combobox,
   NButton,
@@ -117,6 +117,7 @@ export function BudgetsPage() {
     renderCard: BudgetLedgerCard,
     renderEmpty: () => (
       <PageEmptyState
+        icon={ReceiptText}
         title={t("operator.budgets.ledgerEmptyTitle")}
         description={t("operator.budgets.ledgerEmptyDescription")}
       />
@@ -181,6 +182,7 @@ export function BudgetsPage() {
 
       {!familyProfileId ? (
         <PageEmptyState
+          icon={Landmark}
           title={t("operator.budgets.emptyTitle")}
           description={t("operator.budgets.emptyDescription")}
         />
@@ -199,6 +201,7 @@ export function BudgetsPage() {
         </>
       ) : (
         <PageEmptyState
+          icon={Landmark}
           title={t("operator.budgets.loadingTitle")}
           description={t("operator.budgets.loadingDescription")}
         />

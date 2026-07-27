@@ -12,6 +12,7 @@ import {
   BudgetService,
 } from "../src/modules/budgets";
 import {
+  bulkDeleteChildrenDto,
   childIdParams,
   ChildController,
   ChildRepository,
@@ -21,6 +22,7 @@ import {
   updateChildDto,
 } from "../src/modules/children";
 import {
+  bulkDeleteFamiliesDto,
   createFamilyDto,
   FamilyController,
   FamilyRepository,
@@ -110,6 +112,18 @@ describe("Phase 1 DTO and controller boundaries", () => {
          phone: "+212600000002",
       }).success,
     ).toBe(true);
+  });
+
+  it("requires a unique non-empty UUID set for family and child bulk deletion", () => {
+    const secondId = "00000000-0000-4000-8000-000000000033";
+
+    expect(bulkDeleteFamiliesDto.parse({ ids: [familyId, secondId] })).toEqual({
+      ids: [familyId, secondId],
+    });
+    expect(
+      bulkDeleteFamiliesDto.safeParse({ ids: [familyId, familyId] }).success,
+    ).toBe(false);
+    expect(bulkDeleteChildrenDto.safeParse({ ids: [] }).success).toBe(false);
   });
 
   it("accepts the full editable family profile without caller-owned lifecycle fields", () => {
@@ -226,6 +240,7 @@ describe("Phase 1 DTO and controller boundaries", () => {
         "getOwn",
         "get",
         "create",
+        "bulkDelete",
         "update",
         "delete",
         "deactivate",
@@ -239,6 +254,7 @@ describe("Phase 1 DTO and controller boundaries", () => {
         "getOwn",
         "get",
         "create",
+        "bulkDelete",
         "update",
         "delete",
         "deactivate",
@@ -248,6 +264,12 @@ describe("Phase 1 DTO and controller boundaries", () => {
     expect(getValidationConfig(FamilyController.prototype, "create")?.body).toBe(
       createFamilyDto,
     );
+    expect(
+      getValidationConfig(FamilyController.prototype, "bulkDelete")?.body,
+    ).toBe(bulkDeleteFamiliesDto);
+    expect(
+      getValidationConfig(ChildController.prototype, "bulkDelete")?.body,
+    ).toBe(bulkDeleteChildrenDto);
     expect(getValidationConfig(ChildController.prototype, "get")?.params).toBe(
       childIdParams,
     );

@@ -7,28 +7,30 @@ import {
   HandCoins,
   HeartHandshake,
   House,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   PackageSearch,
   Settings2,
+  ShieldCheck,
   ShoppingBag,
   ShoppingCart,
   Tags,
   UserRound,
   UsersRound,
   WalletCards,
-  Warehouse,
 } from "lucide-react";
 import { NButton, NajmScroll, NSidebar, type NavItem } from "najm-kit";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { BrandingImage } from "@/features/Branding";
 import {
   canOpenGlobalSettings,
   GlobalSettingsSheet,
 } from "@/features/Settings/components/GlobalSettingsSheet";
+import { useKafilBranding } from "@/providers/KafilBrandingProvider";
 import { DashboardSidebarProvider } from "./DashboardPageHeader";
 
 interface DashboardUser {
@@ -69,8 +71,34 @@ function operatorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
       sectionIcon: PackageSearch,
     },
     { id: "/operator/products", href: "/operator/products", label: t("nav.products"), icon: ShoppingBag },
-    { id: "/operator/inventory", href: "/operator/inventory", label: t("nav.inventory"), icon: Warehouse },
     { id: "/operator/orders", href: "/operator/orders", label: t("nav.orders"), icon: ClipboardCheck },
+  ];
+}
+
+function adminAccessItems(
+  t: ReturnType<typeof useKafilLanguage>["t"],
+): NavItem[] {
+  return [
+    {
+      id: "/operator/access/users",
+      href: "/operator/access/users",
+      label: t("nav.users"),
+      icon: UsersRound,
+      sectionLabel: t("nav.accessManagement"),
+      sectionIcon: ShieldCheck,
+    },
+    {
+      id: "/operator/access/roles",
+      href: "/operator/access/roles",
+      label: t("nav.roles"),
+      icon: ShieldCheck,
+    },
+    {
+      id: "/operator/access/permissions",
+      href: "/operator/access/permissions",
+      label: t("nav.permissions"),
+      icon: KeyRound,
+    },
   ];
 }
 
@@ -143,7 +171,8 @@ function LinkAdapter({
 }
 
 export function getDashboardNavigation(role: string | null | undefined, t: ReturnType<typeof useKafilLanguage>["t"]) {
-  if (role === "admin" || role === "operator") return operatorItems(t);
+  if (role === "admin") return [...operatorItems(t), ...adminAccessItems(t)];
+  if (role === "operator") return operatorItems(t);
   if (role === "family") return familyItems(t);
   if (role === "sponsor") return sponsorItems(t);
   return [];
@@ -164,8 +193,10 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useKafilLanguage();
+  const { resolved: branding } = useKafilBranding();
   const navItems = getDashboardNavigation(user.role, t);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -174,21 +205,29 @@ export function DashboardShell({
         <NSidebar
           logo={
             <>
-              <Image
-                alt="Kafil"
-                className="mx-auto h-auto w-32 lg:hidden xl:block"
+              <BrandingImage
+                slot="sidebarLogoExpanded"
+                alt="Kafil platform"
+                className={`mx-auto h-10 w-32 object-contain lg:hidden${
+                  sidebarCollapsed ? "" : " xl:block"
+                }`}
                 height={233}
                 priority
-                src="/logoExpanded.png"
+                src={branding.sidebarLogoExpandedPath}
                 width={701}
               />
-              <span className="hidden size-8 overflow-hidden rounded-lg lg:block xl:hidden">
-                <Image
+              <span
+                className={`hidden size-8 overflow-hidden rounded-lg lg:block${
+                  sidebarCollapsed ? "" : " xl:hidden"
+                }`}
+              >
+                <BrandingImage
+                  slot="sidebarLogoCollapsed"
                   alt=""
                   aria-hidden="true"
-                  className="size-full object-cover object-center"
+                  className="size-full object-contain object-center"
                   height={233}
-                  src="/logoExpanded.png"
+                  src={branding.sidebarLogoCollapsedPath}
                   width={233}
                 />
               </span>
@@ -202,6 +241,7 @@ export function DashboardShell({
           autoCollapseAt="lg"
           mobileOpen={mobileOpen}
           onMobileOpenChange={setMobileOpen}
+          onCollapsedChange={setSidebarCollapsed}
           showHamburgerButton={false}
           footer={
             <div className="space-y-1">

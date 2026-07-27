@@ -136,30 +136,36 @@ test("family-create wizard shows paired rows on desktop and collapses to one col
   await expect(dialog.locator("#step-household")).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });
-  const housingRow = await page.getByLabel("Housing situation").boundingBox();
+  const householdFields = dialog
+    .locator("#step-household")
+    .locator('div[class~="md:grid-cols-2"]')
+    .first()
+    .locator(":scope > *");
+  await expect(householdFields).toHaveCount(6);
   const registrationTrigger = dialog
-    .locator("div.cursor-pointer")
-    .filter({ hasText: "July 24th, 2026" })
-    .first();
+    .locator("#step-household")
+    .getByText(/[A-Z][a-z]+ \d{1,2}(?:st|nd|rd|th), \d{4}/, {
+      exact: true,
+    });
   await registrationTrigger.waitFor();
-  const registrationRow = await registrationTrigger.boundingBox();
-  expect(housingRow).not.toBeNull();
-  expect(registrationRow).not.toBeNull();
-  if (housingRow && registrationRow) {
-    expect(Math.abs(housingRow.y - registrationRow.y)).toBeLessThan(20);
-  }
+  const [housingRow, registrationRow] = await householdFields.evaluateAll(
+    (elements) =>
+      elements.slice(0, 2).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { x: rect.x, y: rect.y };
+      }),
+  );
+  expect(Math.abs(housingRow.y - registrationRow.y)).toBeLessThan(20);
+  expect(registrationRow.x).toBeGreaterThan(housingRow.x);
 
   await page.setViewportSize({ width: 375, height: 812 });
-  const housingMobile = await page.getByLabel("Housing situation").boundingBox();
-  const registrationMobile = await dialog
-    .locator("div.cursor-pointer")
-    .filter({ hasText: "July 24th, 2026" })
-    .first()
-    .boundingBox();
-  expect(housingMobile).not.toBeNull();
-  expect(registrationMobile).not.toBeNull();
-  if (housingMobile && registrationMobile) {
-    expect(registrationMobile.y).toBeGreaterThan(housingMobile.y);
-  }
+  const [housingMobile, registrationMobile] = await householdFields.evaluateAll(
+    (elements) =>
+      elements.slice(0, 2).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { x: rect.x, y: rect.y };
+      }),
+  );
+  expect(registrationMobile.y).toBeGreaterThan(housingMobile.y);
   await expect(dialog.locator("#step-household")).toBeVisible();
 });

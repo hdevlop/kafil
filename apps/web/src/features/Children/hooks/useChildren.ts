@@ -4,6 +4,7 @@ import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
+  bulkDeleteChildren,
   createChild,
   deactivateChild,
   deleteChild,
@@ -54,6 +55,13 @@ export function useChildCommands() {
     errorMessage: "Could not permanently delete the child record.",
   });
 
+  const bulkRemove = useEntityCommand({
+    mutationFn: bulkDeleteChildren,
+    invalidate,
+    successMessage: "Selected child records permanently deleted.",
+    errorMessage: "Could not permanently delete the selected child records.",
+  });
+
   const deactivate = useEntityCommand({
     mutationFn: deactivateChild,
     invalidate,
@@ -68,5 +76,5 @@ export function useChildCommands() {
     errorMessage: "Could not reactivate the child record.",
   });
 
-  return { create, update, remove, deactivate, reactivate };
+  return { create, update, remove, bulkRemove, deactivate, reactivate };
 }

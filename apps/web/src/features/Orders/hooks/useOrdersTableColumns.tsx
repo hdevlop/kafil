@@ -24,6 +24,14 @@ export function useOrdersTableColumns() {
         ),
       },
       {
+        accessorKey: "placementSource",
+        header: "Source",
+        cell: ({ getValue }) =>
+          getValue<string>() === "operator_assisted"
+            ? "Assisted"
+            : "Self-service",
+      },
+      {
         accessorKey: "totalMinor",
         header: "Total",
         cell: ({ getValue }) => formatMad(getValue<number>()),

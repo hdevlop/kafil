@@ -7,13 +7,15 @@ import {
   BudgetLedgerRepository,
   MonthlyBudgetLimitRepository,
 } from "../src/modules/budgets";
-import { CatalogService, ProductRepository } from "../src/modules/catalog";
+import { ProductRepository } from "../src/modules/catalog";
 import { OutboxService } from "../src/modules/outbox";
 import { FundingService } from "../src/modules/settings";
 import {
   cartItemDto,
   CartRepository,
   OrderController,
+  OrderEvidenceService,
+  OrderPurchaseRepository,
   OrderRepository,
   OrderService,
   OrderValidator,
@@ -47,9 +49,13 @@ describe("Phase 5 cart and route contracts", () => {
         "removeCartItem",
         "clearCart",
         "submit",
+        "submitAssisted",
         "approve",
         "reject",
-        "startPreparation",
+        "recordPurchase",
+        "replacePurchase",
+        "startDelivery",
+        "confirmDelivery",
         "deliver",
         "cancelOwn",
         "cancel",
@@ -60,8 +66,8 @@ describe("Phase 5 cart and route contracts", () => {
   });
 });
 
-describe("Phase 5 transactional order effects", () => {
-  it("recalculates a stale cart price, reserves stock and budget, and clears the cart", async () => {
+describe("Phase 5 procurement-on-demand transactional order effects", () => {
+  it("reserves budget from a product with no inventory balance and clears the cart", async () => {
     const { service, state } = orderService();
 
     const order = await service.submit("family-user", {
@@ -76,13 +82,6 @@ describe("Phase 5 transactional order effects", () => {
         lineTotalMinor: 600,
       }),
     ]);
-    expect(state.inventory).toEqual([
-      expect.objectContaining({
-        productId,
-        quantity: 2,
-        idempotencyKey: `order:${order.id}:inventory:reserve:${productId}`,
-      }),
-    ]);
     expect(state.balanceUpdates).toEqual([
       { availableMinor: 400, reservedMinor: 600, spentMinor: 0 },
     ]);
@@ -93,7 +92,7 @@ describe("Phase 5 transactional order effects", () => {
         idempotencyKey: `order:${order.id}:budget:reserve`,
       }),
     ]);
-    expect(state.effectOrder).toEqual(["inventory", "budget"]);
+    expect(state.effectOrder).toEqual(["budget"]);
     expect(state.clearedCartIds).toEqual(["cart-1"]);
   });
 
@@ -116,21 +115,8 @@ describe("Phase 5 transactional order effects", () => {
       service.submit("family-user", { idempotencyKey: "order-submit-funding" }),
     ).rejects.toMatchObject({ status: 409 });
 
-    expect(state.inventory).toEqual([]);
     expect(state.balanceUpdates).toEqual([]);
     expect(state.ledger).toEqual([]);
-  });
-
-  it("rejects a low-stock order before it can reserve a budget", async () => {
-    const { service, state } = orderService({ reserveError: true });
-
-    await expect(
-      service.submit("family-user", { idempotencyKey: "order-submit-0003" }),
-    ).rejects.toMatchObject({ status: 409 });
-
-    expect(state.balanceUpdates).toEqual([]);
-    expect(state.ledger).toEqual([]);
-    expect(state.clearedCartIds).toEqual([]);
   });
 
   it("returns the original order for a duplicate submission key without new effects", async () => {
@@ -141,13 +127,12 @@ describe("Phase 5 transactional order effects", () => {
     });
 
     expect(order.id).toBe(orderId);
-    expect(state.inventory).toEqual([]);
     expect(state.balanceUpdates).toEqual([]);
     expect(state.ledger).toEqual([]);
     expect(state.clearedCartIds).toEqual([]);
   });
 
-  it("serializes concurrent duplicate submissions into one reservation set", async () => {
+  it("serializes concurrent duplicate submissions into one budget reservation", async () => {
     const { service, state } = orderService({ serializeCart: true });
 
     const [first, second] = await Promise.all([
@@ -156,13 +141,125 @@ describe("Phase 5 transactional order effects", () => {
     ]);
 
     expect(first.id).toBe(second.id);
-    expect(state.inventory).toHaveLength(1);
     expect(state.balanceUpdates).toHaveLength(1);
     expect(state.ledger).toHaveLength(1);
     expect(state.clearedCartIds).toEqual(["cart-1"]);
   });
 
-  it("captures approved reservations and refunds allocated stock and money on cancellation", async () => {
+  it("creates an attributed assisted order without touching the family's cart", async () => {
+    const { service, state } = orderService();
+
+    const order = await service.submitAssisted(
+      {
+        familyProfileId: householdId,
+        items: [{ productId, quantity: 2 }],
+        assistanceChannel: "phone",
+        assistanceNote: "Guardian could not use the portal",
+        idempotencyKey: "assisted-order-0001",
+      },
+      "operator-user",
+    );
+
+    expect(order).toMatchObject({
+      status: "pending",
+      placementSource: "operator_assisted",
+      placedByUserId: "operator-user",
+      assistanceChannel: "phone",
+      assistanceNote: "Guardian could not use the portal",
+    });
+    expect(state.balanceUpdates).toEqual([
+      { availableMinor: 400, reservedMinor: 600, spentMinor: 0 },
+    ]);
+    expect(state.clearedCartIds).toEqual([]);
+  });
+
+  it("releases a lower receipt variance and captures only the actual purchase", async () => {
+    const { service, state } = orderService({
+      status: "approved",
+      availableMinor: 400,
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+
+    await service.recordPurchase(
+      orderId,
+      purchaseInput({ actualTotalMinor: 500, idempotencyKey: "purchase-lower-0001" }),
+      "operator-user",
+    );
+
+    expect(state.balanceUpdates).toEqual([
+      { availableMinor: 400, reservedMinor: 100, spentMinor: 500 },
+      { availableMinor: 500, reservedMinor: 0, spentMinor: 500 },
+    ]);
+    expect(state.ledger.map((entry) => entry.entryType)).toEqual([
+      "order_capture",
+      "order_release",
+    ]);
+  });
+
+  it("requires confirmation and available budget for a higher receipt variance", async () => {
+    const withoutConfirmation = orderService({
+      status: "approved",
+      availableMinor: 400,
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+    await expect(
+      withoutConfirmation.service.recordPurchase(
+        orderId,
+        purchaseInput({ actualTotalMinor: 700, idempotencyKey: "purchase-high-0001" }),
+        "operator-user",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(withoutConfirmation.state.balanceUpdates).toEqual([]);
+
+    const confirmed = orderService({
+      status: "approved",
+      availableMinor: 400,
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+    await confirmed.service.recordPurchase(
+      orderId,
+      purchaseInput({
+        actualTotalMinor: 700,
+        confirmHigherAmount: true,
+        idempotencyKey: "purchase-high-0002",
+      }),
+      "operator-user",
+    );
+    expect(confirmed.state.balanceUpdates).toEqual([
+      { availableMinor: 300, reservedMinor: 700, spentMinor: 0 },
+      { availableMinor: 300, reservedMinor: 0, spentMinor: 700 },
+    ]);
+  });
+
+  it("tracks purchase delivery to a terminal state without another financial effect", async () => {
+    const { service, state } = orderService({ status: "purchased" });
+    state.activePurchase = purchaseRecord();
+
+    const started = await service.startDelivery(orderId, "operator-user");
+    expect(started.status).toBe("out_for_delivery");
+    expect(state.balanceUpdates).toEqual([]);
+
+    const delivered = await service.confirmDelivery(
+      orderId,
+      {
+        confirmationMethod: "operator_confirmation",
+        deliveryNote: "Handed to the guardian",
+        idempotencyKey: "delivery-confirm-0001",
+      },
+      "operator-user",
+    );
+    expect(delivered).toMatchObject({
+      status: "delivered",
+      deliveryConfirmationMethod: "operator_confirmation",
+    });
+    expect(state.balanceUpdates).toEqual([]);
+    expect(state.ledger).toEqual([]);
+  });
+
+  it("keeps approval reserved, captures the actual purchase, and refunds it on cancellation", async () => {
     const { service, state } = orderService({
       status: "pending",
       availableMinor: 400,
@@ -174,20 +271,37 @@ describe("Phase 5 transactional order effects", () => {
     const approved = await service.approve(orderId, "operator-user");
 
     expect(approved.status).toBe("approved");
+    expect(state.balanceUpdates).toEqual([]);
+    expect(state.ledger).toEqual([]);
+
+    state.order = orderRecord({ status: "approved" });
+    await service.recordPurchase(
+      orderId,
+      {
+        merchantName: "Marjane",
+        purchasedAt: new Date("2026-07-27T12:00:00.000Z"),
+        actualTotalMinor: 600,
+        receiptStoragePath:
+          "/api/order-evidence/receipts/serve/00000000-0000-4000-8000-000000000099.pdf",
+        receiptMediaType: "application/pdf",
+        receiptByteSize: 100,
+        idempotencyKey: "purchase-record-0001",
+      },
+      "operator-user",
+    );
     expect(state.balanceUpdates).toEqual([
       { availableMinor: 400, reservedMinor: 0, spentMinor: 600 },
     ]);
-    expect(state.inventory).toEqual([
-      expect.objectContaining({ idempotencyKey: `order:${orderId}:inventory:allocate:${productId}` }),
-    ]);
     expect(state.ledger).toEqual([
-      expect.objectContaining({ entryType: "order_capture", reversesEntryId: "reserve-ledger" }),
+      expect.objectContaining({
+        entryType: "order_capture",
+        amountMinor: -600,
+        sourceType: "order_purchase",
+      }),
     ]);
-    expect(state.effectOrder).toEqual(["inventory", "budget"]);
 
-    state.order = orderRecord({ status: "approved" });
+    state.order = orderRecord({ status: "purchased" });
     state.balanceUpdates.length = 0;
-    state.inventory.length = 0;
     state.ledger.length = 0;
     state.effectOrder.length = 0;
     state.captureLedger = { id: "capture-ledger" };
@@ -195,7 +309,10 @@ describe("Phase 5 transactional order effects", () => {
 
     const cancelled = await service.cancel(
       orderId,
-      { reason: "Recovered items were returned to stock" },
+      {
+        reason: "Items can be returned to the supermarket",
+        confirmRecoverableGoods: true,
+      },
       "operator-user",
     );
 
@@ -203,13 +320,13 @@ describe("Phase 5 transactional order effects", () => {
     expect(state.balanceUpdates).toEqual([
       { availableMinor: 1000, reservedMinor: 0, spentMinor: 0 },
     ]);
-    expect(state.inventory).toEqual([
-      expect.objectContaining({ idempotencyKey: `order:${orderId}:inventory:return:${productId}` }),
-    ]);
     expect(state.ledger).toEqual([
-      expect.objectContaining({ entryType: "order_refund", reversesEntryId: "capture-ledger" }),
+      expect.objectContaining({
+        entryType: "order_refund",
+        sourceType: "order_purchase",
+      }),
     ]);
-    expect(state.effectOrder).toEqual(["inventory", "budget"]);
+    expect(state.effectOrder).toEqual(["budget"]);
   });
 
   it("rejects forbidden state transitions without writing an order effect", async () => {
@@ -220,19 +337,17 @@ describe("Phase 5 transactional order effects", () => {
     });
 
     expect(state.balanceUpdates).toEqual([]);
-    expect(state.inventory).toEqual([]);
     expect(state.ledger).toEqual([]);
   });
 });
 
 function orderService(options: {
-  status?: "pending" | "approved" | "delivered";
+  status?: "pending" | "approved" | "purchased" | "delivered";
   availableMinor?: number;
   reservedMinor?: number;
   reserveLedger?: { id: string };
   captureLedger?: { id: string };
   orderItems?: ReturnType<typeof orderItemRecord>[];
-  reserveError?: boolean;
   existingSubmission?: boolean;
   serializeCart?: boolean;
   fundingActive?: boolean;
@@ -257,8 +372,10 @@ function orderService(options: {
     orderItems: options.orderItems ?? [],
     reserveLedger: options.reserveLedger,
     captureLedger: options.captureLedger,
+    activePurchase: undefined as
+      | ReturnType<typeof purchaseRecord>
+      | undefined,
     createdItems: [] as Record<string, unknown>[],
-    inventory: [] as Record<string, unknown>[],
     balanceUpdates: [] as Record<string, unknown>[],
     ledger: [] as Record<string, unknown>[],
     clearedCartIds: [] as string[],
@@ -324,9 +441,23 @@ function orderService(options: {
       return state.order;
     },
   } as unknown as OrderRepository;
+  const purchases = {
+    findByIdempotencyKey: async () => undefined,
+    findActiveByOrderId: async () => state.activePurchase,
+    create: async (input: Record<string, unknown>) => {
+      state.activePurchase = purchaseRecord(input);
+      return state.activePurchase;
+    },
+    reverse: async (input: Record<string, unknown>) => input,
+    listByOrderId: async () =>
+      state.activePurchase
+        ? [{ purchase: state.activePurchase, reversal: null }]
+        : [],
+  } as unknown as OrderPurchaseRepository;
   const service = new OrderService(
     carts,
     orders,
+    purchases,
     {
       findActiveById: async () => ({
         id: productId,
@@ -335,27 +466,6 @@ function orderService(options: {
         priceMinor: 300,
       }),
     } as unknown as ProductRepository,
-    {
-      reserve: async (input: Record<string, unknown>) => {
-        if (options.reserveError) {
-          throw { status: 409 };
-        }
-        state.effectOrder.push("inventory");
-        state.inventory.push(input);
-      },
-      allocate: async (input: Record<string, unknown>) => {
-        state.effectOrder.push("inventory");
-        state.inventory.push(input);
-      },
-      release: async (input: Record<string, unknown>) => {
-        state.effectOrder.push("inventory");
-        state.inventory.push(input);
-      },
-      returnAllocated: async (input: Record<string, unknown>) => {
-        state.effectOrder.push("inventory");
-        state.inventory.push(input);
-      },
-    } as unknown as CatalogService,
     {
       lockByFamilyId: async () => state.account,
       updateBalances: async (_id: string, balance: Record<string, unknown>) => {
@@ -385,7 +495,9 @@ function orderService(options: {
     { enqueue: async () => undefined } as unknown as OutboxService,
     {
       ensureFamily: async () => familyRecord(),
+      ensureActiveFamilyById: async () => familyRecord(),
       ensureSameFamily: () => undefined,
+      ensureIdempotencyContext: () => undefined,
       ensureStatus: (order: { status: string }, expected: string) => {
         if (order.status !== expected) {
           throw { status: 409 };
@@ -404,6 +516,9 @@ function orderService(options: {
         return { status: "active" };
       },
     } as unknown as FundingService,
+    {
+      ensureManagedReference: async () => undefined,
+    } as unknown as OrderEvidenceService,
   );
   return { service, state };
 }
@@ -420,7 +535,9 @@ function cartRecord() {
 function familyRecord() {
   return {
     role: "family",
-    familyProfileId: householdId,
+    id: householdId,
+    userId: "family-user",
+    status: "active",
     guardianLegalName: "Family guardian",
     exactAddress: "Private address",
     phone: "+212600000000",
@@ -448,6 +565,9 @@ function orderRecord(overrides: Record<string, unknown> = {}) {
     orderNumber: "KAF-20260716-TEST0001",
     submissionIdempotencyKey: "order-submit-base",
     familyProfileId: householdId,
+    placementSource: "family_self_service",
+    assistanceChannel: null,
+    assistanceNote: null,
     status: "pending",
     subtotalMinor: 600,
     totalMinor: 600,
@@ -465,9 +585,54 @@ function orderRecord(overrides: Record<string, unknown> = {}) {
     cancelledAt: null,
     cancellationReason: null,
     preparationStartedAt: null,
+    deliveryStartedAt: null,
+    deliveryStartedByUserId: null,
     deliveredAt: null,
+    deliveredByUserId: null,
+    deliveryConfirmationMethod: null,
+    deliveryNote: null,
+    deliveryProofStoragePath: null,
+    deliveryProofMediaType: null,
+    deliveryProofByteSize: null,
+    deliveryConfirmationIdempotencyKey: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
+function purchaseInput(overrides: Record<string, unknown> = {}) {
+  return {
+    merchantName: "Marjane",
+    purchasedAt: new Date("2026-07-27T12:00:00.000Z"),
+    actualTotalMinor: 600,
+    receiptStoragePath:
+      "/api/order-evidence/receipts/serve/00000000-0000-4000-8000-000000000099.pdf",
+    receiptMediaType: "application/pdf" as const,
+    receiptByteSize: 100,
+    confirmHigherAmount: false,
+    idempotencyKey: "purchase-record-0001",
+    ...overrides,
+  };
+}
+
+function purchaseRecord(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "00000000-0000-4000-8000-000000000099",
+    orderId,
+    merchantName: "Marjane",
+    receiptNumber: null,
+    purchasedAt: new Date("2026-07-27T12:00:00.000Z"),
+    actualTotalMinor: 600,
+    currency: "MAD",
+    receiptStoragePath:
+      "/api/order-evidence/receipts/serve/00000000-0000-4000-8000-000000000099.pdf",
+    receiptMediaType: "application/pdf",
+    receiptByteSize: 100,
+    recordedByUserId: "operator-user",
+    idempotencyKey: "purchase-record-0001",
+    replacesPurchaseId: null,
+    createdAt: new Date(),
     ...overrides,
   };
 }

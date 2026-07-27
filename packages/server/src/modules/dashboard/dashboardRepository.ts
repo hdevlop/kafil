@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -9,7 +9,6 @@ import { children } from "../children/childSchema";
 import { contributions, contributionPlans } from "../contributions/contributionSchema";
 import { familyProfiles } from "../families/familySchema";
 import { orders, orderItems } from "../orders/orderSchema";
-import { inventoryBalances, products } from "../catalog/catalogSchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
 
@@ -52,7 +51,7 @@ export class DashboardRepository {
   }
 
   async operatorMoneyCounts(now: Date = new Date()) {
-    const [[contributionRows], [budgetRows], [orderRows], [inventoryRows]] = await Promise.all([
+    const [[contributionRows], [budgetRows], [orderRows]] = await Promise.all([
       this.db.select({
         pendingCount: sql<number>`count(*) filter (where ${isLivePending(now)})::int`,
         expiredCount: sql<number>`count(*) filter (where ${contributions.status} = 'expired')::int`,
@@ -69,21 +68,12 @@ export class DashboardRepository {
       this.db.select({
         openCount: sql<number>`count(*) filter (where ${orders.status} in ('pending', 'approved', 'in_preparation'))::int`,
       }).from(orders),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(inventoryBalances)
-        .innerJoin(products, eq(inventoryBalances.productId, products.id))
-        .where(and(
-          eq(products.status, "active"),
-          lte(sql`${inventoryBalances.onHandQuantity} - ${inventoryBalances.reservedQuantity}`, 5),
-        )),
     ]);
 
     return {
       contributions: contributionRows,
       budgets: budgetRows,
       orders: orderRows,
-      inventory: inventoryRows,
     };
   }
 
@@ -107,24 +97,6 @@ export class DashboardRepository {
       .from(orders)
       .groupBy(orders.status)
       .orderBy(asc(orders.status));
-  }
-
-  operatorLowStock(limit = 6) {
-    return this.db
-      .select({
-        productId: products.id,
-        name: products.name,
-        sku: products.sku,
-        availableQuantity: sql<number>`${inventoryBalances.onHandQuantity} - ${inventoryBalances.reservedQuantity}`,
-      })
-      .from(inventoryBalances)
-      .innerJoin(products, eq(inventoryBalances.productId, products.id))
-      .where(and(
-        eq(products.status, "active"),
-        lte(sql`${inventoryBalances.onHandQuantity} - ${inventoryBalances.reservedQuantity}`, 5),
-      ))
-      .orderBy(asc(sql`${inventoryBalances.onHandQuantity} - ${inventoryBalances.reservedQuantity}`), asc(products.name))
-      .limit(limit);
   }
 
   async familyIdentity(userId: string) {
@@ -287,7 +259,7 @@ export class DashboardRepository {
       .from(contributions)
       .innerJoin(supportAssignments, eq(contributions.supportAssignmentId, supportAssignments.id))
       .where(and(
-        eq(contributions.sponsorProfileId, sponsorProfileId),
+        eq(supportAssignments.sponsorProfileId, sponsorProfileId),
         isNull(supportAssignments.childId),
         gte(contributions.submittedAt, since),
       ))

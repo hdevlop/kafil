@@ -8,7 +8,6 @@ const ntableCardFiles = [
   "../src/features/Contributions/components/ContributionCard.tsx",
   "../src/features/Families/components/FamilyCard.tsx",
   "../src/features/FamilyBudget/components/FamilyBudgetLedgerCard.tsx",
-  "../src/features/Inventory/components/InventoryLedgerCard.tsx",
   "../src/features/Orders/components/OrderCard.tsx",
   "../src/features/Products/components/ProductCard.tsx",
   "../src/features/Sponsors/components/SponsorCard.tsx",
@@ -20,17 +19,31 @@ function readSource(relativePath: string) {
 }
 
 describe("NTable responsive card layouts", () => {
+  test("catalog card pages hide pagination after loading the maximum page size", () => {
+    for (const relativePath of [
+      "../src/features/Categories/components/CategoriesPage.tsx",
+      "../src/features/Products/components/ProductsPage.tsx",
+    ]) {
+      const source = readSource(relativePath);
+      expect(source).toContain("createOffsetPagination(0, 100)");
+      expect(source).toContain("showPagination: false");
+      expect(source).not.toContain("manualPagination: true");
+    }
+  });
+
   test("all renderers use the embedded NCard information contract", () => {
-    expect(ntableCardFiles).toHaveLength(11);
+    expect(ntableCardFiles).toHaveLength(10);
 
     for (const relativePath of ntableCardFiles) {
       const source = readSource(relativePath);
       expect(source).toContain("<NCard");
-      expect(source).toContain("embedded");
-      expect(source).toContain("<NCardSection");
-      expect(source).toContain("<NCardInfo");
       expect(source).not.toContain("NSectionInfo");
       expect(source).not.toContain("<article");
+      expect(source).toMatch(/<NCard[^>]*(\bembedded\b|\bbordered\b)/);
+
+      if (!relativePath.includes("/Categories/")) {
+        expect(source).toContain("<NCardInfo");
+      }
     }
   });
 
@@ -42,12 +55,42 @@ describe("NTable responsive card layouts", () => {
 
     for (const relativePath of [
       "../src/features/Budgets/components/BudgetLedgerCard.tsx",
-      "../src/features/Categories/components/CategoryCard.tsx",
-      "../src/features/Products/components/ProductCard.tsx",
       "../src/features/SupportAssignments/components/SupportAssignmentCard.tsx",
     ]) {
       expect(readSource(relativePath)).toContain('<NCardMedia variant="avatar" size="sm">');
     }
+
+    const category = readSource("../src/features/Categories/components/CategoryCard.tsx");
+    expect(category).toContain('variant="hero"');
+    expect(category).toContain('aspect="16/9"');
+    expect(category).toContain("mx-3 mt-3 aspect-[2/1]");
+    expect(category).toContain("<NCardSection");
+    expect(category).toContain('surface="plain"');
+    expect(category).not.toContain("<NCardFooter>");
+    expect(category).not.toContain("<NCardInfo");
+    expect(category).toContain("{data.name}");
+    expect(category).not.toContain("{data.slug}");
+    expect(category).not.toContain("entityCardImageColor");
+    expect(category).toContain("data.itemCount");
+    expect(category).not.toContain("<StatusBadge");
+
+    const product = readSource("../src/features/Products/components/ProductCard.tsx");
+    expect(product).toContain('variant="hero"');
+    expect(product).toContain('aspect="16/9"');
+    expect(product).not.toContain("entityCardImageColor");
+    expect(product).toContain("{data.name}");
+    expect(product).toContain("formatMad(data.priceMinor)");
+    expect(product).toContain("text-emerald-600");
+    expect(product).not.toContain("<StatusBadge");
+    expect(product).toContain("data.categoryName");
+    expect(product).not.toContain("data.onHandQuantity");
+    expect(product).not.toContain("<NCardFooter>");
+    expect(product).toContain("<NCardInfo");
+    expect(product).toContain("<NCardSection");
+    expect(product).toContain("embedded");
+    expect(product).toContain("title={data.name}");
+    expect(product).toContain("description={formatMad(data.priceMinor)}");
+    expect(product).not.toContain("mix-blend-multiply");
 
     const child = readSource("../src/features/Children/components/ChildCard.tsx");
     expect(child).toContain('variant="avatar"');

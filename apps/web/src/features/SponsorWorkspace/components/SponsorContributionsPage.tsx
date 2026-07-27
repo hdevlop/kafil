@@ -298,6 +298,7 @@ export function SponsorContributionsPage({
             </div>
           ) : (
             <PageEmptyState
+              icon={CircleDollarSign}
               title={t("sponsor.contributions.emptyTitle")}
               description={t("sponsor.contributions.emptyDescription")}
             />

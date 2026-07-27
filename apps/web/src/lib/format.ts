@@ -1,9 +1,11 @@
 import { getUiTranslation, type TranslationKey } from "@/i18n/translations";
 
-export type KafilLanguage = "ar" | "en" | "fr";
+export type KafilLanguage = "ar" | "en" | "es" | "fr";
 
 export function normalizeKafilLanguage(value: unknown): KafilLanguage {
-  return value === "ar" || value === "fr" || value === "en" ? value : "en";
+  return value === "ar" || value === "en" || value === "es" || value === "fr"
+    ? value
+    : "en";
 }
 
 function selectedKafilLanguage(): KafilLanguage {
@@ -46,6 +48,7 @@ function selectedKafilTimeZone(): KafilTimeZone {
 const localeByLanguage: Record<KafilLanguage, string> = {
   ar: "ar-MA",
   en: "en-MA",
+  es: "es-MA",
   fr: "fr-MA",
 };
 
@@ -125,6 +128,8 @@ const statusTranslationKeys: Record<string, TranslationKey> = {
   ended: "status.ended",
   inactive: "status.inactive",
   in_preparation: "status.in_preparation",
+  purchased: "status.purchased",
+  out_for_delivery: "status.out_for_delivery",
   paused: "status.paused",
   pending: "status.pending",
   pending_funding: "status.pending_funding",

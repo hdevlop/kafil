@@ -16,19 +16,24 @@ export function useChildrenTableColumns() {
         accessorKey: "legalName",
         header: "Child",
         cell: ({ row }) => {
-          const isFamilyUnavailable =
-            row.original.familyStatus !== undefined &&
-            row.original.familyStatus !== "active";
+          const isDisabled =
+            row.original.status === "inactive" ||
+            (row.original.familyStatus !== undefined &&
+              row.original.familyStatus !== "active");
           const avatar = (
             <NAvatar
             src={getChildAvatarImage(row.original.image, row.original.gender)}
             title={row.original.legalName}
             subtitle={row.original.gender === "F" ? "Female" : "Male"}
             classNames={{
-              avatar: isFamilyUnavailable ? "bg-muted grayscale opacity-70" : "bg-muted",
+              avatar: isDisabled ? "bg-muted grayscale opacity-70" : "bg-muted",
             }}
           />
           );
+
+          const isFamilyUnavailable =
+            row.original.familyStatus !== undefined &&
+            row.original.familyStatus !== "active";
 
           if (!isFamilyUnavailable) return avatar;
 

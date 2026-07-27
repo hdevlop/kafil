@@ -187,14 +187,29 @@ async function clearManagedRolePermissions() {
     .select({ id: rolesTable.id })
     .from(rolesTable)
     .where(inArray(rolesTable.name, AUTH_ROLES.map((role) => role.name)));
+  const permissionRows = await db
+    .select({ id: permissionsTable.id })
+    .from(permissionsTable)
+    .where(
+      inArray(
+        permissionsTable.name,
+        AUTH_PERMISSIONS.map((permission) => permission.name),
+      ),
+    );
 
-  if (roleRows.length > 0) {
+  if (roleRows.length > 0 && permissionRows.length > 0) {
     await db
       .delete(rolePermissionsTable)
       .where(
-        inArray(
-          rolePermissionsTable.roleId,
-          roleRows.map((role) => role.id),
+        and(
+          inArray(
+            rolePermissionsTable.roleId,
+            roleRows.map((role) => role.id),
+          ),
+          inArray(
+            rolePermissionsTable.permissionId,
+            permissionRows.map((permission) => permission.id),
+          ),
         ),
       );
   }
@@ -241,7 +256,17 @@ export async function syncRolePermissions() {
 
       await tx
         .delete(rolePermissionsTable)
-        .where(eq(rolePermissionsTable.roleId, role.id));
+        .where(
+          and(
+            eq(rolePermissionsTable.roleId, role.id),
+            inArray(
+              rolePermissionsTable.permissionId,
+              permissionNames.map(
+                (permissionName) => permissionsByName.get(permissionName)!.id,
+              ),
+            ),
+          ),
+        );
 
       if (permissionNames.length > 0) {
         await tx.insert(rolePermissionsTable).values(
@@ -326,9 +351,15 @@ export async function verifyAuthenticationSeed(
       eq(rolePermissionsTable.permissionId, permissionsTable.id),
     )
     .where(
-      inArray(
-        rolePermissionsTable.roleId,
-        roleRows.map((role) => role.id),
+      and(
+        inArray(
+          rolePermissionsTable.roleId,
+          roleRows.map((role) => role.id),
+        ),
+        inArray(
+          permissionsTable.name,
+          AUTH_PERMISSIONS.map((permission) => permission.name),
+        ),
       ),
     );
 

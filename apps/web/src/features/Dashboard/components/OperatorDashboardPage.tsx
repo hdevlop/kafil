@@ -6,12 +6,10 @@ import {
   HandCoins,
   HeartHandshake,
   LayoutDashboard,
-  PackageSearch,
   UsersRound,
   WalletCards,
 } from "lucide-react";
 import { NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard } from "najm-kit";
-import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
@@ -120,7 +118,7 @@ export function OperatorDashboardPage() {
       </NGrid>
 
       <NGrid cols={1} xlCols={12} className="flex-1">
-        <NGridItem span={1} xlSpan={6}>
+        <NGridItem span={1} xlSpan={12}>
           <StatusBreakdown
             data={data.orderStatuses}
             emptyLabel={t("state.empty")}
@@ -129,36 +127,6 @@ export function OperatorDashboardPage() {
             language={language}
             title={t("dashboard.operator.orderPipeline")}
           />
-        </NGridItem>
-        <NGridItem span={1} xlSpan={6}>
-          <NCard className="h-full" icon={PackageSearch} title={t("dashboard.operator.stockAttention")}>
-            {data.lowStock.length ? (
-              <div className="space-y-2">
-                {data.lowStock.map((product) => (
-                  <Link
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:bg-muted/60"
-                    href="/operator/inventory"
-                    key={product.productId}
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold">{product.name}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{product.sku}</span>
-                    </span>
-                    <strong className="shrink-0 text-sm text-destructive">
-                      {t("dashboard.operator.unitsAvailable", { count: number(product.availableQuantity) })}
-                    </strong>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="grid min-h-44 place-items-center text-center">
-                <div>
-                  <p className="font-semibold">{t("dashboard.operator.stockHealthy")}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.operator.stockHealthyDescription")}</p>
-                </div>
-              </div>
-            )}
-          </NCard>
         </NGridItem>
       </NGrid>
     </NPageLayout>

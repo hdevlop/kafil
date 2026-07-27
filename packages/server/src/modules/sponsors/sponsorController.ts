@@ -15,6 +15,8 @@ import { Validate } from "najm-validation";
 
 import { isAdmin, isOperator, isSponsor } from "../../config/authConfig";
 import {
+  type BulkDeleteSponsorsDto,
+  bulkDeleteSponsorsDto,
   type CreateOwnSponsorProfileDto,
   createOwnSponsorProfileDto,
   type CreateSponsorDto,
@@ -112,6 +114,26 @@ export class SponsorController {
   @ResMsg("sponsors.success.created")
   create(@Body() body: CreateSponsorDto) {
     return this.sponsors.create(body);
+  }
+
+  @Post("/bulk-delete")
+  @isAdmin()
+  @CanDelete(Sponsor)
+  @Validate({ body: bulkDeleteSponsorsDto })
+  @McpTool({
+    description: "Permanently delete multiple unreferenced sponsor accounts",
+    destructive: true,
+    confirm: {
+      level: "danger",
+      message: "Permanently delete these sponsor accounts? This cannot be undone.",
+    },
+  })
+  @ResMsg("sponsors.success.deleted")
+  bulkDelete(
+    @Body() body: BulkDeleteSponsorsDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.sponsors.deleteMany(body.ids, actorUserId);
   }
 
   @Post("/me/profile")

@@ -29,11 +29,13 @@ export interface SponsorProfileInput {
 export interface CreateSponsorInput extends SponsorProfileInput {
   name: string;
   email: string;
+  image?: string | null;
 }
 
 export interface UpdateSponsorInput {
   name: string;
   email: string;
+  image?: string | null;
   phone?: string;
   cin?: string;
   gender?: "F" | "M";

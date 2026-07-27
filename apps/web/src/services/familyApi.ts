@@ -61,6 +61,10 @@ export function deleteFamily(id: string) {
   return api.delete<FamilyRecord>(`/families/${id}`);
 }
 
+export function bulkDeleteFamilies(ids: string[]) {
+  return api.post<FamilyRecord[]>("/families/bulk-delete", { ids });
+}
+
 export function deactivateFamily({ id, reason }: FamilyStatusInput) {
   return api.post<FamilyRecord>(`/families/${id}/deactivate`, { reason });
 }

@@ -40,6 +40,11 @@ daily, five weekly, twelve monthly) and run `restic forget --prune` only after
 review; pruning is destructive. Alert if the timer fails or the newest offsite
 snapshot is older than 26 hours.
 
+The storage archive must include `order-evidence/receipts` and
+`order-evidence/deliveries` together with profile/document assets. Receipt and
+delivery rows reference guarded API paths backed by these files, so database
+and storage must always use the same recovery point.
+
 ## Restore rehearsal
 
 First restore a selected offsite snapshot to a temporary local directory with
@@ -62,10 +67,12 @@ explicitly identified rehearsal targets.
 ## Recovery cases
 
 - **PostgreSQL loss:** stop application writes, restore the matching dump into
-  a new database, run only forward migrations, reconcile ledgers/inventory,
-  rotate sessions, then switch the protected `DATABASE_URL`.
+  a new database, run only forward migrations, reconcile financial ledgers,
+  orders, purchase records, and evidence references, rotate sessions, then
+  switch the protected `DATABASE_URL`.
 - **Storage loss:** restore the storage archive matching the database recovery
-  point and verify protected document ownership and missing-object reports.
+  point and verify protected document ownership plus receipt/delivery missing
+  and orphan-object reports. Never expose a raw storage directory publicly.
 - **Redis loss:** treat cache/session-revocation data as lost; invalidate all
   sessions and rebuild only from authoritative PostgreSQL state. Redis is not
   authoritative financial storage.
