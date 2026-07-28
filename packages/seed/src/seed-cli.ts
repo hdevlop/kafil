@@ -1,6 +1,7 @@
 export const SEED_CLI_COMMANDS = [
   "setup",
   "demo",
+  "remove",
   "full",
   "migrate",
   "admin",
@@ -27,6 +28,7 @@ export interface SeedCliDemoCounts {
 
 const COMMAND_ALIASES: Readonly<Record<string, SeedCliCommand>> = {
   auth: "admin",
+  clean: "remove",
   reset: "setup",
 };
 
@@ -91,36 +93,28 @@ export function seedCliHelp() {
   return `Kafil seed CLI
 
 Usage:
-  bun run seed                         Open the interactive menu
-  bun run seed -- <command> [options] Run a command directly
+  bun run seed
+  bun run seed -- <command> [options]
 
 Commands:
-  setup     Migrate, clear application data/storage, and seed auth
-  demo      Seed demo families, sponsors, operators, and contributions
-  full      Run setup followed by demo data
-  migrate   Apply database migrations only
-  admin     Repair the bootstrap admin, roles, and permissions
-  categories Seed or repair the packaged catalog categories and images
-  verify    Verify the auth seed
-  images    Validate and list packaged seed image files
+  full       Reset and seed everything
+  demo       Add or repair demo data
+  remove     Remove managed demo data
+  setup      Reset app data and seed auth
+  migrate    Apply migrations
+  admin      Repair admin access
+  categories Seed catalog categories
+  verify     Verify auth seed
+  images     Check seed images
 
 Demo/full options:
-  -f, --families <count>        Default: 20
-  -s, --sponsors <count>        Default: 50
-  -o, --operators <count>       Default: 5
-  -c, --contributions <count>   Default: 100
-
-The interactive demo/full workflows prompt for all four counts before running.
-
-Admin credentials:
-  Interactive terminals prompt for the admin email, masked password, and
-  masked password confirmation before starting the database-backed seed.
-  Non-interactive runs use KAFIL_ADMIN_EMAIL/KAFIL_ADMIN_PASSWORD or the
-  ADMIN_EMAIL/ADMIN_PASSWORD aliases.
+  -f, --families <count>       Default: 20
+  -s, --sponsors <count>      Default: 50
+  -o, --operators <count>     Default: 5
+  -c, --contributions <count> Default: 100
 
 Safety:
-  admin does not migrate, clear application data, or seed demo data.
-  categories is also standalone and does not clear unrelated application data.
-  setup and full clear application data. Add --yes for non-interactive use.
-  Use --help or -h to print this help.`;
+  remove deletes managed demo data only.
+  setup/full delete all app data.
+  Destructive non-interactive commands require --yes.`;
 }

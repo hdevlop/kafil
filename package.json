@@ -29,6 +29,7 @@
     "db:studio": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/server','db:studio'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "seed": "bun --cwd packages/seed --env-file=../../.env src/cli.ts",
     "seed:full": "bun --cwd packages/seed --env-file=../../.env src/cli.ts full --yes",
+    "seed:remove": "bun --cwd packages/seed --env-file=../../.env src/cli.ts remove --yes",
     "seed:demo": "bun --cwd packages/seed --env-file=../../.env src/cli.ts demo",
     "seed:images": "bun --cwd packages/seed --env-file=../../.env src/cli.ts images",
     "seed:migrate": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:migrate'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",

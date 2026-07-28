@@ -28,19 +28,21 @@ import {
 import { DEFAULT_DEMO_SEED_COUNTS } from "./scripts/demo/generator";
 
 const COMMAND_LABELS: Readonly<Record<SeedCliCommand, string>> = {
-  setup: "Reset and seed the database",
-  demo: "Add or repair demo data (asks fixture counts)",
-  full: "Full seed: reset, auth, and demo data (asks fixture counts)",
-  migrate: "Apply migrations only",
-  admin: "Repair admin, roles, and permissions",
-  categories: "Add or repair catalog categories and images",
-  verify: "Verify the authentication seed",
-  images: "Validate and list seed images",
+  setup: "Reset app data",
+  demo: "Add/repair demo",
+  remove: "Remove demo data",
+  full: "Reset and seed all",
+  migrate: "Run migrations",
+  admin: "Repair admin access",
+  categories: "Seed categories",
+  verify: "Verify auth",
+  images: "Check images",
 };
 
 const INTERACTIVE_COMMAND_ORDER: readonly SeedCliCommand[] = [
   "full",
   "demo",
+  "remove",
   "setup",
   "migrate",
   "admin",
@@ -54,6 +56,7 @@ const COMMAND_SCRIPTS: Readonly<
 > = {
   setup: "src/index.ts",
   demo: "src/scripts/demo/seed-demo.ts",
+  remove: "src/scripts/remove-demo.ts",
   migrate: "src/scripts/migrate.ts",
   admin: "src/scripts/seed-admin.ts",
   categories: "src/scripts/seed-categories.ts",
@@ -114,7 +117,7 @@ async function main() {
   }
 
   if (
-    (command === "setup" || command === "full") &&
+    (command === "setup" || command === "full" || command === "remove") &&
     !options.yes &&
     !(await confirmDestructiveCommand(command))
   ) {
@@ -196,7 +199,7 @@ async function selectInteractiveCommand(): Promise<SeedCliCommand | undefined> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) return undefined;
 
   const command = await select<SeedCliCommand>({
-    message: "What would you like to seed?",
+    message: "Choose an action",
     initialValue: "full",
     options: INTERACTIVE_COMMAND_ORDER.map((value) => ({
       value,
@@ -204,8 +207,10 @@ async function selectInteractiveCommand(): Promise<SeedCliCommand | undefined> {
       hint:
         value === "full"
           ? "recommended"
+          : value === "remove"
+            ? "demo only"
           : value === "setup"
-            ? "no demo fixtures"
+            ? "all app data"
             : undefined,
     })),
   });
@@ -264,15 +269,20 @@ async function promptCount(
   return Number(answer);
 }
 
-async function confirmDestructiveCommand(command: "setup" | "full") {
+async function confirmDestructiveCommand(
+  command: "setup" | "full" | "remove",
+) {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     throw new Error(
-      `The '${command}' command clears application data. Re-run with --yes in non-interactive environments.`,
+      `'${command}' requires --yes outside an interactive terminal.`,
     );
   }
 
   const answer = await confirm({
-    message: `The '${command}' command clears application data and managed profile images. Continue?`,
+    message:
+      command === "remove"
+        ? "Remove managed demo data?"
+        : "Clear all app data and managed files?",
     initialValue: false,
   });
   return isCancel(answer) ? false : answer;

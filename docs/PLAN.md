@@ -406,10 +406,13 @@ Seed CLI and profile-image extension (2026-07-20): `bun run seed` now opens a
 Clack-powered interactive command menu with family, sponsor, operator, and
 contribution count prompts for demo/full; full seed is the highlighted default
 so pressing Enter reaches the count prompts immediately, while
-`bun run seed -- <command>` supports explicit
-setup, demo, full, migrate, admin, verify, and image-library operations.
-Destructive setup/full commands require confirmation or `--yes`. Flat family
-family and sponsor files named `family-NN` / `sponsor-NN` in the flat
+`bun run seed -- <command>` supports explicit setup, demo, remove, full,
+migrate, admin, category, verification, and image-library operations. The
+concise `remove` action transactionally deletes only deterministic demo
+accounts and their linked activity and managed files; packaged categories,
+settings, the bootstrap admin, and unrelated records remain. Destructive
+remove/setup/full commands require confirmation or `--yes`. Family and sponsor
+files named `family-NN` / `sponsor-NN` in the flat
 `packages/seed/images` library are validated, assigned in numeric order with
 one image per profile and empty fallback images after the library is exhausted,
 then copied with content-versioned

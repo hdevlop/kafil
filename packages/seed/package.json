@@ -11,6 +11,7 @@
     "seed": "bun src/cli.ts",
     "seed:full": "bun src/cli.ts full --yes",
     "seed:demo": "bun src/cli.ts demo",
+    "seed:remove": "bun src/cli.ts remove --yes",
     "seed:migrate": "bun src/cli.ts migrate",
     "seed:admin": "bun src/cli.ts admin",
     "seed:categories": "bun src/cli.ts categories",

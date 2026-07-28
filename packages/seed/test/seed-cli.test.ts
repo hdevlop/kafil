@@ -34,6 +34,10 @@ describe("seed CLI", () => {
       yes: false,
     });
     expect(parseSeedCliArgs(["reset"])).toMatchObject({ command: "setup" });
+    expect(parseSeedCliArgs(["clean", "--yes"])).toMatchObject({
+      command: "remove",
+      yes: true,
+    });
   });
 
   it("builds and validates all interactive demo count arguments", () => {
@@ -68,6 +72,7 @@ describe("seed CLI", () => {
     for (const command of [
       "setup",
       "demo",
+      "remove",
       "full",
       "migrate",
       "admin",
@@ -78,10 +83,8 @@ describe("seed CLI", () => {
       expect(help).toContain(command);
     }
     expect(help).toContain("--yes");
-    expect(help).toContain("masked password");
-    expect(help).toContain("KAFIL_ADMIN_EMAIL/KAFIL_ADMIN_PASSWORD");
-    expect(help).toContain("does not");
-    expect(help).toContain("migrate");
+    expect(help).toContain("demo data only");
+    expect(help.split("\n").length).toBeLessThanOrEqual(30);
   });
 
   it("routes admin directly without reset, migration, or demo work", async () => {
@@ -101,5 +104,19 @@ describe("seed CLI", () => {
     ]) {
       expect(adminSource).not.toContain(forbiddenCall);
     }
+  });
+
+  it("routes demo removal without the full reset", async () => {
+    const cliSource = await Bun.file(
+      new URL("../src/cli.ts", import.meta.url),
+    ).text();
+    const removeSource = await Bun.file(
+      new URL("../src/scripts/remove-demo.ts", import.meta.url),
+    ).text();
+
+    expect(cliSource).toContain('remove: "src/scripts/remove-demo.ts"');
+    expect(removeSource).toContain("removeDemoData");
+    expect(removeSource).not.toContain("clearSeedData");
+    expect(removeSource).not.toContain("clearSeedStorage");
   });
 });
