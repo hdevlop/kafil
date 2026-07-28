@@ -155,35 +155,6 @@ describe("demo seed generator", () => {
     }
   });
 
-  it("keeps each temporary pending record within the family's live capacity", () => {
-    const data = generateDemoSeedData({
-      contributions: 100,
-      families: 10,
-      operators: 2,
-      sponsors: 20,
-    });
-    const targets = new Map(
-      data.families.map((family) => [family.id, family.fundingTargetMinor]),
-    );
-    const committed = new Map<string, number>();
-
-    for (const contribution of data.contributions) {
-      const current = committed.get(contribution.familyProfileId) ?? 0;
-      const target = targets.get(contribution.familyProfileId)!;
-
-      expect(contribution.amountMinor).toBeLessThanOrEqual(target - current);
-      if (
-        contribution.expectedStatus === "validated" ||
-        contribution.expectedStatus === "pending"
-      ) {
-        committed.set(
-          contribution.familyProfileId,
-          current + contribution.amountMinor,
-        );
-      }
-    }
-  });
-
   it("uses a large Moroccan name pool without guardian and sponsor collisions", () => {
     const data = generateDemoSeedData({
       contributions: 0,

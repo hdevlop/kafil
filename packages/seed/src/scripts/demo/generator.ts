@@ -306,10 +306,7 @@ function generateContributions(
           (pendingPlans.indexOf(plan) + 1) % Math.max(1, pendingPlans.length);
       }
     }
-    if (
-      (expectedStatus === "expired" || expectedStatus === "rejected") &&
-      pendingPlans.length > 0
-    ) {
+    if (expectedStatus === "expired" && pendingPlans.length > 0) {
       const plan = pendingPlans[pendingIndex % pendingPlans.length]!;
       assignment = assignmentsByFamilyId.get(plan.family.id)!;
       amountMinor = 1;
