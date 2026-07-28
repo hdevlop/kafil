@@ -3,6 +3,7 @@ name: Verify, publish, and deploy demo
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: kafil-demo-vps
@@ -49,7 +50,7 @@ jobs:
         run: bun run build
 
   publish:
-    name: Build and publish immutable image
+    name: Build and publish image
     needs: verify
     runs-on: ubuntu-24.04
     permissions:
@@ -80,14 +81,16 @@ jobs:
           push: true
           provenance: mode=max
           sbom: true
-          tags: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:main
           build-args: |
             NEXT_PUBLIC_FORM_FILL_ENABLED=false
             OCI_CREATED=${{ steps.created.outputs.value }}
             OCI_REVISION=${{ github.sha }}
 
   deploy:
-    name: Deploy exact image
+    name: Deploy through Dokploy
     needs: publish
     runs-on: ubuntu-24.04
     environment: demo-vps
@@ -95,48 +98,30 @@ jobs:
       contents: read
       packages: read
     steps:
-      - name: Check out exact revision
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-      - name: Prepare versioned release bundle
-        run: |
-          sha256sum \
-            compose.production.yml \
-            deploy/Caddyfile \
-            scripts/deployVps.sh \
-            scripts/verifyVpsDeployment.sh \
-            scripts/backupVps.sh \
-            scripts/restoreRehearsalVps.sh > release.sha256
-          tar -czf release-bundle.tar.gz \
-            compose.production.yml release.sha256 deploy/Caddyfile scripts/deployVps.sh \
-            scripts/verifyVpsDeployment.sh scripts/backupVps.sh scripts/restoreRehearsalVps.sh
-      - name: Configure pinned SSH identity
+      - name: Trigger Dokploy deployment
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          DOKPLOY_DEPLOY_WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
+          DEPLOY_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          install -d -m 0700 "$HOME/.ssh"
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
-          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
-          chmod 0600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
-      - name: Upload and deploy release
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          IMAGE_DIGEST: ${{ needs.publish.outputs.digest }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_USER: ${{ github.actor }}
-        run: |
-          test "$VPS_USER" = "kafil-deploy"
-          release_dir="/opt/kafil/releases/${GITHUB_SHA}"
-          printf '%s' "$GHCR_TOKEN" | ssh -p "$VPS_PORT" \
-            -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$VPS_USER@$VPS_HOST" \
-            "docker login ghcr.io --username '$GHCR_USER' --password-stdin"
-          ssh -p "$VPS_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$VPS_USER@$VPS_HOST" "install -d -m 0750 '$release_dir'"
-          scp -P "$VPS_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            release-bundle.tar.gz "$VPS_USER@$VPS_HOST:$release_dir/release-bundle.tar.gz"
-          ssh -p "$VPS_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$VPS_USER@$VPS_HOST" \
-            "tar -xzf '$release_dir/release-bundle.tar.gz' -C '$release_dir' && chmod 0750 '$release_dir'/scripts/*.sh && '$release_dir/scripts/deployVps.sh' '$GITHUB_SHA' '$release_dir' '$IMAGE_DIGEST'"
+          test -n "$DOKPLOY_DEPLOY_WEBHOOK"
+          if [ -z "$DEPLOY_MESSAGE" ]; then
+            DEPLOY_MESSAGE="Deploy ${GITHUB_SHA}"
+          fi
+          payload="$(
+            jq -n \
+              --arg ref "$GITHUB_REF" \
+              --arg after "$GITHUB_SHA" \
+              --arg message "$DEPLOY_MESSAGE" \
+              '{ref: $ref, after: $after, head_commit: {message: $message}, commits: []}'
+          )"
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "X-GitHub-Event: push" \
+            --data "$payload" \
+            "$DOKPLOY_DEPLOY_WEBHOOK"
