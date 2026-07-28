@@ -9,6 +9,8 @@ import {
 } from "../orders/orderSchema";
 import {
   categories,
+  inventoryBalances,
+  inventoryLedgerEntries,
   type NewCategory,
   type NewProduct,
   type Product,
@@ -235,6 +237,27 @@ export class ProductRepository {
     return rows.map(({ productId }) => productId);
   }
 
+  async productIdsWithInventoryHistory(productIds: string[]) {
+    if (!productIds.length) return [];
+    const rows = await this.db
+      .selectDistinct({ productId: inventoryLedgerEntries.productId })
+      .from(inventoryLedgerEntries)
+      .where(inArray(inventoryLedgerEntries.productId, productIds));
+    return rows.map(({ productId }) => productId);
+  }
+
+  async inventoryBalancesByProductIds(productIds: string[]) {
+    if (!productIds.length) return [];
+    return this.db
+      .select({
+        productId: inventoryBalances.productId,
+        onHandQuantity: inventoryBalances.onHandQuantity,
+        reservedQuantity: inventoryBalances.reservedQuantity,
+      })
+      .from(inventoryBalances)
+      .where(inArray(inventoryBalances.productId, productIds));
+  }
+
   /** Hard-delete the product row. Caller empties cart items first and runs
    * validation upfront. */
   async hardDelete(id: string): Promise<Product | undefined> {
@@ -261,6 +284,20 @@ export class ProductRepository {
     const result = await this.db
       .delete(cartItems)
       .where(inArray(cartItems.productId, productIds));
+    return result.rowCount ?? 0;
+  }
+
+  async deleteZeroInventoryBalancesByProductIds(productIds: string[]) {
+    if (!productIds.length) return 0;
+    const result = await this.db
+      .delete(inventoryBalances)
+      .where(
+        and(
+          inArray(inventoryBalances.productId, productIds),
+          eq(inventoryBalances.onHandQuantity, 0),
+          eq(inventoryBalances.reservedQuantity, 0),
+        ),
+      );
     return result.rowCount ?? 0;
   }
 }

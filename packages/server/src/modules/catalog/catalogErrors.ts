@@ -3,7 +3,7 @@ import { HttpError } from "najm-core";
 export type PristinenessBlock = {
   productId: string;
   productName: string;
-  reason: "order_history";
+  reason: "inventory_balance" | "inventory_history" | "order_history";
 };
 
 export interface PristinenessConflict {
@@ -18,7 +18,7 @@ export function catalogNotPristine(blockers: PristinenessBlock[]): never {
           .map((b) => `${b.productName}:${b.reason}`)
           .join("; ")})`;
   HttpError.conflict(
-    `Catalog items have order history; deactivate instead (${summary})`,
+    `Catalog items are not pristine; deactivate instead (${summary})`,
   );
 }
 

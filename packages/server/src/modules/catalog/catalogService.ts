@@ -216,18 +216,19 @@ export class CatalogService {
   }
 
   /**
-   * Hard-delete a pristine product (no order history). Cart items referencing
-   * it are removed before the product row. Image cleanup is reported to the
+   * Hard-delete a pristine product. Cart items and zero inventory bookkeeping
+   * are removed before the product row. Image cleanup is reported to the
    * caller so it runs once the surrounding transaction has committed.
    *
-   * Kafil is procurement-on-demand, so a product with no inventory balance
-   * is valid. The legacy inventory history tables are never queried here.
+   * Kafil is procurement-on-demand, so a missing or zero inventory balance is
+   * valid. Immutable inventory ledger history still blocks deletion.
    */
   @Transaction({ retries: 2 })
   async deleteProduct(id: string, actorUserId: string) {
     const product = await this.validator.ensureProductExists(id);
     await this.validator.ensureProductPristine(id);
     await this.products.deleteCartItemsByProductIds([product.id]);
+    await this.products.deleteZeroInventoryBalancesByProductIds([product.id]);
     const deleted = await this.products.hardDelete(id);
     if (!deleted) {
       HttpError.notFound("Product not found");
@@ -262,6 +263,7 @@ export class CatalogService {
 
     if (productIds.length > 0) {
       await this.products.deleteCartItemsByProductIds(productIds);
+      await this.products.deleteZeroInventoryBalancesByProductIds(productIds);
       await this.products.hardDeleteByIds(productIds);
     }
     const deleted = await this.categories.hardDelete(id);

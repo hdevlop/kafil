@@ -56,7 +56,7 @@ export function useCategoryCommands() {
     mutationFn: deleteCategory,
     invalidate,
     successMessage: "Category deleted permanently.",
-    errorMessage: "Could not delete the category. It may have order history.",
+    errorMessage: "Could not delete the category. It may have order or inventory history.",
   });
 
   return { create, update, activate, deactivate, remove };

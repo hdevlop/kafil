@@ -82,7 +82,7 @@ export function ProductsPage() {
     void dialog.openDialog({
       title: `Permanently delete ${product.name}?`,
       description:
-        "Bootstrap administrators can permanently delete pristine products (no order history).",
+        "Bootstrap administrators can permanently delete pristine products with no order or inventory history.",
       children: <DeleteProductDialogContent product={product} />,
       showButtons: false,
       size: "sm",

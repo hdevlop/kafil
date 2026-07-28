@@ -1,14 +1,44 @@
 "use client";
 
-import { Package, Tag } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Package, ShoppingCart, Tag } from "lucide-react";
 import Image from "next/image";
-import { cn, NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
+import { usePermissions } from "najm-auth/client/react";
+import { cn, NButton, NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
+
+import { useFamilyOrderingCommands } from "@/features/FamilyOrdering/hooks/useFamilyOrdering";
 import { formatMad } from "@/lib/format";
 
 import type { ProductRecord } from "../types";
 
 export function ProductCard({ data }: Readonly<{ data: ProductRecord }>) {
   const isInactive = data.status !== "active";
+  const { hasRole } = usePermissions();
+  const { add } = useFamilyOrderingCommands();
+  const canPurchase = hasRole("family");
+  const [quantity, setQuantity] = useState(1);
+  const busy = add.isPending;
+  const previousBusy = useRef(busy);
+
+  useEffect(() => {
+    if (previousBusy.current && !busy) {
+      setQuantity(1);
+    }
+    previousBusy.current = busy;
+  }, [busy]);
+
+  function decrement() {
+    setQuantity((current) => Math.max(1, current - 1));
+  }
+
+  function increment() {
+    setQuantity((current) => current + 1);
+  }
+
+  function handleAdd() {
+    if (!canPurchase || isInactive) return;
+    void add.mutateAsync({ productId: data.id, quantity });
+  }
 
   return (
     <NCard
@@ -47,7 +77,6 @@ export function ProductCard({ data }: Readonly<{ data: ProductRecord }>) {
             <Package aria-hidden="true" className="size-12" />
           </div>
         )}
-
       </NCardMedia>
 
       <NCardSection density="responsive" surface="plain">
@@ -57,6 +86,46 @@ export function ProductCard({ data }: Readonly<{ data: ProductRecord }>) {
           label="Category"
           value={data.categoryName}
         />
+      </NCardSection>
+
+      <NCardSection density="responsive" surface="plain" className="border-t border-border">
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center overflow-hidden rounded-lg border border-input">
+            <button
+              aria-label="Decrease quantity"
+              className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={busy || quantity <= 1}
+              onClick={decrement}
+              type="button"
+            >
+              −
+            </button>
+            <span
+              aria-live="polite"
+              className="flex h-9 w-10 items-center justify-center border-x border-input text-sm font-medium tabular-nums"
+            >
+              {quantity}
+            </span>
+            <button
+              aria-label="Increase quantity"
+              className="flex h-9 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={busy}
+              onClick={increment}
+              type="button"
+            >
+              +
+            </button>
+          </div>
+          <NButton
+            aria-label="Add to cart"
+            disabled={!canPurchase || busy || isInactive}
+            onClick={handleAdd}
+            size="sm"
+            title={canPurchase ? undefined : "Add to cart is available to families only"}
+          >
+            <ShoppingCart className="size-4" />
+          </NButton>
+        </div>
       </NCardSection>
     </NCard>
   );

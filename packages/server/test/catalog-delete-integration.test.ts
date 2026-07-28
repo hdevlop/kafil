@@ -129,6 +129,12 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       ],
     );
     await pool.query(
+      `INSERT INTO inventory_balances
+         (product_id, on_hand_quantity, reserved_quantity)
+       VALUES ($1, 0, 0), ($2, 0, 0)`,
+      [ids.pristineProduct, ids.deleteCategoryProduct],
+    );
+    await pool.query(
       `INSERT INTO orders
          (id, order_number, submission_idempotency_key, family_profile_id,
           subtotal_minor, total_minor, guardian_legal_name_snapshot,
@@ -184,6 +190,12 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       .catch(() => undefined);
     await pool
       .query(
+        `DELETE FROM inventory_balances WHERE product_id = ANY($1::uuid[])`,
+        [[ids.pristineProduct, ids.deleteCategoryProduct]],
+      )
+      .catch(() => undefined);
+    await pool
+      .query(
         `DELETE FROM products WHERE category_id = ANY($1::uuid[])`,
         [[ids.productCategory, ids.deleteCategory]],
       )
@@ -224,6 +236,7 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       `SELECT
          (SELECT count(*) FROM products WHERE id = $1)::int AS products,
          (SELECT count(*) FROM cart_items WHERE product_id = $1)::int AS cart_items,
+         (SELECT count(*) FROM inventory_balances WHERE product_id = $1)::int AS inventory_balances,
          (SELECT count(*) FROM audit_events
           WHERE action = 'catalog.productDeleted' AND resource_id = $1::text)::int AS audits`,
       [ids.pristineProduct],
@@ -231,6 +244,7 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
     expect(rows.rows[0]).toEqual({
       products: 0,
       cart_items: 0,
+      inventory_balances: 0,
       audits: 1,
     });
     expect(
@@ -280,13 +294,15 @@ databaseDescribe("catalog pristine-delete PostgreSQL integration", () => {
       `SELECT
          (SELECT count(*) FROM categories WHERE id = $1)::int AS categories,
          (SELECT count(*) FROM products WHERE id = $2)::int AS products,
-         (SELECT count(*) FROM cart_items WHERE product_id = $2)::int AS cart_items`,
+         (SELECT count(*) FROM cart_items WHERE product_id = $2)::int AS cart_items,
+         (SELECT count(*) FROM inventory_balances WHERE product_id = $2)::int AS inventory_balances`,
       [ids.deleteCategory, ids.deleteCategoryProduct],
     );
     expect(rows.rows[0]).toEqual({
       categories: 0,
       products: 0,
       cart_items: 0,
+      inventory_balances: 0,
     });
     expect(
       await exists(

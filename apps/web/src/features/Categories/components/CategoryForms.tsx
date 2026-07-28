@@ -285,8 +285,12 @@ export function DeleteCategoryDialogContent({
   const { remove } = useCategoryCommands();
 
   async function handleDelete() {
-    await remove.mutateAsync(category.id);
-    await pop();
+    try {
+      await remove.mutateAsync(category.id);
+      await pop();
+    } catch {
+      // useEntityCommand already presents the API error to the user.
+    }
   }
 
   return (
@@ -294,9 +298,9 @@ export function DeleteCategoryDialogContent({
       <p className="text-sm leading-6 text-muted-foreground">
         Permanently deletes this category, any products still under it, the
         cart items that referenced those products, and the related storage
-        images. Has no effect on order history or the audit log. The command
-        refuses with a 409 if any product has been ordered — use deactivate
-        instead.
+        images. Has no effect on order or inventory history, or the audit log.
+        The command refuses with a 409 if any product has history or non-zero
+        inventory — use deactivate instead.
       </p>
       <div className="flex justify-end pt-5">
         <NButton

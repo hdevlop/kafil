@@ -11,6 +11,7 @@ import {
 } from "@kafil/server/modules";
 
 import type { DemoChild, DemoSeedData } from "./scripts/demo/generator";
+import { isCategorySeedImageName } from "./category-fixtures";
 
 const MAX_IMAGE_BYTES = 5_000_000;
 const LIBRARY_NOTE_FILES = new Set([".gitkeep", ".ds_store", "readme.md"]);
@@ -90,6 +91,7 @@ export async function readDemoImageLibrary(
         !LIBRARY_DIRECTORIES.has(entry.name.toLowerCase())) ||
       (entry.isFile() &&
         !LIBRARY_NOTE_FILES.has(entry.name.toLowerCase()) &&
+        !isCategorySeedImageName(entry.name) &&
         !FAMILY_IMAGE_NAME.test(entry.name) &&
         !GENDERED_IMAGE_NAME.test(entry.name)),
   );
@@ -98,7 +100,7 @@ export async function readDemoImageLibrary(
       `Unsupported seed image entries in '${libraryPath}': ${unsupported
         .map((entry) => entry.name)
         .sort()
-        .join(", ")}. Use flat family-NN.ext, sponsor-f-NN.ext, sponsor-m-NN.ext, child-f-NN.ext, and child-m-NN.ext files only.`,
+        .join(", ")}. Use packaged category filenames or flat family-NN.ext, sponsor-f-NN.ext, sponsor-m-NN.ext, child-f-NN.ext, and child-m-NN.ext files only.`,
     );
   }
 

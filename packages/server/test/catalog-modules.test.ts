@@ -59,6 +59,7 @@ describe("Phase 4 catalog contracts", () => {
 describe("Phase 4 procurement-on-demand catalog deletion", () => {
   it("hard-deletes a pristine product without any inventory balance", async () => {
     const deletedCartItems: string[][] = [];
+    const deletedInventoryBalances: string[][] = [];
     const deletedProducts: string[] = [];
     const auditEvents: Record<string, unknown>[] = [];
 
@@ -80,6 +81,10 @@ describe("Phase 4 procurement-on-demand catalog deletion", () => {
         }),
         deleteCartItemsByProductIds: async (ids: string[]) => {
           deletedCartItems.push([...ids]);
+          return ids.length;
+        },
+        deleteZeroInventoryBalancesByProductIds: async (ids: string[]) => {
+          deletedInventoryBalances.push([...ids]);
           return ids.length;
         },
         countOrderItemsByProductIds: async () => 0,
@@ -125,6 +130,7 @@ describe("Phase 4 procurement-on-demand catalog deletion", () => {
     const result = await service.deleteProduct(productId, "admin-user");
 
     expect(deletedCartItems).toEqual([[productId]]);
+    expect(deletedInventoryBalances).toEqual([[productId]]);
     expect(deletedProducts).toEqual([productId]);
     expect(auditEvents).toEqual([
       expect.objectContaining({

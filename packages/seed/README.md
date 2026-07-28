@@ -30,6 +30,7 @@ bun run seed -- demo
 bun run seed -- full
 bun run seed -- migrate
 bun run seed -- admin
+bun run seed -- categories
 bun run seed -- verify
 bun run seed -- images
 ```
@@ -74,6 +75,21 @@ otherwise the old environment credentials may be synchronized again. Do not
 mount that protected VPS file read-write into the normal web container merely
 to support this CLI.
 
+### Catalog categories
+
+The standalone category seed creates or repairs the packaged catalog category
+names, descriptions, display order, active status, and images without clearing
+other application data:
+
+```bash
+bun run seed -- categories
+```
+
+The `demo` and `full` commands run the same category seed automatically. Source
+images live directly in `packages/seed/images/` using each category slug as the
+filename, such as `fresh-produce.png` and `school-supplies.png`. The seed copies
+them to managed `category-images` storage with stable content-versioned names.
+
 `demo` accepts configurable counts:
 
 ```bash
@@ -82,7 +98,8 @@ bun run seed -- demo --families=10 --sponsors=25 --operators=3 --contributions=4
 
 Short flags `-f`, `-s`, `-o`, and `-c` are also accepted. The compatibility
 commands `bun run seed:demo`, `bun run seed:full`, `bun run seed:migrate`,
-`bun run seed:admin`, and `bun run seed:verify` remain available.
+`bun run seed:admin`, `bun run seed:categories`, and `bun run seed:verify`
+remain available.
 
 `full` is the default highlighted choice in `bun run seed`. Press Enter and the
 Clack interface asks for family, sponsor, operator, and contribution counts
@@ -91,12 +108,14 @@ questions without resetting existing data. Running `bun run seed -- demo` or
 `bun run seed -- full` directly also asks for counts when no count flags were
 provided. Press Enter on any count to accept its displayed default.
 
-## Demo image library
+## Seed image library
 
 Use these source folders:
 
 ```text
 packages/seed/images/
+  fresh-produce.png
+  school-supplies.png
   family-01.jpg
   family-02.png
   family-03.png

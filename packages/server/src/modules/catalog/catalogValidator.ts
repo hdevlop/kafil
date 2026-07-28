@@ -45,10 +45,8 @@ export class CatalogValidator {
     return product;
   }
 
-  /** A product is "pristine" iff: no order_items reference it. Kafil is
-   *  procurement-on-demand, so an absent inventory balance is valid and any
-   *  legacy `inventory_ledger_entries` rows are read-only history that does
-   *  not block deletion. */
+  /** A product is pristine when it has no order or inventory-ledger history
+   *  and no non-zero inventory balance. A zero balance is removable bookkeeping. */
   async ensureProductPristine(productId: string): Promise<void> {
     const product = await this.products.findById(productId);
     if (!product) {
@@ -57,12 +55,37 @@ export class CatalogValidator {
     const orderCount = await this.products.countOrderItemsByProductIds([
       product.id,
     ]);
+    const inventoryHistory = await this.products.productIdsWithInventoryHistory([
+      product.id,
+    ]);
+    const inventoryBalances = await this.products.inventoryBalancesByProductIds([
+      product.id,
+    ]);
     const blockers: PristinenessBlock[] = [];
     if (orderCount > 0) {
       blockers.push({
         productId: product.id,
         productName: product.name,
         reason: "order_history",
+      });
+    }
+    if (inventoryHistory.length > 0) {
+      blockers.push({
+        productId: product.id,
+        productName: product.name,
+        reason: "inventory_history",
+      });
+    }
+    if (
+      inventoryBalances.some(
+        (balance) =>
+          balance.onHandQuantity !== 0 || balance.reservedQuantity !== 0,
+      )
+    ) {
+      blockers.push({
+        productId: product.id,
+        productName: product.name,
+        reason: "inventory_balance",
       });
     }
     if (blockers.length > 0) {
@@ -80,6 +103,10 @@ export class CatalogValidator {
     const productIds = productsUnder.map((p) => p.id);
     const orderedProductIds =
       await this.products.productIdsWithOrderHistory(productIds);
+    const inventoryHistoryProductIds =
+      await this.products.productIdsWithInventoryHistory(productIds);
+    const inventoryBalances =
+      await this.products.inventoryBalancesByProductIds(productIds);
     const blockers: PristinenessBlock[] = [];
     const lookup = new Map(productsUnder.map((p) => [p.id, p.name]));
 
@@ -88,6 +115,21 @@ export class CatalogValidator {
         productId,
         productName: lookup.get(productId) ?? productId,
         reason: "order_history",
+      });
+    }
+    for (const productId of inventoryHistoryProductIds) {
+      blockers.push({
+        productId,
+        productName: lookup.get(productId) ?? productId,
+        reason: "inventory_history",
+      });
+    }
+    for (const balance of inventoryBalances) {
+      if (balance.onHandQuantity === 0 && balance.reservedQuantity === 0) continue;
+      blockers.push({
+        productId: balance.productId,
+        productName: lookup.get(balance.productId) ?? balance.productId,
+        reason: "inventory_balance",
       });
     }
     if (blockers.length > 0) {

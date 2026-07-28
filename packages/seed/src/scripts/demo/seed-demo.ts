@@ -10,6 +10,7 @@ import {
   SupportAssignmentService,
 } from "@kafil/server/modules";
 
+import { seedCatalogCategories } from "../../category-seed";
 import { prepareDemoProfileImages } from "../../demo-images";
 import { seedDemoData } from "../../demo-seed";
 import { runSeedCommand } from "../../run-seed";
@@ -40,6 +41,13 @@ await runSeedCommand("Kafil demo data seed", async () => {
   );
 
   await server.init();
+  const categorySummary = await seedCatalogCategories(
+    server.container.get(CatalogService),
+    auth.admin.id,
+  );
+  console.log(
+    `categories: ${categorySummary.inserted} inserted, ${categorySummary.repaired} repaired, ${categorySummary.skipped} skipped.`,
+  );
   const summary = await seedDemoData(data, auth.admin.id, {
     assignments: server.container.get(SupportAssignmentService),
     catalog: server.container.get(CatalogService),

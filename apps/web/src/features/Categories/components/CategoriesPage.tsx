@@ -80,7 +80,7 @@ export function CategoriesPage() {
     void dialog.openDialog({
       title: `Permanently delete ${category.name}?`,
       description:
-        "Bootstrap administrators can permanently delete pristine categories (no order history).",
+        "Bootstrap administrators can permanently delete pristine categories with no order or inventory history.",
       children: <DeleteCategoryDialogContent category={category} />,
       showButtons: false,
       size: "sm",
@@ -139,6 +139,9 @@ export function CategoriesPage() {
     showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",
+    classNames: {
+      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-6",
+    },
     addButtonText: "Create category",
     noDataText: "No catalog category found",
     loadingText: "Loading catalog categories...",

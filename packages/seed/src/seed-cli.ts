@@ -4,6 +4,7 @@ export const SEED_CLI_COMMANDS = [
   "full",
   "migrate",
   "admin",
+  "categories",
   "verify",
   "images",
 ] as const;
@@ -99,8 +100,9 @@ Commands:
   full      Run setup followed by demo data
   migrate   Apply database migrations only
   admin     Repair the bootstrap admin, roles, and permissions
+  categories Seed or repair the packaged catalog categories and images
   verify    Verify the auth seed
-  images    Validate and list family/sponsor seed image files
+  images    Validate and list packaged seed image files
 
 Demo/full options:
   -f, --families <count>        Default: 20
@@ -117,8 +119,8 @@ Admin credentials:
   ADMIN_EMAIL/ADMIN_PASSWORD aliases.
 
 Safety:
-  admin repairs only the bootstrap admin and auth definitions; it does not
-  migrate, clear application data, or seed demo data.
+  admin does not migrate, clear application data, or seed demo data.
+  categories is also standalone and does not clear unrelated application data.
   setup and full clear application data. Add --yes for non-interactive use.
   Use --help or -h to print this help.`;
 }

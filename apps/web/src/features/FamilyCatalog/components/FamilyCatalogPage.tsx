@@ -127,7 +127,14 @@ export function FamilyCatalogPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {rows.map((product) => (
-              <FamilyCatalogProductCard adding={cart.add.isPending} key={product.id} product={product} onAdd={(productId) => void cart.add.mutateAsync({ productId, quantity: 1 })} />
+              <FamilyCatalogProductCard
+                adding={cart.add.isPending}
+                key={product.id}
+                onAdd={(productId, quantity) =>
+                  void cart.add.mutateAsync({ productId, quantity })
+                }
+                product={product}
+              />
             ))}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">

@@ -1,4 +1,7 @@
-export { CategoryImageController } from "./categoryImageController";
+export {
+  CATEGORY_IMAGE_SERVE_PREFIX,
+  CategoryImageController,
+} from "./categoryImageController";
 export { ProductImageController } from "./productImageController";
 export { CatalogController } from "./catalogController";
 export * from "./catalogDto";

@@ -62,7 +62,7 @@ export function useProductCommands() {
     mutationFn: deleteProduct,
     invalidate,
     successMessage: "Product deleted permanently.",
-    errorMessage: "Could not delete the product. It may have order history.",
+    errorMessage: "Could not delete the product. It may have order or inventory history.",
   });
 
   return { create, update, activate, deactivate, remove };

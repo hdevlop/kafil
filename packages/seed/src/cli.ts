@@ -33,6 +33,7 @@ const COMMAND_LABELS: Readonly<Record<SeedCliCommand, string>> = {
   full: "Full seed: reset, auth, and demo data (asks fixture counts)",
   migrate: "Apply migrations only",
   admin: "Repair admin, roles, and permissions",
+  categories: "Add or repair catalog categories and images",
   verify: "Verify the authentication seed",
   images: "Validate and list seed images",
 };
@@ -43,6 +44,7 @@ const INTERACTIVE_COMMAND_ORDER: readonly SeedCliCommand[] = [
   "setup",
   "migrate",
   "admin",
+  "categories",
   "verify",
   "images",
 ];
@@ -54,6 +56,7 @@ const COMMAND_SCRIPTS: Readonly<
   demo: "src/scripts/demo/seed-demo.ts",
   migrate: "src/scripts/migrate.ts",
   admin: "src/scripts/seed-admin.ts",
+  categories: "src/scripts/seed-categories.ts",
   verify: "src/scripts/verify.ts",
   images: "src/scripts/demo/list-images.ts",
 };

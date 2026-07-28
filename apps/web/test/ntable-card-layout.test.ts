@@ -62,8 +62,9 @@ describe("NTable responsive card layouts", () => {
 
     const category = readSource("../src/features/Categories/components/CategoryCard.tsx");
     expect(category).toContain('variant="hero"');
-    expect(category).toContain('aspect="16/9"');
-    expect(category).toContain("mx-3 mt-3 aspect-[2/1]");
+    expect(category).toContain('aspect="square"');
+    expect(category).toContain("mx-3 mt-3 w-[calc(100%-1.5rem)] rounded-xl bg-muted");
+    expect(category).toContain('className="size-full object-contain"');
     expect(category).toContain("<NCardSection");
     expect(category).toContain('surface="plain"');
     expect(category).not.toContain("<NCardFooter>");

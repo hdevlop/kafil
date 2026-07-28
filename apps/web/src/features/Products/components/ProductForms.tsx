@@ -329,17 +329,21 @@ export function DeleteProductDialogContent({
   const { remove } = useProductCommands();
 
   async function handleDelete() {
-    await remove.mutateAsync(product.id);
-    await pop();
+    try {
+      await remove.mutateAsync(product.id);
+      await pop();
+    } catch {
+      // useEntityCommand already presents the API error to the user.
+    }
   }
 
   return (
     <div className="space-y-5">
       <p className="text-sm leading-6 text-muted-foreground">
         Permanently deletes this product, its cart entries, and the related
-        storage image. Has no effect on order history or the audit log. The
-        command refuses with a 409 if the product has ever been ordered —
-        use deactivate instead.
+        storage image. Has no effect on order or inventory history, or the
+        audit log. The command refuses with a 409 if the product has history
+        or non-zero inventory — use deactivate instead.
       </p>
       <div className="flex justify-end pt-5">
         <NButton

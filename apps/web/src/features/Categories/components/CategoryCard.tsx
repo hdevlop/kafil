@@ -25,13 +25,13 @@ export function CategoryCard({ data }: Readonly<{ data: CategoryRecord }>) {
       <NCardMedia
         variant="hero"
         placement="top"
-        aspect="16/9"
-        className="mx-3 mt-3 aspect-[2/1] w-[calc(100%-1.5rem)] rounded-xl sm:mx-4 sm:mt-4 sm:w-[calc(100%-2rem)]"
+        aspect="square"
+        className="mx-3 mt-3 w-[calc(100%-1.5rem)] rounded-xl bg-muted sm:mx-4 sm:mt-4 sm:w-[calc(100%-2rem)]"
       >
         {data.image ? (
           <Image
             alt={`Cover image for ${data.name}`}
-            className="size-full object-cover mix-blend-multiply dark:mix-blend-normal"
+            className="size-full object-contain"
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             src={data.image}
@@ -47,15 +47,17 @@ export function CategoryCard({ data }: Readonly<{ data: CategoryRecord }>) {
       <NCardSection
         density="compact"
         surface="plain"
-        className="flex min-h-6 items-center gap-3 space-y-0"
+        className="flex min-h-6 flex-col gap-1 space-y-0 2xl:flex-row"
       >
-        <Tags aria-hidden="true" className="size-5 shrink-0 self-center text-primary" />
-        <p className="min-w-0 flex-1 truncate text-base font-semibold leading-5 text-foreground">
-          {data.name}
-        </p>
-        <div className="flex shrink-0 items-center gap-1.5 text-primary">
-          <Package aria-hidden="true" className="size-4 shrink-0" />
-          <p className="text-sm font-semibold leading-5">
+        <div className="flex w-full min-w-0 items-center gap-1.5 xl:flex-1">
+          <Tags aria-hidden="true" className="size-4 shrink-0 self-center text-primary" />
+          <p className="min-w-0 flex-1 truncate text-base font-semibold leading-5 text-foreground">
+            {data.name}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1 text-primary">
+          <Package aria-hidden="true" className="size-3 shrink-0" />
+          <p className="text-xs font-semibold leading-5">
             {formatKafilNumber(itemCount)} items
           </p>
         </div>

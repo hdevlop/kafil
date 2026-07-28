@@ -71,6 +71,7 @@ describe("seed CLI", () => {
       "full",
       "migrate",
       "admin",
+      "categories",
       "verify",
       "images",
     ]) {

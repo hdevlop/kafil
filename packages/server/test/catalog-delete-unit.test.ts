@@ -103,6 +103,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
 
   it("hard-deletes a pristine product, cascades cart items, and audits", async () => {
     const deletedCartItems: string[][] = [];
+    const deletedInventoryBalances: string[][] = [];
     const deletedProducts: string[] = [];
     const auditEvents: Record<string, unknown>[] = [];
 
@@ -112,6 +113,10 @@ describe("catalog admin-only pristine delete (unit)", () => {
         findById: async () => productRecord(),
         deleteCartItemsByProductIds: async (ids: string[]) => {
           deletedCartItems.push([...ids]);
+          return ids.length;
+        },
+        deleteZeroInventoryBalancesByProductIds: async (ids: string[]) => {
+          deletedInventoryBalances.push([...ids]);
           return ids.length;
         },
         countOrderItemsByProductIds: async () => 0,
@@ -135,6 +140,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
     const result = await service.deleteProduct(productId, OTHER_USER);
 
     expect(deletedCartItems).toEqual([[productId]]);
+    expect(deletedInventoryBalances).toEqual([[productId]]);
     expect(deletedProducts).toEqual([productId]);
     expect(auditEvents).toEqual([
       expect.objectContaining({
@@ -175,7 +181,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
         ensureProductExists: async () => productRecord(),
         ensureProductPristine: () => {
           HttpError.conflict(
-            "Catalog items have order history; deactivate instead (Cleanup product:order_history)",
+            "Catalog items are not pristine; deactivate instead (Cleanup product:order_history)",
           );
         },
       },
@@ -211,7 +217,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
         ensureCategoryExists: async () => categoryRecord(),
         ensureCategoryPristine: () => {
           HttpError.conflict(
-            "Catalog items have order history; deactivate instead",
+            "Catalog items are not pristine; deactivate instead",
           );
         },
       },
@@ -285,6 +291,7 @@ describe("catalog admin-only pristine delete (unit)", () => {
       products: {
         findById: async () => productRecord(),
         deleteCartItemsByProductIds: async () => 0,
+        deleteZeroInventoryBalancesByProductIds: async () => 0,
         hardDelete: async () => productRecord(),
       },
       audits: {
@@ -301,5 +308,37 @@ describe("catalog admin-only pristine delete (unit)", () => {
     await expect(service.deleteProduct(productId, OTHER_USER)).rejects.toThrow(
       "forced audit failure",
     );
+  });
+
+  it("rejects immutable inventory history and non-zero balances", async () => {
+    const historyValidator = new CatalogValidator(
+      {} as CategoryRepository,
+      {
+        findById: async () => productRecord(),
+        countOrderItemsByProductIds: async () => 0,
+        productIdsWithInventoryHistory: async () => [productId],
+        inventoryBalancesByProductIds: async () => [
+          { productId, onHandQuantity: 0, reservedQuantity: 0 },
+        ],
+      } as unknown as ProductRepository,
+    );
+    await expect(
+      historyValidator.ensureProductPristine(productId),
+    ).rejects.toMatchObject({ status: 409 });
+
+    const balanceValidator = new CatalogValidator(
+      {} as CategoryRepository,
+      {
+        findById: async () => productRecord(),
+        countOrderItemsByProductIds: async () => 0,
+        productIdsWithInventoryHistory: async () => [],
+        inventoryBalancesByProductIds: async () => [
+          { productId, onHandQuantity: 1, reservedQuantity: 0 },
+        ],
+      } as unknown as ProductRepository,
+    );
+    await expect(
+      balanceValidator.ensureProductPristine(productId),
+    ).rejects.toMatchObject({ status: 409 });
   });
 });

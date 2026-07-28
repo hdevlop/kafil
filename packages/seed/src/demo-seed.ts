@@ -170,16 +170,16 @@ async function seedDemoProcurementStory(
   const [existingCategory] = await db
     .select({ id: categories.id })
     .from(categories)
-    .where(eq(categories.slug, "demo-essential-groceries"))
+    .where(eq(categories.slug, "fresh-produce"))
     .limit(1);
   const category =
     existingCategory ??
     (await services.catalog.createCategory(
       {
-        name: "Demo essential groceries",
-        slug: "demo-essential-groceries",
-        description: "Procurement-on-demand demo catalog",
-        sortOrder: 90_000,
+        name: "Fresh Produce",
+        slug: "fresh-produce",
+        description: "Fresh fruits, vegetables, and everyday produce.",
+        sortOrder: 10,
       },
       actorUserId,
     ));
@@ -194,8 +194,8 @@ async function seedDemoProcurementStory(
       {
         categoryId: category.id,
         sku: "DEMO-MARJANE-BASKET",
-        name: "Demo family grocery basket",
-        description: "Purchased from a supermarket only after approval",
+        name: "Demo fresh produce basket",
+        description: "Purchased from a produce supplier only after approval",
         priceMinor: 50_000,
       },
       actorUserId,
