@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { getGuardMetadata } from "najm-guard";
 import { getMcpTools } from "najm-mcp";
 
 import { AuditService } from "../src/modules/audit";
@@ -59,10 +60,21 @@ describe("Phase 5 cart and route contracts", () => {
         "deliver",
         "cancelOwn",
         "cancel",
+        "delete",
       ]),
     );
     expect(methods).not.toContain("update");
     expect(methods).not.toContain("setStatus");
+  });
+
+  it("requires the bootstrap admin role and delete:orders permission", () => {
+    const guards = getGuardMetadata(OrderController, "delete");
+    expect(guards.map(({ guardClass }) => guardClass.name)).toEqual([
+      "AdminRoleGuard",
+      "AuthGuard",
+      "PermissionGuard",
+    ]);
+    expect(guards.at(-1)?.params).toBe("delete:orders");
   });
 });
 
@@ -339,10 +351,52 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     expect(state.balanceUpdates).toEqual([]);
     expect(state.ledger).toEqual([]);
   });
+
+  it("permanently deletes a mistaken pre-purchase order and rebuilds its budget", async () => {
+    const { service, state } = orderService({
+      status: "pending",
+      availableMinor: 400,
+      reservedMinor: 600,
+    });
+
+    const deleted = await service.delete(orderId, "admin-user");
+
+    expect(deleted.id).toBe(orderId);
+    expect(state.erasedOrderLedger).toEqual([
+      { budgetAccountId: accountId, orderId },
+    ]);
+    expect(state.balanceUpdates).toEqual([
+      { availableMinor: 1000, reservedMinor: 0, spentMinor: 0 },
+    ]);
+    expect(state.deletedOrderIds).toEqual([orderId]);
+    expect(state.auditEvents).toContainEqual(
+      expect.objectContaining({
+        action: "order.deleted",
+        actorUserId: "admin-user",
+        metadata: {
+          permanent: true,
+          previousStatus: "pending",
+          ledgerEntriesRemoved: 1,
+        },
+      }),
+    );
+  });
+
+  it("refuses permanent deletion after purchase history exists", async () => {
+    const { service, state } = orderService({ status: "purchased" });
+    state.activePurchase = purchaseRecord();
+
+    await expect(service.delete(orderId, "admin-user")).rejects.toMatchObject({
+      status: 409,
+    });
+
+    expect(state.erasedOrderLedger).toEqual([]);
+    expect(state.deletedOrderIds).toEqual([]);
+  });
 });
 
 function orderService(options: {
-  status?: "pending" | "approved" | "purchased" | "delivered";
+  status?: "pending" | "approved" | "rejected" | "purchased" | "cancelled" | "out_for_delivery" | "delivered";
   availableMinor?: number;
   reservedMinor?: number;
   reserveLedger?: { id: string };
@@ -381,6 +435,9 @@ function orderService(options: {
     clearedCartIds: [] as string[],
     events: [] as Record<string, unknown>[],
     effectOrder: [] as Array<"inventory" | "budget">,
+    erasedOrderLedger: [] as Array<{ budgetAccountId: string; orderId: string }>,
+    deletedOrderIds: [] as string[],
+    auditEvents: [] as Record<string, unknown>[],
   };
   const carts = {
     findByFamilyId: async () => cartRecord(),
@@ -440,6 +497,10 @@ function orderService(options: {
       state.order = orderRecord({ ...state.order, ...input });
       return state.order;
     },
+    hardDelete: async (id: string) => {
+      state.deletedOrderIds.push(id);
+      return state.order;
+    },
   } as unknown as OrderRepository;
   const purchases = {
     findByIdempotencyKey: async () => undefined,
@@ -487,11 +548,30 @@ function orderService(options: {
           : key.endsWith(":capture")
             ? state.captureLedger
             : undefined,
+      erasePrePurchaseOrderEntries: async (input: {
+        budgetAccountId: string;
+        orderId: string;
+      }) => {
+        state.erasedOrderLedger.push(input);
+        return {
+          balance: {
+            availableMinor: 1000,
+            reservedMinor: 0,
+            spentMinor: 0,
+          },
+          deletedCount: 1,
+        };
+      },
     } as unknown as BudgetLedgerRepository,
     {
       findByAccountAndMonth: async () => null,
     } as unknown as MonthlyBudgetLimitRepository,
-    { record: async () => undefined } as unknown as AuditService,
+    {
+      record: async (input: Record<string, unknown>) => {
+        state.auditEvents.push(input);
+        return input;
+      },
+    } as unknown as AuditService,
     { enqueue: async () => undefined } as unknown as OutboxService,
     {
       ensureFamily: async () => familyRecord(),

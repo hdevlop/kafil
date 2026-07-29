@@ -21,6 +21,10 @@ export function getOrder(id: string) {
   return api.get<OrderDetail>(`/orders/${id}`);
 }
 
+export function deleteOrder(id: string) {
+  return api.delete<OrderRecord>(`/orders/${id}`);
+}
+
 export function approveOrder(id: string) {
   return api.post<OrderDetail>(`/orders/${id}/approve`);
 }

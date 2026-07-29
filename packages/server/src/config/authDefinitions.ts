@@ -32,6 +32,11 @@ export const AUTH_PERMISSIONS = [
     "catalog",
     "Permanently delete pristine categories and products (added by mistake)",
   ),
+  permission(
+    "delete",
+    "orders",
+    "Permanently delete mistaken pre-purchase orders",
+  ),
   permission("read", "settings", "Read platform product settings"),
   permission("update", "settings", "Update platform product settings"),
   permission("read", "audit-events", "Read filtered audit events"),

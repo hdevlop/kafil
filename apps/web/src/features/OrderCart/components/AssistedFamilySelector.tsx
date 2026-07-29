@@ -17,13 +17,24 @@ export interface AssistedFamilySelectorProps {
   value: string;
   onChange: (familyProfileId: string) => void;
   onFundingEligibilityChange?: (eligible: boolean) => void;
+  onSelectionChange?: (selection: AssistedFamilySelection | null) => void;
   disabled?: boolean;
+}
+
+export interface AssistedFamilySelection {
+  id: string;
+  name: string;
+  image: string | null;
+  exactAddress: string;
+  phone: string | null;
+  availableMinor: number;
 }
 
 export function AssistedFamilySelector({
   value,
   onChange,
   onFundingEligibilityChange,
+  onSelectionChange,
   disabled = false,
 }: Readonly<AssistedFamilySelectorProps>) {
   const { t } = useKafilLanguage();
@@ -71,8 +82,24 @@ export function AssistedFamilySelector({
     onFundingEligibilityChange?.(fundingTargetReached);
   }, [fundingTargetReached, onFundingEligibilityChange]);
 
+  useEffect(() => {
+    onSelectionChange?.(
+      selected
+        ? {
+            id: selected.id,
+            name: selected.name || selected.guardianLegalName,
+            image: selected.image,
+            exactAddress: selected.exactAddress,
+            phone: selected.phone,
+            availableMinor,
+          }
+        : null,
+    );
+  }, [availableMinor, onSelectionChange, selected]);
+
   function handleFamilyChange(familyProfileId: string) {
     onFundingEligibilityChange?.(false);
+    onSelectionChange?.(null);
     onChange(familyProfileId);
   }
 

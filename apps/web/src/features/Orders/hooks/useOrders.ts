@@ -7,6 +7,7 @@ import {
   cancelOrder,
   confirmOrderDelivery,
   createAssistedOrder,
+  deleteOrder,
   deliverOrder,
   getOrder,
   listOrders,
@@ -19,6 +20,7 @@ import {
 import { orderKeys } from "./orderKeys";
 import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 export function useOrders(
   query: OrderListQuery,
@@ -40,6 +42,7 @@ export function useOrder(id: string) {
 }
 
 export function useOrderCommands() {
+  const { t } = useKafilLanguage();
   const invalidate = [orderKeys.all];
 
   const approve = useEntityCommand({
@@ -96,6 +99,12 @@ export function useOrderCommands() {
     successMessage: "Order cancelled and its financial effects reversed.",
     errorMessage: "Could not cancel this order.",
   });
+  const remove = useEntityCommand({
+    mutationFn: deleteOrder,
+    invalidate,
+    successMessage: t("operator.orders.deleteSuccess"),
+    errorMessage: t("operator.orders.deleteError"),
+  });
 
   return {
     approve,
@@ -107,5 +116,6 @@ export function useOrderCommands() {
     confirmDelivery,
     deliver,
     cancel,
+    remove,
   };
 }

@@ -10,9 +10,14 @@ import {
   updateCategoryFormSchema,
 } from "../src/features/Categories/config/categorySchemas";
 import { categoryKeys } from "../src/features/Categories/hooks/categoryKeys";
+import { getUiTranslation } from "../src/i18n/translations";
 
 const categoriesPage = readFileSync(
   new URL("../src/features/Categories/components/CategoriesPage.tsx", import.meta.url),
+  "utf8",
+);
+const categoryForms = readFileSync(
+  new URL("../src/features/Categories/components/CategoryForms.tsx", import.meta.url),
   "utf8",
 );
 
@@ -64,6 +69,31 @@ describe("Phase 6D category form contracts", () => {
 });
 
 describe("Phase 6D category lifecycle contracts", () => {
+  test("localizes every category dialog in all supported languages", () => {
+    expect(getUiTranslation("en", "operator.categories.create")).toBe(
+      "Create category",
+    );
+    expect(getUiTranslation("fr", "operator.categories.create")).toBe(
+      "Créer une catégorie",
+    );
+    expect(getUiTranslation("ar", "operator.categories.create")).toBe(
+      "إنشاء فئة",
+    );
+    expect(getUiTranslation("es", "operator.categories.create")).toBe(
+      "Crear categoría",
+    );
+
+    expect(categoryForms).toContain(
+      'title={t("operator.categories.imageUploadTitle")}',
+    );
+    expect(categoryForms).toContain(
+      'formLabel={t("operator.categories.displayOrder")}',
+    );
+    expect(categoryForms).not.toContain('formLabel="Name"');
+    expect(categoryForms).not.toContain('title="Catalog category"');
+    expect(categoriesPage).toContain('title: t("common.createCategory")');
+  });
+
   test("requires an audited reason for activation changes", () => {
     expect(categoryStatusFormSchema.safeParse({ reason: "" }).success).toBe(false);
     const values = categoryStatusFormSchema.parse({ reason: "  Seasonal catalog review  " });

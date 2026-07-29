@@ -55,7 +55,7 @@ export function CategoriesPage() {
 
   function openCreate() {
     void dialog.openDialog({
-      title: t("common.create") + " " + t("nav.categories").toLowerCase(),
+      title: t("common.createCategory"),
       description: t("common.createCategoryDescription"),
       children: <CreateCategoryDialogContent />,
       showButtons: false,
@@ -77,7 +77,7 @@ export function CategoriesPage() {
 
   function openEdit(category: CategoryRecord) {
     void dialog.openDialog({
-      title: `${t("common.edit")} ${category.name}`,
+      title: t("operator.categories.editTitle", { name: category.name }),
       description: t("common.editCategoryDescription"),
       children: <UpdateCategoryDialogContent category={category} />,
       showButtons: false,
@@ -89,7 +89,12 @@ export function CategoriesPage() {
   function openStatus(category: CategoryRecord) {
     const action = category.status === "active" ? "deactivate" : "activate";
     void dialog.openDialog({
-      title: `${t(action === "deactivate" ? "common.deactivate" : "common.activate")} ${category.name}`,
+      title: t(
+        action === "deactivate"
+          ? "operator.categories.deactivateTitle"
+          : "operator.categories.activateTitle",
+        { name: category.name },
+      ),
       description: t("common.orderLifecycleAudit"),
       children: <CategoryStatusDialogContent action={action} category={category} />,
       showButtons: false,
@@ -99,7 +104,7 @@ export function CategoriesPage() {
 
   function openDelete(category: CategoryRecord) {
     void dialog.openDialog({
-      title: `${t("common.deleteForever")} ${category.name}?`,
+      title: t("operator.categories.deleteTitle", { name: category.name }),
       description: t("common.permanentDeleteCategoryDescription"),
       children: <DeleteCategoryDialogContent category={category} />,
       showButtons: false,
@@ -127,7 +132,7 @@ export function CategoriesPage() {
           icon={Tags}
           action={
             <NButton onClick={openCreate}>
-              {t("common.create") + " " + t("nav.categories").toLowerCase()}
+              {t("common.createCategory")}
             </NButton>
           }
           title={t("common.emptyCatalogCategory")}
@@ -170,7 +175,7 @@ export function CategoriesPage() {
     classNames: {
       cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-6",
     },
-    addButtonText: t("common.create") + " " + t("nav.categories").toLowerCase(),
+    addButtonText: t("common.createCategory"),
     noDataText: t("common.noCatalogCategory"),
     loadingText: t("common.loadingCatalogCategories"),
     dynamicHeight: true,

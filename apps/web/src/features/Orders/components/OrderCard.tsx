@@ -1,9 +1,11 @@
 "use client";
 
-import { CalendarClock, MapPin, ReceiptText } from "lucide-react";
+import { CalendarClock, MapPin, Package, Phone, ReceiptText } from "lucide-react";
 import { NCard, NCardAction, NCardInfo, NCardSection } from "najm-kit";
 
 import { formatKafilDate, formatMad } from "@/lib/format";
+import { getFamilyAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { OrderRecord } from "../types";
@@ -33,8 +35,29 @@ export function OrderCard({
               : "Self-service"
           }
         />
-        <NCardInfo icon={ReceiptText} label="Recipient" value={data.guardianLegalNameSnapshot} />
+        <NCardInfo
+          icon={ReceiptText}
+          label="Family"
+          value={
+            <ManagedAvatar
+              src={getFamilyAvatarImage(data.familyImage ?? null)}
+              title={data.guardianLegalNameSnapshot}
+              size="sm"
+              classNames={{ avatar: "bg-muted" }}
+            />
+          }
+        />
+        <NCardInfo
+          icon={Phone}
+          label="Phone"
+          value={data.deliveryPhoneSnapshot || "—"}
+        />
         <NCardInfo icon={MapPin} label="Delivery address" value={data.deliveryAddressSnapshot} />
+        <NCardInfo
+          icon={Package}
+          label="Articles"
+          value={data.articleCount ?? "—"}
+        />
         <NCardInfo icon={CalendarClock} label="Placed" value={formatKafilDate(data.createdAt)} />
       </NCardSection>
     </NCard>

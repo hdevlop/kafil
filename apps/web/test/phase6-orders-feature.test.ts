@@ -18,6 +18,28 @@ function readSource(relativePath: string) {
 }
 
 describe("Phase 6D order command contracts", () => {
+  test("shows the family identity and order facts in separate table columns", async () => {
+    const [columns, card] = await Promise.all([
+      readSource("../src/features/Orders/hooks/useOrdersTableColumns.tsx"),
+      readSource("../src/features/Orders/components/OrderCard.tsx"),
+    ]);
+
+    expect(columns).toContain('accessorKey: "orderNumber"');
+    expect(columns).toContain('header: "Order number"');
+    expect(columns).toContain('accessorKey: "guardianLegalNameSnapshot"');
+    expect(columns).toContain('header: "Family"');
+    expect(columns).toContain("<ManagedAvatar");
+    expect(columns).toContain("row.original.familyImage");
+    expect(columns).toContain('accessorKey: "deliveryPhoneSnapshot"');
+    expect(columns).toContain('accessorKey: "deliveryAddressSnapshot"');
+    expect(columns).toContain('accessorKey: "articleCount"');
+    expect(card).toContain("<ManagedAvatar");
+    expect(card).toContain("data.familyImage");
+    expect(card).toContain("data.deliveryPhoneSnapshot");
+    expect(card).toContain("data.deliveryAddressSnapshot");
+    expect(card).toContain("data.articleCount");
+  });
+
   test("only exposes valid explicit fulfillment actions for each active state", () => {
     expect(getOrderActions("pending").map((action) => action.command)).toEqual([
       "approve",
@@ -62,6 +84,21 @@ describe("Phase 6D order command contracts", () => {
     ]);
     expect(orderKeys.detail("order-1")).toEqual(["orders", "detail", "order-1"]);
   });
+
+  test("shows permanent deletion only through the exact-admin order menu", () => {
+    const [page, forms, api] = [
+      readSource("../src/features/Orders/components/OrdersPage.tsx"),
+      readSource("../src/features/Orders/components/OrderForms.tsx"),
+      readSource("../src/services/orderApi.ts"),
+    ];
+
+    expect(page).toContain("isExactAdmin");
+    expect(page).toContain('label: t("common.deleteForever")');
+    expect(page).toContain("<DeleteOrderDialogContent");
+    expect(forms).toContain('t("operator.orders.deleteWarning")');
+    expect(forms).toContain('variant="destructive"');
+    expect(api).toContain('api.delete<OrderRecord>(`/orders/${id}`)');
+  });
 });
 
 describe("Phase 7 unified OrderCart flow", () => {
@@ -93,6 +130,18 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(dialog).toContain("setAvailability");
     expect(dialog).toContain("unavailableItemCount");
     expect(dialog).toContain("canSaveAssisted");
+    expect(dialog).toContain("OrderConfirmationStep");
+    expect(dialog).toContain("confirmationFamily");
+    expect(dialog).toContain("setReviewing(true)");
+    expect(dialog).toContain("family.exactAddress");
+    expect(dialog).toContain('t("family.orderCart.phone")');
+    expect(dialog).toContain('t("family.orderCart.confirm")');
+    expect(dialog).toContain("<CheckCircle2");
+    expect(dialog).toContain("<MapPin");
+    expect(dialog).toContain("<ShoppingBag");
+    expect(dialog).toContain("getFamilyAvatarImage(family.image)");
+    expect(dialog).toContain('className="space-y-3 border-t border-border pt-4"');
+    expect(dialog).not.toContain("<NCard bordered noPadding");
     expect(dialog).toContain("getFamilyCatalogProduct");
     expect(dialog).toContain("<ProtectedImage");
     expect(dialog).toContain("<NEmptyState");
@@ -117,6 +166,10 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(familySelector).not.toContain("NCardInfo");
     expect(familySelector).not.toContain("NCardSection");
     expect(familySelector).toContain("onFundingEligibilityChange");
+    expect(familySelector).toContain("onSelectionChange");
+    expect(familySelector).toContain("selected.exactAddress");
+    expect(familySelector).toContain("image: selected.image");
+    expect(familySelector).toContain("phone: selected.phone");
     expect(familySelector).not.toContain("fundingMessage");
     expect(familySelector).not.toContain("funding.openDescription");
     expect(familySelector).toContain('emptyMessage=""');
@@ -148,6 +201,10 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(dialog).toContain(
       "onFundingEligibilityChange={setSelectedFamilyFundingEligible}",
     );
+    expect(dialog).toContain(
+      "onSelectionChange={setSelectedFamilySummary}",
+    );
+    expect(dialog).toContain("const canReview = canSaveAssisted");
   });
 
   test("OrderCartSheet revalidates every draft product without a capped list query", () => {

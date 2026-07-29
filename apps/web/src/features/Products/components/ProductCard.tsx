@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Package, ShoppingCart, Tag } from "lucide-react";
 import { cn, NButton, NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatMad } from "@/lib/format";
-import { ORDER_CART_MAX_QUANTITY, ORDER_CART_MIN_QUANTITY } from "@/features/OrderCart/types";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import type { ProductRecord } from "../types";
@@ -23,41 +22,24 @@ export interface ProductCardAddInput {
 interface ProductCardProps {
   data: ProductRecord;
   onAdd?: (input: ProductCardAddInput) => void | Promise<void>;
+  onOpenCart?: () => void;
+  quantityInCart?: number;
   adding?: boolean;
 }
 
-function clampQuantity(quantity: number): number {
-  if (!Number.isInteger(quantity)) {
-    return ORDER_CART_MIN_QUANTITY;
-  }
-  if (quantity < ORDER_CART_MIN_QUANTITY) return ORDER_CART_MIN_QUANTITY;
-  if (quantity > ORDER_CART_MAX_QUANTITY) return ORDER_CART_MAX_QUANTITY;
-  return quantity;
-}
-
-export function ProductCard({ data, onAdd, adding = false }: Readonly<ProductCardProps>) {
+export function ProductCard({
+  data,
+  onAdd,
+  onOpenCart,
+  quantityInCart = 0,
+  adding = false,
+}: Readonly<ProductCardProps>) {
   const { t } = useKafilLanguage();
   const isInactive = data.status !== "active";
-  const [quantity, setQuantity] = useState(ORDER_CART_MIN_QUANTITY);
   const busy = adding;
-  const previousBusy = useRef(busy);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
-
-  useEffect(() => {
-    if (previousBusy.current && !busy) {
-      setQuantity(ORDER_CART_MIN_QUANTITY);
-    }
-    previousBusy.current = busy;
-  }, [busy]);
-
-  function decrement() {
-    setQuantity((current) => clampQuantity(current - 1));
-  }
-
-  function increment() {
-    setQuantity((current) => clampQuantity(current + 1));
-  }
+  const hasCartItem = quantityInCart > 0;
 
   async function handleAdd() {
     if (!onAdd || isInactive || submittingRef.current) return;
@@ -69,7 +51,7 @@ export function ProductCard({ data, onAdd, adding = false }: Readonly<ProductCar
         productName: data.name,
         sku: data.sku,
         imageUrl: data.imageUrl,
-        quantity: clampQuantity(quantity),
+        quantity: 1,
         estimatedUnitPriceMinor: data.priceMinor,
       });
     } catch {
@@ -80,21 +62,29 @@ export function ProductCard({ data, onAdd, adding = false }: Readonly<ProductCar
     }
   }
 
-  const atMaxQuantity = quantity >= ORDER_CART_MAX_QUANTITY;
-  const atMinQuantity = quantity <= ORDER_CART_MIN_QUANTITY;
-  const canAdd = Boolean(onAdd) && !isInactive && !busy && !submitting;
-  const decreaseAriaLabel = t("family.orderCart.decrease", {
-    name: data.name,
-  });
-  const increaseAriaLabel = t("family.orderCart.increase", {
-    name: data.name,
-  });
-  const quantityAriaLabel = t("family.orderCart.quantityAria", {
-    name: data.name,
-  });
+  function handleAction() {
+    if (hasCartItem) {
+      onOpenCart?.();
+      return;
+    }
+    void handleAdd();
+  }
+
+  const canInteract = hasCartItem
+    ? Boolean(onOpenCart) && !busy
+    : Boolean(onAdd) && !isInactive && !busy && !submitting;
   const addToCartLabel = t("family.orderCart.addToCart", {
     name: data.name,
   });
+  const actionLabel = hasCartItem
+    ? t("family.orderCart.inCart", { count: quantityInCart })
+    : t("family.orderCart.add");
+  const actionAriaLabel = hasCartItem
+    ? t("family.orderCart.openCartFor", {
+        count: quantityInCart,
+        name: data.name,
+      })
+    : addToCartLabel;
 
   return (
     <NCard
@@ -146,52 +136,23 @@ export function ProductCard({ data, onAdd, adding = false }: Readonly<ProductCar
         />
       </NCardSection>
 
-      <NCardSection density="compact" surface="plain" className="border-t border-border pt-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="inline-flex items-center overflow-hidden rounded-lg border border-input">
-            <NButton
-              aria-label={decreaseAriaLabel}
-              className="size-8"
-              disabled={busy || submitting || atMinQuantity}
-              onClick={decrement}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
-              −
-            </NButton>
-            <span
-              aria-label={quantityAriaLabel}
-              aria-live="polite"
-              className="flex size-8 items-center justify-center border-x border-input text-xs font-semibold tabular-nums"
-            >
-              {quantity}
-            </span>
-            <NButton
-              aria-label={increaseAriaLabel}
-              className="size-8"
-              disabled={busy || submitting || atMaxQuantity}
-              onClick={increment}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
-              +
-            </NButton>
-          </div>
-          {onAdd ? (
-            <NButton
-              aria-label={addToCartLabel}
-              className="size-8"
-              disabled={!canAdd}
-              onClick={() => void handleAdd()}
-              size="icon"
-            >
-              <ShoppingCart className="size-4" />
-            </NButton>
-          ) : null}
-        </div>
-      </NCardSection>
+      {onAdd ? (
+        <NCardSection density="compact" surface="plain" className="border-t border-border pt-2">
+          <NButton
+            aria-label={actionAriaLabel}
+            disabled={!canInteract}
+            fullWidth
+            leftIcon={ShoppingCart}
+            loading={submitting}
+            onClick={handleAction}
+            size="sm"
+            type="button"
+            variant={hasCartItem ? "soft" : "success"}
+          >
+            {actionLabel}
+          </NButton>
+        </NCardSection>
+      ) : null}
     </NCard>
   );
 }

@@ -4,6 +4,7 @@ import { ListOrdered, Tags } from "lucide-react";
 import { FormInput, ImageInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 import { useState } from "react";
 
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
@@ -29,11 +30,16 @@ const CATEGORY_IMAGE_TYPES = new Set([
   "image/webp",
 ]);
 
-function categoryImageError(file: File) {
+function categoryImageError(
+  file: File,
+  t: ReturnType<typeof useKafilLanguage>["t"],
+) {
   if (!CATEGORY_IMAGE_TYPES.has(file.type)) {
-    return "Select a PNG, JPEG, WebP, AVIF, or GIF image.";
+    return t("operator.categories.imageTypeError");
   }
-  if (file.size > MAX_CATEGORY_IMAGE_SIZE) return "Image must be 5 MB or smaller.";
+  if (file.size > MAX_CATEGORY_IMAGE_SIZE) {
+    return t("operator.categories.imageSizeError");
+  }
   return null;
 }
 
@@ -50,14 +56,21 @@ function CategoryFields({
   imageVersion?: number;
   onImageChange: (file: File | null) => void;
 }>) {
+  const { t } = useKafilLanguage();
+
   return (
     <>
       <div className="space-y-2">
         <ImageInput
-            accept="image/avif,image/jpeg,image/png,image/webp"
+          accept="image/avif,image/jpeg,image/png,image/webp"
+          buttonLabel={t("operator.categories.imageButton")}
           disabled={disabled}
           imageVersion={String(imageVersion ?? 0)}
           previewClassName="h-44 w-full"
+          replaceSubtitle={t("operator.categories.imageReplaceGuidance")}
+          replaceTitle={t("operator.categories.imageReplaceTitle")}
+          subtitle={t("operator.categories.imageUploadGuidance")}
+          title={t("operator.categories.imageUploadTitle")}
           value={image}
           onChange={onImageChange}
         />
@@ -66,10 +79,10 @@ function CategoryFields({
         ) : null}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <FormInput name="name" type="text" formLabel="Name" placeholder="Food essentials" icon="Tags" required />
-        <FormInput name="sortOrder" type="number" formLabel="Display order" placeholder="1" icon="ListOrdered" required />
+        <FormInput name="name" type="text" formLabel={t("operator.categories.name")} placeholder={t("operator.categories.namePlaceholder")} icon="Tags" required />
+        <FormInput name="sortOrder" type="number" formLabel={t("operator.categories.displayOrder")} placeholder="1" icon="ListOrdered" required />
         <div className="md:col-span-2">
-          <FormInput name="description" type="textarea" formLabel="Description" placeholder="Optional category description" icon="AlignJustify" />
+          <FormInput name="description" type="textarea" formLabel={t("operator.categories.description")} placeholder={t("operator.categories.descriptionPlaceholder")} icon="AlignJustify" />
         </div>
       </div>
     </>
@@ -78,6 +91,7 @@ function CategoryFields({
 
 export function CreateCategoryDialogContent() {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { create } = useCategoryCommands();
   const [image, setImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -90,7 +104,7 @@ export function CreateCategoryDialogContent() {
       setImageError(null);
       return;
     }
-    const error = categoryImageError(file);
+    const error = categoryImageError(file, t);
     if (error) {
       setImageError(error);
       return;
@@ -129,7 +143,7 @@ export function CreateCategoryDialogContent() {
       onSubmit={handleSubmit}
       devTools={useDevFormTools(createCategoryFormSchema)}
     >
-      <NFormSectionHeader icon={Tags} title="Catalog category" />
+      <NFormSectionHeader icon={Tags} title={t("operator.categories.sectionTitle")} />
       <CategoryFields
         disabled={isUploading || create.isPending}
         image={image}
@@ -139,7 +153,11 @@ export function CreateCategoryDialogContent() {
       />
       <div className="flex justify-end pt-5">
         <NButton type="submit" disabled={create.isPending || isUploading}>
-          {isUploading ? "Uploading..." : create.isPending ? "Creating..." : "Create category"}
+          {isUploading
+            ? t("operator.categories.uploading")
+            : create.isPending
+              ? t("operator.categories.creating")
+              : t("operator.categories.create")}
         </NButton>
       </div>
     </NForm>
@@ -148,6 +166,7 @@ export function CreateCategoryDialogContent() {
 
 export function UpdateCategoryDialogContent({ category }: Readonly<{ category: CategoryRecord }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { update } = useCategoryCommands();
   const [image, setImage] = useState<File | string | null>(category.image);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -160,7 +179,7 @@ export function UpdateCategoryDialogContent({ category }: Readonly<{ category: C
       setImageError(null);
       return;
     }
-    const error = categoryImageError(file);
+    const error = categoryImageError(file, t);
     if (error) {
       setImageError(error);
       return;
@@ -220,7 +239,7 @@ export function UpdateCategoryDialogContent({ category }: Readonly<{ category: C
       onSubmit={handleSubmit}
       devTools={useDevFormTools(updateCategoryFormSchema)}
     >
-      <NFormSectionHeader icon={ListOrdered} title="Category details" />
+      <NFormSectionHeader icon={ListOrdered} title={t("operator.categories.detailsTitle")} />
       <CategoryFields
         disabled={isUploading || update.isPending}
         image={image}
@@ -230,7 +249,11 @@ export function UpdateCategoryDialogContent({ category }: Readonly<{ category: C
       />
       <div className="flex justify-end pt-5">
         <NButton type="submit" disabled={update.isPending || isUploading}>
-          {isUploading ? "Uploading..." : update.isPending ? "Saving..." : "Save category"}
+          {isUploading
+            ? t("operator.categories.uploading")
+            : update.isPending
+              ? t("operator.categories.saving")
+              : t("operator.categories.save")}
         </NButton>
       </div>
     </NForm>
@@ -245,6 +268,7 @@ export function CategoryStatusDialogContent({
   category: CategoryRecord;
 }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const commands = useCategoryCommands();
   const command = commands[action];
 
@@ -264,13 +288,30 @@ export function CategoryStatusDialogContent({
     >
       <p className="text-sm leading-6 text-muted-foreground">
         {action === "deactivate"
-          ? "Deactivation keeps existing product and order history while hiding this category from the active catalog."
-          : "Activation makes this category available for active catalog use again."}
+          ? t("operator.categories.deactivateHelp")
+          : t("operator.categories.activateHelp")}
       </p>
-      <FormInput name="reason" type="textarea" formLabel="Reason" placeholder={`Why should this category be ${action}d?`} icon="MessageSquareText" required />
+      <FormInput
+        name="reason"
+        type="textarea"
+        formLabel={t("operator.categories.reason")}
+        placeholder={t(
+          action === "deactivate"
+            ? "operator.categories.deactivateReasonPlaceholder"
+            : "operator.categories.activateReasonPlaceholder",
+        )}
+        icon="MessageSquareText"
+        required
+      />
       <div className="flex justify-end pt-5">
         <NButton type="submit" variant={action === "deactivate" ? "destructive" : "default"} disabled={command.isPending}>
-          {command.isPending ? "Saving..." : action === "deactivate" ? "Deactivate category" : "Activate category"}
+          {command.isPending
+            ? t("operator.categories.saving")
+            : t(
+                action === "deactivate"
+                  ? "operator.categories.deactivate"
+                  : "operator.categories.activate",
+              )}
         </NButton>
       </div>
     </NForm>
@@ -281,6 +322,7 @@ export function DeleteCategoryDialogContent({
   category,
 }: Readonly<{ category: CategoryRecord }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { remove } = useCategoryCommands();
 
   async function handleDelete() {
@@ -295,11 +337,7 @@ export function DeleteCategoryDialogContent({
   return (
     <div className="space-y-5">
       <p className="text-sm leading-6 text-muted-foreground">
-        Permanently deletes this category, any products still under it, the
-        cart items that referenced those products, and the related storage
-        images. Has no effect on order or inventory history, or the audit log.
-        The command refuses with a 409 if any product has history or non-zero
-        inventory — use deactivate instead.
+        {t("operator.categories.deleteWarning")}
       </p>
       <div className="flex justify-end pt-5">
         <NButton
@@ -308,7 +346,9 @@ export function DeleteCategoryDialogContent({
           disabled={remove.isPending}
           onClick={() => void handleDelete()}
         >
-          {remove.isPending ? "Deleting..." : "Delete category permanently"}
+          {remove.isPending
+            ? t("operator.categories.deleting")
+            : t("operator.categories.delete")}
         </NButton>
       </div>
     </div>

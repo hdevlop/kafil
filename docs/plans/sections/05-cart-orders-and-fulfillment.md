@@ -16,6 +16,16 @@ Workflow update completed 2026-07-27:
 - the legacy `in_preparation` delivery command remains only for old rows;
 - no inventory read or write occurs.
 
+Admin correction update completed 2026-07-29:
+
+- bootstrap admins have a dedicated permanent-delete command for mistaken
+  pre-purchase orders only;
+- orders with purchase records or fulfillment evidence are refused;
+- deletion erases the order-owned reserve/release entries, rebuilds remaining
+  budget snapshots, deletes items and status history transactionally, and
+  retains an `order.deleted` audit event;
+- the action is exposed only in the exact-admin order card/table dropdown.
+
 Migration: `0025_ambitious_abomination`.
 
 ## Goal

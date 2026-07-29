@@ -22,6 +22,8 @@ export interface OrderRecord {
   totalMinor: number;
   currency: "MAD" | string;
   guardianLegalNameSnapshot: string;
+  familyImage?: string | null;
+  articleCount?: number;
   deliveryAddressSnapshot: string;
   deliveryPhoneSnapshot: string | null;
   placedByUserId: string;

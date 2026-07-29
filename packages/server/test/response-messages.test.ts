@@ -38,7 +38,7 @@ describe("server response message contract", () => {
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    expect(routes).toHaveLength(174);
+    expect(routes).toHaveLength(175);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));
@@ -75,5 +75,7 @@ describe("server response message contract", () => {
       .toBe("orders.success.approved");
     expect(getResponseMessage(controller("OrderController"), "deliver")?.message)
       .toBe("orders.success.delivered");
+    expect(getResponseMessage(controller("OrderController"), "delete")?.message)
+      .toBe("orders.success.deleted");
   });
 });

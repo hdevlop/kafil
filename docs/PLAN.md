@@ -99,6 +99,10 @@ These decisions apply unless this plan is deliberately revised:
 32. Admin access management is a Kafil privacy-safe facade over Najm users,
     sessions, fixed roles, canonical permissions, and audited custom permissions.
     User creation always completes the owning operator/family/sponsor profile.
+33. Bootstrap admins may permanently delete a mistaken pre-purchase order only
+    while it has no purchase or fulfillment evidence. The transaction removes
+    its order-owned reserve/release ledger entries, rebuilds the family budget
+    snapshots, deletes its items and timeline, and retains an audit record.
 
 The full decision register is in
 [`docs/plans/DECISIONS.md`](plans/DECISIONS.md).
@@ -848,12 +852,16 @@ canonical destinations.
     `EMAIL_PROVIDER` to `console`, so a misconfigured production
     build surfaces a runtime error from `emailConfig.ts` instead of
     silently logging email contents.
-  - `ProductCard` now caps quantity at `ORDER_CART_MAX_QUANTITY`
-    (1,000), awaits the `onAdd` promise, and uses the
-    `family.orderCart.addToCart`, `family.orderCart.increase`,
-    `family.orderCart.decrease`, `family.orderCart.quantityAria`, and
-    `common.category` translation keys for every user-visible label
-    in en/fr/ar/es.
+  - `ProductCard` now exposes one compact Add action instead of duplicating
+    quantity controls from the cart sheet. After the first add it reflects the
+    live cart quantity and opens the cart, while `OrderCartSheet` remains the
+    only place that increments, decrements, or removes items.
+  - `OrderCartSheet` now requires a read-only review step before the existing
+    submit command. The flattened confirmation surface shows the family image,
+    name, exact delivery address, phone number, products, quantities, line totals,
+    available budget, and total with icon-led Back and Confirm actions; it adds no tracking
+    or post-submit receipt screen and preserves server-side recalculation and
+    idempotent submission. Copy is localized in en/fr/ar/es.
   - The Products header now uses a translated Categories button that opens a
     narrow Najm Kit sheet reusing category `NTable` card mode with small square
     image tiles and `aria-pressed` selection instead of a horizontal banner.
@@ -869,6 +877,12 @@ canonical destinations.
   - The browser runner uses HTTP development mode and Najm's documented
     loopback `NAJM_AUTH_INTERNAL_URL`, so `verifyAlways` recovery does not
     depend on an untrusted self-signed internal TLS request.
+  - Bootstrap admins now have an explicit `delete:orders` command and an
+    admin-only permanent-delete action in each order card/table menu. Deletion
+    is limited to orders without purchase or fulfillment history; it removes
+    the pre-purchase order ledger effects, rebuilds account snapshots, deletes
+    the order graph transactionally, and records `order.deleted` in the audit
+    log. Operators and other roles do not receive the permission or UI action.
 - Validation evidence (2026-07-28):
   - `bun run --cwd apps/web typecheck` clean.
   - `bun run --cwd apps/web lint` → 0 errors, 0 warnings.
@@ -885,6 +899,14 @@ canonical destinations.
   - The complete registered browser suite exceeded the ten-minute outer
     timeout while older Phase 6 assertions were still failing. It is not
     counted as passing closeout evidence and remains a follow-up.
+- Admin permanent-order-delete validation (2026-07-29):
+  - `bun run check` passed: web/server/seed lint and typecheck clean; web tests
+    215 pass; server tests 291 pass and 31 opt-in skips; seed tests 71 pass;
+    Next.js production build succeeded with 39 routes.
+  - `bun run test:db` passed 19 PostgreSQL tests, including deletion of the
+    order graph, restoration of its reserved amount, rebuild of later ledger
+    snapshots, and refusal when purchase history exists.
+  - `bun run db:generate` reported no schema changes and no migration.
 
 
 - [~] Add operator statistics and financial reports (live overview statistics,

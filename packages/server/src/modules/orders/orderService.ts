@@ -101,6 +101,52 @@ export class OrderService {
     return this.orderDetail(order, "operator");
   }
 
+  /** Bootstrap-admin correction for an order entered by mistake before any purchase. */
+  @Transaction({ retries: 2 })
+  async delete(id: string, actorUserId: string) {
+    const order = await this.lockOrder(id);
+    if (
+      !["pending", "approved", "rejected", "cancelled"].includes(order.status) ||
+      order.deliveryProofStoragePath
+    ) {
+      HttpError.conflict(
+        "Only pre-purchase orders without fulfillment evidence can be permanently deleted",
+      );
+    }
+
+    const purchaseHistory = await this.purchases.listByOrderId(order.id);
+    if (purchaseHistory.length > 0) {
+      HttpError.conflict(
+        "Orders with purchase history cannot be permanently deleted",
+      );
+    }
+
+    const account = await this.requireBudgetAccount(order.familyProfileId);
+    const { balance, deletedCount } =
+      await this.ledger.erasePrePurchaseOrderEntries({
+        budgetAccountId: account.id,
+        orderId: order.id,
+      });
+    await this.updateBudget(account.id, balance);
+
+    const deleted = await this.orders.hardDelete(order.id);
+    if (!deleted) {
+      HttpError.notFound("Order not found");
+    }
+    await this.audits.record({
+      action: "order.deleted",
+      actorUserId,
+      metadata: {
+        permanent: true,
+        previousStatus: order.status,
+        ledgerEntriesRemoved: deletedCount,
+      },
+      resource: "orders",
+      resourceId: order.id,
+    });
+    return deleted;
+  }
+
   async listOwn(userId: string, userQuery: OwnOrderListQuery) {
     const family = await this.validator.ensureFamily(userId);
     const { limit, offset, status } = ownOrderListQuery.parse(userQuery ?? {});

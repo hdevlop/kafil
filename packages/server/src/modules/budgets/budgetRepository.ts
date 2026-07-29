@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { usersTable } from "najm-auth/pg";
-import { Repository } from "najm-core";
+import { HttpError, Repository } from "najm-core";
 import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
@@ -229,10 +229,64 @@ export class BudgetLedgerRepository {
         ),
       );
 
+    return this.rebuildSnapshots(input.budgetAccountId);
+  }
+
+  /** Bootstrap-admin correction only: erase pre-purchase order effects and
+   * rebuild every remaining ledger snapshot in chronological order. */
+  async erasePrePurchaseOrderEntries(input: {
+    budgetAccountId: string;
+    orderId: string;
+  }) {
+    const orderEntries = await this.db
+      .select({
+        id: budgetLedgerEntries.id,
+        entryType: budgetLedgerEntries.entryType,
+      })
+      .from(budgetLedgerEntries)
+      .where(
+        and(
+          eq(budgetLedgerEntries.budgetAccountId, input.budgetAccountId),
+          eq(budgetLedgerEntries.sourceType, "order"),
+          eq(budgetLedgerEntries.sourceId, input.orderId),
+        ),
+      )
+      .for("update");
+
+    if (orderEntries.length === 0) {
+      HttpError.conflict("Order budget ledger entries are missing");
+    }
+    if (
+      orderEntries.some(
+        ({ entryType }) =>
+          entryType !== "order_reserve" && entryType !== "order_release",
+      )
+    ) {
+      HttpError.conflict(
+        "Orders with captured or refunded budget history cannot be permanently deleted",
+      );
+    }
+
+    const deleted = await this.db
+      .delete(budgetLedgerEntries)
+      .where(
+        and(
+          eq(budgetLedgerEntries.budgetAccountId, input.budgetAccountId),
+          eq(budgetLedgerEntries.sourceType, "order"),
+          eq(budgetLedgerEntries.sourceId, input.orderId),
+        ),
+      )
+      .returning({ id: budgetLedgerEntries.id });
+
+    const balance = await this.rebuildSnapshots(input.budgetAccountId);
+    return { balance, deletedCount: deleted.length };
+  }
+
+  private async rebuildSnapshots(budgetAccountId: string) {
     const entries = await this.db
       .select()
       .from(budgetLedgerEntries)
-      .where(eq(budgetLedgerEntries.budgetAccountId, input.budgetAccountId))
+      .where(eq(budgetLedgerEntries.budgetAccountId, budgetAccountId))
       .orderBy(asc(budgetLedgerEntries.createdAt), asc(budgetLedgerEntries.id))
       .for("update");
 

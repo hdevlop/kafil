@@ -256,3 +256,13 @@ access tokens and refresh sessions and writes a privacy-safe audit event.
 Self-action and bootstrap administrator targets are protected. Account creation
 stays in its family, sponsor, operator, or seed workflow, and runtime role or
 permission editing is not offered.
+
+### D-036 - Admin correction for mistaken pre-purchase orders
+
+Only the bootstrap admin may permanently delete an order entered by mistake,
+and only before the order has purchase records or fulfillment evidence. The
+transaction locks the order and family budget, erases the order-owned
+reserve/release ledger entries, rebuilds every remaining budget snapshot,
+deletes the order items and status timeline, and records a privacy-safe
+`order.deleted` audit event. Purchased, prepared, out-for-delivery, delivered,
+or evidence-bearing orders retain their immutable history and are refused.

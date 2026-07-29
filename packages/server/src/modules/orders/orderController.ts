@@ -13,7 +13,7 @@ import {
 import { McpTool, ToolGroup } from "najm-mcp";
 import { Validate } from "najm-validation";
 
-import { isFamily, isOperator, isSponsor } from "../../config/authConfig";
+import { isAdmin, isFamily, isOperator, isSponsor } from "../../config/authConfig";
 import {
   type AssistedOrderDto,
   assistedOrderDto,
@@ -43,6 +43,7 @@ import {
   submitOrderDto,
 } from "./orderDto";
 import { OrderService } from "./orderService";
+import { CanDelete } from "./orderGuards";
 
 @ToolGroup("orders")
 @Controller("/orders")
@@ -187,6 +188,25 @@ export class OrderController {
   @ResMsg("orders.success.retrieved")
   get(@Params("id") id: string) {
     return this.orders.get(id);
+  }
+
+  @Delete("/:id")
+  @CanDelete("orders")
+  @isAdmin()
+  @Validate({ params: orderIdParams })
+  @McpTool({
+    description:
+      "Permanently delete a mistaken pre-purchase order and rebuild its family budget snapshots",
+    destructive: true,
+    confirm: {
+      level: "danger",
+      message:
+        "Permanently delete this pre-purchase order? This cannot be undone.",
+    },
+  })
+  @ResMsg("orders.success.deleted")
+  delete(@Params("id") id: string, @User("id") userId: string) {
+    return this.orders.delete(id, userId);
   }
 
   @Post("/:id/approve")

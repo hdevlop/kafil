@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { type NTableProps } from "najm-kit";
 
 import { formatKafilDate, formatMad } from "@/lib/format";
+import { getFamilyAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { OrderRecord } from "../types";
@@ -13,15 +15,38 @@ export function useOrdersTableColumns() {
     () => [
       {
         accessorKey: "orderNumber",
-        header: "Order",
-        cell: ({ row }) => (
-          <div className="min-w-0">
-            <p className="truncate font-medium">{row.original.orderNumber}</p>
-            <p className="truncate text-sm text-muted-foreground">
-              {row.original.guardianLegalNameSnapshot}
-            </p>
-          </div>
+        header: "Order number",
+        cell: ({ getValue }) => (
+          <p className="truncate font-medium">{getValue<string>()}</p>
         ),
+      },
+      {
+        accessorKey: "guardianLegalNameSnapshot",
+        header: "Family",
+        cell: ({ row }) => (
+          <ManagedAvatar
+            src={getFamilyAvatarImage(row.original.familyImage ?? null)}
+            title={row.original.guardianLegalNameSnapshot}
+            classNames={{ avatar: "bg-muted" }}
+          />
+        ),
+      },
+      {
+        accessorKey: "deliveryPhoneSnapshot",
+        header: "Phone",
+        cell: ({ getValue }) => getValue<string | null>() || "—",
+      },
+      {
+        accessorKey: "deliveryAddressSnapshot",
+        header: "Address",
+        cell: ({ getValue }) => (
+          <p className="max-w-64 truncate">{getValue<string>()}</p>
+        ),
+      },
+      {
+        accessorKey: "articleCount",
+        header: "Articles",
+        cell: ({ getValue }) => getValue<number | undefined>() ?? "—",
       },
       {
         accessorKey: "placementSource",

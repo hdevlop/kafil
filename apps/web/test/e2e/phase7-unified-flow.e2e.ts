@@ -234,7 +234,13 @@ test.describe("Phase 7 unified catalog and order flow", () => {
     await expect(familySearchInput).toHaveCount(0);
     await expect(page.getByText(/Active family: Guardian 3/)).toBeVisible();
 
-    await page.getByRole("button", { name: "Order" }).click();
+    await page.getByRole("button", { name: "Review order" }).click();
+    await expect(page.getByText("Family 3", { exact: true })).toBeVisible();
+    await expect(page.getByText("3 Test Street", { exact: true })).toBeVisible();
+    await expect(page.getByText("Rice 5 kg", { exact: true })).toBeVisible();
+    expect(assistedPayload).toEqual({});
+
+    await page.getByRole("button", { name: /Confirm order/ }).click();
 
     await page.waitForURL(/\/orders\?created=order-assisted-1/);
     expect(assistedPayload).toMatchObject({

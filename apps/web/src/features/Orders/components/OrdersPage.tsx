@@ -10,11 +10,13 @@ import {
   ReceiptText,
   RefreshCw,
   Send,
+  Trash2,
   Truck,
 } from "lucide-react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { Family, Operator } from "@/shared/Authorization";
+import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useOrdersTableColumns } from "@/features/Orders/hooks/useOrdersTableColumns";
 import { useOrdersTableFilters } from "@/features/Orders/hooks/useOrdersTableFilters";
@@ -33,7 +35,11 @@ import { StatusBadge } from "@/shared/StatusBadge";
 import { getOrderActions, type OrderCommand } from "../config/orderActions";
 import { OrderCard } from "./OrderCard";
 import { OrderDetails } from "./OrderDetails";
-import { ConfirmOrderCommandDialogContent, OrderReasonDialogContent } from "./OrderForms";
+import {
+  ConfirmOrderCommandDialogContent,
+  DeleteOrderDialogContent,
+  OrderReasonDialogContent,
+} from "./OrderForms";
 import {
   ConfirmDeliveryDialogContent,
   PurchaseOrderDialogLoader,
@@ -76,6 +82,7 @@ export interface OrdersPageProps {
 export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps>) {
   const dialog = useDialog();
   const { t } = useKafilLanguage();
+  const { isExactAdmin } = useKafilRole();
   const workspace = useOrdersWorkspace(initialPagination, highlightOrderId);
   const { setPagination } = workspace;
   const orderCommands = useOrderCommands();
@@ -169,6 +176,16 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     });
   }
 
+  function openDelete(order: OrderRecord) {
+    void dialog.openDialog({
+      title: t("operator.orders.deleteTitle", { number: order.orderNumber }),
+      description: t("operator.orders.deleteDescription"),
+      children: <DeleteOrderDialogContent order={order} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
   const headerTitle = isFamilyScope
     ? t("common.orderYourOrders")
     : t("operator.orders.title");
@@ -206,50 +223,64 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
       <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
     ),
     menu: {
-      row: (order) => [
-        {
+      row: (order) => {
+        const actions = [
+          {
           label: t("common.view"),
           icon: Eye,
           onSelect: () => openView(order),
-        },
-        ...getOrderActions(order.status).map((action) => ({
-          label: action.label,
-          icon: getOrderActionIcon(action.command),
-          danger: action.danger,
-          disabled: orderCommands[action.command].isPending,
-          separatorBefore: true,
-          onSelect: () => {
-            if (action.requiresReason) {
-              openReason(
-                action.command as Extract<OrderCommand, "reject" | "cancel">,
-                order,
-              );
-              return;
-            }
-            if (
-              ["purchase", "replacePurchase", "confirmDelivery"].includes(
-                action.command,
-              )
-            ) {
-              openWorkflow(
+          },
+          ...getOrderActions(order.status).map((action) => ({
+            label: action.label,
+            icon: getOrderActionIcon(action.command),
+            danger: action.danger,
+            disabled: orderCommands[action.command].isPending,
+            separatorBefore: true,
+            onSelect: () => {
+              if (action.requiresReason) {
+                openReason(
+                  action.command as Extract<OrderCommand, "reject" | "cancel">,
+                  order,
+                );
+                return;
+              }
+              if (
+                ["purchase", "replacePurchase", "confirmDelivery"].includes(
+                  action.command,
+                )
+              ) {
+                openWorkflow(
+                  action.command as Extract<
+                    OrderCommand,
+                    "purchase" | "replacePurchase" | "confirmDelivery"
+                  >,
+                  order,
+                );
+                return;
+              }
+              openConfirm(
                 action.command as Extract<
                   OrderCommand,
-                  "purchase" | "replacePurchase" | "confirmDelivery"
+                  "approve" | "startDelivery" | "deliver"
                 >,
                 order,
               );
-              return;
-            }
-            openConfirm(
-              action.command as Extract<
-                OrderCommand,
-                "approve" | "startDelivery" | "deliver"
-              >,
-              order,
-            );
+            },
+          })),
+        ];
+        if (!isExactAdmin) return actions;
+        return [
+          ...actions,
+          {
+            label: t("common.deleteForever"),
+            icon: Trash2,
+            danger: true,
+            separatorBefore: true,
+            disabled: orderCommands.remove.isPending,
+            onSelect: () => openDelete(order),
           },
-        })),
-      ],
+        ];
+      },
     },
     menuButton: true,
     manualPagination: true,

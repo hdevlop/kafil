@@ -184,6 +184,7 @@ describe("Kafil server", () => {
       "orders_confirm_delivery",
       "orders_deliver",
       "orders_cancel",
+      "orders_delete",
       "order-evidence_list_orphans",
       "order-evidence_cleanup_orphans",
       "settings_get_settings",

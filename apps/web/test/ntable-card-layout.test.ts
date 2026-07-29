@@ -125,6 +125,12 @@ describe("NTable responsive card layouts", () => {
     expect(product).not.toContain("<NCardFooter>");
     expect(product).toContain("<NCardInfo");
     expect(product).toContain("maxChars={18}");
+    expect(product).toContain('t("family.orderCart.inCart"');
+    expect(product).toContain('variant={hasCartItem ? "soft" : "success"}');
+    expect(product).toContain("fullWidth");
+    expect(product).not.toContain("function decrement");
+    expect(product).not.toContain("function increment");
+    expect(product).not.toContain("ORDER_CART_MAX_QUANTITY");
     expect(product).toContain("<NCardSection");
     expect(product).toContain("embedded");
     expect(product).toContain("title={data.name}");

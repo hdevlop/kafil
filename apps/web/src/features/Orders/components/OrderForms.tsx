@@ -101,3 +101,44 @@ export function OrderReasonDialogContent({
     </NForm>
   );
 }
+
+export function DeleteOrderDialogContent({
+  order,
+}: Readonly<{ order: OrderRecord }>) {
+  const { pop } = useDialog();
+  const { t } = useKafilLanguage();
+  const { remove } = useOrderCommands();
+
+  async function handleDelete() {
+    try {
+      await remove.mutateAsync(order.id);
+      await pop();
+    } catch {
+      // useEntityCommand already presents the API error to the user.
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-3 rounded-xl bg-destructive/10 p-4 text-sm leading-6 text-muted-foreground">
+        <AlertTriangle
+          aria-hidden
+          className="mt-0.5 size-5 shrink-0 text-destructive"
+        />
+        <p>{t("operator.orders.deleteWarning")}</p>
+      </div>
+      <div className="flex justify-end pt-5">
+        <NButton
+          type="button"
+          variant="destructive"
+          disabled={remove.isPending}
+          onClick={() => void handleDelete()}
+        >
+          {remove.isPending
+            ? t("operator.orders.deleting")
+            : t("operator.orders.deleteAction")}
+        </NButton>
+      </div>
+    </div>
+  );
+}

@@ -2,17 +2,20 @@ import {
   and,
   desc,
   eq,
+  getTableColumns,
   gte,
   isNotNull,
   isNull,
   lte,
   sql,
 } from "drizzle-orm";
+import { usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
 import { categories, products } from "../catalog/catalogSchema";
+import { familyProfiles } from "../families/familySchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
 import {
@@ -49,6 +52,16 @@ const cartItemSelection = {
   currency: products.currency,
   productStatus: products.status,
   categoryStatus: categories.status,
+};
+
+const operatorOrderSelection = {
+  ...getTableColumns(orders),
+  familyImage: usersTable.image,
+  articleCount: sql<number>`coalesce((
+    select sum(${orderItems.quantity})
+    from ${orderItems}
+    where ${orderItems.orderId} = ${orders.id}
+  ), 0)::int`,
 };
 
 @Repository("default")
@@ -138,8 +151,13 @@ export class OrderRepository {
   list(limit: number, offset: number, filters: OrderFilters) {
     const condition = orderFilter(filters);
     const query = this.db
-      .select()
+      .select(operatorOrderSelection)
       .from(orders)
+      .innerJoin(
+        familyProfiles,
+        eq(orders.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
       .orderBy(desc(orders.createdAt))
       .limit(limit)
       .offset(offset);
@@ -317,6 +335,15 @@ export class OrderRepository {
       .set({ ...data, updatedAt: new Date() })
       .where(eq(orders.id, id))
       .returning();
+    return order;
+  }
+
+  async hardDelete(id: string) {
+    const order = await this.findById(id);
+    if (!order) return undefined;
+    await this.db.delete(orderStatusEvents).where(eq(orderStatusEvents.orderId, id));
+    await this.db.delete(orderItems).where(eq(orderItems.orderId, id));
+    await this.db.delete(orders).where(eq(orders.id, id));
     return order;
   }
 }

@@ -21,7 +21,7 @@ import { useSearchParams } from "next/navigation";
 import { Operator } from "@/shared/Authorization";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
-import { useOrderCart } from "@/features/OrderCart";
+import { useOrderCart, useOrderCartStore } from "@/features/OrderCart";
 import { CategoryFilterSheet } from "@/features/Categories/components/CategoryBar";
 import { useProductsWorkspace } from "@/features/Products/hooks/useProductsWorkspace";
 import { useProductsTableColumns } from "@/features/Products/hooks/useProductsTableColumns";
@@ -53,6 +53,7 @@ export function ProductsPage() {
   const { t } = useKafilLanguage();
   const { isExactFamily, isExactAdmin } = useKafilRole();
   const orderCart = useOrderCart();
+  const setCartOpen = useOrderCartStore((state) => state.setDialogOpen);
   const columns = useProductsTableColumns();
   const filters = useProductsTableFilters();
   const searchParams = useSearchParams();
@@ -69,6 +70,10 @@ export function ProductsPage() {
     if (!isExactFamily) return (workspace.products ?? []) as ProductRecord[];
     return (workspace.products ?? []) as unknown as ProductRecord[];
   }, [isExactFamily, workspace.products]);
+  const cartQuantityByProductId = useMemo(
+    () => new Map(orderCart.items.map((item) => [item.productId, item.quantity])),
+    [orderCart.items],
+  );
   const pageIndex = getPageIndex(workspace.pagination);
   const pageCount = hasPossibleNextPage(products.length, workspace.pagination)
     ? pageIndex + 2
@@ -139,6 +144,10 @@ export function ProductsPage() {
     });
   }
 
+  function openCart() {
+    setCartOpen(true);
+  }
+
   const tableProps: NTableProps<ProductRecord> = {
     data: products,
     columns,
@@ -149,7 +158,14 @@ export function ProductsPage() {
     onCreate: openCreate,
     onView: openView,
     onEdit: openEdit,
-    renderCard: (props) => <ProductCard {...props} onAdd={handleAdd} />,
+    renderCard: (props) => (
+      <ProductCard
+        {...props}
+        onAdd={handleAdd}
+        onOpenCart={openCart}
+        quantityInCart={cartQuantityByProductId.get(props.data.id) ?? 0}
+      />
+    ),
     renderEmpty: () => (
       <Operator>
         <PageEmptyState
@@ -236,8 +252,10 @@ export function ProductsPage() {
           error={workspace.error}
           loading={workspace.loading}
           onAdd={handleAdd}
+          onOpenCart={openCart}
           pagination={workspace.pagination}
           products={products}
+          quantityByProductId={cartQuantityByProductId}
           refetch={() => void workspace.refetch()}
           setPagination={workspace.setPagination}
         />
@@ -257,7 +275,9 @@ interface ProductsFamilyGridProps {
   pagination: ReturnType<typeof createOffsetPagination>;
   setPagination: (next: ReturnType<typeof createOffsetPagination>) => void;
   products: ProductRecord[];
+  quantityByProductId: ReadonlyMap<string, number>;
   onAdd: (input: ProductCardAddInput) => Promise<void> | void;
+  onOpenCart: () => void;
 }
 
 function ProductsFamilyGrid({
@@ -267,7 +287,9 @@ function ProductsFamilyGrid({
   pagination,
   setPagination,
   products,
+  quantityByProductId,
   onAdd,
+  onOpenCart,
 }: Readonly<ProductsFamilyGridProps>) {
   const { t } = useKafilLanguage();
   const pageIndex = getPageIndex(pagination);
@@ -313,6 +335,8 @@ function ProductsFamilyGrid({
             key={product.id}
             data={product}
             onAdd={onAdd}
+            onOpenCart={onOpenCart}
+            quantityInCart={quantityByProductId.get(product.id) ?? 0}
           />
         ))}
       </div>
