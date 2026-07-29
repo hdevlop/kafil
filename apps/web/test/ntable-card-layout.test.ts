@@ -27,6 +27,8 @@ describe("NTable responsive card layouts", () => {
     expect(categorySheet).toContain("<CategoryCard compact data={data} />");
     expect(categorySheet).toContain('availableModes={["cards"]}');
     expect(categorySheet).toContain('classNames={{ cards: "grid grid-cols-3 gap-2" }}');
+    expect(categorySheet).toContain('aria-label={filterLabel}');
+    expect(categorySheet).toContain('className="hidden sm:inline"');
     expect(categorySheet).toContain("width={420}");
     expect(categorySheet).toContain('aria-pressed={activeId === data.id}');
     expect(categorySheet).toContain('select(activeId === data.id ? "" : data.id)');
@@ -54,7 +56,10 @@ describe("NTable responsive card layouts", () => {
     expect(products).toContain("familyPagination = createOffsetPagination(0, 12)");
     expect(products).toContain("manualPagination: true");
     expect(products).toContain("pageSizeOptions: [25, 50, 100]");
-    expect(products.match(/xl:grid-cols-8/g)).toHaveLength(2);
+    expect(products).toContain('pagination: "hidden sm:flex"');
+    expect(products).toContain('className="hidden justify-between sm:flex"');
+    expect(products.match(/xl:grid-cols-6/g)).toHaveLength(2);
+    expect(products.match(/2xl:grid-cols-8/g)).toHaveLength(2);
   });
 
   test("all renderers use the embedded NCard information contract", () => {
@@ -111,6 +116,8 @@ describe("NTable responsive card layouts", () => {
     expect(product).not.toContain("entityCardImageColor");
     expect(product).toContain("{data.name}");
     expect(product).toContain("formatMad(data.priceMinor)");
+    expect(product).toContain('title: "text-sm font-semibold leading-tight text-foreground"');
+    expect(product).toContain('"mt-1 text-base font-bold leading-none');
     expect(product).toContain("text-emerald-600");
     expect(product).not.toContain("<StatusBadge");
     expect(product).toContain("data.categoryName");

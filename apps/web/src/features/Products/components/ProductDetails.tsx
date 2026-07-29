@@ -2,10 +2,10 @@
 
 import { Barcode, CalendarDays, FolderTree, Image as ImageIcon, Package, ReceiptText } from "lucide-react";
 import { NDetailList, NSection } from "najm-kit";
-import Image from "next/image";
 
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import type { ProductRecord } from "../types";
 
@@ -14,12 +14,11 @@ export function ProductDetails({ product }: Readonly<{ product: ProductRecord }>
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         {product.imageUrl ? (
-          <Image
+          <ProtectedImage
             alt={product.name}
             className="size-12 shrink-0 rounded-xl object-cover"
             height={48}
             src={product.imageUrl}
-            unoptimized
             width={48}
           />
         ) : (

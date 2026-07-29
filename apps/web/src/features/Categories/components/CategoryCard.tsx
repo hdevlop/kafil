@@ -1,10 +1,10 @@
 "use client";
 
 import { Package, Tags } from "lucide-react";
-import Image from "next/image";
 import { cn, NCard, NCardMedia, NCardSection } from "najm-kit";
 import { formatKafilNumber } from "@/lib/format";
 import type { CategoryRecord } from "../types";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 
 interface CategoryCardData {
   name: string;
@@ -40,13 +40,12 @@ export function CategoryCard({
           variant="hero"
         >
           {data.image ? (
-            <Image
+            <ProtectedImage
               alt={`Cover image for ${data.name}`}
               className="size-full object-cover"
               fill
               sizes="120px"
               src={data.image}
-              unoptimized
             />
           ) : (
             <div className="grid size-full place-items-center bg-muted text-muted-foreground">
@@ -80,13 +79,12 @@ export function CategoryCard({
         className="mx-3 mt-3 w-[calc(100%-1.5rem)] rounded-xl bg-muted sm:mx-4 sm:mt-4 sm:w-[calc(100%-2rem)]"
       >
         {data.image ? (
-          <Image
+          <ProtectedImage
             alt={`Cover image for ${data.name}`}
             className="size-full object-contain"
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             src={data.image}
-            unoptimized
           />
         ) : (
           <div className="grid size-full place-items-center bg-muted text-muted-foreground">

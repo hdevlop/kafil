@@ -1,5 +1,5 @@
 export { FloatingOrderCartButton } from "./FloatingOrderCartButton";
-export { OrderCartDialog } from "./OrderCartDialog";
+export { OrderCartSheet } from "./OrderCartDialog";
 export {
   AssistedFamilySelector,
   type AssistedFamilySelectorProps,

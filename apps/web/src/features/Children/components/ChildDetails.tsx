@@ -1,10 +1,11 @@
 "use client";
 
 import { Baby, House, NotebookPen } from "lucide-react";
-import { NAvatar, NDetailList, NSection } from "najm-kit";
+import { NDetailList, NSection } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
 import { getChildAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
@@ -15,7 +16,7 @@ export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
-        <NAvatar
+        <ManagedAvatar
           src={getChildAvatarImage(child.image, child.gender)}
           title={child.legalName}
           subtitle={child.gender === "F" ? t("operator.families.female") : t("operator.families.male")}

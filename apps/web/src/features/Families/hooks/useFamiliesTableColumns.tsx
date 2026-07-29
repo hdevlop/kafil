@@ -2,12 +2,13 @@
 
 import { useMemo } from "react";
 import { usePermissions } from "najm-auth/client/react";
-import { NAvatar, type NTableProps } from "najm-kit";
+import { type NTableProps } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 import type { FamilyRecord } from "../types";
@@ -21,7 +22,7 @@ export function useFamiliesTableColumns() {
         accessorKey: "name",
         header: t("operator.families.account"),
         cell: ({ row }) => (
-          <NAvatar
+          <ManagedAvatar
             src={getFamilyAvatarImage(row.original.image)}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}

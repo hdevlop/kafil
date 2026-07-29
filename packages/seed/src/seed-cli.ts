@@ -99,7 +99,7 @@ Usage:
 Commands:
   full       Reset and seed everything
   demo       Add or repair demo data
-  remove     Remove managed demo data
+  remove     Remove managed demo data and reset catalog
   setup      Reset app data and seed auth
   migrate    Apply migrations
   admin      Repair admin access
@@ -114,7 +114,7 @@ Demo/full options:
   -c, --contributions <count> Default: 100
 
 Safety:
-  remove deletes managed demo data only.
+  remove deletes managed demo data plus products and empty categories.
   setup/full delete all app data.
   Destructive non-interactive commands require --yes.`;
 }

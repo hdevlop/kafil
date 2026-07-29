@@ -3,7 +3,6 @@
 import { CalendarDays, GraduationCap, UsersRound } from "lucide-react";
 import {
   cn,
-  NAvatar,
   NCard,
   NCardAction,
   NCardInfo,
@@ -14,6 +13,7 @@ import {
 
 import { formatKafilDate } from "@/lib/format";
 import { getChildAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -51,7 +51,7 @@ export function ChildCard({ data }: Readonly<{ data: ChildRecord }>) {
         size="sm"
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
-        <NAvatar
+        <ManagedAvatar
           src={getChildAvatarImage(data.image, data.gender)}
           alt={data.legalName}
           size="xl"

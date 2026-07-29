@@ -1,9 +1,14 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { envConfig } from "@kafil/server/config";
+import {
+  assertManagedImageCompliant,
+  detectManagedImageMime,
+  writeManagedImage,
+} from "@kafil/server/managed-images";
 import {
   CATEGORY_IMAGE_SERVE_PREFIX,
   type CreateCategoryDto,
@@ -14,8 +19,6 @@ import {
   CATEGORY_SEED_FIXTURES,
   type CategorySeedFixture,
 } from "./category-fixtures";
-
-const MAX_CATEGORY_IMAGE_BYTES = 5_000_000;
 
 export const DEFAULT_CATEGORY_IMAGE_LIBRARY_PATH = fileURLToPath(
   new URL("../images/", import.meta.url),
@@ -123,20 +126,23 @@ export async function prepareCategorySeedImages(
       if (!sourceStat?.isFile()) {
         throw new Error(`Missing category seed image '${fixture.fileName}'.`);
       }
-      if (sourceStat.size === 0 || sourceStat.size > MAX_CATEGORY_IMAGE_BYTES) {
-        throw new Error(
-          `Category seed image '${fixture.fileName}' must be between 1 byte and 5 MB.`,
-        );
-      }
-
       const contents = await readFile(source);
+      await assertManagedImageCompliant(contents, "catalog");
       const extension = extname(fixture.fileName).toLowerCase();
       const fileName = `${contentUuid(`category:${fixture.slug}`, contents)}${extension}`;
-      await copyFile(source, join(storageDirectory, fileName));
+      const managed = await writeManagedImage({
+        bytes: contents,
+        declaredMime: detectManagedImageMime(contents),
+        directory: storageDirectory,
+        profile: "catalog",
+        requestedFileName: fileName,
+        reuseExisting: true,
+        servePrefix: CATEGORY_IMAGE_SERVE_PREFIX,
+      });
 
       return {
         ...fixture,
-        image: `${CATEGORY_IMAGE_SERVE_PREFIX}${encodeURIComponent(fileName)}`,
+        image: managed.path,
       };
     }),
   );
@@ -152,11 +158,10 @@ export async function validateCategorySeedImages(
     if (!sourceStat?.isFile()) {
       throw new Error(`Missing category seed image '${fixture.fileName}'.`);
     }
-    if (sourceStat.size === 0 || sourceStat.size > MAX_CATEGORY_IMAGE_BYTES) {
-      throw new Error(
-        `Category seed image '${fixture.fileName}' must be between 1 byte and 5 MB.`,
-      );
-    }
+    await assertManagedImageCompliant(
+      new Uint8Array(await readFile(source)),
+      "catalog",
+    );
     paths.push(source);
   }
   return paths;

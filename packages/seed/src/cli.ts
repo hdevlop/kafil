@@ -281,7 +281,7 @@ async function confirmDestructiveCommand(
   const answer = await confirm({
     message:
       command === "remove"
-        ? "Remove managed demo data?"
+        ? "Remove managed demo data and reset products/categories?"
         : "Clear all app data and managed files?",
     initialValue: false,
   });

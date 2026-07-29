@@ -9,6 +9,7 @@
     "./config": "./src/config/index.ts",
     "./database": "./src/database/index.ts",
     "./database/schema": "./src/database/schema.ts",
+    "./managed-images": "./src/storage/managedImages.ts",
     "./locales": "./src/locales/index.ts",
     "./modules": "./src/modules/index.ts"
   },
@@ -34,6 +35,7 @@
     "najm-validation": "2.0.2",
     "pg": "8.22.0",
     "reflect-metadata": "0.2.2",
+    "sharp": "0.34.5",
     "zod": "4.4.3"
   },
   "devDependencies": {

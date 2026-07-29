@@ -2,10 +2,10 @@
 
 import { AlignJustify, CalendarDays, ListOrdered, Tags } from "lucide-react";
 import { NDetailList, NSection } from "najm-kit";
-import Image from "next/image";
 
 import { formatKafilDate } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import type { CategoryRecord } from "../types";
 
@@ -14,12 +14,11 @@ export function CategoryDetails({ category }: Readonly<{ category: CategoryRecor
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         {category.image ? (
-          <Image
+          <ProtectedImage
             alt={category.name}
             className="size-12 shrink-0 rounded-xl object-cover"
             height={48}
             src={category.image}
-            unoptimized
             width={48}
           />
         ) : (

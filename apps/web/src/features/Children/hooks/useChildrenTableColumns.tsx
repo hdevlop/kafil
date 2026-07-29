@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { NAvatar, SimpleTooltip, type NTableProps } from "najm-kit";
+import { SimpleTooltip, type NTableProps } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
 import { getChildAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ChildRecord } from "../types";
@@ -21,7 +22,7 @@ export function useChildrenTableColumns() {
             (row.original.familyStatus !== undefined &&
               row.original.familyStatus !== "active");
           const avatar = (
-            <NAvatar
+            <ManagedAvatar
             src={getChildAvatarImage(row.original.image, row.original.gender)}
             title={row.original.legalName}
             subtitle={row.original.gender === "F" ? "Female" : "Male"}

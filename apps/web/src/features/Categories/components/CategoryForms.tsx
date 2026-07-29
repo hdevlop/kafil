@@ -24,7 +24,6 @@ import { deleteCategoryImage, uploadCategoryImage } from "@/services/categoryApi
 const MAX_CATEGORY_IMAGE_SIZE = 5_000_000;
 const CATEGORY_IMAGE_TYPES = new Set([
   "image/avif",
-  "image/gif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -55,7 +54,7 @@ function CategoryFields({
     <>
       <div className="space-y-2">
         <ImageInput
-          accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
           disabled={disabled}
           imageVersion={String(imageVersion ?? 0)}
           previewClassName="h-44 w-full"

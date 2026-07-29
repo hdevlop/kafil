@@ -200,7 +200,8 @@ export function ProductsPage() {
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
-      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-8",
+      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-8",
+      pagination: "hidden sm:flex",
     },
     addButtonText: t("common.createProduct"),
     noDataText: t("common.noCatalogProduct"),
@@ -306,7 +307,7 @@ function ProductsFamilyGrid({
   }
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
         {products.map((product) => (
           <ProductCard
             key={product.id}
@@ -315,7 +316,7 @@ function ProductsFamilyGrid({
           />
         ))}
       </div>
-      <div className="flex justify-between">
+      <div className="hidden justify-between sm:flex">
         <NButton
           variant="outline"
           disabled={!hasPrevPage}

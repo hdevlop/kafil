@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   distDir: process.env.KAFIL_NEXT_DIST_DIR ?? ".next",
   serverExternalPackages: ["reflect-metadata"],
+  images: {
+    minimumCacheTTL: 2_678_400,
+  },
   allowedDevOrigins: ["127.0.0.1", "192.168.1.13"],
   async headers() {
     return [

@@ -27,6 +27,7 @@ Run a command directly with:
 ```bash
 bun run seed -- setup
 bun run seed -- demo
+bun run seed -- remove
 bun run seed -- full
 bun run seed -- migrate
 bun run seed -- admin
@@ -35,10 +36,16 @@ bun run seed -- verify
 bun run seed -- images
 ```
 
-`setup` applies migrations, clears application data and managed profile image
-storage, then restores the bootstrap admin, roles, and permissions. `full` runs
-`setup` and then adds demo data. Both destructive commands ask for confirmation;
-use `--yes` only for intentional non-interactive execution:
+`setup` applies migrations, clears application data and every mutable managed
+storage directory, then restores the bootstrap admin, roles, and permissions.
+`remove` deletes the deterministic demo graph and resets the catalog by deleting
+products without retained order history plus every category left empty. It also
+removes the deleted records' protected files and sweeps unreferenced UUID-managed
+profile and catalog images. Products required by retained non-demo order history
+remain intact. Branding remains separate because its settings and draft lifecycle
+are retained across application-data resets.
+`full` runs `setup` and then adds demo data. These destructive commands ask for
+confirmation; use `--yes` only for intentional non-interactive execution:
 
 ```bash
 bun run seed -- full --yes
@@ -85,10 +92,26 @@ other application data:
 bun run seed -- categories
 ```
 
+Validate the optimized package library and inventory/backfill existing managed
+references with explicit dry-run, apply, and rollback modes:
+
+```bash
+bun run seed:images
+bun run images:backfill
+bun run images:backfill -- --apply --database-backup=/backups/kafil.sql --storage-backup=/backups/kafil-storage
+bun run images:backfill -- --rollback=/storage/operations/image-backfill-....json
+```
+
+Apply mode refuses to start unless both backup paths exist. It retains original
+files, updates only matching database references, writes checksummed rollback
+metadata without image bytes or personal names, and keeps branding revision
+increments intact.
+
 The `demo` and `full` commands run the same category seed automatically. Source
 images live directly in `packages/seed/images/` using each category slug as the
-filename, such as `fresh-produce.png` and `school-supplies.png`. The seed copies
-them to managed `category-images` storage with stable content-versioned names.
+filename, such as `fresh-produce.webp` and `school-supplies.webp`. The seed
+normalizes them through the server-owned image processor into managed
+`category-images` storage with stable content-versioned names.
 
 `demo` accepts configurable counts:
 
@@ -114,15 +137,15 @@ Use these source folders:
 
 ```text
 packages/seed/images/
-  fresh-produce.png
-  school-supplies.png
-  family-01.jpg
-  family-02.png
-  family-03.png
+  fresh-produce.webp
+  school-supplies.webp
+  family-01.webp
+  family-02.webp
+  family-03.webp
   sponsor-f-01.webp
   sponsor-m-01.webp
-  child-f-01.png
-  child-m-01.png
+  child-f-01.webp
+  child-m-01.webp
 ```
 
 Keep one flat folder. Family images are neutral and represent the whole

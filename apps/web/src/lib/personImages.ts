@@ -1,9 +1,9 @@
 const PERSON_IMAGE_PATHS = {
-  childFemale: "/images/people/child-female.png",
-  childMale: "/images/people/child-male.png",
-  family: "/images/people/family.png",
-  sponsorFemale: "/images/people/sponsor_female.png",
-  sponsorMale: "/images/people/sponsor_male.png",
+  childFemale: "/images/people/child-female.webp",
+  childMale: "/images/people/child-male.webp",
+  family: "/images/people/family.webp",
+  sponsorFemale: "/images/people/sponsor_female.webp",
+  sponsorMale: "/images/people/sponsor_male.webp",
 } as const;
 
 export function getChildPersonImage(gender: string) {

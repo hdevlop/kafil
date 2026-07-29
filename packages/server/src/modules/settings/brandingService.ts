@@ -6,6 +6,7 @@ import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
 import { envConfig } from "../../config/envConfig";
+import { writeManagedImage } from "../../storage/managedImages";
 import { AuditService } from "../audit/auditService";
 import {
   BRANDING_ASSET_FILENAME_PATTERN,
@@ -25,10 +26,8 @@ import {
   DEFAULT_BRANDING_REVISION,
 } from "./settingSchema";
 import {
-  assertBrandingAssetMatchesMime,
   assertBrandingBytesWithinSlotLimit,
   assertBrandingExtensionMatchesMime,
-  detectBrandingAssetMime,
 } from "./brandingStorage";
 import type {
   AdminBrandingConfig,
@@ -328,17 +327,15 @@ export class BrandingService {
     return getFactoryBranding(nextRevision);
   }
 
-  async assertUploadValid(
+  assertUploadValid(
     slot: BrandingSlot,
     fileName: string,
     declaredMime: string,
     bytes: Uint8Array,
-  ): Promise<void> {
+  ): void {
     decodeBrandingFileName(fileName);
     assertBrandingBytesWithinSlotLimit(slot, bytes.byteLength);
     assertBrandingExtensionMatchesMime(fileName, declaredMime);
-    const detected = detectBrandingAssetMime(bytes);
-    assertBrandingAssetMatchesMime(detected, declaredMime);
   }
 
   async uploadAsset(input: {
@@ -348,13 +345,21 @@ export class BrandingService {
     bytes: Uint8Array;
   }): Promise<{ path: string }> {
     const decodedFileName = decodeBrandingFileName(input.fileName);
-    await this.assertUploadValid(
+    this.assertUploadValid(
       input.slot,
       decodedFileName,
       input.declaredMime,
       input.bytes,
     );
-    return this.writeCandidate(decodedFileName, input.bytes);
+    const normalized = await writeManagedImage({
+      bytes: input.bytes,
+      declaredMime: input.declaredMime,
+      directory: brandingDirectory(),
+      profile: input.slot === "authHeroImage" ? "brandingHero" : "brandingLogo",
+      requestedFileName: decodedFileName,
+      servePrefix: brandingAssetServePrefix(),
+    });
+    return { path: normalized.path };
   }
 
   async deleteCandidateByFileName(

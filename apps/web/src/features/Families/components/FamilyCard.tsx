@@ -3,10 +3,9 @@
 import {
   Baby,
   BadgeCheck,
+  Flag,
   HeartHandshake,
-  UserRound,
 } from "lucide-react";
-import Image from "next/image";
 import {
   NButton,
   NCard,
@@ -23,6 +22,7 @@ import {
   FundingProgressBar,
 } from "@/shared/FundingProgressCard";
 import { StatusBadge } from "@/shared/StatusBadge";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
@@ -42,6 +42,12 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
       : capacityStatus === "reserved"
         ? t("funding.reserved")
         : null;
+  const supportPriorityLabel =
+    data.supportPriority === "urgent"
+      ? t("operator.families.supportPriorityUrgent")
+      : data.supportPriority === "high"
+        ? t("operator.families.supportPriorityHigh")
+        : t("operator.families.supportPriorityNormal");
 
   function openSupport() {
     if (isClosed) return;
@@ -72,13 +78,12 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
         )}
       >
         <NCardMedia variant="image" size={104}>
-          <Image
+          <ProtectedImage
             src={getFamilyAvatarImage(data.image)}
             alt={data.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 20vw"
             className="object-cover"
-            unoptimized
           />
         </NCardMedia>
         <NCardAction>
@@ -86,10 +91,16 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
         </NCardAction>
         <NCardSection>
           <NCardInfo
-            icon={UserRound}
-            label={t("operator.families.guardian")}
-            maxChars={25}
-            value={data.guardianLegalName}
+            icon={Flag}
+            label={t("operator.families.supportPriority")}
+            value={supportPriorityLabel}
+            valueClassName={
+              data.supportPriority === "urgent"
+                ? "font-medium text-destructive"
+                : data.supportPriority === "high"
+                  ? "font-medium text-warning"
+                  : undefined
+            }
           />
           <NCardInfo
             icon={Baby}

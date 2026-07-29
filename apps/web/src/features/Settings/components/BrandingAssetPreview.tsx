@@ -43,7 +43,6 @@ export function BrandingAssetPreview({
     height: size.height,
     className: "max-h-32 w-auto rounded-md object-contain",
     onError: () => setHasError(true),
-    unoptimized: src.startsWith("/api/branding/assets/serve/"),
   };
 
   return <Image {...props} alt={alt} />;

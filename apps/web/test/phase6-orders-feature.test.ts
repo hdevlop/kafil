@@ -65,7 +65,7 @@ describe("Phase 6D order command contracts", () => {
 });
 
 describe("Phase 7 unified OrderCart flow", () => {
-  test("renders the shared OrderCartDialog with the new AssistedFamilySelector for assisted draft", async () => {
+  test("renders the shared OrderCartSheet with the new AssistedFamilySelector for assisted draft", async () => {
     const [dialog, familySelector, floatingButton] = await Promise.all([
       readSource(
         "../src/features/OrderCart/components/OrderCartDialog.tsx",
@@ -79,13 +79,22 @@ describe("Phase 7 unified OrderCart flow", () => {
     ]);
 
     expect(dialog).toContain("AssistedFamilySelector");
+    expect(dialog).toContain("<NSheet");
+    expect(dialog).toContain("icon={ShoppingCart}");
+    expect(dialog).toContain('classNames={{ body: "p-4", content: "bg-background" }}');
+    expect(dialog).not.toContain("<NDialog");
+    expect(dialog).toContain("footer={");
+    expect(dialog).toContain("<SimpleTooltip");
+    expect(dialog).toContain('t(\n    "family.orderCart.fundingTargetRequired"');
+    expect(dialog).toContain("fundingTargetBlocksOrder");
+    expect(dialog).toContain("tabIndex={fundingTargetBlocksOrder ? 0 : undefined}");
     expect(dialog).toContain("getProduct");
     expect(dialog).toContain("fetchQuery");
     expect(dialog).toContain("setAvailability");
     expect(dialog).toContain("unavailableItemCount");
     expect(dialog).toContain("canSaveAssisted");
     expect(dialog).toContain("getFamilyCatalogProduct");
-    expect(dialog).toContain("<Image");
+    expect(dialog).toContain("<ProtectedImage");
     expect(dialog).toContain("<NEmptyState");
     expect(dialog).not.toContain("SelectInput");
     expect(dialog).not.toContain("TextAreaInput");
@@ -100,9 +109,9 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(familySelector).toContain("getBudgetSummary");
     expect(familySelector).toContain('status: "active"');
     expect(familySelector).toContain("ComboboxInput");
-    expect(familySelector).toContain("fundingPercent");
-    expect(familySelector).toContain("funding.fundedMinor");
-    expect(familySelector).toContain("funding.targetMinor");
+    expect(familySelector).not.toContain("fundingPercent");
+    expect(familySelector).not.toContain("funding.targetMinor");
+    expect(familySelector).not.toContain("<Target");
     expect(familySelector).not.toContain("FundingProgressBar");
     expect(familySelector).not.toContain("@/shared/FundingProgressCard");
     expect(familySelector).not.toContain("NCardInfo");
@@ -115,9 +124,14 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(familySelector).not.toContain("noFamilyMatch");
 
     expect(floatingButton).toContain("floating-order-cart-button");
+    expect(floatingButton).toContain('rounded="full"');
+    expect(floatingButton).toContain('size="icon-xl"');
+    expect(floatingButton).toContain("<NBadge");
+    expect(floatingButton).toContain("h-6 min-w-6");
+    expect(floatingButton).not.toContain("lineCount");
   });
 
-  test("OrderCartDialog blocks save when items are unavailable or count is zero", () => {
+  test("OrderCartSheet blocks save when items are unavailable or count is zero", () => {
     const dialog = readSource(
       "../src/features/OrderCart/components/OrderCartDialog.tsx",
     );
@@ -136,7 +150,7 @@ describe("Phase 7 unified OrderCart flow", () => {
     );
   });
 
-  test("OrderCartDialog revalidates every draft product without a capped list query", () => {
+  test("OrderCartSheet revalidates every draft product without a capped list query", () => {
     const dialog = readSource(
       "../src/features/OrderCart/components/OrderCartDialog.tsx",
     );

@@ -48,7 +48,6 @@ import type { FamilyRecord, FamilyStoredHousingSituation } from "../types";
 const MAX_FAMILY_IMAGE_SIZE = 5_000_000;
 const FAMILY_IMAGE_TYPES = new Set([
   "image/avif",
-  "image/gif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -199,7 +198,7 @@ export function FamilyGuardianFields({
           type="image"
           formLabel={t("operator.families.imageUrl")}
           subtitle={t("operator.families.imageUploadGuidance")}
-          accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
           allowClear
           disabled={disabled}
           imageSize="md"

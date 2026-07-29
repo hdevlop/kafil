@@ -7,7 +7,7 @@ import { useKafilRole } from "@/shared/Authorization";
 import { useOrderCartStore } from "./store/orderCartStore";
 
 import { FloatingOrderCartButton } from "./components/FloatingOrderCartButton";
-import { OrderCartDialog } from "./components/OrderCartDialog";
+import { OrderCartSheet } from "./components/OrderCartDialog";
 import { useOrderCartSession } from "./hooks/useOrderCartSession";
 import { useOrderCartDraftPersistence } from "./store/orderCartStore";
 
@@ -40,7 +40,7 @@ export function OrderCartOverlay() {
   return (
     <>
       <FloatingOrderCartButton />
-      <OrderCartDialog
+      <OrderCartSheet
         open={dialogOpen}
         onOpenChange={(open) => setDialogOpen(open)}
       />

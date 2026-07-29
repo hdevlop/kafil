@@ -58,7 +58,8 @@ export class SupportAssignmentService {
 
     return families.map((family) => ({
       id: family.id,
-      image: family.image,
+      // Sponsor-facing directory entries never expose managed household photos.
+      image: null,
       reference: `Family ${family.id.slice(0, 8)}`,
       activeChildCount: family.activeChildCount,
       funding: funding.get(family.id) ?? null,

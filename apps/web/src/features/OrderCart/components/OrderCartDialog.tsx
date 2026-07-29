@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Minus, Package, Plus, ShoppingCart, Trash2, Wallet } from "lucide-react";
-import Image from "next/image";
 import {
   NButton,
   NCard,
-  NDialog,
   NEmptyState,
+  NSheet,
+  SimpleTooltip,
 } from "najm-kit";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -18,6 +18,7 @@ import { productKeys } from "@/features/Products/hooks/productKeys";
 import { getProduct } from "@/services/productApi";
 import { getFamilyCatalogProduct } from "@/services/familyCatalogApi";
 import { useOwnFamilyBudgetSummary } from "@/features/FamilyBudget/hooks/useFamilyBudget";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import { useOrderCart } from "../hooks/useOrderCart";
 import { useOrderCartStore } from "../store/orderCartStore";
@@ -67,13 +68,12 @@ function OrderCartLine({
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-card/40 p-2.5">
       <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
         {imageUrl ? (
-          <Image
+          <ProtectedImage
             alt={item.productName}
             className="size-full object-contain"
             fill
             sizes="56px"
             src={imageUrl}
-            unoptimized
           />
         ) : (
           <div className="grid size-full place-items-center text-muted-foreground">
@@ -135,7 +135,7 @@ function OrderCartLine({
   );
 }
 
-export function OrderCartDialog({
+export function OrderCartSheet({
   open,
   onOpenChange,
 }: Readonly<{
@@ -206,9 +206,11 @@ export function OrderCartDialog({
     : t("family.orderCart.saveAssisted");
   const savePendingLabel = t("family.orderCart.saving");
   const resetLabel = t("family.orderCart.reset");
+  const fundingTargetRequiredLabel = t(
+    "family.orderCart.fundingTargetRequired",
+  );
   const saving = orderCart.saving || busy;
   const showAssistedFields = !isExactFamily;
-  const dialogTitle = t("nav.cart");
   const cartEmptyHint = t("family.orderCart.emptyHint");
   const familyUnavailableLabel = t("family.orderCart.unavailable");
   const itemQuantityAria = (name: string) =>
@@ -268,14 +270,61 @@ export function OrderCartDialog({
       hasAnyItems &&
       allItemsAvailable
     : fundingTargetReached && allItemsAvailable;
+  const fundingTargetBlocksOrder =
+    hasAnyItems &&
+    allItemsAvailable &&
+    !saving &&
+    (isExactFamily
+      ? !familyBudget.isFetching &&
+        Boolean(familyBudget.data) &&
+        !fundingTargetReached
+      : Boolean(selectedFamily) && !fundingTargetReached);
 
   return (
-    <NDialog
-      title={dialogTitle}
-      size="lg"
-      showButtons={false}
+    <NSheet
+      classNames={{ body: "p-4", content: "bg-background" }}
+      footer={
+        hasAnyItems ? (
+          <div className="w-full space-y-3">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">{unitsLabel}</span>
+              <span className="font-semibold text-foreground">
+                {totalsLabel}: {formatMad(orderCart.estimatedTotalMinor)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <NButton type="button" variant="outline" onClick={handleReset}>
+                {resetLabel}
+              </NButton>
+              <SimpleTooltip
+                content={fundingTargetRequiredLabel}
+                disabled={!fundingTargetBlocksOrder}
+                side="top"
+              >
+                <span
+                  className="flex flex-1"
+                  tabIndex={fundingTargetBlocksOrder ? 0 : undefined}
+                >
+                  <NButton
+                    className="w-full"
+                    disabled={!canSaveAssisted || saving}
+                    type="button"
+                    onClick={handleSave}
+                  >
+                    {saving ? savePendingLabel : saveLabel}
+                  </NButton>
+                </span>
+              </SimpleTooltip>
+            </div>
+          </div>
+        ) : undefined
+      }
+      icon={ShoppingCart}
       open={open}
       onOpenChange={onOpenChange}
+      side="right"
+      title={t("nav.cart")}
+      width={440}
     >
       {!hasAnyItems ? (
         <NEmptyState
@@ -341,47 +390,8 @@ export function OrderCartDialog({
             ) : null}
           </div>
 
-          <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2 text-sm">
-            <span className="text-muted-foreground">{unitsLabel}</span>
-            <span className="font-semibold text-foreground">
-              {totalsLabel}: {formatMad(orderCart.estimatedTotalMinor)}
-            </span>
-          </div>
-
-          {showAssistedFields ? (
-            <form
-              className="border-t border-border pt-3"
-              id="order-cart-assist-fields"
-              onSubmit={async (event) => {
-                event.preventDefault();
-                await handleSave();
-              }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <NButton type="button" variant="outline" onClick={handleReset}>
-                  {resetLabel}
-                </NButton>
-                <NButton disabled={!canSaveAssisted || saving} type="submit">
-                  {saving ? savePendingLabel : saveLabel}
-                </NButton>
-              </div>
-            </form>
-          ) : (
-            <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
-              <NButton type="button" variant="outline" onClick={handleReset}>
-                {resetLabel}
-              </NButton>
-              <NButton
-                disabled={!canSaveAssisted || saving}
-                type="button"
-                onClick={handleSave}
-              >
-                {saving ? savePendingLabel : saveLabel}
-              </NButton>
-            </div>
-          )}
         </div>
       )}
-    </NDialog>
+    </NSheet>
   );
 }

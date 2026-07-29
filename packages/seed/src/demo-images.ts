@@ -1,9 +1,14 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
+import { mkdir, readFile, readdir } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { envConfig } from "@kafil/server/config";
+import {
+  assertManagedImageCompliant,
+  detectManagedImageMime,
+  writeManagedImage,
+} from "@kafil/server/managed-images";
 import {
   CHILD_IMAGE_SERVE_PREFIX,
   FAMILY_IMAGE_SERVE_PREFIX,
@@ -13,7 +18,6 @@ import {
 import type { DemoChild, DemoSeedData } from "./scripts/demo/generator";
 import { isCategorySeedImageName } from "./category-fixtures";
 
-const MAX_IMAGE_BYTES = 5_000_000;
 const LIBRARY_NOTE_FILES = new Set([".gitkeep", ".ds_store", "readme.md"]);
 const LIBRARY_DIRECTORIES = new Set(["_unclassified"]);
 
@@ -164,12 +168,10 @@ export async function readDemoImageLibrary(
     ...library.sponsor.F,
     ...library.sponsor.M,
   ]) {
-    const info = await stat(image);
-    if (info.size === 0 || info.size > MAX_IMAGE_BYTES) {
-      throw new Error(
-        `Seed image '${image}' must be between 1 byte and 5 MB.`,
-      );
-    }
+    const contents = new Uint8Array(await readFile(image));
+    await assertManagedImageCompliant(contents, "person").catch((error) => {
+      throw new Error(`Seed image '${image}' is not optimized: ${String(error)}`);
+    });
   }
 
   return library;
@@ -314,11 +316,20 @@ async function assignFamilyImages<T extends { id: string }>(
     }
     const sourceExtension = extname(source).toLowerCase();
     const extension = sourceExtension === ".jpeg" ? ".jpg" : sourceExtension;
-    const fileName = `${contentUuid(getKey(record), sourceContents.get(source)!)}${extension}`;
-    await copyFile(source, join(storageDirectory, fileName));
+    const contents = sourceContents.get(source)!;
+    const fileName = `${contentUuid(getKey(record), contents)}${extension}`;
+    const managed = await writeManagedImage({
+      bytes: contents,
+      declaredMime: detectManagedImageMime(contents),
+      directory: storageDirectory,
+      profile: "person",
+      requestedFileName: fileName,
+      reuseExisting: true,
+      servePrefix,
+    });
     next.push({
       ...record,
-      image: `${servePrefix}${encodeURIComponent(fileName)}`,
+      image: managed.path,
     });
     assigned += 1;
   }
@@ -366,12 +377,21 @@ async function assignChildGenderImages<
     const sourceExtension = extname(source).toLowerCase();
     const extension = sourceExtension === ".jpeg" ? ".jpg" : sourceExtension;
     const demoKey = getKey(entry);
-    const fileName = `${contentUuid(demoKey, sourceContents.get(source)!)}${extension}`;
-    await copyFile(source, join(storageDirectory, fileName));
+    const contents = sourceContents.get(source)!;
+    const fileName = `${contentUuid(demoKey, contents)}${extension}`;
+    const managed = await writeManagedImage({
+      bytes: contents,
+      declaredMime: detectManagedImageMime(contents),
+      directory: storageDirectory,
+      profile: "person",
+      requestedFileName: fileName,
+      reuseExisting: true,
+      servePrefix: CHILD_IMAGE_SERVE_PREFIX,
+    });
     next.push({
       ...entry.child,
       demoKey,
-      image: `${CHILD_IMAGE_SERVE_PREFIX}${encodeURIComponent(fileName)}`,
+      image: managed.path,
     });
     assigned += 1;
     void index;

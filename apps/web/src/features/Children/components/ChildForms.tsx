@@ -31,7 +31,6 @@ import type { ChildRecord } from "../types";
 const MAX_CHILD_IMAGE_SIZE = 5_000_000;
 const CHILD_IMAGE_TYPES = new Set([
   "image/avif",
-  "image/gif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -86,7 +85,7 @@ function ChildAvatarBlock({
         name="image"
         formLabel={t("operator.children.imageUrl")}
         subtitle={t("operator.children.imageUploadGuidance")}
-        accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
         allowClear
         disabled={disabled}
         fill

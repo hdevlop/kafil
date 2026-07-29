@@ -171,12 +171,40 @@ class ChildImageViewerRoleGuard {
   }
 }
 
+@Service()
+class FamilyImageViewerRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
+@Service()
+class CatalogImageViewerRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
 const AdminRole = createGuard(AdminRoleGuard);
 const OperatorRole = createGuard(OperatorRoleGuard);
 const FamilyRole = createGuard(FamilyRoleGuard);
 const SponsorRole = createGuard(SponsorRoleGuard);
 const SponsorImageViewerRole = createGuard(SponsorImageViewerRoleGuard);
+const FamilyImageViewerRole = createGuard(FamilyImageViewerRoleGuard);
 const ChildImageViewerRole = createGuard(ChildImageViewerRoleGuard);
+const CatalogImageViewerRole = createGuard(CatalogImageViewerRoleGuard);
 
 export const isAdmin = composeGuards(AdminRole());
 export const isOperator = composeGuards(OperatorRole());
@@ -197,7 +225,9 @@ export const isInGroup = (
 ) => hasRole(userRole, ...keys);
 
 export const isSponsorImageViewer = composeGuards(SponsorImageViewerRole());
+export const isFamilyImageViewer = composeGuards(FamilyImageViewerRole());
 export const isChildImageViewer = composeGuards(ChildImageViewerRole());
+export const isCatalogImageViewer = composeGuards(CatalogImageViewerRole());
 
 export function definePolicy(
   table: unknown,

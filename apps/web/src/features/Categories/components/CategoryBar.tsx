@@ -66,19 +66,20 @@ export function CategoryFilterSheet({
       <NButton
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="gap-2"
+        aria-label={filterLabel}
+        className="size-8 gap-0 p-0 sm:w-auto sm:gap-2 sm:px-3"
         onClick={() => setOpen(true)}
         size="sm"
         type="button"
         variant="outline"
       >
-        <Tags className="size-4" />
-        {categoriesLabel}
+        <Tags aria-hidden className="size-4" />
+        <span className="hidden sm:inline">{categoriesLabel}</span>
       </NButton>
       <NSheet
-        bodyClassName="p-4"
-        contentClassName="bg-background"
+        classNames={{ body: "p-4", content: "bg-background" }}
         description={filterLabel}
+        icon={Tags}
         onOpenChange={setOpen}
         open={open}
         title={categoriesLabel}

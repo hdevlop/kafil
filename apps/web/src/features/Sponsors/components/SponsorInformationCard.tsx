@@ -1,9 +1,10 @@
 "use client";
 
 import { AtSign, FileKey2, MapPin, Phone, UserRound } from "lucide-react";
-import { NAvatar, NCard } from "najm-kit";
+import { NCard } from "najm-kit";
 
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 export interface SponsorInfoViewModel {
   name: string;
@@ -42,7 +43,7 @@ export function SponsorInformationCard({
     <NCard title={t("operator.sponsors.information")}>
       <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
         <div className="self-start">
-          <NAvatar
+          <ManagedAvatar
             src={getSponsorAvatarImage(sponsor.image, sponsor.gender)}
             size="xl"
             classNames={{ avatar: "bg-muted" }}

@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Package, ShoppingCart, Tag } from "lucide-react";
-import Image from "next/image";
 import { cn, NButton, NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatMad } from "@/lib/format";
 import { ORDER_CART_MAX_QUANTITY, ORDER_CART_MIN_QUANTITY } from "@/features/OrderCart/types";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import type { ProductRecord } from "../types";
 
@@ -104,9 +104,9 @@ export function ProductCard({ data, onAdd, adding = false }: Readonly<ProductCar
       description={formatMad(data.priceMinor)}
       classNames={{
         header: "items-start px-2.5 pb-0 pt-2 sm:px-3 sm:pt-2.5",
-        title: "text-sm font-semibold leading-tight text-foreground sm:text-base",
+        title: "text-sm font-semibold leading-tight text-foreground",
         description:
-          "mt-1 text-base font-bold leading-none text-emerald-600 dark:text-emerald-400 sm:text-lg",
+          "mt-1 text-base font-bold leading-none text-emerald-600 dark:text-emerald-400",
         content: "gap-0 px-2.5 pb-2.5 pt-2 sm:px-3 sm:pb-3 sm:pt-2.5",
       }}
       className={cn(
@@ -122,13 +122,12 @@ export function ProductCard({ data, onAdd, adding = false }: Readonly<ProductCar
         style={{ aspectRatio: "1 / 1" }}
       >
         {data.imageUrl ? (
-          <Image
+          <ProtectedImage
             alt={data.name}
             className="size-full object-contain"
             fill
             sizes="(max-width: 640px) calc(50vw - 1.5rem), (max-width: 1024px) 50vw, 25vw"
             src={data.imageUrl}
-            unoptimized
           />
         ) : (
           <div className="grid size-full place-items-center bg-muted text-muted-foreground">

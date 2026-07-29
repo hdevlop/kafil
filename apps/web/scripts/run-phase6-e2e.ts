@@ -80,6 +80,7 @@ try {
       "test/e2e/phase7-unified-flow.e2e.ts",
       "test/e2e/family-create-wizard.e2e.ts",
       "test/e2e/funding-cap-and-catalog-delete.e2e.ts",
+      "test/e2e/image-delivery.e2e.ts",
   ];
   if (Bun.env.KAFIL_E2E_GREP) {
     testCommand.push("--grep", Bun.env.KAFIL_E2E_GREP);

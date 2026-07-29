@@ -6,6 +6,6 @@ await runSeedCommand("Demo cleanup", async () => {
   readDatabaseConfig();
   const result = await removeDemoData();
   console.log(
-    `Removed: ${result.families} families, ${result.sponsors} sponsors, ${result.operators} operators, ${result.contributions} contributions, ${result.orders} orders, ${result.files} files.`,
+    `Removed: ${result.families} families, ${result.sponsors} sponsors, ${result.operators} operators, ${result.contributions} contributions, ${result.orders} orders, ${result.products} products, ${result.categories} categories, ${result.files} files.`,
   );
 });

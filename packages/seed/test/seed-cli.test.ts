@@ -83,7 +83,7 @@ describe("seed CLI", () => {
       expect(help).toContain(command);
     }
     expect(help).toContain("--yes");
-    expect(help).toContain("demo data only");
+    expect(help).toContain("products and empty categories");
     expect(help.split("\n").length).toBeLessThanOrEqual(30);
   });
 

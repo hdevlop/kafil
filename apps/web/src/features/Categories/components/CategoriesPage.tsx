@@ -117,6 +117,9 @@ export function CategoriesPage() {
     onCreate: openCreate,
     onView: openView,
     onEdit: openEdit,
+    onRowClick: (category) => {
+      router.push(`/products?category=${encodeURIComponent(category.id)}`);
+    },
     renderCard: CategoryCard,
     renderEmpty: () => (
       <Operator>

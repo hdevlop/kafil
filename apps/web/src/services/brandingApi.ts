@@ -43,11 +43,10 @@ export async function uploadBrandingAsset(input: {
 }): Promise<UploadBrandingAssetResult> {
   const extension = brandingExtensionForFile(input.file);
   const fileName = `${crypto.randomUUID()}.${extension}`;
-  await api.upload(
+  return api.upload<UploadBrandingAssetResult>(
     `${BRANDING_ASSET_ROUTE}${encodeURIComponent(input.slot)}/${encodeURIComponent(fileName)}`,
     input.file,
   );
-  return { path: `${BRANDING_ASSET_SERVE_PREFIX}${encodeURIComponent(fileName)}` };
 }
 
 export function deleteBrandingAsset(path: string) {

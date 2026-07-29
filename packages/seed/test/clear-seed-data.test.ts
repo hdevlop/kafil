@@ -74,7 +74,7 @@ describe("seed data reset", () => {
     expect(fake.releases).toBe(1);
   });
 
-  it("clears only the managed profile image storage directories", async () => {
+  it("clears every mutable managed storage directory", async () => {
     const removals: Array<{
       options: { force: true; recursive: true };
       path: string;
@@ -85,8 +85,11 @@ describe("seed data reset", () => {
     });
 
     expect(SEED_STORAGE_DIRECTORIES).toEqual([
+      "category-images",
       "child-images",
       "family-images",
+      "operator-images",
+      "product-images",
       "sponsor-images",
       "order-evidence",
     ]);

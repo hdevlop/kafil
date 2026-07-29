@@ -104,7 +104,7 @@ describe("ChildImageAccess", () => {
         role: "admin",
         userId: "admin-user",
       }),
-    ).rejects.toThrow("Invalid child image file name");
+    ).rejects.toThrow("Invalid managed image file name");
   });
 
   it("returns not found when no child references the filename", async () => {

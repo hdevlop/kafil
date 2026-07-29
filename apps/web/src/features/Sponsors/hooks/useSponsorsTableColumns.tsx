@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { NAvatar, type NTableProps } from "najm-kit";
+import { type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SponsorRecord } from "../types";
@@ -18,7 +19,7 @@ export function useSponsorsTableColumns() {
         accessorKey: "name",
         header: t("operator.sponsors.account"),
         cell: ({ row }) => (
-          <NAvatar
+          <ManagedAvatar
             src={getSponsorAvatarImage(
               row.original.image,
               row.original.gender,

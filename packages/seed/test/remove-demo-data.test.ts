@@ -1,14 +1,17 @@
 import { describe, expect, it } from "bun:test";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import {
   DEMO_SCOPE_SQL,
   DEMO_STORAGE_SQL,
   DEMO_SUMMARY_SQL,
+  MANAGED_STORAGE_REFERENCES_SQL,
   managedDemoFilePath,
   REMOVE_DEMO_SQL,
+  RESET_DEMO_CATALOG_SQL,
   removeDemoData,
   removeManagedDemoFiles,
+  removeOrphanedManagedFiles,
 } from "../src/remove-demo-data";
 
 function fakePool(failOn?: string) {
@@ -49,6 +52,12 @@ function fakePool(failOn?: string) {
                 ],
               };
             }
+            if (sql === RESET_DEMO_CATALOG_SQL[3]) {
+              return { rows: [{ id: "product-1" }, { id: "product-2" }] };
+            }
+            if (sql === RESET_DEMO_CATALOG_SQL[4]) {
+              return { rows: [{ id: "category-1" }] };
+            }
             return { rows: [] };
           },
           release() {
@@ -71,6 +80,13 @@ describe("managed demo cleanup", () => {
     expect(removal).toContain("DELETE FROM contributions");
     expect(removal).toContain("DELETE FROM users");
     expect(removal).not.toContain("TRUNCATE");
+
+    const catalogReset = RESET_DEMO_CATALOG_SQL.join("\n");
+    expect(catalogReset).toContain("DELETE FROM products");
+    expect(catalogReset).toContain("DELETE FROM categories");
+    expect(catalogReset).toContain("DELETE FROM cart_items");
+    expect(catalogReset).toContain("DELETE FROM inventory_ledger_entries");
+    expect(catalogReset).toContain("order_items");
   });
 
   it("removes the scoped graph transactionally, then its managed files", async () => {
@@ -90,14 +106,18 @@ describe("managed demo cleanup", () => {
       DEMO_SUMMARY_SQL,
       DEMO_STORAGE_SQL,
       ...REMOVE_DEMO_SQL,
+      ...RESET_DEMO_CATALOG_SQL,
+      MANAGED_STORAGE_REFERENCES_SQL,
       "COMMIT",
     ]);
     expect(result).toEqual({
+      categories: 1,
       contributions: 100,
       families: 10,
       files: 1,
       operators: 2,
       orders: 1,
+      products: 2,
       sponsors: 20,
     });
     expect(removed).toEqual([
@@ -154,6 +174,43 @@ describe("managed demo cleanup", () => {
         "order-evidence/receipts",
         "10000000-0000-4000-8000-000000000001.pdf",
       ),
+    ]);
+  });
+
+  it("removes orphaned managed images while preserving live references", async () => {
+    const retainedFile =
+      "00000000-0000-4000-8000-000000000001.webp";
+    const orphanFamilyFile =
+      "00000000-0000-4000-8000-000000000002.png";
+    const orphanCategoryFile =
+      "00000000-0000-4000-8000-000000000003.jpg";
+    const removed: string[] = [];
+
+    const count = await removeOrphanedManagedFiles(
+      [`/api/family-images/files/serve/${retainedFile}`],
+      "C:/kafil-storage",
+      async (path) => {
+        removed.push(path);
+      },
+      async (path) => {
+        if (path.endsWith("family-images")) {
+          return [
+            { isFile: () => true, name: retainedFile },
+            { isFile: () => true, name: orphanFamilyFile },
+            { isFile: () => true, name: "keep-me.txt" },
+          ];
+        }
+        if (path.endsWith("category-images")) {
+          return [{ isFile: () => true, name: orphanCategoryFile }];
+        }
+        return [];
+      },
+    );
+
+    expect(count).toBe(2);
+    expect(removed).toEqual([
+      resolve("C:/kafil-storage", "category-images", orphanCategoryFile),
+      resolve("C:/kafil-storage", "family-images", orphanFamilyFile),
     ]);
   });
 });

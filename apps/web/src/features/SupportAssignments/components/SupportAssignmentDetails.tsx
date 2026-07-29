@@ -1,11 +1,12 @@
 "use client";
 
 import { NotebookPen, UserRoundCheck } from "lucide-react";
-import { NAvatar, NDetailList, NSection } from "najm-kit";
+import { NDetailList, NSection } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SupportAssignmentView } from "../types";
@@ -17,7 +18,7 @@ export function SupportAssignmentDetails({
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
-        <NAvatar
+        <ManagedAvatar
           src={getSponsorAvatarImage(
             assignment.sponsorImage,
             assignment.sponsorGender,

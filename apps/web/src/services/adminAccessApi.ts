@@ -59,7 +59,6 @@ const OPERATOR_IMAGE_ROUTE = "/operator-images/files/";
 function operatorImageExtension(file: File) {
   const extensionByMimeType: Record<string, string> = {
     "image/avif": "avif",
-    "image/gif": "gif",
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
@@ -70,8 +69,11 @@ function operatorImageExtension(file: File) {
 
 export async function uploadOperatorImage(file: File) {
   const fileName = `${crypto.randomUUID()}.${operatorImageExtension(file)}`;
-  await api.upload(`${OPERATOR_IMAGE_ROUTE}${fileName}`, file);
-  return `/api${OPERATOR_IMAGE_ROUTE}serve/${fileName}`;
+  const uploaded = await api.upload<{ path: string }>(
+    `${OPERATOR_IMAGE_ROUTE}${fileName}`,
+    file,
+  );
+  return uploaded.path;
 }
 
 export function deleteOperatorImage(imagePath: string) {

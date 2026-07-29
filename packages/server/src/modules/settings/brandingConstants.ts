@@ -1,6 +1,6 @@
-export const FACTORY_SIDEBAR_LOGO_EXPANDED_PATH = "/logoExpanded.png";
-export const FACTORY_SIDEBAR_LOGO_COLLAPSED_PATH = "/logoExpanded.png";
-export const FACTORY_AUTH_HERO_IMAGE_PATH = "/HeroA.png";
+export const FACTORY_SIDEBAR_LOGO_EXPANDED_PATH = "/logoExpanded.webp";
+export const FACTORY_SIDEBAR_LOGO_COLLAPSED_PATH = "/logoExpanded.webp";
+export const FACTORY_AUTH_HERO_IMAGE_PATH = "/HeroA.webp";
 
 export const BRANDING_ASSET_ROUTE_PREFIX =
   "/api/branding/assets/serve/" as const;

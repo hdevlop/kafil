@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { NAvatar, type NTableProps } from "najm-kit";
+import { type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { BudgetLedgerEntry } from "../types";
@@ -24,7 +25,7 @@ export function useBudgetLedgerTableColumns() {
 
           return (
             <div className="flex items-center gap-3">
-              <NAvatar
+              <ManagedAvatar
                 src={getSponsorAvatarImage(sponsorImage, sponsorGender)}
                 alt={sponsorName}
                 classNames={{ avatar: "bg-muted" }}

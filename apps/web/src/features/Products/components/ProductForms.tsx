@@ -24,7 +24,6 @@ import type { ProductCategory, ProductRecord } from "../types";
 const MAX_PRODUCT_IMAGE_SIZE = 5_000_000;
 const PRODUCT_IMAGE_TYPES = new Set([
   "image/avif",
-  "image/gif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -76,7 +75,7 @@ function ProductFields({
     <>
       <div className="space-y-2">
         <ImageInput
-          accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
           disabled={disabled}
           imageVersion={String(imageVersion ?? 0)}
           previewClassName="h-44 w-full"

@@ -1,6 +1,3 @@
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import { extname, join } from "node:path";
-
 import {
   ArrayBufferBody,
   ContentType,
@@ -16,36 +13,17 @@ import {
 } from "najm-core";
 
 import { isChildImageViewer, isOperator, ROLES } from "../../config/authConfig";
-import { envConfig } from "../../config/envConfig";
+import {
+  removeManagedImage,
+  resolveManagedImageLocation,
+  serveManagedImage,
+  uploadManagedImage,
+} from "../../storage/managedImageController";
 import { FamilyRepository } from "../families/familyRepository";
 import { ChildRepository } from "./childRepository";
 
-const MAX_CHILD_IMAGE_SIZE = 5_000_000;
-const CHILD_IMAGE_TYPES = {
-  ".avif": "image/avif",
-  ".gif": "image/gif",
-  ".jpg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-} as const;
-
 export const CHILD_IMAGE_SERVE_PREFIX =
   "/api/child-images/files/serve/" as const;
-
-function resolveChildImagePath(rawFileName: string) {
-  const fileName = decodeURIComponent(rawFileName);
-  if (!/^[0-9a-f-]{36}\.(?:avif|gif|jpg|png|webp)$/i.test(fileName)) {
-    HttpError.create(400, "Invalid child image file name");
-  }
-
-  return {
-    directory: join(
-      /* turbopackIgnore: true */ envConfig.storage.basePath,
-      "child-images",
-    ),
-    fileName,
-  };
-}
 
 @Service()
 export class ChildImageAccess {
@@ -61,7 +39,10 @@ export class ChildImageAccess {
       | null
       | undefined,
   ) {
-    const { directory, fileName } = resolveChildImagePath(rawFileName);
+    const { directory, fileName } = resolveManagedImageLocation(
+      "child-images",
+      rawFileName,
+    );
     const child = await this.children.findByImagePath(
       `${CHILD_IMAGE_SERVE_PREFIX}${fileName}`,
     );
@@ -98,25 +79,14 @@ export class ChildImageController {
     @ArrayBufferBody() body: ArrayBuffer,
     @ContentType() contentType: string | undefined,
   ) {
-    const { directory, fileName } = resolveChildImagePath(rawFileName);
-    const expectedType = CHILD_IMAGE_TYPES[
-      extname(fileName).toLowerCase() as keyof typeof CHILD_IMAGE_TYPES
-    ];
-    if (!contentType || contentType.toLowerCase() !== expectedType) {
-      HttpError.create(415, "Unsupported child image type");
-    }
-    if (body.byteLength === 0 || body.byteLength > MAX_CHILD_IMAGE_SIZE) {
-      HttpError.create(413, "Child image must be between 1 byte and 5 MB");
-    }
-
-    await mkdir(directory, { recursive: true });
-    await writeFile(join(directory, fileName), new Uint8Array(body), {
-      flag: "wx",
+    return uploadManagedImage({
+      body,
+      contentType,
+      profile: "person",
+      rawFileName,
+      servePrefix: CHILD_IMAGE_SERVE_PREFIX,
+      storageDirectory: "child-images",
     });
-
-    return {
-      path: `${CHILD_IMAGE_SERVE_PREFIX}${encodeURIComponent(fileName)}`,
-    };
   }
 
   @Get("/files/serve/:fileName")
@@ -127,41 +97,14 @@ export class ChildImageController {
     @User("id") userId: string,
     @User("role") role: string,
   ) {
-    const { directory, fileName } = await this.access.resolveImage(
-      rawFileName,
-      { role, userId },
-    );
-
-    try {
-      const bytes = await readFile(join(directory, fileName));
-      return new Response(new Uint8Array(bytes), {
-        headers: {
-          "cache-control": "private, max-age=31536000, immutable",
-          "content-type": CHILD_IMAGE_TYPES[
-            extname(fileName).toLowerCase() as keyof typeof CHILD_IMAGE_TYPES
-          ],
-        },
-      });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        HttpError.notFound("Child image not found");
-      }
-      throw error;
-    }
+    await this.access.resolveImage(rawFileName, { role, userId });
+    return serveManagedImage("child-images", rawFileName, "Child image not found");
   }
 
   @Delete("/files/:fileName")
   @isOperator()
   @ResMsg("children.success.deleted")
   async remove(@Params("fileName") rawFileName: string) {
-    const { directory, fileName } = resolveChildImagePath(rawFileName);
-
-    try {
-      await unlink(join(directory, fileName));
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    }
-
-    return { deleted: true };
+    return removeManagedImage("child-images", rawFileName);
   }
 }

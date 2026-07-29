@@ -1,9 +1,10 @@
 "use client";
 
 import { Contact, UserRound } from "lucide-react";
-import { NAvatar, NCard, NDetailList, NSection } from "najm-kit";
+import { NCard, NDetailList, NSection } from "najm-kit";
 
 import { StatusBadge } from "@/shared/StatusBadge";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { OwnSponsorProfile } from "../types";
 
@@ -13,7 +14,7 @@ export function SponsorProfileDetails({
   return (
     <NCard icon={UserRound} title="Your account" description="Only you can view these personal profile details.">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
-        <NAvatar src={profile.image ?? undefined} title={profile.name} size="lg" />
+        <ManagedAvatar src={profile.image ?? undefined} title={profile.name} size="lg" />
         <div className="min-w-0">
           <p className="truncate text-lg font-semibold">{profile.name}</p>
           <p className="truncate text-sm text-muted-foreground">{profile.email}</p>

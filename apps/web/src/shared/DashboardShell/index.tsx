@@ -232,7 +232,7 @@ export function DashboardShell({
                   sidebarCollapsed ? "" : " xl:block"
                 }`}
                 height={233}
-                priority
+                preload
                 src={branding.sidebarLogoExpandedPath}
                 width={701}
               />

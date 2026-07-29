@@ -4,7 +4,7 @@ import {
   mkdtemp,
   readFile,
   rm,
-  writeFile,
+  writeFile as writeRawFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,6 +16,12 @@ import {
 import { generateDemoSeedData } from "../src/scripts/demo/generator";
 
 const temporaryDirectories: string[] = [];
+const testImageDirectory = join(import.meta.dir, "..", "images");
+
+async function writeFile(path: string, marker: string) {
+  const source = marker.includes("two") ? "family-02.webp" : "family-01.webp";
+  await writeRawFile(path, await readFile(join(testImageDirectory, source)));
+}
 
 afterEach(async () => {
   await Promise.all(
@@ -60,10 +66,10 @@ describe("demo profile images", () => {
     const familyImages = data.families.map((family) => family.image);
     expect(familyImages).toHaveLength(3);
     expect(familyImages[0]).toMatch(
-      /^\/api\/family-images\/files\/serve\/[0-9a-f-]{36}\.png$/,
+      /^\/api\/family-images\/files\/serve\/[0-9a-f-]{36}\.webp$/,
     );
     expect(familyImages[1]).toMatch(
-      /^\/api\/family-images\/files\/serve\/[0-9a-f-]{36}\.jpg$/,
+      /^\/api\/family-images\/files\/serve\/[0-9a-f-]{36}\.webp$/,
     );
     expect(familyImages[2]).toBeUndefined();
     expect(data.sponsors[0]!.image).toMatch(
@@ -74,11 +80,11 @@ describe("demo profile images", () => {
       familyImages[0]!.lastIndexOf("/") + 1,
     );
     expect(
-      await readFile(
-        join(storagePath, "family-images", firstFamilyFile),
-        "utf8",
-      ),
-    ).toBe("family-one");
+      (await readFile(join(storagePath, "family-images", firstFamilyFile))).subarray(
+        0,
+        4,
+      ).toString("ascii"),
+    ).toBe("RIFF");
   });
 
   it("does not split family images by gender", async () => {
@@ -204,11 +210,9 @@ describe("demo profile images", () => {
     );
     const firstContent = await readFile(
       join(storagePath, "family-images", firstFamilyFile),
-      "utf8",
     );
     const secondContent = await readFile(
       join(storagePath, "family-images", secondFamilyFile),
-      "utf8",
     );
     const sortedIds = [...data.families]
       .map((family) => family.id)
@@ -222,12 +226,11 @@ describe("demo profile images", () => {
       );
     const sortedFirstContent = await readFile(
       join(storagePath, "family-images", sortedFirstFile),
-      "utf8",
     );
-    expect(sortedFirstContent).toBe(firstContent);
-    expect(["family-one", "family-two"]).toContain(firstContent);
-    expect(["family-one", "family-two"]).toContain(secondContent);
-    expect(firstContent).not.toBe(secondContent);
+    expect(sortedFirstContent).toEqual(firstContent);
+    expect(firstContent.byteLength).toBeGreaterThan(0);
+    expect(secondContent.byteLength).toBeGreaterThan(0);
+    expect(firstContent).not.toEqual(secondContent);
   });
 
   it("keeps a family image stable when its guardian gender flips", async () => {

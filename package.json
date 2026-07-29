@@ -32,6 +32,7 @@
     "seed:remove": "bun --cwd packages/seed --env-file=../../.env src/cli.ts remove --yes",
     "seed:demo": "bun --cwd packages/seed --env-file=../../.env src/cli.ts demo",
     "seed:images": "bun --cwd packages/seed --env-file=../../.env src/cli.ts images",
+    "images:backfill": "bun --cwd packages/seed --env-file=../../.env src/scripts/backfill-images.ts",
     "seed:migrate": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:migrate'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "seed:admin": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:admin'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "seed:verify": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:verify'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
@@ -58,6 +59,6 @@
     "@clack/core": "^1.4.3",
     "@clack/prompts": "^1.7.0",
     "najm-core": "^2.0.4",
-    "najm-kit": "2.1.42"
+    "najm-kit": "2.1.43"
   }
 }

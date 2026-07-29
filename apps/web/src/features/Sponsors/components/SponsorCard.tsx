@@ -3,7 +3,6 @@
 import { CalendarDays, Mail, Phone } from "lucide-react";
 import {
   cn,
-  NAvatar,
   NCard,
   NCardAction,
   NCardInfo,
@@ -14,6 +13,7 @@ import {
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SponsorRecord } from "../types";
@@ -48,7 +48,7 @@ export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
         size="sm"
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
-        <NAvatar
+        <ManagedAvatar
           src={getSponsorAvatarImage(data.image, data.gender)}
           alt={data.name}
           size="xl"

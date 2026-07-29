@@ -6,6 +6,9 @@ bounded implementation detail and decision records.
 ## Documents
 
 - [`DECISIONS.md`](DECISIONS.md) - locked MVP product and architecture decisions
+- [`IMAGE-DELIVERY-OPTIMIZATION.md`](IMAGE-DELIVERY-OPTIMIZATION.md) - bounded
+  full-stack plan for upload normalization, protected delivery, existing-image
+  backfill, and measurable loading budgets
 - [`NAJM-STACK.md`](NAJM-STACK.md) - installed framework contracts to reuse
 - [`OPERATOR-SPONSOR-DETAIL-OVERVIEW.md`](OPERATOR-SPONSOR-DETAIL-OVERVIEW.md) -
   internal-coder handoff for the reusable operator/admin sponsor overview dialog

@@ -99,10 +99,10 @@ describe("branding factory", () => {
     expect(first).toEqual(second);
     expect(first).not.toBe(second);
     expect(first.revision).toBe(1);
-    expect(first.sidebarLogoExpandedPath).toBe("/logoExpanded.png");
-    expect(first.sidebarLogoCollapsedPath).toBe("/logoExpanded.png");
-    expect(first.authLogoPath).toBe("/logoExpanded.png");
-    expect(first.authHeroImagePath).toBe("/HeroA.png");
+    expect(first.sidebarLogoExpandedPath).toBe("/logoExpanded.webp");
+    expect(first.sidebarLogoCollapsedPath).toBe("/logoExpanded.webp");
+    expect(first.authLogoPath).toBe("/logoExpanded.webp");
+    expect(first.authHeroImagePath).toBe("/HeroA.webp");
   });
 });
 
@@ -317,7 +317,7 @@ describe("branding server loaders", () => {
   test("public loader constructs an admin config with null custom paths", async () => {
     const publicBranding: PublicBranding = {
       ...getFactoryPublicBranding(),
-      authHeroImagePath: "/HeroA.png",
+      authHeroImagePath: "/HeroA.webp",
       revision: 5,
     };
     const fetcher = async () =>

@@ -2,7 +2,6 @@
 
 import { CalendarDays, House } from "lucide-react";
 import {
-  NAvatar,
   NCard,
   NCardAction,
   NCardInfo,
@@ -13,6 +12,7 @@ import {
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SupportAssignmentView } from "../types";
@@ -25,7 +25,7 @@ export function SupportAssignmentCard({ data }: Readonly<{ data: SupportAssignme
       title={data.sponsorLabel}
     >
       <NCardMedia variant="avatar" size="sm">
-        <NAvatar
+        <ManagedAvatar
           src={getSponsorAvatarImage(data.sponsorImage, data.sponsorGender)}
           alt={data.sponsorLabel}
           size="xl"

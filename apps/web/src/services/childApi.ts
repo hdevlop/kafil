@@ -23,7 +23,6 @@ const CHILD_IMAGE_ROUTE = "/child-images/files/";
 function imageExtension(file: File) {
   const extensionByMimeType: Record<string, string> = {
     "image/avif": "avif",
-    "image/gif": "gif",
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
@@ -34,8 +33,11 @@ function imageExtension(file: File) {
 
 export async function uploadChildImage(file: File) {
   const fileName = `${crypto.randomUUID()}.${imageExtension(file)}`;
-  await api.upload(`${CHILD_IMAGE_ROUTE}${fileName}`, file);
-  return `/api${CHILD_IMAGE_ROUTE}serve/${fileName}`;
+  const uploaded = await api.upload<{ path: string }>(
+    `${CHILD_IMAGE_ROUTE}${fileName}`,
+    file,
+  );
+  return uploaded.path;
 }
 
 export function deleteChildImage(imagePath: string) {

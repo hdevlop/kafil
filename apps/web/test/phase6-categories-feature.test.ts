@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import {
   categoryStatusFormSchema,
@@ -9,6 +10,11 @@ import {
   updateCategoryFormSchema,
 } from "../src/features/Categories/config/categorySchemas";
 import { categoryKeys } from "../src/features/Categories/hooks/categoryKeys";
+
+const categoriesPage = readFileSync(
+  new URL("../src/features/Categories/components/CategoriesPage.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("Phase 6D category form contracts", () => {
   test("creates a catalog category without client-controlled status and auto-derives slug from name", () => {
@@ -78,5 +84,12 @@ describe("Phase 6D category lifecycle contracts", () => {
       "detail",
       "category-1",
     ]);
+  });
+
+  test("opens the filtered products page when a category card is clicked", () => {
+    expect(categoriesPage).toContain("onRowClick: (category) =>");
+    expect(categoriesPage).toContain(
+      "router.push(`/products?category=${encodeURIComponent(category.id)}`)",
+    );
   });
 });

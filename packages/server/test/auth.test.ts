@@ -3,6 +3,11 @@ import { getGuardMetadata } from "najm-guard";
 
 import {
   DashboardController,
+  CategoryImageController,
+  ProductImageController,
+  SponsorImageController,
+  ChildImageController,
+  FamilyImageController,
   Document,
   Operator,
   Sponsor,
@@ -108,5 +113,26 @@ describe("Kafil auth definitions", () => {
     expect(guardName("getOperator")).toBe("OperatorRoleGuard");
     expect(guardName("getFamily")).toBe("FamilyRoleGuard");
     expect(guardName("getSponsor")).toBe("SponsorRoleGuard");
+  });
+
+  it("keeps protected image serve routes on their explicit role boundaries", () => {
+    const guardName = (controller: object, method: string) =>
+      getGuardMetadata(controller as never, method)[0]?.guardClass.name;
+
+    expect(guardName(CategoryImageController, "serve")).toBe(
+      "CatalogImageViewerRoleGuard",
+    );
+    expect(guardName(ProductImageController, "serve")).toBe(
+      "CatalogImageViewerRoleGuard",
+    );
+    expect(guardName(SponsorImageController, "serve")).toBe(
+      "SponsorImageViewerRoleGuard",
+    );
+    expect(guardName(ChildImageController, "serve")).toBe(
+      "ChildImageViewerRoleGuard",
+    );
+    expect(guardName(FamilyImageController, "serve")).toBe(
+      "FamilyImageViewerRoleGuard",
+    );
   });
 });

@@ -28,7 +28,6 @@ import { InitialCredentialsCard } from "@/shared/InitialCredentialsCard";
 const MAX_SPONSOR_IMAGE_SIZE = 5_000_000;
 const SPONSOR_IMAGE_TYPES = new Set([
   "image/avif",
-  "image/gif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -126,7 +125,7 @@ export function CreateSponsorDialogContent() {
             name="image"
             formLabel={t("operator.sponsors.imageUrl")}
             subtitle={t("operator.sponsors.imageUploadGuidance")}
-            accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
             allowClear
             disabled={isSubmitting}
             fill
@@ -256,7 +255,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
             name="image"
             formLabel={t("operator.sponsors.imageUrl")}
             subtitle={t("operator.sponsors.imageUploadGuidance")}
-            accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
             allowClear
             disabled={isSubmitting}
             fill

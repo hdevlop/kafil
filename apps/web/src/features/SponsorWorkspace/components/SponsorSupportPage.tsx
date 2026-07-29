@@ -1,7 +1,6 @@
 "use client";
 
 import { Baby, HeartHandshake } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { NButton, NCard, NPageLayout, NSectionInfo } from "najm-kit";
 
@@ -11,6 +10,7 @@ import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { PageEmptyState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import {
   useSponsorFamilyCatalog,
@@ -46,13 +46,12 @@ function SponsorFamilyCard({
   return (
     <article className="space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="relative h-40 overflow-hidden rounded-xl bg-muted">
-        <Image
+        <ProtectedImage
           src={getFamilyAvatarImage(family.image)}
           alt={family.reference}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
           className="object-cover"
-          unoptimized
         />
       </div>
       <p className="font-semibold">{family.reference}</p>

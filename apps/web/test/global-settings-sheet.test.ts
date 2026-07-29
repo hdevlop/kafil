@@ -26,6 +26,7 @@ describe("global settings sheet", () => {
     const theme = readSource("../src/features/Settings/components/ThemeSettingsPanel.tsx");
 
     expect(sheet).toContain("<NSheet");
+    expect(sheet).toContain("icon={SlidersHorizontal}");
     expect(sheet).toContain("APP_SETTINGS_FORM_ID");
     expect(sheet).toContain("themeDirty || appState.dirty");
     expect(sheet).toContain("<NConfirmDialog");

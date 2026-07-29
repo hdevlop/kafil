@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { NAvatar, type NTableProps } from "najm-kit";
+import { type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SupportAssignmentView } from "../types";
@@ -19,7 +20,7 @@ export function useSupportAssignmentsTableColumns() {
         header: t("operator.assignments.sponsor"),
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <NAvatar
+            <ManagedAvatar
               src={getSponsorAvatarImage(
                 row.original.sponsorImage,
                 row.original.sponsorGender,

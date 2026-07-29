@@ -27,7 +27,6 @@ type AccountKind = "operator" | "family" | "sponsor";
 const MAX_OPERATOR_IMAGE_SIZE = 5_000_000;
 const OPERATOR_IMAGE_TYPES = new Set([
   "image/avif",
-  "image/gif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -147,7 +146,7 @@ function CreateOperatorForm() {
             name="image"
             formLabel={t("adminAccess.users.imageUrl")}
             subtitle={t("adminAccess.users.imageUploadGuidance")}
-            accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
             allowClear
             disabled={isSubmitting}
             fill

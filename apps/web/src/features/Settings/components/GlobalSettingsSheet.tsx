@@ -9,7 +9,7 @@ import {
   stringifyThemeFile,
   toast,
 } from "najm-kit";
-import { Download, RotateCcw, Save, Upload } from "lucide-react";
+import { Download, RotateCcw, Save, SlidersHorizontal, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -175,13 +175,13 @@ export function GlobalSettingsSheet({
   return (
     <>
       <NSheet
+        classNames={{ body: "px-4", content: "bg-background" }}
         open={open}
         onOpenChange={requestOpenChange}
+        icon={SlidersHorizontal}
         title={t("operator.settings.sheetTitle")}
         description={t("operator.settings.sheetDescription")}
         width={500}
-        contentClassName="bg-background"
-        bodyClassName="px-4"
         footer={
           <div className="flex w-full items-center justify-between gap-3">
             {themeActive ? (

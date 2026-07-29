@@ -17,6 +17,7 @@
     "seed:categories": "bun src/cli.ts categories",
     "seed:verify": "bun src/cli.ts verify",
     "seed:images": "bun src/cli.ts images",
+    "images:backfill": "bun src/scripts/backfill-images.ts",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "bun test"

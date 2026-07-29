@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { getGuardMetadata } from "najm-guard";
 import { getMcpTools } from "najm-mcp";
 import { getValidationConfig } from "najm-validation";
+import sharp from "sharp";
 
 import { db } from "../src/config/databaseConfig";
 import { AuditRepository, AuditService } from "../src/modules/audit";
@@ -55,13 +56,20 @@ const PNG_BYTES = new Uint8Array([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
 ]);
 const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
-const WEBP_BYTES = new Uint8Array([
-  0x52, 0x49, 0x46, 0x46, 0x1a, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
-]);
-const AVIF_BYTES = new Uint8Array([
-  0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66,
-  0x00, 0x00, 0x00, 0x00,
-]);
+async function realImageBytes(format: "avif" | "jpeg" | "png" | "webp") {
+  const image = sharp({
+    create: {
+      width: 32,
+      height: 24,
+      channels: 4,
+      background: { r: 24, g: 96, b: 160, alpha: 0.7 },
+    },
+  });
+  if (format === "avif") return new Uint8Array(await image.avif().toBuffer());
+  if (format === "jpeg") return new Uint8Array(await image.jpeg().toBuffer());
+  if (format === "webp") return new Uint8Array(await image.webp().toBuffer());
+  return new Uint8Array(await image.png().toBuffer());
+}
 
 describe("branding factory", () => {
   it("returns the documented factory asset paths and the default revision", () => {
@@ -766,10 +774,11 @@ describe("branding service", () => {
       slot: "sidebarLogoExpanded",
       fileName: VALID_LOGO_NAME,
       declaredMime: "image/png",
-      bytes: PNG_BYTES,
+      bytes: await realImageBytes("png"),
     });
-    expect(result.path).toBe(validLogoPath);
-    expect(existsSync(join(brandingDirectory, VALID_LOGO_NAME))).toBe(true);
+    const normalizedName = VALID_LOGO_NAME.replace(/\.png$/, ".webp");
+    expect(result.path).toBe(brandingAssetPath(normalizedName));
+    expect(existsSync(join(brandingDirectory, normalizedName))).toBe(true);
   });
 
   it("rejects uploads with mismatched declared mime and detected format", async () => {
@@ -780,7 +789,7 @@ describe("branding service", () => {
         slot: "sidebarLogoExpanded",
         fileName: VALID_LOGO_NAME,
         declaredMime: "image/png",
-        bytes: JPEG_BYTES,
+        bytes: await realImageBytes("jpeg"),
       });
     } catch (error) {
       captured = error;
@@ -792,7 +801,7 @@ describe("branding service", () => {
       message?: string;
     };
     expect(errorLike.status).toBe(415);
-    expect(errorLike.message).toContain("Branding asset");
+    expect(errorLike.message).toContain("declared content type");
   });
 
   it("rejects uploads that exceed the slot byte limit", async () => {
@@ -814,27 +823,27 @@ describe("branding service", () => {
       slot: "authLogo",
       fileName: VALID_AUTH_LOGO_NAME,
       declaredMime: "image/png",
-      bytes: PNG_BYTES,
+      bytes: await realImageBytes("png"),
     });
     await service.uploadAsset({
       slot: "sidebarLogoCollapsed",
       fileName: VALID_COLLAPSED_NAME,
       declaredMime: "image/webp",
-      bytes: WEBP_BYTES,
+      bytes: await realImageBytes("webp"),
     });
     await service.uploadAsset({
       slot: "authHeroImage",
       fileName: VALID_HERO_NAME,
       declaredMime: "image/jpeg",
-      bytes: JPEG_BYTES,
+      bytes: await realImageBytes("jpeg"),
     });
-    expect(existsSync(join(brandingDirectory, VALID_AUTH_LOGO_NAME))).toBe(
+    expect(existsSync(join(brandingDirectory, VALID_AUTH_LOGO_NAME.replace(/\.png$/, ".webp")))).toBe(
       true,
     );
     expect(existsSync(join(brandingDirectory, VALID_COLLAPSED_NAME))).toBe(
       true,
     );
-    expect(existsSync(join(brandingDirectory, VALID_HERO_NAME))).toBe(true);
+    expect(existsSync(join(brandingDirectory, VALID_HERO_NAME.replace(/\.jpg$/, ".webp")))).toBe(true);
   });
 
   it("rejects uploads with an undecodable body", async () => {
@@ -856,9 +865,9 @@ describe("branding service", () => {
       slot: "authHeroImage",
       fileName: avifName,
       declaredMime: "image/avif",
-      bytes: AVIF_BYTES,
+      bytes: await realImageBytes("avif"),
     });
-    expect(existsSync(join(brandingDirectory, avifName))).toBe(true);
+    expect(existsSync(join(brandingDirectory, avifName.replace(/\.avif$/, ".webp")))).toBe(true);
   });
 
   it("returns an admin config with customPath and resolvedPath projections", async () => {

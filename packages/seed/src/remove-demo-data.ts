@@ -1,7 +1,7 @@
 import { envConfig } from "@kafil/server/config";
 import { pool } from "@kafil/server/database";
-import { unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { readdir, unlink } from "node:fs/promises";
+import { join, resolve } from "node:path";
 
 const DEMO_USER_PATTERN =
   "^00000000-0000-4000-8000-(102|202|302)[0-9]{9}$";
@@ -87,6 +87,15 @@ export const DEMO_STORAGE_SQL = `
   SELECT receipt_storage_path AS reference
   FROM kafil_demo_purchases WHERE receipt_storage_path IS NOT NULL`;
 
+export const MANAGED_STORAGE_REFERENCES_SQL = `
+  SELECT image AS reference FROM users WHERE image IS NOT NULL
+  UNION
+  SELECT image AS reference FROM children WHERE image IS NOT NULL
+  UNION
+  SELECT image AS reference FROM categories WHERE image IS NOT NULL
+  UNION
+  SELECT image_url AS reference FROM products WHERE image_url IS NOT NULL`;
+
 export const REMOVE_DEMO_SQL = [
   `DELETE FROM outbox_events
    WHERE aggregate_id IN (SELECT id FROM kafil_demo_resources)`,
@@ -129,20 +138,46 @@ export const REMOVE_DEMO_SQL = [
   `DELETE FROM operator_profiles
    WHERE id IN (SELECT id FROM kafil_demo_operators)`,
   `DELETE FROM users WHERE id IN (SELECT id FROM kafil_demo_users)`,
+] as const;
+
+export const RESET_DEMO_CATALOG_SQL = [
+  `DELETE FROM cart_items AS item
+   WHERE NOT EXISTS (
+     SELECT 1 FROM order_items AS history
+     WHERE history.product_id = item.product_id
+   )`,
+  `DELETE FROM inventory_ledger_entries AS entry
+   WHERE NOT EXISTS (
+     SELECT 1 FROM order_items AS history
+     WHERE history.product_id = entry.product_id
+   )`,
+  `DELETE FROM inventory_balances AS balance
+   WHERE NOT EXISTS (
+     SELECT 1 FROM order_items AS history
+     WHERE history.product_id = balance.product_id
+   )`,
   `DELETE FROM products AS product
-   WHERE product.sku = 'DEMO-MARJANE-BASKET'
-     AND NOT EXISTS (SELECT 1 FROM cart_items WHERE product_id = product.id)
-     AND NOT EXISTS (SELECT 1 FROM order_items WHERE product_id = product.id)
-     AND NOT EXISTS (SELECT 1 FROM inventory_balances WHERE product_id = product.id)
-     AND NOT EXISTS (SELECT 1 FROM inventory_ledger_entries WHERE product_id = product.id)`,
+   WHERE NOT EXISTS (
+     SELECT 1 FROM order_items AS history
+     WHERE history.product_id = product.id
+   )
+   RETURNING product.id`,
+  `DELETE FROM categories AS category
+   WHERE NOT EXISTS (
+     SELECT 1 FROM products AS product
+     WHERE product.category_id = category.id
+   )
+   RETURNING category.id`,
 ] as const;
 
 export interface DemoRemovalSummary {
+  categories: number;
   contributions: number;
   families: number;
   files: number;
   operators: number;
   orders: number;
+  products: number;
   sponsors: number;
 }
 
@@ -157,14 +192,51 @@ interface DemoDataPool {
 
 type RemoveFile = (path: string) => Promise<void>;
 
+interface ManagedDirectoryEntry {
+  isFile(): boolean;
+  name: string;
+}
+
+type ReadDirectory = (
+  path: string,
+  options: { withFileTypes: true },
+) => Promise<ManagedDirectoryEntry[]>;
+
+const MANAGED_FILE_PATTERN =
+  /^[0-9a-f-]{36}\.(?:avif|gif|jpeg|jpg|pdf|png|webp)$/i;
+
+const MANAGED_FILE_PREFIXES = [
+  ["/api/family-images/files/serve/", "family-images"],
+  ["/api/sponsor-images/files/serve/", "sponsor-images"],
+  ["/api/operator-images/files/serve/", "operator-images"],
+  ["/api/child-images/files/serve/", "child-images"],
+  ["/api/category-images/files/serve/", "category-images"],
+  ["/api/product-images/files/serve/", "product-images"],
+  ["/api/order-evidence/receipts/serve/", "order-evidence/receipts"],
+  ["/api/order-evidence/deliveries/serve/", "order-evidence/deliveries"],
+] as const;
+
+const ORPHAN_SWEEP_DIRECTORIES = [
+  "category-images",
+  "child-images",
+  "family-images",
+  "operator-images",
+  "product-images",
+  "sponsor-images",
+] as const;
+
 export async function removeDemoData(
   databasePool: DemoDataPool = pool,
   storageBasePath = envConfig.storage.basePath,
   removeFile: RemoveFile = unlink,
+  readDirectory: ReadDirectory = readdir,
 ): Promise<DemoRemovalSummary> {
   const client = await databasePool.connect();
-  let summary: Omit<DemoRemovalSummary, "files">;
+  let summary: Omit<DemoRemovalSummary, "categories" | "files" | "products">;
   let references: string[];
+  let retainedReferences: string[];
+  let categories = 0;
+  let products = 0;
 
   try {
     await client.query("BEGIN");
@@ -178,6 +250,20 @@ export async function removeDemoData(
     summary = summaryResult.rows[0] ?? emptySummary();
     references = storageResult.rows.map((row) => row.reference);
     for (const sql of REMOVE_DEMO_SQL) await client.query(sql);
+    for (const sql of RESET_DEMO_CATALOG_SQL) {
+      const result = (await client.query(sql)) as { rows?: unknown[] };
+      if (sql === RESET_DEMO_CATALOG_SQL[3]) {
+        products = result.rows?.length ?? 0;
+      } else if (sql === RESET_DEMO_CATALOG_SQL[4]) {
+        categories = result.rows?.length ?? 0;
+      }
+    }
+    const retainedStorageResult = (await client.query(
+      MANAGED_STORAGE_REFERENCES_SQL,
+    )) as {
+      rows: Array<{ reference: string }>;
+    };
+    retainedReferences = retainedStorageResult.rows.map((row) => row.reference);
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -186,12 +272,23 @@ export async function removeDemoData(
     client.release();
   }
 
-  const files = await removeManagedDemoFiles(
+  const demoFiles = await removeManagedDemoFiles(
     references,
     storageBasePath,
     removeFile,
   );
-  return { ...summary, files };
+  const orphanFiles = await removeOrphanedManagedFiles(
+    retainedReferences,
+    storageBasePath,
+    removeFile,
+    readDirectory,
+  );
+  return {
+    ...summary,
+    categories,
+    files: demoFiles + orphanFiles,
+    products,
+  };
 }
 
 export async function removeManagedDemoFiles(
@@ -216,23 +313,60 @@ export async function removeManagedDemoFiles(
 }
 
 export function managedDemoFilePath(reference: string, storageBasePath: string) {
-  const prefixes = [
-    ["/api/family-images/files/serve/", "family-images"],
-    ["/api/sponsor-images/files/serve/", "sponsor-images"],
-    ["/api/operator-images/files/serve/", "operator-images"],
-    ["/api/child-images/files/serve/", "child-images"],
-    ["/api/order-evidence/receipts/serve/", "order-evidence/receipts"],
-    ["/api/order-evidence/deliveries/serve/", "order-evidence/deliveries"],
-  ] as const;
-  const match = prefixes.find(([prefix]) => reference.startsWith(prefix));
+  const match = MANAGED_FILE_PREFIXES.find(([prefix]) =>
+    reference.startsWith(prefix),
+  );
   if (!match) return undefined;
   const fileName = decodeURIComponent(reference.slice(match[0].length));
-  if (!/^[0-9a-f-]{36}\.(?:avif|gif|jpeg|jpg|pdf|png|webp)$/i.test(fileName)) {
+  if (!MANAGED_FILE_PATTERN.test(fileName)) {
     return undefined;
   }
   return join(storageBasePath, match[1], fileName);
 }
 
-function emptySummary(): Omit<DemoRemovalSummary, "files"> {
+export async function removeOrphanedManagedFiles(
+  retainedReferences: readonly string[],
+  storageBasePath: string,
+  removeFile: RemoveFile = unlink,
+  readDirectory: ReadDirectory = readdir,
+) {
+  const retainedPaths = new Set(
+    retainedReferences
+      .map((reference) => managedDemoFilePath(reference, storageBasePath))
+      .filter((path): path is string => Boolean(path))
+      .map((path) => resolve(path)),
+  );
+  let removed = 0;
+
+  for (const directory of ORPHAN_SWEEP_DIRECTORIES) {
+    const directoryPath = join(storageBasePath, directory);
+    let entries: ManagedDirectoryEntry[];
+    try {
+      entries = await readDirectory(directoryPath, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw error;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isFile() || !MANAGED_FILE_PATTERN.test(entry.name)) continue;
+      const target = resolve(directoryPath, entry.name);
+      if (retainedPaths.has(target)) continue;
+      try {
+        await removeFile(target);
+        removed += 1;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
+  }
+
+  return removed;
+}
+
+function emptySummary(): Omit<
+  DemoRemovalSummary,
+  "categories" | "files" | "products"
+> {
   return { contributions: 0, families: 0, operators: 0, orders: 0, sponsors: 0 };
 }

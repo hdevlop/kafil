@@ -368,6 +368,7 @@ describe("Phase 2 support assignment workflow", () => {
     expect(catalog).toEqual([
       expect.objectContaining({
         id: householdId,
+        image: null,
         reference: "Family 00000000",
         activeChildCount: 2,
       }),

@@ -349,6 +349,12 @@ Settings sheet gained an admin-only Brand assets card with live previews,
 uncoordinated upload/discard/reset actions, and translations for en, fr, ar,
 and es. Detailed reports, exports, durable outbox delivery, rate limits,
 security headers, and backup rehearsals remain open.
+The measured image-size and cold-loading follow-up is now specified in
+[`IMAGE-DELIVERY-OPTIMIZATION.md`](plans/IMAGE-DELIVERY-OPTIMIZATION.md). It is
+implemented in code with upload-time normalization, bounded package/public
+WebPs, protected rendering, and a backup-gated backfill command. The protected
+data apply/rollback rehearsal and browser transfer evidence remain deployment
+gates for this Phase 7 release-hardening slice.
 
 ## 11. Phase 1 - Identity, Families, Children, and Audit
 

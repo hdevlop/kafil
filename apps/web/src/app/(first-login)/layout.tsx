@@ -17,7 +17,7 @@ export default async function FirstLoginLayout({
           alt="Kafil platform"
           className="h-auto w-44"
           height={233}
-          priority
+          preload
           src={branding.authLogoPath}
           width={701}
         />

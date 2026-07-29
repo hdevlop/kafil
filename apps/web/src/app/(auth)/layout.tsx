@@ -25,7 +25,7 @@ export default async function AuthLayout({
             alt="A family supported by the Kafil platform"
             className="object-cover object-center"
             fill
-            priority
+            preload
             sizes="(min-width: 1024px) 50vw, 100vw"
             src={branding.authHeroImagePath}
           />
@@ -37,7 +37,7 @@ export default async function AuthLayout({
             alt="Kafil platform"
             className="mb-8 w-48"
             height={233}
-            priority
+            preload
             src={branding.authLogoPath}
             width={701}
           />

@@ -1,7 +1,7 @@
 # Seed profile images
 
-This directory holds the demo seed image library. The seed CLI copies these
-files into managed Kafil storage at runtime.
+This directory holds the optimized demo seed image library. The seed CLI runs
+these files through the shared managed-image processor at runtime.
 
 ## Filename contract
 
@@ -9,20 +9,20 @@ A family image represents the entire household. It is not classified by
 gender. Sponsor and child images are gender-matched.
 
 ```text
-family-01.jpg
-family-02.png
+family-01.webp
+family-02.webp
 sponsor-f-01.webp
 sponsor-m-01.webp
-child-f-01.png
-child-m-01.png
+child-f-01.webp
+child-m-01.webp
 ```
 
 Rules:
 
 - The numeric suffix contains at least two digits.
 - The numeric suffix must be unique within the same kind and gender pool. For
-  example, `child-f-01.png` and `child-f-01.webp` conflict, while
-  `child-m-01.png` does not.
+  example, duplicate `child-f-01` variants conflict, while `child-m-01.webp`
+  does not.
 - Records never borrow from the opposite gender pool. Family images are
   neutral and are not split by gender at all.
 - When there are fewer images than demo records, the remaining records keep
@@ -39,7 +39,8 @@ real licensed assets when you have them.
 
 ## Other rules
 
-- Supported formats: AVIF, GIF, JPEG, PNG, and WebP.
-- Maximum file size: 5 MB.
+- Shipped files are static WebP images: person assets are at most 640 x 640 and
+  150 KB; catalog assets are at most 1280 x 1280 and 200 KB.
+- New uploads may start as AVIF, JPEG, PNG, or WebP. GIF is rejected.
 - Nested folders are rejected, except the `_unclassified/` folder which holds
   legacy assets awaiting manual classification.

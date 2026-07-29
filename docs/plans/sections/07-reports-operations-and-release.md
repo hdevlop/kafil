@@ -87,6 +87,37 @@ Completed on 2026-07-20 and extended on 2026-07-21:
       demo runs.
 - [x] Added authenticated sponsor-image serving without making the seed source
       folders public.
+- [x] Hardened reset and demo removal so full application reset clears every
+      mutable managed storage directory, while demo removal also resets every
+      product without retained order history and every category left empty.
+      Unreferenced UUID-managed profile/catalog images are deleted after
+      preserving paths still referenced by the database. Branding remains
+      independently managed and is not swept by demo cleanup.
+
+Cleanup hardening validation (2026-07-29): focused seed lint/typecheck and 9
+reset/removal tests passed. The repaired local `seed:remove` command found zero
+remaining demo database records, removed 67 unreferenced profile images, and
+preserved all 17 database-referenced category images. The isolated-storage root
+`bun run check` passed with 276 server tests (27 PostgreSQL-only skips), 71 seed
+tests, and a successful 39-route production build; `bun run db:generate`
+reported no schema changes.
+
+Catalog-reset extension (2026-07-29): `seed:remove` now also deletes catalog
+products without retained order history and every category left empty, then
+reports both deletion counts. Cart and legacy-inventory rows for those products
+are removed in the same transaction. Historical non-demo order items continue
+to protect their referenced products and categories. Seed lint, typecheck, and
+all 71 seed tests passed; the root `bun run check` gate and 39-route production
+build passed, and `bun run db:generate` reported no schema changes.
+
+## Implemented Slice - Image Delivery Optimization (rollout pending)
+
+The measured oversized-image and cold-load problem is specified in
+[`IMAGE-DELIVERY-OPTIMIZATION.md`](../IMAGE-DELIVERY-OPTIMIZATION.md). The plan
+keeps protected image routes authenticated, normalizes new uploads and seed
+assets into bounded WebP files, backfills existing referenced files safely, and
+adds browser transfer budgets. Status: planned; no optimization implementation
+has been claimed.
 
 Validation: root lint, typecheck, tests, and production build passed. Test
 counts were web 107, server 129 with one opt-in database skip, and seed 27. CLI

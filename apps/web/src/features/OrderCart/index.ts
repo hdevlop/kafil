@@ -1,5 +1,5 @@
 export { OrderCartOverlay } from "./OrderCartOverlay";
-export { OrderCartDialog, FloatingOrderCartButton } from "./components";
+export { OrderCartSheet, FloatingOrderCartButton } from "./components";
 export { useOrderCart } from "./hooks/useOrderCart";
 export { useOrderCartSession } from "./hooks/useOrderCartSession";
 export { useOrderCartStore, selectOrderCartViewModel } from "./store/orderCartStore";

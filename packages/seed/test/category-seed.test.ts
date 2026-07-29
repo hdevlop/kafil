@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -46,7 +46,7 @@ describe("catalog category seed", () => {
     );
     for (const category of first) {
       expect(category.image).toMatch(
-        /^\/api\/category-images\/files\/serve\/[0-9a-f-]{36}\.png$/,
+        /^\/api\/category-images\/files\/serve\/[0-9a-f-]{36}\.webp$/,
       );
     }
   });
@@ -115,8 +115,13 @@ async function temporaryCategoryLibrary() {
   const storagePath = join(root, "storage");
   await mkdir(libraryPath, { recursive: true });
   await Promise.all(
-    CATEGORY_SEED_FIXTURES.map(({ fileName, slug }) =>
-      writeFile(join(libraryPath, fileName), `image:${slug}`),
+    CATEGORY_SEED_FIXTURES.map(async ({ fileName }) =>
+      writeFile(
+        join(libraryPath, fileName),
+        await readFile(
+          join(import.meta.dir, "..", "images", "child-f-01.webp"),
+        ),
+      ),
     ),
   );
   return { libraryPath, storagePath };

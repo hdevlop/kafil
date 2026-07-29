@@ -1,9 +1,8 @@
 "use client";
 
 import { BadgeCheck, HeartHandshake, House } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { NAvatar, NBadge, NDetailItem, NSection } from "najm-kit";
+import { NBadge, NDetailItem, NSection } from "najm-kit";
 
 import { useContributions } from "@/features/Contributions/hooks/useContributions";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -11,7 +10,9 @@ import { formatKafilDate, formatMad } from "@/lib/format";
 import { getFamilyAvatarImage, getSponsorAvatarImage } from "@/lib/personImages";
 import { getStatusTextColor } from "@/lib/status";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import type {
   FamilyRecord,
@@ -84,13 +85,12 @@ export function FamilyDetails({ family }: Readonly<{ family: FamilyRecord }>) {
       <div className="space-y-3 lg:pr-4">
         <section className="space-y-2">
           <div className="relative h-52 overflow-hidden rounded-2xl bg-muted sm:h-60">
-            <Image
+            <ProtectedImage
               src={getFamilyAvatarImage(family.image)}
               alt={family.name}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover"
-              unoptimized
             />
           </div>
           <div className="flex items-center justify-between gap-3">
@@ -131,7 +131,7 @@ export function FamilyDetails({ family }: Readonly<{ family: FamilyRecord }>) {
             <div className="divide-y divide-border/70">
               {contributions.data.map((contribution) => (
                 <div className="flex items-center gap-3 py-2" key={contribution.id}>
-                  <NAvatar
+                  <ManagedAvatar
                     alt={contribution.sponsorName}
                     classNames={{ avatar: "bg-muted" }}
                     size="sm"

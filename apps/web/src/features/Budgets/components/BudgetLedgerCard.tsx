@@ -2,7 +2,6 @@
 
 import { CalendarClock, Hash, Phone, ReceiptText } from "lucide-react";
 import {
-  NAvatar,
   NCard,
   NCardAction,
   NCardInfo,
@@ -13,6 +12,7 @@ import {
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { BudgetLedgerEntry } from "../types";
@@ -36,7 +36,7 @@ export function BudgetLedgerCard({
       </NCardAction>
       {data.sponsorName ? (
         <NCardMedia variant="avatar" size="sm">
-          <NAvatar
+          <ManagedAvatar
             src={getSponsorAvatarImage(data.sponsorImage, data.sponsorGender)}
             alt={data.sponsorName}
             classNames={{ avatar: "bg-muted" }}
