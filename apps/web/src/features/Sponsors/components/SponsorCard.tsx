@@ -4,7 +4,6 @@ import { CalendarDays, Mail, Phone } from "lucide-react";
 import {
   cn,
   NCard,
-  NCardAction,
   NCardInfo,
   NCardMedia,
   NCardSection,
@@ -14,8 +13,6 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
-
 import type { SponsorRecord } from "../types";
 
 export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
@@ -55,9 +52,6 @@ export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
           classNames={{ avatar: "size-20 bg-muted sm:size-16" }}
         />
       </NCardMedia>
-      <NCardAction>
-        <StatusBadge status={data.status} />
-      </NCardAction>
       <NCardSection density="responsive" surface="responsive">
         <NCardInfo
           icon={Mail}

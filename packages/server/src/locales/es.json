@@ -1118,7 +1118,7 @@
         "operatorNotes": "Operator notes",
         "optionalNotes": "Optional internal notes",
         "imageUrl": "Avatar del niño",
-        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF o GIF · hasta 5 MB"
+        "imageUploadGuidance": "PNG, JPEG o WebP · hasta 5 MB"
       },
       "sponsors": {
         "title": "Patrocinadores",
@@ -1158,7 +1158,7 @@
         "notes": "Notas",
         "notesPlaceholder": "Notas internas opcionales",
         "imageUrl": "Avatar del patrocinador",
-        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF o GIF · hasta 5 MB",
+        "imageUploadGuidance": "PNG, JPEG o WebP · hasta 5 MB",
         "creating": "Creando cuenta...",
         "createAndInvite": "Crear cuenta de patrocinador",
         "saving": "Guardando...",

@@ -27,7 +27,6 @@ import { InitialCredentialsCard } from "@/shared/InitialCredentialsCard";
 
 const MAX_SPONSOR_IMAGE_SIZE = 5_000_000;
 const SPONSOR_IMAGE_TYPES = new Set([
-  "image/avif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -35,7 +34,7 @@ const SPONSOR_IMAGE_TYPES = new Set([
 
 function sponsorImageError(file: File) {
   if (!SPONSOR_IMAGE_TYPES.has(file.type)) {
-    return "Select a PNG, JPEG, WebP, AVIF, or GIF image.";
+    return "Select a PNG, JPEG, or WebP image.";
   }
   if (file.size > MAX_SPONSOR_IMAGE_SIZE) return "Image must be 5 MB or smaller.";
   return null;
@@ -125,7 +124,7 @@ export function CreateSponsorDialogContent() {
             name="image"
             formLabel={t("operator.sponsors.imageUrl")}
             subtitle={t("operator.sponsors.imageUploadGuidance")}
-            accept="image/avif,image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp"
             allowClear
             disabled={isSubmitting}
             fill
@@ -144,7 +143,7 @@ export function CreateSponsorDialogContent() {
           <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" required />
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         <FormInput
           name="gender"
           type="select"
@@ -255,7 +254,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
             name="image"
             formLabel={t("operator.sponsors.imageUrl")}
             subtitle={t("operator.sponsors.imageUploadGuidance")}
-            accept="image/avif,image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp"
             allowClear
             disabled={isSubmitting}
             fill

@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
@@ -1295,8 +1296,5 @@ function currentMonth() {
 }
 
 function orderNumber() {
-  return `KAF-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${crypto
-    .randomUUID()
-    .slice(0, 8)
-    .toUpperCase()}`;
+  return `KAF-${nanoid(6).toUpperCase()}`;
 }

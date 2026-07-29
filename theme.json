@@ -80,7 +80,8 @@
       "showSectionLabels": true,
       "showSectionSeparators": true,
       "expandedWidth": 196,
-      "collapsedWidth": 64
+      "collapsedWidth": 64,
+       "mobileWidth": 196
     },
     "table": {
       "headerColor": "var(--primary)",

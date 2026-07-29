@@ -11,7 +11,7 @@ import { OrderCartSheet } from "./components/OrderCartDialog";
 import { useOrderCartSession } from "./hooks/useOrderCartSession";
 import { useOrderCartDraftPersistence } from "./store/orderCartStore";
 
-const SHOWN_ROUTES = new Set<string>(["/products", "/categories", "/orders"]);
+const SHOWN_ROUTES = new Set<string>(["/products", "/categories"]);
 const subscribeToHydration = () => () => undefined;
 
 export function OrderCartOverlay() {

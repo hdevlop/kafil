@@ -1157,7 +1157,7 @@
         "operatorNotes": "Notes opérateur",
         "optionalNotes": "Notes internes facultatives",
         "imageUrl": "Avatar de l’enfant",
-        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF ou GIF · jusqu’à 5 Mo"
+        "imageUploadGuidance": "PNG, JPEG ou WebP · jusqu’à 5 Mo"
       },
       "sponsors": {
         "title": "Parrains",
@@ -1201,7 +1201,7 @@
         "notes": "Notes",
         "notesPlaceholder": "Notes internes facultatives",
         "imageUrl": "Avatar du parrain",
-        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF ou GIF · jusqu’à 5 Mo",
+        "imageUploadGuidance": "PNG, JPEG ou WebP · jusqu’à 5 Mo",
         "creating": "Création du compte...",
         "createAndInvite": "Créer le compte parrain",
         "saving": "Enregistrement...",

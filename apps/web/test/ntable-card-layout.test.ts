@@ -142,7 +142,8 @@ describe("NTable responsive card layouts", () => {
     expect(child).not.toContain('placement="side"');
     expect(child).toContain('size="sm"');
     expect(child).toContain("title={data.legalName}");
-    expect(child).toContain("<NCardAction>");
+    expect(child).not.toContain("<NCardAction>");
+    expect(child).not.toContain("<StatusBadge");
     expect(child).toContain('density="responsive" surface="responsive"');
     expect(child).toContain('description: "hidden sm:block"');
     expect(child).toContain('header: "[&>div:last-child]:hidden sm:[&>div:last-child]:flex"');
@@ -153,7 +154,8 @@ describe("NTable responsive card layouts", () => {
     expect(sponsor).not.toContain('placement="side"');
     expect(sponsor).toContain('size="sm"');
     expect(sponsor).toContain("title={data.name}");
-    expect(sponsor).toContain("<NCardAction>");
+    expect(sponsor).not.toContain("<NCardAction>");
+    expect(sponsor).not.toContain("<StatusBadge");
     expect(sponsor).toContain('density="responsive" surface="responsive"');
     expect(sponsor).toContain('description: "hidden sm:block"');
     expect(sponsor).toContain('header: "[&>div:last-child]:hidden sm:[&>div:last-child]:flex"');

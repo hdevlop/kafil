@@ -1154,7 +1154,7 @@
         "operatorNotes": "ملاحظات المشغّل",
         "optionalNotes": "ملاحظات داخلية اختيارية",
         "imageUrl": "صورة الطفل",
-        "imageUploadGuidance": "PNG أو JPEG أو WebP أو AVIF أو GIF · حتى 5 ميغابايت"
+        "imageUploadGuidance": "PNG أو JPEG أو WebP · حتى 5 ميغابايت"
       },
       "sponsors": {
         "title": "الكفلاء",
@@ -1198,7 +1198,7 @@
         "notes": "ملاحظات",
         "notesPlaceholder": "ملاحظات داخلية اختيارية",
         "imageUrl": "صورة الكفيل",
-        "imageUploadGuidance": "PNG أو JPEG أو WebP أو AVIF أو GIF · حتى 5 ميغابايت",
+        "imageUploadGuidance": "PNG أو JPEG أو WebP · حتى 5 ميغابايت",
         "creating": "جارٍ إنشاء الحساب...",
         "createAndInvite": "إنشاء حساب الكفيل",
         "saving": "جارٍ الحفظ...",

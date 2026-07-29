@@ -30,7 +30,6 @@ import type { ChildRecord } from "../types";
 
 const MAX_CHILD_IMAGE_SIZE = 5_000_000;
 const CHILD_IMAGE_TYPES = new Set([
-  "image/avif",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -38,7 +37,7 @@ const CHILD_IMAGE_TYPES = new Set([
 
 function childImageError(file: File) {
   if (!CHILD_IMAGE_TYPES.has(file.type)) {
-    return "Select a PNG, JPEG, WebP, AVIF, or GIF image.";
+    return "Select a PNG, JPEG, or WebP image.";
   }
   if (file.size > MAX_CHILD_IMAGE_SIZE) return "Image must be 5 MB or smaller.";
   return null;
@@ -85,7 +84,7 @@ function ChildAvatarBlock({
         name="image"
         formLabel={t("operator.children.imageUrl")}
         subtitle={t("operator.children.imageUploadGuidance")}
-            accept="image/avif,image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp"
         allowClear
         disabled={disabled}
         fill

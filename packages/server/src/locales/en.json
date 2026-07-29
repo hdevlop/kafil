@@ -1183,7 +1183,7 @@
         "operatorNotes": "Operator notes",
         "optionalNotes": "Optional internal notes",
         "imageUrl": "Child avatar",
-        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF or GIF · up to 5 MB"
+        "imageUploadGuidance": "PNG, JPEG or WebP · up to 5 MB"
       },
       "sponsors": {
         "title": "Sponsors",
@@ -1227,7 +1227,7 @@
         "notes": "Notes",
         "notesPlaceholder": "Optional internal notes",
         "imageUrl": "Sponsor avatar",
-        "imageUploadGuidance": "PNG, JPEG, WebP, AVIF or GIF · up to 5 MB",
+        "imageUploadGuidance": "PNG, JPEG or WebP · up to 5 MB",
         "creating": "Creating account...",
         "createAndInvite": "Create sponsor account",
         "saving": "Saving...",

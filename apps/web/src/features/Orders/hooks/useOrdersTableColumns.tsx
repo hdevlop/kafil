@@ -37,13 +37,6 @@ export function useOrdersTableColumns() {
         cell: ({ getValue }) => getValue<string | null>() || "—",
       },
       {
-        accessorKey: "deliveryAddressSnapshot",
-        header: "Address",
-        cell: ({ getValue }) => (
-          <p className="max-w-64 truncate">{getValue<string>()}</p>
-        ),
-      },
-      {
         accessorKey: "articleCount",
         header: "Articles",
         cell: ({ getValue }) => getValue<number | undefined>() ?? "—",

@@ -31,7 +31,7 @@ describe("Phase 6D order command contracts", () => {
     expect(columns).toContain("<ManagedAvatar");
     expect(columns).toContain("row.original.familyImage");
     expect(columns).toContain('accessorKey: "deliveryPhoneSnapshot"');
-    expect(columns).toContain('accessorKey: "deliveryAddressSnapshot"');
+    expect(columns).not.toContain('accessorKey: "deliveryAddressSnapshot"');
     expect(columns).toContain('accessorKey: "articleCount"');
     expect(card).toContain("<ManagedAvatar");
     expect(card).toContain("data.familyImage");

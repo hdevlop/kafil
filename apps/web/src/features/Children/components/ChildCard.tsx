@@ -4,7 +4,6 @@ import { CalendarDays, GraduationCap, UsersRound } from "lucide-react";
 import {
   cn,
   NCard,
-  NCardAction,
   NCardInfo,
   NCardMedia,
   NCardSection,
@@ -15,8 +14,6 @@ import { formatKafilDate } from "@/lib/format";
 import { getChildAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { StatusBadge } from "@/shared/StatusBadge";
-
 import type { ChildRecord } from "../types";
 
 export function ChildCard({ data }: Readonly<{ data: ChildRecord }>) {
@@ -58,9 +55,6 @@ export function ChildCard({ data }: Readonly<{ data: ChildRecord }>) {
           classNames={{ avatar: "size-20 bg-muted sm:size-16" }}
         />
       </NCardMedia>
-      <NCardAction>
-        <StatusBadge status={data.status} />
-      </NCardAction>
       <NCardSection density="responsive" surface="responsive">
         <NCardInfo
           icon={CalendarDays}
