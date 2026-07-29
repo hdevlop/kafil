@@ -641,6 +641,9 @@
       "approveOrder": "Approve order",
       "startPreparation": "Start purchasing/preparation",
       "markDelivered": "Mark delivered",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "cancelAndRefund": "Cancelar y reembolsar",
       "saving": "Saving...",
       "previous": "Anterior",
       "next": "Siguiente"

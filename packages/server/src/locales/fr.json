@@ -642,8 +642,11 @@
       "resume": "Reprendre",
       "stop": "Arrêter",
       "approveOrder": "Approuver la commande",
-      "startPreparation": "Commencer l'achat et la préparation",
-      "markDelivered": "Marquer comme livrée",
+      "startPreparation": "Démarrer l'achat/la préparation",
+      "markDelivered": "Marquer comme livré",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "cancelAndRefund": "Annuler et rembourser",
       "saving": "Enregistrement...",
       "previous": "Précédent",
       "next": "Suivant"

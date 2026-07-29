@@ -19,16 +19,16 @@ export interface OrderAction {
 
 const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
   pending: [
-    { command: "approve", label: "Approve", requiresReason: false },
+    { command: "approve", label: "action.approve", requiresReason: false },
     {
       command: "reject",
-      label: "Reject",
+      label: "action.reject",
       danger: true,
       requiresReason: true,
     },
     {
       command: "cancel",
-      label: "Cancel",
+      label: "common.cancel",
       danger: true,
       requiresReason: true,
     },
@@ -36,12 +36,12 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
   approved: [
     {
       command: "purchase",
-      label: "Record purchase",
+      label: "common.recordPurchase",
       requiresReason: false,
     },
     {
       command: "cancel",
-      label: "Cancel",
+      label: "common.cancel",
       danger: true,
       requiresReason: true,
     },
@@ -49,12 +49,12 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
   in_preparation: [
     {
       command: "deliver",
-      label: "Mark delivered",
+      label: "action.markDelivered",
       requiresReason: false,
     },
     {
       command: "cancel",
-      label: "Cancel",
+      label: "common.cancel",
       danger: true,
       requiresReason: true,
     },
@@ -62,18 +62,18 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
   purchased: [
     {
       command: "startDelivery",
-      label: "Start delivery",
+      label: "common.startDelivery",
       requiresReason: false,
     },
     {
       command: "replacePurchase",
-      label: "Replace purchase",
+      label: "common.replacePurchase",
       danger: true,
       requiresReason: false,
     },
     {
       command: "cancel",
-      label: "Cancel and refund",
+      label: "action.cancelAndRefund",
       danger: true,
       requiresReason: true,
     },
@@ -81,12 +81,12 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
   out_for_delivery: [
     {
       command: "confirmDelivery",
-      label: "Confirm delivery",
+      label: "common.confirmDelivery",
       requiresReason: false,
     },
     {
       command: "cancel",
-      label: "Cancel and refund",
+      label: "action.cancelAndRefund",
       danger: true,
       requiresReason: true,
     },

@@ -642,6 +642,9 @@
       "approveOrder": "اعتماد الطلب",
       "startPreparation": "بدء الشراء والتحضير",
       "markDelivered": "تحديد كمُسلّم",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "cancelAndRefund": "إلغاء واسترداد",
       "saving": "جارٍ الحفظ...",
       "previous": "السابق",
       "next": "التالي"

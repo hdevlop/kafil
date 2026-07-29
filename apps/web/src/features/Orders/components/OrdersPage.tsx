@@ -231,7 +231,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
           onSelect: () => openView(order),
           },
           ...getOrderActions(order.status).map((action) => ({
-            label: action.label,
+            label: t(action.label as Parameters<typeof t>[0]),
             icon: getOrderActionIcon(action.command),
             danger: action.danger,
             disabled: orderCommands[action.command].isPending,

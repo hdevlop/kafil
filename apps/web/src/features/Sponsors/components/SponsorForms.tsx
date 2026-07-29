@@ -274,7 +274,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
           <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" />
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         <FormInput
           name="gender"
           type="select"
