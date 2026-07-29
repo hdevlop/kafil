@@ -8,6 +8,24 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Accountability-first sponsorship platform. Bun workspace with a single Next.js 16 runtime.
 
+## Required project skills
+
+These repository-local skills are mandatory implementation instructions:
+
+- **Frontend:** read `.agents/skills/kafil-najm-frontend/SKILL.md` completely
+  before changing or reviewing routes, pages, components, forms, tables,
+  dialogs, state, frontend authorization presentation, localization, or browser
+  workflows in `apps/web`.
+- **Backend:** read `.agents/skills/kafil-najm-backend/SKILL.md` completely
+  before changing or reviewing controllers, DTOs, guards, services,
+  repositories, schemas, migrations, auth/permissions, MCP, audit/outbox,
+  storage, seed definitions, or backend/database tests.
+- **Full stack:** read both skills before a slice touches frontend and backend.
+
+Follow the relevant skill throughout the task, not only during planning. If a
+skill conflicts with an explicit user instruction, follow the user and report
+which skill validation or convention was intentionally skipped.
+
 ## Toolchain
 
 - **Package manager:** `bun@1.3.14`. Use `bun install`, `bun run`, `bun test`. Never use npm/yarn/pnpm.

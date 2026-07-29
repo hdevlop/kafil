@@ -6,7 +6,7 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 
-type EntityQueryOptions<TData> = Omit<
+export type EntityQueryOptions<TData> = Omit<
   UseQueryOptions<TData, Error, TData, QueryKey>,
   "queryKey"
 > & {

@@ -9,9 +9,24 @@ import type {
   UpdateProductInput,
 } from "@/features/Products/types";
 
-export function listProducts(pagination: OffsetPagination) {
+export interface ListProductsFilters {
+  categoryId?: string;
+  status?: "active" | "inactive";
+  search?: string;
+}
+
+export function listProducts(
+  pagination: OffsetPagination,
+  filters: ListProductsFilters = {},
+) {
   return api.get<ProductRecord[]>("/catalog/products", {
-    query: { limit: pagination.limit, offset: pagination.offset },
+    query: {
+      limit: pagination.limit,
+      offset: pagination.offset,
+      ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.search ? { search: filters.search } : {}),
+    },
   });
 }
 

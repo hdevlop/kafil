@@ -3,14 +3,65 @@
 import { Package, Tags } from "lucide-react";
 import Image from "next/image";
 import { cn, NCard, NCardMedia, NCardSection } from "najm-kit";
-
 import { formatKafilNumber } from "@/lib/format";
-
 import type { CategoryRecord } from "../types";
 
-export function CategoryCard({ data }: Readonly<{ data: CategoryRecord }>) {
-  const isInactive = data.status !== "active";
+interface CategoryCardData {
+  name: string;
+  image?: string | null;
+  itemCount?: number | string | null;
+  status?: string | null;
+}
+
+export function CategoryCard({
+  data,
+  compact = false,
+}: Readonly<{
+  data: CategoryCardData | CategoryRecord;
+  compact?: boolean;
+}>) {
+  const isInactive = (data.status ?? "active") !== "active";
   const itemCount = Number(data.itemCount ?? 0);
+
+  if (compact) {
+    return (
+      <NCard
+        embedded
+        noPadding
+        className={cn(
+          "relative aspect-square w-full overflow-hidden",
+          isInactive && "opacity-60 grayscale",
+        )}
+      >
+        <NCardMedia
+          aspect="square"
+          className="absolute inset-0 size-full rounded-none bg-muted"
+          placement="top"
+          variant="hero"
+        >
+          {data.image ? (
+            <Image
+              alt={`Cover image for ${data.name}`}
+              className="size-full object-cover"
+              fill
+              sizes="120px"
+              src={data.image}
+              unoptimized
+            />
+          ) : (
+            <div className="grid size-full place-items-center bg-muted text-muted-foreground">
+              <Tags aria-hidden="true" className="size-7" />
+            </div>
+          )}
+        </NCardMedia>
+        <div className="absolute inset-x-0 bottom-0 bg-background/90 px-2 py-1.5 backdrop-blur-sm">
+          <p className="truncate text-xs font-semibold text-foreground" title={data.name}>
+            {data.name}
+          </p>
+        </div>
+      </NCard>
+    );
+  }
 
   return (
     <NCard

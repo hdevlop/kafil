@@ -1,3 +1,7 @@
-import { FamilyCartPage } from "@/features/FamilyOrdering";
-export const metadata = { title: "Your cart" };
-export default function FamilyCartRoutePage() { return <FamilyCartPage />; }
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+export default function FamilyCartRedirect() {
+  redirect("/products?cart=open");
+}

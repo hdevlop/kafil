@@ -5,6 +5,9 @@ export interface FamilyCatalogCategory {
   name: string;
   slug: string;
   description: string | null;
+  image?: string | null;
+  itemCount?: number;
+  status?: "active";
 }
 
 export interface FamilyCatalogProduct {
@@ -18,6 +21,7 @@ export interface FamilyCatalogProduct {
   priceMinor: number;
   currency: "MAD" | string;
   imageUrl: string | null;
+  status: "active";
 }
 
 export interface FamilyCatalogQuery extends OffsetPagination {

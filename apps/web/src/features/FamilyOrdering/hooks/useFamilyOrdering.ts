@@ -15,18 +15,34 @@ import {
 } from "@/services/familyOrderingApi";
 
 import { familyOrderingKeys } from "./familyOrderingKeys";
-import type { FamilyOrderQuery } from "../types";
+import type { FamilyCart, FamilyOrder, FamilyOrderQuery } from "../types";
+import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 
-export function useFamilyCart() {
-  return useEntityQuery({ queryKey: familyOrderingKeys.cart, queryFn: getFamilyCart });
+export function useFamilyCart(options: Partial<EntityQueryOptions<FamilyCart>> = {}) {
+  return useEntityQuery<FamilyCart>({
+    queryKey: familyOrderingKeys.cart,
+    queryFn: getFamilyCart,
+    ...options,
+  });
 }
 
-export function useFamilyOrders(query: FamilyOrderQuery) {
-  return useEntityQuery({ queryKey: familyOrderingKeys.orders(query), queryFn: () => listFamilyOrders(query) });
+export function useFamilyOrders(
+  query: FamilyOrderQuery,
+  options: Partial<EntityQueryOptions<FamilyOrder[]>> = {},
+) {
+  return useEntityQuery<FamilyOrder[]>({
+    queryKey: familyOrderingKeys.orders(query),
+    queryFn: () => listFamilyOrders(query),
+    ...options,
+  });
 }
 
 export function useFamilyOrder(id: string) {
-  return useEntityQuery({ queryKey: familyOrderingKeys.order(id), queryFn: () => getFamilyOrder(id), enabled: Boolean(id) });
+  return useEntityQuery<Awaited<ReturnType<typeof getFamilyOrder>>>({
+    queryKey: familyOrderingKeys.order(id),
+    queryFn: () => getFamilyOrder(id),
+    enabled: Boolean(id),
+  });
 }
 
 export function useFamilyOrderingCommands() {

@@ -1,7 +1,7 @@
-import { OrdersPage } from "@/features/Orders";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Orders" };
+export const dynamic = "force-dynamic";
 
-export default function OperatorOrdersPage() {
-  return <OrdersPage />;
+export default function OperatorOrdersRedirect() {
+  redirect("/orders");
 }

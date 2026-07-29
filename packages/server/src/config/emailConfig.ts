@@ -10,8 +10,8 @@ import {
  */
 export const emailConfig = () => email(resolveEmailConfig());
 
-function required(name: string) {
-  const value = process.env[name]?.trim();
+function required(name: string, rawValue: string | undefined) {
+  const value = rawValue?.trim();
   if (!value) throw new Error(`${name} is required for the configured email provider.`);
   return value;
 }
@@ -21,7 +21,7 @@ function enabled(value: string | undefined) {
 }
 
 function resolveProvider(): ProviderConfig {
-  const provider = required("EMAIL_PROVIDER").toLowerCase();
+  const provider = required("EMAIL_PROVIDER", process.env.EMAIL_PROVIDER).toLowerCase();
   switch (provider) {
     case "console":
       return {
@@ -31,11 +31,14 @@ function resolveProvider(): ProviderConfig {
     case "memory":
       return { provider: "memory" };
     case "resend":
-      return { provider: "resend", apiKey: required("RESEND_API_KEY") };
+      return {
+        provider: "resend",
+        apiKey: required("RESEND_API_KEY", process.env.RESEND_API_KEY),
+      };
     case "sendgrid":
       return {
         provider: "sendgrid",
-        apiKey: required("SENDGRID_API_KEY"),
+        apiKey: required("SENDGRID_API_KEY", process.env.SENDGRID_API_KEY),
         sandboxMode: enabled(process.env.SENDGRID_SANDBOX_MODE),
       };
     case "smtp": {
@@ -50,7 +53,7 @@ function resolveProvider(): ProviderConfig {
       }
       return {
         provider: "smtp",
-        host: required("SMTP_HOST"),
+        host: required("SMTP_HOST", process.env.SMTP_HOST),
         port,
         secure: enabled(process.env.SMTP_SECURE),
         auth: user && pass ? { user, pass } : undefined,

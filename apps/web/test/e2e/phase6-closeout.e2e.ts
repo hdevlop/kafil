@@ -122,7 +122,7 @@ test("Arabic dashboard copy, switcher, and family cart submission work with RTL"
   await page.goto("/family/cart");
   await page.getByRole("button", { name: "Passer la commande" }).focus();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/family\/orders$/);
+  await expect(page).toHaveURL(/\/orders/);
 });
 
 test("operator can advance a mocked order through browser confirmation dialogs", async ({ page }) => {

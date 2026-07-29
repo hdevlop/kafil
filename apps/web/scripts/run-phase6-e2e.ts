@@ -4,9 +4,7 @@ import { pool } from "@kafil/server/database";
 import { resolve } from "node:path";
 
 const useProductionServer = Bun.env.KAFIL_E2E_USE_PRODUCTION === "1";
-const baseUrl = useProductionServer
-  ? "http://127.0.0.1:3210"
-  : "https://127.0.0.1:3210";
+const baseUrl = "http://127.0.0.1:3210";
 
 const phase6E2eEnvironment = {
   ...process.env,
@@ -19,6 +17,7 @@ const phase6E2eEnvironment = {
   KAFIL_ADMIN_EMAIL: Bun.env.KAFIL_ADMIN_EMAIL,
   KAFIL_ADMIN_PASSWORD: Bun.env.KAFIL_ADMIN_PASSWORD,
   NAJM_ENCRYPTION_KEY: Bun.env.NAJM_ENCRYPTION_KEY,
+  NAJM_AUTH_INTERNAL_URL: `${baseUrl}/api/auth/session/recover`,
   KAFIL_E2E_BASE_URL: baseUrl,
 };
 
@@ -40,9 +39,7 @@ async function waitForWebServer(server: ReturnType<typeof Bun.spawn>) {
       throw new Error(`Next.js E2E server exited with code ${server.exitCode}.`);
     }
     try {
-      const response = await fetch(`${baseUrl}/login`, useProductionServer
-        ? undefined
-        : { tls: { rejectUnauthorized: false } });
+      const response = await fetch(`${baseUrl}/login`);
       if (response.ok) return;
     } catch {
       // The server is still starting.
@@ -69,7 +66,6 @@ try {
           "dev",
           "-p",
           "3210",
-          "--experimental-https",
         ],
     cwd: resolve(import.meta.dir, ".."),
     ...childOptions,
@@ -81,6 +77,7 @@ try {
       "playwright",
       "test",
       "test/e2e/phase6-closeout.e2e.ts",
+      "test/e2e/phase7-unified-flow.e2e.ts",
       "test/e2e/family-create-wizard.e2e.ts",
       "test/e2e/funding-cap-and-catalog-delete.e2e.ts",
   ];

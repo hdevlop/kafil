@@ -3,8 +3,6 @@ import {
   CatalogService,
   ContributionService,
   FamilyService,
-  OrderEvidenceService,
-  OrderService,
   OperatorService,
   SponsorService,
   SupportAssignmentService,
@@ -50,12 +48,9 @@ await runSeedCommand("Kafil demo data seed", async () => {
   );
   const summary = await seedDemoData(data, auth.admin.id, {
     assignments: server.container.get(SupportAssignmentService),
-    catalog: server.container.get(CatalogService),
     contributions: server.container.get(ContributionService),
-    evidence: server.container.get(OrderEvidenceService),
     families: server.container.get(FamilyService),
     operators: server.container.get(OperatorService),
-    orders: server.container.get(OrderService),
     sponsors: server.container.get(SponsorService),
   });
   const childCount = data.families.reduce(

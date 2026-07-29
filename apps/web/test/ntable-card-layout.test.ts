@@ -19,16 +19,42 @@ function readSource(relativePath: string) {
 }
 
 describe("NTable responsive card layouts", () => {
-  test("catalog card pages hide pagination after loading the maximum page size", () => {
-    for (const relativePath of [
+  test("category filter sheet reuses NTable cards with category images", () => {
+    const categorySheet = readSource(
+      "../src/features/Categories/components/CategoryBar.tsx",
+    );
+    expect(categorySheet).toContain("<NTable<CategoryBarItem>");
+    expect(categorySheet).toContain("<CategoryCard compact data={data} />");
+    expect(categorySheet).toContain('availableModes={["cards"]}');
+    expect(categorySheet).toContain('classNames={{ cards: "grid grid-cols-3 gap-2" }}');
+    expect(categorySheet).toContain("width={420}");
+    expect(categorySheet).toContain('aria-pressed={activeId === data.id}');
+    expect(categorySheet).toContain('select(activeId === data.id ? "" : data.id)');
+    expect(categorySheet).not.toContain("CategoryOption");
+
+    const categoryCard = readSource(
+      "../src/features/Categories/components/CategoryCard.tsx",
+    );
+    expect(categoryCard).toContain('"relative aspect-square w-full overflow-hidden"');
+    expect(categoryCard).toContain('sizes="120px"');
+  });
+
+  test("catalog card pages use pagination appropriate to their data source", () => {
+    const categories = readSource(
       "../src/features/Categories/components/CategoriesPage.tsx",
+    );
+    expect(categories).toContain("createOffsetPagination(0, 100)");
+    expect(categories).toContain("showPagination: false");
+    expect(categories).not.toContain("manualPagination: true");
+
+    const products = readSource(
       "../src/features/Products/components/ProductsPage.tsx",
-    ]) {
-      const source = readSource(relativePath);
-      expect(source).toContain("createOffsetPagination(0, 100)");
-      expect(source).toContain("showPagination: false");
-      expect(source).not.toContain("manualPagination: true");
-    }
+    );
+    expect(products).toContain("managementPagination = createOffsetPagination(0, 100)");
+    expect(products).toContain("familyPagination = createOffsetPagination(0, 12)");
+    expect(products).toContain("manualPagination: true");
+    expect(products).toContain("pageSizeOptions: [25, 50, 100]");
+    expect(products.match(/xl:grid-cols-8/g)).toHaveLength(2);
   });
 
   test("all renderers use the embedded NCard information contract", () => {
@@ -65,6 +91,7 @@ describe("NTable responsive card layouts", () => {
     expect(category).toContain('aspect="square"');
     expect(category).toContain("mx-3 mt-3 w-[calc(100%-1.5rem)] rounded-xl bg-muted");
     expect(category).toContain('className="size-full object-contain"');
+    expect(category).toContain('className="size-full object-cover"');
     expect(category).toContain("<NCardSection");
     expect(category).toContain('surface="plain"');
     expect(category).not.toContain("<NCardFooter>");
@@ -77,7 +104,10 @@ describe("NTable responsive card layouts", () => {
 
     const product = readSource("../src/features/Products/components/ProductCard.tsx");
     expect(product).toContain('variant="hero"');
-    expect(product).toContain('aspect="16/9"');
+    expect(product).toContain('aspect="square"');
+    expect(product).toContain('style={{ aspectRatio: "1 / 1" }}');
+    expect(product).toContain("mx-2.5 mt-2.5 w-[calc(100%-1.25rem)] rounded-lg bg-muted");
+    expect(product).toContain('className="size-full object-contain"');
     expect(product).not.toContain("entityCardImageColor");
     expect(product).toContain("{data.name}");
     expect(product).toContain("formatMad(data.priceMinor)");
@@ -87,6 +117,7 @@ describe("NTable responsive card layouts", () => {
     expect(product).not.toContain("data.onHandQuantity");
     expect(product).not.toContain("<NCardFooter>");
     expect(product).toContain("<NCardInfo");
+    expect(product).toContain("maxChars={18}");
     expect(product).toContain("<NCardSection");
     expect(product).toContain("embedded");
     expect(product).toContain("title={data.name}");

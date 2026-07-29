@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kafil Najm Frontend"
+  short_description: "Build Kafil UI with verified Najm Kit contracts"
+  default_prompt: "Use $kafil-najm-frontend to implement this Kafil frontend change with Najm Kit."

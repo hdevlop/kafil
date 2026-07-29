@@ -4,6 +4,7 @@ import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
+  type ListFamiliesFilters,
   bulkDeleteFamilies,
   createFamily,
   deactivateFamily,
@@ -15,10 +16,13 @@ import {
 
 import { familyKeys } from "./familyKeys";
 
-export function useFamilies(pagination: OffsetPagination) {
+export function useFamilies(
+  pagination: OffsetPagination,
+  filters: ListFamiliesFilters = {},
+) {
   return useEntityQuery({
-    queryKey: familyKeys.list(pagination),
-    queryFn: () => listFamilies(pagination),
+    queryKey: familyKeys.list({ ...pagination, ...filters }),
+    queryFn: () => listFamilies(pagination, filters),
   });
 }
 

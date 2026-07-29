@@ -14,7 +14,6 @@ import {
   Settings2,
   ShieldCheck,
   ShoppingBag,
-  ShoppingCart,
   Tags,
   UserRound,
   UsersRound,
@@ -31,6 +30,8 @@ import {
   GlobalSettingsSheet,
 } from "@/features/Settings/components/GlobalSettingsSheet";
 import { useKafilBranding } from "@/providers/KafilBrandingProvider";
+import { OrderCartOverlay } from "@/features/OrderCart";
+import { KafilRoleProvider } from "@/shared/Authorization";
 import { DashboardSidebarProvider } from "./DashboardPageHeader";
 
 interface DashboardUser {
@@ -63,15 +64,15 @@ function operatorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
     },
     { id: "/operator/budgets", href: "/operator/budgets", label: t("nav.budgets"), icon: WalletCards },
     {
-      id: "/operator/categories",
-      href: "/operator/categories",
+      id: "/categories",
+      href: "/categories",
       label: t("nav.categories"),
       icon: Tags,
       sectionLabel: t("nav.catalogOperations"),
       sectionIcon: PackageSearch,
     },
-    { id: "/operator/products", href: "/operator/products", label: t("nav.products"), icon: ShoppingBag },
-    { id: "/operator/orders", href: "/operator/orders", label: t("nav.orders"), icon: ClipboardCheck },
+    { id: "/products", href: "/products", label: t("nav.products"), icon: ShoppingBag },
+    { id: "/orders", href: "/orders", label: t("nav.orders"), icon: ClipboardCheck },
   ];
 }
 
@@ -115,15 +116,14 @@ function familyItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
     },
     { id: "/family/budget", href: "/family/budget", label: t("nav.budgets"), icon: WalletCards },
     {
-      id: "/family/catalog",
-      href: "/family/catalog",
+      id: "/products",
+      href: "/products",
       label: t("nav.catalog"),
       icon: PackageSearch,
       sectionLabel: t("nav.shopping"),
       sectionIcon: ShoppingBag,
     },
-    { id: "/family/cart", href: "/family/cart", label: t("nav.cart"), icon: ShoppingCart },
-    { id: "/family/orders", href: "/family/orders", label: t("nav.orders"), icon: ClipboardCheck },
+    { id: "/orders", href: "/orders", label: t("nav.orders"), icon: ClipboardCheck },
   ];
 }
 
@@ -180,8 +180,27 @@ export function getDashboardNavigation(role: string | null | undefined, t: Retur
 
 export function isDashboardNavigationActive(item: NavItem, pathname: string) {
   if (!item.href) return false;
-  if (["/operator", "/family", "/sponsor"].includes(item.href)) {
+  if (
+    ["/operator", "/family", "/sponsor"].includes(item.href)
+  ) {
     return pathname === item.href;
+  }
+  if (item.href === "/products") {
+    if (pathname === "/products") return true;
+    if (pathname.startsWith("/products/")) return true;
+    if (pathname === "/family/catalog" || pathname === "/family/cart") {
+      return true;
+    }
+    return false;
+  }
+  if (item.href === "/categories") {
+    return pathname === "/categories" || pathname.startsWith("/categories/");
+  }
+  if (item.href === "/orders") {
+    if (pathname === "/orders") return true;
+    if (pathname.startsWith("/orders/")) return true;
+    if (pathname === "/family/orders") return true;
+    return false;
   }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
@@ -200,8 +219,9 @@ export function DashboardShell({
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <DashboardSidebarProvider openSidebar={() => setMobileOpen(true)}>
-      <div className="flex h-screen w-full overflow-hidden bg-background ">
+    <KafilRoleProvider role={user.role}>
+      <DashboardSidebarProvider openSidebar={() => setMobileOpen(true)}>
+        <div className="flex h-screen w-full overflow-hidden bg-background ">
         <NSidebar
           logo={
             <>
@@ -283,14 +303,16 @@ export function DashboardShell({
             {children}
           </NajmScroll>
         </div>
-      </div>
-      {pathname !== "/operator/settings" ? (
-        <GlobalSettingsSheet
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          role={user.role}
-        />
-      ) : null}
-    </DashboardSidebarProvider>
+        </div>
+        {pathname !== "/operator/settings" ? (
+          <GlobalSettingsSheet
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            role={user.role}
+          />
+        ) : null}
+        <OrderCartOverlay />
+      </DashboardSidebarProvider>
+    </KafilRoleProvider>
   );
 }

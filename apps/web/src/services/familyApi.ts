@@ -8,9 +8,22 @@ import type {
   UpdateFamilyInput,
 } from "@/features/Families/types";
 
-export function listFamilies(pagination: OffsetPagination) {
+export interface ListFamiliesFilters {
+  search?: string;
+  status?: "active" | "inactive";
+}
+
+export function listFamilies(
+  pagination: OffsetPagination,
+  filters: ListFamiliesFilters = {},
+) {
   return api.get<FamilyRecord[]>("/families", {
-    query: { limit: pagination.limit, offset: pagination.offset },
+    query: {
+      limit: pagination.limit,
+      offset: pagination.offset,
+      ...(filters.search ? { search: filters.search } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    },
   });
 }
 

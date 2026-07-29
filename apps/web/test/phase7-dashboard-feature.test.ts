@@ -34,9 +34,9 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "/operator/assignments",
       "/operator/contributions",
       "/operator/budgets",
-      "/operator/categories",
-      "/operator/products",
-      "/operator/orders",
+      "/categories",
+      "/products",
+      "/orders",
     ]);
     expect(navigation.filter((item) => item.sectionLabel).map((item) => item.sectionLabel)).toEqual([
       "nav.supportOperations",
@@ -50,10 +50,13 @@ describe("Phase 7 dashboard presentation contracts", () => {
     const navigation = getDashboardNavigation("operator", ((key: string) => key) as never);
     const overview = navigation.find((item) => item.id === "/operator");
     const families = navigation.find((item) => item.id === "/operator/families");
+    const products = navigation.find((item) => item.id === "/products");
 
     expect(overview && isDashboardNavigationActive(overview, "/operator")).toBe(true);
     expect(overview && isDashboardNavigationActive(overview, "/operator/families")).toBe(false);
     expect(families && isDashboardNavigationActive(families, "/operator/families/record-1")).toBe(true);
+    expect(products && isDashboardNavigationActive(products, "/products")).toBe(true);
+    expect(products && isDashboardNavigationActive(products, "/products/123")).toBe(true);
   });
 
   test("keeps independent role dashboard query caches", () => {

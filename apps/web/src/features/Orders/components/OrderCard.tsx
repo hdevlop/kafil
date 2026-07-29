@@ -8,9 +8,14 @@ import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { OrderRecord } from "../types";
 
-export function OrderCard({ data }: Readonly<{ data: OrderRecord }>) {
+export function OrderCard({
+  data,
+  highlighted = false,
+}: Readonly<{ data: OrderRecord; highlighted?: boolean }>) {
   return (
     <NCard
+      className={highlighted ? "border-primary ring-1 ring-primary/30" : undefined}
+      data-highlighted={highlighted ? "true" : undefined}
       embedded
       title={data.orderNumber}
       description={formatMad(data.totalMinor)}

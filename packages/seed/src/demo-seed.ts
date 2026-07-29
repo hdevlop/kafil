@@ -1,29 +1,23 @@
 import {
-  CatalogService,
   ContributionService,
   FamilyService,
-  OrderEvidenceService,
-  OrderService,
   OperatorService,
   SponsorService,
   SupportAssignmentService,
 } from "@kafil/server/modules";
 import {
   budgetLedgerEntries,
-  categories,
   children,
   contributions,
   db,
   familyProfiles,
   operatorProfiles,
-  orders,
-  products,
   rolesTable,
   sponsorProfiles,
   supportAssignments,
   usersTable,
 } from "@kafil/server/database";
-import { and, asc, count, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import type {
   DemoContribution,
@@ -50,7 +44,6 @@ export interface DemoSeedSummary {
   contributions: SeedResult;
   families: SeedResult;
   operators: SeedResult;
-  orders: SeedResult;
   sponsors: SeedResult;
 }
 
@@ -63,10 +56,7 @@ interface SeedResult {
 interface DemoServices {
   assignments: SupportAssignmentService;
   contributions: ContributionService;
-  catalog: CatalogService;
-  evidence: OrderEvidenceService;
   families: FamilyService;
-  orders: OrderService;
   operators: OperatorService;
   sponsors: SponsorService;
 }
@@ -84,7 +74,6 @@ export async function seedDemoData(
     contributions: { inserted: 0, repaired: 0, skipped: 0 },
     families: { inserted: 0, repaired: 0, skipped: 0 },
     operators: { inserted: 0, repaired: 0, skipped: 0 },
-    orders: { inserted: 0, repaired: 0, skipped: 0 },
     sponsors: { inserted: 0, repaired: 0, skipped: 0 },
   };
 
@@ -125,185 +114,8 @@ export async function seedDemoData(
     summary.contributions,
     expiresAt,
   );
-  await seedDemoProcurementStory(
-    data,
-    actorUserId,
-    services,
-    summary.orders,
-  );
-
   await verifyDemoData(identities, data.families, data.contributions, assignments);
   return summary;
-}
-
-async function seedDemoProcurementStory(
-  data: DemoSeedData,
-  actorUserId: string,
-  services: DemoServices,
-  result: SeedResult,
-) {
-  if (data.families.length === 0) {
-    result.skipped += 1;
-    return;
-  }
-  const [family] = await db
-    .select({ id: familyProfiles.id })
-    .from(familyProfiles)
-    .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
-    .where(
-      and(
-        inArray(
-          familyProfiles.id,
-          data.families.map((candidate) => candidate.id),
-        ),
-        eq(usersTable.status, "active"),
-        isNotNull(familyProfiles.fundingActivatedAt),
-      ),
-    )
-    .orderBy(asc(familyProfiles.id))
-    .limit(1);
-  if (!family) {
-    result.skipped += 1;
-    return;
-  }
-
-  const [existingCategory] = await db
-    .select({ id: categories.id })
-    .from(categories)
-    .where(eq(categories.slug, "fresh-produce"))
-    .limit(1);
-  const category =
-    existingCategory ??
-    (await services.catalog.createCategory(
-      {
-        name: "Fresh Produce",
-        slug: "fresh-produce",
-        description: "Fresh fruits, vegetables, and everyday produce.",
-        sortOrder: 10,
-      },
-      actorUserId,
-    ));
-  const [existingProduct] = await db
-    .select({ id: products.id })
-    .from(products)
-    .where(eq(products.sku, "DEMO-MARJANE-BASKET"))
-    .limit(1);
-  const product =
-    existingProduct ??
-    (await services.catalog.createProduct(
-      {
-        categoryId: category.id,
-        sku: "DEMO-MARJANE-BASKET",
-        name: "Demo fresh produce basket",
-        description: "Purchased from a produce supplier only after approval",
-        priceMinor: 50_000,
-      },
-      actorUserId,
-    ));
-
-  const submissionKey = `demo-assisted-order:${family.id}`;
-  const [existingOrder] = await db
-    .select({ id: orders.id, status: orders.status })
-    .from(orders)
-    .where(eq(orders.submissionIdempotencyKey, submissionKey))
-    .limit(1);
-  let order = existingOrder
-    ? await services.orders.get(existingOrder.id)
-    : await services.orders.submitAssisted(
-        {
-          familyProfileId: family.id,
-          items: [{ productId: product.id, quantity: 1 }],
-          assistanceChannel: "phone",
-          assistanceNote: "Synthetic demo: family requested staff assistance",
-          idempotencyKey: submissionKey,
-        },
-        actorUserId,
-      );
-  const wasExisting = Boolean(existingOrder);
-
-  if (order.status === "pending") {
-    order = await services.orders.approve(order.id, actorUserId);
-  }
-  if (order.status === "approved") {
-    const receipt = await ensureDemoEvidence(
-      services.evidence,
-      "receipts",
-      "10000000-0000-4000-8000-000000000001.pdf",
-      Uint8Array.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]),
-      "application/pdf",
-    );
-    order = await services.orders.recordPurchase(
-      order.id,
-      {
-        merchantName: "Marjane",
-        receiptNumber: "DEMO-RECEIPT-001",
-        purchasedAt: new Date("2026-07-20T12:00:00.000Z"),
-        actualTotalMinor: 48_500,
-        receiptStoragePath: receipt.path,
-        receiptMediaType: receipt.mediaType,
-        receiptByteSize: receipt.byteSize,
-        idempotencyKey: `demo-purchase:${family.id}`,
-      },
-      actorUserId,
-    );
-  }
-  if (order.status === "purchased") {
-    order = await services.orders.startDelivery(order.id, actorUserId);
-  }
-  if (order.status === "out_for_delivery") {
-    const proof = await ensureDemoEvidence(
-      services.evidence,
-      "deliveries",
-      "10000000-0000-4000-8000-000000000002.png",
-      Uint8Array.from([
-        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-      ]),
-      "image/png",
-    );
-    order = await services.orders.confirmDelivery(
-      order.id,
-      {
-        confirmationMethod: "photo",
-        deliveryNote: "Synthetic demo delivery confirmation",
-        proofStoragePath: proof.path,
-        proofMediaType: proof.mediaType,
-        proofByteSize: proof.byteSize,
-        idempotencyKey: `demo-delivery:${family.id}`,
-      },
-      actorUserId,
-    );
-  }
-  if (order.status !== "delivered") {
-    throw new Error(`Demo order stopped in unexpected status '${order.status}'.`);
-  }
-  result[wasExisting ? "skipped" : "inserted"] += 1;
-}
-
-async function ensureDemoEvidence(
-  evidence: OrderEvidenceService,
-  kind: "deliveries" | "receipts",
-  fileName: string,
-  bytes: Uint8Array,
-  mediaType: "application/pdf" | "image/png",
-) {
-  try {
-    const stored = await evidence.read(kind, fileName);
-    return {
-      path: `/api/order-evidence/${kind}/serve/${fileName}`,
-      mediaType: stored.mediaType,
-      byteSize: stored.bytes.byteLength,
-    };
-  } catch (error) {
-    if (
-      typeof error !== "object" ||
-      error === null ||
-      !("status" in error) ||
-      error.status !== 404
-    ) {
-      throw error;
-    }
-  }
-  return evidence.upload(kind, fileName, bytes.buffer as ArrayBuffer, mediaType);
 }
 
 async function syncDemoAccountImages(data: DemoSeedData) {

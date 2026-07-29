@@ -39,6 +39,7 @@
         "react-hook-form": "7.81.0",
         "screenfull": "^6.0.2",
         "zod": "4.4.3",
+        "zustand": "^5.0.14",
       },
       "devDependencies": {
         "@playwright/test": "1.57.0",

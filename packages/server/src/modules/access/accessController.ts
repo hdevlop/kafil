@@ -17,7 +17,10 @@ import {
 } from "./accessDto";
 import { AccessService } from "./accessService";
 import { FamilyPasswordService } from "./familyPasswordService";
+import { resolveAccessRateLimitConfig } from "./accessRateLimitConfig";
 import { isFamily } from "../../config/authConfig";
+
+const accessRateLimits = resolveAccessRateLimitConfig();
 
 @Controller("/access")
 export class AccessController {
@@ -28,8 +31,7 @@ export class AccessController {
 
   @Post("/login")
   @RateLimit({
-    limit: 5,
-    window: "15m",
+    ...accessRateLimits.login,
     key: authIdentityRateLimitKey,
     message: "Too many login attempts. Please try again later.",
   })
@@ -40,7 +42,10 @@ export class AccessController {
   }
 
   @Post("/register/sponsor")
-  @RateLimit({ limit: 5, window: "15m", key: authIdentityRateLimitKey })
+  @RateLimit({
+    ...accessRateLimits.sponsorRegistration,
+    key: authIdentityRateLimitKey,
+  })
   @Validate({ body: sponsorAccessRegistrationDto })
   @ResMsg("access.success.registered")
   registerSponsor(@Body() body: SponsorAccessRegistrationDto) {
@@ -48,7 +53,10 @@ export class AccessController {
   }
 
   @Post("/email-verification/request")
-  @RateLimit({ limit: 3, window: "15m", key: authIdentityRateLimitKey })
+  @RateLimit({
+    ...accessRateLimits.verificationRequest,
+    key: authIdentityRateLimitKey,
+  })
   @Validate({ body: requestEmailVerificationDto })
   @ResMsg("access.success.verificationRequested")
   requestVerification(@Body() body: RequestEmailVerificationDto) {
@@ -56,7 +64,7 @@ export class AccessController {
   }
 
   @Post("/email-verification/confirm")
-  @RateLimit({ limit: 5, window: "15m", key: "ip" })
+  @RateLimit({ ...accessRateLimits.verificationConfirm, key: "ip" })
   @Validate({ body: confirmEmailVerificationDto })
   @ResMsg("access.success.emailVerified")
   confirmVerification(@Body() body: ConfirmEmailVerificationDto) {
@@ -72,7 +80,7 @@ export class AccessController {
 
   @Post("/family-password/change")
   @isFamily()
-  @RateLimit({ limit: 5, window: "15m", key: "ip" })
+  @RateLimit({ ...accessRateLimits.familyPasswordChange, key: "ip" })
   @Validate({ body: familyFirstPasswordDto })
   @ResMsg("access.success.passwordChanged")
   changeFamilyPassword(

@@ -21,6 +21,7 @@ import {
   generateFamilyInitialPassword,
   generateInitialPassword,
   normalizePhone,
+  resolveAccessRateLimitConfig,
   sponsorAccessRegistrationDto,
 } from "../src/modules/access";
 
@@ -96,6 +97,41 @@ describe("Kafil access service", () => {
     expect(options?.limit).toBe(5);
     expect(options?.window).toBe("15m");
     expect(options?.key).toBe(authIdentityRateLimitKey);
+  });
+
+  it("keeps production-safe access rate defaults", () => {
+    expect(resolveAccessRateLimitConfig({})).toEqual({
+      login: { limit: 5, window: "15m" },
+      sponsorRegistration: { limit: 5, window: "15m" },
+      verificationRequest: { limit: 3, window: "15m" },
+      verificationConfirm: { limit: 5, window: "15m" },
+      familyPasswordChange: { limit: 5, window: "15m" },
+    });
+  });
+
+  it("supports one demo override plus a tighter route-specific override", () => {
+    expect(
+      resolveAccessRateLimitConfig({
+        KAFIL_ACCESS_RATE_LIMIT: "100",
+        KAFIL_ACCESS_RATE_WINDOW: "1h",
+        KAFIL_ACCESS_VERIFICATION_REQUEST_RATE_LIMIT: "20",
+      }),
+    ).toEqual({
+      login: { limit: 100, window: "1h" },
+      sponsorRegistration: { limit: 100, window: "1h" },
+      verificationRequest: { limit: 20, window: "1h" },
+      verificationConfirm: { limit: 100, window: "1h" },
+      familyPasswordChange: { limit: 100, window: "1h" },
+    });
+  });
+
+  it("rejects invalid access rate environment values", () => {
+    expect(() =>
+      resolveAccessRateLimitConfig({ KAFIL_ACCESS_RATE_LIMIT: "0" }),
+    ).toThrow("KAFIL_ACCESS_RATE_LIMIT must be a positive safe integer");
+    expect(() =>
+      resolveAccessRateLimitConfig({ KAFIL_ACCESS_RATE_WINDOW: "15 minutes" }),
+    ).toThrow("KAFIL_ACCESS_RATE_WINDOW must be a positive duration");
   });
 
   it("normalizes a phone identifier before delegating login to Najm", async () => {

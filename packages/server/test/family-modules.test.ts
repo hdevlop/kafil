@@ -471,6 +471,7 @@ describe("Phase 1 family workflow", () => {
 
   it("includes each family's funding progress in the operator list", async () => {
     const family = familyProfile();
+    const listCalls: unknown[][] = [];
     const progress = {
       status: "pending_funding" as const,
       targetMinor: 720000,
@@ -486,7 +487,10 @@ describe("Phase 1 family workflow", () => {
       {} as AuthService,
       {} as UserService,
       {
-        list: async () => [family],
+        list: async (...args: unknown[]) => {
+          listCalls.push(args);
+          return [family];
+        },
         listActiveSponsorsForFamilies: async (familyIds: string[]) => {
           expect(familyIds).toEqual([familyId]);
           return [
@@ -527,12 +531,22 @@ describe("Phase 1 family workflow", () => {
       {} as SettingRepository,
     );
 
-    await expect(service.list({ limit: 25, offset: 0 })).resolves.toEqual([
+    await expect(
+      service.list({
+        limit: 25,
+        offset: 0,
+        search: "Amrani",
+        status: "active",
+      }),
+    ).resolves.toEqual([
       {
         ...family,
         funding: progress,
         activeSponsorNames: ["Sponsor One", "Sponsor Two"],
       },
+    ]);
+    expect(listCalls).toEqual([
+      [25, 0, { search: "Amrani", status: "active" }],
     ]);
   });
 

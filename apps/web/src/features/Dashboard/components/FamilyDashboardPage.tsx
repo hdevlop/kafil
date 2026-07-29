@@ -113,7 +113,7 @@ export function FamilyDashboardPage() {
           <NCard icon={ClipboardCheck} title={t("dashboard.family.recentOrders")}>
             <div className="space-y-2">
               {data.recentOrders.length ? data.recentOrders.map((order) => (
-                <Link className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 hover:bg-muted/60" href="/family/orders" key={order.id}>
+                <Link className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 hover:bg-muted/60" href="/orders" key={order.id}>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{order.orderNumber}</span>
                     <span className="block text-xs text-muted-foreground">{formatKafilDate(order.placedAt, language)}</span>

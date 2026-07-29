@@ -17,17 +17,22 @@ import {
 } from "@/services/orderApi";
 
 import { orderKeys } from "./orderKeys";
-import type { OrderListQuery } from "../types";
+import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
+import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 
-export function useOrders(query: OrderListQuery) {
-  return useEntityQuery({
+export function useOrders(
+  query: OrderListQuery,
+  options: Partial<EntityQueryOptions<OrderRecord[]>> = {},
+) {
+  return useEntityQuery<OrderRecord[]>({
     queryKey: orderKeys.list(query),
     queryFn: () => listOrders(query),
+    ...options,
   });
 }
 
 export function useOrder(id: string) {
-  return useEntityQuery({
+  return useEntityQuery<OrderDetail>({
     queryKey: orderKeys.detail(id),
     queryFn: () => getOrder(id),
     enabled: Boolean(id),

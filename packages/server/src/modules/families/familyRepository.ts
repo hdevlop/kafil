@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { rolesTable, usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -70,11 +70,35 @@ const familySelection = {
 export class FamilyRepository {
   @DB() private db!: KafilDatabase;
 
-  list(limit: number, offset: number) {
-    return this.selectFamily()
-      .orderBy(asc(familyProfiles.createdAt))
-      .limit(limit)
-      .offset(offset);
+  list(
+    limit: number,
+    offset: number,
+    filters: { search?: string; status?: "active" | "inactive" } = {},
+  ) {
+    const conditions = [];
+    if (filters.status) {
+      conditions.push(eq(usersTable.status, filters.status));
+    }
+    if (filters.search) {
+      const pattern = `%${filters.search}%`;
+      conditions.push(
+        or(
+          ilike(familyProfiles.guardianLegalName, pattern),
+          ilike(usersTable.email, pattern),
+          ilike(usersTable.name, pattern),
+          ilike(familyProfiles.phone, pattern),
+        ),
+      );
+    }
+    const query = this.selectFamily();
+    if (conditions.length > 0) {
+      return query
+        .where(and(...conditions))
+        .orderBy(asc(familyProfiles.createdAt))
+        .limit(limit)
+        .offset(offset);
+    }
+    return query.orderBy(asc(familyProfiles.createdAt)).limit(limit).offset(offset);
   }
 
   async findById(id: string) {

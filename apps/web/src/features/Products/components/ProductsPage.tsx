@@ -1,16 +1,41 @@
 "use client";
 
-import { CircleCheck, CircleOff, Eye, Package, Pencil, Trash2 } from "lucide-react";
-import { usePermissions } from "najm-auth/client/react";
-import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { useMemo } from "react";
+import {
+  CircleCheck,
+  CircleOff,
+  Eye,
+  Package,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import {
+  NButton,
+  NPageLayout,
+  NTable,
+  type NTableProps,
+  useDialog,
+} from "najm-kit";
+import { useSearchParams } from "next/navigation";
 
+import { Operator } from "@/shared/Authorization";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { createOffsetPagination } from "@/lib/pagination";
+import { useKafilRole } from "@/shared/Authorization/useKafilRole";
+import { useOrderCart } from "@/features/OrderCart";
+import { CategoryFilterSheet } from "@/features/Categories/components/CategoryBar";
+import { useProductsWorkspace } from "@/features/Products/hooks/useProductsWorkspace";
+import { useProductsTableColumns } from "@/features/Products/hooks/useProductsTableColumns";
+import { useProductsTableFilters } from "@/features/Products/hooks/useProductsTableFilters";
+import {
+  createOffsetPagination,
+  getPageIndex,
+  hasPossibleNextPage,
+} from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 
-import { ProductCard } from "./ProductCard";
+import { ProductCard, type ProductCardAddInput } from "./ProductCard";
 import { ProductDetails } from "./ProductDetails";
 import {
   CreateProductDialogContent,
@@ -18,26 +43,41 @@ import {
   ProductStatusDialogContent,
   UpdateProductDialogContent,
 } from "./ProductForms";
-import { useProducts } from "../hooks/useProducts";
-import { useProductsTableColumns } from "../hooks/useProductsTableColumns";
-import { useProductsTableFilters } from "../hooks/useProductsTableFilters";
 import type { ProductRecord } from "../types";
 
-const productListPagination = createOffsetPagination(0, 100);
+const managementPagination = createOffsetPagination(0, 100);
+const familyPagination = createOffsetPagination(0, 12);
 
 export function ProductsPage() {
   const dialog = useDialog();
-  const { hasRole } = usePermissions();
   const { t } = useKafilLanguage();
-  const products = useProducts(productListPagination);
+  const { isExactFamily, isExactAdmin } = useKafilRole();
+  const orderCart = useOrderCart();
   const columns = useProductsTableColumns();
   const filters = useProductsTableFilters();
-  const rows = products.data ?? [];
+  const searchParams = useSearchParams();
+  const activeCategoryId = searchParams.get("category") ?? "";
+  const initialPagination = isExactFamily ? familyPagination : managementPagination;
+  const workspace = useProductsWorkspace(
+    initialPagination,
+    {
+      ...(activeCategoryId ? { categoryId: activeCategoryId } : {}),
+    },
+  );
+
+  const products = useMemo(() => {
+    if (!isExactFamily) return (workspace.products ?? []) as ProductRecord[];
+    return (workspace.products ?? []) as unknown as ProductRecord[];
+  }, [isExactFamily, workspace.products]);
+  const pageIndex = getPageIndex(workspace.pagination);
+  const pageCount = hasPossibleNextPage(products.length, workspace.pagination)
+    ? pageIndex + 2
+    : pageIndex + 1;
 
   function openCreate() {
     void dialog.openDialog({
-      title: "Create product",
-      description: "Add an active product the family can request.",
+      title: t("common.createProduct"),
+      description: t("common.createProductDescription"),
       children: <CreateProductDialogContent />,
       showButtons: false,
       width: "lg",
@@ -48,7 +88,7 @@ export function ProductsPage() {
   function openView(product: ProductRecord) {
     void dialog.openDialog({
       title: product.name,
-      description: "Operator-managed product details, catalog placement, and lifecycle.",
+      description: t("common.editProductDescription"),
       children: <ProductDetails product={product} />,
       showButtons: false,
       width: "lg",
@@ -58,8 +98,8 @@ export function ProductsPage() {
 
   function openEdit(product: ProductRecord) {
     void dialog.openDialog({
-      title: `Edit ${product.name}`,
-      description: "Price and catalog details are editable; product status remains command-specific.",
+      title: `${t("common.edit")} ${product.name}`,
+      description: t("common.editProductDescription"),
       children: <UpdateProductDialogContent product={product} />,
       showButtons: false,
       width: "lg",
@@ -70,8 +110,8 @@ export function ProductsPage() {
   function openStatus(product: ProductRecord) {
     const action = product.status === "active" ? "deactivate" : "activate";
     void dialog.openDialog({
-      title: `${action === "deactivate" ? "Deactivate" : "Activate"} ${product.name}`,
-      description: "This lifecycle command is audited by the backend.",
+      title: `${t(action === "deactivate" ? "common.deactivate" : "common.activate")} ${product.name}`,
+      description: t("common.orderLifecycleAudit"),
       children: <ProductStatusDialogContent action={action} product={product} />,
       showButtons: false,
       size: "sm",
@@ -80,82 +120,217 @@ export function ProductsPage() {
 
   function openDelete(product: ProductRecord) {
     void dialog.openDialog({
-      title: `Permanently delete ${product.name}?`,
-      description:
-        "Bootstrap administrators can permanently delete pristine products with no order or inventory history.",
+      title: `${t("common.deleteForever")} ${product.name}?`,
+      description: t("common.permanentDeleteProductDescription"),
       children: <DeleteProductDialogContent product={product} />,
       showButtons: false,
       size: "sm",
     });
   }
 
+  async function handleAdd(input: ProductCardAddInput) {
+    await orderCart.add({
+      productId: input.productId,
+      productName: input.productName,
+      sku: input.sku,
+      imageUrl: input.imageUrl,
+      quantity: input.quantity,
+      estimatedUnitPriceMinor: input.estimatedUnitPriceMinor,
+    });
+  }
+
   const tableProps: NTableProps<ProductRecord> = {
-    data: rows,
+    data: products,
     columns,
     filters,
-    loading: products.isPending,
-    error: products.error,
+    loading: workspace.loading,
+    error: workspace.error,
     getRowId: (product) => product.id,
     onCreate: openCreate,
     onView: openView,
     onEdit: openEdit,
-    renderCard: ProductCard,
-    renderEmpty: () => <PageEmptyState icon={Package} action={<NButton onClick={openCreate}>Create product</NButton>} title="No catalog product yet" description="Create the first product after adding an active category." />,
-    renderError: (error) => <PageErrorState error={error} onRetry={() => void products.refetch()} />,
+    renderCard: (props) => <ProductCard {...props} onAdd={handleAdd} />,
+    renderEmpty: () => (
+      <Operator>
+        <PageEmptyState
+          icon={Package}
+          action={
+            <NButton onClick={openCreate}>{t("common.createProduct")}</NButton>
+          }
+          title={t("common.emptyCatalogProduct")}
+          description={t("common.emptyCatalogProductHint")}
+        />
+      </Operator>
+    ),
+    renderError: (error) => (
+      <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
+    ),
     menu: {
       row: (product) => {
-        const actions = [
+        const baseActions = [
+          { label: t("common.view"), icon: Eye, onSelect: () => openView(product) },
+          { label: t("common.edit"), icon: Pencil, onSelect: () => openEdit(product) },
           {
-            label: "View",
-            icon: Eye,
-            onSelect: () => openView(product),
-          },
-          {
-            label: "Edit",
-            icon: Pencil,
-            onSelect: () => openEdit(product),
-          },
-          {
-            label: product.status === "active" ? "Deactivate" : "Activate",
+            label: t(product.status === "active" ? "common.deactivate" : "common.activate"),
             icon: product.status === "active" ? CircleOff : CircleCheck,
             danger: product.status === "active",
             separatorBefore: true,
             onSelect: () => openStatus(product),
           },
         ];
-
-        if (hasRole("admin")) {
-          actions.push({
-            label: "Delete permanently",
-            icon: Trash2,
-            danger: true,
-            separatorBefore: true,
-            onSelect: () => openDelete(product),
-          });
-        }
-
-        return actions;
+        if (workspace.mode !== "management") return baseActions;
+        if (!isExactAdmin) return baseActions;
+        const permanentDelete = {
+          label: t("common.deleteForever"),
+          icon: Trash2,
+          danger: true,
+          separatorBefore: true,
+          onSelect: () => openDelete(product),
+        };
+        return [...baseActions, permanentDelete];
       },
     },
     menuButton: true,
-    showPagination: false,
+    manualPagination: true,
+    pagination: { pageIndex, pageSize: workspace.pagination.limit },
+    pageCount,
+    onPaginationChange: ({ pageIndex: nextIndex, pageSize }) =>
+      workspace.setPagination(createOffsetPagination(nextIndex, pageSize)),
+    pageSizeOptions: [25, 50, 100],
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
-      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-5",
+      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-8",
     },
-    addButtonText: "Create product",
-    noDataText: "No catalog product found",
-    loadingText: "Loading catalog products...",
+    addButtonText: t("common.createProduct"),
+    noDataText: t("common.noCatalogProduct"),
+    loadingText: t("common.loadingCatalogProducts"),
     dynamicHeight: true,
   };
 
   return (
     <NPageLayout className="flex h-full min-h-0 flex-col gap-4">
-      <NPageHeader icon={Package} title={t("nav.products")} subtitle={t("nav.productsSubtitle")} actions={<PageHeaderGlobalActions />} />
-      <div className="min-h-0 flex-1">
-        <NTable {...tableProps} />
-      </div>
+      <NPageHeader
+        icon={Package}
+        title={t("nav.products")}
+        subtitle={t("nav.productsSubtitle")}
+        actions={
+          <>
+            <CategoryFilterSheet
+              basePath="/products"
+              items={workspace.categories.map((category) => ({
+                id: category.id,
+                name: category.name,
+                image: category.image,
+                itemCount: category.itemCount,
+                status: category.status,
+              }))}
+            />
+            <PageHeaderGlobalActions />
+          </>
+        }
+      />
+      {isExactFamily ? (
+        <ProductsFamilyGrid
+          error={workspace.error}
+          loading={workspace.loading}
+          onAdd={handleAdd}
+          pagination={workspace.pagination}
+          products={products}
+          refetch={() => void workspace.refetch()}
+          setPagination={workspace.setPagination}
+        />
+      ) : (
+        <div className="min-h-0 flex-1">
+          <NTable {...tableProps} />
+        </div>
+      )}
     </NPageLayout>
+  );
+}
+
+interface ProductsFamilyGridProps {
+  loading: boolean;
+  error: unknown;
+  refetch: () => void;
+  pagination: ReturnType<typeof createOffsetPagination>;
+  setPagination: (next: ReturnType<typeof createOffsetPagination>) => void;
+  products: ProductRecord[];
+  onAdd: (input: ProductCardAddInput) => Promise<void> | void;
+}
+
+function ProductsFamilyGrid({
+  loading,
+  error,
+  refetch,
+  pagination,
+  setPagination,
+  products,
+  onAdd,
+}: Readonly<ProductsFamilyGridProps>) {
+  const { t } = useKafilLanguage();
+  const pageIndex = getPageIndex(pagination);
+  const hasNextPage = hasPossibleNextPage(products.length, pagination);
+  const hasPrevPage = pageIndex > 0;
+
+  function goToPage(nextIndex: number) {
+    setPagination(
+      createOffsetPagination(nextIndex, pagination.limit),
+    );
+  }
+
+  if (error) {
+    return (
+      <NPageLayout className="grid min-h-64 place-items-center">
+        <PageErrorState error={error} onRetry={refetch} />
+      </NPageLayout>
+    );
+  }
+  if (loading && products.length === 0) {
+    return (
+      <PageEmptyState
+        icon={Package}
+        title={t("common.loadingProducts")}
+        description={t("common.loadingProducts")}
+      />
+    );
+  }
+  if (products.length === 0) {
+    return (
+      <PageEmptyState
+        icon={Package}
+        title={t("common.emptyProducts")}
+        description={t("common.emptyProductsHint")}
+      />
+    );
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            data={product}
+            onAdd={onAdd}
+          />
+        ))}
+      </div>
+      <div className="flex justify-between">
+        <NButton
+          variant="outline"
+          disabled={!hasPrevPage}
+          onClick={() => goToPage(pageIndex - 1)}
+        >
+          {t("action.previous", { defaultValue: "Previous" })}
+        </NButton>
+        <NButton
+          variant="outline"
+          disabled={!hasNextPage}
+          onClick={() => goToPage(pageIndex + 1)}
+        >
+          {t("action.next", { defaultValue: "Next" })}
+        </NButton>
+      </div>
+    </div>
   );
 }

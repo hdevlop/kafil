@@ -1,7 +1,7 @@
-import { CategoriesPage } from "@/features/Categories";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Categories" };
+export const dynamic = "force-dynamic";
 
-export default function OperatorCategoriesPage() {
-  return <CategoriesPage />;
+export default function OperatorCategoriesRedirect() {
+  redirect("/categories");
 }

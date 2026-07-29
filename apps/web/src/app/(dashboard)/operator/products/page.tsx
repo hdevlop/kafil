@@ -1,7 +1,7 @@
-import { ProductsPage } from "@/features/Products";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Products" };
+export const dynamic = "force-dynamic";
 
-export default function OperatorProductsPage() {
-  return <ProductsPage />;
+export default function OperatorProductsRedirect() {
+  redirect("/products");
 }

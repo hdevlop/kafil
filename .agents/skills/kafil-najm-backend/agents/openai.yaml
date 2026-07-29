@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kafil Najm Backend"
+  short_description: "Build secure Kafil modules with Najm conventions"
+  default_prompt: "Use $kafil-najm-backend to implement this Kafil backend change with Najm conventions."

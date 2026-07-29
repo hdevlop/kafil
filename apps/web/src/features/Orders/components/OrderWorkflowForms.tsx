@@ -184,7 +184,7 @@ export function CreateAssistedOrderDialogContent() {
             assisted.isPending || families.isPending || products.isPending
           }
         >
-          {assisted.isPending ? "Creating..." : "Create pending order"}
+          {assisted.isPending ? "Creating..." : "Order"}
         </NButton>
       </div>
     </NForm>

@@ -14,14 +14,20 @@ import {
 } from "@/services/categoryApi";
 
 import { categoryKeys } from "./categoryKeys";
+import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
+import type { CategoryRecord } from "../types";
 
-export function useCategories(pagination: OffsetPagination) {
-  return useEntityQuery({
+export function useCategories(
+  pagination: OffsetPagination,
+  options: Partial<EntityQueryOptions<CategoryRecord[]>> = {},
+) {
+  return useEntityQuery<CategoryRecord[]>({
     queryKey: categoryKeys.list(pagination),
     queryFn: () => listCategories(pagination),
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
+    ...options,
   });
 }
 

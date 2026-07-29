@@ -1,7 +1,7 @@
-import { FamilyCatalogPage } from "@/features/FamilyCatalog";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Catalog" };
+export const dynamic = "force-dynamic";
 
-export default function FamilyCatalogRoutePage() {
-  return <FamilyCatalogPage />;
+export default function FamilyCatalogRedirect() {
+  redirect("/products");
 }

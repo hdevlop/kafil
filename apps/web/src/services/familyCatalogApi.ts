@@ -22,3 +22,7 @@ export function listFamilyCatalogProducts(query: FamilyCatalogQuery) {
     }),
   });
 }
+
+export function getFamilyCatalogProduct(id: string) {
+  return api.get<FamilyCatalogProduct>(`/catalog/browse/products/${id}`);
+}

@@ -1,3 +1,7 @@
-import { FamilyOrdersPage } from "@/features/FamilyOrdering";
-export const metadata = { title: "Your orders" };
-export default function FamilyOrdersRoutePage() { return <FamilyOrdersPage />; }
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+export default function FamilyOrdersRedirect() {
+  redirect("/orders");
+}

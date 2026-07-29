@@ -5,6 +5,7 @@ import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
+  type ListProductsFilters,
   activateProduct,
   createProduct,
   deactivateProduct,
@@ -15,16 +16,23 @@ import {
 } from "@/services/productApi";
 
 import { productKeys } from "./productKeys";
+import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
+import type { ProductCategory, ProductRecord } from "../types";
 
-export function useProducts(pagination: OffsetPagination) {
-  return useEntityQuery({
-    queryKey: productKeys.list(pagination),
-    queryFn: () => listProducts(pagination),
+export function useProducts(
+  pagination: OffsetPagination,
+  filters: ListProductsFilters = {},
+  options: Partial<EntityQueryOptions<ProductRecord[]>> = {},
+) {
+  return useEntityQuery<ProductRecord[]>({
+    queryKey: productKeys.list(pagination, filters),
+    queryFn: () => listProducts(pagination, filters),
+    ...options,
   });
 }
 
 export function useProductCategories(enabled = true) {
-  return useEntityQuery({
+  return useEntityQuery<ProductCategory[]>({
     queryKey: productKeys.categories,
     queryFn: listProductCategories,
     enabled,

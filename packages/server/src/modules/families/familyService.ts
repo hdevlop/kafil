@@ -49,8 +49,8 @@ export class FamilyService {
   ) {}
 
   async list(query: FamilyListQuery) {
-    const { limit, offset } = familyListQuery.parse(query ?? {});
-    const families = await this.families.list(limit, offset);
+    const { limit, offset, search, status } = familyListQuery.parse(query ?? {});
+    const families = await this.families.list(limit, offset, { search, status });
     const [fundingByFamily, activeSponsors] = await Promise.all([
       this.funding.getProgressForFamilies(families),
       this.families.listActiveSponsorsForFamilies(families.map(({ id }) => id)),

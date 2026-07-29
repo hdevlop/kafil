@@ -119,4 +119,20 @@ describe("seed CLI", () => {
     expect(removeSource).not.toContain("clearSeedData");
     expect(removeSource).not.toContain("clearSeedStorage");
   });
+
+  it("does not create a synthetic catalog product or delivered order during demo seeding", async () => {
+    const [demoSeedSource, demoCommandSource] = await Promise.all([
+      Bun.file(new URL("../src/demo-seed.ts", import.meta.url)).text(),
+      Bun.file(
+        new URL("../src/scripts/demo/seed-demo.ts", import.meta.url),
+      ).text(),
+    ]);
+
+    expect(demoSeedSource).not.toContain("Demo fresh produce basket");
+    expect(demoSeedSource).not.toContain("DEMO-MARJANE-BASKET");
+    expect(demoSeedSource).not.toContain("seedDemoProcurementStory");
+    expect(demoSeedSource).not.toContain("submitAssisted");
+    expect(demoCommandSource).not.toContain("OrderEvidenceService");
+    expect(demoCommandSource).not.toContain("OrderService");
+  });
 });

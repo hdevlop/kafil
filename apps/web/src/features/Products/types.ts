@@ -21,6 +21,8 @@ export interface ProductCategory {
   id: string;
   name: string;
   slug: string;
+  image?: string | null;
+  itemCount?: number;
   status: "active" | "inactive" | string;
 }
 

@@ -105,6 +105,22 @@ describe("Phase 6D product lifecycle contracts", () => {
       "list",
       { limit: 25, offset: 50 },
     ]);
+    expect(
+      productKeys.list(
+        { limit: 25, offset: 0 },
+        { categoryId: product.categoryId, search: "rice", status: "active" },
+      ),
+    ).toEqual([
+      "products",
+      "list",
+      {
+        categoryId: product.categoryId,
+        limit: 25,
+        offset: 0,
+        search: "rice",
+        status: "active",
+      },
+    ]);
     expect(productKeys.categories).toEqual(["products", "categories"]);
     expect(productKeys.detail(product.id)).toEqual(["products", "detail", product.id]);
   });
