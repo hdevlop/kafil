@@ -74,8 +74,8 @@ interface PersistedShape {
 }
 
 function readDraft(userId: string): PersistedShape | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.sessionStorage.getItem(storageKey(userId));
+  if (typeof globalThis.sessionStorage === "undefined") return null;
+  const raw = globalThis.sessionStorage.getItem(storageKey(userId));
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<PersistedShape>;
@@ -91,14 +91,14 @@ function readDraft(userId: string): PersistedShape | null {
 }
 
 function writeDraft(userId: string, draftItems: Record<string, OrderCartDraftItem>) {
-  if (typeof window === "undefined") return;
+  if (typeof globalThis.sessionStorage === "undefined") return;
   const payload: PersistedShape = { ownerUserId: userId, draftItems };
-  window.sessionStorage.setItem(storageKey(userId), JSON.stringify(payload));
+  globalThis.sessionStorage.setItem(storageKey(userId), JSON.stringify(payload));
 }
 
 function clearDraft(userId: string) {
-  if (typeof window === "undefined") return;
-  window.sessionStorage.removeItem(storageKey(userId));
+  if (typeof globalThis.sessionStorage === "undefined") return;
+  globalThis.sessionStorage.removeItem(storageKey(userId));
 }
 
 export const useOrderCartStore = create<OrderCartState>()(

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import {
   selectOrderCartViewModel,
@@ -57,9 +57,13 @@ function createSessionStorage(): SessionStorageLike {
 
 const sessionStorage = createSessionStorage();
 const globalScope = globalThis as unknown as {
-  window?: { sessionStorage: SessionStorageLike };
+  sessionStorage?: SessionStorageLike;
 };
-globalScope.window = { sessionStorage };
+globalScope.sessionStorage = sessionStorage;
+
+afterAll(() => {
+  delete globalScope.sessionStorage;
+});
 
 function resetStore() {
   useOrderCartStore.setState({
@@ -172,8 +176,7 @@ describe("order cart management draft", () => {
   });
 
   test("rehydrates a draft for the bound user and rejects a different owner", () => {
-    expect(typeof window).toBe("object");
-    expect(typeof window.sessionStorage).toBe("object");
+    expect(typeof globalThis.sessionStorage).toBe("object");
     const userA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const userB = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
     const persistedItem = {

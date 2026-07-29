@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, it } from "bun:test";
-import { mkdir, rm, utimes } from "node:fs/promises";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
+import { mkdir, mkdtemp, rm, utimes } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { envConfig } from "../src/config/envConfig";
 import {
   evidenceReference,
   OrderEvidenceService,
@@ -12,11 +12,15 @@ import {
 } from "../src/modules/orders";
 
 const created: string[] = [];
-const receiptsDirectory = join(
-  envConfig.storage.basePath,
-  "order-evidence",
-  "receipts",
-);
+let testStoragePath = "";
+
+beforeAll(async () => {
+  testStoragePath = await mkdtemp(join(tmpdir(), "kafil-order-evidence-"));
+});
+
+afterAll(async () => {
+  await rm(testStoragePath, { force: true, recursive: true });
+});
 
 afterEach(async () => {
   for (const file of created.splice(0)) {
@@ -29,7 +33,10 @@ describe("protected order evidence", () => {
     const evidence = evidenceService();
     const goodName = `${crypto.randomUUID()}.pdf`;
     const badName = `${crypto.randomUUID()}.pdf`;
-    created.push(join(receiptsDirectory, goodName), join(receiptsDirectory, badName));
+    created.push(
+      join(receiptsDirectory(), goodName),
+      join(receiptsDirectory(), badName),
+    );
 
     const uploaded = await evidence.upload(
       "receipts",
@@ -57,7 +64,7 @@ describe("protected order evidence", () => {
     const orphanName = `${crypto.randomUUID()}.pdf`;
     const referencedPath = evidenceReference("receipts", referencedName);
     const evidence = evidenceService([referencedPath]);
-    await mkdir(receiptsDirectory, { recursive: true });
+    await mkdir(receiptsDirectory(), { recursive: true });
     for (const name of [referencedName, orphanName]) {
       await evidence.upload(
         "receipts",
@@ -65,10 +72,10 @@ describe("protected order evidence", () => {
         Uint8Array.from([0x25, 0x50, 0x44, 0x46, 0x2d]).buffer,
         "application/pdf",
       );
-      created.push(join(receiptsDirectory, name));
+      created.push(join(receiptsDirectory(), name));
     }
     const old = new Date(Date.now() - 48 * 60 * 60 * 1_000);
-    await utimes(join(receiptsDirectory, orphanName), old, old);
+    await utimes(join(receiptsDirectory(), orphanName), old, old);
 
     await expect(
       evidence.removeCandidate("receipts", referencedName),
@@ -107,9 +114,23 @@ describe("protected order evidence", () => {
 });
 
 function evidenceService(referenced: string[] = []) {
-  return new OrderEvidenceService({
-    isReceiptReferenced: async (path: string) => referenced.includes(path),
-    isDeliveryProofReferenced: async (path: string) => referenced.includes(path),
-    listReferencedEvidencePaths: async () => referenced,
-  } as unknown as OrderPurchaseRepository);
+  const previousStoragePath = process.env.KAFIL_STORAGE_PATH;
+  process.env.KAFIL_STORAGE_PATH = testStoragePath;
+  try {
+    return new OrderEvidenceService({
+      isReceiptReferenced: async (path: string) => referenced.includes(path),
+      isDeliveryProofReferenced: async (path: string) => referenced.includes(path),
+      listReferencedEvidencePaths: async () => referenced,
+    } as unknown as OrderPurchaseRepository);
+  } finally {
+    if (previousStoragePath === undefined) {
+      delete process.env.KAFIL_STORAGE_PATH;
+    } else {
+      process.env.KAFIL_STORAGE_PATH = previousStoragePath;
+    }
+  }
+}
+
+function receiptsDirectory() {
+  return join(testStoragePath, "order-evidence", "receipts");
 }

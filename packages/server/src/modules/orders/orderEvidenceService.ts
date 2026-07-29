@@ -26,6 +26,8 @@ const EVIDENCE_TYPES = {
 
 @Service()
 export class OrderEvidenceService {
+  private readonly storageBasePath = envConfig.storage.basePath;
+
   constructor(private readonly purchases: OrderPurchaseRepository) {}
 
   async upload(
@@ -34,7 +36,7 @@ export class OrderEvidenceService {
     body: ArrayBuffer,
     contentType: string | undefined,
   ) {
-    const target = resolveEvidenceTarget(kind, rawFileName);
+    const target = resolveEvidenceTarget(this.storageBasePath, kind, rawFileName);
     const expectedType =
       EVIDENCE_TYPES[
         extname(target.fileName).toLowerCase() as keyof typeof EVIDENCE_TYPES
@@ -63,7 +65,7 @@ export class OrderEvidenceService {
   }
 
   async read(kind: OrderEvidenceKind, rawFileName: string) {
-    const target = resolveEvidenceTarget(kind, rawFileName);
+    const target = resolveEvidenceTarget(this.storageBasePath, kind, rawFileName);
     try {
       return {
         bytes: await readFile(join(target.directory, target.fileName)),
@@ -82,7 +84,7 @@ export class OrderEvidenceService {
   }
 
   async removeCandidate(kind: OrderEvidenceKind, rawFileName: string) {
-    const target = resolveEvidenceTarget(kind, rawFileName);
+    const target = resolveEvidenceTarget(this.storageBasePath, kind, rawFileName);
     const reference = evidenceReference(kind, target.fileName);
     const referenced =
       kind === "receipts"
@@ -106,7 +108,7 @@ export class OrderEvidenceService {
     );
     const candidates = await Promise.all(
       (["receipts", "deliveries"] as const).map(async (kind) => {
-        const directory = evidenceDirectory(kind);
+        const directory = evidenceDirectory(this.storageBasePath, kind);
         const entries = await readdir(directory, {
           withFileTypes: true,
         }).catch((error: NodeJS.ErrnoException) => {
@@ -178,15 +180,16 @@ export function evidenceReference(
   return `/api/order-evidence/${kind}/serve/${encodeURIComponent(fileName)}`;
 }
 
-function evidenceDirectory(kind: OrderEvidenceKind) {
+function evidenceDirectory(basePath: string, kind: OrderEvidenceKind) {
   return join(
-    /* turbopackIgnore: true */ envConfig.storage.basePath,
+    /* turbopackIgnore: true */ basePath,
     "order-evidence",
     kind,
   );
 }
 
 function resolveEvidenceTarget(
+  basePath: string,
   kind: OrderEvidenceKind,
   rawFileName: string,
 ) {
@@ -197,7 +200,7 @@ function resolveEvidenceTarget(
   ) {
     HttpError.create(400, "Invalid order evidence file name");
   }
-  return { directory: evidenceDirectory(kind), fileName };
+  return { directory: evidenceDirectory(basePath, kind), fileName };
 }
 
 function matchesSignature(bytes: Uint8Array, mediaType: string) {
