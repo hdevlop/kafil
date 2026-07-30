@@ -41,7 +41,7 @@ ENV HOSTNAME=0.0.0.0 \
     NODE_ENV=production \
     PORT=3000
 
-COPY --from=build --chown=bun:bun /app/package.json /app/bun.lock ./
+COPY --from=build --chown=bun:bun /app/package.json /app/bun.lock /app/tsconfig.base.json ./
 COPY --from=build --chown=bun:bun /app/theme.json ./theme.json
 COPY --from=build --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=build --chown=bun:bun /app/apps/web/package.json /app/apps/web/next.config.ts ./apps/web/

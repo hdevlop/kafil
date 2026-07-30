@@ -907,6 +907,17 @@ canonical destinations.
     order graph, restoration of its reserved amount, rebuild of later ledger
     snapshots, and refusal when purchase history exists.
   - `bun run db:generate` reported no schema changes and no migration.
+- Container seed source-runtime hardening (2026-07-30):
+  - The final Docker stage now includes `/app/tsconfig.base.json`, preserving
+    the legacy TypeScript decorator transform required when the seed CLI
+    imports `@kafil/server` source inside the running image.
+  - An isolated final-image-layout probe reproduced the prior
+    `reflect-metadata` failure without the file and imported the server with
+    exit code 0 after restoring it.
+  - Lint, typecheck, web tests (215 pass), server tests (291 pass and 31
+    opt-in skips), seed tests (71 pass), the 39-route production build, and
+    `bun run db:generate` passed. A real Docker image build remains unverified
+    on this workstation because Docker is unavailable.
 
 
 - [~] Add operator statistics and financial reports (live overview statistics,

@@ -345,6 +345,11 @@ Deployment infrastructure implementation (2026-07-22, activation pending):
       immutable-image deployment/verification scripts, pinned-SHA GitHub
       Actions workflow, protected environment examples, and operations and
       recovery runbooks.
+- [x] Included the workspace `tsconfig.base.json` in the final image so
+      one-shot seed commands retain the legacy decorator transform while
+      importing server TypeScript source. The isolated runtime-layout import
+      reproduced the old failure without the file and passed after the fix;
+      the actual Docker image build remains a deployment-side gate.
 - [~] The audited VPS already has host Caddy on 80/443, so the safe documented
       integration uses a loopback-only Kafil port and preserves the existing
       site. Activation awaits hostname/DNS, credentials, restricted deploy
