@@ -11,6 +11,23 @@ normal operators do not receive those links. Users and Permissions expose
 functional NTable add actions: user creation delegates to complete domain
 onboarding, while custom permission creation preserves canonical seed grants.
 
+Post-phase extension (2026-07-30): the admin Access Management section now
+also exposes the Staff directory. The new `/operator/staff` route is admin-only
+(enforced server-side via `requireRole(["admin"])`), ships Najm Kit cards as
+the default view with a `cards | table` toggle, runs server pagination and
+filters (search, status, affiliation, function, application-access), and is
+covered by `apps/web/test/staff-feature.test.ts`. Operator creation moves out
+of the admin Users dialog and into the Staff workspace; Staff provisioning
+records the linked `userId` so `hasOperatorAccess` and admin Access lifecycle
+commands stay in sync.
+
+Post-phase extension (2026-07-30): the canonical `/orders` workspace now has a
+Delivery column and state-aware assign, reassign, start, fail, confirm, and view
+actions. Delivery Details uses Najm Kit `NSheet` with the current Staff/contact
+card, semantic progress, immutable attempt history, RTL-aware placement, and a
+95vw mobile layout. Family and sponsor pages continue to render only safe
+milestones and never Staff identity/contact or internal attempt reasons.
+
 Inventory references in the historical Phase 6 evidence below describe the
 2026-07-16 warehouse UI and are superseded by the 2026-07-27 procurement
 extension: there is no active Inventory route, navigation entry, API, or MCP

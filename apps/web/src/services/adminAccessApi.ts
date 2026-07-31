@@ -5,7 +5,6 @@ import type {
   AccessUserDetail,
   AccessUserListQuery,
   AccessUserPage,
-  CreateAccessOperatorInput,
   CreateAccessPermissionInput,
 } from "@/features/AdminAccess/types";
 import { api } from "@/services/http";
@@ -52,37 +51,6 @@ export function listAccessRoles() {
 
 export function listAccessPermissions() {
   return api.get<AccessPermissionView[]>("/admin/access/permissions");
-}
-
-const OPERATOR_IMAGE_ROUTE = "/operator-images/files/";
-
-function operatorImageExtension(file: File) {
-  const extensionByMimeType: Record<string, string> = {
-    "image/avif": "avif",
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-  };
-
-  return extensionByMimeType[file.type] ?? "img";
-}
-
-export async function uploadOperatorImage(file: File) {
-  const fileName = `${crypto.randomUUID()}.${operatorImageExtension(file)}`;
-  const uploaded = await api.upload<{ path: string }>(
-    `${OPERATOR_IMAGE_ROUTE}${fileName}`,
-    file,
-  );
-  return uploaded.path;
-}
-
-export function deleteOperatorImage(imagePath: string) {
-  const fileName = imagePath.slice(imagePath.lastIndexOf("/") + 1);
-  return api.deleteFile(`${OPERATOR_IMAGE_ROUTE}${encodeURIComponent(fileName)}`);
-}
-
-export function createAccessOperator(input: CreateAccessOperatorInput) {
-  return api.post<{ userId: string }>("/operators", input);
 }
 
 export function createAccessPermission(input: CreateAccessPermissionInput) {

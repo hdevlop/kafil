@@ -4,18 +4,22 @@ import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import {
   approveOrder,
+  assignOrderDelivery,
   cancelOrder,
   confirmOrderDelivery,
   createAssistedOrder,
   deleteOrder,
   deliverOrder,
+  failOrderDelivery,
   getOrder,
   listOrders,
   recordOrderPurchase,
+  reassignOrderDelivery,
   rejectOrder,
   replaceOrderPurchase,
   startOrderDelivery,
 } from "@/services/orderApi";
+import { listStaffDeliveryOptions } from "@/services/staffApi";
 
 import { orderKeys } from "./orderKeys";
 import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
@@ -38,6 +42,13 @@ export function useOrder(id: string) {
     queryKey: orderKeys.detail(id),
     queryFn: () => getOrder(id),
     enabled: Boolean(id),
+  });
+}
+
+export function useDeliveryStaffOptions() {
+  return useEntityQuery({
+    queryKey: ["staff", "delivery-options"],
+    queryFn: listStaffDeliveryOptions,
   });
 }
 
@@ -75,6 +86,18 @@ export function useOrderCommands() {
     successMessage: "Purchase replaced and budget difference settled.",
     errorMessage: "Could not replace this purchase.",
   });
+  const assignDelivery = useEntityCommand({
+    mutationFn: assignOrderDelivery,
+    invalidate,
+    successMessage: "Delivery staff assigned.",
+    errorMessage: "Could not assign delivery staff.",
+  });
+  const reassignDelivery = useEntityCommand({
+    mutationFn: reassignOrderDelivery,
+    invalidate,
+    successMessage: "Delivery staff changed.",
+    errorMessage: "Could not change delivery staff.",
+  });
   const startDelivery = useEntityCommand({
     mutationFn: startOrderDelivery,
     invalidate,
@@ -86,6 +109,12 @@ export function useOrderCommands() {
     invalidate,
     successMessage: "Delivery confirmed.",
     errorMessage: "Could not confirm delivery.",
+  });
+  const failDelivery = useEntityCommand({
+    mutationFn: failOrderDelivery,
+    invalidate,
+    successMessage: "Delivery failure recorded. The order can be reassigned.",
+    errorMessage: "Could not record the delivery failure.",
   });
   const deliver = useEntityCommand({
     mutationFn: deliverOrder,
@@ -112,8 +141,11 @@ export function useOrderCommands() {
     reject,
     purchase,
     replacePurchase,
+    assignDelivery,
+    reassignDelivery,
     startDelivery,
     confirmDelivery,
+    failDelivery,
     deliver,
     cancel,
     remove,

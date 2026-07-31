@@ -16,7 +16,7 @@ describe("auth seed definitions", () => {
     ]);
   });
 
-  it("uses unique permission names with matching action/resource pairs", () => {
+it("uses unique permission names with matching action/resource pairs", () => {
     const names = AUTH_PERMISSIONS.map((permission) => permission.name);
     expect(names).toEqual([
       "read:operators",
@@ -35,6 +35,11 @@ describe("auth seed definitions", () => {
       "create:children",
       "update:children",
       "delete:children",
+      "read:staff",
+      "create:staff",
+      "update:staff",
+      "delete:staff",
+      "read:staffDeliveryOptions",
       "read:supportAssignments",
       "create:supportAssignments",
       "update:supportAssignments",
@@ -68,7 +73,7 @@ describe("auth seed definitions", () => {
     );
     expect(AUTH_ROLE_PERMISSIONS.admin).toContain("delete:catalog");
     expect(AUTH_ROLE_PERMISSIONS.admin).toContain("delete:orders");
-    expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:catalog");
+expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:catalog");
     expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:orders");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("read:sponsors");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("delete:documents");
@@ -76,6 +81,10 @@ describe("auth seed definitions", () => {
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("update:children");
     expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:families");
     expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:children");
+    expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("read:staff");
+    expect(AUTH_ROLE_PERMISSIONS.operator).toContain(
+      "read:staffDeliveryOptions",
+    );
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain(
       "create:supportAssignments",
     );

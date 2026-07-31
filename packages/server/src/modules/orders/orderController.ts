@@ -15,6 +15,8 @@ import { Validate } from "najm-validation";
 
 import { isAdmin, isFamily, isOperator, isSponsor } from "../../config/authConfig";
 import {
+  type AssignDeliveryDto,
+  assignDeliveryDto,
   type AssistedOrderDto,
   assistedOrderDto,
   type CartItemDto,
@@ -24,6 +26,8 @@ import {
   confirmDeliveryDto,
   type FamilyCancelOrderDto,
   familyCancelOrderDto,
+  type FailDeliveryDto,
+  failDeliveryDto,
   type OperatorCancelOrderDto,
   operatorCancelOrderDto,
   orderIdParams,
@@ -37,10 +41,14 @@ import {
   recordPurchaseDto,
   type ReplacePurchaseDto,
   replacePurchaseDto,
+  type ReassignDeliveryDto,
+  reassignDeliveryDto,
   type SetCartItemQuantityDto,
   setCartItemQuantityDto,
   type SubmitOrderDto,
   submitOrderDto,
+  type StartDeliveryDto,
+  startDeliveryDto,
 } from "./orderDto";
 import { OrderService } from "./orderService";
 import { CanDelete } from "./orderGuards";
@@ -272,16 +280,72 @@ export class OrderController {
     return this.orders.replacePurchase(id, body, userId);
   }
 
+  @Post("/:id/delivery/assign")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: assignDeliveryDto })
+  @McpTool({
+    description: "Assign active Delivery staff to a purchased order",
+    idempotent: true,
+    confirm: { level: "warning", message: "Assign this delivery staff member?" },
+  })
+  @ResMsg("orders.success.deliveryAssigned")
+  assignDelivery(
+    @Params("id") id: string,
+    @Body() body: AssignDeliveryDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.assignDelivery(id, body, userId);
+  }
+
+  @Post("/:id/delivery/reassign")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: reassignDeliveryDto })
+  @McpTool({
+    description: "Replace an unstarted delivery assignment with immutable history",
+    idempotent: true,
+    confirm: { level: "warning", message: "Change the assigned delivery staff member?" },
+  })
+  @ResMsg("orders.success.deliveryReassigned")
+  reassignDelivery(
+    @Params("id") id: string,
+    @Body() body: ReassignDeliveryDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.reassignDelivery(id, body, userId);
+  }
+
   @Post("/:id/delivery/start")
   @isOperator()
-  @Validate({ params: orderIdParams })
+  @Validate({ params: orderIdParams, body: startDeliveryDto })
   @McpTool({
     description: "Start delivery for a purchased order",
     confirm: { level: "warning", message: "Start delivery for this order?" },
   })
   @ResMsg("orders.success.deliveryStarted")
-  startDelivery(@Params("id") id: string, @User("id") userId: string) {
-    return this.orders.startDelivery(id, userId);
+  startDelivery(
+    @Params("id") id: string,
+    @Body() body: StartDeliveryDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.startDelivery(id, body, userId);
+  }
+
+  @Post("/:id/delivery/fail")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: failDeliveryDto })
+  @McpTool({
+    description: "Close an in-progress delivery attempt as failed",
+    idempotent: true,
+    destructive: true,
+    confirm: { level: "warning", message: "Record this delivery attempt as failed?" },
+  })
+  @ResMsg("orders.success.deliveryFailed")
+  failDelivery(
+    @Params("id") id: string,
+    @Body() body: FailDeliveryDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.failDelivery(id, body, userId);
   }
 
   @Post("/:id/delivery/confirm")

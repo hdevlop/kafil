@@ -1,13 +1,17 @@
 import type {
   AssistedOrderInput,
+  AssignDeliveryInput,
   ConfirmDeliveryInput,
   EvidenceUpload,
+  FailDeliveryInput,
   OrderDetail,
   OrderListQuery,
   OrderReasonInput,
   OrderRecord,
   RecordPurchaseInput,
+  ReassignDeliveryInput,
   ReplacePurchaseInput,
+  StartDeliveryInput,
 } from "@/features/Orders/types";
 import { api } from "@/services/http";
 
@@ -41,8 +45,20 @@ export function replaceOrderPurchase({ id, ...input }: ReplacePurchaseInput) {
   return api.post<OrderDetail>(`/orders/${id}/purchase/replace`, input);
 }
 
-export function startOrderDelivery(id: string) {
-  return api.post<OrderDetail>(`/orders/${id}/delivery/start`);
+export function assignOrderDelivery({ id, ...input }: AssignDeliveryInput) {
+  return api.post<OrderDetail>(`/orders/${id}/delivery/assign`, input);
+}
+
+export function reassignOrderDelivery({ id, ...input }: ReassignDeliveryInput) {
+  return api.post<OrderDetail>(`/orders/${id}/delivery/reassign`, input);
+}
+
+export function startOrderDelivery({ id, ...input }: StartDeliveryInput) {
+  return api.post<OrderDetail>(`/orders/${id}/delivery/start`, input);
+}
+
+export function failOrderDelivery({ id, ...input }: FailDeliveryInput) {
+  return api.post<OrderDetail>(`/orders/${id}/delivery/fail`, input);
 }
 
 export function confirmOrderDelivery({ id, ...input }: ConfirmDeliveryInput) {

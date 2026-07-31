@@ -31,7 +31,11 @@ export type OrderAction =
   | "reject"
   | "purchase"
   | "replacePurchase"
+  | "viewDelivery"
+  | "assignDelivery"
+  | "reassignDelivery"
   | "startDelivery"
+  | "failDelivery"
   | "confirmDelivery"
   | "deliver"
   | "cancel"
@@ -87,9 +91,18 @@ export function useOrdersWorkspace(
       } else if (status === "in_preparation") {
         set.push("deliver", "cancel");
       } else if (status === "purchased") {
-        set.push("startDelivery", "replacePurchase", "cancel");
+        const managementOrder = order as OrderRecord;
+        if (managementOrder.currentDelivery) {
+          set.push("viewDelivery", "startDelivery", "reassignDelivery");
+        } else {
+          if (managementOrder.latestDelivery) set.push("viewDelivery");
+          set.push("assignDelivery");
+        }
+        set.push("replacePurchase", "cancel");
       } else if (status === "out_for_delivery") {
-        set.push("confirmDelivery", "cancel");
+        set.push("viewDelivery", "confirmDelivery", "failDelivery");
+      } else if (status === "delivered") {
+        set.push("viewDelivery");
       }
       return set;
     },

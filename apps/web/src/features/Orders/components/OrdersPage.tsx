@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   BadgeCheck,
   Ban,
@@ -12,6 +12,9 @@ import {
   Send,
   Trash2,
   Truck,
+  UserPlus,
+  UserRoundCog,
+  TriangleAlert,
 } from "lucide-react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
@@ -32,8 +35,9 @@ import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { StatusBadge } from "@/shared/StatusBadge";
 
-import { getOrderActions, type OrderCommand } from "../config/orderActions";
+import { getOrderActions, type OrderAction, type OrderCommand } from "../config/orderActions";
 import { OrderCard } from "./OrderCard";
+import { DeliveryDetailsSheet } from "./DeliveryDetailsSheet";
 import { OrderDetails } from "./OrderDetails";
 import {
   ConfirmOrderCommandDialogContent,
@@ -41,7 +45,9 @@ import {
   OrderReasonDialogContent,
 } from "./OrderForms";
 import {
+  AssignDeliveryDialogContent,
   ConfirmDeliveryDialogContent,
+  FailDeliveryDialogContent,
   PurchaseOrderDialogLoader,
 } from "./OrderWorkflowForms";
 import { useOrdersWorkspace } from "../hooks/useOrdersWorkspace";
@@ -64,8 +70,16 @@ function getOrderActionIcon(action: OrderCommand) {
       return ReceiptText;
     case "replacePurchase":
       return RefreshCw;
+    case "viewDelivery":
+      return Truck;
+    case "assignDelivery":
+      return UserPlus;
+    case "reassignDelivery":
+      return UserRoundCog;
     case "startDelivery":
       return Send;
+    case "failDelivery":
+      return TriangleAlert;
     case "confirmDelivery":
       return Truck;
     case "deliver":
@@ -87,7 +101,11 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
   const { setPagination } = workspace;
   const orderCommands = useOrderCommands();
   const familyCommands = useFamilyOrderingCommands();
-  const columns = useOrdersTableColumns();
+  const [deliveryOrder, setDeliveryOrder] = useState<OrderRecord | null>(null);
+  const openDelivery = useCallback((order: OrderRecord) => {
+    setDeliveryOrder(order);
+  }, []);
+  const columns = useOrdersTableColumns(openDelivery);
   const filters = useOrdersTableFilters();
   const isFamilyScope = workspace.scope === "family";
   const orders = (workspace.orders ?? []) as OrderRecord[] & FamilyOrder[];
@@ -186,6 +204,72 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     });
   }
 
+  function openDeliveryCommand(
+    action: Extract<OrderCommand, "assignDelivery" | "reassignDelivery" | "failDelivery">,
+    order: OrderRecord,
+  ) {
+    const reassign = action === "reassignDelivery";
+    const failed = action === "failDelivery";
+    void dialog.openDialog({
+      title: failed
+        ? t("operator.orders.delivery.failed")
+        : reassign
+          ? t("operator.orders.changeDeliveryStaff")
+          : t("operator.orders.assignDelivery"),
+      description: failed
+        ? "Close this attempt and make the purchased order available for reassignment."
+        : "Choose from active Staff records with the Delivery role.",
+      children: failed ? (
+        <FailDeliveryDialogContent order={order} />
+      ) : (
+        <AssignDeliveryDialogContent order={order} reassign={reassign} />
+      ),
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function runOrderAction(action: OrderAction, order: OrderRecord) {
+    if (action.command === "viewDelivery") {
+      openDelivery(order);
+      return;
+    }
+    if (["assignDelivery", "reassignDelivery", "failDelivery"].includes(action.command)) {
+      openDeliveryCommand(
+        action.command as Extract<
+          OrderCommand,
+          "assignDelivery" | "reassignDelivery" | "failDelivery"
+        >,
+        order,
+      );
+      return;
+    }
+    if (action.requiresReason) {
+      openReason(
+        action.command as Extract<OrderCommand, "reject" | "cancel">,
+        order,
+      );
+      return;
+    }
+    if (["purchase", "replacePurchase", "confirmDelivery"].includes(action.command)) {
+      openWorkflow(
+        action.command as Extract<
+          OrderCommand,
+          "purchase" | "replacePurchase" | "confirmDelivery"
+        >,
+        order,
+      );
+      return;
+    }
+    openConfirm(
+      action.command as Extract<
+        OrderCommand,
+        "approve" | "startDelivery" | "deliver"
+      >,
+      order,
+    );
+  }
+
   const headerTitle = isFamilyScope
     ? t("common.orderYourOrders")
     : t("operator.orders.title");
@@ -230,42 +314,16 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
           icon: Eye,
           onSelect: () => openView(order),
           },
-          ...getOrderActions(order.status).map((action) => ({
+          ...getOrderActions(order).map((action) => ({
             label: t(action.label as Parameters<typeof t>[0]),
             icon: getOrderActionIcon(action.command),
             danger: action.danger,
-            disabled: orderCommands[action.command].isPending,
+            disabled:
+              action.command === "viewDelivery"
+                ? false
+                : orderCommands[action.command].isPending,
             separatorBefore: true,
-            onSelect: () => {
-              if (action.requiresReason) {
-                openReason(
-                  action.command as Extract<OrderCommand, "reject" | "cancel">,
-                  order,
-                );
-                return;
-              }
-              if (
-                ["purchase", "replacePurchase", "confirmDelivery"].includes(
-                  action.command,
-                )
-              ) {
-                openWorkflow(
-                  action.command as Extract<
-                    OrderCommand,
-                    "purchase" | "replacePurchase" | "confirmDelivery"
-                  >,
-                  order,
-                );
-                return;
-              }
-              openConfirm(
-                action.command as Extract<
-                  OrderCommand,
-                  "approve" | "startDelivery" | "deliver"
-                >,
-                order,
-              );
-            },
+            onSelect: () => runOrderAction(action, order),
           })),
         ];
         if (!isExactAdmin) return actions;
@@ -382,6 +440,19 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
           <NTable {...operatorTableProps} />
         </div>
       )}
+      <DeliveryDetailsSheet
+        open={deliveryOrder !== null}
+        order={deliveryOrder}
+        onOpenChange={(open) => {
+          if (!open) setDeliveryOrder(null);
+        }}
+        onAction={(command, order) => {
+          const action = getOrderActions(order).find(
+            (candidate) => candidate.command === command,
+          );
+          if (action) runOrderAction(action, order);
+        }}
+      />
     </NPageLayout>
   );
 }
@@ -450,6 +521,8 @@ function FamilyOrderCard({
               date: formatKafilDate(order.deliveryStartedAt),
             })}
           </p>
+        ) : order.deliveryAssigned ? (
+          <p>{t("common.orderDeliveryAssigned")}</p>
         ) : null}
         {order.deliveryProofRecorded ? (
           <p>{t("common.orderDeliveryProofRecorded")}</p>

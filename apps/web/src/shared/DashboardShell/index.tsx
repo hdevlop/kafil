@@ -32,6 +32,7 @@ import {
 import { useKafilBranding } from "@/providers/KafilBrandingProvider";
 import { OrderCartOverlay } from "@/features/OrderCart";
 import { KafilRoleProvider } from "@/shared/Authorization";
+import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";
 import { DashboardSidebarProvider } from "./DashboardPageHeader";
 
 interface DashboardUser {
@@ -40,7 +41,10 @@ interface DashboardUser {
   role?: string | null;
 }
 
-function operatorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
+function operatorItems(
+  t: ReturnType<typeof useKafilLanguage>["t"],
+  includeStaff = false,
+): NavItem[] {
   return [
     { id: "/operator", href: "/operator", label: t("nav.overview"), icon: LayoutDashboard },
     {
@@ -53,6 +57,14 @@ function operatorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
     },
     { id: "/operator/children", href: "/operator/children", label: t("nav.children"), icon: Baby },
     { id: "/operator/sponsors", href: "/operator/sponsors", label: t("nav.sponsors"), icon: UserRound },
+    ...(includeStaff
+      ? [{
+          id: "/operator/staff",
+          href: "/operator/staff",
+          label: t("nav.staff"),
+          icon: UserShieldIcon,
+        }]
+      : []),
     { id: "/operator/assignments", href: "/operator/assignments", label: t("nav.assignments"), icon: HeartHandshake },
     {
       id: "/operator/contributions",
@@ -171,7 +183,7 @@ function LinkAdapter({
 }
 
 export function getDashboardNavigation(role: string | null | undefined, t: ReturnType<typeof useKafilLanguage>["t"]) {
-  if (role === "admin") return [...operatorItems(t), ...adminAccessItems(t)];
+  if (role === "admin") return [...operatorItems(t, true), ...adminAccessItems(t)];
   if (role === "operator") return operatorItems(t);
   if (role === "family") return familyItems(t);
   if (role === "sponsor") return sponsorItems(t);

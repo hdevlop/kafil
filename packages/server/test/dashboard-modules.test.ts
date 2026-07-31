@@ -31,6 +31,14 @@ describe("Phase 7 dashboard report boundaries", () => {
       }),
       operatorContributionTrend: async () => [{ month: "2026-07", validatedMinor: "9000", refundedMinor: "500" }],
       operatorOrderStatuses: async () => [{ status: "pending", count: "2" }],
+      operatorRecentOrders: async () => [{
+        id: "order-1",
+        orderNumber: "ORD-001",
+        familyName: "Atlas Family",
+        status: "pending",
+        totalMinor: "1800",
+        placedAt: new Date("2026-07-20"),
+      }],
     } as unknown as DashboardRepository);
 
     const result = await dashboard.getOperator();
@@ -43,6 +51,14 @@ describe("Phase 7 dashboard report boundaries", () => {
       validatedMinor: 9000,
       refundedMinor: 500,
     });
+    expect(result.recentOrders).toEqual([{
+      id: "order-1",
+      orderNumber: "ORD-001",
+      familyName: "Atlas Family",
+      status: "pending",
+      totalMinor: 1800,
+      placedAt: new Date("2026-07-20"),
+    }]);
   });
 
   it("keeps the sponsor dashboard privacy-safe while aggregating supported budgets", async () => {

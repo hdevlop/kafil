@@ -44,6 +44,17 @@ export const submitOrderDto = z.object({
 
 export const orderReasonDto = z.object({ reason });
 
+export const assignDeliveryDto = z.object({
+  staffProfileId: id,
+  idempotencyKey,
+});
+
+export const reassignDeliveryDto = assignDeliveryDto.extend({ reason });
+
+export const startDeliveryDto = z.object({ idempotencyKey });
+
+export const failDeliveryDto = z.object({ reason, idempotencyKey });
+
 export const assistedOrderDto = z.object({
   familyProfileId: id,
   items: z
@@ -174,6 +185,10 @@ export type ReplacePurchaseDto = z.input<typeof replacePurchaseDto>;
 export type ConfirmDeliveryDto = z.input<typeof confirmDeliveryDto>;
 export type OperatorCancelOrderDto = z.input<typeof operatorCancelOrderDto>;
 export type OrderReasonDto = z.input<typeof orderReasonDto>;
+export type AssignDeliveryDto = z.input<typeof assignDeliveryDto>;
+export type ReassignDeliveryDto = z.input<typeof reassignDeliveryDto>;
+export type StartDeliveryDto = z.input<typeof startDeliveryDto>;
+export type FailDeliveryDto = z.input<typeof failDeliveryDto>;
 export type FamilyCancelOrderDto = z.input<typeof familyCancelOrderDto>;
 export type OrderListQuery = z.input<typeof orderListQuery>;
 export type OwnOrderListQuery = z.input<typeof ownOrderListQuery>;

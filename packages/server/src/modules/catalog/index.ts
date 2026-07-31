@@ -2,7 +2,10 @@ export {
   CATEGORY_IMAGE_SERVE_PREFIX,
   CategoryImageController,
 } from "./categoryImageController";
-export { ProductImageController } from "./productImageController";
+export {
+  PRODUCT_IMAGE_SERVE_PREFIX,
+  ProductImageController,
+} from "./productImageController";
 export { CatalogController } from "./catalogController";
 export * from "./catalogDto";
 export * from "./catalogGuards";

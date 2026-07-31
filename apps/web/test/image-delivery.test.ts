@@ -55,6 +55,17 @@ describe("image delivery source gates", () => {
     expect(avatar).toContain("sizes={IMAGE_SIZES[size]}");
   });
 
+  test("removes avatar initials after a managed image loads", () => {
+    const avatar = readFileSync(
+      join(sourceRoot, "shared", "ManagedAvatar.tsx"),
+      "utf8",
+    );
+
+    expect(avatar).toContain("loadedSource !== resolved");
+    expect(avatar).toContain("onLoad={() => setLoadedSource(resolved)}");
+    expect(avatar).toContain("{showFallback ? (");
+  });
+
   test("leaves public branding eligible for the Next optimizer", () => {
     const branding = readFileSync(
       join(sourceRoot, "features", "Branding", "BrandingImage.tsx"),
@@ -67,13 +78,13 @@ describe("image delivery source gates", () => {
 
   test("uses the authoritative normalized path returned by every upload", () => {
     for (const service of [
-      "services/adminAccessApi.ts",
       "services/brandingApi.ts",
       "services/categoryApi.ts",
       "services/childApi.ts",
       "services/familyApi.ts",
       "services/productApi.ts",
       "services/sponsorApi.ts",
+      "services/staffApi.ts",
     ]) {
       const source = readFileSync(join(sourceRoot, service), "utf8");
       expect(source).toContain("api.upload<");

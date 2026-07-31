@@ -266,3 +266,44 @@ reserve/release ledger entries, rebuilds every remaining budget snapshot,
 deletes the order items and status timeline, and records a privacy-safe
 `order.deleted` audit event. Purchased, prepared, out-for-delivery, delivered,
 or evidence-bearing orders retain their immutable history and are refused.
+
+### D-037 - One Staff directory owns operator, internal delivery, and external delivery
+
+Kafil maintains one Staff directory. The MVP form exposes one operational
+Role, `operator` or `delivery`, backed by a normalized function row. This is
+job metadata for filtering and assignment and never duplicates Najm RBAC.
+Creating Operator Staff provisions its Najm operator account in the same
+workflow and returns a one-time credential. Delivery Staff has no application
+account. Permanent deletion is admin-only and allowed only for a pristine
+Staff record with no linked Najm user or delivery history; historical Staff is
+deactivated instead. The admin account lifecycle (`/admin/access/users`
+deactivate and reactivate) keeps linked Staff status in lock-step with Najm.
+
+### D-038 - Admin-only Staff route and navigation placement
+
+`/operator/staff` is an admin-only route enforced server-side by
+`requireRole(["admin"])` in the page component. The Staff link lives inside
+the admin Access Management navigation group, never inside the common
+operator navigation, so a normal operator cannot reach the management
+surface. Operators only see the safe `/staff/options/delivery` projection
+needed by delivery-assignment workflows.
+
+### D-039 - Immutable delivery assignments inside Orders
+
+Delivery assignment belongs to Orders and references active Staff whose
+operational Role is `delivery`. Each assignment creates an immutable
+`order_delivery_attempts` record with Staff identity/contact snapshots,
+command-specific idempotency keys, lifecycle timestamps, and failure or
+cancellation reasons. A partial unique index permits at most one `assigned` or
+`in_progress` attempt per order.
+
+Assignment keeps an order `purchased`; start atomically moves both the attempt
+and order to `in_progress` / `out_for_delivery`; failure closes the attempt and
+returns the order to `purchased`; confirmation completes the active attempt and
+the existing protected-proof workflow together. Reassignment cancels only an
+unstarted attempt and creates its replacement atomically. Operators and admins
+receive operational assignment data; family views receive only an assigned
+milestone, and sponsor views retain their existing fulfillment milestones.
+Audit/outbox payloads contain stable IDs and states, never Staff phone, exact
+address, failure text, notes, or proof paths. Delivery has no budget or
+inventory effect.

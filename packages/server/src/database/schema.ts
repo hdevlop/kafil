@@ -24,6 +24,7 @@ import { orderSchema } from "../modules/orders/orderSchema";
 import { outboxSchema } from "../modules/outbox/outboxSchema";
 import { settingSchema } from "../modules/settings/settingSchema";
 import { sponsorSchema } from "../modules/sponsors/sponsorSchema";
+import { staffSchema } from "../modules/staff/staffSchema";
 import { supportAssignmentSchema } from "../modules/supportAssignments/supportAssignmentSchema";
 import {
   budgetLedgerEntryTypeEnum,
@@ -39,10 +40,13 @@ import {
   familySupportPriorityEnum,
   inventoryLedgerEntryTypeEnum,
   orderAssistanceChannelEnum,
+  orderDeliveryAttemptStatusEnum,
   orderPlacementSourceEnum,
   orderStatusEnum,
   outboxEventStatusEnum,
   productStatusEnum,
+  staffAffiliationEnum,
+  staffStatusEnum,
   supportAssignmentStatusEnum,
 } from "./enums";
 
@@ -70,10 +74,13 @@ export {
   familySupportPriorityEnum,
   inventoryLedgerEntryTypeEnum,
   orderAssistanceChannelEnum,
+  orderDeliveryAttemptStatusEnum,
   orderPlacementSourceEnum,
   orderStatusEnum,
   outboxEventStatusEnum,
   productStatusEnum,
+  staffAffiliationEnum,
+  staffStatusEnum,
   supportAssignmentStatusEnum,
 };
 export * from "../modules/audit/auditSchema";
@@ -89,6 +96,7 @@ export * from "../modules/orders/orderSchema";
 export * from "../modules/outbox/outboxSchema";
 export * from "../modules/settings/settingSchema";
 export * from "../modules/sponsors/sponsorSchema";
+export * from "../modules/staff/staffSchema";
 export * from "../modules/supportAssignments/supportAssignmentSchema";
 
 export const kafilSchema = {
@@ -104,6 +112,7 @@ export const kafilSchema = {
   ...outboxSchema,
   ...settingSchema,
   ...sponsorSchema,
+  ...staffSchema,
   ...supportAssignmentSchema,
   ...documentSchema,
 };

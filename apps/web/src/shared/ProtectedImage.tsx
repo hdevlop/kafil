@@ -10,6 +10,7 @@ const PROTECTED_IMAGE_PREFIXES = [
   "/api/child-images/files/serve/",
   "/api/category-images/files/serve/",
   "/api/product-images/files/serve/",
+  "/api/staff-images/files/serve/",
 ] as const;
 
 export function isProtectedImageSource(src: string) {

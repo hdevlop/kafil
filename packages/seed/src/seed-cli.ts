@@ -21,6 +21,7 @@ export interface SeedCliOptions {
 
 export interface SeedCliDemoCounts {
   contributions: number;
+  deliveries: number;
   families: number;
   operators: number;
   sponsors: number;
@@ -85,6 +86,7 @@ export function demoCountArgs(counts: SeedCliDemoCounts) {
     `--families=${counts.families}`,
     `--sponsors=${counts.sponsors}`,
     `--operators=${counts.operators}`,
+    `--deliveries=${counts.deliveries}`,
     `--contributions=${counts.contributions}`,
   ];
 }
@@ -108,10 +110,11 @@ Commands:
   images     Check seed images
 
 Demo/full options:
-  -f, --families <count>       Default: 20
-  -s, --sponsors <count>      Default: 50
-  -o, --operators <count>     Default: 5
-  -c, --contributions <count> Default: 100
+  -f, --families <count>       Default: 10
+  -s, --sponsors <count>      Default: 20
+  -o, --operators <count>     Default: 6
+  -d, --deliveries <count>    Default: 4
+  -c, --contributions <count> Default: 20
 
 Safety:
   remove deletes managed demo data plus products and empty categories.

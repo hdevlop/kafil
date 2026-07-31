@@ -107,29 +107,38 @@ files, updates only matching database references, writes checksummed rollback
 metadata without image bytes or personal names, and keeps branding revision
 increments intact.
 
-The `demo` and `full` commands run the same category seed automatically. Source
-images live directly in `packages/seed/images/` using each category slug as the
-filename, such as `fresh-produce.webp` and `school-supplies.webp`. The seed
-normalizes them through the server-owned image processor into managed
-`category-images` storage with stable content-versioned names.
+The `demo` and `full` commands run the same category seed automatically, then
+create or repair 18 matching image-backed demo products. Source images live
+directly in `packages/seed/images/` using each category slug as the filename,
+such as `fresh-produce.webp` and `school-supplies.webp`. The seed normalizes
+them through the server-owned image processor into managed category/product
+storage with stable content-versioned names.
+
+The default demo creates 10 families, 20 sponsors, 6 operators, 4 delivery
+staff, and 20 contributions. Fully funded families receive 24 repeat orders
+spread across the trailing 12 months, with a realistic mix of delivered,
+rejected, cancelled, approved, purchased, pending, and out-for-delivery states.
+Order creation and lifecycle transitions use the normal services and ledger
+commands; reruns reuse the deterministic records.
 
 `demo` accepts configurable counts:
 
 ```bash
-bun run seed -- demo --families=10 --sponsors=25 --operators=3 --contributions=40
+bun run seed -- demo --families=10 --sponsors=20 --operators=6 --deliveries=4 --contributions=20
 ```
 
-Short flags `-f`, `-s`, `-o`, and `-c` are also accepted. The compatibility
+Short flags `-f`, `-s`, `-o`, `-d`, and `-c` are also accepted. The compatibility
 commands `bun run seed:demo`, `bun run seed:full`, `bun run seed:migrate`,
 `bun run seed:admin`, `bun run seed:categories`, and `bun run seed:verify`
 remain available.
 
 `full` is the default highlighted choice in `bun run seed`. Press Enter and the
-Clack interface asks for family, sponsor, operator, and contribution counts
-separately before the destructive confirmation. Choosing `demo` asks the same
-questions without resetting existing data. Running `bun run seed -- demo` or
-`bun run seed -- full` directly also asks for counts when no count flags were
-provided. Press Enter on any count to accept its displayed default.
+Clack interface asks for family, sponsor, operator, delivery-staff, and
+contribution counts separately before the destructive confirmation. Choosing
+`demo` asks the same questions without resetting existing data. Running
+`bun run seed -- demo` or `bun run seed -- full` directly also asks for counts
+when no count flags were provided. Press Enter on any count to accept its
+displayed default.
 
 ## Seed image library
 

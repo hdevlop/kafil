@@ -419,7 +419,7 @@ describe("initial PostgreSQL migration", () => {
     expect(migration).not.toContain("DROP TABLE");
   });
 
-  it("adds assisted procurement, immutable purchases, and delivery without destructive DDL", async () => {
+it("adds assisted procurement, immutable purchases, and delivery without destructive DDL", async () => {
     const migration = await Bun.file(
       join(migrationsDirectory, "0025_ambitious_abomination.sql"),
     ).text();
@@ -440,6 +440,62 @@ describe("initial PostgreSQL migration", () => {
     );
     expect(migration).toContain(
       'CONSTRAINT "orders_delivery_proof_complete_check"',
+    );
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
+
+  it("introduces Staff profiles and functions with a backfill of every operator profile", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0026_concerned_cannonball.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'CREATE TYPE "public"."staff_affiliation"',
+    );
+    expect(migration).toContain(
+      'CREATE TYPE "public"."staff_status"',
+    );
+    expect(migration).toContain('CREATE TABLE "staff_profiles"');
+    expect(migration).toContain('CREATE TABLE "staff_functions"');
+    expect(migration).toContain(
+      'CONSTRAINT "staff_profiles_user_id_users_id_fk"',
+    );
+    expect(migration).toContain(
+      'CONSTRAINT "staff_profiles_phone_unique"',
+    );
+    expect(migration).toContain(
+      'INSERT INTO "staff_profiles"',
+    );
+    expect(migration).toContain('FROM "operator_profiles" op');
+    expect(migration).toContain(
+      'INSERT INTO "staff_functions"',
+    );
+    expect(migration).toContain("'operator'");
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
+
+  it("adds normalized delivery attempts with lifecycle and concurrency guards", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0027_unusual_victor_mancha.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'CREATE TYPE "public"."order_delivery_attempt_status"',
+    );
+    expect(migration).toContain('CREATE TABLE "order_delivery_attempts"');
+    expect(migration).toContain(
+      'CONSTRAINT "order_delivery_attempts_lifecycle_check"',
+    );
+    expect(migration).toContain(
+      'CREATE UNIQUE INDEX "order_delivery_attempts_one_active_per_order"',
+    );
+    expect(migration).toContain(
+      'WHERE "order_delivery_attempts"."status" IN (\'assigned\', \'in_progress\')',
+    );
+    expect(migration).toContain(
+      'CREATE UNIQUE INDEX "order_delivery_attempts_assignment_key_unique"',
     );
     expect(migration).not.toContain("DROP COLUMN");
     expect(migration).not.toContain("DROP TABLE");

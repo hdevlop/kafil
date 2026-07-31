@@ -1,11 +1,15 @@
-import type { OrderStatus } from "../types";
+import type { OrderRecord, OrderStatus } from "../types";
 
 export type OrderCommand =
   | "approve"
   | "reject"
   | "purchase"
   | "replacePurchase"
+  | "viewDelivery"
+  | "assignDelivery"
+  | "reassignDelivery"
   | "startDelivery"
+  | "failDelivery"
   | "confirmDelivery"
   | "deliver"
   | "cancel";
@@ -61,11 +65,6 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
   ],
   purchased: [
     {
-      command: "startDelivery",
-      label: "common.startDelivery",
-      requiresReason: false,
-    },
-    {
       command: "replacePurchase",
       label: "common.replacePurchase",
       danger: true,
@@ -78,21 +77,76 @@ const actionsByStatus: Partial<Record<OrderStatus, OrderAction[]>> = {
       requiresReason: true,
     },
   ],
-  out_for_delivery: [
-    {
-      command: "confirmDelivery",
-      label: "common.confirmDelivery",
-      requiresReason: false,
-    },
-    {
-      command: "cancel",
-      label: "action.cancelAndRefund",
-      danger: true,
-      requiresReason: true,
-    },
-  ],
 };
 
-export function getOrderActions(status: string): OrderAction[] {
+export function getOrderActions(
+  input: string | Pick<OrderRecord, "status" | "currentDelivery" | "latestDelivery">,
+): OrderAction[] {
+  const status = typeof input === "string" ? input : input.status;
+  if (typeof input === "string") {
+    return actionsByStatus[status as OrderStatus] ?? [];
+  }
+  if (status === "purchased") {
+    const deliveryActions: OrderAction[] = input.currentDelivery
+      ? [
+          {
+            command: "viewDelivery",
+            label: "operator.orders.viewDelivery",
+            requiresReason: false,
+          },
+          {
+            command: "startDelivery",
+            label: "common.startDelivery",
+            requiresReason: false,
+          },
+          {
+            command: "reassignDelivery",
+            label: "operator.orders.changeDeliveryStaff",
+            requiresReason: true,
+          },
+        ]
+      : [
+          ...(input.latestDelivery
+            ? [{
+                command: "viewDelivery" as const,
+                label: "operator.orders.viewDelivery",
+                requiresReason: false,
+              }]
+            : []),
+          {
+            command: "assignDelivery",
+            label: "operator.orders.assignDelivery",
+            requiresReason: false,
+          },
+        ];
+    return [...deliveryActions, ...(actionsByStatus.purchased ?? [])];
+  }
+  if (status === "out_for_delivery") {
+    return [
+      {
+        command: "viewDelivery",
+        label: "operator.orders.viewDelivery",
+        requiresReason: false,
+      },
+      {
+        command: "confirmDelivery",
+        label: "common.confirmDelivery",
+        requiresReason: false,
+      },
+      {
+        command: "failDelivery",
+        label: "operator.orders.deliveryFailed",
+        danger: true,
+        requiresReason: true,
+      },
+    ];
+  }
+  if (status === "delivered") {
+    return [{
+      command: "viewDelivery",
+      label: "operator.orders.viewDeliveryHistory",
+      requiresReason: false,
+    }];
+  }
   return actionsByStatus[status as OrderStatus] ?? [];
 }

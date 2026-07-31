@@ -18,8 +18,8 @@ import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
 import { familyProfiles } from "../families/familySchema";
-import { operatorProfiles } from "../operators/operatorSchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
+import { staffProfiles } from "../staff/staffSchema";
 
 export interface AccessUserFilters {
   search?: string;
@@ -40,7 +40,7 @@ const userSelection = {
   createdAt: usersTable.createdAt,
   updatedAt: usersTable.updatedAt,
   familyProfileId: familyProfiles.id,
-  operatorProfileId: operatorProfiles.id,
+  staffProfileId: staffProfiles.id,
   sponsorProfileId: sponsorProfiles.id,
 };
 
@@ -199,6 +199,16 @@ export class AdminAccessRepository {
     return permission;
   }
 
+  async syncStaffStatus(
+    staffProfileId: string,
+    status: "active" | "inactive",
+  ) {
+    await this.db
+      .update(staffProfiles)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(staffProfiles.id, staffProfileId));
+  }
+
   async listUserIdsByRoleNames(roleNames: string[]) {
     if (roleNames.length === 0) return [];
     return this.db
@@ -240,7 +250,7 @@ export class AdminAccessRepository {
       .from(usersTable)
       .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
       .leftJoin(familyProfiles, eq(usersTable.id, familyProfiles.userId))
-      .leftJoin(operatorProfiles, eq(usersTable.id, operatorProfiles.userId))
+      .leftJoin(staffProfiles, eq(usersTable.id, staffProfiles.userId))
       .leftJoin(sponsorProfiles, eq(usersTable.id, sponsorProfiles.userId));
   }
 }

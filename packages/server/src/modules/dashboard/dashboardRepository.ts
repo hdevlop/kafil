@@ -99,6 +99,23 @@ export class DashboardRepository {
       .orderBy(asc(orders.status));
   }
 
+  operatorRecentOrders(limit = 5) {
+    return this.db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        familyName: usersTable.name,
+        status: orders.status,
+        totalMinor: orders.totalMinor,
+        placedAt: orders.createdAt,
+      })
+      .from(orders)
+      .innerJoin(familyProfiles, eq(orders.familyProfileId, familyProfiles.id))
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
+      .orderBy(desc(orders.createdAt))
+      .limit(limit);
+  }
+
   async familyIdentity(userId: string) {
     const [identity] = await this.db
       .select({

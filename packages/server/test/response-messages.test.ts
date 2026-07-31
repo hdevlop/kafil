@@ -31,14 +31,14 @@ function controller(name: string) {
 }
 
 describe("server response message contract", () => {
-  it("assigns a direct, domain-specific response key to every controller endpoint", () => {
-    expect(controllers).toHaveLength(24);
+it("assigns a direct, domain-specific response key to every controller endpoint", () => {
+    expect(controllers).toHaveLength(25);
 
     const routes = controllers.flatMap((current) =>
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    expect(routes).toHaveLength(175);
+    expect(routes).toHaveLength(186);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));
@@ -73,6 +73,10 @@ describe("server response message contract", () => {
       .toBe("catalog.success.deleted");
     expect(getResponseMessage(controller("OrderController"), "approve")?.message)
       .toBe("orders.success.approved");
+    expect(getResponseMessage(controller("OrderController"), "assignDelivery")?.message)
+      .toBe("orders.success.deliveryAssigned");
+    expect(getResponseMessage(controller("OrderController"), "failDelivery")?.message)
+      .toBe("orders.success.deliveryFailed");
     expect(getResponseMessage(controller("OrderController"), "deliver")?.message)
       .toBe("orders.success.delivered");
     expect(getResponseMessage(controller("OrderController"), "delete")?.message)

@@ -23,7 +23,6 @@ import {
 } from "../config/sponsorSchemas";
 import { useSponsorCommands } from "../hooks/useSponsors";
 import type { SponsorRecord } from "../types";
-import { InitialCredentialsCard } from "@/shared/InitialCredentialsCard";
 
 const MAX_SPONSOR_IMAGE_SIZE = 5_000_000;
 const SPONSOR_IMAGE_TYPES = new Set([
@@ -66,10 +65,6 @@ export function CreateSponsorDialogContent() {
   const { pop } = useDialog();
   const { create } = useSponsorCommands();
   const devTools = useDevFormTools(createSponsorFormSchema);
-  const [credentials, setCredentials] = useState<{
-    password: string;
-    phone: string;
-  } | null>(null);
   const [sponsorImage, setSponsorImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -85,10 +80,10 @@ export function CreateSponsorDialogContent() {
       uploadedImagePath = sponsorImage
         ? await uploadSponsorImage(sponsorImage)
         : null;
-      const created = await create.mutateAsync(
+      await create.mutateAsync(
         toCreateSponsorInput(values, uploadedImagePath),
       );
-      setCredentials({ password: created.initialPassword, phone: values.phone });
+      await pop();
     } catch (error) {
       if (uploadedImagePath) {
         await deleteSponsorImage(uploadedImagePath).catch(() => undefined);
@@ -97,16 +92,6 @@ export function CreateSponsorDialogContent() {
     } finally {
       setIsUploadingImage(false);
     }
-  }
-
-  if (credentials) {
-    return (
-      <InitialCredentialsCard
-        password={credentials.password}
-        phone={credentials.phone}
-        onDone={() => void pop()}
-      />
-    );
   }
 
   return (

@@ -34,6 +34,7 @@ function fakePool(failOn?: string) {
                 rows: [
                   {
                     contributions: 100,
+                    deliveries: 4,
                     families: 10,
                     operators: 2,
                     orders: 1,
@@ -77,7 +78,9 @@ describe("managed demo cleanup", () => {
     expect(scope).toContain("@demo.kafil.test");
     expect(scope).toContain("KAFIL-DEMO-%");
     expect(scope).toContain("demo-assisted-order:%");
+    expect(scope).toContain("kafil_demo_delivery_staff");
     expect(removal).toContain("DELETE FROM contributions");
+    expect(removal).toContain("DELETE FROM order_delivery_attempts");
     expect(removal).toContain("DELETE FROM users");
     expect(removal).not.toContain("TRUNCATE");
 
@@ -113,6 +116,7 @@ describe("managed demo cleanup", () => {
     expect(result).toEqual({
       categories: 1,
       contributions: 100,
+      deliveries: 4,
       families: 10,
       files: 1,
       operators: 2,

@@ -25,6 +25,14 @@ export interface OperatorDashboardData {
   };
   contributionTrend: Array<{ month: string; validatedMinor: number; refundedMinor: number }>;
   orderStatuses: DashboardStatusCount[];
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    familyName: string;
+    status: string;
+    totalMinor: number;
+    placedAt: string;
+  }>;
 }
 
 export interface FamilyDashboardData {

@@ -5,9 +5,11 @@ import {
   moroccanNameParts,
 } from "../../fakers/moroccan-names";
 import type { MoroccanNameParts } from "../../fakers/moroccan-names";
+import { DEMO_ORDER_PRODUCT_SKUS } from "../../demo-product-fixtures";
 
 export interface DemoSeedCounts {
   contributions: number;
+  deliveries?: number;
   families: number;
   operators: number;
   sponsors: number;
@@ -29,6 +31,19 @@ export interface DemoPersonAccount {
 
 export interface DemoOperator extends DemoPersonAccount {
   jobTitle: string;
+}
+
+export interface DemoDelivery {
+  address: string;
+  cin: string;
+  contactEmail: string;
+  dateOfBirth: string;
+  gender: "F" | "M";
+  id: string;
+  jobTitle: string;
+  name: string;
+  notes: string;
+  phone: string;
 }
 
 export type DemoSponsor = DemoPersonAccount;
@@ -80,11 +95,32 @@ export interface DemoContribution {
   sponsorProfileId: string;
 }
 
+export interface DemoOrder {
+  assistanceChannel: "home_visit" | "in_person" | "phone";
+  expectedStatus:
+    | "approved"
+    | "cancelled"
+    | "delivered"
+    | "out_for_delivery"
+    | "pending"
+    | "purchased"
+    | "rejected";
+  familyProfileId: string;
+  idempotencyKey: string;
+  items: Array<{
+    quantity: number;
+    sku: string;
+  }>;
+  placedAt: string;
+}
+
 export interface DemoSeedData {
   assignments: DemoSupportAssignment[];
   contributions: DemoContribution[];
+  deliveries: DemoDelivery[];
   families: DemoFamily[];
   operators: DemoOperator[];
+  orders: DemoOrder[];
   sponsors: DemoSponsor[];
 }
 
@@ -96,11 +132,12 @@ interface DemoFamilyFundingPlan {
   targetMinor: number;
 }
 
-export const DEFAULT_DEMO_SEED_COUNTS: Readonly<DemoSeedCounts> = {
-  contributions: 100,
-  families: 20,
-  operators: 5,
-  sponsors: 50,
+export const DEFAULT_DEMO_SEED_COUNTS: Readonly<Required<DemoSeedCounts>> = {
+  contributions: 20,
+  deliveries: 4,
+  families: 10,
+  operators: 6,
+  sponsors: 20,
 };
 
 const DEMO_FAKER_SEED = 20_260_719;
@@ -148,6 +185,12 @@ const JOB_TITLES = [
   "Programme officer",
   "Social worker",
 ] as const;
+const DELIVERY_JOB_TITLES = [
+  "Delivery coordinator",
+  "Family delivery driver",
+  "Field delivery agent",
+  "Last-mile courier",
+] as const;
 
 export function readDemoSeedCounts(
   args: readonly string[] = process.argv.slice(2).filter((arg) => arg !== "--"),
@@ -158,6 +201,12 @@ export function readDemoSeedCounts(
       "contributions",
       "c",
       DEFAULT_DEMO_SEED_COUNTS.contributions,
+    ),
+    deliveries: readCount(
+      args,
+      "deliveries",
+      "d",
+      DEFAULT_DEMO_SEED_COUNTS.deliveries,
     ),
     families: readCount(args, "families", "f", DEFAULT_DEMO_SEED_COUNTS.families),
     operators: readCount(args, "operators", "o", DEFAULT_DEMO_SEED_COUNTS.operators),
@@ -179,6 +228,9 @@ export function generateDemoSeedData(
   const operators = Array.from({ length: counts.operators }, (_, index) =>
     operator(index, adultName),
   );
+  const deliveries = Array.from({ length: counts.deliveries ?? 0 }, (_, index) =>
+    delivery(index, adultName),
+  );
   const sponsors = Array.from({ length: counts.sponsors }, (_, index) =>
     sponsor(index, adultName),
   );
@@ -198,12 +250,18 @@ export function generateDemoSeedData(
     families,
     referenceDate,
   );
+  const orders =
+    deliveries.length === 0
+      ? []
+      : generateOrders(families, contributions, referenceDate);
 
   return {
     assignments,
     contributions,
+    deliveries,
     families,
     operators,
+    orders,
     sponsors,
   };
 }
@@ -218,6 +276,12 @@ function generateContributions(
   const activeFundingPlans = fundingPlans
     .filter((plan) => plan.state !== "zero")
     .slice(0, count);
+  const fullFundingPlans = activeFundingPlans.filter(
+    (plan) => plan.state === "full",
+  );
+  const pendingFundingPlans = activeFundingPlans.filter(
+    (plan) => plan.state === "pending",
+  );
   const statuses = contributionStatuses(count, activeFundingPlans.length);
   const assignmentsByFamilyId = new Map<string, DemoSupportAssignment>();
 
@@ -227,6 +291,10 @@ function generateContributions(
     }
   }
 
+  const validatedPlanQueue = [
+    ...fullFundingPlans,
+    ...pendingFundingPlans,
+  ];
   let validatedIndex = 0;
   const contributionPlans = statuses.map((expectedStatus, index) => {
     if (expectedStatus !== "validated") {
@@ -236,9 +304,13 @@ function generateContributions(
       };
     }
 
-    const fundingPlan = activeFundingPlans[
-      validatedIndex % activeFundingPlans.length
-    ]!;
+    const fundingPlan =
+      validatedPlanQueue[validatedIndex] ??
+      pendingFundingPlans[
+        (validatedIndex - validatedPlanQueue.length) %
+          pendingFundingPlans.length
+      ] ??
+      fullFundingPlans[validatedIndex % fullFundingPlans.length]!;
     validatedIndex += 1;
     return {
       assignment: assignmentsByFamilyId.get(fundingPlan.family.id)!,
@@ -325,6 +397,124 @@ function generateContributions(
   });
 }
 
+function generateOrders(
+  families: readonly DemoFamily[],
+  contributions: readonly DemoContribution[],
+  referenceDate: Date,
+): DemoOrder[] {
+  const activatedFamilies = families
+    .map((family) => {
+      const validated = contributions
+        .filter(
+          (contribution) =>
+            contribution.familyProfileId === family.id &&
+            contribution.expectedStatus === "validated",
+        )
+        .sort((left, right) => left.paidAt.localeCompare(right.paidAt));
+      const fundedMinor = validated.reduce(
+        (total, contribution) => total + contribution.amountMinor,
+        0,
+      );
+      return {
+        activationDate: validated.at(-1)?.paidAt,
+        family,
+        fundedMinor,
+      };
+    })
+    .filter(
+      (
+        entry,
+      ): entry is {
+        activationDate: string;
+        family: DemoFamily;
+        fundedMinor: number;
+      } =>
+        entry.fundedMinor === entry.family.fundingTargetMinor &&
+        entry.activationDate !== undefined,
+    );
+  const orderCount = Math.min(24, activatedFamilies.length * 8);
+  if (orderCount === 0) return [];
+
+  return Array.from({ length: orderCount }, (_, index) => {
+    const monthSlot = Math.floor((index * 12) / orderCount);
+    const monthOffset = 11 - monthSlot;
+    const placedAt = historicalOrderDate(index, monthOffset, referenceDate);
+    const eligible = activatedFamilies.filter(
+      (entry) => entry.activationDate <= placedAt.slice(0, 10),
+    );
+    const family =
+      eligible[index % eligible.length]?.family ??
+      activatedFamilies[0]!.family;
+    const firstSku =
+      DEMO_ORDER_PRODUCT_SKUS[index % DEMO_ORDER_PRODUCT_SKUS.length]!;
+    const secondSku =
+      DEMO_ORDER_PRODUCT_SKUS[
+        (index + 2) % DEMO_ORDER_PRODUCT_SKUS.length
+      ]!;
+    const items: DemoOrder["items"] = [
+      { quantity: 1 + (index % 2), sku: firstSku },
+      { quantity: 1, sku: secondSku },
+    ];
+    if (index % 3 === 0) {
+      const thirdSku =
+        DEMO_ORDER_PRODUCT_SKUS[
+          (index + 4) % DEMO_ORDER_PRODUCT_SKUS.length
+        ]!;
+      if (!items.some((item) => item.sku === thirdSku)) {
+        items.push({ quantity: 1, sku: thirdSku });
+      }
+    }
+
+    return {
+      assistanceChannel: ["phone", "in_person", "home_visit"][
+        index % 3
+      ] as DemoOrder["assistanceChannel"],
+      expectedStatus: demoOrderStatus(index, orderCount),
+      familyProfileId: family.id,
+      idempotencyKey: `demo-assisted-order:${String(index + 1).padStart(4, "0")}`,
+      items,
+      placedAt,
+    };
+  });
+}
+
+function demoOrderStatus(index: number, count: number): DemoOrder["expectedStatus"] {
+  const remaining = count - index;
+  if (remaining === 1) return "out_for_delivery";
+  if (remaining === 2) return "pending";
+  if (remaining === 3) return "purchased";
+  if (remaining === 4) return "approved";
+  if (index % 11 === 5) return "cancelled";
+  if (index % 9 === 4) return "rejected";
+  return "delivered";
+}
+
+function historicalOrderDate(
+  index: number,
+  monthOffset: number,
+  referenceDate: Date,
+) {
+  const month = new Date(
+    Date.UTC(
+      referenceDate.getUTCFullYear(),
+      referenceDate.getUTCMonth() - monthOffset,
+      1,
+      10 + (index % 8),
+    ),
+  );
+  const daysInMonth = new Date(
+    Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  const currentMonth =
+    month.getUTCFullYear() === referenceDate.getUTCFullYear() &&
+    month.getUTCMonth() === referenceDate.getUTCMonth();
+  const latestDay = currentMonth
+    ? Math.min(daysInMonth, referenceDate.getUTCDate())
+    : daysInMonth;
+  month.setUTCDate(Math.min(20 + (index % 7), latestDay));
+  return month.toISOString();
+}
+
 function generateAssignments(
   sponsors: readonly DemoSponsor[],
   families: readonly DemoFamily[],
@@ -396,12 +586,12 @@ function contributionStatuses(count: number, requiredValidated: number) {
   const statuses = Array.from({ length: count }, (_, index) =>
     contributionStatus(index),
   );
-  let validated = statuses.filter((status) => status === "validated").length;
-
-  for (let index = 0; validated < requiredValidated; index += 1) {
-    if (statuses[index] === "validated") continue;
+  for (
+    let index = 0;
+    index < Math.min(requiredValidated, statuses.length);
+    index += 1
+  ) {
     statuses[index] = "validated";
-    validated += 1;
   }
 
   return statuses;
@@ -480,6 +670,23 @@ function operator(index: number, adultName: AdultNameGenerator): DemoOperator {
     dateOfBirth: adultBirthDate(index),
     jobTitle: pick(JOB_TITLES),
     notes: "Generated Kafil demo operator.",
+  };
+}
+
+function delivery(index: number, adultName: AdultNameGenerator): DemoDelivery {
+  const gender = alternatingGender(index + 1);
+  const name = adultName(gender).fullName;
+  return {
+    id: stableUuid(401, index),
+    name,
+    contactEmail: seedEmail("delivery", index),
+    phone: seedPhone(40, index),
+    cin: seedCin("DL", index),
+    gender,
+    address: moroccanAddress(),
+    dateOfBirth: adultBirthDate(index + 31),
+    jobTitle: pick(DELIVERY_JOB_TITLES),
+    notes: "Generated Kafil demo delivery staff.",
   };
 }
 

@@ -17,6 +17,7 @@ import {
 
 import type { DemoChild, DemoSeedData } from "./scripts/demo/generator";
 import { isCategorySeedImageName } from "./category-fixtures";
+import { isDemoProductSeedImageName } from "./demo-product-fixtures";
 
 const LIBRARY_NOTE_FILES = new Set([".gitkeep", ".ds_store", "readme.md"]);
 const LIBRARY_DIRECTORIES = new Set(["_unclassified"]);
@@ -96,6 +97,7 @@ export async function readDemoImageLibrary(
       (entry.isFile() &&
         !LIBRARY_NOTE_FILES.has(entry.name.toLowerCase()) &&
         !isCategorySeedImageName(entry.name) &&
+        !isDemoProductSeedImageName(entry.name) &&
         !FAMILY_IMAGE_NAME.test(entry.name) &&
         !GENDERED_IMAGE_NAME.test(entry.name)),
   );
@@ -104,7 +106,7 @@ export async function readDemoImageLibrary(
       `Unsupported seed image entries in '${libraryPath}': ${unsupported
         .map((entry) => entry.name)
         .sort()
-        .join(", ")}. Use packaged category filenames or flat family-NN.ext, sponsor-f-NN.ext, sponsor-m-NN.ext, child-f-NN.ext, and child-m-NN.ext files only.`,
+        .join(", ")}. Use packaged category/product filenames or flat family-NN.ext, sponsor-f-NN.ext, sponsor-m-NN.ext, child-f-NN.ext, and child-m-NN.ext files only.`,
     );
   }
 

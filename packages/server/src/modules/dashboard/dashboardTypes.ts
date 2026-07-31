@@ -31,6 +31,14 @@ export interface OperatorDashboard {
   };
   contributionTrend: OperatorContributionTrendPoint[];
   orderStatuses: DashboardStatusCount[];
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    familyName: string;
+    status: string;
+    totalMinor: number;
+    placedAt: Date;
+  }>;
 }
 
 export interface FamilyDashboard {

@@ -1,4 +1,5 @@
 export const phase6BrowserUsers = {
+  admin: "phase6-browser-admin@example.test",
   family: "phase6-browser-family@example.test",
   operator: "phase6-browser-operator@example.test",
   sponsor: "phase6-browser-sponsor@example.test",

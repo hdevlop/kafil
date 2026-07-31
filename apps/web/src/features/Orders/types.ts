@@ -51,6 +51,44 @@ export interface OrderRecord {
   deliveryProofByteSize: number | null;
   createdAt: string;
   updatedAt: string;
+  currentDelivery: DeliverySummary | null;
+  latestDelivery: DeliverySummary | null;
+}
+
+export type DeliveryAttemptStatus =
+  | "assigned"
+  | "in_progress"
+  | "failed"
+  | "delivered"
+  | "cancelled";
+
+export interface DeliverySummary {
+  attemptId: string;
+  staffProfileId: string;
+  name: string;
+  status: DeliveryAttemptStatus;
+  assignedAt: string;
+}
+
+export interface DeliveryAttempt {
+  id: string;
+  orderId: string;
+  staffProfileId: string;
+  status: DeliveryAttemptStatus;
+  deliveryNameSnapshot: string;
+  deliveryPhoneSnapshot: string;
+  affiliationSnapshot: "internal" | "external";
+  companyNameSnapshot: string | null;
+  assignedByUserId: string;
+  assignedAt: string;
+  startedAt: string | null;
+  failedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  failureReason: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface OrderItem {
@@ -74,7 +112,7 @@ export interface OrderStatusEvent {
   createdAt: string;
 }
 
-export interface OrderDetail extends OrderRecord {
+export type OrderDetail = Omit<OrderRecord, "currentDelivery"> & {
   items: OrderItem[];
   statusEvents: OrderStatusEvent[];
   activePurchase: OrderPurchase | null;
@@ -86,7 +124,9 @@ export interface OrderDetail extends OrderRecord {
   actualTotalMinor: number | null;
   receiptRecorded: boolean;
   deliveryProofRecorded: boolean;
-}
+  currentDelivery: DeliveryAttempt | null;
+  deliveryAttempts: DeliveryAttempt[];
+};
 
 export type OrderListQuery = OffsetPagination;
 
@@ -137,6 +177,27 @@ export interface ConfirmDeliveryInput {
   proofStoragePath?: string;
   proofMediaType?: string;
   proofByteSize?: number;
+  idempotencyKey: string;
+}
+
+export interface AssignDeliveryInput {
+  id: string;
+  staffProfileId: string;
+  idempotencyKey: string;
+}
+
+export interface ReassignDeliveryInput extends AssignDeliveryInput {
+  reason: string;
+}
+
+export interface StartDeliveryInput {
+  id: string;
+  idempotencyKey: string;
+}
+
+export interface FailDeliveryInput {
+  id: string;
+  reason: string;
   idempotencyKey: string;
 }
 

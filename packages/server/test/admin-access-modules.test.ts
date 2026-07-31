@@ -24,7 +24,7 @@ interface AccessFakeUser {
   createdAt: Date;
   updatedAt: Date;
   familyProfileId: string | null;
-  operatorProfileId: string | null;
+  staffProfileId: string | null;
   sponsorProfileId: string | null;
 }
 
@@ -40,7 +40,7 @@ const operatorUser: AccessFakeUser = {
   createdAt: new Date("2026-07-27T00:00:00.000Z"),
   updatedAt: new Date("2026-07-27T00:00:00.000Z"),
   familyProfileId: null,
-  operatorProfileId: "operator-profile",
+  staffProfileId: "operator-profile",
   sponsorProfileId: null,
 };
 
@@ -114,6 +114,9 @@ describe("admin access lifecycle", () => {
     ]);
     expect(state.invalidated).toEqual([operatorUser.id]);
     expect(state.revoked).toEqual([operatorUser.id]);
+    expect(state.staffStatusSyncs).toEqual([
+      { staffProfileId: operatorUser.staffProfileId!, status: "inactive" },
+    ]);
     expect(state.audits).toEqual([
       expect.objectContaining({
         action: "access.user_deactivated",
@@ -125,6 +128,37 @@ describe("admin access lifecycle", () => {
     expect(JSON.stringify(result)).not.toMatch(
       /password|token|guardian|address/i,
     );
+  });
+
+  it("reactivates a safe user and syncs the linked Staff status back to active", async () => {
+    const { service, state } = accessService({
+      ...operatorUser,
+      status: "inactive",
+    });
+
+    const result = await service.reactivate(
+      operatorUser.id,
+      { reason: "Returned to the programme" },
+      "admin-user",
+    );
+
+    expect(result.status).toBe("active");
+    expect(state.userUpdates).toEqual([
+      { id: operatorUser.id, data: { status: "active" } },
+    ]);
+    expect(state.invalidated).toEqual([operatorUser.id]);
+    expect(state.revoked).toEqual([]);
+    expect(state.staffStatusSyncs).toEqual([
+      { staffProfileId: operatorUser.staffProfileId!, status: "active" },
+    ]);
+    expect(state.audits).toEqual([
+      expect.objectContaining({
+        action: "access.user_reactivated",
+        actorUserId: "admin-user",
+        resourceId: operatorUser.id,
+        metadata: { reason: "Returned to the programme" },
+      }),
+    ]);
   });
 
   it("protects the current administrator and every bootstrap administrator", async () => {
@@ -142,7 +176,7 @@ describe("admin access lifecycle", () => {
       id: "other-admin",
       role: "admin",
       roleId: "admin-role",
-      operatorProfileId: null,
+      staffProfileId: null,
     });
     await expect(
       bootstrap.service.revokeSessions("other-admin", "admin-user"),
@@ -232,6 +266,10 @@ function accessService(
     revoked: [] as string[],
     audits: [] as Record<string, unknown>[],
     createdPermissions: [] as Array<Record<string, unknown>>,
+    staffStatusSyncs: [] as Array<{
+      staffProfileId: string;
+      status: "active" | "inactive";
+    }>,
   };
   const livePermissions: Array<{
     id: string;
@@ -273,6 +311,12 @@ function accessService(
     },
     listUserIdsByRoleNames: async (roleNames: string[]) =>
       roleNames.includes(user.role) ? [{ id: user.id }] : [],
+    syncStaffStatus: async (
+      staffProfileId: string,
+      status: "active" | "inactive",
+    ) => {
+      state.staffStatusSyncs.push({ staffProfileId, status });
+    },
   } as unknown as AdminAccessRepository;
   const service = new AdminAccessService(
     repository,

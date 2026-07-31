@@ -31,7 +31,16 @@ export function ConfirmOrderCommandDialogContent({
   }[action];
 
   async function handleConfirm() {
-    await command.mutateAsync(order.id);
+    if (action === "startDelivery") {
+      await commands.startDelivery.mutateAsync({
+        id: order.id,
+        idempotencyKey: crypto.randomUUID(),
+      });
+    } else if (action === "approve") {
+      await commands.approve.mutateAsync(order.id);
+    } else {
+      await commands.deliver.mutateAsync(order.id);
+    }
     await pop();
   }
 

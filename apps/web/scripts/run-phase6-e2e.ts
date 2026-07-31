@@ -4,7 +4,8 @@ import { pool } from "@kafil/server/database";
 import { resolve } from "node:path";
 
 const useProductionServer = Bun.env.KAFIL_E2E_USE_PRODUCTION === "1";
-const baseUrl = "http://127.0.0.1:3210";
+const externalBaseUrl = Bun.env.KAFIL_E2E_EXTERNAL_BASE_URL?.replace(/\/$/, "");
+const baseUrl = externalBaseUrl ?? "http://127.0.0.1:3210";
 
 const phase6E2eEnvironment = {
   ...process.env,
@@ -51,36 +52,52 @@ async function waitForWebServer(server: ReturnType<typeof Bun.spawn>) {
 
 try {
   await preparePhase6BrowserUsers();
-  webServer = Bun.spawn({
-    cmd: useProductionServer
-      ? [
-          process.execPath,
-          "node_modules/next/dist/bin/next",
-          "start",
-          "-p",
-          "3210",
-        ]
-      : [
-          process.execPath,
-          "node_modules/next/dist/bin/next",
-          "dev",
-          "-p",
-          "3210",
-        ],
-    cwd: resolve(import.meta.dir, ".."),
-    ...childOptions,
-  });
-  await waitForWebServer(webServer);
+  if (externalBaseUrl) {
+    const response = await fetch(`${baseUrl}/login`);
+    if (!response.ok) {
+      throw new Error(`External E2E server returned ${response.status} for /login.`);
+    }
+  } else {
+    webServer = Bun.spawn({
+      cmd: useProductionServer
+        ? [
+            process.execPath,
+            "node_modules/next/dist/bin/next",
+            "start",
+            "-p",
+            "3210",
+          ]
+        : [
+            process.execPath,
+            "node_modules/next/dist/bin/next",
+            "dev",
+            "-p",
+            "3210",
+          ],
+      cwd: resolve(import.meta.dir, ".."),
+      ...childOptions,
+    });
+    await waitForWebServer(webServer);
+  }
 
+  const configuredFiles = Bun.env.KAFIL_E2E_FILES
+    ?.split(",")
+    .map((file) => file.trim())
+    .filter(Boolean);
   const testCommand = [
-      "bunx",
-      "playwright",
-      "test",
-      "test/e2e/phase6-closeout.e2e.ts",
-      "test/e2e/phase7-unified-flow.e2e.ts",
-      "test/e2e/family-create-wizard.e2e.ts",
-      "test/e2e/funding-cap-and-catalog-delete.e2e.ts",
-      "test/e2e/image-delivery.e2e.ts",
+    "bunx",
+    "playwright",
+    "test",
+    ...(configuredFiles?.length
+      ? configuredFiles
+      : [
+          "test/e2e/phase6-closeout.e2e.ts",
+          "test/e2e/phase7-unified-flow.e2e.ts",
+          "test/e2e/family-create-wizard.e2e.ts",
+          "test/e2e/funding-cap-and-catalog-delete.e2e.ts",
+          "test/e2e/image-delivery.e2e.ts",
+          "test/e2e/staff-delivery-assignment.e2e.ts",
+        ]),
   ];
   if (Bun.env.KAFIL_E2E_GREP) {
     testCommand.push("--grep", Bun.env.KAFIL_E2E_GREP);

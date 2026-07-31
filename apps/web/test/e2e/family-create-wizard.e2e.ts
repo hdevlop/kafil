@@ -11,7 +11,7 @@ const browserPassword = "Phase6BrowserPass1!";
 
 async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: language, url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: language, url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
@@ -19,6 +19,7 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.getByRole("button", { name: "Log in" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(new RegExp(`/${role}$`));
+  await page.waitForLoadState("networkidle");
 }
 
 function json(

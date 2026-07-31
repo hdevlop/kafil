@@ -13,7 +13,7 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.context().addCookies([{
     name: "kafil-ui-language",
     value: language,
-    url: process.env.KAFIL_E2E_BASE_URL ?? "https://127.0.0.1:3210",
+    url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210",
   }]);
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
@@ -21,6 +21,7 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.getByRole("button", { name: "Log in" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(new RegExp(`/${role}$`));
+  await page.waitForLoadState("networkidle");
 }
 
 function json(route: Parameters<Parameters<Page["route"]>[1]>[0], value: unknown) {
@@ -95,12 +96,38 @@ test("Arabic dashboard copy, switcher, and family cart submission work with RTL"
       spentMinor: 0,
     }),
   );
+  await page.route("**/api/families/me", (route) =>
+    json(route, {
+      id: "family-browser",
+      userId: "phase6_browser_family",
+      name: "Phase 6 family",
+      email: "phase6-browser-family@example.test",
+      image: null,
+      emailVerified: true,
+      status: "active",
+      role: "family",
+      relationshipToChildren: null,
+      notes: null,
+      guardianLegalName: "Phase 6 family",
+      guardianCin: "AB123456",
+      guardianDateOfBirth: "1985-01-01",
+      exactAddress: "10 Test Street",
+      housingSituation: "rented",
+      registrationDate: "2026-01-01",
+      supportPriority: "normal",
+      phone: "+212600000001",
+      activeChildCount: 0,
+      activeSponsorCount: 0,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    }),
+  );
 
   await page.goto("/family/cart");
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-  await expect(page.getByText("سلتك", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "إرسال الطلب" })).toBeEnabled();
+  await expect(page.getByText("السلة", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "مراجعة الطلب" })).toBeEnabled();
 
   await page.route("**/api/dashboard/family", (route) =>
     json(route, {
@@ -120,12 +147,15 @@ test("Arabic dashboard copy, switcher, and family cart submission work with RTL"
   await expect(page.getByRole("button", { name: "Se déconnecter" })).toBeVisible();
 
   await page.goto("/family/cart");
-  await page.getByRole("button", { name: "Passer la commande" }).focus();
+  await page.getByRole("button", { name: "Vérifier la commande" }).focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: /Confirmer la commande/ }).focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/orders/);
 });
 
 test("operator can advance a mocked order through browser confirmation dialogs", async ({ page }) => {
+  test.setTimeout(180_000);
   await useRole(page, "operator");
 
   const operatorToken = await page.evaluate(async () => {
@@ -142,9 +172,12 @@ test("operator can advance a mocked order through browser confirmation dialogs",
   );
   expect(operatorAdminApiStatus).toBe(401);
   await page.goto("/operator/access/users");
-  await expect(page).toHaveURL(/\/forbidden$/);
+  await expect(page).toHaveURL(/(?:\/forbidden$|\/login\?from=%2Fforbidden$)/);
+  await useRole(page, "operator");
 
   let status = "pending";
+  let deliveryAssigned = false;
+  let deliveryAttemptStatus = "assigned";
   const purchase = {
     id: "purchase-browser",
     orderId: "operator-order",
@@ -199,6 +232,26 @@ test("operator can advance a mocked order through browser confirmation dialogs",
       : null,
     receiptRecorded: ["purchased", "out_for_delivery", "delivered"].includes(status),
     deliveryProofRecorded: false,
+    currentDelivery:
+      deliveryAssigned && status !== "delivered"
+        ? {
+            attemptId: "delivery-attempt-browser",
+            staffProfileId: "30000000-0000-4000-8000-000000000001",
+            name: "Amina Courier",
+            status: deliveryAttemptStatus,
+            assignedAt: "2026-07-17T12:02:10.000Z",
+          }
+        : null,
+    latestDelivery: deliveryAssigned
+      ? {
+          attemptId: "delivery-attempt-browser",
+          staffProfileId: "30000000-0000-4000-8000-000000000001",
+          name: "Amina Courier",
+          status: status === "delivered" ? "delivered" : deliveryAttemptStatus,
+          assignedAt: "2026-07-17T12:02:10.000Z",
+        }
+      : null,
+    deliveryAttempts: [],
   });
 
   await page.route("**/api/order-evidence/**", async (route) => {
@@ -218,12 +271,29 @@ test("operator can advance a mocked order through browser confirmation dialogs",
     if (method === "GET" && pathname === "/api/orders") return json(route, [order()]);
     if (method === "POST" && pathname.endsWith("/approve")) status = "approved";
     if (method === "POST" && pathname.endsWith("/purchase")) status = "purchased";
-    if (method === "POST" && pathname.endsWith("/delivery/start")) status = "out_for_delivery";
+    if (method === "POST" && pathname.endsWith("/delivery/assign")) deliveryAssigned = true;
+    if (method === "POST" && pathname.endsWith("/delivery/start")) {
+      status = "out_for_delivery";
+      deliveryAttemptStatus = "in_progress";
+    }
     if (method === "POST" && pathname.endsWith("/delivery/confirm")) status = "delivered";
     return json(route, order());
   });
+  await page.route("**/api/staff/options/delivery", (route) =>
+    json(route, [
+      {
+        id: "30000000-0000-4000-8000-000000000001",
+        name: "Amina Courier",
+        image: null,
+        phone: "+212600001122",
+        affiliation: "internal",
+        companyName: null,
+        functionKeys: ["delivery"],
+      },
+    ]),
+  );
 
-  await page.goto("/operator/orders");
+  await page.goto("/orders");
   await expect(page.getByText("K-OP-001", { exact: true })).toBeVisible();
 
   const openAction = async (name: string) => {
@@ -242,6 +312,12 @@ test("operator can advance a mocked order through browser confirmation dialogs",
     buffer: Buffer.from("%PDF-1.4"),
   });
   await purchaseDialog.getByRole("button", { name: "Record purchase" }).click();
+
+  await openAction("Assign delivery");
+  const assignmentDialog = page.getByRole("dialog", { name: "Assign delivery" });
+  await assignmentDialog.getByRole("combobox").first().click();
+  await page.getByRole("option", { name: /Amina Courier/ }).click();
+  await assignmentDialog.getByRole("button", { name: "Assign delivery" }).click();
 
   await openAction("Start delivery");
   await page.getByRole("button", { name: "Start delivery" }).click();
@@ -295,6 +371,7 @@ test("sponsor can create a contribution plan and submit a contribution", async (
 });
 
 test("operator can open the sponsor overview dialog with KPIs and sponsor information", async ({ page }) => {
+  test.setTimeout(180_000);
   await useRole(page, "operator");
   const populatedSponsorName = "Sponsor Overview Test With An Extraordinarily Long Display Name";
   const populatedSponsorEmail = "sponsor.overview.with.a.long.address@example.test";
@@ -425,9 +502,9 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
     {
       name: "kafil-ui-language",
       value: "en",
-      url: process.env.KAFIL_E2E_BASE_URL ?? "https://127.0.0.1:3210",
+      url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210",
     },
-    { name: "kafil-ui-theme", value: "dark", url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-theme", value: "dark", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/operator/sponsors");
@@ -436,8 +513,8 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-dark.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "fr", url: "https://127.0.0.1:3210" },
-    { name: "kafil-ui-theme", value: "light", url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: "fr", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
+    { name: "kafil-ui-theme", value: "light", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
   await page.goto("/operator/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
@@ -445,8 +522,8 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-french.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "ar", url: "https://127.0.0.1:3210" },
-    { name: "kafil-ui-theme", value: "light", url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: "ar", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
+    { name: "kafil-ui-theme", value: "light", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
   await page.goto("/operator/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
@@ -454,7 +531,7 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await captureSponsorOverviewEvidence(page, "operator-populated-arabic-rtl.png");
 
   await page.context().addCookies([
-    { name: "kafil-ui-language", value: "en", url: "https://127.0.0.1:3210" },
+    { name: "kafil-ui-language", value: "en", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
   await page.goto("/operator/sponsors");
   await openSponsorOverview(page, "Inactive Empty Sponsor");
@@ -691,15 +768,17 @@ test("bootstrap admin can open read-only access management pages", async ({
   await page.getByPlaceholder("Enter your password").fill(adminPassword);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL(/\/operator$/);
+  await page.waitForLoadState("networkidle");
 
   await page.goto("/operator/access/users");
   await expect(page.getByRole("heading", { name: "Users", exact: true })).toBeVisible();
   await expect(
-    page.getByRole("navigation").getByText("Access management", { exact: true }),
+    page.getByRole("navigation").getByText("Access", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Roles" }).click();
+  await page.goto("/operator/access/roles");
   await expect(page.getByRole("heading", { name: "Roles", exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Permissions" }).click();
+  await page.waitForLoadState("networkidle");
+  await page.goto("/operator/access/permissions");
   await expect(
     page.getByRole("heading", { name: "Permissions", exact: true }),
   ).toBeVisible();

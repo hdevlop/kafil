@@ -3,15 +3,21 @@ import {
   readDemoImageLibrary,
 } from "../../demo-images";
 import { validateCategorySeedImages } from "../../category-seed";
+import { validateDemoProductImages } from "../../demo-catalog";
 
 const library = await readDemoImageLibrary();
 const categoryImages = await validateCategorySeedImages();
+const productImages = await validateDemoProductImages();
 
 console.log(`Seed image library: ${DEFAULT_DEMO_IMAGE_LIBRARY_PATH}`);
 console.log(
   `categories: ${categoryImages.length} image${categoryImages.length === 1 ? "" : "s"}`,
 );
 for (const image of categoryImages) console.log(`  ${image}`);
+console.log(
+  `products: ${productImages.length} image${productImages.length === 1 ? "" : "s"}`,
+);
+for (const image of productImages) console.log(`  ${image}`);
 console.log(`family: ${library.family.length} image${library.family.length === 1 ? "" : "s"}`);
 for (const image of library.family) console.log(`  ${image}`);
 for (const kind of ["sponsor", "child"] as const) {

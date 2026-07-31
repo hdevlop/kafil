@@ -66,12 +66,32 @@ describe("Phase 7 dashboard presentation contracts", () => {
   });
 
   test("ships dashboard and refunded-status labels in every supported language", () => {
-    for (const language of ["en", "fr", "ar"] as const) {
+    for (const language of ["en", "fr", "ar", "es"] as const) {
       expect(getUiTranslation(language, "dashboard.operator.title")).toBeTruthy();
+      expect(getUiTranslation(language, "dashboard.operator.latestOrders")).toBeTruthy();
+      expect(getUiTranslation(language, "dashboard.operator.operationalAttention")).toBeTruthy();
+      expect(getUiTranslation(language, "dashboard.operator.quickActions")).toBeTruthy();
       expect(getUiTranslation(language, "dashboard.family.spendingTrend")).toBeTruthy();
       expect(getUiTranslation(language, "dashboard.sponsor.contributionTrend")).toBeTruthy();
       expect(getUiTranslation(language, "status.refunded")).toBeTruthy();
     }
     expect(formatStatusLabel("refunded", "fr")).toBe("Remboursée");
+  });
+
+  test("adds live operator order, attention, and quick-action cards beside the pipeline", async () => {
+    const pageSource = await Bun.file(
+      new URL("../src/features/Dashboard/components/OperatorDashboardPage.tsx", import.meta.url),
+    ).text();
+    const cardsSource = await Bun.file(
+      new URL("../src/features/Dashboard/components/OperatorOperationsCards.tsx", import.meta.url),
+    ).text();
+
+    expect(pageSource).toContain('xlCols={12}');
+    expect(pageSource).toContain('<LatestOrdersCard recentOrders={data.recentOrders ?? []} />');
+    expect(pageSource).toContain("<OperationalAttentionCard");
+    expect(pageSource).toContain("<QuickActionsCard />");
+    expect(cardsSource).toContain('href="/orders"');
+    expect(cardsSource).toContain('href: "/operator/contributions"');
+    expect(cardsSource).toContain('href: "/products"');
   });
 });

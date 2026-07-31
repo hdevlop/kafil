@@ -41,6 +41,8 @@ real licensed assets when you have them.
 
 - Shipped files are static WebP images: person assets are at most 640 x 640 and
   150 KB; catalog assets are at most 1280 x 1280 and 200 KB.
+- Individual demo product assets use the `product-<descriptive-name>.webp`
+  convention and are referenced explicitly from `demo-product-fixtures.ts`.
 - New uploads may start as AVIF, JPEG, PNG, or WebP. GIF is rejected.
 - Nested folders are rejected, except the `_unclassified/` folder which holds
   legacy assets awaiting manual classification.

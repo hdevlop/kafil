@@ -44,6 +44,7 @@ describe("seed CLI", () => {
     expect(
       demoCountArgs({
         contributions: 40,
+        deliveries: 4,
         families: 10,
         operators: 3,
         sponsors: 25,
@@ -52,6 +53,7 @@ describe("seed CLI", () => {
       "--families=10",
       "--sponsors=25",
       "--operators=3",
+      "--deliveries=4",
       "--contributions=40",
     ]);
     expect(seedCountValidation("0")).toBeUndefined();
@@ -120,7 +122,7 @@ describe("seed CLI", () => {
     expect(removeSource).not.toContain("clearSeedStorage");
   });
 
-  it("does not create a synthetic catalog product or delivered order during demo seeding", async () => {
+  it("seeds categories, products, and realistic historical orders during demo seeding", async () => {
     const [demoSeedSource, demoCommandSource] = await Promise.all([
       Bun.file(new URL("../src/demo-seed.ts", import.meta.url)).text(),
       Bun.file(
@@ -128,11 +130,11 @@ describe("seed CLI", () => {
       ).text(),
     ]);
 
-    expect(demoSeedSource).not.toContain("Demo fresh produce basket");
-    expect(demoSeedSource).not.toContain("DEMO-MARJANE-BASKET");
-    expect(demoSeedSource).not.toContain("seedDemoProcurementStory");
-    expect(demoSeedSource).not.toContain("submitAssisted");
-    expect(demoCommandSource).not.toContain("OrderEvidenceService");
-    expect(demoCommandSource).not.toContain("OrderService");
+    expect(demoCommandSource).toContain("seedCatalogCategories");
+    expect(demoCommandSource).toContain("seedDemoCatalogProducts");
+    expect(demoCommandSource).toContain("seedDemoOrders");
+    expect(demoCommandSource).toContain("OrderEvidenceService");
+    expect(demoCommandSource).toContain("OrderService");
+    expect(demoSeedSource).toContain('functions: ["delivery"]');
   });
 });

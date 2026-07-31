@@ -54,16 +54,46 @@ describe("Phase 6D order command contracts", () => {
       "deliver",
       "cancel",
     ]);
-    expect(getOrderActions("purchased").map((action) => action.command)).toEqual([
-      "startDelivery",
+    expect(getOrderActions({
+      status: "purchased",
+      currentDelivery: null,
+      latestDelivery: null,
+    }).map((action) => action.command)).toEqual([
+      "assignDelivery",
       "replacePurchase",
       "cancel",
     ]);
-    expect(getOrderActions("out_for_delivery").map((action) => action.command)).toEqual([
-      "confirmDelivery",
+    expect(getOrderActions({
+      status: "purchased",
+      currentDelivery: {
+        attemptId: "attempt-1",
+        staffProfileId: "staff-1",
+        name: "Amina",
+        status: "assigned",
+        assignedAt: "2026-07-30T10:00:00.000Z",
+      },
+      latestDelivery: null,
+    }).map((action) => action.command)).toEqual([
+      "viewDelivery",
+      "startDelivery",
+      "reassignDelivery",
+      "replacePurchase",
       "cancel",
     ]);
-    expect(getOrderActions("delivered")).toEqual([]);
+    expect(getOrderActions({
+      status: "out_for_delivery",
+      currentDelivery: null,
+      latestDelivery: null,
+    }).map((action) => action.command)).toEqual([
+      "viewDelivery",
+      "confirmDelivery",
+      "failDelivery",
+    ]);
+    expect(getOrderActions({
+      status: "delivered",
+      currentDelivery: null,
+      latestDelivery: null,
+    }).map((action) => action.command)).toEqual(["viewDelivery"]);
   });
 
   test("requires and normalizes an audited reason for reject and cancel commands", () => {
@@ -83,6 +113,32 @@ describe("Phase 6D order command contracts", () => {
       { limit: 25, offset: 50 },
     ]);
     expect(orderKeys.detail("order-1")).toEqual(["orders", "detail", "order-1"]);
+  });
+
+  test("renders a delivery column, explicit commands, and a responsive history sheet", () => {
+    const [columns, page, sheet, forms, api] = [
+      readSource("../src/features/Orders/hooks/useOrdersTableColumns.tsx"),
+      readSource("../src/features/Orders/components/OrdersPage.tsx"),
+      readSource("../src/features/Orders/components/DeliveryDetailsSheet.tsx"),
+      readSource("../src/features/Orders/components/OrderWorkflowForms.tsx"),
+      readSource("../src/services/orderApi.ts"),
+    ];
+
+    expect(columns).toContain('id: "delivery"');
+    expect(columns).toContain("currentDelivery");
+    expect(page).toContain("<DeliveryDetailsSheet");
+    expect(page).toContain("<AssignDeliveryDialogContent");
+    expect(page).toContain("<FailDeliveryDialogContent");
+    expect(sheet).toContain("<NSheet");
+    expect(sheet).toContain('width={560}');
+    expect(sheet).toContain('classNames={{ content: "max-w-full"');
+    expect(sheet).toContain("deliveryAttempts");
+    expect(sheet).not.toMatch(/live map|gps|vehicle location/i);
+    expect(forms).toContain('"assign-order-delivery"');
+    expect(forms).toContain('id="fail-order-delivery"');
+    expect(api).toContain("/delivery/assign");
+    expect(api).toContain("/delivery/reassign");
+    expect(api).toContain("/delivery/fail");
   });
 
   test("shows permanent deletion only through the exact-admin order menu", () => {

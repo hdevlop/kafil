@@ -5,7 +5,6 @@ import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import {
   deactivateAccessUser,
-  createAccessOperator,
   createAccessPermission,
   getAccessUser,
   listAccessPermissions,
@@ -86,17 +85,11 @@ export function useAccessUserCommands() {
 export function useAdminAccessCreateCommands() {
   const { t } = useKafilLanguage();
   const invalidate = [adminAccessKeys.all];
-  const createOperator = useEntityCommand({
-    mutationFn: createAccessOperator,
-    invalidate,
-    successMessage: t("adminAccess.messages.userCreated"),
-    errorMessage: t("adminAccess.messages.userCreateError"),
-  });
   const createPermission = useEntityCommand({
     mutationFn: createAccessPermission,
     invalidate,
     successMessage: t("adminAccess.messages.permissionCreated"),
     errorMessage: t("adminAccess.messages.permissionCreateError"),
   });
-  return { createOperator, createPermission };
+  return { createPermission };
 }

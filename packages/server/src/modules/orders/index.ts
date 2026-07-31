@@ -9,6 +9,7 @@ export {
 export * from "./orderGuards";
 export {
   CartRepository,
+  OrderDeliveryRepository,
   OrderPurchaseRepository,
   OrderRepository,
   type OrderFilters,

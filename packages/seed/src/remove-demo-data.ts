@@ -18,9 +18,24 @@ export const DEMO_SCOPE_SQL = [
   `CREATE TEMP TABLE kafil_demo_sponsors ON COMMIT DROP AS
    SELECT id FROM sponsor_profiles
    WHERE user_id IN (SELECT id FROM kafil_demo_users)`,
-  `CREATE TEMP TABLE kafil_demo_operators ON COMMIT DROP AS
-   SELECT id FROM operator_profiles
-   WHERE user_id IN (SELECT id FROM kafil_demo_users)`,
+  `CREATE TEMP TABLE kafil_demo_operator_staff ON COMMIT DROP AS
+   SELECT sp.id
+   FROM staff_profiles sp
+   INNER JOIN staff_functions sf
+     ON sf.staff_profile_id = sp.id
+   WHERE sf.function_key = 'operator'
+     AND sp.user_id IN (SELECT id FROM kafil_demo_users)`,
+  `CREATE TEMP TABLE kafil_demo_delivery_staff ON COMMIT DROP AS
+   SELECT sp.id
+   FROM staff_profiles sp
+   INNER JOIN staff_functions sf
+     ON sf.staff_profile_id = sp.id
+   WHERE sf.function_key = 'delivery'
+     AND sp.id::text ~ '^00000000-0000-4000-8000-401[0-9]{9}$'`,
+  `CREATE TEMP TABLE kafil_demo_staff ON COMMIT DROP AS
+   SELECT id FROM kafil_demo_operator_staff
+   UNION
+   SELECT id FROM kafil_demo_delivery_staff`,
   `CREATE TEMP TABLE kafil_demo_assignments ON COMMIT DROP AS
    SELECT id FROM support_assignments
    WHERE family_profile_id IN (SELECT id FROM kafil_demo_families)
@@ -59,7 +74,7 @@ export const DEMO_SCOPE_SQL = [
    SELECT id::text FROM kafil_demo_users
    UNION SELECT id::text FROM kafil_demo_families
    UNION SELECT id::text FROM kafil_demo_sponsors
-   UNION SELECT id::text FROM kafil_demo_operators
+   UNION SELECT id::text FROM kafil_demo_staff
    UNION SELECT id::text FROM kafil_demo_assignments
    UNION SELECT id::text FROM kafil_demo_contributions
    UNION SELECT id::text FROM kafil_demo_plans
@@ -72,7 +87,8 @@ export const DEMO_SCOPE_SQL = [
 export const DEMO_SUMMARY_SQL = `SELECT
   (SELECT count(*)::int FROM kafil_demo_families) AS families,
   (SELECT count(*)::int FROM kafil_demo_sponsors) AS sponsors,
-  (SELECT count(*)::int FROM kafil_demo_operators) AS operators,
+  (SELECT count(*)::int FROM kafil_demo_operator_staff) AS operators,
+  (SELECT count(*)::int FROM kafil_demo_delivery_staff) AS deliveries,
   (SELECT count(*)::int FROM kafil_demo_contributions) AS contributions,
   (SELECT count(*)::int FROM kafil_demo_orders) AS orders`;
 
@@ -106,6 +122,8 @@ export const REMOVE_DEMO_SQL = [
    WHERE purchase_id IN (SELECT id FROM kafil_demo_purchases)`,
   `DELETE FROM order_purchase_records
    WHERE id IN (SELECT id FROM kafil_demo_purchases)`,
+  `DELETE FROM order_delivery_attempts
+   WHERE order_id IN (SELECT id FROM kafil_demo_orders)`,
   `DELETE FROM order_status_events
    WHERE order_id IN (SELECT id FROM kafil_demo_orders)`,
   `DELETE FROM order_items
@@ -131,12 +149,16 @@ export const REMOVE_DEMO_SQL = [
   `DELETE FROM children
    WHERE id IN (SELECT id FROM kafil_demo_children)`,
   `DELETE FROM tokens WHERE user_id IN (SELECT id FROM kafil_demo_users)`,
-  `DELETE FROM family_profiles
+`DELETE FROM family_profiles
    WHERE id IN (SELECT id FROM kafil_demo_families)`,
   `DELETE FROM sponsor_profiles
    WHERE id IN (SELECT id FROM kafil_demo_sponsors)`,
+  `DELETE FROM staff_functions
+   WHERE staff_profile_id IN (SELECT id FROM kafil_demo_staff)`,
+  `DELETE FROM staff_profiles
+   WHERE id IN (SELECT id FROM kafil_demo_staff)`,
   `DELETE FROM operator_profiles
-   WHERE id IN (SELECT id FROM kafil_demo_operators)`,
+   WHERE user_id IN (SELECT id FROM kafil_demo_users)`,
   `DELETE FROM users WHERE id IN (SELECT id FROM kafil_demo_users)`,
 ] as const;
 
@@ -173,6 +195,7 @@ export const RESET_DEMO_CATALOG_SQL = [
 export interface DemoRemovalSummary {
   categories: number;
   contributions: number;
+  deliveries: number;
   families: number;
   files: number;
   operators: number;
@@ -368,5 +391,12 @@ function emptySummary(): Omit<
   DemoRemovalSummary,
   "categories" | "files" | "products"
 > {
-  return { contributions: 0, families: 0, operators: 0, orders: 0, sponsors: 0 };
+  return {
+    contributions: 0,
+    deliveries: 0,
+    families: 0,
+    operators: 0,
+    orders: 0,
+    sponsors: 0,
+  };
 }

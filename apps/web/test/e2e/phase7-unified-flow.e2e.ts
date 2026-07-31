@@ -13,14 +13,15 @@ async function useRole(page: Page, role: ProductRole) {
   await page.context().addCookies([{
     name: "kafil-ui-language",
     value: "en",
-    url: process.env.KAFIL_E2E_BASE_URL ?? "https://127.0.0.1:3210",
+    url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210",
   }]);
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
   await page.getByRole("button", { name: "Log in" }).focus();
   await page.keyboard.press("Enter");
-  await page.waitForURL(new RegExp(`/${role}$`));
+  await page.waitForURL(new RegExp(role === "admin" ? "/operator$" : `/${role}$`));
+  await page.waitForLoadState("networkidle");
 }
 
 function json(route: Parameters<Parameters<Page["route"]>[1]>[0], value: unknown) {
@@ -85,7 +86,7 @@ test.describe("Phase 7 unified catalog and order flow", () => {
     await expect(page.getByText("Rice 5 kg", { exact: true })).toBeVisible();
     await expect(page.getByText("Shirt M", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Categories", exact: true }).click();
+    await page.getByRole("button", { name: "Filter products by category" }).click();
     await expect(page.getByAltText("Cover image for Food essentials")).toBeVisible();
     await page.getByRole("button", { name: "Food essentials", exact: true }).click();
     await page.waitForURL(/category=category-food/);
@@ -93,7 +94,7 @@ test.describe("Phase 7 unified catalog and order flow", () => {
     await expect(page.getByText("Rice 5 kg", { exact: true })).toBeVisible();
     await expect(page.getByText("Shirt M", { exact: true })).toHaveCount(0);
 
-    await page.getByRole("button", { name: "Categories", exact: true }).click();
+    await page.getByRole("button", { name: "Filter products by category" }).click();
     await page.getByRole("button", { name: "Food essentials", exact: true }).click();
     await page.waitForURL((url) => !url.search.includes("category="));
     await expect(page.getByText("Shirt M", { exact: true })).toBeVisible();

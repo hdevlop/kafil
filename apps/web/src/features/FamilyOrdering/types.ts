@@ -42,6 +42,7 @@ export interface FamilyOrder {
   purchasedAt: string | null;
   receiptRecorded: boolean;
   deliveryStartedAt: string | null;
+  deliveryAssigned: boolean;
   deliveredAt: string | null;
   deliveryProofRecorded: boolean;
   assisted: boolean;

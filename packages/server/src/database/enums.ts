@@ -92,9 +92,18 @@ export const deliveryConfirmationMethodEnum = pgEnum(
   "delivery_confirmation_method",
   ["operator_confirmation", "recipient_signature", "photo"],
 );
+export const orderDeliveryAttemptStatusEnum = pgEnum(
+  "order_delivery_attempt_status",
+  ["assigned", "in_progress", "failed", "delivered", "cancelled"],
+);
 export const outboxEventStatusEnum = pgEnum("outbox_event_status", [
   "pending",
   "processing",
   "sent",
   "failed",
 ]);
+export const staffAffiliationEnum = pgEnum("staff_affiliation", [
+  "internal",
+  "external",
+]);
+export const staffStatusEnum = pgEnum("staff_status", ["active", "inactive"]);

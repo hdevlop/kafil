@@ -40,11 +40,12 @@ export class DashboardService {
 
   async getOperator(): Promise<OperatorDashboard> {
     const { firstMonth } = monthWindow();
-    const [people, money, trendRows, orderRows] = await Promise.all([
+    const [people, money, trendRows, orderRows, recentOrders] = await Promise.all([
       this.dashboard.operatorPeopleCounts(),
       this.dashboard.operatorMoneyCounts(),
       this.dashboard.operatorContributionTrend(firstMonth),
       this.dashboard.operatorOrderStatuses(),
+      this.dashboard.operatorRecentOrders(),
     ]);
 
     return {
@@ -76,6 +77,11 @@ export class DashboardService {
         (month) => ({ month, validatedMinor: 0, refundedMinor: 0 }),
       ),
       orderStatuses: statusCounts(orderRows),
+      recentOrders: recentOrders.map((order) => ({
+        ...order,
+        familyName: order.familyName || "Family",
+        totalMinor: numberValue(order.totalMinor),
+      })),
     };
   }
 

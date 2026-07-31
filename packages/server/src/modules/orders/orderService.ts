@@ -12,13 +12,18 @@ import { applyBudgetBalanceDelta } from "../budgets/money";
 import { ProductRepository } from "../catalog";
 import { OutboxService } from "../outbox/outboxService";
 import { FundingService } from "../settings/fundingService";
+import { StaffRepository } from "../staff/staffRepository";
 import {
+  assignDeliveryDto,
+  type AssignDeliveryDto,
   assistedOrderDto,
   type AssistedOrderDto,
   type CartItemDto,
   cartItemDto,
   confirmDeliveryDto,
   type ConfirmDeliveryDto,
+  failDeliveryDto,
+  type FailDeliveryDto,
   type FamilyCancelOrderDto,
   familyCancelOrderDto,
   type OperatorCancelOrderDto,
@@ -33,19 +38,25 @@ import {
   type RecordPurchaseDto,
   replacePurchaseDto,
   type ReplacePurchaseDto,
+  reassignDeliveryDto,
+  type ReassignDeliveryDto,
   type SetCartItemQuantityDto,
   setCartItemQuantityDto,
   type SubmitOrderDto,
   submitOrderDto,
+  startDeliveryDto,
+  type StartDeliveryDto,
 } from "./orderDto";
 import { OrderEvidenceService } from "./orderEvidenceService";
 import {
   CartRepository,
+  OrderDeliveryRepository,
   OrderPurchaseRepository,
   OrderRepository,
 } from "./orderRepository";
 import type {
   Order,
+  OrderDeliveryAttempt,
   OrderPurchaseRecord,
 } from "./orderSchema";
 import { OrderValidator } from "./orderValidator";
@@ -74,7 +85,9 @@ export class OrderService {
   constructor(
     private readonly carts: CartRepository,
     private readonly orders: OrderRepository,
+    private readonly deliveries: OrderDeliveryRepository,
     private readonly purchases: OrderPurchaseRepository,
+    private readonly staff: StaffRepository,
     private readonly products: ProductRepository,
     private readonly accounts: BudgetAccountRepository,
     private readonly ledger: BudgetLedgerRepository,
@@ -94,7 +107,24 @@ export class OrderService {
 
   async list(userQuery: OrderListQuery) {
     const { limit, offset, ...filters } = orderListQuery.parse(userQuery ?? {});
-    return this.orders.list(limit, offset, filters);
+    const records = await this.orders.list(limit, offset, filters);
+    const latestByOrder = await this.deliveries.listLatestByOrderIds(
+      records.map((order) => order.id),
+    );
+    return records.map((order) => {
+      const latestDelivery = latestByOrder.get(order.id) ?? null;
+      return {
+        ...order,
+        currentDelivery:
+          latestDelivery &&
+          ["assigned", "in_progress"].includes(latestDelivery.status)
+            ? deliveryAttemptSummary(latestDelivery)
+            : null,
+        latestDelivery: latestDelivery
+          ? deliveryAttemptSummary(latestDelivery)
+          : null,
+      };
+    });
   }
 
   async get(id: string) {
@@ -157,8 +187,16 @@ export class OrderService {
       offset,
       status,
     );
+    const latestByOrder = await this.deliveries.listLatestByOrderIds(
+      records.map((order) => order.id),
+    );
     return Promise.all(
-      records.map((order) => this.familyOrderProjection(order)),
+      records.map(async (order) => ({
+        ...(await this.familyOrderProjection(order)),
+        deliveryAssigned: ["assigned", "in_progress"].includes(
+          latestByOrder.get(order.id)?.status ?? "",
+        ),
+      })),
     );
   }
 
@@ -508,15 +546,114 @@ export class OrderService {
   }
 
   @Transaction({ retries: 2 })
-  async startDelivery(id: string, actorUserId: string) {
+  async assignDelivery(
+    id: string,
+    data: AssignDeliveryDto,
+    actorUserId: string,
+  ) {
+    const input = assignDeliveryDto.parse(data);
     const order = await this.lockOrder(id);
+    const repeated = await this.deliveries.findByAssignmentIdempotencyKey(
+      input.idempotencyKey,
+    );
+    if (repeated) {
+      this.ensureDeliveryIdempotencyContext(repeated, order.id, input.staffProfileId);
+      return this.orderDetail(order, "operator");
+    }
+    this.validator.ensureStatus(order, "purchased");
+    if (await this.deliveries.findActiveByOrderId(order.id, true)) {
+      HttpError.conflict("Order already has an active delivery assignment");
+    }
+    const staff = await this.ensureAssignableDeliveryStaff(input.staffProfileId);
+    const attempt = await this.deliveries.create({
+      orderId: order.id,
+      staffProfileId: staff.id,
+      status: "assigned",
+      deliveryNameSnapshot: staff.name,
+      deliveryPhoneSnapshot: staff.phone,
+      affiliationSnapshot: staff.affiliation,
+      companyNameSnapshot: staff.companyName,
+      assignedByUserId: actorUserId,
+      assignmentIdempotencyKey: input.idempotencyKey,
+    });
+    await this.recordDeliveryEvent("assigned", order, attempt, actorUserId);
+    return this.orderDetail(order, "operator");
+  }
+
+  @Transaction({ retries: 2 })
+  async reassignDelivery(
+    id: string,
+    data: ReassignDeliveryDto,
+    actorUserId: string,
+  ) {
+    const input = reassignDeliveryDto.parse(data);
+    const order = await this.lockOrder(id);
+    const repeated = await this.deliveries.findByAssignmentIdempotencyKey(
+      input.idempotencyKey,
+    );
+    if (repeated) {
+      this.ensureDeliveryIdempotencyContext(repeated, order.id, input.staffProfileId);
+      return this.orderDetail(order, "operator");
+    }
+    this.validator.ensureStatus(order, "purchased");
+    const current = await this.deliveries.findActiveByOrderId(order.id, true);
+    if (!current || current.status !== "assigned") {
+      HttpError.conflict("An assigned delivery attempt is required");
+    }
+    if (current.staffProfileId === input.staffProfileId) {
+      HttpError.conflict("Choose a different delivery staff member");
+    }
+    const staff = await this.ensureAssignableDeliveryStaff(input.staffProfileId);
+    const changedAt = new Date();
+    await this.deliveries.cancel(current.id, input.reason, changedAt);
+    const replacement = await this.deliveries.create({
+      orderId: order.id,
+      staffProfileId: staff.id,
+      status: "assigned",
+      deliveryNameSnapshot: staff.name,
+      deliveryPhoneSnapshot: staff.phone,
+      affiliationSnapshot: staff.affiliation,
+      companyNameSnapshot: staff.companyName,
+      assignedByUserId: actorUserId,
+      assignedAt: changedAt,
+      assignmentIdempotencyKey: input.idempotencyKey,
+    });
+    await this.recordDeliveryEvent("reassigned", order, replacement, actorUserId, {
+      previousAttemptId: current.id,
+      previousStaffProfileId: current.staffProfileId,
+    });
+    return this.orderDetail(order, "operator");
+  }
+
+  @Transaction({ retries: 2 })
+  async startDelivery(
+    id: string,
+    data: StartDeliveryDto,
+    actorUserId: string,
+  ) {
+    const input = startDeliveryDto.parse(data);
+    const order = await this.lockOrder(id);
+    const repeated = await this.deliveries.findByStartIdempotencyKey(
+      input.idempotencyKey,
+    );
+    if (repeated) {
+      this.ensureDeliveryIdempotencyContext(repeated, order.id);
+      return this.orderDetail(order, "operator");
+    }
     this.validator.ensureStatus(order, "purchased");
     if (!(await this.purchases.findActiveByOrderId(order.id))) {
       HttpError.conflict("Active purchase record is required");
     }
+    const attempt = await this.deliveries.findActiveByOrderId(order.id, true);
+    if (!attempt || attempt.status !== "assigned") {
+      HttpError.conflict("An active delivery assignment is required");
+    }
+    await this.ensureAssignableDeliveryStaff(attempt.staffProfileId);
+    const startedAt = new Date();
+    await this.deliveries.start(attempt.id, input.idempotencyKey, startedAt);
     const started = await this.orders.update(order.id, {
       status: "out_for_delivery",
-      deliveryStartedAt: new Date(),
+      deliveryStartedAt: startedAt,
       deliveryStartedByUserId: actorUserId,
     });
     await this.recordTransition(
@@ -525,8 +662,52 @@ export class OrderService {
       actorUserId,
       null,
       "delivery_started",
+      { attemptId: attempt.id, staffProfileId: attempt.staffProfileId },
     );
     return this.orderDetail(started, "operator");
+  }
+
+  @Transaction({ retries: 2 })
+  async failDelivery(
+    id: string,
+    data: FailDeliveryDto,
+    actorUserId: string,
+  ) {
+    const input = failDeliveryDto.parse(data);
+    const order = await this.lockOrder(id);
+    const repeated = await this.deliveries.findByFailIdempotencyKey(
+      input.idempotencyKey,
+    );
+    if (repeated) {
+      this.ensureDeliveryIdempotencyContext(repeated, order.id);
+      return this.orderDetail(order, "operator");
+    }
+    this.validator.ensureStatus(order, "out_for_delivery");
+    const attempt = await this.deliveries.findActiveByOrderId(order.id, true);
+    if (!attempt || attempt.status !== "in_progress") {
+      HttpError.conflict("An in-progress delivery attempt is required");
+    }
+    const failedAt = new Date();
+    await this.deliveries.fail(
+      attempt.id,
+      input.reason,
+      input.idempotencyKey,
+      failedAt,
+    );
+    const returned = await this.orders.update(order.id, {
+      status: "purchased",
+      deliveryStartedAt: null,
+      deliveryStartedByUserId: null,
+    });
+    await this.recordTransition(
+      order,
+      returned,
+      actorUserId,
+      null,
+      "delivery_failed",
+      { attemptId: attempt.id, staffProfileId: attempt.staffProfileId },
+    );
+    return this.orderDetail(returned, "operator");
   }
 
   @Transaction({ retries: 2 })
@@ -543,7 +724,19 @@ export class OrderService {
       }
       HttpError.conflict("Order is already delivered");
     }
+    const repeatedAttempt =
+      await this.deliveries.findByConfirmationIdempotencyKey(
+        input.idempotencyKey,
+      );
+    if (repeatedAttempt) {
+      this.ensureDeliveryIdempotencyContext(repeatedAttempt, order.id);
+      return this.orderDetail(order, "operator");
+    }
     this.validator.ensureStatus(order, "out_for_delivery");
+    const attempt = await this.deliveries.findActiveByOrderId(order.id, true);
+    if (!attempt || attempt.status !== "in_progress") {
+      HttpError.conflict("An in-progress delivery attempt is required");
+    }
     if (input.proofStoragePath) {
       await this.evidence.ensureManagedReference(
         "deliveries",
@@ -552,9 +745,15 @@ export class OrderService {
         input.proofByteSize!,
       );
     }
+    const deliveredAt = new Date();
+    await this.deliveries.complete(
+      attempt.id,
+      input.idempotencyKey,
+      deliveredAt,
+    );
     const delivered = await this.orders.update(order.id, {
       status: "delivered",
-      deliveredAt: new Date(),
+      deliveredAt,
       deliveredByUserId: actorUserId,
       deliveryConfirmationMethod: input.confirmationMethod,
       deliveryNote: input.deliveryNote ?? null,
@@ -569,7 +768,11 @@ export class OrderService {
       actorUserId,
       null,
       "delivered",
-      { evidenceRecorded: Boolean(input.proofStoragePath) },
+      {
+        attemptId: attempt.id,
+        staffProfileId: attempt.staffProfileId,
+        evidenceRecorded: Boolean(input.proofStoragePath),
+      },
     );
     return this.orderDetail(delivered, "operator");
   }
@@ -644,6 +847,17 @@ export class OrderService {
         HttpError.conflict("Active purchase record is missing");
       }
       await this.refundPurchase(order, purchase, actorUserId, input.reason);
+    }
+    const activeDelivery = await this.deliveries.findActiveByOrderId(
+      order.id,
+      true,
+    );
+    if (activeDelivery) {
+      await this.deliveries.cancel(
+        activeDelivery.id,
+        input.reason,
+        new Date(),
+      );
     }
     const cancelled = await this.orders.update(order.id, {
       status: "cancelled",
@@ -1131,6 +1345,60 @@ export class OrderService {
     });
   }
 
+  private async ensureAssignableDeliveryStaff(staffProfileId: string) {
+    const staff = await this.staff.findById(staffProfileId);
+    if (!staff) HttpError.notFound("Delivery staff profile not found");
+    if (staff.status !== "active" || !staff.functions.includes("delivery")) {
+      HttpError.conflict("Active Delivery staff is required");
+    }
+    return staff;
+  }
+
+  private ensureDeliveryIdempotencyContext(
+    attempt: OrderDeliveryAttempt,
+    orderId: string,
+    staffProfileId?: string,
+  ) {
+    if (
+      attempt.orderId !== orderId ||
+      (staffProfileId !== undefined &&
+        attempt.staffProfileId !== staffProfileId)
+    ) {
+      HttpError.conflict("Idempotency key was already used for another delivery command");
+    }
+  }
+
+  private async recordDeliveryEvent(
+    action: "assigned" | "reassigned",
+    order: Order,
+    attempt: OrderDeliveryAttempt,
+    actorUserId: string,
+    metadata: Record<string, unknown> = {},
+  ) {
+    const safeMetadata = {
+      attemptId: attempt.id,
+      staffProfileId: attempt.staffProfileId,
+      status: attempt.status,
+      ...metadata,
+    };
+    await this.audits.record({
+      action: `order.delivery_${action}`,
+      actorUserId,
+      metadata: safeMetadata,
+      resource: "orders",
+      resourceId: order.id,
+    });
+    await this.outbox.enqueue({
+      topic: `order.delivery_${action}`,
+      aggregateType: "order",
+      aggregateId: order.id,
+      payload: {
+        orderNumber: order.orderNumber,
+        ...safeMetadata,
+      },
+    });
+  }
+
   private async lockOrder(id: string) {
     const order = await this.orders.lockById(id);
     if (!order) {
@@ -1169,12 +1437,14 @@ export class OrderService {
     order: Order,
     audience: "family" | "operator",
   ) {
-    const [items, statusEvents, purchaseHistory] = await Promise.all([
-      this.orders.listItems(order.id),
-      this.orders.listStatusEvents(order.id),
-      this.purchases.listByOrderId(order.id),
-    ]);
+    const items = await this.orders.listItems(order.id);
+    const statusEvents = await this.orders.listStatusEvents(order.id);
+    const purchaseHistory = await this.purchases.listByOrderId(order.id);
     if (audience === "operator") {
+      const deliveryAttempts = await this.deliveries.listByOrderId(order.id);
+      const currentAttempt = deliveryAttempts.find((attempt) =>
+        ["assigned", "in_progress"].includes(attempt.status),
+      );
       return {
         ...order,
         items,
@@ -1188,12 +1458,21 @@ export class OrderService {
             .actualTotalMinor ?? null,
         receiptRecorded: purchaseHistory.some(({ reversal }) => !reversal),
         deliveryProofRecorded: Boolean(order.deliveryProofStoragePath),
+        currentDelivery: currentAttempt
+          ? deliveryAttemptProjection(currentAttempt)
+          : null,
+        deliveryAttempts: deliveryAttempts.map(deliveryAttemptProjection),
       };
     }
+    const activeDelivery = await this.deliveries.findActiveByOrderId(order.id);
     return {
       ...(await this.familyOrderProjection(order)),
+      deliveryAssigned: Boolean(activeDelivery),
       items,
-      statusEvents,
+      statusEvents: statusEvents.map(({ actorUserId, ...event }) => {
+        void actorUserId;
+        return event;
+      }),
     };
   }
 
@@ -1201,6 +1480,14 @@ export class OrderService {
     const purchase = await this.purchases.findActiveByOrderId(order.id);
     const {
       assistanceNote: _assistanceNote,
+      submissionIdempotencyKey: _submissionIdempotencyKey,
+      placedByUserId: _placedByUserId,
+      approvedByUserId: _approvedByUserId,
+      rejectedByUserId: _rejectedByUserId,
+      cancelledByUserId: _cancelledByUserId,
+      deliveryStartedByUserId: _deliveryStartedByUserId,
+      deliveredByUserId: _deliveredByUserId,
+      deliveryConfirmationIdempotencyKey: _deliveryConfirmationIdempotencyKey,
       deliveryNote: _deliveryNote,
       deliveryProofStoragePath: _deliveryProofStoragePath,
       deliveryProofMediaType: _deliveryProofMediaType,
@@ -1208,6 +1495,14 @@ export class OrderService {
       ...safeOrder
     } = order;
     void _assistanceNote;
+    void _submissionIdempotencyKey;
+    void _placedByUserId;
+    void _approvedByUserId;
+    void _rejectedByUserId;
+    void _cancelledByUserId;
+    void _deliveryStartedByUserId;
+    void _deliveredByUserId;
+    void _deliveryConfirmationIdempotencyKey;
     void _deliveryNote;
     void _deliveryProofStoragePath;
     void _deliveryProofMediaType;
@@ -1271,6 +1566,39 @@ function purchaseMetadata(order: Order, purchase: OrderPurchaseRecord) {
     actualTotalMinor: purchase.actualTotalMinor,
     differenceMinor: purchase.actualTotalMinor - order.totalMinor,
     evidenceRecorded: true,
+  };
+}
+
+function deliveryAttemptSummary(attempt: OrderDeliveryAttempt) {
+  return {
+    attemptId: attempt.id,
+    staffProfileId: attempt.staffProfileId,
+    name: attempt.deliveryNameSnapshot,
+    status: attempt.status,
+    assignedAt: attempt.assignedAt,
+  };
+}
+
+function deliveryAttemptProjection(attempt: OrderDeliveryAttempt) {
+  return {
+    id: attempt.id,
+    orderId: attempt.orderId,
+    staffProfileId: attempt.staffProfileId,
+    status: attempt.status,
+    deliveryNameSnapshot: attempt.deliveryNameSnapshot,
+    deliveryPhoneSnapshot: attempt.deliveryPhoneSnapshot,
+    affiliationSnapshot: attempt.affiliationSnapshot,
+    companyNameSnapshot: attempt.companyNameSnapshot,
+    assignedByUserId: attempt.assignedByUserId,
+    assignedAt: attempt.assignedAt,
+    startedAt: attempt.startedAt,
+    failedAt: attempt.failedAt,
+    completedAt: attempt.completedAt,
+    cancelledAt: attempt.cancelledAt,
+    failureReason: attempt.failureReason,
+    cancellationReason: attempt.cancellationReason,
+    createdAt: attempt.createdAt,
+    updatedAt: attempt.updatedAt,
   };
 }
 

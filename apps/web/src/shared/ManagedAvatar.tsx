@@ -82,9 +82,12 @@ export function ManagedAvatar({
     ? withVersion(candidate, srcVersion ?? version)
     : undefined;
   const [failedSource, setFailedSource] = useState<string | null>(null);
+  const [loadedSource, setLoadedSource] = useState<string | null>(null);
   const label = title || fallback || alt || "";
   const fallbackText = fallback && !title ? fallback : initials(label) || "?";
   const hasText = Boolean(title || subtitle || meta);
+  const showFallback =
+    !resolved || failedSource === resolved || loadedSource !== resolved;
 
   return (
     <div className={cn("flex items-center gap-3", classNames?.root, className)}>
@@ -93,16 +96,18 @@ export function ManagedAvatar({
         shape={shape}
         size={size}
       >
-        <span
-          aria-hidden
-          className={cn(
-            "flex size-full items-center justify-center bg-muted font-semibold text-foreground",
-            TEXT_SIZE_CLASSES[size],
-            classNames?.fallback,
-          )}
-        >
-          {fallbackText}
-        </span>
+        {showFallback ? (
+          <span
+            aria-hidden
+            className={cn(
+              "flex size-full items-center justify-center bg-muted font-semibold text-foreground",
+              TEXT_SIZE_CLASSES[size],
+              classNames?.fallback,
+            )}
+          >
+            {fallbackText}
+          </span>
+        ) : null}
         {resolved && failedSource !== resolved ? (
           <ProtectedImage
             alt={alt || label}
@@ -110,6 +115,7 @@ export function ManagedAvatar({
             fill
             loading="lazy"
             onError={() => setFailedSource(resolved)}
+            onLoad={() => setLoadedSource(resolved)}
             sizes={IMAGE_SIZES[size]}
             src={resolved}
           />

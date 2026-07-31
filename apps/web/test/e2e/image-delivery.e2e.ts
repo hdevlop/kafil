@@ -16,6 +16,7 @@ async function useRole(page: Page, role: Role) {
   await page.getByPlaceholder("Enter your password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL(new RegExp(`/${role}$`));
+  await page.waitForLoadState("networkidle");
 }
 
 function isManagedImage(response: Response) {

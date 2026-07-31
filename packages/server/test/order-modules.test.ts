@@ -11,11 +11,13 @@ import {
 import { ProductRepository } from "../src/modules/catalog";
 import { OutboxService } from "../src/modules/outbox";
 import { FundingService } from "../src/modules/settings";
+import { StaffRepository } from "../src/modules/staff";
 import {
   cartItemDto,
   CartRepository,
   OrderController,
   OrderEvidenceService,
+  OrderDeliveryRepository,
   OrderPurchaseRepository,
   OrderRepository,
   OrderService,
@@ -27,6 +29,7 @@ const householdId = "00000000-0000-4000-8000-000000000081";
 const productId = "00000000-0000-4000-8000-000000000082";
 const orderId = "00000000-0000-4000-8000-000000000083";
 const accountId = "00000000-0000-4000-8000-000000000084";
+const deliveryStaffId = "00000000-0000-4000-8000-000000000085";
 
 describe("Phase 5 cart and route contracts", () => {
   it("accepts only positive bounded cart quantities and idempotent submission keys", () => {
@@ -55,7 +58,10 @@ describe("Phase 5 cart and route contracts", () => {
         "reject",
         "recordPurchase",
         "replacePurchase",
+        "assignDelivery",
+        "reassignDelivery",
         "startDelivery",
+        "failDelivery",
         "confirmDelivery",
         "deliver",
         "cancelOwn",
@@ -250,7 +256,20 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     const { service, state } = orderService({ status: "purchased" });
     state.activePurchase = purchaseRecord();
 
-    const started = await service.startDelivery(orderId, "operator-user");
+    await service.assignDelivery(
+      orderId,
+      {
+        staffProfileId: deliveryStaffId,
+        idempotencyKey: "delivery-assign-0001",
+      },
+      "operator-user",
+    );
+
+    const started = await service.startDelivery(
+      orderId,
+      { idempotencyKey: "delivery-start-0001" },
+      "operator-user",
+    );
     expect(started.status).toBe("out_for_delivery");
     expect(state.balanceUpdates).toEqual([]);
 
@@ -269,6 +288,117 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     });
     expect(state.balanceUpdates).toEqual([]);
     expect(state.ledger).toEqual([]);
+  });
+
+  it("reassigns before start and retains the cancelled assignment", async () => {
+    const { service, state } = orderService({ status: "purchased" });
+    state.activePurchase = purchaseRecord();
+    await service.assignDelivery(
+      orderId,
+      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-1001" },
+      "operator-user",
+    );
+    const replacementStaffId = "00000000-0000-4000-8000-000000000086";
+    await service.reassignDelivery(
+      orderId,
+      {
+        staffProfileId: replacementStaffId,
+        reason: "Courier shift changed",
+        idempotencyKey: "delivery-reassign-1001",
+      },
+      "operator-user",
+    );
+
+    expect(state.deliveryAttempts).toHaveLength(2);
+    expect(state.deliveryAttempts[0]).toMatchObject({
+      status: "cancelled",
+      cancellationReason: "Courier shift changed",
+    });
+    expect(state.deliveryAttempts[1]).toMatchObject({
+      status: "assigned",
+      staffProfileId: replacementStaffId,
+    });
+  });
+
+  it("records failure and returns the order to purchased without a budget effect", async () => {
+    const { service, state } = orderService({ status: "purchased" });
+    state.activePurchase = purchaseRecord();
+    await service.assignDelivery(
+      orderId,
+      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-2001" },
+      "operator-user",
+    );
+    await service.startDelivery(
+      orderId,
+      { idempotencyKey: "delivery-start-2001" },
+      "operator-user",
+    );
+    const failed = await service.failDelivery(
+      orderId,
+      { reason: "Recipient unavailable", idempotencyKey: "delivery-fail-2001" },
+      "operator-user",
+    );
+
+    expect(failed.status).toBe("purchased");
+    expect(state.deliveryAttempts[0]).toMatchObject({
+      status: "failed",
+      failureReason: "Recipient unavailable",
+    });
+    expect(state.balanceUpdates).toEqual([]);
+  });
+
+  it("rejects assignment to inactive Delivery staff", async () => {
+    const { service } = orderService({
+      status: "purchased",
+      deliveryStaffActive: false,
+    });
+    await expect(
+      service.assignDelivery(
+        orderId,
+        { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-3001" },
+        "operator-user",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("keeps delivery identity, command keys, and actor IDs out of family detail", async () => {
+    const { service, state } = orderService({ status: "purchased" });
+    state.events.push({
+      id: "event-1",
+      orderId,
+      fromStatus: "approved",
+      toStatus: "purchased",
+      actorUserId: "operator-user",
+      reason: null,
+      createdAt: new Date(),
+    });
+    await service.assignDelivery(
+      orderId,
+      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-4001" },
+      "operator-user",
+    );
+
+    const family = await service.getOwn(orderId, "family-user");
+    expect((family as { deliveryAssigned: boolean }).deliveryAssigned).toBe(true);
+    expect(family).not.toHaveProperty("currentDelivery");
+    expect(family).not.toHaveProperty("deliveryAttempts");
+    expect(family).not.toHaveProperty("deliveryStartedByUserId");
+    expect(family).not.toHaveProperty("deliveryConfirmationIdempotencyKey");
+    expect(family.statusEvents[0]).not.toHaveProperty("actorUserId");
+  });
+
+  it("serializes transaction-bound order detail reads", async () => {
+    const { service, state } = orderService({
+      rejectConcurrentDetailReads: true,
+    });
+
+    await service.getOwn(orderId, "family-user");
+
+    expect(state.detailReads).toEqual([
+      "items",
+      "statusEvents",
+      "purchaseHistory",
+    ]);
   });
 
   it("keeps approval reserved, captures the actual purchase, and refunds it on cancellation", async () => {
@@ -405,9 +535,12 @@ function orderService(options: {
   existingSubmission?: boolean;
   serializeCart?: boolean;
   fundingActive?: boolean;
+  deliveryStaffActive?: boolean;
+  rejectConcurrentDetailReads?: boolean;
 } = {}) {
   let createdSubmission = false;
   let cartLocked = false;
+  let detailReadInProgress = false;
   const cartWaiters: Array<() => void> = [];
   const releaseCart = () => {
     const next = cartWaiters.shift();
@@ -438,6 +571,18 @@ function orderService(options: {
     erasedOrderLedger: [] as Array<{ budgetAccountId: string; orderId: string }>,
     deletedOrderIds: [] as string[],
     auditEvents: [] as Record<string, unknown>[],
+    deliveryAttempts: [] as Record<string, unknown>[],
+    detailReads: [] as string[],
+  };
+  const detailRead = async <T>(label: string, value: T) => {
+    if (options.rejectConcurrentDetailReads && detailReadInProgress) {
+      throw new Error(`Concurrent detail read '${label}'`);
+    }
+    detailReadInProgress = true;
+    state.detailReads.push(label);
+    await Promise.resolve();
+    detailReadInProgress = false;
+    return value;
   };
   const carts = {
     findByFamilyId: async () => cartRecord(),
@@ -486,8 +631,8 @@ function orderService(options: {
       state.orderItems = items.map((item) => orderItemRecord(item));
       return state.orderItems;
     },
-    listItems: async () => state.orderItems,
-    listStatusEvents: async () => state.events,
+    listItems: async () => detailRead("items", state.orderItems),
+    listStatusEvents: async () => detailRead("statusEvents", state.events),
     appendStatusEvent: async (input: Record<string, unknown>) => {
       state.events.push(input);
       return input;
@@ -511,14 +656,106 @@ function orderService(options: {
     },
     reverse: async (input: Record<string, unknown>) => input,
     listByOrderId: async () =>
-      state.activePurchase
-        ? [{ purchase: state.activePurchase, reversal: null }]
-        : [],
+      detailRead(
+        "purchaseHistory",
+        state.activePurchase
+          ? [{ purchase: state.activePurchase, reversal: null }]
+          : [],
+      ),
   } as unknown as OrderPurchaseRepository;
+  const deliveries = {
+    findByAssignmentIdempotencyKey: async (key: string) =>
+      state.deliveryAttempts.find(
+        (attempt) => attempt.assignmentIdempotencyKey === key,
+      ),
+    findByStartIdempotencyKey: async (key: string) =>
+      state.deliveryAttempts.find((attempt) => attempt.startIdempotencyKey === key),
+    findByFailIdempotencyKey: async (key: string) =>
+      state.deliveryAttempts.find((attempt) => attempt.failIdempotencyKey === key),
+    findByConfirmationIdempotencyKey: async (key: string) =>
+      state.deliveryAttempts.find(
+        (attempt) => attempt.confirmationIdempotencyKey === key,
+      ),
+    findActiveByOrderId: async () =>
+      state.deliveryAttempts.find((attempt) =>
+        ["assigned", "in_progress"].includes(String(attempt.status)),
+      ),
+    create: async (input: Record<string, unknown>) => {
+      const attempt = {
+        id: `delivery-attempt-${state.deliveryAttempts.length + 1}`,
+        assignedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        startedAt: null,
+        failedAt: null,
+        completedAt: null,
+        cancelledAt: null,
+        failureReason: null,
+        cancellationReason: null,
+        startIdempotencyKey: null,
+        failIdempotencyKey: null,
+        confirmationIdempotencyKey: null,
+        ...input,
+      };
+      state.deliveryAttempts.push(attempt);
+      return attempt;
+    },
+    start: async (id: string, key: string, startedAt: Date) => {
+      const attempt = state.deliveryAttempts.find((row) => row.id === id)!;
+      Object.assign(attempt, {
+        status: "in_progress",
+        startedAt,
+        startIdempotencyKey: key,
+      });
+      return attempt;
+    },
+    complete: async (id: string, key: string, completedAt: Date) => {
+      const attempt = state.deliveryAttempts.find((row) => row.id === id)!;
+      Object.assign(attempt, {
+        status: "delivered",
+        completedAt,
+        confirmationIdempotencyKey: key,
+      });
+      return attempt;
+    },
+    fail: async (id: string, reason: string, key: string, failedAt: Date) => {
+      const attempt = state.deliveryAttempts.find((row) => row.id === id)!;
+      Object.assign(attempt, {
+        status: "failed",
+        failureReason: reason,
+        failedAt,
+        failIdempotencyKey: key,
+      });
+      return attempt;
+    },
+    cancel: async (id: string, reason: string, cancelledAt: Date) => {
+      const attempt = state.deliveryAttempts.find((row) => row.id === id)!;
+      Object.assign(attempt, {
+        status: "cancelled",
+        cancellationReason: reason,
+        cancelledAt,
+      });
+      return attempt;
+    },
+    listByOrderId: async () => state.deliveryAttempts,
+    listLatestByOrderIds: async () => new Map(),
+  } as unknown as OrderDeliveryRepository;
   const service = new OrderService(
     carts,
     orders,
+    deliveries,
     purchases,
+    {
+      findById: async (id: string) => ({
+        id,
+        name: "Amina Delivery",
+        phone: "+212600001122",
+        affiliation: "internal",
+        companyName: null,
+        status: options.deliveryStaffActive === false ? "inactive" : "active",
+        functions: ["delivery"],
+      }),
+    } as unknown as StaffRepository,
     {
       findActiveById: async () => ({
         id: productId,
@@ -589,6 +826,10 @@ function orderService(options: {
         }
       },
       ensureLockedOrderOwnedBy: () => undefined,
+      ensureOrderOwnedByFamily: async () => ({
+        family: familyRecord(),
+        order: state.order,
+      }),
     } as unknown as OrderValidator,
     {
       ensureOrderEligible: async () => {

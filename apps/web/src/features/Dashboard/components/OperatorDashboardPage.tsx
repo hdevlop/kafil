@@ -19,6 +19,11 @@ import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/Dash
 
 import { useOperatorDashboard } from "../hooks/useDashboard";
 import { MonthlyLineChart, PieBreakdown, StatusBreakdown } from "./DashboardCharts";
+import {
+  LatestOrdersCard,
+  OperationalAttentionCard,
+  QuickActionsCard,
+} from "./OperatorOperationsCards";
 
 export function OperatorDashboardPage() {
   const dashboard = useOperatorDashboard();
@@ -117,8 +122,8 @@ export function OperatorDashboardPage() {
         </NGridItem>
       </NGrid>
 
-      <NGrid cols={1} xlCols={12} className="flex-1">
-        <NGridItem span={1} xlSpan={12}>
+      <NGrid cols={1} mdCols={2} xlCols={12} className="flex-1">
+        <NGridItem span={1} xlSpan={3}>
           <StatusBreakdown
             data={data.orderStatuses}
             emptyLabel={t("state.empty")}
@@ -127,6 +132,18 @@ export function OperatorDashboardPage() {
             language={language}
             title={t("dashboard.operator.orderPipeline")}
           />
+        </NGridItem>
+        <NGridItem span={1} xlSpan={3}>
+          <LatestOrdersCard recentOrders={data.recentOrders ?? []} />
+        </NGridItem>
+        <NGridItem span={1} xlSpan={3}>
+          <OperationalAttentionCard
+            orderStatuses={data.orderStatuses}
+            pendingContributions={data.counts.pendingContributions}
+          />
+        </NGridItem>
+        <NGridItem span={1} xlSpan={3}>
+          <QuickActionsCard />
         </NGridItem>
       </NGrid>
     </NPageLayout>

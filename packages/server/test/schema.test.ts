@@ -17,6 +17,7 @@ import {
   inventoryLedgerEntries,
   monthlyBudgetLimits,
   operatorProfiles,
+  orderDeliveryAttempts,
   orderItems,
   orderStatusEvents,
   orders,
@@ -25,6 +26,8 @@ import {
   products,
   schema,
   sponsorProfiles,
+  staffFunctions,
+  staffProfiles,
   supportAssignments,
 } from "../src/database/schema";
 
@@ -177,6 +180,7 @@ describe("Kafil database schema", () => {
         "inventoryLedgerEntries",
         "monthlyBudgetLimits",
         "operatorProfiles",
+        "orderDeliveryAttempts",
         "orderItems",
         "orderPurchaseRecords",
         "orderPurchaseReversals",
@@ -186,6 +190,8 @@ describe("Kafil database schema", () => {
         "platformSettings",
         "products",
         "sponsorProfiles",
+        "staffFunctions",
+        "staffProfiles",
         "supportAssignments",
       ].sort(),
     );
@@ -407,5 +413,71 @@ describe("Kafil database schema", () => {
     expect(columns.sponsorProfileId.notNull).toBe(true);
     expect(columns.familyProfileId.notNull).toBe(true);
     expect(columns.assignedByUserId.notNull).toBe(true);
+  });
+
+  it("composes Staff profiles with a normalized functions join", () => {
+    const staffColumns = getTableColumns(staffProfiles);
+    const functionColumns = getTableColumns(staffFunctions);
+
+    expect(Object.keys(staffColumns)).toEqual(
+      expect.arrayContaining([
+        "id",
+        "userId",
+        "name",
+        "contactEmail",
+        "phone",
+        "image",
+        "affiliation",
+        "companyName",
+        "cin",
+        "gender",
+        "address",
+        "dateOfBirth",
+        "jobTitle",
+        "status",
+        "notes",
+      ]),
+    );
+    expect(staffColumns.userId.isUnique).toBe(true);
+    expect(staffColumns.phone.isUnique).toBe(true);
+    expect(staffColumns.cin.isUnique).toBe(true);
+    expect(staffColumns.affiliation.notNull).toBe(true);
+    expect(staffColumns.status.notNull).toBe(true);
+    expect(Object.keys(functionColumns)).toEqual(
+      expect.arrayContaining(["staffProfileId", "functionKey"]),
+    );
+    expect(functionColumns.staffProfileId.notNull).toBe(true);
+    expect(functionColumns.functionKey.notNull).toBe(true);
+  });
+
+  it("composes immutable order delivery attempts with command idempotency", () => {
+    const columns = getTableColumns(orderDeliveryAttempts);
+
+    expect(Object.keys(columns)).toEqual(
+      expect.arrayContaining([
+        "orderId",
+        "staffProfileId",
+        "status",
+        "deliveryNameSnapshot",
+        "deliveryPhoneSnapshot",
+        "affiliationSnapshot",
+        "companyNameSnapshot",
+        "assignedByUserId",
+        "assignedAt",
+        "startedAt",
+        "failedAt",
+        "completedAt",
+        "cancelledAt",
+        "failureReason",
+        "cancellationReason",
+        "assignmentIdempotencyKey",
+        "startIdempotencyKey",
+        "failIdempotencyKey",
+        "confirmationIdempotencyKey",
+      ]),
+    );
+    expect(columns.orderId.notNull).toBe(true);
+    expect(columns.staffProfileId.notNull).toBe(true);
+    expect(columns.assignmentIdempotencyKey.notNull).toBe(true);
   });
 });

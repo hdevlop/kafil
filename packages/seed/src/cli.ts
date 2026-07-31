@@ -233,6 +233,11 @@ async function promptDemoCounts() {
     DEFAULT_DEMO_SEED_COUNTS.operators,
   );
   if (operators === undefined) return undefined;
+  const deliveries = await promptCount(
+    "How many delivery staff?",
+    DEFAULT_DEMO_SEED_COUNTS.deliveries,
+  );
+  if (deliveries === undefined) return undefined;
   const contributions = await promptCount(
     "How many contributions?",
     DEFAULT_DEMO_SEED_COUNTS.contributions,
@@ -244,9 +249,9 @@ async function promptDemoCounts() {
   if (contributions === undefined) return undefined;
 
   log.info(
-    `Demo data: ${families} families, ${sponsors} sponsors, ${operators} operators, ${contributions} contributions.`,
+    `Demo data: ${families} families, ${sponsors} sponsors, ${operators} operators, ${deliveries} delivery staff, ${contributions} contributions.`,
   );
-  return { contributions, families, operators, sponsors };
+  return { contributions, deliveries, families, operators, sponsors };
 }
 
 async function promptCount(

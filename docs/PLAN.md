@@ -432,6 +432,17 @@ route for operator/sponsor views. Root lint, typecheck, tests, and production
 build passed: web 107 tests, server 129 tests with one opt-in database skip, and
 seed 27 tests. CLI help, empty-library validation, auth verification, and a
 zero-record configured-database demo run also passed without clearing data.
+Demo realism follow-up (2026-07-30): the current defaults are 10 families, 20
+sponsors, 6 operators, 4 delivery staff, and 20 contributions. Demo/full always
+repair the 18 packaged categories, create or repair 18 matching image-backed
+products, and generate 24 repeat-family orders across the trailing 12 months.
+The generated history uses normal assisted-order, budget, purchase, receipt,
+delivery-assignment, and confirmation commands, while deterministic keys make
+reruns idempotent and recent orders retain useful active lifecycle states.
+Seed lint/typecheck and all 73 seed tests passed. Root typecheck, the complete
+test command, the 40-route production build, and no-change migration generation
+also passed; the combined root check is currently blocked only by an unrelated
+unused-parameter lint finding in the concurrent delivery implementation.
 Funding correction (2026-07-19): generated validated contribution totals now
 approach but never exceed each family's funding target. Namespaced demo
 contributions from the earlier distribution are repaired through audited
@@ -760,6 +771,17 @@ Exit gate:
 ## 17. Phase 7 - Reports, Operations, and Release
 
 Goal: close the operational, privacy, and production-readiness surface.
+
+Staff and delivery-assignment extension (complete 2026-07-30): the admin-only
+Staff directory now owns Operator/Delivery operational metadata, provisions
+linked operator accounts, and supplies operators with a privacy-safe delivery
+selector. Migration `0027_unusual_victor_mancha` adds immutable delivery
+attempts with one-active-attempt and idempotency constraints. Explicit Orders
+commands cover assign, reassign, start, fail, and confirm; the canonical
+`/orders` UI adds a Delivery column, state-aware dialogs, and responsive history
+sheet. Family/sponsor projections remain identity-safe. Unit, PostgreSQL
+concurrency, production build, migration drift, and four-role browser gates
+passed. Phase 7 remains active for the unrelated release items below.
 
 Phase 7 unification slice (2026-07-28): `/products`, `/categories`, and `/orders`
 become the single canonical surfaces for the catalog and order experience.

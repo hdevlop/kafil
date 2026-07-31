@@ -104,7 +104,7 @@ FROM family_profiles fp JOIN users u ON u.id = fp.user_id WHERE u.image IS NOT N
 UNION ALL
 SELECT 'sponsor', sp.id::text, u.image, NULL FROM sponsor_profiles sp JOIN users u ON u.id = sp.user_id WHERE u.image IS NOT NULL
 UNION ALL
-SELECT 'operator', op.id::text, u.image, NULL FROM operator_profiles op JOIN users u ON u.id = op.user_id WHERE u.image IS NOT NULL
+SELECT 'operator', sp.id::text, u.image, NULL FROM staff_profiles sp JOIN staff_functions sf ON sf.staff_profile_id = sp.id AND sf.function_key = 'operator' JOIN users u ON u.id = sp.user_id WHERE u.image IS NOT NULL
 UNION ALL
 SELECT 'child', c.id::text, c.image, NULL FROM children c WHERE c.image IS NOT NULL
 UNION ALL
@@ -197,7 +197,7 @@ async function updateReference(
   const statements: Record<Exclude<ImageKind, "brandingLogo" | "brandingHero">, string> = {
     family: "UPDATE users u SET image = $1 FROM family_profiles fp WHERE fp.user_id = u.id AND fp.id = $2 AND u.image = $3 RETURNING u.id",
     sponsor: "UPDATE users u SET image = $1 FROM sponsor_profiles sp WHERE sp.user_id = u.id AND sp.id = $2 AND u.image = $3 RETURNING u.id",
-    operator: "UPDATE users u SET image = $1 FROM operator_profiles op WHERE op.user_id = u.id AND op.id = $2 AND u.image = $3 RETURNING u.id",
+    operator: "UPDATE users u SET image = $1 FROM staff_profiles sp INNER JOIN staff_functions sf ON sf.staff_profile_id = sp.id AND sf.function_key = 'operator' WHERE sp.user_id = u.id AND sp.id = $2 AND u.image = $3 RETURNING u.id",
     child: "UPDATE children SET image = $1, updated_at = NOW() WHERE id = $2 AND image = $3 RETURNING id",
     category: "UPDATE categories SET image = $1, updated_at = NOW() WHERE id = $2 AND image = $3 RETURNING id",
     product: "UPDATE products SET image_url = $1, updated_at = NOW() WHERE id = $2 AND image_url = $3 RETURNING id",

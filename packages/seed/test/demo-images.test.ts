@@ -98,6 +98,23 @@ describe("demo profile images", () => {
     expect(library.family).toHaveLength(1);
   });
 
+  it("allows packaged product images without assigning them as profiles", async () => {
+    const root = await temporaryRoot();
+    const libraryPath = join(root, "images");
+    await mkdir(libraryPath, { recursive: true });
+    await writeRawFile(
+      join(libraryPath, "product-tomatoes.webp"),
+      await readFile(join(testImageDirectory, "product-tomatoes.webp")),
+    );
+
+    const library = await readDemoImageLibrary(libraryPath);
+    expect(library).toEqual({
+      child: { F: [], M: [] },
+      family: [],
+      sponsor: { F: [], M: [] },
+    });
+  });
+
   it("rejects gender-tagged family filenames", async () => {
     const root = await temporaryRoot();
     const libraryPath = join(root, "images");

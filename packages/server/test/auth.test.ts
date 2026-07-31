@@ -9,8 +9,9 @@ import {
   ChildImageController,
   FamilyImageController,
   Document,
-  Operator,
   Sponsor,
+  Staff,
+  StaffDeliveryOptions,
 } from "../src/modules";
 import {
   authConfig,
@@ -101,7 +102,8 @@ describe("Kafil auth definitions", () => {
   });
 
   it("uses API resource names for policy permission resolution", () => {
-    expect(Operator.name).toBe("operators");
+    expect(Staff.name).toBe("staff");
+    expect(StaffDeliveryOptions.name).toBe("staffDeliveryOptions");
     expect(Sponsor.name).toBe("sponsors");
     expect(Document.name).toBe("documents");
   });

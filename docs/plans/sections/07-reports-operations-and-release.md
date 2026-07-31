@@ -16,6 +16,26 @@ Status: active
       PostgreSQL concurrency gates; production staging/browser smoke remains a
       separate Phase 7 release gate.
 
+## Staff and Delivery Assignment Extension - Complete 2026-07-30
+
+- [x] Re-audited and repaired the Staff prerequisite around the single
+      Operator/Delivery Role, automatic operator provisioning, synchronization,
+      sorting, privacy, authorization, and localization.
+- [x] Added migration `0027_unusual_victor_mancha` with immutable delivery
+      attempts, idempotency uniqueness, lifecycle checks, and one active attempt
+      per order.
+- [x] Added locked assign/reassign/start/fail/confirm commands and privacy-safe
+      audit/outbox metadata without budget or inventory effects.
+- [x] Added operator current/history projections, family assigned-only milestone,
+      and unchanged sponsor-safe milestones.
+- [x] Added the Orders Delivery column, command dialogs, and responsive/RTL Najm
+      Kit details sheet with immutable history.
+- [x] Passed unit, type, lint, production build, PostgreSQL concurrency,
+      migration/drift, and admin/operator/family/sponsor browser acceptance.
+
+This extension does not close the remaining observability, staging, security,
+and release checklist items in Phase 7.
+
 ## Goal
 
 Close the reporting, notification, observability, privacy, recovery, and release
@@ -76,7 +96,7 @@ Completed on 2026-07-20 and extended on 2026-07-21:
 - [x] Replaced script-name knowledge with one Clack-powered interactive/direct
       seed CLI for setup, demo, full, migration, auth repair, verification, and
       image checks; full is the highlighted default and demo/full prompt for all
-      four fixture counts.
+      five account/activity counts.
 - [x] Added destructive-command confirmation and an explicit `--yes` automation
       flag for setup/full workflows.
 - [x] Added one flat package-owned image library with enforced `family-NN` and
@@ -93,6 +113,22 @@ Completed on 2026-07-20 and extended on 2026-07-21:
       Unreferenced UUID-managed profile/catalog images are deleted after
       preserving paths still referenced by the database. Branding remains
       independently managed and is not swept by demo cleanup.
+- [x] Updated the current demo defaults to 10 families, 20 sponsors, 6
+      operators, 4 dedicated delivery staff, and 20 contributions. Demo/full
+      now create or repair the packaged categories plus 18 matching
+      image-backed products, then create 24 deterministic repeat-family orders
+      across the trailing 12 months through the normal order, purchase, budget,
+      and delivery services.
+
+Demo-realism validation (2026-07-30): seed lint and typecheck passed; all 73
+seed tests passed, including product idempotency, repeat-family/month coverage,
+cleanup of delivery attempts/staff, and chronological non-negative budget
+replay. Root typecheck passed, the complete test command passed (web, 308 server
+passes with 33 opt-in skips, and 73 seed passes), the 40-route production build
+passed, and `bun run db:generate` reported no schema changes. The combined
+`bun run check` command remains red only because the concurrent delivery slice
+still has an unrelated unused `_actorUserId` lint finding in
+`orderService.ts`; no seed lint finding remains.
 
 Cleanup hardening validation (2026-07-29): focused seed lint/typecheck and 9
 reset/removal tests passed. The repaired local `seed:remove` command found zero

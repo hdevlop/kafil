@@ -7,10 +7,14 @@ import { formatKafilDate, formatMad } from "@/lib/format";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 import type { OrderRecord } from "../types";
 
-export function useOrdersTableColumns() {
+export function useOrdersTableColumns(
+  onDelivery?: (order: OrderRecord) => void,
+) {
+  const { t } = useKafilLanguage();
   return useMemo<NTableProps<OrderRecord>["columns"]>(
     () => [
       {
@@ -60,11 +64,41 @@ export function useOrdersTableColumns() {
         cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
       },
       {
+        id: "delivery",
+        header: t("operator.orders.delivery.column"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const order = row.original;
+          const label = order.currentDelivery
+            ? `${order.currentDelivery.name}${order.currentDelivery.status === "in_progress" ? ` · ${t("operator.orders.delivery.inProgress")}` : ""}`
+            : ["failed", "cancelled"].includes(
+                  order.latestDelivery?.status ?? "",
+                )
+              ? t("operator.orders.delivery.needsReassignment")
+              : order.latestDelivery?.status === "delivered"
+                ? order.latestDelivery.name
+                : t("operator.orders.delivery.notAssigned");
+          return (
+            <button
+              type="button"
+              className="max-w-48 truncate text-start text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`View delivery for ${order.orderNumber}: ${label}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelivery?.(order);
+              }}
+            >
+              {label}
+            </button>
+          );
+        },
+      },
+      {
         accessorKey: "createdAt",
         header: "Placed",
         cell: ({ getValue }) => formatKafilDate(getValue<string>()),
       },
     ],
-    [],
+    [onDelivery, t],
   );
 }

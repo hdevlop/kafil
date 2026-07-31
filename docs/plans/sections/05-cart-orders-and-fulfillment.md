@@ -28,6 +28,21 @@ Admin correction update completed 2026-07-29:
 
 Migration: `0025_ambitious_abomination`.
 
+Delivery assignment update completed 2026-07-30:
+
+- purchased orders can be assigned or reassigned to active Delivery Staff;
+- immutable attempts retain contact snapshots, actors, timestamps, failure or
+  cancellation reasons, and command-specific idempotency keys;
+- start moves the active attempt/order to `in_progress`/`out_for_delivery`,
+  failure returns the order to `purchased`, and confirmation completes the same
+  active attempt without changing family funds;
+- the order row is locked for every command and a partial unique index prevents
+  competing active assignments;
+- family receives only an assigned milestone and sponsor retains its existing
+  safe fulfillment milestones.
+
+Migration: `0027_unusual_victor_mancha`.
+
 ## Goal
 
 Let a family build a cart, submit a funded order, and track the operator-managed

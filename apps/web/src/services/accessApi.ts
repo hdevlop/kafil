@@ -9,15 +9,44 @@ export interface AccessLoginResult {
   mustChangePassword: boolean;
 }
 
+type IdentifierLoginCredentials = {
+  identifier: string;
+  password: string;
+};
+
+function normalizeLoginIdentifier(identifier: string) {
+  const trimmed = identifier.trim();
+  if (trimmed.includes("@")) return trimmed.toLowerCase();
+
+  const compact = trimmed.replace(/[\s().-]+/g, "");
+  if (compact.startsWith("0")) return `+212${compact.slice(1)}`;
+  if (compact.startsWith("212")) return `+${compact}`;
+  return compact;
+}
+
 export async function loginWithIdentifier(input: {
   identifier: string;
   password: string;
 }) {
-  const result = await api.post<AccessLoginResult>("/access/login", input);
-  // The access endpoint sets Najm's secure refresh/session cookies. Refreshing
-  // once hydrates the published client state used by the rest of the app.
-  await auth.client.refresh();
-  return result;
+  // Najm Auth accepts `identifier` at runtime, although 2.0.11's client
+  // declaration still exposes only the legacy email-shaped overload. Going
+  // through client.login is important: applying the returned tokens also
+  // resets a refresh circuit opened by the previous expired session.
+  const identifierClient = auth.client as typeof auth.client & {
+    login(credentials: IdentifierLoginCredentials): ReturnType<
+      typeof auth.client.login
+    >;
+  };
+  await identifierClient.login({
+    ...input,
+    identifier: normalizeLoginIdentifier(input.identifier),
+  });
+
+  if (!auth.client.hasRole("family")) {
+    return { mustChangePassword: false };
+  }
+
+  return getFamilyPasswordRequirement();
 }
 
 export function getFamilyPasswordRequirement() {

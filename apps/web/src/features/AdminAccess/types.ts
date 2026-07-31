@@ -15,7 +15,7 @@ export interface AccessUser {
   createdAt: string | null;
   updatedAt: string | null;
   familyProfileId: string | null;
-  operatorProfileId: string | null;
+  staffProfileId: string | null;
   sponsorProfileId: string | null;
 }
 
@@ -72,19 +72,6 @@ export interface AccessPermissionView extends AccessPermission {
 export interface AccessReasonCommand {
   userId: string;
   reason: string;
-}
-
-export interface CreateAccessOperatorInput {
-  name: string;
-  email: string;
-  phone: string;
-  cin: string;
-  gender: "M" | "F";
-  address: string;
-  dateOfBirth: string;
-  jobTitle?: string;
-  notes?: string;
-  image?: string | null;
 }
 
 export interface CreateAccessPermissionInput {

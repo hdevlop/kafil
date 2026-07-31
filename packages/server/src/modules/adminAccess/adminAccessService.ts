@@ -191,6 +191,9 @@ export class AdminAccessService {
     const user = await this.requireUser(userId);
     this.ensureSafeTarget(user, actorUserId, "deactivate");
     await this.users.update(user.id, { status: "inactive" });
+    if (user.staffProfileId) {
+      await this.repository.syncStaffStatus(user.staffProfileId, "inactive");
+    }
     await this.revokeAll(user.id);
     await this.record("access.user_deactivated", actorUserId, user.id, reason);
     return this.getUser(user.id);
@@ -207,12 +210,15 @@ export class AdminAccessService {
     if (
       user.role !== "admin" &&
       !user.familyProfileId &&
-      !user.operatorProfileId &&
+      !user.staffProfileId &&
       !user.sponsorProfileId
     ) {
       HttpError.conflict("Linked Kafil profile is required for reactivation");
     }
     await this.users.update(user.id, { status: "active" });
+    if (user.staffProfileId) {
+      await this.repository.syncStaffStatus(user.staffProfileId, "active");
+    }
     await this.tokens.invalidateUserAccessTokens(user.id);
     await this.record("access.user_reactivated", actorUserId, user.id, reason);
     return this.getUser(user.id);

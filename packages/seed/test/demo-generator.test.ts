@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 
 import {
   createFamilyDto,
-  createOperatorDto,
+  createStaffDto,
   createSupportAssignmentDto,
   createSponsorDto,
   recordContributionDto,
@@ -18,6 +18,7 @@ import {
   MOROCCAN_LAST_NAMES,
   MOROCCAN_MALE_FIRST_NAMES,
 } from "../src/fakers/moroccan-names";
+import { DEMO_PRODUCT_FIXTURES } from "../src/demo-product-fixtures";
 
 describe("demo seed generator", () => {
   it("keeps the expanded Moroccan name catalog complete and unique", () => {
@@ -32,11 +33,13 @@ describe("demo seed generator", () => {
   it("defaults to the requested Kafil demo account counts", () => {
     const data = generateDemoSeedData({ ...DEFAULT_DEMO_SEED_COUNTS });
 
-    expect(data.families).toHaveLength(20);
-    expect(data.sponsors).toHaveLength(50);
-    expect(data.operators).toHaveLength(5);
-    expect(data.assignments).toHaveLength(50);
-    expect(data.contributions).toHaveLength(100);
+    expect(data.families).toHaveLength(10);
+    expect(data.sponsors).toHaveLength(20);
+    expect(data.operators).toHaveLength(6);
+    expect(data.deliveries).toHaveLength(4);
+    expect(data.assignments).toHaveLength(20);
+    expect(data.contributions).toHaveLength(20);
+    expect(data.orders).toHaveLength(24);
     expect(data.families.every((family) => family.initialChildren.length >= 1)).toBe(
       true,
     );
@@ -50,10 +53,18 @@ describe("demo seed generator", () => {
         "4",
         "-o",
         "2",
+        "-d",
+        "5",
         "-c",
         "6",
       ]),
-    ).toEqual({ contributions: 6, families: 3, sponsors: 4, operators: 2 });
+    ).toEqual({
+      contributions: 6,
+      deliveries: 5,
+      families: 3,
+      sponsors: 4,
+      operators: 2,
+    });
     expect(() => readDemoSeedCounts(["--families=-1"])).toThrow(
       "--families must be an integer",
     );
@@ -79,7 +90,25 @@ describe("demo seed generator", () => {
       expect(createSponsorDto.safeParse(sponsor).success).toBe(true);
     }
     for (const operator of first.operators) {
-      expect(createOperatorDto.safeParse(operator).success).toBe(true);
+      expect(
+        createStaffDto.safeParse({
+          ...operator,
+          contactEmail: operator.email,
+          affiliation: "internal",
+          functions: ["operator"],
+          createOperatorAccess: true,
+          createOperatorAccessEmail: operator.email,
+        }).success,
+      ).toBe(true);
+    }
+    for (const delivery of first.deliveries) {
+      expect(
+        createStaffDto.safeParse({
+          ...delivery,
+          affiliation: "internal",
+          functions: ["delivery"],
+        }).success,
+      ).toBe(true);
     }
     for (const assignment of first.assignments) {
       expect(createSupportAssignmentDto.safeParse(assignment).success).toBe(true);
@@ -233,6 +262,49 @@ describe("demo seed generator", () => {
     ).toBe(true);
   });
 
+  it("creates repeat-family order history across the trailing 12 months", () => {
+    const referenceDate = new Date("2026-07-30T10:00:00.000Z");
+    const data = generateDemoSeedData(
+      {
+        contributions: 20,
+        deliveries: 4,
+        families: 10,
+        operators: 6,
+        sponsors: 20,
+      },
+      referenceDate,
+    );
+    const months = new Set(
+      data.orders.map((order) => order.placedAt.slice(0, 7)),
+    );
+    const familyOrderCounts = countValues(
+      data.orders.map((order) => order.familyProfileId),
+    );
+
+    expect(data.orders).toHaveLength(24);
+    expect(months.size).toBe(12);
+    expect(Object.values(familyOrderCounts).every((count) => count > 1)).toBe(
+      true,
+    );
+    expect(
+      data.orders.every(
+        (order) =>
+          new Set(order.items.map((item) => item.sku)).size ===
+          order.items.length,
+      ),
+    ).toBe(true);
+    expect(countValues(data.orders.map((order) => order.expectedStatus))).toEqual({
+      approved: 1,
+      cancelled: 2,
+      delivered: 16,
+      out_for_delivery: 1,
+      pending: 1,
+      purchased: 1,
+      rejected: 2,
+    });
+    expect(simulateHistoricalBalances(data)).toBe(true);
+  });
+
   it("generates deterministic household intake distributions and bounded dates", () => {
     const referenceDate = new Date("2026-07-20T10:00:00.000Z");
     const data = generateDemoSeedData(
@@ -331,4 +403,82 @@ function isMoroccanName(name: string) {
     firstNames.some((firstName) => name.startsWith(`${firstName} `)) &&
     MOROCCAN_LAST_NAMES.some((lastName) => name.endsWith(` ${lastName}`))
   );
+}
+
+function simulateHistoricalBalances(
+  data: ReturnType<typeof generateDemoSeedData>,
+) {
+  const prices = new Map(
+    DEMO_PRODUCT_FIXTURES.map((product) => [product.sku, product.priceMinor]),
+  );
+  for (const family of data.families) {
+    const events: Array<{
+      at: number;
+      available: number;
+      reserved: number;
+      spent: number;
+    }> = data.contributions
+      .filter(
+        (contribution) =>
+          contribution.familyProfileId === family.id &&
+          contribution.expectedStatus === "validated",
+      )
+      .map((contribution) => ({
+        at: new Date(`${contribution.paidAt}T18:00:00.000Z`).getTime(),
+        available: contribution.amountMinor,
+        reserved: 0,
+        spent: 0,
+      }));
+    data.orders.forEach((order, index) => {
+      if (order.familyProfileId !== family.id) return;
+      const estimate = order.items.reduce(
+        (total, item) => total + prices.get(item.sku)! * item.quantity,
+        0,
+      );
+      const placedAt = new Date(order.placedAt).getTime();
+      events.push({
+        at: placedAt,
+        available: -estimate,
+        reserved: estimate,
+        spent: 0,
+      });
+      if (
+        order.expectedStatus === "rejected" ||
+        order.expectedStatus === "cancelled"
+      ) {
+        events.push({
+          at: placedAt + 2 * 60 * 60 * 1_000,
+          available: estimate,
+          reserved: -estimate,
+          spent: 0,
+        });
+      } else if (
+        order.expectedStatus === "purchased" ||
+        order.expectedStatus === "out_for_delivery" ||
+        order.expectedStatus === "delivered"
+      ) {
+        const actual = Math.max(1, estimate - (index % 3) * 100);
+        events.push({
+          at: placedAt + 4 * 60 * 60 * 1_000,
+          available: estimate - actual,
+          reserved: -estimate,
+          spent: actual,
+        });
+      }
+    });
+    const balance = { available: 0, reserved: 0, spent: 0 };
+    for (const event of events.sort((left, right) => left.at - right.at)) {
+      balance.available += event.available;
+      balance.reserved += event.reserved;
+      balance.spent += event.spent;
+      if (
+        balance.available < 0 ||
+        balance.reserved < 0 ||
+        balance.spent < 0
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
 }

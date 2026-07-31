@@ -1,11 +1,13 @@
 import {
   and,
+  asc,
   desc,
   eq,
   getTableColumns,
   gte,
   isNotNull,
   isNull,
+  inArray,
   lte,
   sql,
 } from "drizzle-orm";
@@ -23,11 +25,14 @@ import {
   carts,
   type NewOrderPurchaseRecord,
   type NewOrderPurchaseReversal,
+  type NewOrderDeliveryAttempt,
   type NewOrder,
   type NewOrderItem,
   orderItems,
+  orderDeliveryAttempts,
   orderPurchaseRecords,
   orderPurchaseReversals,
+  type OrderDeliveryAttempt,
   type OrderStatus,
   orderStatusEvents,
   orders,
@@ -345,6 +350,180 @@ export class OrderRepository {
     await this.db.delete(orderItems).where(eq(orderItems.orderId, id));
     await this.db.delete(orders).where(eq(orders.id, id));
     return order;
+  }
+}
+
+@Repository("default")
+export class OrderDeliveryRepository {
+  @DB() private db!: KafilDatabase;
+
+  async findActiveByOrderId(orderId: string, lock = false) {
+    const query = this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(
+        and(
+          eq(orderDeliveryAttempts.orderId, orderId),
+          inArray(orderDeliveryAttempts.status, ["assigned", "in_progress"]),
+        ),
+      )
+      .limit(1);
+    if (lock) {
+      const [attempt] = await query.for("update");
+      return attempt;
+    }
+    const [attempt] = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(
+        and(
+          eq(orderDeliveryAttempts.orderId, orderId),
+          inArray(orderDeliveryAttempts.status, ["assigned", "in_progress"]),
+        ),
+      )
+      .limit(1);
+    return attempt;
+  }
+
+  async findByAssignmentIdempotencyKey(assignmentIdempotencyKey: string) {
+    const [attempt] = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(
+        eq(
+          orderDeliveryAttempts.assignmentIdempotencyKey,
+          assignmentIdempotencyKey,
+        ),
+      )
+      .limit(1);
+    return attempt;
+  }
+
+  async findByStartIdempotencyKey(startIdempotencyKey: string) {
+    const [attempt] = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(eq(orderDeliveryAttempts.startIdempotencyKey, startIdempotencyKey))
+      .limit(1);
+    return attempt;
+  }
+
+  async findByFailIdempotencyKey(failIdempotencyKey: string) {
+    const [attempt] = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(eq(orderDeliveryAttempts.failIdempotencyKey, failIdempotencyKey))
+      .limit(1);
+    return attempt;
+  }
+
+  async findByConfirmationIdempotencyKey(confirmationIdempotencyKey: string) {
+    const [attempt] = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(
+        eq(
+          orderDeliveryAttempts.confirmationIdempotencyKey,
+          confirmationIdempotencyKey,
+        ),
+      )
+      .limit(1);
+    return attempt;
+  }
+
+  async create(data: NewOrderDeliveryAttempt) {
+    const [attempt] = await this.db
+      .insert(orderDeliveryAttempts)
+      .values(data)
+      .returning();
+    return attempt;
+  }
+
+  async start(id: string, idempotencyKey: string, startedAt: Date) {
+    const [attempt] = await this.db
+      .update(orderDeliveryAttempts)
+      .set({
+        status: "in_progress",
+        startedAt,
+        startIdempotencyKey: idempotencyKey,
+        updatedAt: startedAt,
+      })
+      .where(eq(orderDeliveryAttempts.id, id))
+      .returning();
+    return attempt;
+  }
+
+  async fail(id: string, reason: string, idempotencyKey: string, failedAt: Date) {
+    const [attempt] = await this.db
+      .update(orderDeliveryAttempts)
+      .set({
+        status: "failed",
+        failureReason: reason,
+        failedAt,
+        failIdempotencyKey: idempotencyKey,
+        updatedAt: failedAt,
+      })
+      .where(eq(orderDeliveryAttempts.id, id))
+      .returning();
+    return attempt;
+  }
+
+  async complete(
+    id: string,
+    idempotencyKey: string,
+    completedAt: Date,
+  ) {
+    const [attempt] = await this.db
+      .update(orderDeliveryAttempts)
+      .set({
+        status: "delivered",
+        completedAt,
+        confirmationIdempotencyKey: idempotencyKey,
+        updatedAt: completedAt,
+      })
+      .where(eq(orderDeliveryAttempts.id, id))
+      .returning();
+    return attempt;
+  }
+
+  async cancel(id: string, reason: string, cancelledAt: Date) {
+    const [attempt] = await this.db
+      .update(orderDeliveryAttempts)
+      .set({
+        status: "cancelled",
+        cancellationReason: reason,
+        cancelledAt,
+        updatedAt: cancelledAt,
+      })
+      .where(eq(orderDeliveryAttempts.id, id))
+      .returning();
+    return attempt;
+  }
+
+  listByOrderId(orderId: string) {
+    return this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(eq(orderDeliveryAttempts.orderId, orderId))
+      .orderBy(asc(orderDeliveryAttempts.assignedAt), asc(orderDeliveryAttempts.id));
+  }
+
+  async listLatestByOrderIds(orderIds: readonly string[]) {
+    if (orderIds.length === 0) return new Map<string, OrderDeliveryAttempt>();
+    const rows = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(inArray(orderDeliveryAttempts.orderId, [...orderIds]))
+      .orderBy(
+        asc(orderDeliveryAttempts.orderId),
+        desc(orderDeliveryAttempts.assignedAt),
+        desc(orderDeliveryAttempts.id),
+      );
+    const latest = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      if (!latest.has(row.orderId)) latest.set(row.orderId, row);
+    }
+    return latest;
   }
 }
 

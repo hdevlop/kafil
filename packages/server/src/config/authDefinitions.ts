@@ -18,6 +18,12 @@ export const AUTH_PERMISSIONS = [
   ...crudPermissions("sponsors", "sponsor profiles"),
   ...crudPermissions("families", "family profiles"),
   ...crudPermissions("children", "children"),
+  ...crudPermissions("staff", "staff profiles"),
+  permission(
+    "read",
+    "staffDeliveryOptions",
+    "Read active delivery-eligible staff options",
+  ),
   ...writePermissions("supportAssignments", "sponsor support assignments"),
   ...writePermissions("contributions", "contribution workflows"),
   permission(
@@ -66,6 +72,7 @@ export const AUTH_ROLE_PERMISSIONS: Record<
     "read:children",
     "create:children",
     "update:children",
+    "read:staffDeliveryOptions",
     "read:supportAssignments",
     "create:supportAssignments",
     "update:supportAssignments",

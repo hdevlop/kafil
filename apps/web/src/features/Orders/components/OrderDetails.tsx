@@ -149,8 +149,22 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
         <NDetailList
           items={[
             {
+              label: "Assigned staff",
+              value:
+                data.currentDelivery?.deliveryNameSnapshot ||
+                (data.deliveryAttempts.length ? "No active assignment" : "Not assigned"),
+            },
+            {
+              label: "Operational phone",
+              value: data.currentDelivery?.deliveryPhoneSnapshot || "Not available",
+            },
+            {
               label: "Started",
               value: formatKafilDate(data.deliveryStartedAt),
+            },
+            {
+              label: "Recorded attempts",
+              value: String(data.deliveryAttempts.length),
             },
             {
               label: "Confirmation method",

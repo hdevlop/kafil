@@ -1,8 +1,8 @@
 import {
   ContributionService,
   FamilyService,
-  OperatorService,
   SponsorService,
+  StaffService,
   SupportAssignmentService,
 } from "@kafil/server/modules";
 import {
@@ -11,9 +11,10 @@ import {
   contributions,
   db,
   familyProfiles,
-  operatorProfiles,
   rolesTable,
   sponsorProfiles,
+  staffFunctions,
+  staffProfiles,
   supportAssignments,
   usersTable,
 } from "@kafil/server/database";
@@ -21,6 +22,7 @@ import { and, asc, count, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import type {
   DemoContribution,
+  DemoDelivery,
   DemoFamily,
   DemoOperator,
   DemoSeedData,
@@ -42,6 +44,7 @@ interface DemoAccountIdentity {
 export interface DemoSeedSummary {
   assignments: SeedResult;
   contributions: SeedResult;
+  deliveries: SeedResult;
   families: SeedResult;
   operators: SeedResult;
   sponsors: SeedResult;
@@ -57,7 +60,7 @@ interface DemoServices {
   assignments: SupportAssignmentService;
   contributions: ContributionService;
   families: FamilyService;
-  operators: OperatorService;
+  operators: StaffService;
   sponsors: SponsorService;
 }
 
@@ -72,17 +75,35 @@ export async function seedDemoData(
   const summary: DemoSeedSummary = {
     assignments: { inserted: 0, repaired: 0, skipped: 0 },
     contributions: { inserted: 0, repaired: 0, skipped: 0 },
+    deliveries: { inserted: 0, repaired: 0, skipped: 0 },
     families: { inserted: 0, repaired: 0, skipped: 0 },
     operators: { inserted: 0, repaired: 0, skipped: 0 },
     sponsors: { inserted: 0, repaired: 0, skipped: 0 },
   };
 
+  await seedDeliveryGroup(
+    data.deliveries,
+    services.operators,
+    actorUserId,
+    summary.deliveries,
+  );
   await seedGroup(
     "operators",
     data.operators,
     existing,
     summary.operators,
-    (item) => services.operators.create(item),
+    (item) =>
+      services.operators.createWithUserId(
+        {
+          ...item,
+          contactEmail: item.email,
+          affiliation: "internal",
+          functions: ["operator"],
+          createOperatorAccess: true,
+          createOperatorAccessEmail: item.email,
+        },
+        actorUserId,
+      ),
   );
   await seedGroup(
     "sponsors",
@@ -115,6 +136,7 @@ export async function seedDemoData(
     expiresAt,
   );
   await verifyDemoData(identities, data.families, data.contributions, assignments);
+  await verifyDemoDeliveries(data.deliveries);
   return summary;
 }
 
@@ -416,6 +438,125 @@ function logProgress(label: string, processed: number, total: number) {
   }
 }
 
+async function seedDeliveryGroup(
+  items: readonly DemoDelivery[],
+  service: StaffService,
+  actorUserId: string,
+  result: SeedResult,
+) {
+  if (items.length === 0) return;
+  const rows = await db
+    .select({
+      address: staffProfiles.address,
+      affiliation: staffProfiles.affiliation,
+      cin: staffProfiles.cin,
+      contactEmail: staffProfiles.contactEmail,
+      dateOfBirth: staffProfiles.dateOfBirth,
+      functionKey: staffFunctions.functionKey,
+      gender: staffProfiles.gender,
+      id: staffProfiles.id,
+      jobTitle: staffProfiles.jobTitle,
+      name: staffProfiles.name,
+      notes: staffProfiles.notes,
+      phone: staffProfiles.phone,
+      status: staffProfiles.status,
+    })
+    .from(staffProfiles)
+    .leftJoin(
+      staffFunctions,
+      eq(staffFunctions.staffProfileId, staffProfiles.id),
+    )
+    .where(
+      or(
+        inArray(
+          staffProfiles.id,
+          items.map((item) => item.id),
+        ),
+        inArray(
+          staffProfiles.contactEmail,
+          items.map((item) => item.contactEmail),
+        ),
+        inArray(
+          staffProfiles.phone,
+          items.map((item) => item.phone),
+        ),
+      ),
+    );
+  const rowsById = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const grouped = rowsById.get(row.id) ?? [];
+    grouped.push(row);
+    rowsById.set(row.id, grouped);
+  }
+
+  for (const [index, item] of items.entries()) {
+    const conflicts = rows.filter(
+      (row) =>
+        row.id !== item.id &&
+        (row.contactEmail === item.contactEmail || row.phone === item.phone),
+    );
+    if (conflicts.length > 0) {
+      throw new Error(
+        `Demo delivery staff '${item.contactEmail}' conflicts with an existing staff record.`,
+      );
+    }
+    const matches = rowsById.get(item.id) ?? [];
+    const stored = matches[0];
+    const desired = {
+      address: item.address,
+      affiliation: "internal" as const,
+      cin: item.cin,
+      companyName: null,
+      contactEmail: item.contactEmail,
+      dateOfBirth: item.dateOfBirth,
+      functions: ["delivery"],
+      gender: item.gender,
+      image: null,
+      jobTitle: item.jobTitle,
+      name: item.name,
+      notes: item.notes,
+      phone: item.phone,
+    };
+
+    if (!stored) {
+      await service.create({ id: item.id, ...desired }, actorUserId);
+      result.inserted += 1;
+    } else {
+      const functionKeys = new Set(
+        matches
+          .map((row) => row.functionKey)
+          .filter((key): key is string => key !== null),
+      );
+      const needsRepair =
+        stored.address !== item.address ||
+        stored.affiliation !== "internal" ||
+        stored.cin !== item.cin ||
+        stored.contactEmail !== item.contactEmail ||
+        stored.dateOfBirth !== item.dateOfBirth ||
+        stored.gender !== item.gender ||
+        stored.jobTitle !== item.jobTitle ||
+        stored.name !== item.name ||
+        stored.notes !== item.notes ||
+        stored.phone !== item.phone ||
+        functionKeys.size !== 1 ||
+        !functionKeys.has("delivery");
+      if (needsRepair) {
+        await service.update(item.id, desired, actorUserId);
+      }
+      if (stored.status !== "active") {
+        await service.reactivate(
+          item.id,
+          { reason: "Restore the managed demo delivery fixture." },
+          actorUserId,
+        );
+      }
+      if (needsRepair || stored.status !== "active") result.repaired += 1;
+      else result.skipped += 1;
+    }
+    logProgress("deliveries", index + 1, items.length);
+  }
+}
+
 async function seedGroup<T extends { email: string }>(
   label: keyof DemoSeedSummary,
   items: readonly T[],
@@ -554,12 +695,19 @@ async function loadExistingAccounts(
       .innerJoin(rolesTable, eq(rolesTable.id, usersTable.roleId))
       .where(or(inArray(usersTable.email, emails), inArray(usersTable.id, userIds))),
     db
-      .select({ id: operatorProfiles.id, userId: operatorProfiles.userId })
-      .from(operatorProfiles)
+      .select({ id: staffProfiles.id, userId: staffProfiles.userId })
+      .from(staffProfiles)
+      .innerJoin(
+        staffFunctions,
+        and(
+          eq(staffFunctions.staffProfileId, staffProfiles.id),
+          eq(staffFunctions.functionKey, "operator"),
+        ),
+      )
       .where(
         or(
-          inArray(operatorProfiles.id, profileIds),
-          inArray(operatorProfiles.userId, userIds),
+          inArray(staffProfiles.id, profileIds),
+          inArray(staffProfiles.userId, userIds),
         ),
       ),
     db
@@ -620,10 +768,19 @@ async function loadExistingAccounts(
   return existing;
 }
 
-function indexProfiles(rows: Array<{ id: string; userId: string }>) {
+function indexProfiles(
+  rows: Array<{ id: string; userId: string | null }>,
+) {
   return {
     byId: new Map(rows.map((profile) => [profile.id, profile])),
-    byUserId: new Map(rows.map((profile) => [profile.userId, profile])),
+    byUserId: new Map(
+      rows
+        .filter(
+          (profile): profile is { id: string; userId: string } =>
+            profile.userId !== null,
+        )
+        .map((profile) => [profile.userId, profile]),
+    ),
   };
 }
 
@@ -837,5 +994,37 @@ async function verifyDemoData(
         `Demo contribution '${desired.externalReference}' is missing its validation timestamp.`,
       );
     }
+  }
+}
+
+async function verifyDemoDeliveries(items: readonly DemoDelivery[]) {
+  if (items.length === 0) return;
+  const rows = await db
+    .select({
+      id: staffProfiles.id,
+      functionKey: staffFunctions.functionKey,
+      status: staffProfiles.status,
+    })
+    .from(staffProfiles)
+    .innerJoin(
+      staffFunctions,
+      eq(staffFunctions.staffProfileId, staffProfiles.id),
+    )
+    .where(
+      and(
+        inArray(
+          staffProfiles.id,
+          items.map((item) => item.id),
+        ),
+        eq(staffFunctions.functionKey, "delivery"),
+      ),
+    );
+  if (
+    rows.length !== items.length ||
+    rows.some((row) => row.status !== "active")
+  ) {
+    throw new Error(
+      `Demo verification expected ${items.length} active delivery staff, found ${rows.length}.`,
+    );
   }
 }

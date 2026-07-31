@@ -45,7 +45,7 @@ export function AdminAccessUserDetails({
             label: t("adminAccess.dialogs.linkedProfile"),
             value:
               data.familyProfileId ||
-              data.operatorProfileId ||
+              data.staffProfileId ||
               data.sponsorProfileId ||
               t("adminAccess.common.bootstrapAccount"),
           },

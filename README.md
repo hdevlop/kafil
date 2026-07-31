@@ -150,8 +150,9 @@ The command requires `DATABASE_URL`, `KAFIL_ADMIN_EMAIL`, and
 data, and seed the Najm bootstrap administrator, product roles, and permissions.
 For automation, run `bun run seed -- setup --yes`.
 
-Seed repeatable demo data with 20 families, 50 sponsors, 5 operators, 50 active
-support assignments, and 100 contributions:
+Seed repeatable demo data with 10 families, 20 sponsors, 6 operators, 4
+delivery staff, 20 contributions, 18 image-backed products, and 24
+repeat-family orders across the trailing 12 months:
 
 ```bash
 bun run seed -- demo
@@ -163,16 +164,17 @@ funding services. Validated demo contributions are capped below each family's
 funding target. Matching demo records are skipped on later runs, while outdated
 managed demo contributions are safely repaired. Customize
 the counts with SMS-style arguments such as
-`bun run seed -- demo --families=10 --sponsors=25 --operators=3 --contributions=40`.
+`bun run seed -- demo --families=10 --sponsors=20 --operators=6 --deliveries=4 --contributions=20`.
 Contributions require at least one family and one
 sponsor; use `--contributions=0` when intentionally seeding neither. To apply
 migrations, seed authentication, and then seed demo data in one command, run
 `bun run seed:full`.
 
-When at least one generated family reaches activation, the demo seed also
-creates one deterministic assisted grocery order, lower-price Marjane receipt,
-and photo-confirmed delivery through the real order services. Re-running the
-seed reuses the same idempotency keys and protected evidence.
+When generated families reach activation, the demo seed creates repeat assisted
+orders across those same families. Purchases use deterministic supermarket
+receipts, completed orders rotate across the delivery staff, and recent
+requests remain in useful active states. Re-running the seed reuses the same
+idempotency keys and protected evidence.
 
 Optional demo images live together in `packages/seed/images` as files such as
 `family-01.jpg` and `sponsor-01.webp`. Run `bun run seed -- images` to validate

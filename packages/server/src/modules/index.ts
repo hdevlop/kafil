@@ -13,5 +13,6 @@ export * from "./orders";
 export * from "./outbox";
 export * from "./settings";
 export * from "./sponsors";
+export * from "./staff";
 export * from "./supportAssignments";
 export { SystemController } from "./system/systemController";

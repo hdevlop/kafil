@@ -10,18 +10,19 @@ import {
   NFormSectionHeader,
   useDialog,
 } from "najm-kit";
-import { ClipboardPlus, PackagePlus, Truck } from "lucide-react";
+import { ClipboardPlus, PackagePlus, TriangleAlert, Truck, UserRoundCheck } from "lucide-react";
 
 import { useFamilies } from "@/features/Families/hooks/useFamilies";
 import { useProducts } from "@/features/Products/hooks/useProducts";
 import { formatMad } from "@/lib/format";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import {
   deleteOrderEvidenceCandidate,
   uploadOrderEvidence,
 } from "@/services/orderApi";
 
 import { useOrderCommands } from "../hooks/useOrders";
-import { useOrder } from "../hooks/useOrders";
+import { useDeliveryStaffOptions, useOrder } from "../hooks/useOrders";
 import type { OrderDetail, OrderRecord } from "../types";
 
 const assistedOrderSchema = z.object({
@@ -57,6 +58,19 @@ const deliverySchema = z.object({
     "photo",
   ]),
   deliveryNote: z.string().trim().max(500).optional(),
+});
+
+const assignmentSchema = z.object({
+  staffProfileId: z.string().uuid("Choose an active delivery staff member"),
+  reason: z.string().trim().max(500).optional(),
+});
+
+const reassignmentSchema = assignmentSchema.extend({
+  reason: z.string().trim().min(3, "Give a short reason").max(500),
+});
+
+const deliveryFailureSchema = z.object({
+  reason: z.string().trim().min(3, "Give a short reason").max(500),
 });
 
 function AssistedOrderItemFields({
@@ -317,6 +331,142 @@ export function PurchaseOrderDialogLoader({
     );
   }
   return <PurchaseOrderDialogContent order={order.data} replace={replace} />;
+}
+
+export function AssignDeliveryDialogContent({
+  order,
+  reassign = false,
+}: Readonly<{ order: OrderRecord; reassign?: boolean }>) {
+  const { pop } = useDialog();
+  const { t } = useKafilLanguage();
+  const options = useDeliveryStaffOptions();
+  const commands = useOrderCommands();
+  const command = reassign ? commands.reassignDelivery : commands.assignDelivery;
+  const staffOptions =
+    options.data
+      ?.filter((staff) => staff.id !== order.currentDelivery?.staffProfileId)
+      .map((staff) => ({
+        value: staff.id,
+        label: `${staff.name} — ${staff.phone}${staff.companyName ? ` · ${staff.companyName}` : ""}`,
+      })) ?? [];
+
+  async function submit(values: z.infer<typeof assignmentSchema>) {
+    const common = {
+      id: order.id,
+      staffProfileId: values.staffProfileId,
+      idempotencyKey: crypto.randomUUID(),
+    };
+    if (reassign) {
+      await commands.reassignDelivery.mutateAsync({
+        ...common,
+        reason: values.reason!,
+      });
+    } else {
+      await commands.assignDelivery.mutateAsync(common);
+    }
+    await pop();
+  }
+
+  return (
+    <NForm
+      id={reassign ? "reassign-order-delivery" : "assign-order-delivery"}
+      schema={reassign ? reassignmentSchema : assignmentSchema}
+      defaultValues={{ staffProfileId: "", reason: "" }}
+      onSubmit={submit}
+      className="space-y-5"
+    >
+      <NFormSectionHeader
+        icon={UserRoundCheck}
+        title={reassign ? t("operator.orders.changeDeliveryStaff") : t("operator.orders.assignDelivery")}
+      />
+      {reassign && order.currentDelivery ? (
+        <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+          {t("operator.orders.delivery.currentlyAssigned", {
+            name: order.currentDelivery.name,
+          })}
+        </p>
+      ) : null}
+      <FormInput
+        name="staffProfileId"
+        type="combobox"
+        formLabel={t("operator.orders.delivery.selector")}
+        searchPlaceholder="Search active delivery staff"
+        emptyMessage="No active delivery staff found"
+        items={staffOptions}
+        icon="Truck"
+        disabled={options.isPending}
+        required
+      />
+      {reassign ? (
+        <FormInput
+          name="reason"
+          type="textarea"
+          formLabel={t("operator.orders.delivery.reasonForChange")}
+          placeholder="Why is this assignment changing?"
+          icon="MessageSquareText"
+          required
+        />
+      ) : null}
+      <div className="flex justify-end">
+        <NButton type="submit" disabled={command.isPending || options.isPending}>
+          {command.isPending
+            ? t("operator.orders.delivery.saving")
+            : reassign
+              ? t("operator.orders.delivery.changeStaff")
+              : t("operator.orders.delivery.assign")}
+        </NButton>
+      </div>
+    </NForm>
+  );
+}
+
+export function FailDeliveryDialogContent({
+  order,
+}: Readonly<{ order: OrderRecord }>) {
+  const { pop } = useDialog();
+  const { t } = useKafilLanguage();
+  const { failDelivery } = useOrderCommands();
+
+  async function submit(values: z.infer<typeof deliveryFailureSchema>) {
+    await failDelivery.mutateAsync({
+      id: order.id,
+      reason: values.reason,
+      idempotencyKey: crypto.randomUUID(),
+    });
+    await pop();
+  }
+
+  return (
+    <NForm
+      id="fail-order-delivery"
+      schema={deliveryFailureSchema}
+      defaultValues={{ reason: "" }}
+      onSubmit={submit}
+      className="space-y-5"
+    >
+      <NFormSectionHeader icon={TriangleAlert} title={t("operator.orders.delivery.failed")} />
+      <p className="rounded-xl bg-amber-500/10 p-4 text-sm text-muted-foreground">
+        This closes the active attempt and returns the order to Purchased so a
+        new delivery staff member can be assigned. It does not change the
+        family budget.
+      </p>
+      <FormInput
+        name="reason"
+        type="textarea"
+        formLabel={t("operator.orders.delivery.failureReason")}
+        placeholder="Why could this delivery not be completed?"
+        icon="MessageSquareText"
+        required
+      />
+      <div className="flex justify-end">
+        <NButton type="submit" variant="destructive" disabled={failDelivery.isPending}>
+          {failDelivery.isPending
+            ? t("operator.orders.delivery.saving")
+            : t("operator.orders.delivery.recordFailure")}
+        </NButton>
+      </div>
+    </NForm>
+  );
 }
 
 export function ConfirmDeliveryDialogContent({

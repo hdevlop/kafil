@@ -23,12 +23,7 @@ async function login(page: Page, email: string, password: string) {
   await page.getByPlaceholder("Enter your password").fill(password);
   const loginResponse = page.waitForResponse(
     (response) =>
-      response.url().includes("/api/access/login") &&
-      response.request().method() === "POST",
-  );
-  const refreshResponse = page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/auth/refresh") &&
+      response.url().includes("/api/auth/login") &&
       response.request().method() === "POST",
   );
   await page.getByRole("button", { name: "Log in" }).click();
@@ -38,13 +33,8 @@ async function login(page: Page, email: string, password: string) {
       `Browser login failed with ${response.status()}: ${await response.text()}`,
     );
   }
-  const refresh = await refreshResponse;
-  if (!refresh.ok()) {
-    throw new Error(
-      `Browser refresh failed with ${refresh.status()}: ${await refresh.text()}`,
-    );
-  }
   await page.waitForURL(/\/operator$|\/sponsor$/);
+  await page.waitForLoadState("networkidle");
 }
 
 async function screenshot(page: Page, name: string) {

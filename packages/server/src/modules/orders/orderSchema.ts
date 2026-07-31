@@ -18,11 +18,13 @@ import { timestamps } from "../../database/columns";
 import {
   deliveryConfirmationMethodEnum,
   orderAssistanceChannelEnum,
+  orderDeliveryAttemptStatusEnum,
   orderPlacementSourceEnum,
   orderStatusEnum,
 } from "../../database/enums";
 import { products } from "../catalog/catalogSchema";
 import { familyProfiles } from "../families/familySchema";
+import { staffProfiles } from "../staff/staffSchema";
 
 const minorUnit = (name: string) => bigint(name, { mode: "number" });
 
@@ -288,6 +290,89 @@ export const orderStatusEvents = pgTable(
   ],
 );
 
+export const orderDeliveryAttempts = pgTable(
+  "order_delivery_attempts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id),
+    staffProfileId: uuid("staff_profile_id")
+      .notNull()
+      .references(() => staffProfiles.id),
+    status: orderDeliveryAttemptStatusEnum("status")
+      .default("assigned")
+      .notNull(),
+    deliveryNameSnapshot: varchar("delivery_name_snapshot", {
+      length: 120,
+    }).notNull(),
+    deliveryPhoneSnapshot: varchar("delivery_phone_snapshot", {
+      length: 40,
+    }).notNull(),
+    affiliationSnapshot: varchar("affiliation_snapshot", {
+      length: 20,
+    }).notNull(),
+    companyNameSnapshot: varchar("company_name_snapshot", { length: 160 }),
+    assignedByUserId: text("assigned_by_user_id")
+      .notNull()
+      .references(() => usersTable.id),
+    assignedAt: timestamp("assigned_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    failureReason: text("failure_reason"),
+    cancellationReason: text("cancellation_reason"),
+    assignmentIdempotencyKey: varchar("assignment_idempotency_key", {
+      length: 160,
+    }).notNull(),
+    startIdempotencyKey: varchar("start_idempotency_key", { length: 160 }),
+    failIdempotencyKey: varchar("fail_idempotency_key", { length: 160 }),
+    confirmationIdempotencyKey: varchar("confirmation_idempotency_key", {
+      length: 160,
+    }),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex("order_delivery_attempts_assignment_key_unique").on(
+      table.assignmentIdempotencyKey,
+    ),
+    uniqueIndex("order_delivery_attempts_start_key_unique").on(
+      table.startIdempotencyKey,
+    ),
+    uniqueIndex("order_delivery_attempts_fail_key_unique").on(
+      table.failIdempotencyKey,
+    ),
+    uniqueIndex("order_delivery_attempts_confirmation_key_unique").on(
+      table.confirmationIdempotencyKey,
+    ),
+    uniqueIndex("order_delivery_attempts_one_active_per_order")
+      .on(table.orderId)
+      .where(sql`${table.status} IN ('assigned', 'in_progress')`),
+    index("order_delivery_attempts_order_assigned_at_idx").on(
+      table.orderId,
+      table.assignedAt,
+    ),
+    index("order_delivery_attempts_staff_profile_idx").on(table.staffProfileId),
+    check(
+      "order_delivery_attempts_lifecycle_check",
+      sql`(
+        (${table.status} = 'assigned' AND ${table.startedAt} IS NULL AND ${table.failedAt} IS NULL AND ${table.completedAt} IS NULL AND ${table.cancelledAt} IS NULL AND ${table.failureReason} IS NULL AND ${table.cancellationReason} IS NULL)
+        OR
+        (${table.status} = 'in_progress' AND ${table.startedAt} IS NOT NULL AND ${table.failedAt} IS NULL AND ${table.completedAt} IS NULL AND ${table.cancelledAt} IS NULL AND ${table.failureReason} IS NULL AND ${table.cancellationReason} IS NULL)
+        OR
+        (${table.status} = 'failed' AND ${table.startedAt} IS NOT NULL AND ${table.failedAt} IS NOT NULL AND ${table.completedAt} IS NULL AND ${table.cancelledAt} IS NULL AND length(trim(${table.failureReason})) >= 3 AND ${table.cancellationReason} IS NULL)
+        OR
+        (${table.status} = 'delivered' AND ${table.startedAt} IS NOT NULL AND ${table.failedAt} IS NULL AND ${table.completedAt} IS NOT NULL AND ${table.cancelledAt} IS NULL AND ${table.failureReason} IS NULL AND ${table.cancellationReason} IS NULL)
+        OR
+        (${table.status} = 'cancelled' AND ${table.failedAt} IS NULL AND ${table.completedAt} IS NULL AND ${table.cancelledAt} IS NOT NULL AND ${table.failureReason} IS NULL AND length(trim(${table.cancellationReason})) >= 3)
+      )`,
+    ),
+  ],
+);
+
 export type Cart = typeof carts.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
@@ -296,6 +381,8 @@ export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type OrderStatus = Order["status"];
 export type OrderStatusEvent = typeof orderStatusEvents.$inferSelect;
+export type OrderDeliveryAttempt = typeof orderDeliveryAttempts.$inferSelect;
+export type NewOrderDeliveryAttempt = typeof orderDeliveryAttempts.$inferInsert;
 export type OrderPurchaseRecord = typeof orderPurchaseRecords.$inferSelect;
 export type NewOrderPurchaseRecord = typeof orderPurchaseRecords.$inferInsert;
 export type OrderPurchaseReversal = typeof orderPurchaseReversals.$inferSelect;
@@ -308,6 +395,7 @@ export const orderSchema = {
   orders,
   orderItems,
   orderStatusEvents,
+  orderDeliveryAttempts,
   orderPurchaseRecords,
   orderPurchaseReversals,
 };
