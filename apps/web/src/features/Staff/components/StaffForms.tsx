@@ -97,7 +97,7 @@ export function CreateStaffDialogContent() {
       name: "",
       notes: "",
       phone: "",
-      role: "operator",
+      functions: ["operator"],
     },
   });
 
@@ -214,9 +214,10 @@ export function CreateStaffDialogContent() {
             { value: "operator", label: t("operator.staff.functionOperator") },
             { value: "delivery", label: t("operator.staff.functionDelivery") },
           ]}
-          name="role"
+          name="functions"
           required
-          type="select"
+          showSearch={false}
+          type="multiselect"
         />
         <FormInput
           formLabel={t("operator.staff.jobTitle")}
@@ -279,7 +280,7 @@ export function UpdateStaffDialogContent({
       name: staff.name,
       notes: staff.notes ?? "",
       phone: staff.phone,
-      role: staff.functions.includes("operator") ? "operator" : "delivery",
+      functions: staff.functions,
     },
   });
 
@@ -416,15 +417,15 @@ export function UpdateStaffDialogContent({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <FormInput
-          disabled={Boolean(staff.userId)}
           formLabel={t("operator.staff.role")}
           items={[
             { value: "operator", label: t("operator.staff.functionOperator") },
             { value: "delivery", label: t("operator.staff.functionDelivery") },
           ]}
-          name="role"
+          name="functions"
           required
-          type="select"
+          showSearch={false}
+          type="multiselect"
         />
         <FormInput
           formLabel={t("operator.staff.jobTitle")}

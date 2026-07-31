@@ -159,6 +159,7 @@ describe("Kafil server", () => {
       "families_deactivate",
       "families_reactivate",
       "staff_list_delivery_options",
+      "staff_list_operator_options",
       "staff_list",
       "staff_get",
       "staff_create",

@@ -84,6 +84,22 @@ describe("staff module DTOs", () => {
     ).toBe(false);
   });
 
+  it("accepts one Staff profile with both Operator and Delivery functions", () => {
+    expect(
+      createStaffDto.safeParse({
+        affiliation: "internal",
+        cin: "AB123456",
+        contactEmail: "dual@example.test",
+        dateOfBirth: "1990-05-20",
+        functions: ["operator", "delivery"],
+        gender: "F",
+        address: "Rabat",
+        name: "Dual Staff",
+        phone: "+212600000000",
+      }).success,
+    ).toBe(true);
+  });
+
   it("requires company name for external staff records", () => {
     expect(
       createStaffDto.safeParse({
@@ -178,6 +194,7 @@ describe("staff module controller validation", () => {
   it("exposes staff operations as guarded MCP tools", () => {
     expect(getMcpToolGroup(StaffController)).toBe("staff");
     expect(getMcpTools(StaffController).map((tool) => tool.methodKey)).toEqual([
+      "listOperatorOptions",
       "listDeliveryOptions",
       "list",
       "get",
@@ -520,12 +537,13 @@ describe("staff module services", () => {
     );
 
     await expect(service.deletePristine(staffId, "admin-user")).rejects.toMatchObject({
+      message: "Staff records with order history must be deactivated instead",
       status: 409,
     });
     expect(isPristineCalls).toEqual([staffId]);
   });
 
-  it("permanently deletes a staff record and its linked account when it has no delivery history", async () => {
+  it("permanently deletes a staff record and its linked account when it has no order history", async () => {
     const deletedUserIds: string[] = [];
     const service = new StaffService(
       {

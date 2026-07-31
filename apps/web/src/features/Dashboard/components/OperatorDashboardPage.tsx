@@ -81,7 +81,7 @@ export function OperatorDashboardPage() {
       </NGrid>
 
       <NGrid cols={1} xlCols={12}>
-        <NGridItem span={1} xlSpan={2}>
+        <NGridItem span={1} xlSpan={3}>
           <PieBreakdown
             data={[
               { label: t("dashboard.operator.families"), value: data.counts.families, color: "#55A7EE" },
@@ -93,7 +93,7 @@ export function OperatorDashboardPage() {
             valueFormatter={number}
           />
         </NGridItem>
-        <NGridItem span={1} xlSpan={8}>
+        <NGridItem span={1} xlSpan={6}>
           <MonthlyLineChart
             data={data.contributionTrend}
             icon={HandCoins}
@@ -106,7 +106,7 @@ export function OperatorDashboardPage() {
             valueFormatter={money}
           />
         </NGridItem>
-        <NGridItem span={1} xlSpan={2}>
+        <NGridItem span={1} xlSpan={3}>
           <NDonutCard
             className="h-full"
             icon={WalletCards}
@@ -125,12 +125,13 @@ export function OperatorDashboardPage() {
       <NGrid cols={1} mdCols={2} xlCols={12} className="flex-1">
         <NGridItem span={1} xlSpan={3}>
           <StatusBreakdown
-            data={data.orderStatuses}
+            data={data.orderStatuses.filter(({ status }) => status !== "purchased")}
             emptyLabel={t("state.empty")}
             icon={ClipboardCheck}
             labelForStatus={(status) => formatStatusLabel(status, language)}
             language={language}
             title={t("dashboard.operator.orderPipeline")}
+            xlOnlyStatuses={["approved"]}
           />
         </NGridItem>
         <NGridItem span={1} xlSpan={3}>

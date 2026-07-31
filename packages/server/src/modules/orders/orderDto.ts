@@ -57,6 +57,8 @@ export const failDeliveryDto = z.object({ reason, idempotencyKey });
 
 export const assistedOrderDto = z.object({
   familyProfileId: id,
+  purchasingStaffProfileId: id.optional(),
+  deliveryStaffProfileId: id.optional(),
   items: z
     .array(
       z.object({

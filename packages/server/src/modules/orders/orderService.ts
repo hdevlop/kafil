@@ -12,7 +12,10 @@ import { applyBudgetBalanceDelta } from "../budgets/money";
 import { ProductRepository } from "../catalog";
 import { OutboxService } from "../outbox/outboxService";
 import { FundingService } from "../settings/fundingService";
-import { StaffRepository } from "../staff/staffRepository";
+import {
+  StaffRepository,
+  type StaffRecord,
+} from "../staff/staffRepository";
 import {
   assignDeliveryDto,
   type AssignDeliveryDto,
@@ -78,6 +81,8 @@ interface PendingOrderInput {
   assistanceNote: string | null;
   idempotencyKey: string;
   auditAction: "order.assisted_submitted" | "order.submitted";
+  purchasingStaff: StaffRecord | null;
+  deliveryStaff: StaffRecord | null;
 }
 
 @Service()
@@ -149,6 +154,21 @@ export class OrderService {
     if (purchaseHistory.length > 0) {
       HttpError.conflict(
         "Orders with purchase history cannot be permanently deleted",
+      );
+    }
+    const deliveryHistory = await this.deliveries.listByOrderId(order.id);
+    const hasDeliveryExecutionHistory = deliveryHistory.some(
+      (attempt) =>
+        attempt.startedAt !== null ||
+        attempt.failedAt !== null ||
+        attempt.completedAt !== null ||
+        attempt.status === "in_progress" ||
+        attempt.status === "failed" ||
+        attempt.status === "delivered",
+    );
+    if (hasDeliveryExecutionHistory) {
+      HttpError.conflict(
+        "Orders with started delivery history cannot be permanently deleted",
       );
     }
 
@@ -333,6 +353,8 @@ export class OrderService {
       assistanceNote: null,
       idempotencyKey: input.idempotencyKey,
       auditAction: "order.submitted",
+      purchasingStaff: null,
+      deliveryStaff: null,
     });
     await this.carts.clear(cart.id);
     return this.orderDetail(order, "family");
@@ -352,8 +374,21 @@ export class OrderService {
         placementSource: "operator_assisted",
         placedByUserId: actorUserId,
       });
+      await this.ensurePendingAssignmentIdempotencyContext(existing, {
+        purchasingStaffProfileId: input.purchasingStaffProfileId,
+        deliveryStaffProfileId: input.deliveryStaffProfileId,
+      });
       return this.orderDetail(existing, "operator");
     }
+
+    const purchasingStaff = input.purchasingStaffProfileId
+      ? await this.ensureAssignablePurchasingStaff(
+          input.purchasingStaffProfileId,
+        )
+      : null;
+    const deliveryStaff = input.deliveryStaffProfileId
+      ? await this.ensureAssignableDeliveryStaff(input.deliveryStaffProfileId)
+      : null;
 
     const order = await this.createPendingOrder({
       family,
@@ -364,6 +399,8 @@ export class OrderService {
       assistanceNote: input.assistanceNote ?? null,
       idempotencyKey: input.idempotencyKey,
       auditAction: "order.assisted_submitted",
+      purchasingStaff,
+      deliveryStaff,
     });
     return this.orderDetail(order, "operator");
   }
@@ -387,6 +424,13 @@ export class OrderService {
     const order = await this.lockOrder(id);
     this.validator.ensureStatus(order, "pending");
     await this.releaseRequestedReservation(order, actorUserId, reason);
+    const activeDelivery = await this.deliveries.findActiveByOrderId(
+      order.id,
+      true,
+    );
+    if (activeDelivery) {
+      await this.deliveries.cancel(activeDelivery.id, reason, new Date());
+    }
     const rejected = await this.orders.update(order.id, {
       status: "rejected",
       rejectedByUserId: actorUserId,
@@ -560,7 +604,7 @@ export class OrderService {
       this.ensureDeliveryIdempotencyContext(repeated, order.id, input.staffProfileId);
       return this.orderDetail(order, "operator");
     }
-    this.validator.ensureStatus(order, "purchased");
+    this.validator.ensureOneOfStatuses(order, ["pending", "approved", "purchased"]);
     if (await this.deliveries.findActiveByOrderId(order.id, true)) {
       HttpError.conflict("Order already has an active delivery assignment");
     }
@@ -595,7 +639,7 @@ export class OrderService {
       this.ensureDeliveryIdempotencyContext(repeated, order.id, input.staffProfileId);
       return this.orderDetail(order, "operator");
     }
-    this.validator.ensureStatus(order, "purchased");
+    this.validator.ensureOneOfStatuses(order, ["pending", "approved", "purchased"]);
     const current = await this.deliveries.findActiveByOrderId(order.id, true);
     if (!current || current.status !== "assigned") {
       HttpError.conflict("An assigned delivery attempt is required");
@@ -885,6 +929,10 @@ export class OrderService {
         placementSource: input.placementSource,
         placedByUserId: input.placedByUserId,
       });
+      await this.ensurePendingAssignmentIdempotencyContext(existing, {
+        purchasingStaffProfileId: input.purchasingStaff?.id,
+        deliveryStaffProfileId: input.deliveryStaff?.id,
+      });
       return existing;
     }
     const valuedItems = await this.valueItems(input.items);
@@ -904,6 +952,9 @@ export class OrderService {
       deliveryAddressSnapshot: input.family.exactAddress,
       deliveryPhoneSnapshot: input.family.phone,
       placedByUserId: input.placedByUserId,
+      purchasingStaffProfileId: input.purchasingStaff?.id ?? null,
+      purchasingStaffNameSnapshot: input.purchasingStaff?.name ?? null,
+      purchasingAssignedAt: input.purchasingStaff ? new Date() : null,
     });
     await this.orders.createItems(
       valuedItems.map((item) => ({
@@ -916,6 +967,20 @@ export class OrderService {
         lineTotalMinor: item.lineTotalMinor,
       })),
     );
+    let deliveryAttempt: OrderDeliveryAttempt | null = null;
+    if (input.deliveryStaff) {
+      deliveryAttempt = await this.deliveries.create({
+        orderId: order.id,
+        staffProfileId: input.deliveryStaff.id,
+        status: "assigned",
+        deliveryNameSnapshot: input.deliveryStaff.name,
+        deliveryPhoneSnapshot: input.deliveryStaff.phone,
+        affiliationSnapshot: input.deliveryStaff.affiliation,
+        companyNameSnapshot: input.deliveryStaff.companyName,
+        assignedByUserId: input.placedByUserId,
+        assignmentIdempotencyKey: input.idempotencyKey,
+      });
+    }
     await this.reserveRequestedBudget(order, input.placedByUserId);
     await this.orders.appendStatusEvent({
       orderId: order.id,
@@ -934,6 +999,15 @@ export class OrderService {
           : {}),
         totalMinor,
         itemCount: valuedItems.length,
+        ...(input.purchasingStaff
+          ? { purchasingStaffProfileId: input.purchasingStaff.id }
+          : {}),
+        ...(deliveryAttempt
+          ? {
+              deliveryAttemptId: deliveryAttempt.id,
+              deliveryStaffProfileId: deliveryAttempt.staffProfileId,
+            }
+          : {}),
       },
       resource: "orders",
       resourceId: order.id,
@@ -1130,6 +1204,17 @@ export class OrderService {
     reason: string | null,
     audience: "family" | "operator",
   ) {
+    const activeDelivery = await this.deliveries.findActiveByOrderId(
+      order.id,
+      true,
+    );
+    if (activeDelivery) {
+      await this.deliveries.cancel(
+        activeDelivery.id,
+        reason ?? "Order cancelled",
+        new Date(),
+      );
+    }
     await this.releaseRequestedReservation(order, actorUserId, reason);
     const cancelled = await this.orders.update(order.id, {
       status: "cancelled",
@@ -1354,6 +1439,45 @@ export class OrderService {
     return staff;
   }
 
+  private async ensureAssignablePurchasingStaff(staffProfileId: string) {
+    const staff = await this.staff.findById(staffProfileId);
+    if (!staff) HttpError.notFound("Purchasing staff profile not found");
+    if (staff.status !== "active" || !staff.functions.includes("operator")) {
+      HttpError.conflict("Active Operator staff is required for purchasing");
+    }
+    return staff;
+  }
+
+  private async ensurePendingAssignmentIdempotencyContext(
+    order: Order,
+    expected: {
+      purchasingStaffProfileId?: string;
+      deliveryStaffProfileId?: string;
+    },
+  ) {
+    if (
+      order.purchasingStaffProfileId !==
+      (expected.purchasingStaffProfileId ?? null)
+    ) {
+      HttpError.conflict(
+        "Idempotency key was already used with another purchasing assignment",
+      );
+    }
+    const initialDelivery =
+      await this.deliveries.findByAssignmentIdempotencyKey(
+        order.submissionIdempotencyKey,
+      );
+    if (
+      (initialDelivery?.orderId === order.id
+        ? initialDelivery.staffProfileId
+        : null) !== (expected.deliveryStaffProfileId ?? null)
+    ) {
+      HttpError.conflict(
+        "Idempotency key was already used with another delivery assignment",
+      );
+    }
+  }
+
   private ensureDeliveryIdempotencyContext(
     attempt: OrderDeliveryAttempt,
     orderId: string,
@@ -1445,6 +1569,15 @@ export class OrderService {
       const currentAttempt = deliveryAttempts.find((attempt) =>
         ["assigned", "in_progress"].includes(attempt.status),
       );
+      const deliveryStaff = await Promise.all(
+        [...new Set(deliveryAttempts.map(({ staffProfileId }) => staffProfileId))]
+          .map((staffProfileId) => this.staff.findById(staffProfileId)),
+      );
+      const deliveryStaffById = new Map(
+        deliveryStaff
+          .filter((profile) => profile !== undefined)
+          .map((profile) => [profile.id, profile]),
+      );
       return {
         ...order,
         items,
@@ -1459,9 +1592,17 @@ export class OrderService {
         receiptRecorded: purchaseHistory.some(({ reversal }) => !reversal),
         deliveryProofRecorded: Boolean(order.deliveryProofStoragePath),
         currentDelivery: currentAttempt
-          ? deliveryAttemptProjection(currentAttempt)
+          ? deliveryAttemptProjection(
+              currentAttempt,
+              deliveryStaffById.get(currentAttempt.staffProfileId),
+            )
           : null,
-        deliveryAttempts: deliveryAttempts.map(deliveryAttemptProjection),
+        deliveryAttempts: deliveryAttempts.map((attempt) =>
+          deliveryAttemptProjection(
+            attempt,
+            deliveryStaffById.get(attempt.staffProfileId),
+          ),
+        ),
       };
     }
     const activeDelivery = await this.deliveries.findActiveByOrderId(order.id);
@@ -1482,6 +1623,9 @@ export class OrderService {
       assistanceNote: _assistanceNote,
       submissionIdempotencyKey: _submissionIdempotencyKey,
       placedByUserId: _placedByUserId,
+      purchasingStaffProfileId: _purchasingStaffProfileId,
+      purchasingStaffNameSnapshot: _purchasingStaffNameSnapshot,
+      purchasingAssignedAt: _purchasingAssignedAt,
       approvedByUserId: _approvedByUserId,
       rejectedByUserId: _rejectedByUserId,
       cancelledByUserId: _cancelledByUserId,
@@ -1497,6 +1641,9 @@ export class OrderService {
     void _assistanceNote;
     void _submissionIdempotencyKey;
     void _placedByUserId;
+    void _purchasingStaffProfileId;
+    void _purchasingStaffNameSnapshot;
+    void _purchasingAssignedAt;
     void _approvedByUserId;
     void _rejectedByUserId;
     void _cancelledByUserId;
@@ -1579,7 +1726,10 @@ function deliveryAttemptSummary(attempt: OrderDeliveryAttempt) {
   };
 }
 
-function deliveryAttemptProjection(attempt: OrderDeliveryAttempt) {
+function deliveryAttemptProjection(
+  attempt: OrderDeliveryAttempt,
+  staff?: { image: string | null; gender: "M" | "F" | null },
+) {
   return {
     id: attempt.id,
     orderId: attempt.orderId,
@@ -1587,6 +1737,8 @@ function deliveryAttemptProjection(attempt: OrderDeliveryAttempt) {
     status: attempt.status,
     deliveryNameSnapshot: attempt.deliveryNameSnapshot,
     deliveryPhoneSnapshot: attempt.deliveryPhoneSnapshot,
+    image: staff?.image ?? null,
+    gender: staff?.gender ?? null,
     affiliationSnapshot: attempt.affiliationSnapshot,
     companyNameSnapshot: attempt.companyNameSnapshot,
     assignedByUserId: attempt.assignedByUserId,

@@ -26,6 +26,10 @@ Status: active
       per order.
 - [x] Added locked assign/reassign/start/fail/confirm commands and privacy-safe
       audit/outbox metadata without budget or inventory effects.
+- [x] Allowed delivery staff to be assigned or reassigned once an order is
+      approved so the same staff member can procure and deliver it; starting
+      delivery still requires a recorded purchase, and pre-purchase
+      cancellation closes the active assignment.
 - [x] Added operator current/history projections, family assigned-only milestone,
       and unchanged sponsor-safe milestones.
 - [x] Added the Orders Delivery column, command dialogs, and responsive/RTL Najm

@@ -500,4 +500,26 @@ it("adds assisted procurement, immutable purchases, and delivery without destruc
     expect(migration).not.toContain("DROP COLUMN");
     expect(migration).not.toContain("DROP TABLE");
   });
+
+  it("adds optional purchasing assignments without rewriting existing orders", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0028_clumsy_vargas.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'ADD COLUMN "purchasing_staff_profile_id" uuid',
+    );
+    expect(migration).toContain(
+      'ADD COLUMN "purchasing_staff_name_snapshot" varchar(120)',
+    );
+    expect(migration).toContain(
+      'CONSTRAINT "orders_purchasing_staff_profile_id_staff_profiles_id_fk"',
+    );
+    expect(migration).toContain(
+      'CONSTRAINT "orders_purchasing_assignment_complete_check"',
+    );
+    expect(migration).not.toContain("SET NOT NULL");
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
 });

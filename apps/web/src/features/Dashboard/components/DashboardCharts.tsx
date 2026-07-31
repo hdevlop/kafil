@@ -105,8 +105,8 @@ export function MonthlyLineChart({
           </span>
         ))}
       </div>
-      <div className="overflow-x-auto pb-1">
-        <div className="min-w-[42rem]">
+      <div className="min-w-0 overflow-hidden pb-1">
+        <div className="w-full min-w-0">
           <div aria-label={title} className="relative h-44" role="img">
             <svg aria-hidden="true" className="absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100">
               {series.map((item) => (
@@ -280,6 +280,7 @@ export function StatusBreakdown({
   labelForStatus,
   language,
   title,
+  xlOnlyStatuses = [],
 }: Readonly<{
   data: Array<{ status: string; count: number }>;
   emptyLabel: string;
@@ -287,13 +288,17 @@ export function StatusBreakdown({
   labelForStatus: (status: string) => string;
   language: KafilLanguage;
   title: string;
+  xlOnlyStatuses?: string[];
 }>) {
   const maximum = Math.max(1, ...data.map((item) => item.count));
   return (
     <NCard className="h-full" icon={icon} title={title}>
       <div className="space-y-3">
         {data.length ? data.map((item) => (
-          <div className="space-y-1.5" key={item.status}>
+          <div
+            className={`space-y-1.5 ${xlOnlyStatuses.includes(item.status) ? "hidden xl:block" : ""}`}
+            key={item.status}
+          >
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="text-muted-foreground">{labelForStatus(item.status)}</span>
               <strong>{formatKafilNumber(item.count, language)}</strong>

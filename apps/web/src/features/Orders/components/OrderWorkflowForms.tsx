@@ -264,7 +264,6 @@ export function PurchaseOrderDialogContent({
         reason: "",
       }}
       onSubmit={submit}
-      className="space-y-5"
     >
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput name="merchantName" type="text" formLabel="Merchant" icon="Store" required />
@@ -281,21 +280,25 @@ export function PurchaseOrderDialogContent({
           required
         />
       ) : null}
-      <label className="block space-y-2 text-sm">
-        <span className="font-medium">Protected receipt</span>
-        <input
+      <div className="space-y-2">
+        <FormInput
+          name="receipt"
           type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp"
-          onChange={(event) => {
-            setReceipt(event.target.files?.[0] ?? null);
+          formLabel="Protected receipt"
+          formDescription="PDF, JPEG, PNG, or WebP. Maximum 10 MB. Operator/admin access only."
+          placeholder="Choose a receipt file"
+          onChange={(file) => {
+            setReceipt(file as File | null);
             setFileError(null);
           }}
+          required
         />
-        <span className="block text-xs text-muted-foreground">
-          PDF, JPEG, PNG, or WebP. Maximum 10 MB. Operator/admin access only.
-        </span>
-        {fileError ? <span className="block text-xs text-destructive">{fileError}</span> : null}
-      </label>
+        {fileError ? (
+          <p className="text-xs text-destructive" role="alert">
+            {fileError}
+          </p>
+        ) : null}
+      </div>
       <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
         Requested: {formatMad(order.totalMinor)}. A higher actual amount is
         explicitly confirmed by this submission and still requires available
@@ -373,19 +376,11 @@ export function AssignDeliveryDialogContent({
       schema={reassign ? reassignmentSchema : assignmentSchema}
       defaultValues={{ staffProfileId: "", reason: "" }}
       onSubmit={submit}
-      className="space-y-5"
     >
       <NFormSectionHeader
         icon={UserRoundCheck}
         title={reassign ? t("operator.orders.changeDeliveryStaff") : t("operator.orders.assignDelivery")}
       />
-      {reassign && order.currentDelivery ? (
-        <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-          {t("operator.orders.delivery.currentlyAssigned", {
-            name: order.currentDelivery.name,
-          })}
-        </p>
-      ) : null}
       <FormInput
         name="staffProfileId"
         type="combobox"
@@ -513,7 +508,6 @@ export function ConfirmDeliveryDialogContent({
         deliveryNote: "",
       }}
       onSubmit={submit}
-      className="space-y-5"
     >
       <NFormSectionHeader icon={Truck} title="Delivery confirmation" />
       <FormInput
@@ -535,14 +529,17 @@ export function ConfirmDeliveryDialogContent({
         formDescription="Do not enter names, CIN, phone numbers, medical details, or exact address."
         icon="NotebookPen"
       />
-      <label className="block space-y-2 text-sm">
-        <span className="font-medium">Protected proof (optional for operator confirmation)</span>
-        <input
-          type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp"
-          onChange={(event) => setProof(event.target.files?.[0] ?? null)}
-        />
-      </label>
+      <FormInput
+        name="proof"
+        type="image"
+        formLabel="Protected proof (optional for operator confirmation)"
+        accept="image/jpeg,image/png,image/webp"
+        previewClassName="h-32 w-full"
+        title="Choose proof image"
+        subtitle="JPEG, PNG, or WebP"
+        value={proof}
+        onChange={(file) => setProof(file as File | null)}
+      />
       <div className="flex justify-end">
         <NButton type="submit" disabled={confirmDelivery.isPending}>
           {confirmDelivery.isPending ? "Saving..." : "Confirm delivery"}

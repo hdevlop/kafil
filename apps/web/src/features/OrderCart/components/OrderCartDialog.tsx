@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,11 +13,18 @@ import {
   Plus,
   ShieldCheck,
   ShoppingBag,
+  ShoppingBasket,
   ShoppingCart,
+  Truck,
   Trash2,
+  UserRoundCog,
+  UsersRound,
   Wallet,
 } from "lucide-react";
 import {
+  CheckboxInput,
+  ComboboxInput,
+  Label,
   NBadge,
   NButton,
   NCard,
@@ -37,6 +44,11 @@ import { useOwnFamilyBudgetSummary } from "@/features/FamilyBudget/hooks/useFami
 import { useOwnFamilyProfile } from "@/features/FamilyDashboard/hooks/useFamilyDashboard";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ProtectedImage } from "@/shared/ProtectedImage";
+import {
+  useDeliveryStaffOptions,
+  useOperatorStaffOptions,
+} from "@/features/Orders/hooks/useOrders";
+import type { StaffAssignmentOption } from "@/features/Staff/types";
 
 import { useOrderCart } from "../hooks/useOrderCart";
 import { useOrderCartStore } from "../store/orderCartStore";
@@ -74,8 +86,8 @@ function OrderCartLine({
 }>) {
   const productImage = useQuery<string | null>({
     queryKey: familyMode
-      ? ["family-catalog", "product", item.productId]
-      : productKeys.detail(item.productId),
+      ? ["order-cart", "family-product-image", item.productId]
+      : ["order-cart", "product-image", item.productId],
     queryFn: async () => {
       const product = familyMode
         ? await getFamilyCatalogProduct(item.productId)
@@ -177,7 +189,7 @@ function OrderCartLine({
   );
 }
 
-interface OrderConfirmationFamily {
+export interface OrderConfirmationFamily {
   name: string;
   image: string | null;
   exactAddress: string;
@@ -185,76 +197,200 @@ interface OrderConfirmationFamily {
   availableMinor: number | null;
 }
 
-function OrderConfirmationStep({
+function AssignmentPlanningSection({
+  purchasingStaffId,
+  deliveryStaffId,
+  sameStaff,
+  operatorOptions,
+  deliveryOptions,
+  disabled,
+  onPurchasingStaffChange,
+  onDeliveryStaffChange,
+  onSameStaffChange,
+}: Readonly<{
+  purchasingStaffId: string;
+  deliveryStaffId: string;
+  sameStaff: boolean;
+  operatorOptions: StaffAssignmentOption[];
+  deliveryOptions: StaffAssignmentOption[];
+  disabled: boolean;
+  onPurchasingStaffChange: (value: string) => void;
+  onDeliveryStaffChange: (value: string) => void;
+  onSameStaffChange: (value: boolean) => void;
+}>) {
+  const { t } = useKafilLanguage();
+  const selectedPurchasingStaff = operatorOptions.find(
+    ({ id }) => id === purchasingStaffId,
+  );
+  const canUseSameStaff = Boolean(
+    selectedPurchasingStaff?.functionKeys.includes("delivery"),
+  );
+  const unassigned = "__unassigned__";
+  const toItems = (options: StaffAssignmentOption[]) => [
+    { value: unassigned, label: t("family.orderCart.assignmentUnassigned") },
+    ...options.map((option) => ({
+      value: option.id,
+      label: option.name,
+    })),
+  ];
+
+  return (
+    <section
+      aria-labelledby="order-confirmation-assignment"
+      className="space-y-3 border-b border-border pb-5"
+    >
+      <div className="flex items-center gap-2">
+        <UserRoundCog aria-hidden className="size-4 text-primary" />
+        <h3 id="order-confirmation-assignment" className="text-sm font-semibold">
+          {t("family.orderCart.assignmentTitle")}
+        </h3>
+      </div>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="min-w-0 space-y-1.5">
+            <Label className="flex items-center gap-2">
+              <ShoppingBasket aria-hidden className="size-4 text-primary" />
+              {t("family.orderCart.purchasingStaff")}
+            </Label>
+            <ComboboxInput
+              disabled={disabled}
+              emptyMessage={t("family.orderCart.noPurchasingStaff")}
+              items={toItems(operatorOptions)}
+              placeholder={t("family.orderCart.choosePurchasingStaff")}
+              searchPlaceholder={t("family.orderCart.searchStaff")}
+              value={purchasingStaffId || unassigned}
+              onChange={(value) =>
+                onPurchasingStaffChange(value === unassigned ? "" : value)
+              }
+            />
+          </div>
+          <div className="min-w-0 space-y-1.5">
+            <Label className="flex items-center gap-2">
+              <Truck aria-hidden className="size-4 text-primary" />
+              {t("family.orderCart.deliveryStaff")}
+            </Label>
+            <ComboboxInput
+              disabled={disabled || sameStaff}
+              emptyMessage={t("family.orderCart.noDeliveryStaff")}
+              items={toItems(deliveryOptions)}
+              placeholder={t("family.orderCart.chooseDeliveryStaff")}
+              searchPlaceholder={t("family.orderCart.searchStaff")}
+              value={deliveryStaffId || unassigned}
+              onChange={(value) =>
+                onDeliveryStaffChange(value === unassigned ? "" : value)
+              }
+            />
+          </div>
+        </div>
+        {canUseSameStaff ? (
+          <CheckboxInput
+            label={t("family.orderCart.sameStaff")}
+            value={sameStaff}
+            onChange={(value) => {
+              if (!disabled) onSameStaffChange(value);
+            }}
+          />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+export function OrderConfirmationStep({
   family,
   items,
   familyMode,
+  showNotice = true,
+  totalMinor,
+  separateSections = true,
+  familyStatus,
+  children,
 }: Readonly<{
   family: OrderConfirmationFamily;
   items: OrderCartDraftItem[];
   familyMode: boolean;
+  showNotice?: boolean;
+  totalMinor?: number;
+  separateSections?: boolean;
+  familyStatus?: ReactNode;
+  children?: ReactNode;
 }>) {
   const { t } = useKafilLanguage();
 
   return (
-    <div className="space-y-5">
-      <section className="flex items-center gap-3 border-b border-border pb-4">
-        <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-muted">
-          <ProtectedImage
-            alt={family.name}
-            className="object-cover"
-            fill
-            sizes="96px"
-            src={getFamilyAvatarImage(family.image)}
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("family.orderCart.family")}
-          </p>
-          <h3 className="mt-0.5 truncate text-base font-semibold text-foreground">
-            {family.name}
-          </h3>
-          <div className="mt-1.5 flex items-start gap-1.5 text-sm text-muted-foreground">
-            <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-            <span className="line-clamp-2 leading-relaxed">
-              {family.exactAddress}
-            </span>
+    <div className="flex flex-col gap-5">
+      <section
+        className={`flex flex-col gap-2 ${separateSections ? "border-b border-border pb-5" : ""}`}
+        aria-labelledby="order-confirmation-family"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <UsersRound aria-hidden className="size-4 text-primary" />
+            <h3 id="order-confirmation-family" className="text-sm font-semibold">
+              {t("family.orderCart.family")}
+            </h3>
           </div>
-          {family.phone ? (
-            <div
-              aria-label={t("family.orderCart.phone")}
-              className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"
-            >
-              <Phone aria-hidden className="size-4 shrink-0 text-primary" />
-              <span dir="ltr">{family.phone}</span>
+          {familyStatus}
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+            <ProtectedImage
+              alt={family.name}
+              className="object-cover"
+              fill
+              sizes="96px"
+              src={getFamilyAvatarImage(family.image)}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-semibold text-foreground">{family.name}</p>
+            <div className="mt-1.5 flex items-start gap-1.5 text-sm text-muted-foreground">
+              <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
+              <span className="line-clamp-2 leading-relaxed">{family.exactAddress}</span>
             </div>
-          ) : null}
+            {family.phone ? (
+              <div aria-label={t("family.orderCart.phone")} className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Phone aria-hidden className="size-4 shrink-0 text-primary" />
+                <span dir="ltr">{family.phone}</span>
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
 
-      <section aria-labelledby="order-confirmation-products" className="space-y-2">
+      <section
+        aria-labelledby="order-confirmation-products"
+        className={`flex flex-col gap-2 ${separateSections ? "border-b border-border pb-5" : ""}`}
+      >
         <div className="flex items-center gap-2">
           <ShoppingBag aria-hidden className="size-4 text-primary" />
           <h3 id="order-confirmation-products" className="text-sm font-semibold">
             {t("family.orderCart.products")}
           </h3>
         </div>
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-          {items.map((item) => (
-            <OrderCartLine
-              key={item.productId}
-              editable={false}
-              familyMode={familyMode}
-              item={item}
-              unavailableLabel={t("family.orderCart.unavailable")}
-            />
-          ))}
+        <div className="overflow-hidden rounded-xl border border-border">
+          <div className="divide-y divide-border">
+            {items.map((item) => (
+              <OrderCartLine
+                key={item.productId}
+                editable={false}
+                familyMode={familyMode}
+                item={item}
+                unavailableLabel={t("family.orderCart.unavailable")}
+              />
+            ))}
+          </div>
+          {totalMinor !== undefined ? (
+            <div className="flex items-center justify-between px-3 pb-3 pt-1 text-sm">
+              <span className="text-muted-foreground">{t("family.cart.total")}</span>
+              <span className="font-semibold text-foreground">{formatMad(totalMinor)}</span>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <section className="space-y-3 border-t border-border pt-4">
-        {family.availableMinor !== null ? (
+      {family.availableMinor !== null ? (
+        <section>
           <div className="flex items-center justify-between gap-3 text-sm">
             <span className="flex items-center gap-2 text-muted-foreground">
               <Wallet aria-hidden className="size-4" />
@@ -264,13 +400,17 @@ function OrderConfirmationStep({
               {formatMad(family.availableMinor)}
             </span>
           </div>
-        ) : null}
-      </section>
+        </section>
+      ) : null}
 
-      <div className="flex gap-2 rounded-lg bg-muted px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
-        <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-        <p>{t("family.orderCart.confirmationNotice")}</p>
-      </div>
+      {children}
+
+      {showNotice ? (
+        <div className="flex gap-2 rounded-lg bg-muted px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+          <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
+          <p>{t("family.orderCart.confirmationNotice")}</p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -294,7 +434,13 @@ export function OrderCartSheet({
     useState(false);
   const [selectedFamilySummary, setSelectedFamilySummary] =
     useState<AssistedFamilySelection | null>(null);
+  const [purchasingStaffId, setPurchasingStaffId] = useState("");
+  const [deliveryStaffId, setDeliveryStaffId] = useState("");
+  const [sameStaff, setSameStaff] = useState(false);
   const [reviewing, setReviewing] = useState(false);
+  const staffOptionsEnabled = open && !isExactFamily;
+  const operatorStaff = useOperatorStaffOptions({ enabled: staffOptionsEnabled });
+  const deliveryStaff = useDeliveryStaffOptions({ enabled: staffOptionsEnabled });
 
   const familyBudget = useOwnFamilyBudgetSummary({
     enabled: open && isExactFamily,
@@ -380,6 +526,8 @@ export function OrderCartSheet({
         : await orderCart.save({
             mode: "assisted",
             familyProfileId: selectedFamily,
+            purchasingStaffProfileId: purchasingStaffId || undefined,
+            deliveryStaffProfileId: deliveryStaffId || undefined,
             assistanceChannel: "phone",
           });
       if (result) {
@@ -387,6 +535,9 @@ export function OrderCartSheet({
           setSelectedFamily("");
           setSelectedFamilyFundingEligible(false);
           setSelectedFamilySummary(null);
+          setPurchasingStaffId("");
+          setDeliveryStaffId("");
+          setSameStaff(false);
         }
         setReviewing(false);
         onOpenChange(false);
@@ -404,7 +555,29 @@ export function OrderCartSheet({
     setSelectedFamily("");
     setSelectedFamilyFundingEligible(false);
     setSelectedFamilySummary(null);
+    setPurchasingStaffId("");
+    setDeliveryStaffId("");
+    setSameStaff(false);
     setReviewing(false);
+  }
+
+  function handlePurchasingStaffChange(value: string) {
+    setPurchasingStaffId(value);
+    if (!sameStaff) return;
+    const canDeliver = operatorStaff.data
+      ?.find(({ id }) => id === value)
+      ?.functionKeys.includes("delivery");
+    if (canDeliver) {
+      setDeliveryStaffId(value);
+      return;
+    }
+    setSameStaff(false);
+    setDeliveryStaffId("");
+  }
+
+  function handleSameStaffChange(value: boolean) {
+    setSameStaff(value);
+    if (value) setDeliveryStaffId(purchasingStaffId);
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -547,7 +720,21 @@ export function OrderCartSheet({
           family={confirmationFamily}
           familyMode={isExactFamily}
           items={orderCart.items}
-        />
+        >
+          {!isExactFamily ? (
+            <AssignmentPlanningSection
+              deliveryOptions={deliveryStaff.data ?? []}
+              deliveryStaffId={deliveryStaffId}
+              disabled={saving || operatorStaff.isPending || deliveryStaff.isPending}
+              operatorOptions={operatorStaff.data ?? []}
+              purchasingStaffId={purchasingStaffId}
+              sameStaff={sameStaff}
+              onDeliveryStaffChange={setDeliveryStaffId}
+              onPurchasingStaffChange={handlePurchasingStaffChange}
+              onSameStaffChange={handleSameStaffChange}
+            />
+          ) : null}
+        </OrderConfirmationStep>
       ) : (
         <div className="space-y-3">
           {showAssistedFields ? (

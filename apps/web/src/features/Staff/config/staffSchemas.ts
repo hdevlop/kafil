@@ -31,7 +31,7 @@ export const createStaffFormSchema = z.object({
     .optional(),
   affiliation: z.enum(["internal", "external"]),
   companyName: optionalText(160),
-  role: z.enum(STAFF_FUNCTION_VALUES),
+  functions: z.array(z.enum(STAFF_FUNCTION_VALUES)).min(1).max(STAFF_FUNCTION_VALUES.length),
   jobTitle: optionalText(120),
   notes: optionalText(2_000),
   cin: optionalText(20),
@@ -47,15 +47,17 @@ export const createStaffFormSchema = z.object({
     });
   }
 
-  for (const [field, valid, message] of [
-    ["contactEmail", Boolean(data.contactEmail), "Email is required for staff records."],
-    ["cin", Boolean(data.cin && data.cin.trim().length >= 8), "CIN is required for staff records."],
-    ["gender", Boolean(data.gender), "Gender is required for staff records."],
-    ["address", Boolean(data.address?.trim()), "Address is required for staff records."],
-    ["dateOfBirth", Boolean(data.dateOfBirth), "Date of birth is required for staff records."],
-  ] as const) {
-    if (!valid) {
-      context.addIssue({ code: "custom", message, path: [field] });
+  if (data.functions.includes("operator")) {
+    for (const [field, valid, message] of [
+      ["contactEmail", Boolean(data.contactEmail), "Email is required for Operator staff."],
+      ["cin", Boolean(data.cin && data.cin.trim().length >= 8), "CIN is required for Operator staff."],
+      ["gender", Boolean(data.gender), "Gender is required for Operator staff."],
+      ["address", Boolean(data.address?.trim()), "Address is required for Operator staff."],
+      ["dateOfBirth", Boolean(data.dateOfBirth), "Date of birth is required for Operator staff."],
+    ] as const) {
+      if (!valid) {
+        context.addIssue({ code: "custom", message, path: [field] });
+      }
     }
   }
 });
@@ -75,7 +77,7 @@ export const updateStaffFormSchema = z.object({
     .nullish(),
   affiliation: z.enum(["internal", "external"]),
   companyName: optionalText(160),
-  role: z.enum(STAFF_FUNCTION_VALUES),
+  functions: z.array(z.enum(STAFF_FUNCTION_VALUES)).min(1).max(STAFF_FUNCTION_VALUES.length),
   jobTitle: optionalText(120),
   notes: optionalText(2_000),
   cin: optionalText(20),
@@ -90,15 +92,17 @@ export const updateStaffFormSchema = z.object({
       path: ["companyName"],
     });
   }
-  for (const [field, valid, message] of [
-    ["contactEmail", Boolean(data.contactEmail), "Email is required for staff records."],
-    ["cin", Boolean(data.cin && data.cin.trim().length >= 8), "CIN is required for staff records."],
-    ["gender", Boolean(data.gender), "Gender is required for staff records."],
-    ["address", Boolean(data.address?.trim()), "Address is required for staff records."],
-    ["dateOfBirth", Boolean(data.dateOfBirth), "Date of birth is required for staff records."],
-  ] as const) {
-    if (!valid) {
-      context.addIssue({ code: "custom", message, path: [field] });
+  if (data.functions.includes("operator")) {
+    for (const [field, valid, message] of [
+      ["contactEmail", Boolean(data.contactEmail), "Email is required for Operator staff."],
+      ["cin", Boolean(data.cin && data.cin.trim().length >= 8), "CIN is required for Operator staff."],
+      ["gender", Boolean(data.gender), "Gender is required for Operator staff."],
+      ["address", Boolean(data.address?.trim()), "Address is required for Operator staff."],
+      ["dateOfBirth", Boolean(data.dateOfBirth), "Date of birth is required for Operator staff."],
+    ] as const) {
+      if (!valid) {
+        context.addIssue({ code: "custom", message, path: [field] });
+      }
     }
   }
 });
@@ -147,7 +151,7 @@ interface FormLikeValues {
   companyName?: string | null | undefined;
   contactEmail?: string | null | undefined;
   dateOfBirth?: string | null | undefined;
-  role: "operator" | "delivery";
+  functions: StaffFunctionKey[];
   gender?: "M" | "F" | null | undefined;
   image?: string | File | null | undefined;
   jobTitle?: string | null | undefined;
@@ -167,7 +171,7 @@ function toStaffProfileInput(
     image: normalizeImage(values.image),
     affiliation,
     companyName: null,
-    functions: normalizeFunctions([values.role]),
+    functions: normalizeFunctions(values.functions),
     jobTitle: optional(values.jobTitle) ?? null,
     notes: optional(values.notes) ?? null,
     cin: optional(values.cin)?.toUpperCase() ?? null,
@@ -189,9 +193,9 @@ export function toCreateStaffInput(
   const profile = toStaffProfileInput(values);
   return {
     ...profile,
-    createOperatorAccess: values.role === "operator",
+    createOperatorAccess: values.functions.includes("operator"),
     createOperatorAccessEmail:
-      values.role === "operator"
+      values.functions.includes("operator")
         ? nullable(values.contactEmail) ?? undefined
         : undefined,
   };

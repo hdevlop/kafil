@@ -100,7 +100,7 @@ test.describe("Phase 7 unified catalog and order flow", () => {
     await expect(page.getByText("Shirt M", { exact: true })).toBeVisible();
   });
 
-  test("operator assisted draft searches active families server-side and lands on /orders?created=...", async ({ page }) => {
+  test("operator assisted draft assigns one dual-capability Staff member and lands on /orders?created=...", async ({ page }) => {
     await useRole(page, "operator");
 
     const allFamilies = Array.from({ length: 5 }).map((_, index) => ({
@@ -202,9 +202,27 @@ test.describe("Phase 7 unified catalog and order flow", () => {
     await page.route("**/api/budgets/families**", (route) =>
       json(route, allFamilies),
     );
+    const dualStaffId = "30000000-0000-4000-8000-000000000003";
+    const dualStaff = {
+      id: dualStaffId,
+      name: "Karim Operations",
+      image: null,
+      phone: "+212600009999",
+      affiliation: "internal",
+      companyName: null,
+      functionKeys: ["operator", "delivery"],
+    };
+    await page.route("**/api/staff/options/operator", (route) =>
+      json(route, [dualStaff]),
+    );
+    await page.route("**/api/staff/options/delivery", (route) =>
+      json(route, [dualStaff]),
+    );
     interface AssistedPayload {
       familyProfileId?: string;
       items?: Array<{ productId: string; quantity: number }>;
+      purchasingStaffProfileId?: string;
+      deliveryStaffProfileId?: string;
     }
     let assistedPayload: AssistedPayload = {};
     await page.route("**/api/orders**", async (route) => {
@@ -228,25 +246,41 @@ test.describe("Phase 7 unified catalog and order flow", () => {
     const cartButton = page.getByTestId("floating-order-cart-button");
     await cartButton.click();
 
+    await page
+      .getByRole("dialog", { name: "Cart" })
+      .getByRole("combobox")
+      .click();
     const familySearchInput = page.getByPlaceholder("Search active families");
     await familySearchInput.fill("Family 3");
-    await expect.poll(() => lastFamiliesQuery.search ?? "").toBe("Family 3");
-    await page.getByRole("button", { name: /Guardian 3/ }).click();
+    await expect.poll(() => lastFamiliesQuery.status).toBe("active");
+    await page.getByRole("option", { name: /Guardian 3/ }).click();
     await expect(familySearchInput).toHaveCount(0);
-    await expect(page.getByText(/Active family: Guardian 3/)).toBeVisible();
+    await expect(
+      page.getByRole("dialog", { name: "Cart" }).getByRole("combobox"),
+    ).toContainText("Guardian 3");
 
     await page.getByRole("button", { name: "Review order" }).click();
-    await expect(page.getByText("Family 3", { exact: true })).toBeVisible();
-    await expect(page.getByText("3 Test Street", { exact: true })).toBeVisible();
-    await expect(page.getByText("Rice 5 kg", { exact: true })).toBeVisible();
+    const review = page.getByRole("dialog", { name: "Review order" });
+    await expect(review.getByText("Family 3", { exact: true })).toBeVisible();
+    await expect(review.getByText("3 Test Street", { exact: true })).toBeVisible();
+    await expect(review.getByText("Rice 5 kg", { exact: true })).toBeVisible();
+    await expect(review.getByText("Assignment", { exact: true })).toBeVisible();
     expect(assistedPayload).toEqual({});
 
-    await page.getByRole("button", { name: /Confirm order/ }).click();
+    const assignmentSelectors = review.getByRole("combobox");
+    await assignmentSelectors.first().click();
+    await page.getByRole("option", { name: "Karim Operations" }).click();
+    await review.getByText("Same person purchases and delivers").click();
+    await expect(review.getByRole("checkbox")).toBeChecked();
+
+    await review.getByRole("button", { name: /Confirm order/ }).click();
 
     await page.waitForURL(/\/orders\?created=order-assisted-1/);
     expect(assistedPayload).toMatchObject({
       familyProfileId: "family-3",
       items: [{ productId: "product-1", quantity: 1 }],
+      purchasingStaffProfileId: dualStaffId,
+      deliveryStaffProfileId: dualStaffId,
     });
   });
 });

@@ -28,8 +28,6 @@ import { useProductsTableColumns } from "@/features/Products/hooks/useProductsTa
 import { useProductsTableFilters } from "@/features/Products/hooks/useProductsTableFilters";
 import {
   createOffsetPagination,
-  getPageIndex,
-  hasPossibleNextPage,
 } from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -45,8 +43,7 @@ import {
 } from "./ProductForms";
 import type { ProductRecord } from "../types";
 
-const managementPagination = createOffsetPagination(0, 100);
-const familyPagination = createOffsetPagination(0, 12);
+const productsPagination = createOffsetPagination(0, 100);
 
 export function ProductsPage() {
   const dialog = useDialog();
@@ -58,9 +55,8 @@ export function ProductsPage() {
   const filters = useProductsTableFilters();
   const searchParams = useSearchParams();
   const activeCategoryId = searchParams.get("category") ?? "";
-  const initialPagination = isExactFamily ? familyPagination : managementPagination;
   const workspace = useProductsWorkspace(
-    initialPagination,
+    productsPagination,
     {
       ...(activeCategoryId ? { categoryId: activeCategoryId } : {}),
     },
@@ -74,11 +70,6 @@ export function ProductsPage() {
     () => new Map(orderCart.items.map((item) => [item.productId, item.quantity])),
     [orderCart.items],
   );
-  const pageIndex = getPageIndex(workspace.pagination);
-  const pageCount = hasPossibleNextPage(products.length, workspace.pagination)
-    ? pageIndex + 2
-    : pageIndex + 1;
-
   function openCreate() {
     void dialog.openDialog({
       title: t("common.createProduct"),
@@ -207,17 +198,12 @@ export function ProductsPage() {
       },
     },
     menuButton: true,
-    manualPagination: true,
-    pagination: { pageIndex, pageSize: workspace.pagination.limit },
-    pageCount,
-    onPaginationChange: ({ pageIndex: nextIndex, pageSize }) =>
-      workspace.setPagination(createOffsetPagination(nextIndex, pageSize)),
-    pageSizeOptions: [25, 50, 100],
+    defaultPagination: { pageIndex: 0, pageSize: productsPagination.limit },
+    showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
       cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-8",
-      pagination: "hidden sm:flex",
     },
     addButtonText: t("common.createProduct"),
     noDataText: t("common.noCatalogProduct"),
@@ -253,11 +239,9 @@ export function ProductsPage() {
           loading={workspace.loading}
           onAdd={handleAdd}
           onOpenCart={openCart}
-          pagination={workspace.pagination}
           products={products}
           quantityByProductId={cartQuantityByProductId}
           refetch={() => void workspace.refetch()}
-          setPagination={workspace.setPagination}
         />
       ) : (
         <div className="min-h-0 flex-1">
@@ -272,8 +256,6 @@ interface ProductsFamilyGridProps {
   loading: boolean;
   error: unknown;
   refetch: () => void;
-  pagination: ReturnType<typeof createOffsetPagination>;
-  setPagination: (next: ReturnType<typeof createOffsetPagination>) => void;
   products: ProductRecord[];
   quantityByProductId: ReadonlyMap<string, number>;
   onAdd: (input: ProductCardAddInput) => Promise<void> | void;
@@ -284,24 +266,12 @@ function ProductsFamilyGrid({
   loading,
   error,
   refetch,
-  pagination,
-  setPagination,
   products,
   quantityByProductId,
   onAdd,
   onOpenCart,
 }: Readonly<ProductsFamilyGridProps>) {
   const { t } = useKafilLanguage();
-  const pageIndex = getPageIndex(pagination);
-  const hasNextPage = hasPossibleNextPage(products.length, pagination);
-  const hasPrevPage = pageIndex > 0;
-
-  function goToPage(nextIndex: number) {
-    setPagination(
-      createOffsetPagination(nextIndex, pagination.limit),
-    );
-  }
-
   if (error) {
     return (
       <NPageLayout className="grid min-h-64 place-items-center">
@@ -339,22 +309,6 @@ function ProductsFamilyGrid({
             quantityInCart={quantityByProductId.get(product.id) ?? 0}
           />
         ))}
-      </div>
-      <div className="hidden justify-between sm:flex">
-        <NButton
-          variant="outline"
-          disabled={!hasPrevPage}
-          onClick={() => goToPage(pageIndex - 1)}
-        >
-          {t("action.previous", { defaultValue: "Previous" })}
-        </NButton>
-        <NButton
-          variant="outline"
-          disabled={!hasNextPage}
-          onClick={() => goToPage(pageIndex + 1)}
-        >
-          {t("action.next", { defaultValue: "Next" })}
-        </NButton>
       </div>
     </div>
   );

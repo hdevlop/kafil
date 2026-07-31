@@ -92,6 +92,10 @@ export class StaffService {
     return this.staff.listDeliveryOptions();
   }
 
+  async listOperatorOptions() {
+    return this.staff.listOperatorOptions();
+  }
+
   async get(id: string) {
     return this.validator.ensureExists(id);
   }
@@ -302,7 +306,7 @@ export class StaffService {
     const isPristine = await this.staff.isPristine(params.id);
     if (!isPristine) {
       HttpError.conflict(
-        "Staff records with delivery history must be deactivated instead",
+        "Staff records with order history must be deactivated instead",
       );
     }
     const existing = await this.staff.deleteProfile(params.id);
@@ -325,7 +329,7 @@ export class StaffService {
     const rejected = body.ids.filter((id) => !pristine.has(id));
     if (rejected.length > 0) {
       HttpError.conflict(
-        "Selected staff records with delivery history must be deactivated instead",
+        "Selected staff records with order history must be deactivated instead",
       );
     }
     const deleted = [];

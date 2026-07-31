@@ -29,7 +29,7 @@ export interface StaffRecord {
   updatedAt: string;
 }
 
-export interface StaffDeliveryOption {
+export interface StaffAssignmentOption {
   id: string;
   name: string;
   image: string | null;
@@ -38,6 +38,8 @@ export interface StaffDeliveryOption {
   companyName: string | null;
   functionKeys: StaffFunctionKey[];
 }
+
+export type StaffDeliveryOption = StaffAssignmentOption;
 
 export interface StaffPage {
   items: StaffRecord[];

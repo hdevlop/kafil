@@ -38,7 +38,7 @@ it("assigns a direct, domain-specific response key to every controller endpoint"
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    expect(routes).toHaveLength(186);
+    expect(routes).toHaveLength(187);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

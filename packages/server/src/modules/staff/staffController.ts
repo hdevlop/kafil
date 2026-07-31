@@ -47,6 +47,18 @@ import { StaffService } from "./staffService";
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
+  @Get("/options/operator")
+  @isOperator()
+  @CanRead("staffDeliveryOptions")
+  @McpTool({
+    description: "List active Staff with the operator function for safe purchasing selectors",
+    readOnly: true,
+  })
+  @ResMsg("staff.success.optionsRetrieved")
+  listOperatorOptions() {
+    return this.staffService.listOperatorOptions();
+  }
+
   @Get("/options/delivery")
   @isOperator()
   @CanRead("staffDeliveryOptions")
@@ -185,7 +197,7 @@ export class StaffController {
   @CanDelete()
   @Validate({ params: staffIdParams })
   @McpTool({
-    description: "Permanently delete a Staff record without delivery history",
+    description: "Permanently delete a Staff record without order history",
     destructive: true,
     confirm: {
       level: "danger",
@@ -202,7 +214,7 @@ export class StaffController {
   @CanDelete()
   @Validate({ body: bulkDeleteStaffDto })
   @McpTool({
-    description: "Permanently delete Staff records without delivery history",
+    description: "Permanently delete Staff records without order history",
     destructive: true,
     confirm: {
       level: "danger",

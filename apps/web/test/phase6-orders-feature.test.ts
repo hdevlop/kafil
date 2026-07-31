@@ -46,7 +46,45 @@ describe("Phase 6D order command contracts", () => {
       "reject",
       "cancel",
     ]);
-    expect(getOrderActions("approved").map((action) => action.command)).toEqual([
+    expect(getOrderActions({
+      status: "pending",
+      currentDelivery: {
+        attemptId: "attempt-planned",
+        staffProfileId: "staff-dual",
+        name: "Amina",
+        status: "assigned",
+        assignedAt: "2026-07-31T10:00:00.000Z",
+      },
+      latestDelivery: null,
+    }).map((action) => action.command)).toEqual([
+      "viewDelivery",
+      "reassignDelivery",
+      "approve",
+      "reject",
+      "cancel",
+    ]);
+    expect(getOrderActions({
+      status: "approved",
+      currentDelivery: null,
+      latestDelivery: null,
+    }).map((action) => action.command)).toEqual([
+      "assignDelivery",
+      "purchase",
+      "cancel",
+    ]);
+    expect(getOrderActions({
+      status: "approved",
+      currentDelivery: {
+        attemptId: "attempt-1",
+        staffProfileId: "staff-1",
+        name: "Amina",
+        status: "assigned",
+        assignedAt: "2026-07-30T10:00:00.000Z",
+      },
+      latestDelivery: null,
+    }).map((action) => action.command)).toEqual([
+      "viewDelivery",
+      "reassignDelivery",
       "purchase",
       "cancel",
     ]);
@@ -115,7 +153,7 @@ describe("Phase 6D order command contracts", () => {
     expect(orderKeys.detail("order-1")).toEqual(["orders", "detail", "order-1"]);
   });
 
-  test("renders a delivery column, explicit commands, and a responsive history sheet", () => {
+  test("renders a delivery column, explicit commands, and a responsive delivery sheet", () => {
     const [columns, page, sheet, forms, api] = [
       readSource("../src/features/Orders/hooks/useOrdersTableColumns.tsx"),
       readSource("../src/features/Orders/components/OrdersPage.tsx"),
@@ -130,15 +168,42 @@ describe("Phase 6D order command contracts", () => {
     expect(page).toContain("<AssignDeliveryDialogContent");
     expect(page).toContain("<FailDeliveryDialogContent");
     expect(sheet).toContain("<NSheet");
-    expect(sheet).toContain('width={560}');
-    expect(sheet).toContain('classNames={{ content: "max-w-full"');
-    expect(sheet).toContain("deliveryAttempts");
+    expect(sheet).toContain('width={440}');
+    expect(sheet).toContain('content: "max-w-full bg-background"');
+    expect(sheet).toContain('footer: "bg-background"');
+    expect(sheet).toContain("<ManagedAvatar");
+    expect(sheet).toContain("getFeaturedDeliveryAttempt(order)");
+    expect(sheet).toContain('order.status === "cancelled" || order.status === "rejected"');
+    expect(sheet).toContain("attempt.id === latestAttemptId");
+    expect(sheet).toContain('order.status !== "delivered"');
+    expect(sheet).toContain('attempt.status === "delivered"');
+    expect(sheet).toContain("getSponsorAvatarImage(featured.image, featured.gender)");
+    expect(sheet).toContain("deliveryPhoneSnapshot");
+    expect(sheet).toContain("formatDateTime");
+    expect(sheet).toContain("DeliveryAttemptCard");
+    expect(sheet).toContain("attempt.id !== featured?.id");
+    expect(sheet).toContain("delivery-history-title");
+    expect(sheet).not.toContain("embedded");
     expect(sheet).not.toMatch(/live map|gps|vehicle location/i);
     expect(forms).toContain('"assign-order-delivery"');
     expect(forms).toContain('id="fail-order-delivery"');
     expect(api).toContain("/delivery/assign");
     expect(api).toContain("/delivery/reassign");
     expect(api).toContain("/delivery/fail");
+  });
+
+  test("keeps the purchase dialog content-height and uses the Najm file input", () => {
+    const page = readSource("../src/features/Orders/components/OrdersPage.tsx");
+    const forms = readSource(
+      "../src/features/Orders/components/OrderWorkflowForms.tsx",
+    );
+
+    expect(page).toContain('height: "auto"');
+    expect(page).not.toContain('height: action === "confirmDelivery"');
+    expect(forms).toContain('name="receipt"');
+    expect(forms).toContain('type="file"');
+    expect(forms).toContain('placeholder="Choose a receipt file"');
+    expect(forms).not.toMatch(/<input\s+type="file"/);
   });
 
   test("shows permanent deletion only through the exact-admin order menu", () => {
@@ -182,11 +247,21 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(dialog).toContain("fundingTargetBlocksOrder");
     expect(dialog).toContain("tabIndex={fundingTargetBlocksOrder ? 0 : undefined}");
     expect(dialog).toContain("getProduct");
+    expect(dialog).toContain('["order-cart", "product-image", item.productId]');
+    expect(dialog).toContain('["order-cart", "family-product-image", item.productId]');
     expect(dialog).toContain("fetchQuery");
     expect(dialog).toContain("setAvailability");
     expect(dialog).toContain("unavailableItemCount");
     expect(dialog).toContain("canSaveAssisted");
     expect(dialog).toContain("OrderConfirmationStep");
+    expect(dialog).toContain("AssignmentPlanningSection");
+    expect(dialog).toContain("useOperatorStaffOptions");
+    expect(dialog).toContain("useDeliveryStaffOptions");
+    expect(dialog).toContain("sameStaff");
+    expect(dialog).toContain("purchasingStaffProfileId");
+    expect(dialog).toContain("deliveryStaffProfileId");
+    expect(dialog).not.toContain('t("family.orderCart.assignmentDescription")');
+    expect(dialog).not.toContain('t("family.orderCart.sameStaffUnavailable")');
     expect(dialog).toContain("confirmationFamily");
     expect(dialog).toContain("setReviewing(true)");
     expect(dialog).toContain("family.exactAddress");
@@ -196,7 +271,8 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(dialog).toContain("<MapPin");
     expect(dialog).toContain("<ShoppingBag");
     expect(dialog).toContain("getFamilyAvatarImage(family.image)");
-    expect(dialog).toContain('className="space-y-3 border-t border-border pt-4"');
+    expect(dialog).toContain('className="flex flex-col gap-5"');
+    expect(dialog).toContain('separateSections ? "border-b border-border pb-5"');
     expect(dialog).not.toContain("<NCard bordered noPadding");
     expect(dialog).toContain("getFamilyCatalogProduct");
     expect(dialog).toContain("<ProtectedImage");

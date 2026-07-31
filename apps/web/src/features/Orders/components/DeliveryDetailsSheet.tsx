@@ -5,14 +5,14 @@ import {
   Circle,
   Clock3,
   History,
-  Phone,
   Truck,
-  UserRound,
 } from "lucide-react";
-import { NButton, NCard, NCardInfo, NCardSection, NSheet } from "najm-kit";
+import { NButton, NCard, NSheet } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { formatKafilDate, formatStatusLabel } from "@/lib/format";
+import { formatDateTime, formatKafilDate, formatStatusLabel } from "@/lib/format";
+import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -54,9 +54,14 @@ export function DeliveryDetailsSheet({
       icon={Truck}
       title={order ? `${t("operator.orders.delivery.column")} · ${order.orderNumber}` : t("operator.orders.delivery.details")}
       description={t("operator.orders.delivery.detailsDescription")}
-      width={560}
+      width={440}
       side={language === "ar" ? "left" : "right"}
-      classNames={{ content: "max-w-full", body: "space-y-5" }}
+      classNames={{
+        content: "max-w-full bg-background",
+        header: "bg-background",
+        body: "space-y-5 bg-background",
+        footer: "bg-background",
+      }}
       footer={
         order && deliveryActions.length ? (
           <div className="flex flex-wrap justify-end gap-2">
@@ -88,46 +93,86 @@ export function DeliveryDetailsSheet({
   );
 }
 
+export function DeliveryAssignmentCard({
+  order,
+}: Readonly<{ order: NonNullable<ReturnType<typeof useOrder>["data"]> }>) {
+  const { language, t } = useKafilLanguage();
+  const featured = getFeaturedDeliveryAttempt(order);
+
+  return (
+    <NCard
+      title={featured ? undefined : t("operator.orders.delivery.noActiveAssignment")}
+      description={
+        featured
+          ? undefined
+          : order.latestDelivery?.status === "failed"
+            ? t("operator.orders.delivery.needsReassignment")
+            : t("operator.orders.delivery.assignToContinue")
+      }
+    >
+      {featured ? (
+        <div className="flex items-center justify-between gap-3">
+          <ManagedAvatar
+            className="min-w-0"
+            fallback={featured.deliveryNameSnapshot}
+            meta={<span className="flex items-center gap-1.5"><Clock3 aria-hidden className="size-3.5" />{formatDateTime(featured.assignedAt, language)}</span>}
+            shape="rounded"
+            size="lg"
+            src={getSponsorAvatarImage(featured.image, featured.gender)}
+            subtitle={featured.deliveryPhoneSnapshot}
+            title={featured.deliveryNameSnapshot}
+          />
+          <StatusBadge className="shrink-0" status={featured.status} />
+        </div>
+      ) : null}
+    </NCard>
+  );
+}
+
+function getFeaturedDeliveryAttempt(
+  order: NonNullable<ReturnType<typeof useOrder>["data"]>,
+) {
+  if (order.currentDelivery) return order.currentDelivery;
+
+  const latestAttemptId = order.latestDelivery?.attemptId;
+  if (order.status === "cancelled" || order.status === "rejected") {
+    return (
+      order.deliveryAttempts.find((attempt) => attempt.id === latestAttemptId) ??
+      [...order.deliveryAttempts].reverse()[0] ??
+      null
+    );
+  }
+  if (order.status !== "delivered") return null;
+
+  return (
+    order.deliveryAttempts.find(
+      (attempt) =>
+        attempt.id === latestAttemptId && attempt.status === "delivered",
+    ) ??
+    [...order.deliveryAttempts]
+      .reverse()
+      .find((attempt) => attempt.status === "delivered") ??
+    null
+  );
+}
+
 function DeliveryDetailsBody({
   order,
 }: Readonly<{ order: NonNullable<ReturnType<typeof useOrder>["data"]> }>) {
   const { t } = useKafilLanguage();
-  const current = order.currentDelivery;
+  const featured = getFeaturedDeliveryAttempt(order);
+  const history = order.deliveryAttempts.filter((attempt) => attempt.id !== featured?.id);
   const milestones = [
     { label: t("operator.orders.delivery.orderConfirmed"), at: order.approvedAt, complete: Boolean(order.approvedAt) },
     { label: t("operator.orders.delivery.purchaseRecorded"), at: order.activePurchase?.purchasedAt, complete: Boolean(order.activePurchase) },
-    { label: t("operator.orders.delivery.assigned"), at: current?.assignedAt, complete: order.deliveryAttempts.length > 0 },
+    { label: t("operator.orders.delivery.assigned"), at: featured?.assignedAt ?? order.latestDelivery?.assignedAt, complete: order.deliveryAttempts.length > 0 },
     { label: t("operator.orders.delivery.outForDelivery"), at: order.deliveryStartedAt, complete: Boolean(order.deliveryStartedAt) },
     { label: t("operator.orders.delivery.delivered"), at: order.deliveredAt, complete: order.status === "delivered" },
   ];
 
   return (
     <div className="space-y-5">
-      <NCard
-        embedded
-        title={current?.deliveryNameSnapshot ?? t("operator.orders.delivery.noActiveAssignment")}
-        description={
-          current
-            ? `${formatStatusLabel(current.status)} · assigned ${formatKafilDate(current.assignedAt)}`
-            : order.latestDelivery?.status === "failed"
-              ? t("operator.orders.delivery.needsReassignment")
-              : t("operator.orders.delivery.assignToContinue")
-        }
-      >
-        {current ? (
-          <NCardSection>
-            <NCardInfo icon={Phone} label={t("operator.orders.delivery.operationalPhone")} value={current.deliveryPhoneSnapshot} />
-            <NCardInfo
-              icon={UserRound}
-              label={t("operator.orders.delivery.affiliation")}
-              value={
-                current.companyNameSnapshot ||
-                formatStatusLabel(current.affiliationSnapshot)
-              }
-            />
-          </NCardSection>
-        ) : null}
-      </NCard>
+      <DeliveryAssignmentCard order={order} />
 
       <section aria-labelledby="delivery-progress-title" className="space-y-3">
         <h3 id="delivery-progress-title" className="font-semibold">
@@ -152,54 +197,48 @@ function DeliveryDetailsBody({
         </ol>
       </section>
 
-      <section aria-labelledby="delivery-history-title" className="space-y-3">
-        <div className="flex items-center gap-2">
-          <History aria-hidden className="size-4" />
-          <h3 id="delivery-history-title" className="font-semibold">
-            {t("operator.orders.delivery.history")}
-          </h3>
-        </div>
-        {order.deliveryAttempts.length ? (
-          <ol className="space-y-3" aria-label="Immutable delivery attempt history">
-            {[...order.deliveryAttempts].reverse().map((attempt) => (
-              <DeliveryAttemptCard key={attempt.id} attempt={attempt} />
+      {history.length ? (
+        <section aria-labelledby="delivery-history-title" className="space-y-3">
+          <div className="flex items-center gap-2">
+            <History aria-hidden className="size-4" />
+            <h3 id="delivery-history-title" className="font-semibold">
+              {t("operator.orders.delivery.history")}
+            </h3>
+          </div>
+          <ol className="space-y-3">
+            {[...history].reverse().map((attempt) => (
+              <li key={attempt.id}>
+                <DeliveryAttemptCard attempt={attempt} />
+              </li>
             ))}
           </ol>
-        ) : (
-          <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-            {t("operator.orders.delivery.noAttempts")}
-          </p>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }
 
 function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>) {
-  const { t } = useKafilLanguage();
+  const { language } = useKafilLanguage();
   const endedAt =
-    attempt.completedAt ?? attempt.failedAt ?? attempt.cancelledAt ?? attempt.startedAt;
+    attempt.completedAt ?? attempt.failedAt ?? attempt.cancelledAt ?? attempt.startedAt ?? attempt.assignedAt;
+
   return (
-    <li className="rounded-xl border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-medium">{attempt.deliveryNameSnapshot}</p>
-          <p className="text-xs text-muted-foreground">
-            Assigned {formatKafilDate(attempt.assignedAt)}
-          </p>
-        </div>
-        <StatusBadge status={attempt.status} />
+    <NCard>
+      <div className="flex items-center justify-between gap-3">
+        <ManagedAvatar
+          className="min-w-0"
+          fallback={attempt.deliveryNameSnapshot}
+          meta={formatDateTime(endedAt, language)}
+          shape="rounded"
+          size="md"
+          src={getSponsorAvatarImage(attempt.image, attempt.gender)}
+          subtitle={attempt.deliveryPhoneSnapshot}
+          title={attempt.deliveryNameSnapshot}
+        />
+        <StatusBadge className="shrink-0" status={attempt.status} />
       </div>
-      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-        <Clock3 aria-hidden className="size-3.5" />
-        <span>{endedAt ? formatKafilDate(endedAt) : t("operator.orders.delivery.awaitingStart")}</span>
-      </div>
-      {attempt.failureReason || attempt.cancellationReason ? (
-        <p className="mt-3 rounded-lg bg-muted p-3 text-sm">
-          {attempt.failureReason ?? attempt.cancellationReason}
-        </p>
-      ) : null}
-    </li>
+    </NCard>
   );
 }
 

@@ -45,7 +45,7 @@ describe("Staff admin-only navigation", () => {
 });
 
 describe("Staff form contracts", () => {
-  test("rejects an operator role without its required profile fields", () => {
+  test("rejects an Operator capability without its required profile fields", () => {
     expect(
       createStaffFormSchema.safeParse({
         address: "Rabat",
@@ -55,12 +55,12 @@ describe("Staff form contracts", () => {
         gender: "F",
         name: "Safe Operator",
         phone: "+212600000000",
-        role: "operator",
+        functions: ["operator"],
       }).success,
     ).toBe(false);
   });
 
-  test("maps the single Operator role to one function and provisions its login", () => {
+  test("maps Operator and Delivery capabilities and provisions one operator login", () => {
     const values = createStaffFormSchema.parse({
         address: "Rabat",
         affiliation: "internal",
@@ -70,13 +70,13 @@ describe("Staff form contracts", () => {
         gender: "F",
         name: "Safe Operator",
         phone: "+212600000000",
-        role: "operator",
+        functions: ["operator", "delivery"],
       });
 
     expect(toCreateStaffInput(values)).toMatchObject({
       createOperatorAccess: true,
       createOperatorAccessEmail: "operator@example.test",
-      functions: ["operator"],
+      functions: ["operator", "delivery"],
     });
   });
 
@@ -88,7 +88,7 @@ describe("Staff form contracts", () => {
         contactEmail: "ops@dhl.test",
         name: "External Operator",
         phone: "+212600000000",
-        role: "operator",
+        functions: ["operator"],
       }).success,
     ).toBe(false);
   });
@@ -103,7 +103,7 @@ describe("Staff form contracts", () => {
       gender: "F",
       name: "Delivery Driver",
       phone: "+212600000000",
-      role: "delivery",
+      functions: ["delivery"],
     });
 
     const input = toCreateStaffInput(values);
@@ -122,7 +122,7 @@ describe("Staff form contracts", () => {
     });
   });
 
-  test("preserves the shared identity values when the role changes to Delivery", () => {
+  test("preserves shared identity values for a Delivery-only profile", () => {
     const input = toUpdateStaffInput(
       updateStaffFormSchema.parse({
         address: "Hidden address",
@@ -134,7 +134,7 @@ describe("Staff form contracts", () => {
         gender: "F",
         name: "Delivery Driver",
         phone: "+212600000000",
-        role: "delivery",
+        functions: ["delivery"],
       }),
     );
 

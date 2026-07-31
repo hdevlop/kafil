@@ -101,8 +101,16 @@ These decisions apply unless this plan is deliberately revised:
     User creation always completes the owning operator/family/sponsor profile.
 33. Bootstrap admins may permanently delete a mistaken pre-purchase order only
     while it has no purchase or fulfillment evidence. The transaction removes
-    its order-owned reserve/release ledger entries, rebuilds the family budget
-    snapshots, deletes its items and timeline, and retains an audit record.
+    its order-owned reserve/release ledger entries, unstarted delivery plans,
+    items, and timeline; rebuilds the family budget snapshots; and retains an
+    audit record. An assignment that never started is planning, not fulfillment
+    evidence.
+34. A Staff profile may carry both `operator` and `delivery` capabilities.
+    Assisted checkout may optionally plan an active operator for purchasing and
+    an active delivery-capable Staff member for delivery, including the same
+    person for both. Planning does not advance the order: explicit approval,
+    purchase recording, delivery start, and delivery confirmation remain the
+    only lifecycle transitions.
 
 The full decision register is in
 [`docs/plans/DECISIONS.md`](plans/DECISIONS.md).
@@ -782,6 +790,15 @@ commands cover assign, reassign, start, fail, and confirm; the canonical
 sheet. Family/sponsor projections remain identity-safe. Unit, PostgreSQL
 concurrency, production build, migration drift, and four-role browser gates
 passed. Phase 7 remains active for the unrelated release items below.
+
+Assisted fulfillment-planning extension (complete 2026-07-31): Staff now
+supports one or both operational capabilities (`operator`, `delivery`). During
+operator/admin cart confirmation, purchasing and delivery assignees are
+optional, and one dual-capability Staff member can fill both fields. The order
+is still created as `pending`; purchasing assignment is snapshotted on the
+order, delivery planning creates the immutable assigned attempt, and only the
+existing explicit commands move the lifecycle forward. Migration
+`0028_clumsy_vargas` adds the nullable purchasing assignment snapshot.
 
 Phase 7 unification slice (2026-07-28): `/products`, `/categories`, and `/orders`
 become the single canonical surfaces for the catalog and order experience.

@@ -71,6 +71,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
       expect(getUiTranslation(language, "dashboard.operator.latestOrders")).toBeTruthy();
       expect(getUiTranslation(language, "dashboard.operator.operationalAttention")).toBeTruthy();
       expect(getUiTranslation(language, "dashboard.operator.quickActions")).toBeTruthy();
+      expect(getUiTranslation(language, "dashboard.operator.calendar")).toBeTruthy();
       expect(getUiTranslation(language, "dashboard.family.spendingTrend")).toBeTruthy();
       expect(getUiTranslation(language, "dashboard.sponsor.contributionTrend")).toBeTruthy();
       expect(getUiTranslation(language, "status.refunded")).toBeTruthy();
@@ -85,11 +86,19 @@ describe("Phase 7 dashboard presentation contracts", () => {
     const cardsSource = await Bun.file(
       new URL("../src/features/Dashboard/components/OperatorOperationsCards.tsx", import.meta.url),
     ).text();
+    const chartsSource = await Bun.file(
+      new URL("../src/features/Dashboard/components/DashboardCharts.tsx", import.meta.url),
+    ).text();
 
     expect(pageSource).toContain('xlCols={12}');
     expect(pageSource).toContain('<LatestOrdersCard recentOrders={data.recentOrders ?? []} />');
     expect(pageSource).toContain("<OperationalAttentionCard");
     expect(pageSource).toContain("<QuickActionsCard />");
+    expect(pageSource).not.toContain("<CalendarCard />");
+    expect(pageSource).toContain('status !== "purchased"');
+    expect(pageSource).toContain('xlOnlyStatuses={["approved"]}');
+    expect(chartsSource).toContain('className="min-w-0 overflow-hidden pb-1"');
+    expect(cardsSource).toContain('href="/orders"');
     expect(cardsSource).toContain('href="/orders"');
     expect(cardsSource).toContain('href: "/operator/contributions"');
     expect(cardsSource).toContain('href: "/products"');

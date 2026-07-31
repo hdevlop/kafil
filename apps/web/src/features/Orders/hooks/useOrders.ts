@@ -19,7 +19,10 @@ import {
   replaceOrderPurchase,
   startOrderDelivery,
 } from "@/services/orderApi";
-import { listStaffDeliveryOptions } from "@/services/staffApi";
+import {
+  listStaffDeliveryOptions,
+  listStaffOperatorOptions,
+} from "@/services/staffApi";
 
 import { orderKeys } from "./orderKeys";
 import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
@@ -45,10 +48,23 @@ export function useOrder(id: string) {
   });
 }
 
-export function useDeliveryStaffOptions() {
+export function useDeliveryStaffOptions(
+  options: Partial<EntityQueryOptions<Awaited<ReturnType<typeof listStaffDeliveryOptions>>>> = {},
+) {
   return useEntityQuery({
     queryKey: ["staff", "delivery-options"],
     queryFn: listStaffDeliveryOptions,
+    ...options,
+  });
+}
+
+export function useOperatorStaffOptions(
+  options: Partial<EntityQueryOptions<Awaited<ReturnType<typeof listStaffOperatorOptions>>>> = {},
+) {
+  return useEntityQuery({
+    queryKey: ["staff", "operator-options"],
+    queryFn: listStaffOperatorOptions,
+    ...options,
   });
 }
 

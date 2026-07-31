@@ -122,7 +122,7 @@ export class OrderController {
   @Validate({ body: assistedOrderDto })
   @McpTool({
     description:
-      "Create a pending, audited order for a family and reserve its budget",
+      "Create a pending, audited order for a family, reserve its budget, and optionally plan purchasing and delivery staff",
     idempotent: true,
     confirm: {
       level: "danger",
@@ -284,7 +284,7 @@ export class OrderController {
   @isOperator()
   @Validate({ params: orderIdParams, body: assignDeliveryDto })
   @McpTool({
-    description: "Assign active Delivery staff to a purchased order",
+    description: "Assign active Delivery staff to a pending, approved, or purchased order",
     idempotent: true,
     confirm: { level: "warning", message: "Assign this delivery staff member?" },
   })

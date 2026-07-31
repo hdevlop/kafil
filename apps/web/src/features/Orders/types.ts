@@ -27,6 +27,9 @@ export interface OrderRecord {
   deliveryAddressSnapshot: string;
   deliveryPhoneSnapshot: string | null;
   placedByUserId: string;
+  purchasingStaffProfileId: string | null;
+  purchasingStaffNameSnapshot: string | null;
+  purchasingAssignedAt: string | null;
   approvedByUserId: string | null;
   approvedAt: string | null;
   rejectedByUserId: string | null;
@@ -77,6 +80,8 @@ export interface DeliveryAttempt {
   status: DeliveryAttemptStatus;
   deliveryNameSnapshot: string;
   deliveryPhoneSnapshot: string;
+  image: string | null;
+  gender: "M" | "F" | null;
   affiliationSnapshot: "internal" | "external";
   companyNameSnapshot: string | null;
   assignedByUserId: string;
@@ -138,6 +143,8 @@ export interface OrderReasonInput {
 
 export interface AssistedOrderInput {
   familyProfileId: string;
+  purchasingStaffProfileId?: string;
+  deliveryStaffProfileId?: string;
   items: Array<{ productId: string; quantity: number }>;
   assistanceChannel: "phone" | "in_person" | "home_visit" | "other";
   assistanceNote?: string;

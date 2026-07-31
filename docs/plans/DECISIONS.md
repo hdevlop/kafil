@@ -307,3 +307,30 @@ milestone, and sponsor views retain their existing fulfillment milestones.
 Audit/outbox payloads contain stable IDs and states, never Staff phone, exact
 address, failure text, notes, or proof paths. Delivery has no budget or
 inventory effect.
+
+### D-040 - Multi-capability Staff and assisted fulfillment planning
+
+This decision supersedes the single-role UI limit in D-037 and the
+`purchased`-only assignment timing in D-039. A Staff profile may expose one or
+both operational capabilities, `operator` and `delivery`; these remain domain
+metadata and do not add a Najm authorization role. A linked operator account is
+still provisioned only when the profile carries the `operator` capability.
+
+Operator/admin assisted cart confirmation may optionally select an active
+operator-capable purchasing assignee and an active delivery-capable delivery
+assignee. A single dual-capability Staff profile may be selected for both. The
+purchasing assignment is snapshotted on the order, while delivery planning
+creates the same immutable `assigned` delivery-attempt record used by later
+commands. Delivery may be planned while an order is `pending`, `approved`, or
+`purchased`.
+
+Assignments are plans, not lifecycle evidence: submission remains `pending`,
+approval remains explicit, purchase is reached only by recording the protected
+receipt, and `out_for_delivery` is reached only by starting delivery. Rejection
+or cancellation closes an active planned delivery attempt. Family and sponsor
+projections omit purchasing and delivery Staff identity.
+
+Because an unstarted assignment is only a plan, bootstrap-admin correction may
+delete it together with an otherwise eligible mistaken pre-purchase order.
+Purchase history, protected proof, or a delivery attempt that actually started
+remains immutable fulfillment evidence and blocks permanent deletion.

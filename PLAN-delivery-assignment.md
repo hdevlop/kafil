@@ -1,6 +1,6 @@
 # Staff Completion and Delivery Assignment Plan
 
-**Status:** IN PROGRESS - implementation complete; closing verification in progress (2026-07-30)
+**Status:** IN PROGRESS - multi-capability assisted-planning extension implemented; closing verification in progress (2026-07-31)
 **Depends on:** `PLAN-staff-module.md`
 **Primary surfaces:** Staff page, Staff form, existing Orders table, order delivery dialogs and details
 **Rule:** Phase 0 is a blocking gate. Delivery work must not begin until the existing Staff implementation has been independently rechecked, every finding has been resolved, and its required verification passes.
@@ -9,15 +9,18 @@
 
 Finish the Staff foundation, then add an auditable delivery-assignment workflow inside the existing Orders module.
 
-The agreed administrator experience is:
+The current administrator experience is:
 
 1. Staff uses the same visual pattern as Sponsors: searchable cards/table, status filter, view toggle, and an Add button.
-2. Add/Edit Staff exposes one visible `Role` field with exactly two MVP choices:
-   - `Operator`
-   - `Delivery`
+2. Add/Edit Staff exposes a `Capabilities` field where one profile may select
+   `Operator`, `Delivery`, or both.
 3. Delivery work stays inside the current Orders table. There is no separate Delivery or Purchasing sidebar page.
-4. An operator or admin assigns an active Delivery staff member to a purchased order, starts delivery, confirms delivery, records failure, or changes the assignment.
-5. Every assignment and attempt is retained as immutable operational history.
+4. At assisted cart confirmation, an operator or admin may optionally plan the
+   purchasing operator and delivery Staff member, including one dual-capability
+   person for both. The submitted order remains `pending`.
+5. Delivery may be planned or changed while pending, approved, or purchased;
+   start still requires purchase, and confirm still requires an active delivery.
+6. Every assignment and attempt is retained as immutable operational history.
 
 ## 2. Locked product decisions
 
@@ -25,14 +28,16 @@ The agreed administrator experience is:
 
 `Role` on the Staff form is operational Staff metadata. It is not a new Najm authorization role and must not create a parallel RBAC system.
 
-For the MVP, the UI accepts exactly one role. At the application boundary it may map to the existing normalized Staff function model:
+The UI accepts one or both capabilities and maps them to the existing normalized Staff function model:
 
 | Staff form value | Persisted function key | Najm account behavior |
 | --- | --- | --- |
 | `Operator` | `operator` | A linked Najm user is provisioned and synchronized according to the Staff plan. |
 | `Delivery` | `delivery` | No login account is created in this slice. The profile is selectable for order delivery work. |
 
-The database may retain the normalized function/join structure for future expansion, but Staff create and edit forms must not expose a multi-select in this MVP.
+Staff create and edit use a multi-select. Selecting `operator` keeps the linked
+Najm operator-account workflow; selecting `delivery` makes the same profile
+available for delivery planning.
 
 ### 2.2 Staff screen
 
@@ -440,7 +445,7 @@ Do not include a live map, simulated vehicle location, route line, ETA promise, 
 - [x] Re-audit the previous plan against live code.
 - [x] Capture findings.
 - [x] Resolve all findings.
-- [x] Reconcile the Staff UI to the Sponsor pattern and single Role field.
+- [x] Reconcile the Staff UI to the Sponsor pattern and multi-capability field.
 - [x] Pass the complete Staff gate.
 
 ### Phase 1 - Contract and decision alignment (complete 2026-07-30)
@@ -565,7 +570,6 @@ bun run check
 - Generic status mutation endpoints.
 - Delivery fees charged to a family budget.
 - External courier settlement/accounting. If added later, it is a Kafil operating expense and must be modeled separately from family funds.
-- Multi-role Staff selection in the MVP form.
 
 ## 12. Exit criteria
 
@@ -573,7 +577,7 @@ This plan is complete only when:
 
 - [x] The previous Staff implementation has been freshly audited.
 - [x] All discovered Staff findings are resolved and documented.
-- [x] Staff matches the agreed Sponsor-style page and single Role form.
+- [x] Staff matches the agreed Sponsor-style page and multi-capability form.
 - [x] Delivery assignment is available from the existing Orders table.
 - [x] The Delivery Details view provides the current assignment, progress timeline, attempt history, and valid next actions.
 - [x] Assign, reassign, start, fail, confirm, and history work through explicit audited commands.

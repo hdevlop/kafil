@@ -91,6 +91,15 @@ export const orders = pgTable(
     placedByUserId: text("placed_by_user_id")
       .notNull()
       .references(() => usersTable.id),
+    purchasingStaffProfileId: uuid("purchasing_staff_profile_id").references(
+      () => staffProfiles.id,
+    ),
+    purchasingStaffNameSnapshot: varchar("purchasing_staff_name_snapshot", {
+      length: 120,
+    }),
+    purchasingAssignedAt: timestamp("purchasing_assigned_at", {
+      withTimezone: true,
+    }),
     approvedByUserId: text("approved_by_user_id").references(
       () => usersTable.id,
     ),
@@ -159,11 +168,20 @@ export const orders = pgTable(
         (${table.deliveryProofStoragePath} IS NOT NULL AND ${table.deliveryProofMediaType} IS NOT NULL AND ${table.deliveryProofByteSize} > 0)
       )`,
     ),
+    check(
+      "orders_purchasing_assignment_complete_check",
+      sql`(
+        (${table.purchasingStaffProfileId} IS NULL AND ${table.purchasingStaffNameSnapshot} IS NULL AND ${table.purchasingAssignedAt} IS NULL)
+        OR
+        (${table.purchasingStaffProfileId} IS NOT NULL AND ${table.purchasingStaffNameSnapshot} IS NOT NULL AND ${table.purchasingAssignedAt} IS NOT NULL)
+      )`,
+    ),
     index("orders_family_created_at_idx").on(
       table.familyProfileId,
       table.createdAt,
     ),
     index("orders_status_created_at_idx").on(table.status, table.createdAt),
+    index("orders_purchasing_staff_idx").on(table.purchasingStaffProfileId),
   ],
 );
 

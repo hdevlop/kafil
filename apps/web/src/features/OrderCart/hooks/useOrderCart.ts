@@ -34,6 +34,8 @@ export interface OrderCartAddInput {
 
 export interface OrderCartSaveAssistedInput {
   familyProfileId: string;
+  purchasingStaffProfileId?: string;
+  deliveryStaffProfileId?: string;
   assistanceChannel: "phone" | "in_person" | "home_visit" | "other";
   assistanceNote?: string;
 }
@@ -221,6 +223,8 @@ export function useOrderCart(): UseOrderCart {
 
     const result = await operatorCommands.assisted.mutateAsync({
       familyProfileId: input.familyProfileId,
+      purchasingStaffProfileId: input.purchasingStaffProfileId,
+      deliveryStaffProfileId: input.deliveryStaffProfileId,
       assistanceChannel: input.assistanceChannel,
       assistanceNote: input.assistanceNote || undefined,
       items: items.map((item) => ({

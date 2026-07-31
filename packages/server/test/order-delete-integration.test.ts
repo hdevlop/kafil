@@ -17,6 +17,8 @@ const ids = {
   order: crypto.randomUUID(),
   purchasedOrder: crypto.randomUUID(),
   purchase: crypto.randomUUID(),
+  deliveryStaff: crypto.randomUUID(),
+  deliveryAttempt: crypto.randomUUID(),
   credit: crypto.randomUUID(),
   reserve: crypto.randomUUID(),
   debit: crypto.randomUUID(),
@@ -97,6 +99,26 @@ databaseDescribe("order permanent-delete PostgreSQL integration", () => {
       [ids.order, ids.purchasedOrder, ids.product, `ODEL-${suffix}`],
     );
     await pool.query(
+      `INSERT INTO staff_profiles (id, name, phone)
+       VALUES ($1, 'Order delete delivery plan', $2)`,
+      [ids.deliveryStaff, `+2127${suffix.replaceAll("-", "").slice(0, 8)}`],
+    );
+    await pool.query(
+      `INSERT INTO order_delivery_attempts
+         (id, order_id, staff_profile_id, delivery_name_snapshot,
+          delivery_phone_snapshot, affiliation_snapshot, assigned_by_user_id,
+          assignment_idempotency_key)
+       VALUES ($1, $2, $3, 'Order delete delivery plan', $4, 'internal', $5, $6)`,
+      [
+        ids.deliveryAttempt,
+        ids.order,
+        ids.deliveryStaff,
+        `+2127${suffix.replaceAll("-", "").slice(0, 8)}`,
+        actorUserId,
+        `order-delete-delivery-${suffix}`,
+      ],
+    );
+    await pool.query(
       `INSERT INTO order_status_events
          (order_id, from_status, to_status, actor_user_id)
        VALUES ($1, NULL, 'pending', $3), ($2, 'purchased', 'cancelled', $3)`,
@@ -156,18 +178,25 @@ databaseDescribe("order permanent-delete PostgreSQL integration", () => {
         [ids.purchasedOrder],
       );
       await pool.query(
-        "DELETE FROM order_status_events WHERE order_id = $1",
-        [ids.purchasedOrder],
+        "DELETE FROM order_delivery_attempts WHERE order_id = ANY($1::uuid[])",
+        [[ids.order, ids.purchasedOrder]],
       );
       await pool.query(
-        "DELETE FROM order_items WHERE order_id = $1",
-        [ids.purchasedOrder],
+        "DELETE FROM order_status_events WHERE order_id = ANY($1::uuid[])",
+        [[ids.order, ids.purchasedOrder]],
       );
-      await pool.query("DELETE FROM orders WHERE id = $1", [ids.purchasedOrder]);
+      await pool.query(
+        "DELETE FROM order_items WHERE order_id = ANY($1::uuid[])",
+        [[ids.order, ids.purchasedOrder]],
+      );
+      await pool.query("DELETE FROM orders WHERE id = ANY($1::uuid[])", [
+        [ids.order, ids.purchasedOrder],
+      ]);
       await pool.query("DELETE FROM budget_ledger_entries WHERE budget_account_id = $1", [ids.account]);
       await pool.query("DELETE FROM budget_accounts WHERE id = $1", [ids.account]);
       await pool.query("DELETE FROM products WHERE id = $1", [ids.product]);
       await pool.query("DELETE FROM categories WHERE id = $1", [ids.category]);
+      await pool.query("DELETE FROM staff_profiles WHERE id = $1", [ids.deliveryStaff]);
       await pool.query("DELETE FROM family_profiles WHERE id = $1", [ids.family]);
     }
     await pool.end();
@@ -176,8 +205,11 @@ databaseDescribe("order permanent-delete PostgreSQL integration", () => {
   it("deletes the order graph and rebuilds later ledger snapshots", async () => {
     await service.delete(ids.order, actorUserId);
 
-    const [order, account, ledger, audit] = await Promise.all([
+    const [order, deliveryPlan, account, ledger, audit] = await Promise.all([
       pool.query("SELECT id FROM orders WHERE id = $1", [ids.order]),
+      pool.query("SELECT id FROM order_delivery_attempts WHERE id = $1", [
+        ids.deliveryAttempt,
+      ]),
       pool.query<{ available_minor: string; reserved_minor: string; spent_minor: string }>(
         "SELECT available_minor, reserved_minor, spent_minor FROM budget_accounts WHERE id = $1",
         [ids.account],
@@ -191,6 +223,7 @@ databaseDescribe("order permanent-delete PostgreSQL integration", () => {
     ]);
 
     expect(order.rowCount).toBe(0);
+    expect(deliveryPlan.rowCount).toBe(0);
     expect(account.rows[0]).toEqual({
       available_minor: "900",
       reserved_minor: "0",

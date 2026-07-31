@@ -30,6 +30,7 @@ const productId = "00000000-0000-4000-8000-000000000082";
 const orderId = "00000000-0000-4000-8000-000000000083";
 const accountId = "00000000-0000-4000-8000-000000000084";
 const deliveryStaffId = "00000000-0000-4000-8000-000000000085";
+const purchasingStaffId = "00000000-0000-4000-8000-000000000087";
 
 describe("Phase 5 cart and route contracts", () => {
   it("accepts only positive bounded cart quantities and idempotent submission keys", () => {
@@ -191,6 +192,44 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     expect(state.clearedCartIds).toEqual([]);
   });
 
+  it("plans one dual-capability Staff member for purchase and delivery without advancing status", async () => {
+    const { service, state } = orderService();
+
+    const order = await service.submitAssisted(
+      {
+        familyProfileId: householdId,
+        purchasingStaffProfileId: purchasingStaffId,
+        deliveryStaffProfileId: purchasingStaffId,
+        items: [{ productId, quantity: 2 }],
+        assistanceChannel: "in_person",
+        idempotencyKey: "assisted-order-dual-0001",
+      },
+      "operator-user",
+    );
+
+    expect(order).toMatchObject({
+      status: "pending",
+      purchasingStaffProfileId: purchasingStaffId,
+      purchasingStaffNameSnapshot: "Amina Delivery",
+    });
+    expect(state.deliveryAttempts).toHaveLength(1);
+    expect(state.deliveryAttempts[0]).toMatchObject({
+      orderId,
+      staffProfileId: purchasingStaffId,
+      status: "assigned",
+      assignmentIdempotencyKey: "assisted-order-dual-0001",
+    });
+    expect(state.auditEvents).toContainEqual(
+      expect.objectContaining({
+        action: "order.assisted_submitted",
+        metadata: expect.objectContaining({
+          purchasingStaffProfileId: purchasingStaffId,
+          deliveryStaffProfileId: purchasingStaffId,
+        }),
+      }),
+    );
+  });
+
   it("releases a lower receipt variance and captures only the actual purchase", async () => {
     const { service, state } = orderService({
       status: "approved",
@@ -290,6 +329,64 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     expect(state.ledger).toEqual([]);
   });
 
+  it("assigns and reassigns delivery while approved but still requires purchase before start", async () => {
+    const { service, state } = orderService({ status: "approved" });
+    await service.assignDelivery(
+      orderId,
+      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-approved-assign-0001" },
+      "operator-user",
+    );
+
+    const replacementStaffId = "00000000-0000-4000-8000-000000000086";
+    await service.reassignDelivery(
+      orderId,
+      {
+        staffProfileId: replacementStaffId,
+        reason: "Buyer route changed",
+        idempotencyKey: "delivery-approved-reassign-0001",
+      },
+      "operator-user",
+    );
+
+    expect(state.deliveryAttempts).toHaveLength(2);
+    expect(state.deliveryAttempts[1]).toMatchObject({
+      status: "assigned",
+      staffProfileId: replacementStaffId,
+    });
+    await expect(
+      service.startDelivery(
+        orderId,
+        { idempotencyKey: "delivery-approved-start-0001" },
+        "operator-user",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("cancels an approved order's active delivery assignment", async () => {
+    const { service, state } = orderService({
+      status: "approved",
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+    await service.assignDelivery(
+      orderId,
+      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-approved-cancel-0001" },
+      "operator-user",
+    );
+
+    await service.cancel(
+      orderId,
+      { reason: "Family request changed" },
+      "operator-user",
+    );
+
+    expect(state.deliveryAttempts[0]).toMatchObject({
+      status: "cancelled",
+      cancellationReason: "Family request changed",
+    });
+    expect(state.order.status).toBe("cancelled");
+  });
+
   it("reassigns before start and retains the cancelled assignment", async () => {
     const { service, state } = orderService({ status: "purchased" });
     state.activePurchase = purchaseRecord();
@@ -317,6 +414,18 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     expect(state.deliveryAttempts[1]).toMatchObject({
       status: "assigned",
       staffProfileId: replacementStaffId,
+    });
+    const detail = await service.get(orderId) as {
+      currentDelivery: { image: string | null; gender: "M" | "F" | null } | null;
+      deliveryAttempts: Array<{ image: string | null; gender: "M" | "F" | null }>;
+    };
+    expect(detail.currentDelivery).toMatchObject({
+      image: "/api/staff-images/files/serve/amina.webp",
+      gender: "F",
+    });
+    expect(detail.deliveryAttempts[1]).toMatchObject({
+      image: "/api/staff-images/files/serve/amina.webp",
+      gender: "F",
     });
   });
 
@@ -488,6 +597,12 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
       availableMinor: 400,
       reservedMinor: 600,
     });
+    state.deliveryAttempts.push({
+      status: "assigned",
+      startedAt: null,
+      failedAt: null,
+      completedAt: null,
+    });
 
     const deleted = await service.delete(orderId, "admin-user");
 
@@ -510,6 +625,24 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
         },
       }),
     );
+  });
+
+  it("refuses permanent deletion after delivery execution has started", async () => {
+    const { service, state } = orderService({ status: "cancelled" });
+    state.deliveryAttempts.push({
+      status: "cancelled",
+      startedAt: new Date("2026-07-31T12:00:00.000Z"),
+      failedAt: null,
+      completedAt: null,
+    });
+
+    await expect(service.delete(orderId, "admin-user")).rejects.toMatchObject({
+      message: "Orders with started delivery history cannot be permanently deleted",
+      status: 409,
+    });
+
+    expect(state.erasedOrderLedger).toEqual([]);
+    expect(state.deletedOrderIds).toEqual([]);
   });
 
   it("refuses permanent deletion after purchase history exists", async () => {
@@ -750,10 +883,15 @@ function orderService(options: {
         id,
         name: "Amina Delivery",
         phone: "+212600001122",
+        image: "/api/staff-images/files/serve/amina.webp",
+        gender: "F",
         affiliation: "internal",
         companyName: null,
         status: options.deliveryStaffActive === false ? "inactive" : "active",
-        functions: ["delivery"],
+        functions:
+          id === purchasingStaffId
+            ? ["operator", "delivery"]
+            : ["delivery"],
       }),
     } as unknown as StaffRepository,
     {
@@ -826,6 +964,7 @@ function orderService(options: {
         }
       },
       ensureLockedOrderOwnedBy: () => undefined,
+      ensureOrderExists: async () => state.order,
       ensureOrderOwnedByFamily: async () => ({
         family: familyRecord(),
         order: state.order,
@@ -897,6 +1036,9 @@ function orderRecord(overrides: Record<string, unknown> = {}) {
     deliveryAddressSnapshot: "Private address",
     deliveryPhoneSnapshot: "+212600000000",
     placedByUserId: "family-user",
+    purchasingStaffProfileId: null,
+    purchasingStaffNameSnapshot: null,
+    purchasingAssignedAt: null,
     approvedByUserId: null,
     approvedAt: null,
     rejectedByUserId: null,

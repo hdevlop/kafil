@@ -82,7 +82,7 @@ export interface StaffRecord {
   userStatus: string | null;
 }
 
-export interface DeliveryStaffOption {
+export interface StaffAssignmentOption {
   affiliation: "internal" | "external";
   companyName: string | null;
   functionKeys: StaffFunctionKey[];
@@ -91,6 +91,8 @@ export interface DeliveryStaffOption {
   name: string;
   phone: string;
 }
+
+export type DeliveryStaffOption = StaffAssignmentOption;
 
 @Repository("default")
 export class StaffRepository {
@@ -223,23 +225,11 @@ export class StaffRepository {
   }
 
   async listDeliveryOptions() {
-    const rows = await this.db
-      .select(deliveryOptionSelection)
-      .from(staffProfiles)
-      .innerJoin(
-        staffFunctions,
-        and(
-          eq(staffFunctions.staffProfileId, staffProfiles.id),
-          eq(staffFunctions.functionKey, "delivery"),
-        ),
-      )
-      .where(eq(staffProfiles.status, "active"))
-      .orderBy(asc(staffProfiles.name), asc(staffProfiles.id));
-    const ids = rows.map((row) => row.id);
-    const functionMap = await this.loadFunctionsForIds(ids);
-    return rows.map((row) =>
-      this.toDeliveryOption(row, functionMap.get(row.id) ?? []),
-    );
+    return this.listActiveByFunction("delivery");
+  }
+
+  async listOperatorOptions() {
+    return this.listActiveByFunction("operator");
   }
 
   async hasOperatorFunction(staffProfileId: string) {
@@ -342,6 +332,9 @@ export class StaffRepository {
           sql`NOT EXISTS (
             SELECT 1 FROM "order_delivery_attempts"
             WHERE "order_delivery_attempts"."staff_profile_id" = ${staffProfiles.id}
+          ) AND NOT EXISTS (
+            SELECT 1 FROM "orders"
+            WHERE "orders"."purchasing_staff_profile_id" = ${staffProfiles.id}
           )`,
         ),
       );
@@ -364,6 +357,9 @@ export class StaffRepository {
           sql`NOT EXISTS (
             SELECT 1 FROM "order_delivery_attempts"
             WHERE "order_delivery_attempts"."staff_profile_id" = ${staffProfiles.id}
+          ) AND NOT EXISTS (
+            SELECT 1 FROM "orders"
+            WHERE "orders"."purchasing_staff_profile_id" = ${staffProfiles.id}
           )`,
         ),
       )
@@ -415,7 +411,7 @@ export class StaffRepository {
       phone: string;
     },
     functionKeys: StaffFunctionKey[],
-  ): DeliveryStaffOption {
+  ): StaffAssignmentOption {
     return {
       affiliation: row.affiliation,
       companyName: row.companyName,

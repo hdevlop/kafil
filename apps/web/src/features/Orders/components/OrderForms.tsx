@@ -85,15 +85,7 @@ export function OrderReasonDialogContent({
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
       devTools={useDevFormTools(orderReasonFormSchema)}
-      className="space-y-5"
     >
-      <p className="text-sm leading-6 text-muted-foreground">
-        {isCancellation
-          ? ["purchased", "out_for_delivery"].includes(order.status)
-            ? "This confirms the purchased goods/payment are recoverable and refunds the actual captured amount. Explain why the order cannot continue."
-            : "Cancellation releases the pending budget reservation. Explain why this order cannot continue."
-          : "Rejection releases this pending order's budget reservation. Explain why it cannot be fulfilled."}
-      </p>
       <FormInput
         name="reason"
         type="textarea"

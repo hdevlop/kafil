@@ -3,7 +3,7 @@ import { api } from "@/services/http";
 import type {
   CreateStaffInput,
   StaffCreateResult,
-  StaffDeliveryOption,
+  StaffAssignmentOption,
   StaffListQuery,
   StaffPage,
   StaffProvisionAccessResult,
@@ -37,7 +37,11 @@ export function getStaff(id: string) {
 }
 
 export function listStaffDeliveryOptions() {
-  return api.get<StaffDeliveryOption[]>("/staff/options/delivery");
+  return api.get<StaffAssignmentOption[]>("/staff/options/delivery");
+}
+
+export function listStaffOperatorOptions() {
+  return api.get<StaffAssignmentOption[]>("/staff/options/operator");
 }
 
 export async function uploadStaffImage(file: File) {

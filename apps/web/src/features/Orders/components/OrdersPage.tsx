@@ -38,7 +38,7 @@ import { StatusBadge } from "@/shared/StatusBadge";
 import { getOrderActions, type OrderAction, type OrderCommand } from "../config/orderActions";
 import { OrderCard } from "./OrderCard";
 import { DeliveryDetailsSheet } from "./DeliveryDetailsSheet";
-import { OrderDetails } from "./OrderDetails";
+import { OrderDetailsSheet } from "./OrderDetails";
 import {
   ConfirmOrderCommandDialogContent,
   DeleteOrderDialogContent,
@@ -102,6 +102,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
   const orderCommands = useOrderCommands();
   const familyCommands = useFamilyOrderingCommands();
   const [deliveryOrder, setDeliveryOrder] = useState<OrderRecord | null>(null);
+  const [viewOrder, setViewOrder] = useState<OrderRecord | null>(null);
   const openDelivery = useCallback((order: OrderRecord) => {
     setDeliveryOrder(order);
   }, []);
@@ -117,14 +118,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
   const familyDetail = useFamilyOrder(familySelectedId);
 
   function openView(order: OrderRecord) {
-    void dialog.openDialog({
-      title: order.orderNumber,
-      description: t("operator.orders.snapshot"),
-      children: <OrderDetails orderId={order.id} />,
-      showButtons: false,
-      size: "lg",
-      height: "xl",
-    });
+    setViewOrder(order);
   }
 
   function openConfirm(
@@ -172,7 +166,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
       children: content,
       showButtons: false,
       size: "lg",
-      height: "xl",
+      height: "auto",
     });
   }
 
@@ -451,6 +445,13 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
             (candidate) => candidate.command === command,
           );
           if (action) runOrderAction(action, order);
+        }}
+      />
+      <OrderDetailsSheet
+        open={viewOrder !== null}
+        order={viewOrder}
+        onOpenChange={(open) => {
+          if (!open) setViewOrder(null);
         }}
       />
     </NPageLayout>

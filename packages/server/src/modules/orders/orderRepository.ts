@@ -346,6 +346,9 @@ export class OrderRepository {
   async hardDelete(id: string) {
     const order = await this.findById(id);
     if (!order) return undefined;
+    await this.db
+      .delete(orderDeliveryAttempts)
+      .where(eq(orderDeliveryAttempts.orderId, id));
     await this.db.delete(orderStatusEvents).where(eq(orderStatusEvents.orderId, id));
     await this.db.delete(orderItems).where(eq(orderItems.orderId, id));
     await this.db.delete(orders).where(eq(orders.id, id));

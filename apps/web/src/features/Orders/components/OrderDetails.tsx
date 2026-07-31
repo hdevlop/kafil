@@ -1,240 +1,136 @@
 "use client";
 
 import {
-  CalendarDays,
-  MapPin,
-  PackageCheck,
-  ReceiptText,
-  Route,
+  ClipboardCheck,
+  MessageSquareText,
   Truck,
+  UserRoundCog,
 } from "lucide-react";
-import { NCard, NDetailList, NSection } from "najm-kit";
+import { NCard, NSheet } from "najm-kit";
 
-import {
-  formatKafilDate,
-  formatKafilNumber,
-  formatMad,
-  formatStatusLabel,
-} from "@/lib/format";
+import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { formatStatusLabel } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import { useOrder } from "../hooks/useOrders";
+import type { OrderRecord } from "../types";
+import { DeliveryAssignmentCard } from "./DeliveryDetailsSheet";
 
-export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
-  const order = useOrder(orderId);
-
-  if (order.isPending) {
-    return (
-      <NCard
-        title="Loading order details"
-        description="Retrieving the protected fulfillment snapshot and timeline."
-        loading
-      />
-    );
-  }
-
-  if (order.isError) {
-    return (
-      <PageErrorState
-        error={order.error}
-        title="We could not load this order"
-        onRetry={() => void order.refetch()}
-      />
-    );
-  }
-
-  if (!order.data) return null;
-  const data = order.data;
+export function OrderDetailsSheet({ open, order, onOpenChange }: Readonly<{
+  open: boolean;
+  order: OrderRecord | null;
+  onOpenChange: (open: boolean) => void;
+}>) {
+  const { language, t } = useKafilLanguage();
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4 rounded-2xl bg-muted/60 p-4">
-        <div className="min-w-0">
-          <p className="truncate text-xl font-semibold">{data.orderNumber}</p>
-          <p className="text-sm text-muted-foreground">
-            Requested {formatMad(data.totalMinor)}
-            {data.actualTotalMinor !== null
-              ? ` · Actual ${formatMad(data.actualTotalMinor)}`
-              : ""}
-          </p>
-        </div>
-        <StatusBadge status={data.status} />
-      </div>
+    <NSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      icon={ClipboardCheck}
+      title={order ? `${t("common.view")} ${order.orderNumber}` : t("common.view")}
+      description={t("operator.orders.snapshot")}
+      width={480}
+      side={language === "ar" ? "left" : "right"}
+      classNames={{ content: "max-w-full bg-background", header: "bg-background", body: "bg-background" }}
+    >
+      {order ? <OrderDetails orderId={order.id} /> : null}
+    </NSheet>
+  );
+}
 
-      <NSection icon={PackageCheck} title="Accountable fulfillment">
-        <NDetailList
-          items={[
-            { label: "Placed", value: formatKafilDate(data.createdAt) },
-            {
-              label: "Placement",
-              value:
-                data.placementSource === "operator_assisted"
-                  ? "Operator assisted"
-                  : "Family self-service",
-            },
-            {
-              label: "Request channel",
-              value: data.assistanceChannel || "Not assisted",
-            },
-            {
-              label: "Private assistance note",
-              value: data.assistanceNote || "No note",
-            },
-            { label: "Approved", value: formatKafilDate(data.approvedAt) },
-            {
-              label: "Purchase recorded",
-              value: formatKafilDate(data.activePurchase?.purchasedAt),
-            },
-            {
-              label: "Delivery started",
-              value: formatKafilDate(data.deliveryStartedAt),
-            },
-            { label: "Delivered", value: formatKafilDate(data.deliveredAt) },
-            {
-              label: "Rejection reason",
-              value: data.rejectionReason || "Not rejected",
-            },
-            {
-              label: "Cancellation reason",
-              value: data.cancellationReason || "Not cancelled",
-            },
-          ]}
-        />
-      </NSection>
+export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
+  const { t } = useKafilLanguage();
+  const order = useOrder(orderId);
 
-      {data.activePurchase ? (
-        <NSection icon={ReceiptText} title="Purchase and receipt">
-          <NDetailList
-            items={[
-              { label: "Merchant", value: data.activePurchase.merchantName },
-              {
-                label: "Requested total",
-                value: formatMad(data.requestedTotalMinor),
-              },
-              {
-                label: "Actual total",
-                value: formatMad(data.activePurchase.actualTotalMinor),
-              },
-              {
-                label: "Difference",
-                value: formatMad(
-                  data.activePurchase.actualTotalMinor -
-                    data.requestedTotalMinor,
-                ),
-              },
-              {
-                label: "Receipt number",
-                value: data.activePurchase.receiptNumber || "Not recorded",
-              },
-              {
-                label: "Protected receipt",
-                value: (
-                  <a
-                    className="text-primary underline"
-                    href={data.activePurchase.receiptStoragePath}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Open receipt
-                  </a>
-                ),
-              },
-            ]}
-          />
-        </NSection>
+  if (order.isPending) return <NCard title="Loading order details" loading />;
+  if (order.isError) {
+    return <PageErrorState error={order.error} title="We could not load this order" onRetry={() => void order.refetch()} />;
+  }
+  if (!order.data) return null;
+  const data = order.data;
+  const statusReason =
+    data.status === "rejected"
+      ? data.rejectionReason
+      : data.status === "cancelled"
+        ? data.cancellationReason
+        : null;
+  const hasDelivery = Boolean(
+    data.currentDelivery || data.deliveryAttempts.length,
+  );
+
+  return (
+    <OrderConfirmationStep
+        family={{
+          name: data.guardianLegalNameSnapshot,
+          image: data.familyImage ?? null,
+          exactAddress: data.deliveryAddressSnapshot,
+          phone: data.deliveryPhoneSnapshot,
+          availableMinor: null,
+        }}
+        familyMode={false}
+        familyStatus={<StatusBadge status={data.status} />}
+        separateSections
+        showNotice={false}
+        totalMinor={data.requestedTotalMinor}
+        items={data.items.map((item) => ({
+          productId: item.productId,
+          productName: item.productNameSnapshot,
+          sku: item.skuSnapshot,
+          quantity: item.quantity,
+          estimatedUnitPriceMinor: item.unitPriceMinor,
+          currency: data.currency,
+          available: true,
+        }))}
+      >
+      {data.purchasingStaffNameSnapshot ? (
+        <section
+          aria-labelledby="order-purchasing-title"
+          className="flex flex-col gap-2 border-b border-border pb-5"
+        >
+          <div className="flex items-center gap-2">
+            <UserRoundCog aria-hidden className="size-4 text-primary" />
+            <h3 id="order-purchasing-title" className="text-sm font-semibold">
+              {t("family.orderCart.purchasingStaff")}
+            </h3>
+          </div>
+          <NCard embedded>
+            <p className="text-sm font-medium text-foreground">
+              {data.purchasingStaffNameSnapshot}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("family.orderCart.purchasingAssignmentPlanned")}
+            </p>
+          </NCard>
+        </section>
       ) : null}
-
-      <NSection icon={Truck} title="Delivery">
-        <NDetailList
-          items={[
-            {
-              label: "Assigned staff",
-              value:
-                data.currentDelivery?.deliveryNameSnapshot ||
-                (data.deliveryAttempts.length ? "No active assignment" : "Not assigned"),
-            },
-            {
-              label: "Operational phone",
-              value: data.currentDelivery?.deliveryPhoneSnapshot || "Not available",
-            },
-            {
-              label: "Started",
-              value: formatKafilDate(data.deliveryStartedAt),
-            },
-            {
-              label: "Recorded attempts",
-              value: String(data.deliveryAttempts.length),
-            },
-            {
-              label: "Confirmation method",
-              value: data.deliveryConfirmationMethod || "Not confirmed",
-            },
-            {
-              label: "Private note",
-              value: data.deliveryNote || "No note",
-            },
-            {
-              label: "Protected proof",
-              value: data.deliveryProofStoragePath ? (
-                <a
-                  className="text-primary underline"
-                  href={data.deliveryProofStoragePath}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Open proof
-                </a>
-              ) : (
-                "No proof recorded"
-              ),
-            },
-          ]}
-        />
-      </NSection>
-
-      <NSection icon={MapPin} title="Protected delivery snapshot">
-        <NDetailList
-          items={[
-            { label: "Recipient", value: data.guardianLegalNameSnapshot },
-            { label: "Address", value: data.deliveryAddressSnapshot },
-            {
-              label: "Phone",
-              value: data.deliveryPhoneSnapshot || "Not provided",
-            },
-          ]}
-        />
-      </NSection>
-
-      <NSection icon={ReceiptText} title="Order items">
-        <NDetailList
-          items={data.items.map((item) => ({
-            label: `${item.productNameSnapshot} (${item.skuSnapshot}) × ${formatKafilNumber(item.quantity)}`,
-            value: formatMad(item.lineTotalMinor),
-          }))}
-        />
-      </NSection>
-
-      <NSection icon={Route} title="Status timeline">
-        <NDetailList
-          items={data.statusEvents.map((event) => ({
-            label: `${event.fromStatus ? `${formatStatusLabel(event.fromStatus)} → ` : ""}${formatStatusLabel(event.toStatus)}`,
-            value: `${formatKafilDate(event.createdAt)}${event.reason ? ` — ${event.reason}` : ""}`,
-          }))}
-        />
-      </NSection>
-
-      <NSection icon={CalendarDays} title="Record">
-        <NDetailList
-          items={[
-            { label: "Last updated", value: formatKafilDate(data.updatedAt) },
-            {
-              label: "Household reference",
-              value: data.familyProfileId.slice(0, 8),
-            },
-          ]}
-        />
-      </NSection>
-    </div>
+      {hasDelivery ? (
+        <section
+          aria-labelledby="order-delivery-title"
+          className={`flex flex-col gap-2 ${statusReason ? "border-b border-border pb-5" : ""}`}
+        >
+          <div className="flex items-center gap-2"><Truck aria-hidden className="size-4 text-primary" /><h3 id="order-delivery-title" className="text-sm font-semibold">Delivery</h3></div>
+          <DeliveryAssignmentCard order={data} />
+        </section>
+      ) : null}
+      {statusReason ? (
+        <section
+          aria-labelledby="order-status-reason-title"
+          className="flex flex-col gap-2"
+        >
+          <div className="flex items-center gap-2">
+            <MessageSquareText aria-hidden className="size-4 text-primary" />
+            <h3 id="order-status-reason-title" className="text-sm font-semibold">
+              {formatStatusLabel(data.status)} reason
+            </h3>
+          </div>
+          <NCard>
+            <p className="text-sm text-muted-foreground">{statusReason}</p>
+          </NCard>
+        </section>
+      ) : null}
+    </OrderConfirmationStep>
   );
 }

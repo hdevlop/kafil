@@ -86,7 +86,7 @@ export function getOrderActions(
   if (typeof input === "string") {
     return actionsByStatus[status as OrderStatus] ?? [];
   }
-  if (status === "purchased") {
+  if (status === "pending" || status === "approved" || status === "purchased") {
     const deliveryActions: OrderAction[] = input.currentDelivery
       ? [
           {
@@ -94,11 +94,13 @@ export function getOrderActions(
             label: "operator.orders.viewDelivery",
             requiresReason: false,
           },
-          {
-            command: "startDelivery",
-            label: "common.startDelivery",
-            requiresReason: false,
-          },
+          ...(status === "purchased"
+            ? [{
+                command: "startDelivery" as const,
+                label: "common.startDelivery",
+                requiresReason: false,
+              }]
+            : []),
           {
             command: "reassignDelivery",
             label: "operator.orders.changeDeliveryStaff",
@@ -119,7 +121,10 @@ export function getOrderActions(
             requiresReason: false,
           },
         ];
-    return [...deliveryActions, ...(actionsByStatus.purchased ?? [])];
+    return [
+      ...deliveryActions,
+      ...(actionsByStatus[status as "pending" | "approved" | "purchased"] ?? []),
+    ];
   }
   if (status === "out_for_delivery") {
     return [

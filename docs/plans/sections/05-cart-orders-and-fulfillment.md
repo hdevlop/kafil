@@ -21,6 +21,9 @@ Admin correction update completed 2026-07-29:
 - bootstrap admins have a dedicated permanent-delete command for mistaken
   pre-purchase orders only;
 - orders with purchase records or fulfillment evidence are refused;
+- unstarted delivery assignments are planning records, so they are deleted
+  with an otherwise eligible mistaken order; started attempts remain evidence
+  and are refused;
 - deletion erases the order-owned reserve/release entries, rebuilds remaining
   budget snapshots, deletes items and status history transactionally, and
   retains an `order.deleted` audit event;
@@ -42,6 +45,21 @@ Delivery assignment update completed 2026-07-30:
   safe fulfillment milestones.
 
 Migration: `0027_unusual_victor_mancha`.
+
+Assisted fulfillment-planning update completed 2026-07-31:
+
+- Staff may carry both Operator and Delivery capabilities;
+- operator/admin cart confirmation may optionally select purchasing and
+  delivery assignees, including the same dual-capability person for both;
+- the submitted order remains `pending`; assignment alone never marks work as
+  approved, purchased, or out for delivery;
+- purchasing identity is snapshotted on the order, and delivery planning uses
+  an immutable `assigned` attempt that may be changed while pending, approved,
+  or purchased;
+- rejection and cancellation close any active planned delivery attempt, while
+  family and sponsor projections omit Staff identity.
+
+Migration: `0028_clumsy_vargas`.
 
 ## Goal
 

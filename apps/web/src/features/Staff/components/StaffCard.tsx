@@ -56,11 +56,13 @@ export function StaffCard({ data }: Readonly<{ data: StaffRecord }>) {
         <NCardInfo
           icon={BriefcaseBusiness}
           label={t("operator.staff.role")}
-          value={
-            data.functions.includes("operator")
-              ? t("operator.staff.functionOperator")
-              : t("operator.staff.functionDelivery")
-          }
+          value={data.functions
+            .map((functionKey) =>
+              functionKey === "operator"
+                ? t("operator.staff.functionOperator")
+                : t("operator.staff.functionDelivery"),
+            )
+            .join(", ")}
         />
         <NCardInfo
           icon={Mail}
