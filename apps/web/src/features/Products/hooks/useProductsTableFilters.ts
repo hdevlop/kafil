@@ -4,7 +4,13 @@ import { useMemo } from "react";
 
 import { PRODUCT_TABLE_COLUMN_IDS } from "./useProductsTableColumns";
 
-export function useProductsTableFilters() {
+interface ProductCategoryFilterOption {
+  name: string;
+}
+
+export function useProductsTableFilters(
+  categories: ProductCategoryFilterOption[],
+) {
   return useMemo(
     () => [
       {
@@ -13,14 +19,13 @@ export function useProductsTableFilters() {
         placeholder: "Search product name...",
       },
       {
-        type: "text",
-        name: PRODUCT_TABLE_COLUMN_IDS.sku,
-        placeholder: "Search SKU...",
-      },
-      {
-        type: "text",
+        type: "combobox",
         name: PRODUCT_TABLE_COLUMN_IDS.categoryName,
-        placeholder: "Search category...",
+        placeholder: "Filter by category",
+        options: categories.map((category) => ({
+          value: category.name,
+          label: category.name,
+        })),
       },
       {
         type: "select",
@@ -32,6 +37,6 @@ export function useProductsTableFilters() {
         ],
       },
     ],
-    [],
+    [categories],
   );
 }

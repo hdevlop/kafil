@@ -11,6 +11,7 @@ import {
   updateStaffFormSchema,
 } from "../src/features/Staff/config/staffSchemas";
 import { staffKeys } from "../src/features/Staff/hooks/staffKeys";
+import { matchesStaffFunction } from "../src/features/Staff/hooks/useStaffTableColumns";
 
 describe("Staff admin-only navigation", () => {
   test("keeps the operator navigation free of the Staff management route", () => {
@@ -173,6 +174,14 @@ describe("Staff lifecycle and access provisioning contracts", () => {
 });
 
 describe("Staff query keys", () => {
+  test("matches a selected function against the staff function array", () => {
+    expect(matchesStaffFunction(["operator"], "operator")).toBe(true);
+    expect(matchesStaffFunction(["operator"], "delivery")).toBe(false);
+    expect(matchesStaffFunction(["operator", "delivery"], "delivery")).toBe(
+      true,
+    );
+  });
+
   test("encodes the filter set inside the list query key", () => {
     const key = staffKeys.list({
       affiliation: "external",

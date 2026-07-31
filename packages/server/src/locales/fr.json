@@ -1306,6 +1306,7 @@
         "status": "Statut",
         "searchName": "Rechercher un parrain...",
         "searchEmail": "Rechercher un e-mail...",
+        "searchPhone": "Rechercher un numéro de téléphone...",
         "filterStatus": "Filtrer par statut",
         "createSuccess": "Le compte parrain a été créé. La connexion initiale est prête.",
         "createError": "Impossible de créer le compte parrain.",

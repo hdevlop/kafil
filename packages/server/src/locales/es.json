@@ -1263,6 +1263,7 @@
         "status": "Estado",
         "searchName": "Buscar patrocinador...",
         "searchEmail": "Buscar correo electrónico...",
+        "searchPhone": "Buscar número de teléfono...",
         "filterStatus": "Filtrar por estado",
         "createSuccess": "La cuenta del patrocinador se creó. El acceso inicial está listo.",
         "createError": "No se pudo crear la cuenta del patrocinador.",

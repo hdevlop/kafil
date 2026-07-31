@@ -14,8 +14,8 @@ export function useSponsorsTableFilters() {
       },
       {
         type: "text",
-        name: "email",
-        placeholder: t("operator.sponsors.searchEmail"),
+        name: "phone",
+        placeholder: t("operator.sponsors.searchPhone"),
       },
       {
         type: "select",

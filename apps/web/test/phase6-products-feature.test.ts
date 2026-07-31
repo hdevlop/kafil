@@ -85,7 +85,7 @@ describe("Phase 6D product form contracts", () => {
 });
 
 describe("Phase 6D product lifecycle contracts", () => {
-  test("keeps an explicit SKU column for the SKU table filter", () => {
+  test("keeps the generated SKU visible in the product table", () => {
     expect(PRODUCT_TABLE_COLUMN_IDS.sku).toBe("sku");
     expect(Object.values(PRODUCT_TABLE_COLUMN_IDS)).toContain("sku");
   });

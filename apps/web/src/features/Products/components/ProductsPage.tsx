@@ -52,7 +52,6 @@ export function ProductsPage() {
   const orderCart = useOrderCart();
   const setCartOpen = useOrderCartStore((state) => state.setDialogOpen);
   const columns = useProductsTableColumns();
-  const filters = useProductsTableFilters();
   const searchParams = useSearchParams();
   const activeCategoryId = searchParams.get("category") ?? "";
   const workspace = useProductsWorkspace(
@@ -61,6 +60,7 @@ export function ProductsPage() {
       ...(activeCategoryId ? { categoryId: activeCategoryId } : {}),
     },
   );
+  const filters = useProductsTableFilters(workspace.categories);
 
   const products = useMemo(() => {
     if (!isExactFamily) return (workspace.products ?? []) as ProductRecord[];

@@ -19,6 +19,13 @@ function functionLabels(
   return functions.map((fn) => (fn === "operator" ? labels.operator : labels.delivery)).join(", ");
 }
 
+export function matchesStaffFunction(
+  functions: StaffRecord["functions"],
+  selectedFunction: string,
+) {
+  return functions.includes(selectedFunction as StaffRecord["functions"][number]);
+}
+
 export function useStaffTableColumns() {
   const { language, t } = useKafilLanguage();
   return useMemo<NTableProps<StaffRecord>["columns"]>(
@@ -40,6 +47,11 @@ export function useStaffTableColumns() {
       {
         accessorKey: "functions",
         enableSorting: false,
+        filterFn: (row, _columnId, selectedFunction) =>
+          matchesStaffFunction(
+            row.original.functions,
+            String(selectedFunction),
+          ),
         header: t("operator.staff.functions"),
         cell: ({ getValue }) =>
           functionLabels(getValue<StaffRecord["functions"]>(), {

@@ -1336,6 +1336,7 @@
         "status": "Status",
         "searchName": "Search sponsor name...",
         "searchEmail": "Search email...",
+        "searchPhone": "Search phone number...",
         "filterStatus": "Filter by status",
         "createSuccess": "Sponsor account created. Initial login is ready.",
         "createError": "Could not create the sponsor account.",
