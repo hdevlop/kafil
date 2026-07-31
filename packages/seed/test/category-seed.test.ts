@@ -23,11 +23,11 @@ afterEach(async () => {
 
 describe("catalog category seed", () => {
   it("defines unique app categories backed by packaged image names", () => {
-    expect(CATEGORY_SEED_FIXTURES).toHaveLength(18);
-    expect(new Set(CATEGORY_SEED_FIXTURES.map(({ slug }) => slug)).size).toBe(18);
+    expect(CATEGORY_SEED_FIXTURES).toHaveLength(17);
+    expect(new Set(CATEGORY_SEED_FIXTURES.map(({ slug }) => slug)).size).toBe(17);
     expect(
       new Set(CATEGORY_SEED_FIXTURES.map(({ fileName }) => fileName)).size,
-    ).toBe(18);
+    ).toBe(17);
     expect(CATEGORY_SEED_FIXTURES.map(({ slug }) => slug)).toContain(
       "fresh-produce",
     );
@@ -39,8 +39,8 @@ describe("catalog category seed", () => {
     const first = await prepareCategorySeedImages({ libraryPath, storagePath });
     const second = await prepareCategorySeedImages({ libraryPath, storagePath });
 
-    expect(await validateCategorySeedImages(libraryPath)).toHaveLength(18);
-    expect(first).toHaveLength(18);
+    expect(await validateCategorySeedImages(libraryPath)).toHaveLength(17);
+    expect(first).toHaveLength(17);
     expect(first.map(({ image }) => image)).toEqual(
       second.map(({ image }) => image),
     );
@@ -93,16 +93,16 @@ describe("catalog category seed", () => {
 
     expect(
       await seedCatalogCategories(service, "actor", { libraryPath, storagePath }),
-    ).toEqual({ inserted: 18, repaired: 0, skipped: 0 });
+    ).toEqual({ inserted: 17, repaired: 0, skipped: 0 });
     expect(
       await seedCatalogCategories(service, "actor", { libraryPath, storagePath }),
-    ).toEqual({ inserted: 0, repaired: 0, skipped: 18 });
+    ).toEqual({ inserted: 0, repaired: 0, skipped: 17 });
 
     records[0]!.name = "Stale name";
     records[0]!.status = "inactive";
     expect(
       await seedCatalogCategories(service, "actor", { libraryPath, storagePath }),
-    ).toEqual({ inserted: 0, repaired: 1, skipped: 17 });
+    ).toEqual({ inserted: 0, repaired: 1, skipped: 16 });
     expect(records[0]!.name).toBe("Fresh Produce");
     expect(String(records[0]!.status)).toBe("active");
   });

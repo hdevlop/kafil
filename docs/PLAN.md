@@ -442,8 +442,8 @@ seed 27 tests. CLI help, empty-library validation, auth verification, and a
 zero-record configured-database demo run also passed without clearing data.
 Demo realism follow-up (2026-07-30): the current defaults are 10 families, 20
 sponsors, 6 operators, 4 delivery staff, and 20 contributions. Demo/full always
-repair the 18 packaged categories, create or repair 18 matching image-backed
-products, and generate 24 repeat-family orders across the trailing 12 months.
+repair the 17 packaged categories, create or repair the packaged image-backed
+demo products, and generate 24 repeat-family orders across the trailing 12 months.
 The generated history uses normal assisted-order, budget, purchase, receipt,
 delivery-assignment, and confirmation commands, while deterministic keys make
 reruns idempotent and recent orders retain useful active lifecycle states.

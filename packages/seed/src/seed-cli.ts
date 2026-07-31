@@ -6,6 +6,7 @@ export const SEED_CLI_COMMANDS = [
   "migrate",
   "admin",
   "categories",
+  "products",
   "verify",
   "images",
 ] as const;
@@ -106,6 +107,7 @@ Commands:
   migrate    Apply migrations
   admin      Repair admin access
   categories Seed catalog categories
+  products   Seed demo catalog products
   verify     Verify auth seed
   images     Check seed images
 

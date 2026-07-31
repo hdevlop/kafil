@@ -20,6 +20,9 @@ const phoneDigits = String(Number.parseInt(suffix.slice(0, 8), 16) % 100_000_000
   .padStart(8, "0");
 const phone = `+2126${phoneDigits}`;
 const guardianCin = `RC${suffix.slice(0, 8)}`.toUpperCase();
+const orderId = crypto.randomUUID();
+const deliveryAttemptId = crypto.randomUUID();
+const staffProfileId = crypto.randomUUID();
 
 let actorUserId = "";
 let families: FamilyService;
@@ -66,6 +69,12 @@ databaseDescribe("family delete and recreate PostgreSQL integration", () => {
   });
 
   afterAll(async () => {
+    await pool
+      .query(`DELETE FROM order_delivery_attempts WHERE id = $1`, [deliveryAttemptId])
+      .catch(() => undefined);
+    await pool
+      .query(`DELETE FROM orders WHERE id = $1`, [orderId])
+      .catch(() => undefined);
     const existing = await pool
       .query<{ id: string }>(
         `SELECT id FROM family_profiles WHERE id = $1 LIMIT 1`,
@@ -88,24 +97,82 @@ databaseDescribe("family delete and recreate PostgreSQL integration", () => {
         email,
       ])
       .catch(() => undefined);
+    await pool
+      .query(`DELETE FROM staff_profiles WHERE id = $1`, [staffProfileId])
+      .catch(() => undefined);
     await pool.end();
   });
 
-  it("creates, deletes, and recreates the same family without restarting", async () => {
+  it("deletes delivery history and recreates the same family without restarting", async () => {
     const first = await isolatedRequest(() =>
       families.create(input, actorUserId),
     );
     expect(first).toMatchObject({ id: familyId, userId });
 
+    await pool.query(
+      `INSERT INTO staff_profiles (id, name, phone, affiliation, status)
+       VALUES ($1, $2, $3, 'internal', 'active')`,
+      [staffProfileId, "Family Delete Delivery", `+2127${phoneDigits}`],
+    );
+    await pool.query(
+      `INSERT INTO orders (
+         id, order_number, submission_idempotency_key, family_profile_id,
+         placement_source, status, subtotal_minor, total_minor, currency,
+         guardian_legal_name_snapshot, delivery_address_snapshot,
+         delivery_phone_snapshot, placed_by_user_id
+       ) VALUES (
+         $1, $2, $3, $4, 'family_self_service', 'pending', 100, 100, 'MAD',
+         $5, $6, $7, $8
+       )`,
+      [
+        orderId,
+        `FAMILY-DELETE-${suffix}`,
+        `family-delete-order:${orderId}`,
+        familyId,
+        input.name,
+        input.exactAddress,
+        input.phone,
+        actorUserId,
+      ],
+    );
+    await pool.query(
+      `INSERT INTO order_delivery_attempts (
+         id, order_id, staff_profile_id, status, delivery_name_snapshot,
+         delivery_phone_snapshot, affiliation_snapshot, assigned_by_user_id,
+         assignment_idempotency_key
+       ) VALUES ($1, $2, $3, 'assigned', $4, $5, 'internal', $6, $7)`,
+      [
+        deliveryAttemptId,
+        orderId,
+        staffProfileId,
+        "Family Delete Delivery",
+        `+2127${phoneDigits}`,
+        actorUserId,
+        `family-delete-delivery:${deliveryAttemptId}`,
+      ],
+    );
+
     await isolatedRequest(() => families.delete(familyId, actorUserId));
 
-    const removed = await pool.query<{ families: number; users: number }>(
+    const removed = await pool.query<{
+      deliveryAttempts: number;
+      families: number;
+      orders: number;
+      users: number;
+    }>(
       `SELECT
          (SELECT count(*)::int FROM family_profiles WHERE id = $1) AS families,
-         (SELECT count(*)::int FROM users WHERE id = $2) AS users`,
-      [familyId, userId],
+         (SELECT count(*)::int FROM users WHERE id = $2) AS users,
+         (SELECT count(*)::int FROM orders WHERE id = $3) AS orders,
+         (SELECT count(*)::int FROM order_delivery_attempts WHERE id = $4) AS "deliveryAttempts"`,
+      [familyId, userId, orderId, deliveryAttemptId],
     );
-    expect(removed.rows[0]).toEqual({ families: 0, users: 0 });
+    expect(removed.rows[0]).toEqual({
+      deliveryAttempts: 0,
+      families: 0,
+      orders: 0,
+      users: 0,
+    });
 
     const recreated = await isolatedRequest(() =>
       families.create(input, actorUserId),

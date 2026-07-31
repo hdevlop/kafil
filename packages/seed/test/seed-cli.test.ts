@@ -38,6 +38,9 @@ describe("seed CLI", () => {
       command: "remove",
       yes: true,
     });
+    expect(parseSeedCliArgs(["products"])).toMatchObject({
+      command: "products",
+    });
   });
 
   it("builds and validates all interactive demo count arguments", () => {
@@ -79,6 +82,7 @@ describe("seed CLI", () => {
       "migrate",
       "admin",
       "categories",
+      "products",
       "verify",
       "images",
     ]) {
@@ -120,6 +124,17 @@ describe("seed CLI", () => {
     expect(removeSource).toContain("removeDemoData");
     expect(removeSource).not.toContain("clearSeedData");
     expect(removeSource).not.toContain("clearSeedStorage");
+  });
+
+  it("routes product seeding with category prerequisites", async () => {
+    const [cliSource, productSource] = await Promise.all([
+      Bun.file(new URL("../src/cli.ts", import.meta.url)).text(),
+      Bun.file(new URL("../src/scripts/seed-products.ts", import.meta.url)).text(),
+    ]);
+
+    expect(cliSource).toContain('products: "src/scripts/seed-products.ts"');
+    expect(productSource).toContain("seedCatalogCategories");
+    expect(productSource).toContain("seedDemoCatalogProducts");
   });
 
   it("seeds categories, products, and realistic historical orders during demo seeding", async () => {
