@@ -22,9 +22,8 @@ export const CATEGORY_SEED_FIXTURES: readonly CategorySeedFixture[] = [
   { name: "Toys", slug: "toys", description: "Children's toys, games, and age-appropriate play essentials.", fileName: "toys.webp", sortOrder: 130 },
   { name: "Kitchen & Home", slug: "kitchen-home", description: "Cookware, utensils, small appliances, and household essentials.", fileName: "kitchen-home.webp", sortOrder: 140 },
   { name: "Home Improvement", slug: "home-improvement", description: "Home maintenance, lighting, repair, and improvement supplies.", fileName: "home-improvement.webp", sortOrder: 150 },
-  { name: "Hand Tools", slug: "hand-tools", description: "Hand tools, power tools, and practical repair equipment.", fileName: "hand-tools.webp", sortOrder: 160 },
-  { name: "Electronics", slug: "electronics", description: "Phones, computers, accessories, and consumer electronics.", fileName: "electronics.webp", sortOrder: 170 },
-  { name: "Pet Supplies", slug: "pet-supplies", description: "Pet food, hygiene products, accessories, and care supplies.", fileName: "pet-supplies.webp", sortOrder: 180 },
+  { name: "Electronics", slug: "electronics", description: "Phones, computers, accessories, and consumer electronics.", fileName: "electronics.webp", sortOrder: 160 },
+  { name: "Pet Supplies", slug: "pet-supplies", description: "Pet food, hygiene products, accessories, and care supplies.", fileName: "pet-supplies.webp", sortOrder: 170 },
 ];
 
 const CATEGORY_SEED_IMAGE_NAMES = new Set(

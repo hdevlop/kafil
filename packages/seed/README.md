@@ -32,6 +32,7 @@ bun run seed -- full
 bun run seed -- migrate
 bun run seed -- admin
 bun run seed -- categories
+bun run seed -- products
 bun run seed -- verify
 bun run seed -- images
 ```
@@ -82,7 +83,7 @@ otherwise the old environment credentials may be synchronized again. Do not
 mount that protected VPS file read-write into the normal web container merely
 to support this CLI.
 
-### Catalog categories
+### Catalog categories and products
 
 The standalone category seed creates or repairs the packaged catalog category
 names, descriptions, display order, active status, and images without clearing
@@ -90,7 +91,11 @@ other application data:
 
 ```bash
 bun run seed -- categories
+bun run seed -- products
 ```
+
+The standalone product command first creates or repairs its required categories,
+then creates, repairs, or retires the packaged image-backed demo products.
 
 Validate the optimized package library and inventory/backfill existing managed
 references with explicit dry-run, apply, and rollback modes:
@@ -107,8 +112,8 @@ files, updates only matching database references, writes checksummed rollback
 metadata without image bytes or personal names, and keeps branding revision
 increments intact.
 
-The `demo` and `full` commands run the same category seed automatically, then
-create or repair 18 matching image-backed demo products. Source images live
+The `demo` and `full` commands run the same 17-category seed automatically, then
+create or repair the packaged image-backed demo products. Source images live
 directly in `packages/seed/images/` using each category slug as the filename,
 such as `fresh-produce.webp` and `school-supplies.webp`. The seed normalizes
 them through the server-owned image processor into managed category/product
@@ -129,7 +134,8 @@ bun run seed -- demo --families=10 --sponsors=20 --operators=6 --deliveries=4 --
 
 Short flags `-f`, `-s`, `-o`, `-d`, and `-c` are also accepted. The compatibility
 commands `bun run seed:demo`, `bun run seed:full`, `bun run seed:migrate`,
-`bun run seed:admin`, `bun run seed:categories`, and `bun run seed:verify`
+`bun run seed:admin`, `bun run seed:categories`, `bun run seed:products`, and
+`bun run seed:verify`
 remain available.
 
 `full` is the default highlighted choice in `bun run seed`. Press Enter and the

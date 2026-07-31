@@ -18,6 +18,7 @@ import { documentObjects } from "../documents/documentSchema";
 import {
   cartItems,
   carts,
+  orderDeliveryAttempts,
   orderItems,
   orderPurchaseRecords,
   orderPurchaseReversals,
@@ -247,6 +248,9 @@ export class FamilyRepository {
     await this.db
       .delete(orderPurchaseRecords)
       .where(inArray(orderPurchaseRecords.orderId, familyOrderIds));
+    await this.db
+      .delete(orderDeliveryAttempts)
+      .where(inArray(orderDeliveryAttempts.orderId, familyOrderIds));
     await this.db
       .delete(orderItems)
       .where(inArray(orderItems.orderId, familyOrderIds));

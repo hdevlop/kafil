@@ -35,6 +35,7 @@ const COMMAND_LABELS: Readonly<Record<SeedCliCommand, string>> = {
   migrate: "Run migrations",
   admin: "Repair admin access",
   categories: "Seed categories",
+  products: "Seed products",
   verify: "Verify auth",
   images: "Check images",
 };
@@ -47,6 +48,7 @@ const INTERACTIVE_COMMAND_ORDER: readonly SeedCliCommand[] = [
   "migrate",
   "admin",
   "categories",
+  "products",
   "verify",
   "images",
 ];
@@ -60,6 +62,7 @@ const COMMAND_SCRIPTS: Readonly<
   migrate: "src/scripts/migrate.ts",
   admin: "src/scripts/seed-admin.ts",
   categories: "src/scripts/seed-categories.ts",
+  products: "src/scripts/seed-products.ts",
   verify: "src/scripts/verify.ts",
   images: "src/scripts/demo/list-images.ts",
 };
