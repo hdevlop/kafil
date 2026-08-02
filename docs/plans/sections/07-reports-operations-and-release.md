@@ -74,6 +74,65 @@ This slice establishes useful live overview reporting. It does not close the
 detailed report, CSV export, outbox delivery, operations, recovery, or release
 checklists below.
 
+Dashboard routing consolidation completed on 2026-08-01:
+
+- [x] Made `/dashboard` the only overview route and removed role-home redirects.
+- [x] Selected the admin/operator, family, or sponsor dashboard from the exact
+      server-owned session role so only one dashboard mounts and fetches data.
+- [x] Consolidated dashboard ownership under
+      `features/Dashboard/{AdminDashboard,FamilyDashboard,SponsorDashboard}`.
+- [x] Pointed every role's Overview navigation and dashboard return flow to
+      `/dashboard`; nested role-specific workflow routes remain protected by
+      their existing server layouts.
+
+Validation on 2026-08-01: web lint and typecheck passed; all 233 web tests
+passed; the root test command passed with 316 server tests, 33 opt-in skips,
+and 76 seed tests; the production build passed with `/dashboard` and without
+the three former role-home routes; `db:generate` reported no schema drift. A
+focused production-browser run passed family, sponsor, and bootstrap-admin
+dashboard landings (3/3) and removed its isolated users. The broader six-file
+browser suite exceeded its 15-minute outer timeout and is not claimed here.
+
+Family recent-order category thumbnails completed on 2026-08-01:
+
+- [x] Ranked each order's categories by summed ordered quantity, with the first
+      category occurrence and category ID providing deterministic tie breaks.
+- [x] Added the winning category name and protected image path to the
+      family-only dashboard projection and rendered a compact image tile with
+      an accessible label and shopping-bag fallback.
+
+Validation: root lint, typecheck, and tests passed (252 web tests, 324 server
+tests with 36 database-only skips, and 76 seed tests); the production build
+passed with 36 generated pages; `db:generate` reported no schema drift. Live
+visual browser acceptance was not run because no interactive browser backend
+was available in this session.
+
+Runtime correction on 2026-08-01: the initial correlated category query let
+Drizzle emit unqualified nested column names, which PostgreSQL rejected as
+ambiguous. The query now uses explicit subquery aliases and fully qualified
+columns. A real repository read returned the five expected category names and
+protected image paths from the local database. A query-generation regression
+test was added; root lint, typecheck, tests, the 36-page production build, and
+schema-drift generation passed, with 325 server tests and 36 database-only
+skips. The Kafil development server was restarted after validation.
+
+Family dashboard refinement on 2026-08-01: the Recent orders card is capped at
+the four newest family orders and fills the complete dashboard grid-row height;
+the canonical Orders page retains full history.
+
+Standalone budget-page removal completed on 2026-08-02:
+
+- [x] Removed the operator/admin, family, and sponsor Budget routes and sidebar
+      destinations.
+- [x] Removed the page-only ledger tables, forms, sponsor budget workspace, and
+      unused frontend API/query contracts.
+- [x] Kept dashboard balance summaries, checkout budget reads, contribution
+      history, order purchase details, and the complete backend budget engine.
+
+Validation: root lint, typecheck, and tests passed; the production build passed
+with 33 routes and without `/operator/budgets`, `/family/budget`, or
+`/sponsor/budgets`; `db:generate` reported no schema changes.
+
 ## Response Contract
 
 Completed on 2026-07-19:
@@ -175,19 +234,21 @@ Completed on 2026-07-20:
       session-cookie, refresh-token, and rate-limit behavior.
 - [x] Normalized phone identities into Najm users and backfilled only
       unambiguous existing family, sponsor, and operator profile numbers.
-- [x] Added operator-created initial credentials. Families receive the
-      surname plus birth year (for example, `Amrani1987`) for an easy first
-      login; sponsors keep a random suffix. Only the hash is persisted and the
-      operator sees the plaintext once.
+- [x] Added operator-created initial credentials. Families use the guardian
+      CIN as the temporary first password, with uppercase and lowercase CIN
+      input normalized to one canonical value; sponsors keep a random suffix.
+      Only the password hash is persisted and CIN remains excluded from auth
+      logs, audit metadata, and outbox payloads.
 - [x] Added guardian date of birth to new family intake while keeping the new
       database column nullable for honest legacy-data migration.
 - [x] Added pending public sponsor registration, hashed one-time verification
       tokens, resend behavior, and an email verification page that activates
       the account.
-- [x] Added a server-owned first-login requirement for newly operator-created
-      families. Login and dashboard navigation lead to a simple multilingual
-      password screen; a successful change clears the requirement, revokes all
-      sessions, and asks the family to sign in again.
+- [x] Added a server-owned first-password requirement for newly
+      operator-created families. Temporary-CIN verification creates only a
+      ten-minute setup session; it cannot access the dashboard or protected
+      APIs. A successful change consumes it, clears the requirement, revokes
+      all sessions, and asks the family to sign in once with the new password.
 - [x] Limited the easy lowercase-and-number replacement policy to the family
       first-login command. Sponsors, operators, admins, registration, reset,
       and ordinary Najm password changes retain the stronger Najm policy.
@@ -202,6 +263,86 @@ production build. `bun run db:generate` reported no schema drift,
 the verification-token and family-password-requirement tables without legacy
 requirement rows, and
 `bun run test:db` passed the PostgreSQL concurrency test.
+
+Family CIN credential follow-up (2026-08-01): new family provisioning now
+hashes the lowercase-normalized guardian CIN as the temporary first password.
+Both web login and Kafil's access service normalize uppercase/lowercase
+CIN-shaped input identically, and the first-password form performs the same
+normalization when checking the current credential. Permanent family passwords
+cannot use a CIN-shaped value. Existing surname/year temporary hashes remain
+valid because non-CIN passwords are left untouched. Root lint, typecheck, test,
+production build, and schema-drift generation passed: web 235 tests, server
+318 tests with 33 opt-in skips, and seed 76 tests; no migration was generated.
+
+Remember-me and first-login escape follow-up (2026-08-01): the login form now
+submits a real boolean remember preference through the Najm client. The single
+Next/Najm API boundary converts refresh and signed-session cookies to
+browser-session cookies when unchecked, retains seven-day persistence when
+checked, and reapplies the selected mode during refresh rotation and session
+recovery. The forced family password screen now provides a localized sign-out
+action. Najm client login requests are routed internally through Kafil's
+access-login DTO so temporary CIN credentials bypass only the inappropriate
+permanent-password format check while Najm still applies tokens and resets its
+refresh circuit. Focused auth coverage passed 28 tests; the full root gates
+passed with 242 web tests, 318 server tests plus 33 opt-in skips, 76 seed tests,
+a successful production build, and no schema drift.
+
+Auth navigation stability follow-up (2026-08-01): successful login, forced
+family-password completion, first-login sign-out, and dashboard sign-out now
+perform one full-document replacement after the auth mutation. This remounts
+Najm's singleton client/provider against the new server cookie snapshot instead
+of overlapping a client route replacement with `router.refresh()`, preventing
+the `/login?from=/dashboard` and `/dashboard` reload loop after browser restore.
+Focused auth coverage passed 29 tests. The full gate passed with 243 web tests,
+318 server tests plus 33 opt-in skips, 76 seed tests, a successful production
+build, and no schema drift. A live HTTP smoke also passed login, first-password
+page access, logout cookie clearing, public login, and signed-out dashboard
+redirects.
+
+Setup-only family password follow-up (2026-08-01): temporary-CIN verification
+now returns only an opaque ten-minute password-setup session through an
+HttpOnly browser-session cookie. The server stores only its SHA-256 hash in the
+new `family_password_setup_sessions` table from migration
+`0029_square_mac_gargan`; rows carry expiry, consumption, and revocation state.
+The response removes every normal access/refresh/signed-session artifact, so
+`/dashboard` and protected APIs reject the setup flow at the normal auth
+boundary instead of relying on client redirects. Closing Chrome removes the
+setup cookie, and `/change-password` redirects to `/login` when the cookie is
+absent or the server session is invalid. Password completion atomically
+consumes the setup session, updates the Najm-owned password hash, revokes all
+normal sessions, clears cookies, and requires one sign-in with the new
+password. The former client-side dashboard password guard was removed.
+
+Validation: `bun run check` passed with 245 web tests, 322 server tests plus 36
+database-only skips, 76 seed tests, and a successful 37-page production build.
+`bun run test:db` passed 22/22, including the new concurrent single-consumer
+setup-session test and real family recreation. The additive migration applied
+locally, and `bun run db:generate` then reported no drift. HTTP smoke returned a
+307 from signed-out `/change-password` to `/login` and 401 from the setup API
+without its cookie. Interactive browser acceptance was unavailable because no
+browser backend was exposed in this session.
+
+Shared Najm credential-setup follow-up (2026-08-01): the reusable setup-session
+lifecycle moved into published `najm-auth@2.0.12`. Its public service verifies a
+temporary credential without minting normal tokens, persists only an opaque
+token hash in the purpose-bound `credential_setup_sessions` table, and owns
+transactional begin/require/consume/cancel plus cookie cleanup. Kafil now
+delegates those operations and retains only family password requirements, CIN
+normalization, and the permanent-password policy. Migrations
+`0030_previous_madrox` and `0031_numerous_the_liberteens` create the shared
+Najm table and drop the superseded app-owned table. Existing setup tokens are
+intentionally invalidated during this one-time migration; unmet family password
+requirements remain intact.
+
+Validation: the npm registry reports `najm-auth@2.0.12` with the published
+integrity and shasum. Najm Auth passed 169 tests and its public API check. Kafil
+passed the full root gate with 245 web tests, 323 server tests plus 36
+database-only skips, 76 seed tests, and a successful 37-page production build.
+The PostgreSQL suite passed 22/22 and Drizzle reported no schema drift. A live
+temporary-CIN smoke returned setup-required with only the HttpOnly browser
+session cookie, rejected `/dashboard` with 307, accepted the scoped setup API,
+then returned 401 and redirected `/change-password` to `/login` immediately
+after cancellation.
 
 ## Installable Mobile Web App
 
@@ -449,6 +590,16 @@ Required final suites:
 - backup/restore rehearsal
 
 ## Release Checklist
+
+Root-plan application closeout (2026-08-02): canonical contribution history,
+compact shared order cards, the responsive 12-month family chart, shared Najm
+OTP primitives, and sponsor email-OTP activation are implemented. Published
+versions are `najm-kit@2.1.47` and `najm-auth@2.0.13`; Kafil migration
+`0032_same_rachel_grey.sql` is applied. Lint, typecheck, unit suites, production
+build, 23 PostgreSQL tests, no-schema-drift generation, and focused four-flow
+Chrome acceptance pass. The checklist below remains open for production
+infrastructure and operational rehearsal that is outside the additive root
+plan.
 
 - [ ] All phase exit gates closed with evidence
 - [ ] No destructive migration of historical money/order data

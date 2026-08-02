@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { familyCatalogKeys } from "../src/features/FamilyCatalog/hooks/familyCatalogKeys";
+import { familyCatalogKeys } from "../src/features/Products/hooks/familyCatalogKeys";
 
 describe("Phase 6E family catalog query contracts", () => {
   test("keeps family category lookup separate from active product browsing", () => {

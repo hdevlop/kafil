@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { getFamilyChildStatusCounts } from "../src/features/FamilyDashboard/config/familyChildSummary";
-import { familyDashboardKeys } from "../src/features/FamilyDashboard/hooks/familyDashboardKeys";
+import { getFamilyChildStatusCounts } from "../src/features/Dashboard/FamilyDashboard/config/familyChildSummary";
+import { familyDashboardKeys } from "../src/features/Dashboard/FamilyDashboard/hooks/familyDashboardKeys";
 import { contributionKeys } from "../src/features/Contributions/hooks/contributionKeys";
 
 describe("Phase 6E family household and children contracts", () => {
@@ -39,6 +39,7 @@ describe("Phase 6E family household and children contracts", () => {
       "contributions",
       "list",
       {
+        audience: "management",
         familyProfileId: "11111111-1111-4111-8111-111111111111",
         limit: 3,
         offset: 0,

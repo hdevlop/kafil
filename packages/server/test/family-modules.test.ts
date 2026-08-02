@@ -1,5 +1,10 @@
 import { describe, expect, it } from "bun:test";
-import type { AuthService, UserRepository, UserService } from "najm-auth";
+import type {
+  AuthService,
+  EncryptionService,
+  UserRepository,
+  UserService,
+} from "najm-auth";
 import { db } from "../src/config/databaseConfig";
 import { server } from "../src/server";
 import { getMcpTools } from "najm-mcp";
@@ -354,6 +359,7 @@ describe("Phase 1 family workflow", () => {
     const childCreates: Record<string, unknown>[] = [];
     const auditEvents: Record<string, unknown>[] = [];
     const passwordRequirements: string[] = [];
+    const userUpdates: unknown[][] = [];
     const service = new FamilyService(
       {
         provisionUser: async (input: Record<string, unknown>) => {
@@ -396,13 +402,22 @@ describe("Phase 1 family workflow", () => {
       } as unknown as FamilyValidator,
       {} as FundingService,
       {} as SettingRepository,
-      { update: async () => ({}) } as unknown as UserRepository,
+      {
+        update: async (...input: unknown[]) => {
+          userUpdates.push(input);
+          return {};
+        },
+      } as unknown as UserRepository,
       {
         requireFamilyPasswordChange: async (userId: string) => {
           passwordRequirements.push(userId);
           return { userId, required: true };
         },
       } as unknown as AccessRepository,
+      undefined,
+      {
+        hashPassword: async (password: string) => `hash:${password}`,
+      } as unknown as EncryptionService,
     );
 
     await service.create(
@@ -435,7 +450,7 @@ describe("Phase 1 family workflow", () => {
         email: "family@example.test",
         image: "https://images.example.test/families/family.jpg",
         role: "family",
-        password: "Amrani1987",
+        password: expect.stringMatching(/^Kafil-[0-9a-f-]+-A1$/),
       }),
     ]);
     expect(familyCreates).toEqual([
@@ -467,6 +482,17 @@ describe("Phase 1 family workflow", () => {
       }),
     ]);
     expect(passwordRequirements).toEqual(["family-user"]);
+    expect(userUpdates).toEqual([
+      [
+        "family-user",
+        {
+          password: "hash:ab123456",
+          phone: "+212600000001",
+          phoneVerified: false,
+          emailVerified: true,
+        },
+      ],
+    ]);
   });
 
   it("includes each family's funding progress in the operator list", async () => {

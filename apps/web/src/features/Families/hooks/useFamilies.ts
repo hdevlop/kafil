@@ -19,10 +19,12 @@ import { familyKeys } from "./familyKeys";
 export function useFamilies(
   pagination: OffsetPagination,
   filters: ListFamiliesFilters = {},
+  enabled = true,
 ) {
   return useEntityQuery({
     queryKey: familyKeys.list({ ...pagination, ...filters }),
     queryFn: () => listFamilies(pagination, filters),
+    enabled,
   });
 }
 

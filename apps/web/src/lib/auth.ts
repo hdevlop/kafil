@@ -7,6 +7,7 @@ export const auth = defineAuth({
   loginRoute: "/login",
   publicRoutes: [
     "/",
+    "/change-password",
     "/login",
     "/register/sponsor",
     "/forgot-password",
@@ -14,7 +15,6 @@ export const auth = defineAuth({
     "/verify-email",
   ],
   protectedRoutes: [
-    "/change-password",
     "/dashboard",
     "/forbidden",
     "/operator/:path*",
@@ -23,6 +23,7 @@ export const auth = defineAuth({
     "/products",
     "/categories",
     "/orders",
+    "/contribution",
   ],
   roleRoutes: {
     "/operator/:path*": ["admin", "operator"],
@@ -30,7 +31,8 @@ export const auth = defineAuth({
     "/sponsor/:path*": ["sponsor"],
     "/products": ["admin", "operator", "family"],
     "/categories": ["admin", "operator", "family"],
-    "/orders": ["admin", "operator", "family"],
+    "/orders": ["admin", "operator", "family", "sponsor"],
+    "/contribution": ["admin", "operator", "family"],
   },
   refreshThreshold: 0.8,
   tabSync: true,

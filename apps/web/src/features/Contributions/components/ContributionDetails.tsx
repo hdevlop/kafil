@@ -8,15 +8,17 @@ import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { StatusBadge } from "@/shared/StatusBadge";
 
-import type { ContributionRecord } from "../types";
+import type { ContributionListRecord, ContributionRecord } from "../types";
+
+function isManagement(record: ContributionListRecord): record is ContributionRecord {
+  return "sponsorName" in record;
+}
 
 function reference(value: string | null, notLinked: string) {
   return value ? value.slice(0, 8) : notLinked;
 }
 
-export function ContributionDetails({
-  contribution,
-}: Readonly<{ contribution: ContributionRecord }>) {
+export function ContributionDetails({ contribution }: Readonly<{ contribution: ContributionListRecord }>) {
   const { t } = useKafilLanguage();
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => {
@@ -25,63 +27,34 @@ export function ContributionDetails({
     const interval = window.setInterval(updateNow, 30_000);
     return () => window.clearInterval(interval);
   }, []);
+  const management = isManagement(contribution);
   const isPending = contribution.status === "pending";
-  const isExpired =
-    contribution.status === "expired" ||
-    (isPending &&
-      Boolean(contribution.expiresAt) &&
-      nowMs !== null &&
-      new Date(contribution.expiresAt!).getTime() <= nowMs);
+  const isExpired = contribution.status === "expired" ||
+    (isPending && Boolean(contribution.expiresAt) && nowMs !== null && new Date(contribution.expiresAt!).getTime() <= nowMs);
 
   const paymentItems = [
-    {
-      label: t("operator.contributions.externalReference"),
-      value: contribution.externalReference || t("operator.contributions.notProvided"),
-    },
-    {
-      label: t("operator.contributions.submitted"),
-      value: formatKafilDate(contribution.submittedAt),
-    },
-    {
-      label: t("operator.contributions.paid"),
-      value: formatKafilDate(contribution.paidAt),
-    },
-    {
-      label: t("operator.contributions.validated"),
-      value: formatKafilDate(contribution.validatedAt),
-    },
-    {
-      label: t("operator.contributions.rejected"),
-      value: formatKafilDate(contribution.rejectedAt),
-    },
-    {
-      label: t("operator.contributions.expiredAt"),
-      value: formatKafilDate(contribution.expiredAt),
-    },
-    {
-      label: t("operator.contributions.rejectionReason"),
-      value: contribution.rejectionReason || t("operator.contributions.notRejected"),
-    },
+    { label: t("operator.contributions.externalReference"), value: contribution.externalReference || t("operator.contributions.notProvided") },
+    { label: t("operator.contributions.submitted"), value: formatKafilDate(contribution.submittedAt) },
+    { label: t("operator.contributions.paid"), value: formatKafilDate(contribution.paidAt) },
+    { label: t("operator.contributions.validated"), value: formatKafilDate(contribution.validatedAt) },
+    { label: t("operator.contributions.rejected"), value: formatKafilDate(contribution.rejectedAt) },
+    { label: t("operator.contributions.expiredAt"), value: formatKafilDate(contribution.expiredAt) },
   ];
-  if (isPending && contribution.expiresAt) {
-    paymentItems.push({
-      label: t("operator.contributions.pendingDeadline"),
-      value: isExpired
-        ? `${formatDateTime(contribution.expiresAt)} (${t("operator.contributions.expired")})`
-        : formatDateTime(contribution.expiresAt),
-    });
-  }
+  if (management) paymentItems.push({
+    label: t("operator.contributions.rejectionReason"),
+    value: contribution.rejectionReason || t("operator.contributions.notRejected"),
+  });
+  if (isPending && contribution.expiresAt) paymentItems.push({
+    label: t("operator.contributions.pendingDeadline"),
+    value: isExpired ? `${formatDateTime(contribution.expiresAt)} (${t("operator.contributions.expired")})` : formatDateTime(contribution.expiresAt),
+  });
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4 rounded-2xl bg-muted/60 p-4">
         <div>
-          <p className="text-xl font-semibold">
-            {formatMad(contribution.amountMinor)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {contribution.paymentMethod}
-          </p>
+          <p className="text-xl font-semibold">{formatMad(contribution.amountMinor)}</p>
+          {management ? <p className="text-sm text-muted-foreground">{contribution.paymentMethod}</p> : null}
         </div>
         <StatusBadge status={isExpired && isPending ? "expired" : contribution.status} />
       </div>
@@ -90,41 +63,22 @@ export function ContributionDetails({
         <NDetailList items={paymentItems} />
       </NSection>
 
-      <NSection icon={CreditCard} title={t("operator.contributions.supportLinkage")}>
-        <NDetailList
-          items={[
-            {
-              label: t("operator.contributions.supportAssignment"),
-              value: reference(contribution.supportAssignmentId, t("operator.contributions.notLinked")),
-            },
-            {
-              label: t("operator.contributions.contributionPlan"),
-              value: reference(contribution.contributionPlanId, t("operator.contributions.notLinked")),
-            },
-            {
-              label: t("operator.assignments.sponsor"),
-              value: `${contribution.sponsorName} — ${contribution.sponsorEmail}`,
-            },
-          ]}
-        />
-      </NSection>
-
-      <NSection icon={Landmark} title={t("operator.contributions.budgetDestination")}>
-        <NDetailList
-          items={[
-            {
-              label: t("operator.assignments.family"),
-              value: contribution.familyName,
-            },
-          ]}
-        />
-      </NSection>
-
-      {isExpired ? (
-        <p className="rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">
-          {t("operator.contributions.expiredWarning")}
-        </p>
+      {management ? (
+        <>
+          <NSection icon={CreditCard} title={t("operator.contributions.supportLinkage")}>
+            <NDetailList items={[
+              { label: t("operator.contributions.supportAssignment"), value: reference(contribution.supportAssignmentId, t("operator.contributions.notLinked")) },
+              { label: t("operator.contributions.contributionPlan"), value: reference(contribution.contributionPlanId, t("operator.contributions.notLinked")) },
+              { label: t("operator.assignments.sponsor"), value: `${contribution.sponsorName} — ${contribution.sponsorEmail}` },
+            ]} />
+          </NSection>
+          <NSection icon={Landmark} title={t("operator.contributions.budgetDestination")}>
+            <NDetailList items={[{ label: t("operator.assignments.family"), value: contribution.familyName }]} />
+          </NSection>
+        </>
       ) : null}
+
+      {isExpired ? <p className="rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">{t("operator.contributions.expiredWarning")}</p> : null}
     </div>
   );
 }

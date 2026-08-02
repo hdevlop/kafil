@@ -51,11 +51,43 @@ export class ContributionService {
     return this.contributions.list(limit, offset, filters);
   }
 
+  listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
+    const parsed = contributionListQuery.parse(query ?? {});
+    if (role === "family") {
+      if (parsed.familyProfileId) {
+        HttpError.forbidden("Family contribution scope cannot be selected by the client");
+      }
+      return this.contributions.listFamily(
+        userId,
+        parsed.limit,
+        parsed.offset,
+        { status: parsed.status },
+      );
+    }
+    if (role !== "admin" && role !== "operator") {
+      HttpError.forbidden("Contribution access denied");
+    }
+    const { limit, offset, ...filters } = parsed;
+    return this.contributions.list(limit, offset, filters);
+  }
+
   listRecordingOptions() {
     return this.contributions.listRecordingOptions();
   }
 
   get(id: string) {
+    return this.validator.ensureContributionExists(id);
+  }
+
+  async getForPrincipal(id: string, userId: string, role: string) {
+    if (role === "family") {
+      const contribution = await this.contributions.findFamilyById(id, userId);
+      if (!contribution) HttpError.notFound("Contribution not found");
+      return contribution;
+    }
+    if (role !== "admin" && role !== "operator") {
+      HttpError.forbidden("Contribution access denied");
+    }
     return this.validator.ensureContributionExists(id);
   }
 

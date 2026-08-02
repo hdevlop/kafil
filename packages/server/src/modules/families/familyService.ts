@@ -1,5 +1,7 @@
+import { randomUUID } from "node:crypto";
 import {
   AuthService,
+  EncryptionService,
   TokenService,
   UserRepository,
   UserService,
@@ -46,6 +48,7 @@ export class FamilyService {
     private readonly userRecords?: UserRepository,
     private readonly access?: AccessRepository,
     private readonly tokens?: TokenService,
+    private readonly encryption?: EncryptionService,
   ) {}
 
   async list(query: FamilyListQuery) {
@@ -142,17 +145,21 @@ export class FamilyService {
       HttpError.notFound("Default family funding target not found");
     }
 
-    const initialPassword = generateFamilyInitialPassword(
-      account.name,
-      guardianDateOfBirth,
-    );
+    const initialPassword = generateFamilyInitialPassword(guardianCin);
+    const provisioningPassword = this.encryption
+      ? `Kafil-${randomUUID()}-A1`
+      : initialPassword;
     const user = await this.auth.provisionUser({
       ...(userId ? { id: userId } : {}),
       ...account,
       role: FAMILY_ROLE,
-      password: initialPassword,
+      password: provisioningPassword,
     });
+    const password = this.encryption
+      ? await this.encryption.hashPassword(initialPassword)
+      : undefined;
     await this.userRecords?.update(user.id, {
+      ...(password ? { password } : {}),
       phone,
       phoneVerified: false,
       emailVerified: true,

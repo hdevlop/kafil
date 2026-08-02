@@ -9,7 +9,7 @@ export function SponsorKpiGrid({
   desktopColumns = 4,
   kpis,
 }: Readonly<{
-  desktopColumns?: 3 | 4;
+  desktopColumns?: 3 | 4 | 5;
   kpis: SponsorKpiItem[];
 }>) {
   return (
@@ -17,10 +17,14 @@ export function SponsorKpiGrid({
       {kpis.map((kpi) => {
         const card = (
           <NStatCard
-            variant="compact"
-            classNames={{ label: "overflow-visible whitespace-normal text-clip leading-tight" }}
+            className="h-full"
+            classNames={{
+              label: "overflow-visible whitespace-normal text-clip leading-tight",
+              value: "tabular-nums",
+            }}
             icon={kpi.icon}
             label={kpi.label}
+            subtext={kpi.subtext}
             value={kpi.value}
           />
         );

@@ -16,7 +16,10 @@ import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { ChildRecord } from "../types";
 
-export function ChildCard({ data }: Readonly<{ data: ChildRecord }>) {
+export function ChildCard({
+  data,
+  embedded = true,
+}: Readonly<{ data: ChildRecord; embedded?: boolean }>) {
   const { t } = useKafilLanguage();
   const isInactive = data.status === "inactive";
   const isFamilyUnavailable = data.familyStatus !== undefined && data.familyStatus !== "active";
@@ -30,7 +33,7 @@ export function ChildCard({ data }: Readonly<{ data: ChildRecord }>) {
 
   const card = (
     <NCard
-      embedded
+      embedded={embedded}
       title={data.legalName}
       description={data.gender === "F" ? t("operator.families.female") : t("operator.families.male")}
       classNames={{

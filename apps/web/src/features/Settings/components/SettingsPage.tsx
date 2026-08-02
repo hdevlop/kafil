@@ -12,7 +12,7 @@ export function SettingsPage({ role }: Readonly<{ role: string | null | undefine
       open
       role={role}
       onOpenChange={(open) => {
-        if (!open) router.replace("/operator");
+        if (!open) router.replace("/dashboard");
       }}
     />
   );

@@ -4,8 +4,9 @@ Status: **COMPLETE**
 
 Post-phase extension (2026-07-27): the operator Orders page now includes
 assisted ordering, protected receipt purchase/replacement, and delivery
-dialogs. Family and sponsor order pages show privacy-safe purchase/delivery
-milestones. Admins receive a localized Access management sidebar section with
+dialogs. Family order pages show the assigned delivery name and privacy-safe
+purchase/delivery milestones; sponsor pages keep identity-free milestones.
+Admins receive a localized Access management sidebar section with
 Users, Roles, and Permissions; its nested server layout requires `admin`, and
 normal operators do not receive those links. Users and Permissions expose
 functional NTable add actions: user creation delegates to complete domain
@@ -25,8 +26,9 @@ Post-phase extension (2026-07-30): the canonical `/orders` workspace now has a
 Delivery column and state-aware assign, reassign, start, fail, confirm, and view
 actions. Delivery Details uses Najm Kit `NSheet` with the current Staff/contact
 card, semantic progress, immutable attempt history, RTL-aware placement, and a
-95vw mobile layout. Family and sponsor pages continue to render only safe
-milestones and never Staff identity/contact or internal attempt reasons.
+95vw mobile layout. Family pages render only the assigned delivery name plus
+safe milestones, while sponsor pages never expose Staff identity; neither
+projection exposes Staff contact data or internal attempt reasons.
 
 Inventory references in the historical Phase 6 evidence below describe the
 2026-07-16 warehouse UI and are superseded by the 2026-07-27 procurement
@@ -34,6 +36,13 @@ extension: there is no active Inventory route, navigation entry, API, or MCP
 tool.
 
 Current implementation slice: **None — Phase 6 closed on 2026-07-17**
+
+Post-phase routing extension (2026-08-01): `/dashboard` is the only overview
+route. It resolves the authenticated role server-side and renders one of
+`Dashboard/AdminDashboard`, `Dashboard/FamilyDashboard`, or
+`Dashboard/SponsorDashboard` without a role-home redirect. Admin and operator
+share `AdminDashboard`; nested `/operator/*`, `/family/*`, and `/sponsor/*`
+workflow routes keep their existing server-owned role layouts.
 
 ## Goal
 
@@ -187,7 +196,7 @@ apps/web/src/app/
     forgot-password/
     reset-password/
   (dashboard)/
-    dashboard/
+    dashboard/               # canonical role-selected overview
     operator/
       families/
       children/
@@ -213,9 +222,10 @@ apps/web/src/app/
       profile/
 ```
 
-`/dashboard` resolves the session and redirects to the correct role home.
-Unknown roles receive a forbidden state. An admin is routed to the operator
-surface for bootstrap support but is not presented as a normal product role.
+`/dashboard` resolves the session and renders the correct exact-role dashboard
+without redirecting. Unknown roles receive a forbidden state. Admin and
+operator share the management dashboard, but admin is not presented as a
+family or sponsor identity.
 
 ## Phase 6A - Theme, Auth, and Role Shell
 
@@ -230,7 +240,7 @@ dashboard shell.
 - [x] Add login, sponsor registration, forgot-password, and reset-password
       routes
 - [x] Resolve the initial session in the root layout
-- [x] Redirect `/dashboard` by role
+- [x] Render one exact-role dashboard directly at `/dashboard`
 - [x] Add protected operator, family, and sponsor homes
 - [x] Add the role-aware Najm Kit sidebar shell
 - [x] Add Phase 6A contract tests and production route smoke
@@ -732,9 +742,9 @@ The first Family application slice exposes only the authenticated family's
 profile, family, and child records:
 
 ```text
-app/(dashboard)/family/page.tsx
-  -> features/FamilyDashboard/components/FamilyOverviewPage.tsx
-    -> features/FamilyDashboard/hooks/useFamilyDashboard.ts
+app/(dashboard)/dashboard/page.tsx
+  -> features/Dashboard/FamilyDashboard/components/FamilyDashboardPage.tsx
+    -> features/Dashboard/FamilyDashboard/hooks/useFamilyDashboard.ts
       -> services/familyDashboardApi.ts
         -> /api/families/me and /api/children/me
 ```
@@ -864,8 +874,8 @@ The opening Sponsor Application slice is deliberately isolated from the active
 Family persistent-cart work and from Phase 6C repairs:
 
 ```text
-app/(dashboard)/sponsor/page.tsx
-  -> features/SponsorProfile/components/SponsorProfileGate.tsx
+app/(dashboard)/dashboard/page.tsx
+  -> features/Dashboard/SponsorDashboard/components/SponsorDashboardGate.tsx
     -> features/SponsorProfile/hooks/useSponsorProfile.ts
       -> services/sponsorProfileApi.ts
         -> /api/sponsors/me/profile

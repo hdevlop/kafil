@@ -522,4 +522,60 @@ it("adds assisted procurement, immutable purchases, and delivery without destruc
     expect(migration).not.toContain("DROP COLUMN");
     expect(migration).not.toContain("DROP TABLE");
   });
+
+  it("adds expiring family password setup sessions without exposing tokens", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0029_square_mac_gargan.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'CREATE TABLE "family_password_setup_sessions"',
+    );
+    expect(migration).toContain('"token_hash" varchar(64) NOT NULL');
+    expect(migration).toContain('"expires_at" timestamp with time zone NOT NULL');
+    expect(migration).toContain('"consumed_at" timestamp with time zone');
+    expect(migration).toContain('"revoked_at" timestamp with time zone');
+    expect(migration).toContain(
+      'FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade',
+    );
+    expect(migration).not.toContain("DROP COLUMN");
+    expect(migration).not.toContain("DROP TABLE");
+  });
+
+  it("moves setup-session persistence to the shared Najm Auth table", async () => {
+    const createShared = await Bun.file(
+      join(migrationsDirectory, "0030_previous_madrox.sql"),
+    ).text();
+    const removeLegacy = await Bun.file(
+      join(migrationsDirectory, "0031_numerous_the_liberteens.sql"),
+    ).text();
+
+    expect(createShared).toContain('CREATE TABLE "credential_setup_sessions"');
+    expect(createShared).toContain('"purpose" text NOT NULL');
+    expect(createShared).toContain('"token_hash" text NOT NULL');
+    expect(createShared).toContain('"expires_at" timestamp NOT NULL');
+    expect(createShared).toContain(
+      'FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade',
+    );
+    expect(createShared).not.toContain('DROP TABLE "family_password_setup_sessions"');
+    expect(removeLegacy.trim()).toBe(
+      'DROP TABLE "family_password_setup_sessions" CASCADE;',
+    );
+  });
+
+  it("adds one hashed and bounded sponsor email OTP challenge per user", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0032_same_rachel_grey.sql"),
+    ).text();
+
+    expect(migration).toContain('CREATE TABLE "sponsor_email_otp_challenges"');
+    expect(migration).toContain('"code_hash" varchar(64) NOT NULL');
+    expect(migration).toContain('"expires_at" timestamp with time zone NOT NULL');
+    expect(migration).toContain('"attempts_remaining" integer DEFAULT 5 NOT NULL');
+    expect(migration).toContain('"email_sent" boolean DEFAULT false NOT NULL');
+    expect(migration).toContain('CREATE UNIQUE INDEX "sponsor_email_otp_challenges_user_unique"');
+    expect(migration).toContain('CHECK ("sponsor_email_otp_challenges"."attempts_remaining" >= 0)');
+    expect(migration).not.toContain('"code" varchar');
+    expect(migration).not.toContain("DROP TABLE");
+  });
 });

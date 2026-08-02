@@ -77,17 +77,23 @@ export function ManagedAvatar({
   title?: string;
   version?: string | number | null;
 }>) {
-  const candidate = src && src !== "noavatar.png" ? src : fallbackSrc;
-  const resolved = candidate
-    ? withVersion(candidate, srcVersion ?? version)
+  const primarySource = src && src !== "noavatar.png"
+    ? withVersion(src, srcVersion ?? version)
     : undefined;
-  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const fallbackSource = fallbackSrc
+    ? withVersion(fallbackSrc, srcVersion ?? version)
+    : undefined;
+  const [failedSources, setFailedSources] = useState<string[]>([]);
+  const resolved = [primarySource, fallbackSource].find(
+    (source): source is string => (
+      typeof source === "string" && !failedSources.includes(source)
+    ),
+  );
   const [loadedSource, setLoadedSource] = useState<string | null>(null);
   const label = title || fallback || alt || "";
   const fallbackText = fallback && !title ? fallback : initials(label) || "?";
   const hasText = Boolean(title || subtitle || meta);
-  const showFallback =
-    !resolved || failedSource === resolved || loadedSource !== resolved;
+  const showFallback = !resolved || loadedSource !== resolved;
 
   return (
     <div className={cn("flex items-center gap-3", classNames?.root, className)}>
@@ -108,13 +114,15 @@ export function ManagedAvatar({
             {fallbackText}
           </span>
         ) : null}
-        {resolved && failedSource !== resolved ? (
+        {resolved ? (
           <ProtectedImage
             alt={alt || label}
             className={cn("object-cover", classNames?.image)}
             fill
             loading="lazy"
-            onError={() => setFailedSource(resolved)}
+            onError={() => setFailedSources((current) => (
+              current.includes(resolved) ? current : [...current, resolved]
+            ))}
             onLoad={() => setLoadedSource(resolved)}
             sizes={IMAGE_SIZES[size]}
             src={resolved}

@@ -18,16 +18,15 @@ import {
 } from "lucide-react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
-import { Family, Operator } from "@/shared/Authorization";
+import { Operator } from "@/shared/Authorization";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useOrdersTableColumns } from "@/features/Orders/hooks/useOrdersTableColumns";
 import { useOrdersTableFilters } from "@/features/Orders/hooks/useOrdersTableFilters";
 import { useOrderCommands } from "@/features/Orders/hooks/useOrders";
 import {
-  useFamilyOrder,
   useFamilyOrderingCommands,
-} from "@/features/FamilyOrdering/hooks/useFamilyOrdering";
+} from "@/features/Orders/hooks/useFamilyOrdering";
 import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
 import { formatKafilDate, formatMad, formatStatusLabel } from "@/lib/format";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
@@ -38,7 +37,7 @@ import { StatusBadge } from "@/shared/StatusBadge";
 import { getOrderActions, type OrderAction, type OrderCommand } from "../config/orderActions";
 import { OrderCard } from "./OrderCard";
 import { DeliveryDetailsSheet } from "./DeliveryDetailsSheet";
-import { OrderDetailsSheet } from "./OrderDetails";
+import { FamilyOrderDetailsSheet, OrderDetailsSheet } from "./OrderDetails";
 import {
   ConfirmOrderCommandDialogContent,
   DeleteOrderDialogContent,
@@ -54,9 +53,8 @@ import { useOrdersWorkspace } from "../hooks/useOrdersWorkspace";
 import type { OrderRecord } from "../types";
 import type {
   FamilyOrder,
-  FamilyOrderDetail,
-  FamilyOrderStatusEvent,
-} from "@/features/FamilyOrdering/types";
+} from "@/features/Orders/familyTypes";
+import type { SponsorSupportedOrder } from "@/features/Orders/sponsorTypes";
 
 const initialPagination = createOffsetPagination(0, 25);
 
@@ -108,14 +106,17 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
   }, []);
   const columns = useOrdersTableColumns(openDelivery);
   const filters = useOrdersTableFilters();
+  const familyFilters = filters.filter(
+    (filter) => filter.name !== "guardianLegalNameSnapshot",
+  );
   const isFamilyScope = workspace.scope === "family";
-  const orders = (workspace.orders ?? []) as OrderRecord[] & FamilyOrder[];
+  const isSponsorScope = workspace.scope === "sponsor";
+  const orders = workspace.orders ?? [];
   const pageIndex = getPageIndex(workspace.pagination);
   const pageCount = hasPossibleNextPage(orders.length, workspace.pagination)
     ? pageIndex + 2
     : pageIndex + 1;
   const [familySelectedId, setFamilySelectedId] = useState<string>("");
-  const familyDetail = useFamilyOrder(familySelectedId);
 
   function openView(order: OrderRecord) {
     setViewOrder(order);
@@ -266,10 +267,14 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
 
   const headerTitle = isFamilyScope
     ? t("common.orderYourOrders")
-    : t("operator.orders.title");
+    : isSponsorScope
+      ? t("dashboard.sponsor.supportedOrders")
+      : t("operator.orders.title");
   const headerSubtitle = isFamilyScope
     ? t("common.orderYourOrdersSubtitle")
-    : t("operator.orders.subtitle");
+    : isSponsorScope
+      ? t("dashboard.sponsor.privacySafeOrders")
+      : t("operator.orders.subtitle");
   const headerIcon = ClipboardCheck;
 
   const operatorRows = orders as OrderRecord[];
@@ -285,6 +290,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     renderCard: ({ "data-row-id": rowId, ...rest }) => (
       <OrderCard
         {...rest}
+        audience="management"
         highlighted={highlightOrderId !== null && rowId === highlightOrderId}
       />
     ),
@@ -343,12 +349,193 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     pageSizeOptions: [10, 25, 50, 100],
     responsiveCards: true,
     defaultMode: "table",
+    showViewToggle: false,
     noDataText: t("operator.orders.noData"),
     loadingText: t("operator.orders.loading"),
     dynamicHeight: true,
   };
 
   const familyOrders = orders as FamilyOrder[];
+  const familyTableProps: NTableProps<FamilyOrder> = {
+    data: familyOrders,
+    filters: familyFilters,
+    columns: [
+      { accessorKey: "orderNumber", header: "Order" },
+      {
+        accessorKey: "totalMinor",
+        header: "Total",
+        cell: ({ getValue }) => formatMad(getValue<number>()),
+      },
+      {
+        accessorKey: "articleCount",
+        header: "Articles",
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+      },
+      {
+        id: "delivery",
+        header: t("operator.orders.delivery.column"),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const order = row.original;
+          if (order.deliveryName) return order.deliveryName;
+          return t("operator.orders.delivery.notAssigned");
+        },
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Placed",
+        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+      },
+    ],
+    loading: workspace.loading,
+    error: workspace.error,
+    getRowId: (order) => order.id,
+    onView: (order) => setFamilySelectedId(order.id),
+    renderCard: ({ "data-row-id": rowId, ...props }) => (
+      <OrderCard
+        data={props.data}
+        audience="family"
+        highlighted={highlightOrderId !== null && rowId === highlightOrderId}
+        actions={
+          <div className="flex justify-end gap-2">
+            <NButton
+              size="sm"
+              variant="outline"
+              onClick={() => setFamilySelectedId(props.data.id)}
+            >
+              {t("common.orderTrack")}
+            </NButton>
+            {props.data.status === "pending" ? (
+              <NButton
+                size="sm"
+                variant="outline"
+                disabled={familyCommands.cancel.isPending}
+                onClick={() =>
+                  void familyCommands.cancel.mutateAsync({ id: props.data.id })
+                }
+              >
+                {t("common.orderCancel")}
+              </NButton>
+            ) : null}
+          </div>
+        }
+      />
+    ),
+    renderEmpty: () => (
+      <PageEmptyState
+        icon={ClipboardCheck}
+        title={t("common.orderNoOrdersTitle")}
+        description={t("common.orderNoOrdersDescription")}
+      />
+    ),
+    renderError: (error) => (
+      <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
+    ),
+    menu: {
+      row: (order) => [
+        {
+          label: t("common.orderTrack"),
+          icon: Eye,
+          onSelect: () => setFamilySelectedId(order.id),
+        },
+        ...(order.status === "pending"
+          ? [{
+              label: t("common.orderCancel"),
+              icon: Ban,
+              danger: true,
+              disabled: familyCommands.cancel.isPending,
+              onSelect: () =>
+                void familyCommands.cancel.mutateAsync({ id: order.id }),
+            }]
+          : []),
+      ],
+    },
+    menuButton: true,
+    manualPagination: true,
+    pagination: { pageIndex, pageSize: workspace.pagination.limit },
+    pageCount,
+    onPaginationChange: ({ pageIndex: nextIndex, pageSize }) =>
+      setPagination(createOffsetPagination(nextIndex, pageSize)),
+    pageSizeOptions: [10, 25, 50, 100],
+    responsiveCards: true,
+    defaultMode: "table",
+    showViewToggle: false,
+    noDataText: t("common.orderNoOrdersTitle"),
+    loadingText: t("common.loadingOrders"),
+    dynamicHeight: true,
+  };
+
+  const sponsorOrders = orders as SponsorSupportedOrder[];
+  const sponsorTableProps: NTableProps<SponsorSupportedOrder> = {
+    data: sponsorOrders,
+    columns: [
+      { accessorKey: "orderNumber", header: "Order" },
+      {
+        accessorKey: "totalMinor",
+        header: "Total",
+        cell: ({ row }) =>
+          formatMad(row.original.actualTotalMinor ?? row.original.totalMinor),
+      },
+      {
+        id: "items",
+        header: t("dashboard.sponsor.items"),
+        cell: ({ row }) =>
+          row.original.items.reduce((total, item) => total + item.quantity, 0),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ getValue }) => formatStatusLabel(getValue<string>()),
+      },
+      {
+        accessorKey: "placedAt",
+        header: "Placed",
+        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+      },
+    ],
+    loading: workspace.loading,
+    error: workspace.error,
+    getRowId: (order) => order.id,
+    renderCard: ({ data }) => (
+      <OrderCard
+        audience="sponsor"
+        data={{
+          ...data,
+          articleCount: data.items.reduce(
+            (total, item) => total + item.quantity,
+            0,
+          ),
+          requestedTotalMinor: data.totalMinor,
+        }}
+      />
+    ),
+    renderEmpty: () => (
+      <PageEmptyState
+        icon={ClipboardCheck}
+        title={t("dashboard.sponsor.supportedOrders")}
+        description={t("dashboard.sponsor.noSupportedOrders")}
+      />
+    ),
+    renderError: (error) => (
+      <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
+    ),
+    manualPagination: true,
+    pagination: { pageIndex, pageSize: workspace.pagination.limit },
+    pageCount,
+    onPaginationChange: ({ pageIndex: nextIndex, pageSize }) =>
+      setPagination(createOffsetPagination(nextIndex, pageSize)),
+    pageSizeOptions: [10, 25, 50, 100],
+    responsiveCards: true,
+    defaultMode: "table",
+    showViewToggle: false,
+    noDataText: t("dashboard.sponsor.noSupportedOrders"),
+    loadingText: t("common.loadingOrders"),
+    dynamicHeight: true,
+  };
 
   return (
     <NPageLayout className="flex h-full min-h-0 flex-col gap-4">
@@ -361,74 +548,14 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
 
       {isFamilyScope ? (
         <>
-          {workspace.loading ? (
-            <p className="text-sm text-muted-foreground">
-              {t("common.loadingOrders")}
-            </p>
-          ) : workspace.error ? (
-            <PageErrorState
-              error={workspace.error}
-              onRetry={() => void workspace.refetch()}
-            />
-          ) : familyOrders.length ? (
-            <>
-              <div className="grid gap-3 lg:grid-cols-2">
-                {familyOrders.map((order) => (
-                  <FamilyOrderCard
-                    key={order.id}
-                    highlighted={highlightOrderId === order.id}
-                    order={order}
-                    pending={familyCommands.cancel.isPending}
-                    t={t}
-                    onCancel={() =>
-                      void familyCommands.cancel.mutateAsync({ id: order.id })
-                    }
-                    onTrack={() => setFamilySelectedId(order.id)}
-                  />
-                ))}
-              </div>
-              <div className="flex justify-between">
-                <NButton
-                  variant="outline"
-                  disabled={pageIndex === 0}
-                  onClick={() =>
-                    workspace.setPagination(
-                      createOffsetPagination(pageIndex - 1, workspace.pagination.limit),
-                    )
-                  }
-                >
-                  {t("action.previous", { defaultValue: "Previous" })}
-                </NButton>
-                <NButton
-                  variant="outline"
-                  disabled={!hasPossibleNextPage(familyOrders.length, workspace.pagination)}
-                  onClick={() =>
-                    workspace.setPagination(
-                      createOffsetPagination(pageIndex + 1, workspace.pagination.limit),
-                    )
-                  }
-                >
-                  {t("action.next", { defaultValue: "Next" })}
-                </NButton>
-              </div>
-              {familySelectedId ? (
-                <FamilyOrderTimeline
-                  detail={familyDetail.data}
-                  loading={familyDetail.isPending}
-                  t={t}
-                />
-              ) : null}
-            </>
-          ) : (
-            <Family>
-              <PageEmptyState
-                icon={ClipboardCheck}
-                title={t("common.orderNoOrdersTitle")}
-                description={t("common.orderNoOrdersDescription")}
-              />
-            </Family>
-          )}
+          <div className="min-h-0 flex-1">
+            <NTable {...familyTableProps} />
+          </div>
         </>
+      ) : isSponsorScope ? (
+        <div className="min-h-0 flex-1">
+          <NTable {...sponsorTableProps} />
+        </div>
       ) : (
         <div className="min-h-0 flex-1">
           <NTable {...operatorTableProps} />
@@ -454,136 +581,16 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
           if (!open) setViewOrder(null);
         }}
       />
+      <FamilyOrderDetailsSheet
+        open={familySelectedId !== ""}
+        orderId={familySelectedId}
+        orderNumber={
+          familyOrders.find((order) => order.id === familySelectedId)?.orderNumber ?? null
+        }
+        onOpenChange={(open) => {
+          if (!open) setFamilySelectedId("");
+        }}
+      />
     </NPageLayout>
-  );
-}
-
-interface FamilyOrderCardProps {
-  order: FamilyOrder;
-  pending: boolean;
-  highlighted: boolean;
-  t: ReturnType<typeof useKafilLanguage>["t"];
-  onCancel: () => void;
-  onTrack: () => void;
-}
-
-function FamilyOrderCard({
-  order,
-  pending,
-  highlighted,
-  t,
-  onCancel,
-  onTrack,
-}: Readonly<FamilyOrderCardProps>) {
-  return (
-    <div
-      className={`rounded-2xl border p-4 text-card-foreground transition-colors ${
-        highlighted
-          ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-          : "border-border bg-card"
-      }`}
-      data-highlighted={highlighted ? "true" : undefined}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold">{order.orderNumber}</p>
-          <p className="text-sm text-muted-foreground">
-            {t("common.orderPlacedOn", {
-              date: formatKafilDate(order.createdAt),
-            })}
-            {order.assisted ? ` · ${t("common.orderCreatedWithAssistance")}` : ""}
-          </p>
-        </div>
-        <StatusBadge status={order.status} />
-      </div>
-      <div className="mt-3 space-y-1 text-sm text-muted-foreground">
-        <p>
-          {t("common.requestedAmount", {
-            amount: formatMad(order.requestedTotalMinor ?? order.totalMinor),
-          })}
-        </p>
-        {order.actualTotalMinor !== null ? (
-          <p>
-            {t("common.orderActualCharged", {
-              amount: formatMad(order.actualTotalMinor),
-            })}{" "}
-            ·{" "}
-            {order.merchantName || t("common.orderActualMerchant")}
-          </p>
-        ) : (
-          <p>{t("common.orderAwaitingReceipt")}</p>
-        )}
-        {order.receiptRecorded ? (
-          <p>{t("common.orderReceiptRecorded")}</p>
-        ) : null}
-        {order.deliveryStartedAt ? (
-          <p>
-            {t("common.orderDeliveryStarted", {
-              date: formatKafilDate(order.deliveryStartedAt),
-            })}
-          </p>
-        ) : order.deliveryAssigned ? (
-          <p>{t("common.orderDeliveryAssigned")}</p>
-        ) : null}
-        {order.deliveryProofRecorded ? (
-          <p>{t("common.orderDeliveryProofRecorded")}</p>
-        ) : null}
-      </div>
-      <div className="mt-4 flex items-center justify-between">
-        <p className="font-semibold">
-          {formatMad(order.actualTotalMinor ?? order.totalMinor)}
-        </p>
-        <div className="flex gap-2">
-          <NButton size="sm" variant="outline" onClick={onTrack}>
-            {t("common.orderTrack")}
-          </NButton>
-          {order.status === "pending" ? (
-            <Family>
-              <NButton
-                size="sm"
-                variant="outline"
-                disabled={pending}
-                onClick={onCancel}
-              >
-                {t("common.orderCancel")}
-              </NButton>
-            </Family>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface FamilyOrderTimelineProps {
-  detail: FamilyOrderDetail | null | undefined;
-  loading: boolean;
-  t: ReturnType<typeof useKafilLanguage>["t"];
-}
-
-function FamilyOrderTimeline({
-  detail,
-  loading,
-  t,
-}: Readonly<FamilyOrderTimelineProps>) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 text-card-foreground">
-      <p className="text-sm font-medium">{t("family.cart.reviewTitle")}</p>
-      <p className="text-sm text-muted-foreground">
-        {detail?.orderNumber ?? t("common.loading")}
-      </p>
-      {loading ? (
-        <p className="mt-2 text-sm">{t("common.loading")}</p>
-      ) : null}
-      {detail?.statusEvents.map((event: FamilyOrderStatusEvent) => (
-        <div className="mt-3 border-t border-border pt-3" key={event.id}>
-          <p className="font-medium">{formatStatusLabel(event.toStatus)}</p>
-          <p className="text-sm text-muted-foreground">
-            {formatKafilDate(event.createdAt)}
-            {event.reason ? ` - ${event.reason}` : ""}
-          </p>
-        </div>
-      ))}
-    </div>
   );
 }

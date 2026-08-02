@@ -1,6 +1,7 @@
 import type {
   ContributionCommandResult,
   ContributionListQuery,
+  ContributionListRecord,
   ContributionReasonInput,
   ContributionRecord,
   ContributionRecordingOption,
@@ -8,8 +9,8 @@ import type {
 } from "@/features/Contributions/types";
 import { api } from "@/services/http";
 
-export function listContributions(query: ContributionListQuery) {
-  return api.get<ContributionRecord[]>("/contributions", {
+export function listContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery) {
+  return api.get<TRecord[]>("/contributions", {
     query: {
       familyProfileId: query.familyProfileId,
       limit: query.limit,

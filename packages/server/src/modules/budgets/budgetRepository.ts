@@ -1,10 +1,15 @@
 import { and, asc, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { usersTable } from "najm-auth/pg";
 import { HttpError, Repository } from "najm-core";
 import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
 import { contributions } from "../contributions/contributionSchema";
+import {
+  orderPurchaseRecords,
+  orders,
+} from "../orders/orderSchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import {
   budgetAccounts,
@@ -14,6 +19,13 @@ import {
   type NewBudgetLedgerEntry,
 } from "./budgetSchema";
 import { applyBudgetBalanceDelta, type BudgetBalance } from "./money";
+
+const ledgerOrders = alias(orders, "budget_ledger_orders");
+const ledgerPurchases = alias(
+  orderPurchaseRecords,
+  "budget_ledger_order_purchases",
+);
+const ledgerPurchaseOrders = alias(orders, "budget_ledger_purchase_orders");
 
 const budgetLedgerSelection = {
   id: budgetLedgerEntries.id,
@@ -37,6 +49,11 @@ const budgetLedgerSelection = {
   contributionStatus: contributions.status,
   paymentMethod: contributions.paymentMethod,
   externalReference: contributions.externalReference,
+  sourceReference: sql<string | null>`coalesce(
+    ${contributions.externalReference},
+    ${ledgerOrders.orderNumber},
+    ${ledgerPurchaseOrders.orderNumber}
+  )`,
 };
 
 @Repository("default")
@@ -113,8 +130,29 @@ export class BudgetLedgerRepository {
         eq(contributions.sponsorProfileId, sponsorProfiles.id),
       )
       .leftJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .leftJoin(
+        ledgerOrders,
+        and(
+          eq(budgetLedgerEntries.sourceType, "order"),
+          sql`${budgetLedgerEntries.sourceId} = ${ledgerOrders.id}::text`,
+        ),
+      )
+      .leftJoin(
+        ledgerPurchases,
+        and(
+          eq(budgetLedgerEntries.sourceType, "order_purchase"),
+          sql`${budgetLedgerEntries.sourceId} = ${ledgerPurchases.id}::text`,
+        ),
+      )
+      .leftJoin(
+        ledgerPurchaseOrders,
+        eq(ledgerPurchases.orderId, ledgerPurchaseOrders.id),
+      )
       .where(eq(budgetLedgerEntries.budgetAccountId, budgetAccountId))
-      .orderBy(desc(budgetLedgerEntries.createdAt))
+      .orderBy(
+        desc(budgetLedgerEntries.createdAt),
+        desc(budgetLedgerEntries.id),
+      )
       .limit(limit)
       .offset(offset);
   }
@@ -124,7 +162,10 @@ export class BudgetLedgerRepository {
       .select()
       .from(budgetLedgerEntries)
       .where(eq(budgetLedgerEntries.budgetAccountId, budgetAccountId))
-      .orderBy(desc(budgetLedgerEntries.createdAt))
+      .orderBy(
+        desc(budgetLedgerEntries.createdAt),
+        desc(budgetLedgerEntries.id),
+      )
       .limit(1);
     return entry;
   }

@@ -19,7 +19,7 @@ const email = `family-recreate-${suffix}@example.test`;
 const phoneDigits = String(Number.parseInt(suffix.slice(0, 8), 16) % 100_000_000)
   .padStart(8, "0");
 const phone = `+2126${phoneDigits}`;
-const guardianCin = `RC${suffix.slice(0, 8)}`.toUpperCase();
+const guardianCin = `RC${phoneDigits}`;
 const orderId = crypto.randomUUID();
 const deliveryAttemptId = crypto.randomUUID();
 const staffProfileId = crypto.randomUUID();

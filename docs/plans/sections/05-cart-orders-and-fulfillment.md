@@ -41,8 +41,8 @@ Delivery assignment update completed 2026-07-30:
   active attempt without changing family funds;
 - the order row is locked for every command and a partial unique index prevents
   competing active assignments;
-- family receives only an assigned milestone and sponsor retains its existing
-  safe fulfillment milestones.
+- family receives the assigned delivery name plus safe milestones, while the
+  sponsor retains its existing safe fulfillment milestones.
 
 Migration: `0027_unusual_victor_mancha`.
 
@@ -56,8 +56,9 @@ Assisted fulfillment-planning update completed 2026-07-31:
 - purchasing identity is snapshotted on the order, and delivery planning uses
   an immutable `assigned` attempt that may be changed while pending, approved,
   or purchased;
-- rejection and cancellation close any active planned delivery attempt, while
-  family and sponsor projections omit Staff identity.
+- rejection and cancellation close any active planned delivery attempt;
+  family projections expose only the assigned delivery name, while sponsor
+  projections omit Staff identity.
 
 Migration: `0028_clumsy_vargas`.
 

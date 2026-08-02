@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import { api } from "@/services/http";
 
 export interface SponsorRegistrationResult {
@@ -6,13 +5,20 @@ export interface SponsorRegistrationResult {
 }
 
 export interface AccessLoginResult {
-  mustChangePassword: boolean;
+  nextStep: "authenticated" | "family_password_setup" | "sponsor_email_otp";
+  expiresAt?: string;
+  resendAvailableAt?: string;
+  maskedDestination?: string;
+  emailSent?: boolean;
 }
 
-type IdentifierLoginCredentials = {
-  identifier: string;
-  password: string;
-};
+export interface SponsorEmailOtpSetup {
+  nextStep: "sponsor_email_otp";
+  expiresAt: string;
+  resendAvailableAt: string;
+  maskedDestination: string;
+  emailSent: boolean;
+}
 
 function normalizeLoginIdentifier(identifier: string) {
   const trimmed = identifier.trim();
@@ -24,39 +30,40 @@ function normalizeLoginIdentifier(identifier: string) {
   return compact;
 }
 
+const familyCinCredentialPattern = /^[a-z]{1,3}\d{5,17}$/i;
+
+function normalizeFamilyCinCredential(password: string) {
+  const trimmed = password.trim();
+  if (
+    trimmed.length >= 8 &&
+    trimmed.length <= 20 &&
+    familyCinCredentialPattern.test(trimmed)
+  ) {
+    return trimmed.toLowerCase();
+  }
+  return password;
+}
+
 export async function loginWithIdentifier(input: {
   identifier: string;
   password: string;
+  rememberMe: boolean;
+  locale?: "en" | "fr" | "ar" | "es";
 }) {
-  // Najm Auth accepts `identifier` at runtime, although 2.0.11's client
-  // declaration still exposes only the legacy email-shaped overload. Going
-  // through client.login is important: applying the returned tokens also
-  // resets a refresh circuit opened by the previous expired session.
-  const identifierClient = auth.client as typeof auth.client & {
-    login(credentials: IdentifierLoginCredentials): ReturnType<
-      typeof auth.client.login
-    >;
-  };
-  await identifierClient.login({
+  return api.post<AccessLoginResult>("/access/login", {
     ...input,
     identifier: normalizeLoginIdentifier(input.identifier),
+    password: normalizeFamilyCinCredential(input.password),
   });
-
-  if (!auth.client.hasRole("family")) {
-    return { mustChangePassword: false };
-  }
-
-  return getFamilyPasswordRequirement();
 }
 
-export function getFamilyPasswordRequirement() {
-  return api.get<{ mustChangePassword: boolean }>(
-    "/access/family-password/requirement",
+export function getFamilyPasswordSetup() {
+  return api.get<{ setupRequired: true; expiresAt: string }>(
+    "/access/family-password/setup",
   );
 }
 
 export function changeFamilyFirstPassword(input: {
-  currentPassword: string;
   newPassword: string;
 }) {
   return api.post<{ changed: true; signInAgain: true }>(
@@ -65,22 +72,38 @@ export function changeFamilyFirstPassword(input: {
   );
 }
 
+export function cancelFamilyPasswordSetup() {
+  return api.post<{ cancelled: true }>("/access/family-password/cancel");
+}
+
 export function registerSponsorAccess(input: {
   name: string;
   email: string;
   password: string;
+  locale: "en" | "fr" | "ar" | "es";
 }) {
   return api.post<SponsorRegistrationResult>("/access/register/sponsor", input);
 }
 
-export function requestEmailVerification(email: string) {
-  return api.post<{ accepted: true }>("/access/email-verification/request", {
-    email,
-  });
+export function getSponsorEmailOtpSetup() {
+  return api.get<SponsorEmailOtpSetup>("/access/email-verification/setup");
 }
 
-export function confirmEmailVerification(token: string) {
-  return api.post<{ verified: true }>("/access/email-verification/confirm", {
-    token,
-  });
+export function resendSponsorEmailOtp() {
+  return api.post<SponsorEmailOtpSetup & { accepted: true }>(
+    "/access/email-verification/resend",
+  );
+}
+
+export function confirmEmailVerification(code: string) {
+  return api.post<{ nextStep: "authenticated" }>(
+    "/access/email-verification/confirm",
+    { code },
+  );
+}
+
+export function cancelSponsorEmailOtp() {
+  return api.post<{ cancelled: true }>(
+    "/access/email-verification/cancel",
+  );
 }

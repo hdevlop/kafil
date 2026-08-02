@@ -16,10 +16,11 @@ import {
 
 import { sponsorKeys } from "./sponsorKeys";
 
-export function useSponsors(pagination: OffsetPagination) {
+export function useSponsors(pagination: OffsetPagination, enabled = true) {
   return useEntityQuery({
     queryKey: sponsorKeys.list(pagination),
     queryFn: () => listSponsors(pagination),
+    enabled,
   });
 }
 

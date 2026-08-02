@@ -1,5 +1,6 @@
 import {
   authSchema,
+  credentialSetupSessionsTable,
   oauthAccountsTable,
   permissionsTable,
   rolePermissionsTable,
@@ -61,6 +62,7 @@ export {
   tokensTable,
   userStatusEnum,
   usersTable,
+  credentialSetupSessionsTable,
   budgetLedgerEntryTypeEnum,
   categoryStatusEnum,
   childStatusEnum,

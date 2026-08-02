@@ -155,14 +155,16 @@
       "login": "Connexion réussie",
       "registered": "Compte créé. Vérifiez votre e-mail pour l'activer.",
       "verificationRequested": "Si le compte est en attente, un e-mail de vérification a été demandé.",
+      "verificationSetupRetrieved": "Configuration d'activation de l'e-mail récupérée.",
+      "verificationCancelled": "Session d'activation de l'e-mail annulée.",
       "emailVerified": "E-mail vérifié. Votre compte est actif.",
       "passwordRequirementRetrieved": "Exigence de mot de passe récupérée.",
-      "passwordChanged": "Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe."
+      "passwordChanged": "Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe.",
+      "passwordSetupCancelled": "Session de configuration du mot de passe annulée."
     },
     "firstLogin": {
       "title": "Choisissez un mot de passe facile",
       "description": "C'est votre première connexion. Remplacez le mot de passe temporaire par un mot de passe facile à retenir.",
-      "currentPassword": "Mot de passe temporaire actuel",
       "newPassword": "Nouveau mot de passe",
       "confirmPassword": "Répétez le nouveau mot de passe",
       "passwordHelp": "Utilisez au moins 8 lettres minuscules et chiffres, par exemple fatima2026.",
@@ -481,6 +483,14 @@
   },
   "ui": {
     "common": {
+      "orderCategory": "Catégorie de commande",
+      "orderFamily": "Famille",
+      "orderPhone": "Téléphone",
+      "orderDeliveryAddress": "Adresse de livraison",
+      "orderArticles": "Articles",
+      "orderRequested": "Demandé",
+      "orderMerchant": "Commerçant",
+      "orderPlaced": "Passée",
       "all": "Tous",
       "loading": "Chargement...",
       "categoryFilterAria": "Filtrer les produits par catégorie",
@@ -568,7 +578,6 @@
       "firstLogin": {
         "title": "Choisissez un mot de passe facile",
         "description": "C'est votre première connexion. Remplacez le mot de passe temporaire par un mot de passe facile à retenir.",
-        "currentPassword": "Mot de passe temporaire actuel",
         "newPassword": "Nouveau mot de passe",
         "confirmPassword": "Répétez le nouveau mot de passe",
         "passwordHelp": "Utilisez au moins 8 lettres minuscules et chiffres, par exemple fatima2026.",
@@ -578,6 +587,45 @@
         "checking": "Vérification de votre compte...",
         "changed": "Mot de passe modifié. Connectez-vous avec le nouveau mot de passe.",
         "changeFailed": "Impossible de modifier le mot de passe."
+      },
+      "emailOtp": {
+        "checking": "Vérification de la session d'activation...",
+        "title": "Vérifiez votre e-mail",
+        "instructions": "Saisissez le code d'activation à six chiffres envoyé à votre adresse e-mail.",
+        "destination": "Adresse e-mail masquée",
+        "expiresMinutes": "Le code expire 10 minutes après son envoi.",
+        "expired": "Ce code a expiré. Demandez un nouveau code pour continuer.",
+        "codeLabel": "Code d'activation",
+        "codeDescription": "Six chiffres",
+        "submit": "Vérifier et continuer",
+        "submitting": "Vérification...",
+        "resend": "Envoyer un nouveau code",
+        "resendIn": "Nouvel envoi dans {seconds}s",
+        "cancel": "Annuler et se reconnecter",
+        "deliveryFailed": "Le dernier e-mail n'a pas pu être livré. Vous pourrez demander un nouveau code à la fin du délai.",
+        "invalid": "Le code est invalide ou expiré. Demandez-en un nouveau si nécessaire.",
+        "success": "E-mail vérifié. Bienvenue sur Kafil.",
+        "resendSuccess": "Un nouveau code d'activation a été envoyé."
+      },
+      "registration": {
+        "title": "Créez votre compte",
+        "name": "Nom complet",
+        "namePlaceholder": "Saisissez votre nom complet",
+        "email": "Adresse e-mail",
+        "emailPlaceholder": "Saisissez votre adresse e-mail",
+        "password": "Mot de passe",
+        "passwordPlaceholder": "Au moins 8 caractères",
+        "confirmPassword": "Confirmer le mot de passe",
+        "confirmPasswordPlaceholder": "Répétez votre mot de passe",
+        "submit": "Créer le compte et envoyer le code",
+        "submitting": "Création du compte...",
+        "failed": "L'inscription a échoué.",
+        "checkEmail": "Consultez votre e-mail",
+        "sent": "Nous avons envoyé un code d'activation à six chiffres à {email}. Connectez-vous avec l'adresse et le mot de passe que vous venez d'enregistrer pour le saisir.",
+        "notSent": "Votre compte est en attente. Connectez-vous avec l'adresse et le mot de passe que vous venez d'enregistrer, puis demandez un nouveau code d'activation.",
+        "activate": "Se connecter pour activer le compte",
+        "already": "Vous avez déjà un compte ?",
+        "login": "Se connecter"
       }
     },
     "language": {
@@ -766,7 +814,16 @@
         "budgetPosition": "Votre budget",
         "orderPipeline": "Suivi de vos commandes",
         "recentOrders": "Commandes récentes",
-        "noOrders": "Aucune commande. Parcourez le catalogue lorsque vous êtes prêt."
+        "noOrders": "Aucune commande. Parcourez le catalogue lorsque vous êtes prêt.",
+        "recentSponsors": "Sponsors récents",
+        "supportingSince": "Soutient depuis le {date}",
+        "noSponsors": "Aucun sponsor actif pour le moment.",
+        "myFamily": "Ma famille",
+        "viewAll": "Voir tout",
+        "viewDetails": "Voir les détails",
+        "guardian": "Tuteur ou tutrice",
+        "yearOld": "{count} an",
+        "yearsOld": "{count} ans"
       },
       "sponsor": {
         "welcome": "Bienvenue, {name}",
@@ -1575,6 +1632,15 @@
       }
     },
     "family": {
+      "contributions": {
+        "title": "Historique des contributions",
+        "subtitle": "Consultez les paiements attribués à votre famille sans afficher les informations du sponsor.",
+        "viewTitle": "Détails de la contribution",
+        "viewDescription": "Un relevé de contribution respectueux de la confidentialité de votre famille.",
+        "emptyTitle": "Aucune contribution",
+        "emptyDescription": "Les paiements en attente et validés apparaîtront ici.",
+        "noData": "Aucune contribution trouvée"
+      },
       "cart": {
         "loadingTitle": "Chargement de votre panier",
         "loadingDescription": "Récupération de votre panier protégé.",

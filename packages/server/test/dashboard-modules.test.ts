@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { getMcpTools } from "najm-mcp";
 
 import {
@@ -59,6 +60,97 @@ describe("Phase 7 dashboard report boundaries", () => {
       totalMinor: 1800,
       placedAt: new Date("2026-07-20"),
     }]);
+  });
+
+  it("returns the dominant category projection for each family recent order", async () => {
+    const dashboard = new DashboardService({
+      familyIdentity: async () => ({ familyProfileId: "family-1", displayName: "Atlas Family" }),
+      familySummary: async () => ({
+        children: { total: 1, active: 1 },
+        budget: { availableMinor: 5000, reservedMinor: 0, spentMinor: 1000 },
+        orders: { open: 0, delivered: 1 },
+      }),
+      familyOrderTrend: async () => [],
+      familyOrderStatuses: async () => [{ status: "delivered", count: 1 }],
+      familyRecentOrders: async () => [{
+        id: "order-1",
+        orderNumber: "ORD-001",
+        status: "delivered",
+        totalMinor: "1000",
+        placedAt: new Date("2026-07-20"),
+        dominantCategoryName: "Fresh Produce",
+        dominantCategoryImage: "/api/category-images/files/serve/fresh-produce.webp",
+      }],
+      familyRecentSponsorContributions: async () => [{
+        id: "contribution-1",
+        name: "Sponsor One",
+        image: null,
+        gender: "F",
+        status: "pending",
+        amountMinor: "700000",
+        submittedAt: new Date("2026-07-10"),
+        paidAt: null,
+      }],
+    } as unknown as DashboardRepository);
+
+    const result = await dashboard.getFamily("family-user");
+
+    expect(result.recentOrders).toEqual([{
+      id: "order-1",
+      orderNumber: "ORD-001",
+      status: "delivered",
+      totalMinor: 1000,
+      placedAt: new Date("2026-07-20"),
+      dominantCategoryName: "Fresh Produce",
+      dominantCategoryImage: "/api/category-images/files/serve/fresh-produce.webp",
+    }]);
+    expect(result.recentSponsorContributions).toEqual([{
+      id: "contribution-1",
+      name: "Sponsor One",
+      image: null,
+      gender: "F",
+      status: "pending",
+      amountMinor: 700000,
+      submittedAt: new Date("2026-07-10"),
+      paidAt: null,
+    }]);
+  });
+
+  it("returns the family's latest sponsor contributions with their statuses", () => {
+    const repository = new DashboardRepository();
+    (repository as unknown as { db: ReturnType<typeof drizzle.mock> }).db = drizzle.mock();
+
+    const query = repository.familyRecentSponsorContributions(
+      "00000000-0000-4000-8000-000000000001",
+    ).toSQL();
+
+    expect(query.sql).toContain('"contributions"."family_profile_id" = $1');
+    expect(query.sql).toContain('"contributions"."status"');
+    expect(query.sql).toContain('"contributions"."amount_minor"');
+    expect(query.sql).toContain('order by "contributions"."submitted_at" desc');
+    expect(query.params).toEqual([
+      "00000000-0000-4000-8000-000000000001",
+      4,
+    ]);
+  });
+
+  it("qualifies every dominant-category subquery column", () => {
+    const repository = new DashboardRepository();
+    (repository as unknown as { db: ReturnType<typeof drizzle.mock> }).db = drizzle.mock();
+
+    const query = repository.familyRecentOrders(
+      "00000000-0000-4000-8000-000000000001",
+    ).toSQL();
+
+    expect(query.sql).toContain(
+      'dominant_products."id" = dominant_order_items."product_id"',
+    );
+    expect(query.sql).toContain(
+      'dominant_order_items."order_id" = "orders"."id"',
+    );
+    expect(query.sql).toContain('SUM(dominant_order_items."quantity") DESC');
+    expect(query.sql).toContain('MIN(dominant_order_items."created_at") ASC');
+    expect(query.params).toContain(4);
   });
 
   it("keeps the sponsor dashboard privacy-safe while aggregating supported budgets", async () => {

@@ -90,11 +90,12 @@ export class DashboardService {
     if (!identity) HttpError.notFound("Family dashboard not found");
 
     const { firstMonth } = monthWindow();
-    const [summary, trendRows, statusRows, recentOrders] = await Promise.all([
+    const [summary, trendRows, statusRows, recentOrders, recentSponsorContributions] = await Promise.all([
       this.dashboard.familySummary(identity.familyProfileId),
       this.dashboard.familyOrderTrend(identity.familyProfileId, firstMonth),
       this.dashboard.familyOrderStatuses(identity.familyProfileId),
       this.dashboard.familyRecentOrders(identity.familyProfileId),
+      this.dashboard.familyRecentSponsorContributions(identity.familyProfileId),
     ]);
 
     return {
@@ -116,6 +117,11 @@ export class DashboardService {
       ),
       orderStatuses: statusCounts(statusRows),
       recentOrders: recentOrders.map((order) => ({ ...order, totalMinor: numberValue(order.totalMinor) })),
+      recentSponsorContributions: recentSponsorContributions.map((contribution) => ({
+        ...contribution,
+        name: contribution.name || "Sponsor",
+        amountMinor: numberValue(contribution.amountMinor),
+      })),
     };
   }
 

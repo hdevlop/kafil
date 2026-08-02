@@ -66,6 +66,17 @@ describe("image delivery source gates", () => {
     expect(avatar).toContain("{showFallback ? (");
   });
 
+  test("tries the configured avatar fallback after the primary image fails", () => {
+    const avatar = readFileSync(
+      join(sourceRoot, "shared", "ManagedAvatar.tsx"),
+      "utf8",
+    );
+
+    expect(avatar).toContain("[primarySource, fallbackSource].find");
+    expect(avatar).toContain("!failedSources.includes(source)");
+    expect(avatar).toContain("[...current, resolved]");
+  });
+
   test("leaves public branding eligible for the Next optimizer", () => {
     const branding = readFileSync(
       join(sourceRoot, "features", "Branding", "BrandingImage.tsx"),

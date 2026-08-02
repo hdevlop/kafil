@@ -1,7 +1,7 @@
 import type {
   FamilyChildRecord,
   FamilyDashboardProfile,
-} from "@/features/FamilyDashboard/types";
+} from "@/features/Dashboard/FamilyDashboard/types";
 import { api } from "@/services/http";
 
 export function getOwnFamilyProfile() {

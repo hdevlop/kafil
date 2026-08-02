@@ -40,8 +40,8 @@ import { formatMad } from "@/lib/format";
 import { productKeys } from "@/features/Products/hooks/productKeys";
 import { getProduct } from "@/services/productApi";
 import { getFamilyCatalogProduct } from "@/services/familyCatalogApi";
-import { useOwnFamilyBudgetSummary } from "@/features/FamilyBudget/hooks/useFamilyBudget";
-import { useOwnFamilyProfile } from "@/features/FamilyDashboard/hooks/useFamilyDashboard";
+import { useOwnFamilyBudgetSummary } from "@/features/Budgets/hooks/useFamilyBudget";
+import { useOwnFamilyProfile } from "@/features/Dashboard/FamilyDashboard";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 import {

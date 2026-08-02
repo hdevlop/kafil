@@ -20,9 +20,7 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
   await page.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL(
-    new RegExp(["admin", "operator"].includes(role) ? "/operator$" : `/${role}$`),
-  );
+  await page.waitForURL(/\/dashboard$/);
   await page.waitForLoadState("networkidle");
 }
 
@@ -224,7 +222,7 @@ test.describe("Delivery assignment workflow", () => {
     await page.route("**/api/orders/me**", (route) =>
       json(route, [familySafeOrder()]),
     );
-    await page.goto("/family/orders");
+    await page.goto("/orders");
     await expect(page.getByText("Preparing for delivery", { exact: true })).toBeVisible();
     for (const value of forbiddenValues) {
       await expect(page.getByText(value, { exact: true })).toHaveCount(0);
@@ -235,7 +233,7 @@ test.describe("Delivery assignment workflow", () => {
     await page.route("**/api/orders/supported**", (route) =>
       json(route, [sponsorSafeOrder()]),
     );
-    await page.goto("/sponsor/orders");
+    await page.goto("/orders");
     await expect(page.getByText("K-SAFE-001", { exact: true })).toBeVisible();
     for (const value of forbiddenValues) {
       await expect(page.getByText(value, { exact: true })).toHaveCount(0);

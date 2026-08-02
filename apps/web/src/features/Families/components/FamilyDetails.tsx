@@ -118,7 +118,7 @@ export function FamilyDetails({ family }: Readonly<{ family: FamilyRecord }>) {
             </h3>
             <Link
               className="text-xs font-medium text-primary hover:underline"
-              href={`/operator/contributions?family=${family.id}`}
+              href={`/contribution?family=${family.id}`}
             >
               {t("operator.families.viewAllContributions")}
             </Link>

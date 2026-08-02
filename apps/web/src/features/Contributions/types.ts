@@ -37,7 +37,26 @@ export interface ContributionRecord {
   updatedAt: string;
 }
 
+export interface FamilyContributionRecord {
+  id: string;
+  amountMinor: number;
+  currency: "MAD" | string;
+  externalReference: string | null;
+  status: ContributionStatus | string;
+  submittedAt: string;
+  paidAt: string | null;
+  expiresAt: string | null;
+  expiredAt: string | null;
+  validatedAt: string | null;
+  rejectedAt: string | null;
+  createdAt: string;
+}
+
+export type ContributionListRecord = ContributionRecord | FamilyContributionRecord;
+export type ContributionAudience = "management" | "family";
+
 export type ContributionListQuery = OffsetPagination & {
+  audience?: ContributionAudience;
   familyProfileId?: string;
   status?: ContributionStatus;
 };

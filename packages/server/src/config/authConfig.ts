@@ -151,7 +151,7 @@ class SponsorImageViewerRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.OPERATOR, ROLES.SPONSOR, ROLES.ADMIN] },
+      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR, ROLES.ADMIN] },
       user,
       context,
     );
@@ -165,6 +165,19 @@ class ChildImageViewerRoleGuard {
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
       { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
+@Service()
+class ContributionReaderRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY] },
       user,
       context,
     );
@@ -190,7 +203,7 @@ class CatalogImageViewerRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.ADMIN] },
+      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR, ROLES.ADMIN] },
       user,
       context,
     );
@@ -201,6 +214,7 @@ const AdminRole = createGuard(AdminRoleGuard);
 const OperatorRole = createGuard(OperatorRoleGuard);
 const FamilyRole = createGuard(FamilyRoleGuard);
 const SponsorRole = createGuard(SponsorRoleGuard);
+const ContributionReaderRole = createGuard(ContributionReaderRoleGuard);
 const SponsorImageViewerRole = createGuard(SponsorImageViewerRoleGuard);
 const FamilyImageViewerRole = createGuard(FamilyImageViewerRoleGuard);
 const ChildImageViewerRole = createGuard(ChildImageViewerRoleGuard);
@@ -210,6 +224,7 @@ export const isAdmin = composeGuards(AdminRole());
 export const isOperator = composeGuards(OperatorRole());
 export const isFamily = composeGuards(FamilyRole());
 export const isSponsor = composeGuards(SponsorRole());
+export const isContributionReader = composeGuards(ContributionReaderRole());
 
 export function hasRole(userRole: string | null | undefined, ...keys: RoleKey[]) {
   if (!userRole) return false;

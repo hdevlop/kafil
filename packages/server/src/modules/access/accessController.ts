@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, ResMsg, User } from "najm-core";
+import { Body, Controller, Get, Post, ResMsg } from "najm-core";
 import { authIdentityRateLimitKey } from "najm-auth";
 import { RateLimit } from "najm-rate";
 import { Validate } from "najm-validation";
@@ -8,8 +8,6 @@ import {
   accessLoginDto,
   type ConfirmEmailVerificationDto,
   confirmEmailVerificationDto,
-  type RequestEmailVerificationDto,
-  requestEmailVerificationDto,
   type SponsorAccessRegistrationDto,
   sponsorAccessRegistrationDto,
   type FamilyFirstPasswordDto,
@@ -18,7 +16,6 @@ import {
 import { AccessService } from "./accessService";
 import { FamilyPasswordService } from "./familyPasswordService";
 import { resolveAccessRateLimitConfig } from "./accessRateLimitConfig";
-import { isFamily } from "../../config/authConfig";
 
 const accessRateLimits = resolveAccessRateLimitConfig();
 
@@ -52,15 +49,17 @@ export class AccessController {
     return this.access.registerSponsor(body);
   }
 
-  @Post("/email-verification/request")
-  @RateLimit({
-    ...accessRateLimits.verificationRequest,
-    key: authIdentityRateLimitKey,
-  })
-  @Validate({ body: requestEmailVerificationDto })
+  @Get("/email-verification/setup")
+  @ResMsg("access.success.verificationSetupRetrieved")
+  verificationSetup() {
+    return this.access.verificationSetup();
+  }
+
+  @Post("/email-verification/resend")
+  @RateLimit({ ...accessRateLimits.verificationResend, key: "ip" })
   @ResMsg("access.success.verificationRequested")
-  requestVerification(@Body() body: RequestEmailVerificationDto) {
-    return this.access.requestVerification(body.email);
+  resendVerification() {
+    return this.access.resendVerification();
   }
 
   @Post("/email-verification/confirm")
@@ -68,25 +67,32 @@ export class AccessController {
   @Validate({ body: confirmEmailVerificationDto })
   @ResMsg("access.success.emailVerified")
   confirmVerification(@Body() body: ConfirmEmailVerificationDto) {
-    return this.access.confirmVerification(body.token);
+    return this.access.confirmVerification(body.code);
   }
 
-  @Get("/family-password/requirement")
-  @isFamily()
+  @Post("/email-verification/cancel")
+  @ResMsg("access.success.verificationCancelled")
+  cancelVerification() {
+    return this.access.cancelVerification();
+  }
+
+  @Get("/family-password/setup")
   @ResMsg("access.success.passwordRequirementRetrieved")
-  passwordRequirement(@User("id") userId: string) {
-    return this.familyPasswords.requirement(userId);
+  passwordSetup() {
+    return this.familyPasswords.requirement();
   }
 
   @Post("/family-password/change")
-  @isFamily()
   @RateLimit({ ...accessRateLimits.familyPasswordChange, key: "ip" })
   @Validate({ body: familyFirstPasswordDto })
   @ResMsg("access.success.passwordChanged")
-  changeFamilyPassword(
-    @Body() body: FamilyFirstPasswordDto,
-    @User("id") userId: string,
-  ) {
-    return this.familyPasswords.change(userId, body);
+  changeFamilyPassword(@Body() body: FamilyFirstPasswordDto) {
+    return this.familyPasswords.change(body);
+  }
+
+  @Post("/family-password/cancel")
+  @ResMsg("access.success.passwordSetupCancelled")
+  cancelFamilyPasswordSetup() {
+    return this.familyPasswords.cancel();
   }
 }

@@ -3,7 +3,7 @@ import type {
   FamilyOrder,
   FamilyOrderDetail,
   FamilyOrderQuery,
-} from "@/features/FamilyOrdering/types";
+} from "@/features/Orders/familyTypes";
 import { api } from "@/services/http";
 
 export function getFamilyCart() {

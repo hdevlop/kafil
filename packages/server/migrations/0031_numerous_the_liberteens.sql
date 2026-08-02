@@ -1,0 +1,1 @@
+DROP TABLE "family_password_setup_sessions" CASCADE;

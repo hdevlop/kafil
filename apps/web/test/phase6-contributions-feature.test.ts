@@ -55,7 +55,13 @@ describe("Phase 6D contribution command contracts", () => {
     expect(contributionKeys.list({ limit: 25, offset: 50 })).toEqual([
       "contributions",
       "list",
-      { limit: 25, offset: 50 },
+      {
+        audience: "management",
+        familyProfileId: undefined,
+        limit: 25,
+        offset: 50,
+        status: undefined,
+      },
     ]);
     expect(contributionKeys.detail("contribution-1")).toEqual([
       "contributions",

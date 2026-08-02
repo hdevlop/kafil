@@ -89,7 +89,7 @@ export const AUTH_ROLE_PERMISSIONS: Record<
     "update:documents",
     "delete:documents",
   ],
-  family: ["read:families", "read:children", "read:budgets"],
+  family: ["read:families", "read:children", "read:budgets", "read:contributions"],
   sponsor: [
     "read:sponsors",
     "create:sponsors",

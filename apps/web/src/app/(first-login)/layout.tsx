@@ -11,7 +11,7 @@ export default async function FirstLoginLayout({
       <div className="absolute end-4 top-4 sm:end-8 sm:top-8">
         <AuthLanguageSelector />
       </div>
-      <div className="flex w-full flex-col items-center gap-6 pt-14">
+      <div className="flex w-full flex-col items-center gap-6">
         <BrandingImage
           slot="authLogo"
           alt="Kafil platform"

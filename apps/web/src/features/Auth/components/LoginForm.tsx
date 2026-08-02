@@ -11,6 +11,7 @@ import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import { getPostLoginRoute } from "../lib/getPostLoginRoute";
 import type { LoginFormProps, LoginValues } from "@/app/(auth)/types";
 import { loginWithIdentifier } from "@/services/accessApi";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 function GoogleMark() {
   return (
@@ -25,17 +26,17 @@ function GoogleMark() {
 
 export function LoginForm({ redirectTo }: LoginFormProps) {
   const router = useRouter();
+  const { language } = useKafilLanguage();
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(values: LoginValues) {
     setIsLoading(true);
     try {
-      const result = await loginWithIdentifier(values);
-      toast.success("Welcome back.");
-      router.replace(
-        getPostLoginRoute(result.mustChangePassword, redirectTo),
+      const result = await loginWithIdentifier({ ...values, locale: language });
+      if (result.nextStep === "authenticated") toast.success("Welcome back.");
+      window.location.replace(
+        getPostLoginRoute(result.nextStep, redirectTo),
       );
-      router.refresh();
     } catch (error) {
       toast.error(getAuthErrorMessage(error, "Login failed."));
     } finally {
@@ -56,7 +57,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
         <NForm
           id="login-form"
           schema={loginSchema}
-          defaultValues={{ identifier: "", password: "" }}
+          defaultValues={{ identifier: "", password: "", rememberMe: false }}
           onSubmit={handleSubmit}
           className="mt-6 h-auto space-y-4"
         >
@@ -78,15 +79,14 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           />
 
           <div className="flex items-center justify-between gap-4 text-sm">
-            <label className="flex cursor-pointer items-center gap-2 font-medium text-muted-foreground" htmlFor="remember-me">
-              <input
-                className="size-4 rounded border-input text-primary accent-primary focus:ring-ring"
-                id="remember-me"
-                name="rememberMe"
-                type="checkbox"
-              />
-              Remember me
-            </label>
+            <FormInput
+              className="w-auto shrink-0"
+              classNames={{ item: "w-auto shrink-0" }}
+              label="Remember me"
+              name="rememberMe"
+              type="checkbox"
+              variant="ghost"
+            />
             <Link className="cursor-pointer font-medium text-primary transition hover:text-primary/80 hover:underline" href="/forgot-password">
               Forgot password?
             </Link>

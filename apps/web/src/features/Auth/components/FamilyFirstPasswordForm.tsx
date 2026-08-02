@@ -1,15 +1,14 @@
 "use client";
 
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import { FormInput, NButton, NForm, toast } from "najm-kit";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { auth } from "@/lib/auth";
 import {
+  cancelFamilyPasswordSetup,
   changeFamilyFirstPassword,
-  getFamilyPasswordRequirement,
+  getFamilyPasswordSetup,
 } from "@/services/accessApi";
 import {
   familyFirstPasswordSchema,
@@ -18,41 +17,34 @@ import {
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 
 export function FamilyFirstPasswordForm() {
-  const router = useRouter();
   const { t } = useKafilLanguage();
   const [checking, setChecking] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     let active = true;
-    void getFamilyPasswordRequirement()
-      .then(({ mustChangePassword }) => {
+    void getFamilyPasswordSetup()
+      .then(({ setupRequired }) => {
         if (!active) return;
-        if (!mustChangePassword) {
-          router.replace("/family");
-          return;
-        }
-        setChecking(false);
+        if (setupRequired) setChecking(false);
       })
       .catch(() => {
-        if (active) setChecking(false);
+        if (active) window.location.replace("/login");
       });
     return () => {
       active = false;
     };
-  }, [router]);
+  }, []);
 
   async function handleSubmit(values: FamilyFirstPasswordValues) {
     setIsLoading(true);
     try {
       await changeFamilyFirstPassword({
-        currentPassword: values.currentPassword,
         newPassword: values.newPassword,
       });
-      await auth.client.logout().catch(() => undefined);
       toast.success(t("access.firstLogin.changed"));
-      router.replace("/login");
-      router.refresh();
+      window.location.replace("/login");
     } catch (error) {
       toast.error(
         getAuthErrorMessage(error, t("access.firstLogin.changeFailed")),
@@ -60,6 +52,12 @@ export function FamilyFirstPasswordForm() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleSignOut() {
+    setIsSigningOut(true);
+    await cancelFamilyPasswordSetup().catch(() => undefined);
+    window.location.replace("/login");
   }
 
   if (checking) {
@@ -78,14 +76,10 @@ export function FamilyFirstPasswordForm() {
       <h1 className="mt-5 text-center text-3xl font-semibold">
         {t("access.firstLogin.title")}
       </h1>
-      <p className="mt-3 text-center leading-7 text-muted-foreground">
-        {t("access.firstLogin.description")}
-      </p>
 
       <NForm
-        className="mt-7 space-y-5"
+        className="mt-7"
         defaultValues={{
-          currentPassword: "",
           newPassword: "",
           confirmPassword: "",
         }}
@@ -94,22 +88,12 @@ export function FamilyFirstPasswordForm() {
         schema={familyFirstPasswordSchema}
       >
         <FormInput
-          formLabel={t("access.firstLogin.currentPassword")}
-          icon="Lock"
-          name="currentPassword"
-          required
-          type="password"
-        />
-        <FormInput
           formLabel={t("access.firstLogin.newPassword")}
           icon="KeyRound"
           name="newPassword"
           required
           type="password"
         />
-        <p className="rounded-xl bg-muted px-4 py-3 text-sm leading-6 text-muted-foreground">
-          {t("access.firstLogin.passwordHelp")}
-        </p>
         <FormInput
           formLabel={t("access.firstLogin.confirmPassword")}
           icon="KeyRound"
@@ -118,6 +102,7 @@ export function FamilyFirstPasswordForm() {
           type="password"
         />
         <NButton
+          disabled={isSigningOut}
           fullWidth
           loading={isLoading}
           loadingText={t("access.firstLogin.saving")}
@@ -127,6 +112,19 @@ export function FamilyFirstPasswordForm() {
           {t("access.firstLogin.save")}
         </NButton>
       </NForm>
+
+      <NButton
+        className="mt-3"
+        disabled={isLoading}
+        fullWidth
+        leftIcon={LogOut}
+        loading={isSigningOut}
+        onClick={handleSignOut}
+        type="button"
+        variant="outline"
+      >
+        {t("action.signOut")}
+      </NButton>
 
       <div className="mt-6 flex gap-3 rounded-2xl bg-primary/5 p-4 text-sm leading-6 text-muted-foreground">
         <ShieldCheck aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" />

@@ -20,7 +20,7 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
   await page.getByRole("button", { name: "Log in" }).focus();
   await page.keyboard.press("Enter");
-  await page.waitForURL(new RegExp(`/${role}$`));
+  await page.waitForURL(/\/dashboard$/);
   await page.waitForLoadState("networkidle");
 }
 
@@ -139,7 +139,7 @@ test("Arabic dashboard copy, switcher, and family cart submission work with RTL"
       recentOrders: [],
     }),
   );
-  await page.goto("/family");
+  await page.goto("/dashboard");
   await page.locator("button").filter({ has: page.locator("svg.lucide-languages") }).click();
   await page.getByRole("menuitem").nth(1).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
@@ -648,7 +648,7 @@ test("sponsor dashboard renders populated and empty overview states", async ({ p
     return json(route, { data: [], status: "success" });
   });
 
-  await page.goto("/sponsor");
+  await page.goto("/dashboard");
   await expect(page.getByText(/Dashboard Sponsor/).first()).toBeVisible();
   await expect(page.getByText("Support ASSIGN01").first()).toBeVisible();
   await captureSponsorOverviewEvidence(page, "sponsor-dashboard-populated-desktop.png");
@@ -705,7 +705,7 @@ test("direct URLs and crafted API requests cannot cross role boundaries", async 
     return body.data.accessToken;
   });
   const familyStatuses = await page.evaluate(async (accessToken) => Promise.all([
-    fetch("/operator/orders", { redirect: "manual" }).then((response) => response.status),
+    fetch("/operator/families", { redirect: "manual" }).then((response) => response.status),
     fetch("/api/orders", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
     fetch("/api/contributions/me", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
     fetch("/api/sponsors/sponsor-overview-1/overview", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
@@ -767,7 +767,7 @@ test("bootstrap admin can open read-only access management pages", async ({
   await page.getByLabel("Email or phone").fill(adminEmail);
   await page.getByPlaceholder("Enter your password").fill(adminPassword);
   await page.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL(/\/operator$/);
+  await page.waitForURL(/\/dashboard$/);
   await page.waitForLoadState("networkidle");
 
   await page.goto("/operator/access/users");

@@ -1,13 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const ntableCardFiles = [
-  "../src/features/Budgets/components/BudgetLedgerCard.tsx",
   "../src/features/Categories/components/CategoryCard.tsx",
   "../src/features/Children/components/ChildCard.tsx",
   "../src/features/Contributions/components/ContributionCard.tsx",
   "../src/features/Families/components/FamilyCard.tsx",
-  "../src/features/FamilyBudget/components/FamilyBudgetLedgerCard.tsx",
   "../src/features/Orders/components/OrderCard.tsx",
   "../src/features/Products/components/ProductCard.tsx",
   "../src/features/Sponsors/components/SponsorCard.tsx",
@@ -58,12 +56,14 @@ describe("NTable responsive card layouts", () => {
     expect(products).not.toContain("manualPagination: true");
     expect(products).not.toContain("pageSizeOptions:");
     expect(products).not.toContain('className="hidden justify-between sm:flex"');
-    expect(products.match(/xl:grid-cols-6/g)).toHaveLength(2);
-    expect(products.match(/2xl:grid-cols-8/g)).toHaveLength(2);
+    expect(products.match(/xl:grid-cols-6/g)).toHaveLength(1);
+    expect(products.match(/2xl:grid-cols-8/g)).toHaveLength(1);
+    expect(products).not.toContain("ProductsFamilyGrid");
+    expect(categories).not.toContain("CategoriesFamilyGrid");
   });
 
   test("all renderers use the embedded NCard information contract", () => {
-    expect(ntableCardFiles).toHaveLength(10);
+    expect(ntableCardFiles).toHaveLength(8);
 
     for (const relativePath of ntableCardFiles) {
       const source = readSource(relativePath);
@@ -78,18 +78,49 @@ describe("NTable responsive card layouts", () => {
     }
   });
 
+  test("role-scoped data reuses the shared catalog, order, and contribution components", () => {
+    const orders = readSource(
+      "../src/features/Orders/components/OrdersPage.tsx",
+    );
+    const sponsorContributions = readSource(
+      "../src/features/SponsorWorkspace/components/SponsorContributionsPage.tsx",
+    );
+    expect(orders).toContain("familyTableProps");
+    expect(orders).toContain("sponsorTableProps");
+    expect(orders).not.toContain("function FamilyOrderCard");
+    expect(
+      existsSync(
+        new URL(
+          "../src/features/SponsorWorkspace/components/SponsorOrdersPage.tsx",
+          import.meta.url,
+        ),
+      ),
+    ).toBe(false);
+    expect(sponsorContributions).toContain('import { ContributionCard }');
+    for (const removedFeature of [
+      "FamilyBudget",
+      "FamilyCatalog",
+      "FamilyOrdering",
+    ]) {
+      expect(
+        existsSync(
+          new URL(`../src/features/${removedFeature}`, import.meta.url),
+        ),
+      ).toBe(false);
+    }
+  });
+
   test("entity cards use responsive media variants", () => {
     const family = readSource("../src/features/Families/components/FamilyCard.tsx");
     expect(family).toContain('<NCardMedia variant="image" size={104}>');
     expect(family).toContain('className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4"');
     expect(family).toContain("<FundingProgressBar inline progress={data.funding} />");
 
-    for (const relativePath of [
-      "../src/features/Budgets/components/BudgetLedgerCard.tsx",
-      "../src/features/SupportAssignments/components/SupportAssignmentCard.tsx",
-    ]) {
-      expect(readSource(relativePath)).toContain('<NCardMedia variant="avatar" size="sm">');
-    }
+    expect(
+      readSource(
+        "../src/features/SupportAssignments/components/SupportAssignmentCard.tsx",
+      ),
+    ).toContain('<NCardMedia variant="avatar" size="sm">');
 
     const category = readSource("../src/features/Categories/components/CategoryCard.tsx");
     expect(category).toContain('variant="hero"');

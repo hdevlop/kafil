@@ -96,33 +96,60 @@ export function DeliveryDetailsSheet({
 export function DeliveryAssignmentCard({
   order,
 }: Readonly<{ order: NonNullable<ReturnType<typeof useOrder>["data"]> }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
   const featured = getFeaturedDeliveryAttempt(order);
 
   return (
-    <NCard
-      title={featured ? undefined : t("operator.orders.delivery.noActiveAssignment")}
-      description={
-        featured
-          ? undefined
-          : order.latestDelivery?.status === "failed"
-            ? t("operator.orders.delivery.needsReassignment")
-            : t("operator.orders.delivery.assignToContinue")
+    <DeliveryPersonCard
+      delivery={featured}
+      emptyTitle={t("operator.orders.delivery.noActiveAssignment")}
+      emptyDescription={
+        order.latestDelivery?.status === "failed"
+          ? t("operator.orders.delivery.needsReassignment")
+          : t("operator.orders.delivery.assignToContinue")
       }
+    />
+  );
+}
+
+export interface DeliveryPersonCardData {
+  deliveryNameSnapshot: string;
+  deliveryPhoneSnapshot: string;
+  image: string | null;
+  gender: "M" | "F" | null;
+  assignedAt: string | Date;
+  status: string;
+}
+
+export function DeliveryPersonCard({
+  delivery,
+  emptyTitle,
+  emptyDescription,
+}: Readonly<{
+  delivery: DeliveryPersonCardData | null;
+  emptyTitle: string;
+  emptyDescription: string;
+}>) {
+  const { language } = useKafilLanguage();
+
+  return (
+    <NCard
+      title={delivery ? undefined : emptyTitle}
+      description={delivery ? undefined : emptyDescription}
     >
-      {featured ? (
+      {delivery ? (
         <div className="flex items-center justify-between gap-3">
           <ManagedAvatar
             className="min-w-0"
-            fallback={featured.deliveryNameSnapshot}
-            meta={<span className="flex items-center gap-1.5"><Clock3 aria-hidden className="size-3.5" />{formatDateTime(featured.assignedAt, language)}</span>}
+            fallback={delivery.deliveryNameSnapshot}
+            meta={<span className="flex items-center gap-1.5"><Clock3 aria-hidden className="size-3.5" />{formatDateTime(delivery.assignedAt, language)}</span>}
             shape="rounded"
             size="lg"
-            src={getSponsorAvatarImage(featured.image, featured.gender)}
-            subtitle={featured.deliveryPhoneSnapshot}
-            title={featured.deliveryNameSnapshot}
+            src={getSponsorAvatarImage(delivery.image, delivery.gender)}
+            subtitle={delivery.deliveryPhoneSnapshot}
+            title={delivery.deliveryNameSnapshot}
           />
-          <StatusBadge className="shrink-0" status={featured.status} />
+          <StatusBadge className="shrink-0" status={delivery.status} />
         </div>
       ) : null}
     </NCard>

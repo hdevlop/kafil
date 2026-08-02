@@ -2,7 +2,7 @@ import type {
   FamilyCatalogCategory,
   FamilyCatalogProduct,
   FamilyCatalogQuery,
-} from "@/features/FamilyCatalog/types";
+} from "@/features/Products/familyCatalogTypes";
 import { cleanQuery } from "@/lib/pagination";
 import { api } from "@/services/http";
 

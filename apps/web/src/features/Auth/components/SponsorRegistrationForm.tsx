@@ -10,13 +10,14 @@ import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import type { RegistrationValues } from "@/app/(auth)/types";
 import {
   registerSponsorAccess,
-  requestEmailVerification,
 } from "@/services/accessApi";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 export function SponsorRegistrationForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const { language, t } = useKafilLanguage();
   const devTools = useDevFormTools(sponsorRegistrationSchema, {
     password: "KafilDev123",
     confirmPassword: "KafilDev123",
@@ -29,25 +30,12 @@ export function SponsorRegistrationForm() {
         name: values.name,
         email: values.email,
         password: values.password,
+        locale: language,
       });
       setRegisteredEmail(values.email);
       setEmailSent(result.emailSent);
     } catch (error) {
-      toast.error(getAuthErrorMessage(error, "Registration failed."));
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function resendVerification() {
-    if (!registeredEmail) return;
-    setIsLoading(true);
-    try {
-      await requestEmailVerification(registeredEmail);
-      setEmailSent(true);
-      toast.success("A new verification email was requested.");
-    } catch (error) {
-      toast.error(getAuthErrorMessage(error, "Could not request another email."));
+      toast.error(getAuthErrorMessage(error, t("access.registration.failed")));
     } finally {
       setIsLoading(false);
     }
@@ -56,17 +44,14 @@ export function SponsorRegistrationForm() {
   if (registeredEmail) {
     return (
       <div className="flex w-full flex-col text-center">
-        <p className="text-3xl text-muted-foreground">Check your email</p>
+        <p className="text-3xl text-muted-foreground">{t("access.registration.checkEmail")}</p>
         <p className="mt-5 rounded-2xl bg-muted px-5 py-4 text-sm leading-6 text-muted-foreground">
           {emailSent
-            ? `We sent an activation link to ${registeredEmail}. Open it before signing in.`
-            : "Your account is pending, but the email could not be delivered. Request another activation email below."}
+            ? t("access.registration.sent", { email: registeredEmail })
+            : t("access.registration.notSent")}
         </p>
-        <NButton className="mt-5" type="button" variant="outline" loading={isLoading} onClick={() => void resendVerification()}>
-          Send activation email again
-        </NButton>
         <Link className="mt-5 text-sm font-medium text-primary hover:underline" href="/login">
-          Back to login
+          {t("access.registration.activate")}
         </Link>
       </div>
     );
@@ -75,7 +60,7 @@ export function SponsorRegistrationForm() {
   return (
     <div className="flex flex-col w-full">
       <div className="text-center">
-        <p className="mt-1 text-4xl text-muted-foreground">Create your account</p>
+        <p className="mt-1 text-4xl text-muted-foreground">{t("access.registration.title")}</p>
       </div>
 
       <NForm
@@ -94,32 +79,32 @@ export function SponsorRegistrationForm() {
         <FormInput
           name="name"
           type="text"
-          formLabel="Full name"
-          placeholder="Enter your full name"
+          formLabel={t("access.registration.name")}
+          placeholder={t("access.registration.namePlaceholder")}
           icon="User"
           required
         />
         <FormInput
           name="email"
           type="text"
-          formLabel="Email address"
-          placeholder="Enter your email address"
+          formLabel={t("access.registration.email")}
+          placeholder={t("access.registration.emailPlaceholder")}
           icon="Mail"
           required
         />
         <FormInput
           name="password"
           type="password"
-          formLabel="Password"
-          placeholder="At least 8 characters"
+          formLabel={t("access.registration.password")}
+          placeholder={t("access.registration.passwordPlaceholder")}
           icon="Lock"
           required
         />
         <FormInput
           name="confirmPassword"
           type="password"
-          formLabel="Confirm password"
-          placeholder="Repeat your password"
+          formLabel={t("access.registration.confirmPassword")}
+          placeholder={t("access.registration.confirmPasswordPlaceholder")}
           icon="Lock"
           required
         />
@@ -127,19 +112,19 @@ export function SponsorRegistrationForm() {
         <NButton
           fullWidth
           loading={isLoading}
-          loadingText="Creating account..."
+          loadingText={t("access.registration.submitting")}
           rounded="lg"
           size="xl"
           type="submit"
         >
-          Create account and verify email
+          {t("access.registration.submit")}
         </NButton>
       </NForm>
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
+        {t("access.registration.already")} {" "}
         <Link className="cursor-pointer font-medium text-primary transition hover:text-primary/80 hover:underline" href="/login">
-          Log in
+          {t("access.registration.login")}
         </Link>
       </p>
     </div>

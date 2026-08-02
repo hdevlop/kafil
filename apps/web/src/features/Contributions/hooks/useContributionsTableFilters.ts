@@ -13,13 +13,15 @@ function uniqueOptions(values: string[]) {
   }));
 }
 
-export function useContributionsTableFilters() {
+export function useContributionsTableFilters(audience: "management" | "family") {
   const { t } = useKafilLanguage();
-  const families = useFamilies({ limit: 100, offset: 0 });
-  const sponsors = useSponsors({ limit: 100, offset: 0 });
+  const management = audience === "management";
+  const families = useFamilies({ limit: 100, offset: 0 }, {}, management);
+  const sponsors = useSponsors({ limit: 100, offset: 0 }, management);
 
   return useMemo(
     () => [
+      ...(management ? [
       {
         type: "combobox" as const,
         name: "familyName",
@@ -53,6 +55,11 @@ export function useContributionsTableFilters() {
         name: "externalReference",
         placeholder: t("operator.contributions.searchReference"),
       },
+      ] : [{
+        type: "text" as const,
+        name: "externalReference",
+        placeholder: t("operator.contributions.searchReference"),
+      }]),
       {
         type: "select" as const,
         name: "status",
@@ -66,6 +73,6 @@ export function useContributionsTableFilters() {
         ],
       },
     ],
-    [families.data, sponsors.data, t],
+    [families.data, management, sponsors.data, t],
   );
 }

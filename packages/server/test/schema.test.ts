@@ -9,6 +9,7 @@ import {
   children,
   contributionPlans,
   contributions,
+  credentialSetupSessionsTable,
   documentObjects,
   familyPasswordRequirements,
   familyProfiles,
@@ -25,6 +26,7 @@ import {
   platformSettings,
   products,
   schema,
+  sponsorEmailOtpChallenges,
   sponsorProfiles,
   staffFunctions,
   staffProfiles,
@@ -38,6 +40,7 @@ describe("Kafil database schema", () => {
         "users",
         "oauthAccounts",
         "tokens",
+        "credentialSetupSessions",
         "roles",
         "permissions",
         "rolePermissions",
@@ -189,6 +192,7 @@ describe("Kafil database schema", () => {
         "outboxEvents",
         "platformSettings",
         "products",
+        "sponsorEmailOtpChallenges",
         "sponsorProfiles",
         "staffFunctions",
         "staffProfiles",
@@ -209,6 +213,47 @@ describe("Kafil database schema", () => {
     ]);
     expect(columns.userId.notNull).toBe(true);
     expect(columns.required.notNull).toBe(true);
+  });
+
+  it("stores only hashed, bounded sponsor activation challenges", () => {
+    const columns = getTableColumns(sponsorEmailOtpChallenges);
+    expect(Object.keys(columns)).toEqual([
+      "id",
+      "userId",
+      "codeHash",
+      "expiresAt",
+      "resendAvailableAt",
+      "attemptsRemaining",
+      "rememberMe",
+      "emailSent",
+      "locale",
+      "consumedAt",
+      "createdAt",
+      "updatedAt",
+    ]);
+    expect(columns).not.toHaveProperty("code");
+    expect(columns.codeHash.notNull).toBe(true);
+    expect(columns.attemptsRemaining.notNull).toBe(true);
+  });
+
+  it("composes Najm's hashed, expiring, purpose-bound setup sessions", () => {
+    const columns = getTableColumns(credentialSetupSessionsTable);
+
+    expect(Object.keys(columns)).toEqual([
+      "id",
+      "createdAt",
+      "updatedAt",
+      "userId",
+      "purpose",
+      "tokenHash",
+      "expiresAt",
+      "consumedAt",
+      "revokedAt",
+    ]);
+    expect(columns.userId.notNull).toBe(true);
+    expect(columns.purpose.notNull).toBe(true);
+    expect(columns.tokenHash.notNull).toBe(true);
+    expect(columns.expiresAt.notNull).toBe(true);
   });
 
   it("composes Phase 3 accounts, limits, ledger, plans, and contributions", () => {

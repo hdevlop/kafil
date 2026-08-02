@@ -15,8 +15,13 @@ import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import { useOrder } from "../hooks/useOrders";
+import { useFamilyOrder } from "../hooks/useFamilyOrdering";
+import type { FamilyOrderDetail } from "../familyTypes";
 import type { OrderRecord } from "../types";
-import { DeliveryAssignmentCard } from "./DeliveryDetailsSheet";
+import {
+  DeliveryAssignmentCard,
+  DeliveryPersonCard,
+} from "./DeliveryDetailsSheet";
 
 export function OrderDetailsSheet({ open, order, onOpenChange }: Readonly<{
   open: boolean;
@@ -38,6 +43,88 @@ export function OrderDetailsSheet({ open, order, onOpenChange }: Readonly<{
     >
       {order ? <OrderDetails orderId={order.id} /> : null}
     </NSheet>
+  );
+}
+
+export function FamilyOrderDetailsSheet({
+  open,
+  orderId,
+  orderNumber,
+  onOpenChange,
+}: Readonly<{
+  open: boolean;
+  orderId: string;
+  orderNumber: string | null;
+  onOpenChange: (open: boolean) => void;
+}>) {
+  const { language, t } = useKafilLanguage();
+  const order = useFamilyOrder(orderId);
+
+  return (
+    <NSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      icon={ClipboardCheck}
+      title={orderNumber ? `${t("common.view")} ${orderNumber}` : t("common.view")}
+      description={t("common.orderYourOrdersSubtitle")}
+      width={480}
+      side={language === "ar" ? "left" : "right"}
+      classNames={{ content: "max-w-full bg-background", header: "bg-background", body: "bg-background" }}
+    >
+      {order.isPending ? <NCard title={t("common.loadingOrders")} loading /> : null}
+      {order.isError ? (
+        <PageErrorState
+          error={order.error}
+          title={t("common.orderNoOrdersTitle")}
+          onRetry={() => void order.refetch()}
+        />
+      ) : null}
+      {order.data ? <FamilyOrderDetails data={order.data} /> : null}
+    </NSheet>
+  );
+}
+
+function FamilyOrderDetails({ data }: Readonly<{ data: FamilyOrderDetail }>) {
+  const { t } = useKafilLanguage();
+
+  return (
+    <OrderConfirmationStep
+      family={{
+        name: data.guardianLegalNameSnapshot,
+        image: data.familyImage,
+        exactAddress: data.deliveryAddressSnapshot,
+        phone: data.deliveryPhoneSnapshot,
+        availableMinor: null,
+      }}
+      familyMode
+      familyStatus={<StatusBadge status={data.status} />}
+      separateSections
+      showNotice={false}
+      totalMinor={data.requestedTotalMinor}
+      items={data.items.map((item) => ({
+        productId: item.productId,
+        productName: item.productNameSnapshot,
+        sku: item.skuSnapshot,
+        quantity: item.quantity,
+        estimatedUnitPriceMinor: item.unitPriceMinor,
+        currency: data.currency,
+        available: true,
+      }))}
+    >
+      <section aria-labelledby="family-order-delivery-title" className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Truck aria-hidden className="size-4 text-primary" />
+          <h3 id="family-order-delivery-title" className="text-sm font-semibold">
+            {t("operator.orders.delivery.column")}
+          </h3>
+        </div>
+        <DeliveryPersonCard
+          delivery={data.delivery}
+          emptyTitle={t("operator.orders.delivery.noActiveAssignment")}
+          emptyDescription={t("operator.orders.delivery.assignToContinue")}
+        />
+      </section>
+    </OrderConfirmationStep>
   );
 }
 

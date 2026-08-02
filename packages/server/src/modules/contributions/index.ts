@@ -4,6 +4,7 @@ export * from "./contributionGuards";
 export {
   ContributionPlanRepository,
   ContributionRepository,
+  familyContributionSelection,
 } from "./contributionRepository";
 export * from "./contributionSchema";
 export { ContributionService } from "./contributionService";

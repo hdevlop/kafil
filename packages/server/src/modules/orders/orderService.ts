@@ -210,13 +210,21 @@ export class OrderService {
     const latestByOrder = await this.deliveries.listLatestByOrderIds(
       records.map((order) => order.id),
     );
+    const articleCountsByOrder = await this.orders.listArticleCountsByOrderIds(
+      records.map((order) => order.id),
+    );
     return Promise.all(
-      records.map(async (order) => ({
-        ...(await this.familyOrderProjection(order)),
-        deliveryAssigned: ["assigned", "in_progress"].includes(
-          latestByOrder.get(order.id)?.status ?? "",
-        ),
-      })),
+      records.map(async (order) => {
+        const latestDelivery = latestByOrder.get(order.id) ?? null;
+        return {
+          ...(await this.familyOrderProjection(order)),
+          deliveryAssigned: ["assigned", "in_progress"].includes(
+            latestDelivery?.status ?? "",
+          ),
+          deliveryName: latestDelivery?.deliveryNameSnapshot ?? null,
+          articleCount: articleCountsByOrder.get(order.id) ?? 0,
+        };
+      }),
     );
   }
 
@@ -233,17 +241,27 @@ export class OrderService {
       offset,
       status,
     );
-    return Promise.all(
-      summaries.map(async (order) => {
-        const purchase = await this.purchases.findActiveByOrderId(order.id);
+    const latestByOrder = await this.deliveries.listLatestByOrderIds(
+      summaries.map((order) => order.id),
+    );
+    const orderIds = summaries.map((order) => order.id);
+    const [purchasesByOrder, itemsByOrder] = await Promise.all([
+      this.purchases.listActiveByOrderIds(orderIds),
+      this.orders.listItemsByOrderIds(orderIds),
+    ]);
+    return summaries.map((order) => {
+        const purchase = purchasesByOrder.get(order.id) ?? null;
+        const latestDelivery = latestByOrder.get(order.id) ?? null;
         return {
           ...order,
+          deliveryName: latestDelivery?.deliveryNameSnapshot ?? null,
+          deliveryStatus: latestDelivery?.status ?? null,
           actualTotalMinor: purchase?.actualTotalMinor ?? null,
           merchantName: purchase?.merchantName ?? null,
           purchasedAt: purchase?.purchasedAt ?? null,
           receiptRecorded: Boolean(purchase),
           deliveryProofRecorded: order.deliveryProofRecorded,
-          items: (await this.orders.listItems(order.id)).map((item) => ({
+          items: (itemsByOrder.get(order.id) ?? []).map((item) => ({
             productName: item.productNameSnapshot,
             sku: item.skuSnapshot,
             quantity: item.quantity,
@@ -251,8 +269,7 @@ export class OrderService {
             lineTotalMinor: item.lineTotalMinor,
           })),
         };
-      }),
-    );
+      });
   }
 
   @Transaction({ retries: 2 })
@@ -1605,10 +1622,21 @@ export class OrderService {
         ),
       };
     }
-    const activeDelivery = await this.deliveries.findActiveByOrderId(order.id);
+    const deliveryAttempts = await this.deliveries.listByOrderId(order.id);
+    const activeDelivery = deliveryAttempts.find((attempt) =>
+      ["assigned", "in_progress"].includes(attempt.status),
+    );
+    const latestDelivery = activeDelivery ?? deliveryAttempts.at(-1) ?? null;
+    const deliveryStaff = latestDelivery
+      ? await this.staff.findById(latestDelivery.staffProfileId)
+      : undefined;
     return {
       ...(await this.familyOrderProjection(order)),
       deliveryAssigned: Boolean(activeDelivery),
+      deliveryName: latestDelivery?.deliveryNameSnapshot ?? null,
+      delivery: latestDelivery
+        ? familyDeliveryProjection(latestDelivery, deliveryStaff)
+        : null,
       items,
       statusEvents: statusEvents.map(({ actorUserId, ...event }) => {
         void actorUserId;
@@ -1723,6 +1751,20 @@ function deliveryAttemptSummary(attempt: OrderDeliveryAttempt) {
     name: attempt.deliveryNameSnapshot,
     status: attempt.status,
     assignedAt: attempt.assignedAt,
+  };
+}
+
+function familyDeliveryProjection(
+  attempt: OrderDeliveryAttempt,
+  staff?: { image: string | null; gender: "M" | "F" | null },
+) {
+  return {
+    deliveryNameSnapshot: attempt.deliveryNameSnapshot,
+    deliveryPhoneSnapshot: attempt.deliveryPhoneSnapshot,
+    image: staff?.image ?? null,
+    gender: staff?.gender ?? null,
+    assignedAt: attempt.assignedAt,
+    status: attempt.status,
   };
 }
 

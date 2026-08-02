@@ -18,7 +18,6 @@ import {
 } from "najm-kit";
 import { useSearchParams } from "next/navigation";
 
-import { Operator } from "@/shared/Authorization";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useOrderCart, useOrderCartStore } from "@/features/OrderCart";
@@ -48,7 +47,7 @@ const productsPagination = createOffsetPagination(0, 100);
 export function ProductsPage() {
   const dialog = useDialog();
   const { t } = useKafilLanguage();
-  const { isExactFamily, isExactAdmin } = useKafilRole();
+  const { isExactAdmin } = useKafilRole();
   const orderCart = useOrderCart();
   const setCartOpen = useOrderCartStore((state) => state.setDialogOpen);
   const columns = useProductsTableColumns();
@@ -62,10 +61,15 @@ export function ProductsPage() {
   );
   const filters = useProductsTableFilters(workspace.categories);
 
-  const products = useMemo(() => {
-    if (!isExactFamily) return (workspace.products ?? []) as ProductRecord[];
-    return (workspace.products ?? []) as unknown as ProductRecord[];
-  }, [isExactFamily, workspace.products]);
+  const products = useMemo(
+    () =>
+      (workspace.products ?? []).map((product) => ({
+        createdAt: "",
+        updatedAt: "",
+        ...product,
+      })) as ProductRecord[],
+    [workspace.products],
+  );
   const cartQuantityByProductId = useMemo(
     () => new Map(orderCart.items.map((item) => [item.productId, item.quantity])),
     [orderCart.items],
@@ -146,9 +150,9 @@ export function ProductsPage() {
     loading: workspace.loading,
     error: workspace.error,
     getRowId: (product) => product.id,
-    onCreate: openCreate,
+    onCreate: workspace.mode === "management" ? openCreate : undefined,
     onView: openView,
-    onEdit: openEdit,
+    onEdit: workspace.mode === "management" ? openEdit : undefined,
     renderCard: (props) => (
       <ProductCard
         {...props}
@@ -158,24 +162,28 @@ export function ProductsPage() {
       />
     ),
     renderEmpty: () => (
-      <Operator>
-        <PageEmptyState
-          icon={Package}
-          action={
+      <PageEmptyState
+        icon={Package}
+        action={
+          workspace.mode === "management" ? (
             <NButton onClick={openCreate}>{t("common.createProduct")}</NButton>
-          }
-          title={t("common.emptyCatalogProduct")}
-          description={t("common.emptyCatalogProductHint")}
-        />
-      </Operator>
+          ) : undefined
+        }
+        title={t("common.emptyCatalogProduct")}
+        description={t("common.emptyCatalogProductHint")}
+      />
     ),
     renderError: (error) => (
       <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
     ),
     menu: {
       row: (product) => {
+        const viewAction = {
+          label: t("common.view"), icon: Eye, onSelect: () => openView(product),
+        };
+        if (workspace.mode !== "management") return [viewAction];
         const baseActions = [
-          { label: t("common.view"), icon: Eye, onSelect: () => openView(product) },
+          viewAction,
           { label: t("common.edit"), icon: Pencil, onSelect: () => openEdit(product) },
           {
             label: t(product.status === "active" ? "common.deactivate" : "common.activate"),
@@ -185,7 +193,6 @@ export function ProductsPage() {
             onSelect: () => openStatus(product),
           },
         ];
-        if (workspace.mode !== "management") return baseActions;
         if (!isExactAdmin) return baseActions;
         const permanentDelete = {
           label: t("common.deleteForever"),
@@ -233,83 +240,9 @@ export function ProductsPage() {
           </>
         }
       />
-      {isExactFamily ? (
-        <ProductsFamilyGrid
-          error={workspace.error}
-          loading={workspace.loading}
-          onAdd={handleAdd}
-          onOpenCart={openCart}
-          products={products}
-          quantityByProductId={cartQuantityByProductId}
-          refetch={() => void workspace.refetch()}
-        />
-      ) : (
-        <div className="min-h-0 flex-1">
-          <NTable {...tableProps} />
-        </div>
-      )}
-    </NPageLayout>
-  );
-}
-
-interface ProductsFamilyGridProps {
-  loading: boolean;
-  error: unknown;
-  refetch: () => void;
-  products: ProductRecord[];
-  quantityByProductId: ReadonlyMap<string, number>;
-  onAdd: (input: ProductCardAddInput) => Promise<void> | void;
-  onOpenCart: () => void;
-}
-
-function ProductsFamilyGrid({
-  loading,
-  error,
-  refetch,
-  products,
-  quantityByProductId,
-  onAdd,
-  onOpenCart,
-}: Readonly<ProductsFamilyGridProps>) {
-  const { t } = useKafilLanguage();
-  if (error) {
-    return (
-      <NPageLayout className="grid min-h-64 place-items-center">
-        <PageErrorState error={error} onRetry={refetch} />
-      </NPageLayout>
-    );
-  }
-  if (loading && products.length === 0) {
-    return (
-      <PageEmptyState
-        icon={Package}
-        title={t("common.loadingProducts")}
-        description={t("common.loadingProducts")}
-      />
-    );
-  }
-  if (products.length === 0) {
-    return (
-      <PageEmptyState
-        icon={Package}
-        title={t("common.emptyProducts")}
-        description={t("common.emptyProductsHint")}
-      />
-    );
-  }
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            data={product}
-            onAdd={onAdd}
-            onOpenCart={onOpenCart}
-            quantityInCart={quantityByProductId.get(product.id) ?? 0}
-          />
-        ))}
+      <div className="min-h-0 flex-1">
+        <NTable {...tableProps} />
       </div>
-    </div>
+    </NPageLayout>
   );
 }

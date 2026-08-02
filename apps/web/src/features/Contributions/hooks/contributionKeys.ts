@@ -6,6 +6,7 @@ export const contributionKeys = {
   all: entityKeys.all("contributions"),
   list(query: ContributionListQuery) {
     return entityKeys.list("contributions", {
+      audience: query.audience ?? "management",
       familyProfileId: query.familyProfileId,
       limit: query.limit,
       offset: query.offset,

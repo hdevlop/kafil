@@ -1,4 +1,4 @@
-import type { SponsorBudgetSummary, SponsorContribution, SponsorContributionPlan, SponsorFamilyCatalogEntry, SponsorListQuery, SponsorSupportedOrder, SponsorSupportAssignment, SponsorSupportSummary } from "@/features/SponsorWorkspace/types";
+import type { SponsorContribution, SponsorContributionPlan, SponsorFamilyCatalogEntry, SponsorListQuery, SponsorSupportAssignment, SponsorSupportSummary } from "@/features/SponsorWorkspace/types";
 import { api } from "@/services/http";
 
 export async function listSponsorSupport() {
@@ -14,8 +14,6 @@ export function listSponsorFamilyCatalog() { return api.get<SponsorFamilyCatalog
 export function selectSponsorFamily(input: { familyProfileId: string }) { return api.post<SponsorSupportAssignment>("/support-assignments/me", input); }
 export function listSponsorPlans(query: SponsorListQuery) { return api.get<SponsorContributionPlan[]>("/contributions/me/plans", { query: { limit: query.limit, offset: query.offset } }); }
 export function listSponsorContributions(query: SponsorListQuery) { return api.get<SponsorContribution[]>("/contributions/me", { query: { limit: query.limit, offset: query.offset } }); }
-export function getSponsorBudgetSummary() { return api.get<SponsorBudgetSummary>("/contributions/me/summary"); }
-export function listSponsorOrders(query: SponsorListQuery) { return api.get<SponsorSupportedOrder[]>("/orders/supported", { query: { limit: query.limit, offset: query.offset } }); }
 export function createSponsorPlan(input: { supportAssignmentId: string; kind: "monthly" | "one_time"; amountMinor: number }) { return api.post<SponsorContributionPlan>("/contributions/me/plans", input); }
 export function submitSponsorContribution(input: { supportAssignmentId: string; amountMinor: number; paymentMethod: string }) { return api.post<SponsorContribution>("/contributions/me", input); }
 export function changeSponsorPlan(input: { id: string; action: "pause" | "resume" | "stop"; reason: string }) { return api.post<SponsorContributionPlan>(`/contributions/me/plans/${input.id}/${input.action}`, { reason: input.reason }); }

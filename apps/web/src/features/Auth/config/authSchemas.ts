@@ -11,6 +11,7 @@ const password = z
 export const loginSchema = z.object({
   identifier: z.string().trim().min(1, "Enter your email or phone number"),
   password: z.string().min(1, "Enter your password"),
+  rememberMe: z.boolean().default(false),
 });
 
 export const sponsorRegistrationSchema = z
@@ -29,6 +30,12 @@ export const forgotPasswordSchema = z.object({
   email: z.email("Enter a valid email address"),
 });
 
+export const sponsorEmailOtpSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, "Enter the six-digit activation code"),
+});
+
+export type SponsorEmailOtpValues = z.infer<typeof sponsorEmailOtpSchema>;
+
 export const resetPasswordSchema = z
   .object({
     newPassword: password,
@@ -45,11 +52,19 @@ const easyFamilyPassword = z
   .max(72, "Use at most 72 characters")
   .regex(/^[a-z0-9]+$/, "Use lowercase letters and numbers only")
   .regex(/[a-z]/, "Include at least one letter")
-  .regex(/\d/, "Include at least one number");
+  .regex(/\d/, "Include at least one number")
+  .refine(
+    (value) =>
+      !(
+        value.length >= 8 &&
+        value.length <= 20 &&
+        /^[a-z]{1,3}\d{5,17}$/.test(value)
+      ),
+    "Choose a password that is not a CIN",
+  );
 
 export const familyFirstPasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, "Enter your current password"),
     newPassword: easyFamilyPassword,
     confirmPassword: z.string(),
   })

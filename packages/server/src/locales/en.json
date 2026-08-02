@@ -231,14 +231,16 @@
       "login": "Login successful",
       "registered": "Account created. Verify your email to activate it.",
       "verificationRequested": "If the account is pending, a verification email has been requested.",
+      "verificationSetupRetrieved": "Email activation setup retrieved.",
+      "verificationCancelled": "Email activation session cancelled.",
       "emailVerified": "Email verified. Your account is active.",
       "passwordRequirementRetrieved": "Password requirement retrieved.",
-      "passwordChanged": "Password changed. Sign in again with your new password."
+      "passwordChanged": "Password changed. Sign in again with your new password.",
+      "passwordSetupCancelled": "Password setup session cancelled."
     },
     "firstLogin": {
       "title": "Choose an easy password",
       "description": "This is your first login. Replace the temporary password with one you can remember.",
-      "currentPassword": "Current temporary password",
       "newPassword": "New password",
       "confirmPassword": "Repeat the new password",
       "passwordHelp": "Use at least 8 lowercase letters and numbers, for example fatima2026.",
@@ -493,6 +495,14 @@
   },
   "ui": {
     "common": {
+      "orderCategory": "Order category",
+      "orderFamily": "Family",
+      "orderPhone": "Phone",
+      "orderDeliveryAddress": "Delivery address",
+      "orderArticles": "Articles",
+      "orderRequested": "Requested",
+      "orderMerchant": "Merchant",
+      "orderPlaced": "Placed",
       "all": "All",
       "loading": "Loading...",
       "categoryFilterAria": "Filter products by category",
@@ -580,7 +590,6 @@
       "firstLogin": {
         "title": "Choose an easy password",
         "description": "This is your first login. Replace the temporary password with one you can remember.",
-        "currentPassword": "Current temporary password",
         "newPassword": "New password",
         "confirmPassword": "Repeat the new password",
         "passwordHelp": "Use at least 8 lowercase letters and numbers, for example fatima2026.",
@@ -590,6 +599,45 @@
         "checking": "Checking your account...",
         "changed": "Password changed. Sign in with your new password.",
         "changeFailed": "Could not change the password."
+      },
+      "emailOtp": {
+        "checking": "Checking activation session...",
+        "title": "Verify your email",
+        "instructions": "Enter the six-digit activation code sent to your email.",
+        "destination": "Masked email destination",
+        "expiresMinutes": "The code expires 10 minutes after it is sent.",
+        "expired": "This code has expired. Request a new code to continue.",
+        "codeLabel": "Activation code",
+        "codeDescription": "Six numeric digits",
+        "submit": "Verify and continue",
+        "submitting": "Verifying...",
+        "resend": "Send a new code",
+        "resendIn": "Send again in {seconds}s",
+        "cancel": "Cancel and sign in again",
+        "deliveryFailed": "The last email could not be delivered. You can request a new code when the timer ends.",
+        "invalid": "The code is invalid or expired. Request a new code if needed.",
+        "success": "Email verified. Welcome to Kafil.",
+        "resendSuccess": "A new activation code was sent."
+      },
+      "registration": {
+        "title": "Create your account",
+        "name": "Full name",
+        "namePlaceholder": "Enter your full name",
+        "email": "Email address",
+        "emailPlaceholder": "Enter your email address",
+        "password": "Password",
+        "passwordPlaceholder": "At least 8 characters",
+        "confirmPassword": "Confirm password",
+        "confirmPasswordPlaceholder": "Repeat your password",
+        "submit": "Create account and send code",
+        "submitting": "Creating account...",
+        "failed": "Registration failed.",
+        "checkEmail": "Check your email",
+        "sent": "We sent a six-digit activation code to {email}. Sign in with the email and password you just registered to enter it.",
+        "notSent": "Your account is pending. Sign in with the email and password you just registered, then request a new activation code.",
+        "activate": "Sign in to activate your account",
+        "already": "Already have an account?",
+        "login": "Log in"
       }
     },
     "language": {
@@ -778,7 +826,16 @@
         "budgetPosition": "Your budget",
         "orderPipeline": "Your order pipeline",
         "recentOrders": "Recent orders",
-        "noOrders": "No orders yet. Browse the catalog when you are ready."
+        "noOrders": "No orders yet. Browse the catalog when you are ready.",
+        "recentSponsors": "Recent sponsors",
+        "supportingSince": "Supporting since {date}",
+        "noSponsors": "No active sponsors yet.",
+        "myFamily": "My family",
+        "viewAll": "View all",
+        "viewDetails": "View details",
+        "guardian": "Guardian",
+        "yearOld": "{count} year old",
+        "yearsOld": "{count} years old"
       },
       "sponsor": {
         "welcome": "Welcome, {name}",
@@ -1632,6 +1689,15 @@
       }
     },
     "family": {
+      "contributions": {
+        "title": "Contribution history",
+        "subtitle": "Review the payments credited toward your family support without exposing sponsor details.",
+        "viewTitle": "Contribution details",
+        "viewDescription": "A privacy-safe contribution record for your family.",
+        "emptyTitle": "No contributions yet",
+        "emptyDescription": "Validated and pending support payments will appear here.",
+        "noData": "No contribution found"
+      },
       "cart": {
         "loadingTitle": "Loading your cart",
         "loadingDescription": "Retrieving your protected cart.",

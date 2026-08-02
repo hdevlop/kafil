@@ -24,6 +24,8 @@ export interface OrderRecord {
   guardianLegalNameSnapshot: string;
   familyImage?: string | null;
   articleCount?: number;
+  dominantCategoryName: string | null;
+  dominantCategoryImage: string | null;
   deliveryAddressSnapshot: string;
   deliveryPhoneSnapshot: string | null;
   placedByUserId: string;

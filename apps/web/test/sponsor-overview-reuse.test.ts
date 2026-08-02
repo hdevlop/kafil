@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import { sponsorDashboardKeys } from "../src/features/SponsorDashboard/hooks/sponsorDashboardKeys";
+import { sponsorDashboardKeys } from "../src/features/Dashboard/SponsorDashboard/hooks/sponsorDashboardKeys";
 import { sponsorKeys } from "../src/features/Sponsors/hooks/sponsorKeys";
 
 describe("Sponsor overview shared-card reuse contracts", () => {
   test("the sponsor dashboard page imports shared SponsorOverview cards, not local duplicates", async () => {
     const pageSource = await Bun.file(
-      new URL("../src/features/SponsorDashboard/components/SponsorDashboardPage.tsx", import.meta.url),
+      new URL("../src/features/Dashboard/SponsorDashboard/components/SponsorDashboardPage.tsx", import.meta.url),
     ).text();
 
     expect(pageSource).toContain("@/features/SponsorOverview/components/SponsorKpiGrid");
@@ -14,8 +14,20 @@ describe("Sponsor overview shared-card reuse contracts", () => {
     expect(pageSource).toContain("@/features/SponsorOverview/components/ContributionOverviewCard");
     expect(pageSource).toContain("@/features/SponsorOverview/components/RecentContributionsCard");
     expect(pageSource).toContain("@/features/SponsorOverview/components/RecentSupportedOrdersCard");
+    expect(pageSource).toContain("<SponsorKpiGrid desktopColumns={5}");
     expect(pageSource).toContain('import Link from "next/link"');
     expect(pageSource).not.toContain("<a");
+  });
+
+  test("the shared contribution activity card uses a lightweight SVG trend", async () => {
+    const source = await Bun.file(
+      new URL("../src/features/SponsorOverview/components/ContributionOverviewCard.tsx", import.meta.url),
+    ).text();
+
+    expect(source).toContain('preserveAspectRatio="none"');
+    expect(source).toContain("getSmoothLinePath");
+    expect(source).toContain('role="img"');
+    expect(source).not.toContain("recharts");
   });
 
   test("shared cards contain no hardcoded sponsor-self routes", async () => {

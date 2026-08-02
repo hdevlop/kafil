@@ -121,11 +121,11 @@ skills or dependencies in the project.
 
 ## 5. Architecture and folder ownership
 
-Move sponsor-overview presentation out of the broad `Dashboard` feature while
-leaving the operator and family dashboards untouched.
+Keep sponsor-overview presentation isolated inside the shared `Dashboard`
+feature while leaving the admin/operator and family dashboard modules untouched.
 
 ```text
-apps/web/src/features/SponsorDashboard/
+apps/web/src/features/Dashboard/SponsorDashboard/
   components/
     SponsorDashboardPage.tsx
     SponsorDashboardHeader.tsx
@@ -155,7 +155,7 @@ apps/web/src/services/
 Update these existing consumers:
 
 ```text
-apps/web/src/features/SponsorProfile/components/SponsorProfileGate.tsx
+apps/web/src/features/Dashboard/SponsorDashboard/components/SponsorDashboardGate.tsx
 apps/web/src/features/Dashboard/index.ts
 apps/web/src/features/Dashboard/types.ts
 apps/web/src/services/dashboardApi.ts
@@ -449,12 +449,12 @@ and no client N+1 sequence.
 
 ### Slice B — feature extraction
 
-- [x] Create `features/SponsorDashboard` with `types`, service, query key, hook,
+- [x] Create `features/Dashboard/SponsorDashboard` with `types`, service, query key, hook,
       pure view-model mapper, and public index.
 - [x] Move sponsor-specific types out of `features/Dashboard/types.ts`.
 - [x] Move `getSponsorDashboard()` out of `services/dashboardApi.ts`.
-- [x] Update `SponsorProfileGate` to import the new feature.
-- [x] Keep the `/sponsor` route page thin.
+- [x] Keep sponsor profile gating at the dashboard feature boundary.
+- [x] Keep the canonical `/dashboard` route page thin.
 
 Exit: old sponsor overview behavior still renders through the new feature
 boundary before the visual redesign begins.
@@ -465,7 +465,7 @@ boundary before the visual redesign begins.
 - [x] Implement the 5/3/4 primary row.
 - [x] Implement the 5/4/3 activity row.
 - [x] Extract any touched shared chart component into a dedicated file instead
-      of growing `DashboardCharts.tsx`.
+      of growing `Dashboard/shared/DashboardCharts.tsx`.
 - [x] Use real links and real empty states.
 
 Exit: desktop composition matches the reference hierarchy while using Kafil

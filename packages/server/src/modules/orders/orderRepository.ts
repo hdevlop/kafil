@@ -28,6 +28,8 @@ import {
   type NewOrderDeliveryAttempt,
   type NewOrder,
   type NewOrderItem,
+  type OrderItem,
+  type OrderPurchaseRecord,
   orderItems,
   orderDeliveryAttempts,
   orderPurchaseRecords,
@@ -37,6 +39,7 @@ import {
   orderStatusEvents,
   orders,
 } from "./orderSchema";
+import { dominantOrderCategoryField } from "./orderQueries";
 
 export interface OrderFilters {
   familyProfileId?: string;
@@ -59,14 +62,24 @@ const cartItemSelection = {
   categoryStatus: categories.status,
 };
 
-const operatorOrderSelection = {
-  ...getTableColumns(orders),
-  familyImage: usersTable.image,
-  articleCount: sql<number>`coalesce((
+const orderArticleCount = sql<number>`coalesce((
     select sum(${orderItems.quantity})
     from ${orderItems}
     where ${orderItems.orderId} = ${orders.id}
-  ), 0)::int`,
+  ), 0)::int`;
+
+const operatorOrderSelection = {
+  ...getTableColumns(orders),
+  familyImage: usersTable.image,
+  articleCount: orderArticleCount,
+  dominantCategoryName: dominantOrderCategoryField("name"),
+  dominantCategoryImage: dominantOrderCategoryField("image"),
+};
+
+const familyOrderSelection = {
+  ...getTableColumns(orders),
+  dominantCategoryName: dominantOrderCategoryField("name"),
+  dominantCategoryImage: dominantOrderCategoryField("image"),
 };
 
 @Repository("default")
@@ -75,7 +88,7 @@ export class CartRepository {
 
   async findByFamilyId(familyProfileId: string) {
     const [cart] = await this.db
-      .select()
+      .select(familyOrderSelection)
       .from(carts)
       .where(eq(carts.familyProfileId, familyProfileId))
       .limit(1);
@@ -190,6 +203,19 @@ export class OrderRepository {
       .offset(offset);
   }
 
+  async listArticleCountsByOrderIds(orderIds: readonly string[]) {
+    if (orderIds.length === 0) return new Map<string, number>();
+    const rows = await this.db
+      .select({
+        orderId: orderItems.orderId,
+        articleCount: sql<number>`sum(${orderItems.quantity})::int`,
+      })
+      .from(orderItems)
+      .where(inArray(orderItems.orderId, [...orderIds]))
+      .groupBy(orderItems.orderId);
+    return new Map(rows.map((row) => [row.orderId, row.articleCount]));
+  }
+
   listSupportedBySponsor(
     sponsorUserId: string,
     limit: number,
@@ -220,6 +246,8 @@ export class OrderRepository {
         deliveryStartedAt: orders.deliveryStartedAt,
         deliveredAt: orders.deliveredAt,
         deliveryProofRecorded: sql<boolean>`${orders.deliveryProofStoragePath} IS NOT NULL`,
+        dominantCategoryName: dominantOrderCategoryField("name"),
+        dominantCategoryImage: dominantOrderCategoryField("image"),
       })
       .from(orders)
       .innerJoin(
@@ -286,6 +314,22 @@ export class OrderRepository {
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId))
       .orderBy(orderItems.createdAt);
+  }
+
+  async listItemsByOrderIds(orderIds: readonly string[]) {
+    const grouped = new Map<string, OrderItem[]>();
+    if (orderIds.length === 0) return grouped;
+    const rows = await this.db
+      .select()
+      .from(orderItems)
+      .where(inArray(orderItems.orderId, [...orderIds]))
+      .orderBy(asc(orderItems.orderId), asc(orderItems.createdAt), asc(orderItems.id));
+    for (const row of rows) {
+      const items = grouped.get(row.orderId) ?? [];
+      items.push(row);
+      grouped.set(row.orderId, items);
+    }
+    return grouped;
   }
 
   listStatusEvents(orderId: string) {
@@ -560,6 +604,33 @@ export class OrderPurchaseRepository {
       .orderBy(desc(orderPurchaseRecords.createdAt))
       .limit(1);
     return purchase?.purchase;
+  }
+
+  async listActiveByOrderIds(orderIds: readonly string[]) {
+    const active = new Map<string, OrderPurchaseRecord>();
+    if (orderIds.length === 0) return active;
+    const rows = await this.db
+      .select({ purchase: orderPurchaseRecords })
+      .from(orderPurchaseRecords)
+      .leftJoin(
+        orderPurchaseReversals,
+        eq(orderPurchaseReversals.purchaseId, orderPurchaseRecords.id),
+      )
+      .where(and(
+        inArray(orderPurchaseRecords.orderId, [...orderIds]),
+        isNull(orderPurchaseReversals.id),
+      ))
+      .orderBy(
+        asc(orderPurchaseRecords.orderId),
+        desc(orderPurchaseRecords.createdAt),
+        desc(orderPurchaseRecords.id),
+      );
+    for (const row of rows) {
+      if (!active.has(row.purchase.orderId)) {
+        active.set(row.purchase.orderId, row.purchase);
+      }
+    }
+    return active;
   }
 
   listByOrderId(orderId: string) {

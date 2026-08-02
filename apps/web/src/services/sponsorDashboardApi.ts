@@ -1,4 +1,4 @@
-import type { SponsorDashboardData } from "@/features/SponsorDashboard/types";
+import type { SponsorDashboardData } from "@/features/Dashboard/SponsorDashboard/types";
 
 import { api } from "./http";
 

@@ -9,6 +9,7 @@ import { children } from "../children/childSchema";
 import { contributions, contributionPlans } from "../contributions/contributionSchema";
 import { familyProfiles } from "../families/familySchema";
 import { orders, orderItems } from "../orders/orderSchema";
+import { dominantOrderCategoryField } from "../orders/orderQueries";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
 
@@ -170,7 +171,7 @@ export class DashboardRepository {
       .orderBy(asc(orders.status));
   }
 
-  familyRecentOrders(familyProfileId: string, limit = 5) {
+  familyRecentOrders(familyProfileId: string, limit = 4) {
     return this.db
       .select({
         id: orders.id,
@@ -178,10 +179,35 @@ export class DashboardRepository {
         status: orders.status,
         totalMinor: orders.totalMinor,
         placedAt: orders.createdAt,
+        dominantCategoryName: dominantOrderCategoryField("name"),
+        dominantCategoryImage: dominantOrderCategoryField("image"),
       })
       .from(orders)
       .where(eq(orders.familyProfileId, familyProfileId))
       .orderBy(desc(orders.createdAt))
+      .limit(limit);
+  }
+
+  familyRecentSponsorContributions(familyProfileId: string, limit = 4) {
+    return this.db
+      .select({
+        id: contributions.id,
+        name: usersTable.name,
+        image: usersTable.image,
+        gender: sponsorProfiles.gender,
+        status: contributions.status,
+        amountMinor: contributions.amountMinor,
+        submittedAt: contributions.submittedAt,
+        paidAt: contributions.paidAt,
+      })
+      .from(contributions)
+      .innerJoin(
+        sponsorProfiles,
+        eq(contributions.sponsorProfileId, sponsorProfiles.id),
+      )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .where(eq(contributions.familyProfileId, familyProfileId))
+      .orderBy(desc(contributions.submittedAt))
       .limit(limit);
   }
 

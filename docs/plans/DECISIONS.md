@@ -136,9 +136,10 @@ is a package boundary, not a separate deployment.
 
 ### D-023 - Najm owns authentication
 
-Kafil reuses Najm auth, sessions, JWTs, refresh rotation, reset flows, role
-guards, permission guards, and ownership. It does not create a parallel auth
-system.
+Kafil reuses Najm auth, normal sessions, JWTs, refresh rotation, reset flows,
+role guards, permission guards, password hashing, and ownership. It does not
+create a parallel normal-auth system. The first-family-password flow may use a
+Kafil-owned, purpose-bound setup token that cannot authorize product routes.
 
 ### D-024 - Backend-first delivery
 
@@ -302,8 +303,9 @@ and order to `in_progress` / `out_for_delivery`; failure closes the attempt and
 returns the order to `purchased`; confirmation completes the active attempt and
 the existing protected-proof workflow together. Reassignment cancels only an
 unstarted attempt and creates its replacement atomically. Operators and admins
-receive operational assignment data; family views receive only an assigned
-milestone, and sponsor views retain their existing fulfillment milestones.
+receive operational assignment data; family views receive the assigned
+delivery name and safe milestones, while sponsor views retain identity-free
+fulfillment milestones.
 Audit/outbox payloads contain stable IDs and states, never Staff phone, exact
 address, failure text, notes, or proof paths. Delivery has no budget or
 inventory effect.
@@ -327,10 +329,30 @@ commands. Delivery may be planned while an order is `pending`, `approved`, or
 Assignments are plans, not lifecycle evidence: submission remains `pending`,
 approval remains explicit, purchase is reached only by recording the protected
 receipt, and `out_for_delivery` is reached only by starting delivery. Rejection
-or cancellation closes an active planned delivery attempt. Family and sponsor
-projections omit purchasing and delivery Staff identity.
+or cancellation closes an active planned delivery attempt. Family projections
+expose only the assigned delivery name and omit purchasing Staff identity;
+sponsor projections omit both identities.
 
 Because an unstarted assignment is only a plan, bootstrap-admin correction may
 delete it together with an otherwise eligible mistaken pre-purchase order.
 Purchase history, protected proof, or a delivery attempt that actually started
 remains immutable fulfillment evidence and blocks permanent deletion.
+
+### D-041 - Guardian CIN is the temporary family credential
+
+An operator-created family uses its guardian CIN as the temporary first-login
+password. Standard CIN-shaped input is normalized to lowercase at the Kafil
+login boundary, so guardians may type either uppercase or lowercase. A valid
+temporary CIN produces only a ten-minute, HttpOnly, browser-session setup token
+whose hash is stored in PostgreSQL. It cannot access `/dashboard` or protected
+APIs and is consumed when the permanent password is chosen. Completion revokes
+all normal sessions and requires one clean sign-in with the new password. A
+CIN-shaped value is rejected as the permanent password. CIN remains
+operator-only identity data and must not appear in auth logs, audit metadata,
+outbox payloads, or sponsor projections.
+
+The reusable setup-session lifecycle belongs to `najm-auth`, not Kafil.
+`najm-auth@2.0.12` verifies temporary credentials without establishing a normal
+session and owns purpose-bound begin, require, atomic consume, cancel, expiry,
+cookie, and token-hash behavior. Kafil supplies the `family-password` purpose
+and keeps only family-specific requirement and password-policy rules.

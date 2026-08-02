@@ -122,7 +122,7 @@ This repository uses Bun. Do not use npm, yarn, pnpm, or `npx`.
 ## 5. Reuse architecture
 
 The existing sponsor-dashboard cards currently belong to
-`features/SponsorDashboard` and some contain sponsor-self labels and routes.
+`features/Dashboard/SponsorDashboard` and some contain sponsor-self labels and routes.
 Extract only the genuinely reusable visual primitives:
 
 ```text
@@ -140,7 +140,7 @@ apps/web/src/features/SponsorOverview/
 Keep role-specific containers and adapters separate:
 
 ```text
-apps/web/src/features/SponsorDashboard/
+apps/web/src/features/Dashboard/SponsorDashboard/
   components/
     SponsorDashboardPage.tsx
     SponsorDashboardKpiGrid.tsx
@@ -635,4 +635,3 @@ Do not accept source positioning as visual proof.
       dark-theme, and long-content verification requires browser screenshots.
 - [x] Full repository gates pass; E2E denial tests added; visual evidence pending.
 - [ ] Phase 7 evidence records actual commands and counts; screenshots still required.
-

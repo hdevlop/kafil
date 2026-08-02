@@ -10,10 +10,6 @@ import {
   createSponsorFormSchema,
   updateSponsorFormSchema,
 } from "../src/features/Sponsors/config/sponsorSchemas";
-import {
-  manualBudgetAdjustmentFormSchema,
-  monthlyBudgetLimitFormSchema,
-} from "../src/features/Budgets/config/budgetSchemas";
 import { createCategoryFormSchema } from "../src/features/Categories/config/categorySchemas";
 import { createProductFormSchema } from "../src/features/Products/config/productSchemas";
 
@@ -45,11 +41,6 @@ describe("F8 development form fills", () => {
 
   test("generate valid operational form values", () => {
     const cases = [
-      [monthlyBudgetLimitFormSchema, buildFormFill(monthlyBudgetLimitFormSchema)],
-      [
-        manualBudgetAdjustmentFormSchema,
-        buildFormFill(manualBudgetAdjustmentFormSchema),
-      ],
       [createCategoryFormSchema, buildFormFill(createCategoryFormSchema)],
       [
         createProductFormSchema,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { getGuardMetadata } from "najm-guard";
 import { getMcpTools } from "najm-mcp";
 
@@ -24,6 +25,7 @@ import {
   OrderValidator,
   submitOrderDto,
 } from "../src/modules/orders";
+import { dominantOrderCategoryField } from "../src/modules/orders/orderQueries";
 
 const householdId = "00000000-0000-4000-8000-000000000081";
 const productId = "00000000-0000-4000-8000-000000000082";
@@ -33,6 +35,93 @@ const deliveryStaffId = "00000000-0000-4000-8000-000000000085";
 const purchasingStaffId = "00000000-0000-4000-8000-000000000087";
 
 describe("Phase 5 cart and route contracts", () => {
+  it("ranks dominant categories by quantity with deterministic tie breakers", () => {
+    const query = new PgDialect().sqlToQuery(dominantOrderCategoryField("name"));
+    expect(query.sql).toContain("SUM(dominant_order_items.\"quantity\") DESC");
+    expect(query.sql).toContain("MIN(dominant_order_items.\"created_at\") ASC");
+    expect(query.sql).toContain("dominant_category.\"id\" ASC");
+    expect(query.sql).toContain("LIMIT 1");
+  });
+
+  it("batches sponsor order enrichment without per-order repository reads", async () => {
+    const calls = {
+      deliveries: 0,
+      items: 0,
+      purchases: 0,
+    };
+    const summaries = [
+      { id: "order-1", deliveryProofRecorded: false },
+      { id: "order-2", deliveryProofRecorded: true },
+    ];
+    const service = new OrderService(
+      {} as CartRepository,
+      {
+        listSupportedBySponsor: async () => summaries,
+        listItemsByOrderIds: async (ids: readonly string[]) => {
+          calls.items += 1;
+          expect(ids).toEqual(["order-1", "order-2"]);
+          return new Map([
+            ["order-1", [{
+              productNameSnapshot: "Rice",
+              skuSnapshot: "RICE",
+              quantity: 2,
+              unitPriceMinor: 300,
+              lineTotalMinor: 600,
+            }]],
+          ]);
+        },
+      } as unknown as OrderRepository,
+      {
+        listLatestByOrderIds: async (ids: readonly string[]) => {
+          calls.deliveries += 1;
+          expect(ids).toEqual(["order-1", "order-2"]);
+          return new Map([
+            ["order-1", { status: "assigned", deliveryNameSnapshot: "Amina" }],
+          ]);
+        },
+      } as unknown as OrderDeliveryRepository,
+      {
+        listActiveByOrderIds: async (ids: readonly string[]) => {
+          calls.purchases += 1;
+          expect(ids).toEqual(["order-1", "order-2"]);
+          return new Map([
+            ["order-2", {
+              actualTotalMinor: 775,
+              merchantName: "Market",
+              purchasedAt: new Date("2026-08-01T10:00:00.000Z"),
+            }],
+          ]);
+        },
+      } as unknown as OrderPurchaseRepository,
+      {} as StaffRepository,
+      {} as ProductRepository,
+      {} as BudgetAccountRepository,
+      {} as BudgetLedgerRepository,
+      {} as MonthlyBudgetLimitRepository,
+      {} as AuditService,
+      {} as OutboxService,
+      {} as OrderValidator,
+      {} as FundingService,
+      {} as OrderEvidenceService,
+    );
+
+    const result = await service.listSupported("sponsor-user", {});
+
+    expect(calls).toEqual({ deliveries: 1, items: 1, purchases: 1 });
+    expect(result[0]).toMatchObject({
+      deliveryName: "Amina",
+      deliveryStatus: "assigned",
+      receiptRecorded: false,
+      items: [{ productName: "Rice", quantity: 2 }],
+    });
+    expect(result[1]).toMatchObject({
+      actualTotalMinor: 775,
+      merchantName: "Market",
+      receiptRecorded: true,
+      items: [],
+    });
+  });
+
   it("accepts only positive bounded cart quantities and idempotent submission keys", () => {
     expect(
       cartItemDto.parse({ productId, quantity: "2", priceMinor: 1 }),
@@ -327,6 +416,19 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     });
     expect(state.balanceUpdates).toEqual([]);
     expect(state.ledger).toEqual([]);
+
+    const familyDetail = await service.getOwn(orderId, "family-user");
+    expect(familyDetail).toMatchObject({
+      deliveryAssigned: false,
+      deliveryName: "Amina Delivery",
+      delivery: {
+        deliveryNameSnapshot: "Amina Delivery",
+        deliveryPhoneSnapshot: "+212600001122",
+        image: "/api/staff-images/files/serve/amina.webp",
+        gender: "F",
+        status: "delivered",
+      },
+    });
   });
 
   it("assigns and reassigns delivery while approved but still requires purchase before start", async () => {
@@ -470,7 +572,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     ).rejects.toMatchObject({ status: 409 });
   });
 
-  it("keeps delivery identity, command keys, and actor IDs out of family detail", async () => {
+  it("exposes only the delivery name while keeping private delivery data out of family detail", async () => {
     const { service, state } = orderService({ status: "purchased" });
     state.events.push({
       id: "event-1",
@@ -489,6 +591,9 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
 
     const family = await service.getOwn(orderId, "family-user");
     expect((family as { deliveryAssigned: boolean }).deliveryAssigned).toBe(true);
+    expect((family as { deliveryName: string | null }).deliveryName).toBe(
+      "Amina Delivery",
+    );
     expect(family).not.toHaveProperty("currentDelivery");
     expect(family).not.toHaveProperty("deliveryAttempts");
     expect(family).not.toHaveProperty("deliveryStartedByUserId");

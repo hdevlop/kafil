@@ -4,10 +4,10 @@ import { useState } from "react";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useCategories, useCategoryCommands } from "@/features/Categories/hooks/useCategories";
-import { useFamilyCatalogCategories } from "@/features/FamilyCatalog/hooks/useFamilyCatalog";
+import { useFamilyCatalogCategories } from "@/features/Products/hooks/useFamilyCatalog";
 import type { OffsetPagination } from "@/lib/pagination";
 import type { CategoryRecord } from "@/features/Categories/types";
-import type { FamilyCatalogCategory } from "@/features/FamilyCatalog/types";
+import type { FamilyCatalogCategory } from "@/features/Products/familyCatalogTypes";
 
 export interface CategoriesWorkspaceFilters {
   search?: string;

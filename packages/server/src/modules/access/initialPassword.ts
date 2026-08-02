@@ -11,11 +11,24 @@ function passwordNamePart(fullName: string) {
 }
 
 export function generateFamilyInitialPassword(
-  fullName: string,
-  dateOfBirth: string,
+  guardianCin: string,
 ) {
-  const year = dateOfBirth.slice(0, 4);
-  return `${passwordNamePart(fullName)}${year}`;
+  return normalizeFamilyCinCredential(guardianCin);
+}
+
+const FAMILY_CIN_CREDENTIAL_PATTERN = /^[a-z]{1,3}\d{5,17}$/i;
+
+export function isFamilyCinCredential(value: string) {
+  const trimmed = value.trim();
+  return (
+    trimmed.length >= 8 &&
+    trimmed.length <= 20 &&
+    FAMILY_CIN_CREDENTIAL_PATTERN.test(trimmed)
+  );
+}
+
+export function normalizeFamilyCinCredential(value: string) {
+  return isFamilyCinCredential(value) ? value.trim().toLowerCase() : value;
 }
 
 /**

@@ -42,6 +42,21 @@ const ownContributionSelection = {
   createdAt: contributions.createdAt,
 };
 
+export const familyContributionSelection = {
+  id: contributions.id,
+  amountMinor: contributions.amountMinor,
+  currency: contributions.currency,
+  externalReference: contributions.externalReference,
+  status: contributions.status,
+  submittedAt: contributions.submittedAt,
+  paidAt: contributions.paidAt,
+  expiresAt: contributions.expiresAt,
+  expiredAt: contributions.expiredAt,
+  validatedAt: contributions.validatedAt,
+  rejectedAt: contributions.rejectedAt,
+  createdAt: contributions.createdAt,
+};
+
 const operatorContributionSelection = {
   id: contributions.id,
   contributionPlanId: contributions.contributionPlanId,
@@ -158,6 +173,44 @@ export class ContributionRepository {
       .where(eq(contributions.id, id))
       .limit(1);
     return contribution;
+  }
+
+  async findFamilyById(id: string, userId: string) {
+    const [contribution] = await this.db
+      .select(familyContributionSelection)
+      .from(contributions)
+      .innerJoin(
+        familyProfiles,
+        eq(contributions.familyProfileId, familyProfiles.id),
+      )
+      .where(and(eq(contributions.id, id), eq(familyProfiles.userId, userId)))
+      .limit(1);
+    return contribution;
+  }
+
+  listFamily(
+    userId: string,
+    limit: number,
+    offset: number,
+    filters: Pick<ContributionFilters, "status">,
+  ) {
+    const condition = filters.status
+      ? and(
+          eq(familyProfiles.userId, userId),
+          eq(contributions.status, filters.status),
+        )
+      : eq(familyProfiles.userId, userId);
+    return this.db
+      .select(familyContributionSelection)
+      .from(contributions)
+      .innerJoin(
+        familyProfiles,
+        eq(contributions.familyProfileId, familyProfiles.id),
+      )
+      .where(condition)
+      .orderBy(desc(contributions.submittedAt))
+      .limit(limit)
+      .offset(offset);
   }
 
   async lockById(id: string) {

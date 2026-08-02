@@ -9,7 +9,7 @@
   ],
   "overrides": {
     "najm-core": "2.0.4",
-    "najm-auth": "2.0.11",
+    "najm-auth": "2.0.13",
     "najm-database": "2.0.3",
     "diject": "0.1.8"
   },
@@ -60,6 +60,6 @@
     "@clack/core": "^1.4.3",
     "@clack/prompts": "^1.7.0",
     "najm-core": "^2.0.4",
-    "najm-kit": "2.1.46"
+    "najm-kit": "2.1.47"
   }
 }

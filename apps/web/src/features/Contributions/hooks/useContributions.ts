@@ -16,12 +16,12 @@ import {
 
 import { contributionInvalidation } from "./contributionInvalidation";
 import { contributionKeys } from "./contributionKeys";
-import type { ContributionListQuery } from "../types";
+import type { ContributionListQuery, ContributionListRecord, ContributionRecord } from "../types";
 
-export function useContributions(query: ContributionListQuery) {
+export function useContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery) {
   return useEntityQuery({
     queryKey: contributionKeys.list(query),
-    queryFn: () => listContributions(query),
+    queryFn: () => listContributions<TRecord>(query),
   });
 }
 

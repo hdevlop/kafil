@@ -341,7 +341,7 @@ function generateContributions(
     );
   }
 
-  return Array.from({ length: count }, (_, index) => {
+  const generated = Array.from({ length: count }, (_, index) => {
     let { assignment, expectedStatus } = contributionPlans[index]!;
     let amountMinor = 50_000 + (index % 5) * 25_000;
 
@@ -352,10 +352,7 @@ function generateContributions(
       amountMinor =
         contributionCount === 1
           ? remaining
-          : Math.min(
-              Math.max(1, Math.floor(remaining / 2)),
-              remaining - (contributionCount - 1),
-            );
+          : Math.max(1, Math.floor(remaining / contributionCount));
       validatedRemaining.set(familyId, contributionCount - 1);
       fundingRemaining.set(familyId, remaining - amountMinor);
     } else if (expectedStatus === "pending") {
@@ -384,7 +381,11 @@ function generateContributions(
     ) {
       const plan = pendingPlans[pendingIndex % pendingPlans.length]!;
       assignment = assignmentsByFamilyId.get(plan.family.id)!;
-      amountMinor = 1;
+      const remaining = pendingRemaining.get(plan.family.id) ?? 1;
+      amountMinor = Math.min(
+        50_000 + (index % 5) * 25_000,
+        Math.max(1, remaining),
+      );
     }
 
     return contribution(
@@ -395,6 +396,12 @@ function generateContributions(
       referenceDate,
     );
   });
+
+  return generated.sort(
+    (left, right) =>
+      left.paidAt.localeCompare(right.paidAt) ||
+      left.externalReference.localeCompare(right.externalReference),
+  );
 }
 
 function generateOrders(

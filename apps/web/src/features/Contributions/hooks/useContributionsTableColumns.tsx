@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { type NTableProps } from "najm-kit";
 
 import { formatKafilDate, formatMad } from "@/lib/format";
@@ -9,37 +9,41 @@ import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
-import type { ContributionRecord } from "../types";
+import type { ContributionAudience, ContributionListRecord, ContributionRecord } from "../types";
 
-export function useContributionsTableColumns() {
+function isManagement(record: ContributionListRecord): record is ContributionRecord {
+  return "sponsorName" in record;
+}
+
+export function useContributionsTableColumns(
+  audience: ContributionAudience,
+  renderActions: (record: ContributionListRecord) => ReactNode,
+) {
   const { t } = useKafilLanguage();
-  return useMemo<NTableProps<ContributionRecord>["columns"]>(
+  return useMemo<NTableProps<ContributionListRecord>["columns"]>(
     () => [
-      {
-        accessorKey: "sponsorName",
-        header: t("operator.assignments.sponsor"),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-3">
-            <ManagedAvatar
-              src={getSponsorAvatarImage(
-                row.original.sponsorImage,
-                row.original.sponsorGender,
-              )}
-              alt={row.original.sponsorName}
-              classNames={{ avatar: "bg-muted" }}
-            />
-            <span>{row.original.sponsorName}</span>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "familyName",
-        header: t("operator.assignments.family"),
-      },
-      {
-        accessorKey: "paymentMethod",
-        header: t("operator.contributions.paymentMethod"),
-      },
+      ...(audience === "management" ? [
+        {
+          accessorKey: "sponsorName",
+          header: t("operator.assignments.sponsor"),
+          cell: ({ row }: { row: { original: ContributionListRecord } }) => {
+            const record = row.original;
+            if (!isManagement(record)) return null;
+            return (
+              <div className="flex items-center gap-3">
+                <ManagedAvatar
+                  src={getSponsorAvatarImage(record.sponsorImage, record.sponsorGender)}
+                  alt={record.sponsorName}
+                  classNames={{ avatar: "bg-muted" }}
+                />
+                <span>{record.sponsorName}</span>
+              </div>
+            );
+          },
+        },
+        { accessorKey: "familyName", header: t("operator.assignments.family") },
+        { accessorKey: "paymentMethod", header: t("operator.contributions.paymentMethod") },
+      ] : []),
       {
         accessorKey: "externalReference",
         header: t("operator.contributions.reference"),
@@ -60,7 +64,13 @@ export function useContributionsTableColumns() {
         header: t("operator.contributions.submitted"),
         cell: ({ getValue }) => formatKafilDate(getValue<string>()),
       },
+      {
+        id: "actions",
+        header: t("common.actions"),
+        enableSorting: false,
+        cell: ({ row }) => renderActions(row.original),
+      },
     ],
-    [t],
+    [audience, renderActions, t],
   );
 }

@@ -76,19 +76,22 @@ These decisions apply unless this plan is deliberately revised:
     activation. Reaching the current target activates the family once.
 24. Lowering a family's target reevaluates that family. Raising it or spending
     budget never deactivates an already-qualified family.
-25. Operator-created accounts are phone-first. Family initial passwords use the
-    surname and birth year (for example, `Amrani1987`) for an easy first login,
-    while sponsor initial passwords retain a random suffix. Kafil stores only
-    Najm's password hash and reveals the credential once to the operator.
+25. Operator-created accounts are phone-first. A family's temporary first
+    password is the guardian CIN; standard CIN-shaped input is normalized so
+    either uppercase or lowercase works. Sponsor initial passwords retain a
+    random suffix. Kafil stores only Najm's password hash and never places the
+    CIN in auth logs, audit metadata, or outbox payloads.
 26. Public sponsor registration remains email-first. New accounts stay pending
     until an expiring, one-time email-verification link activates them.
 27. Email and normalized phone are both accepted login identifiers. Phone is
     globally unique at the Najm user boundary; profile tables retain the domain
     contact field.
 28. Newly operator-created families must replace the temporary password on
-    their first login. The server owns this requirement; the family replacement
-    may use lowercase letters and numbers, while every other role keeps Najm's
-    stronger password policy.
+    their first access. A valid temporary CIN creates only a ten-minute,
+    browser-session password-setup session; it creates no usable dashboard/API
+    session. Choosing the permanent lowercase-and-number password consumes the
+    setup session, revokes every normal session, and requires one clean sign-in.
+    Every other role keeps Najm's stronger password policy.
 29. Operators and admins may create an attributed assisted order for an active
     family without impersonating it or changing its personal cart.
 30. Approval keeps the estimated total reserved. A protected supermarket
@@ -144,6 +147,9 @@ The current workspace already contains a useful foundation:
 - [x] Family profiles enforce one login per family through a unique `userId`
 - [x] Sponsor public onboarding and self-profile completion
 - [x] Email-or-phone authentication with globally normalized phone identities
+- [x] Explicit remember-me persistence for normal logins: unchecked logins use
+      browser-session cookies and checked logins persist through browser
+      restarts; temporary-CIN access is always a setup-only browser session
 - [x] Najm Auth 2.0.10 identity-aware access throttling and explicit loopback
       session recovery for the single Next.js production process
 - [x] One-time operator credential handoff for family and sponsor accounts
@@ -159,8 +165,9 @@ The current workspace already contains a useful foundation:
 - [x] Cart and order workflow
 - [x] Configurable family funding target, progress, and order-activation gate
 - [x] Operator-only family image upload with protected local filesystem serving
-- [x] Role-specific dashboard applications with grouped icon navigation, live
-      KPI cards, trend charts, status summaries, and role-scoped attention lists
+- [x] One canonical `/dashboard` with server-side exact-role selection, grouped
+      icon navigation, live KPI cards, trend charts, status summaries, and
+      role-scoped attention lists
 - [~] Durable financial outbox rows exist; reports, delivery workers, and
       release hardening remain Phase 7
 
@@ -175,9 +182,9 @@ Browser
   |
   +-- Landing and auth routes
   |
-  +-- Role dashboards
+  +-- Canonical /dashboard
         |
-        +-- Operator
+        +-- AdminDashboard (admin and operator)
         +-- Family
         +-- Sponsor
               |
@@ -755,7 +762,7 @@ Detailed active plan: [`plans/sections/06-web-dashboards.md`](plans/sections/06-
 
 - [x] Add login, sponsor registration, reset-password, and activation pages
 - [x] Resolve the session server-side with Najm auth
-- [x] Redirect `/dashboard` to the correct role dashboard
+- [x] Render the correct exact-role dashboard directly at `/dashboard`
 - [x] Add operator navigation and management screens (Families, Children,
       Sponsors, SupportAssignments, Contributions, Budgets, Categories,
       Products, Orders, admin Access management, and platform Settings)
@@ -800,6 +807,85 @@ order, delivery planning creates the immutable assigned attempt, and only the
 existing explicit commands move the lifecycle forward. Migration
 `0028_clumsy_vargas` adds the nullable purchasing assignment snapshot.
 
+Canonical dashboard extension (2026-08-01): `/dashboard` now resolves the
+authenticated role server-side and directly renders exactly one dashboard;
+there is no role-home redirect. Admin and operator share `AdminDashboard`,
+while family and sponsor render their own dashboards. All Overview navigation
+links target `/dashboard`, and the dashboard feature is organized under
+`features/Dashboard/{AdminDashboard,FamilyDashboard,SponsorDashboard}`. The old
+`/operator`, `/family`, and `/sponsor` overview pages were removed; their nested
+role-protected workflow routes remain unchanged.
+
+Family CIN credential follow-up (2026-08-01): newly operator-created families
+now receive the guardian CIN as their temporary first password. Kafil
+normalizes standard CIN-shaped input to lowercase in both active login paths
+and the first-password replacement check, so uppercase and lowercase typing
+work identically. Existing surname/year temporary hashes remain usable, the
+mandatory replacement flow is unchanged, and CIN-shaped values are rejected
+as permanent family passwords. No schema migration was required.
+
+Remember-me follow-up (2026-08-01): the login form now submits an explicit
+boolean preference. Kafil's single Next/Najm API boundary applies it to both
+the refresh-token and signed-session cookies and preserves the choice through
+refresh rotation and server-side session recovery. Unchecked logins use
+browser-session cookies; checked logins retain the configured seven-day
+persistence. The forced family password screen now includes a localized sign
+out action so a user can return to login or switch accounts. Najm client login
+requests are handled by Kafil's access-login DTO, allowing temporary CIN
+credentials without weakening the permanent-password policy or bypassing
+Najm's token application and refresh-circuit reset. No schema migration was
+required.
+
+Auth navigation stability follow-up (2026-08-01): login and sign-out now use a
+single full-document replacement after changing cookies and Najm client state.
+This remounts the root auth provider from the new server session and prevents
+stale client/RSC state from bouncing between `/login?from=/dashboard` and
+`/dashboard` after a browser restore.
+
+Setup-only family password follow-up (2026-08-01): a successful temporary-CIN
+credential check no longer returns a usable normal session. Kafil immediately
+revokes the transient Najm login artifacts before the response and issues one
+opaque, hashed, ten-minute password-setup session in the HttpOnly
+`kafil.family-setup` browser-session cookie. The setup route is public to Najm
+auth but requires that scoped server session; `/dashboard` and every protected
+API remain unavailable because no access token, refresh token, or signed Najm
+session reaches the browser. Closing the browser removes the setup cookie, and
+reopening or restoring `/change-password` without it redirects to `/login`.
+Password completion atomically consumes the setup row, replaces the temporary
+hash, clears the requirement, revokes all normal sessions, clears every cookie,
+and asks the family to sign in once with the new password. Migration
+`0029_square_mac_gargan` adds only the hashed setup-session storage and its
+expiry/consume/revoke metadata. Family provisioning uses a transaction-local
+Najm-compliant bridge credential and overwrites it with Najm's hash of the CIN
+before commit, so the temporary credential is never stored in plaintext and is
+still exactly the guardian CIN shared with the family.
+
+Validation: the full root `bun run check` gate passed (web 245 tests, server
+322 tests with 36 database opt-in skips, seed 76 tests, and a successful
+37-page production build). `bun run test:db` passed all 22 PostgreSQL tests,
+including concurrent single-consumption of the setup token and real family
+create/delete/recreate. Migration `0029_square_mac_gargan` applied locally and
+the following `bun run db:generate` reported no schema drift. HTTP smoke
+confirmed signed-out `/change-password` redirects to `/login` and the setup API
+returns 401 without its scoped cookie. Interactive browser acceptance was not
+available because this session exposed no browser backend.
+
+Najm ownership follow-up (2026-08-01): `najm-auth@2.0.12` now owns the generic,
+purpose-bound `credential_setup_sessions` table and transactional setup-session
+service. Temporary-credential verification is separate from normal session
+establishment, so Kafil never creates a full session for the CIN path. Kafil
+retains only its family requirement, CIN normalization, and permanent-password
+policy, delegating setup begin/require/consume/cancel to Najm. Append-only
+migrations `0030_previous_madrox` and `0031_numerous_the_liberteens` create the
+shared table and remove the superseded Kafil table; applying them intentionally
+invalidates any outstanding ten-minute setup token while preserving password
+requirements. The npm registry integrity was verified, `bun run check` passed
+with 245 web tests, 323 server tests plus 36 database-only skips, 76 seed tests,
+and a successful 37-page build; `bun run test:db` passed 22/22 and
+`bun run db:generate` reported no drift. Live HTTP acceptance confirmed a
+setup-only login, no normal auth cookie, a 307 dashboard rejection, immediate
+revocation on cancel, and a clean redirect to `/login`.
+
 Phase 7 unification slice (2026-07-28): `/products`, `/categories`, and `/orders`
 become the single canonical surfaces for the catalog and order experience.
 The shared frontend plan in
@@ -831,8 +917,7 @@ canonical destinations.
   accepts an `onAdd` callback so it is presentation-only.
 - `DashboardShell.isDashboardNavigationActive` teaches the new exact
   roots (`/products`, `/categories`, `/orders`) and maps the legacy
-  `/family/cart`, `/family/catalog`, and `/family/orders` aliases to
-  them.
+  `/family/cart` and `/family/catalog` aliases to the product surface.
 - `lib/auth.ts` extends `protectedRoutes` and `roleRoutes` with the
   three canonical routes so unauthenticated traffic is rejected and
   the correct roles reach them.
@@ -865,6 +950,28 @@ canonical destinations.
   pages. `useProductsWorkspace` now accepts live filters so changing the
   Categories sheet URL parameter immediately refetches the family catalog
   query instead of locally filtering the previous response.
+- Canonical Orders route follow-up (2026-08-01): `/orders` is the only family,
+  sponsor, operator, and admin Orders page. The `/family/orders`,
+  `/operator/orders`, and `/sponsor/orders` pages were removed; exact-role
+  selection chooses the privacy-scoped query, columns, and actions inside the
+  shared `OrdersPage` and `NTable`, while route and backend guards remain
+  authoritative.
+- Shared role presentation follow-up (2026-08-01): family and management
+  Products and Categories now render through the same `NTable` and card
+  components. Management and family Orders use the same `NTable` and
+  `OrderCard`; sponsor order projections reuse that card. Sponsor contribution
+  history reuses `ContributionCard`.
+  Each role retains its privacy-scoped query and capability-specific actions.
+  The family sidebar now mirrors the admin Finance/Catalog grouping and exposes
+  the canonical Categories, Products, and Orders destinations. The duplicate
+  `FamilyBudget`, `FamilyCatalog`, and `FamilyOrdering` frontend feature folders
+  are removed: their role-scoped hooks and types now live inside `Budgets`,
+  `Products`, and `Orders`.
+- Budget-page removal follow-up (2026-08-02): removed the standalone operator,
+  family, and sponsor budget routes and navigation. Contributions remains the
+  funding-history surface, Orders remains the purchase/status surface, and
+  dashboards retain concise balance summaries. The backend budget engine,
+  order-time funding checks, reservation safety, and audit ledger remain intact.
 - Persistence test rewrite (2026-07-28): `order-cart-store.test.ts`
   installs a `window.sessionStorage` polyfill and asserts that
   `bindSession` rehydrates only the matching owner, that a different
@@ -958,6 +1065,45 @@ canonical destinations.
     `bun run db:generate` passed. A real Docker image build remains unverified
     on this workstation because Docker is unavailable.
 
+- Budget ledger and demo-history repair (2026-08-02):
+  - The shared budget ledger now identifies each activity and source, resolves
+    contribution references and order numbers, and shows the resulting
+    available balance instead of rendering contribution-only columns for order
+    reserve, capture, and release entries.
+  - Dense contribution fixtures split each family's intended funding evenly
+    instead of repeatedly halving the remainder. Demo contribution timelines
+    are chronological and deterministic, and every managed family snapshot is
+    rebuilt after idempotent repair.
+  - Demo reruns preserve valid forward order progress performed by users while
+    continuing to reject incompatible lifecycle drift; immutable order history
+    is never downgraded.
+  - The exact local rerun with 2 families, 10 sponsors, 6 operators, 4 delivery
+    staff, and 40 contributions completed successfully. Both accounts reconcile
+    with zero row-level snapshot mismatches; the dense family has 29 validated
+    contributions between MAD 103.44 and MAD 103.45.
+  - `bun run check` passed, including the 36-route production build, and
+    `bun run db:generate` reported no schema drift. Interactive browser
+    inspection was unavailable because no browser backend was exposed.
+
+- Root-plan completion (2026-08-02): the additive `PLAN.md` queue is complete.
+  `/contribution` is now the canonical admin/operator/family contribution
+  surface, with an owner-filtered family projection and visible guarded icon
+  actions. The shared order card now serves management, family, and sponsor
+  audiences with compact mobile density, safe delivery summaries, and a
+  deterministic quantity-ranked dominant category loaded without list N+1s.
+  The family 12-month order chart fits 320–430 px without horizontal scrolling.
+  Sponsor activation now uses a hashed, six-digit, ten-minute OTP entered after
+  valid pending credentials; resend cooldown, bounded attempts, setup-only
+  cookies, atomic consumption, and Remember me are server-owned. Append-only
+  migration `0032_same_rachel_grey.sql` applied successfully.
+  `najm-kit@2.1.47` and `najm-auth@2.0.13` are published and installed. Root
+  lint, typecheck, tests, and the 36-route production build pass; PostgreSQL
+  integration is 23/23 and Drizzle reports no schema drift. Focused isolated
+  Chrome acceptance passes contribution privacy/actions, order cards at
+  375/390/430 px plus Arabic RTL, the 12-point chart at 320/375/390/430 px plus
+  Arabic RTL, and real registration-to-OTP-to-dashboard activation. Phase 7
+  remains active only for the unrelated release and infrastructure items below.
+
 
 - [~] Add operator statistics and financial reports (live overview statistics,
       contribution trend, budget position, and order pipeline are complete;
@@ -966,8 +1112,9 @@ canonical destinations.
       statuses, supported budget use, and privacy-safe KPIs are complete;
       detailed reports remain)
 - [~] Add family monthly budget/order summaries (live 12-month order activity,
-      budget position, order pipeline, and recent orders are complete; monthly
-      statements and category reporting remain)
+      budget position, order pipeline, and recent orders are complete; each
+      recent order now shows the image of the category with the highest summed
+      item quantity; monthly statements and category reporting remain)
 - [x] Standardize translated success response envelopes across all Kafil
       controller routes while preserving the raw health probe
 - [x] Make the web application installable on Android and iPhone with a web app

@@ -1,79 +1,91 @@
 "use client";
 
-import { CalendarClock, MapPin, Package, Phone, ReceiptText, Truck } from "lucide-react";
+import { CalendarClock, MapPin, Package, Phone, ReceiptText, ShoppingBag, Truck } from "lucide-react";
 import { NCard, NCardAction, NCardInfo, NCardSection } from "najm-kit";
 
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
+import { ProtectedImage } from "@/shared/ProtectedImage";
 import { StatusBadge } from "@/shared/StatusBadge";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
-import type { OrderRecord } from "../types";
+export type OrderCardAudience = "management" | "family" | "sponsor";
 
-export function OrderCard({
-  data,
-  highlighted = false,
-}: Readonly<{ data: OrderRecord; highlighted?: boolean }>) {
+export interface OrderCardData {
+  orderNumber: string;
+  status: string;
+  totalMinor: number;
+  createdAt?: string;
+  placedAt?: string;
+  guardianLegalNameSnapshot?: string;
+  familyImage?: string | null;
+  deliveryPhoneSnapshot?: string | null;
+  deliveryAddressSnapshot?: string;
+  currentDelivery?: { name: string } | null;
+  latestDelivery?: { name: string; status: string } | null;
+  deliveryName?: string | null;
+  deliveryStatus?: string | null;
+  articleCount?: number;
+  requestedTotalMinor?: number;
+  actualTotalMinor?: number | null;
+  merchantName?: string | null;
+  dominantCategoryName?: string | null;
+  dominantCategoryImage?: string | null;
+}
+
+export function OrderCard({ data, audience = "management", highlighted = false, actions }: Readonly<{
+  data: OrderCardData;
+  audience?: OrderCardAudience;
+  highlighted?: boolean;
+  actions?: React.ReactNode;
+}>) {
   const { t } = useKafilLanguage();
+  const placedAt = data.createdAt ?? data.placedAt;
+  const hideFamilyIdentity = audience === "family";
+  const deliveryName = audience === "management"
+    ? data.currentDelivery?.name ?? (data.latestDelivery?.status === "delivered" ? data.latestDelivery.name : null)
+    : data.deliveryName ?? null;
+  const deliveryStatus = audience === "management" ? data.latestDelivery?.status : data.deliveryStatus;
+  const deliveryValue = deliveryName ??
+    (["failed", "cancelled"].includes(deliveryStatus ?? "")
+      ? t("operator.orders.delivery.needsReassignment")
+      : t("operator.orders.delivery.notAssigned"));
+  const total = data.actualTotalMinor ?? data.totalMinor;
+
   return (
     <NCard
       className={highlighted ? "border-primary ring-1 ring-primary/30" : undefined}
       data-highlighted={highlighted ? "true" : undefined}
       embedded
-      title={data.orderNumber}
-      description={formatMad(data.totalMinor)}
+      title={
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+            {data.dominantCategoryImage ? (
+              <ProtectedImage src={data.dominantCategoryImage} alt={data.dominantCategoryName ?? t("common.orderCategory")} width={48} height={48} className="size-full object-contain" />
+            ) : <ShoppingBag aria-hidden="true" className="size-5" />}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-semibold">{data.orderNumber}</span>
+            <span className="block text-sm font-medium text-muted-foreground">{formatMad(total)}</span>
+          </span>
+        </div>
+      }
     >
-      <NCardAction>
-        <StatusBadge status={data.status} />
-      </NCardAction>
-      <NCardSection>
-        <NCardInfo
-          icon={ReceiptText}
-          label="Source"
-          value={
-            data.placementSource === "operator_assisted"
-              ? "Assisted"
-              : "Self-service"
-          }
-        />
-        <NCardInfo
-          icon={ReceiptText}
-          label="Family"
-          value={
-            <ManagedAvatar
-              src={getFamilyAvatarImage(data.familyImage ?? null)}
-              title={data.guardianLegalNameSnapshot}
-              size="sm"
-              classNames={{ avatar: "bg-muted" }}
-            />
-          }
-        />
-        <NCardInfo
-          icon={Phone}
-          label="Phone"
-          value={data.deliveryPhoneSnapshot || "—"}
-        />
-        <NCardInfo icon={MapPin} label="Delivery address" value={data.deliveryAddressSnapshot} />
-        <NCardInfo
-          icon={Truck}
-          label={t("operator.orders.delivery.column")}
-          value={
-            data.currentDelivery?.name ??
-            (["failed", "cancelled"].includes(data.latestDelivery?.status ?? "")
-              ? t("operator.orders.delivery.needsReassignment")
-              : data.latestDelivery?.status === "delivered"
-                ? data.latestDelivery.name
-                : t("operator.orders.delivery.notAssigned"))
-          }
-        />
-        <NCardInfo
-          icon={Package}
-          label="Articles"
-          value={data.articleCount ?? "—"}
-        />
-        <NCardInfo icon={CalendarClock} label="Placed" value={formatKafilDate(data.createdAt)} />
+      <NCardAction><StatusBadge status={data.status} /></NCardAction>
+      <NCardSection className="gap-1.5">
+        {!hideFamilyIdentity && data.guardianLegalNameSnapshot ? (
+          <NCardInfo icon={ReceiptText} label={t("common.orderFamily")} value={<ManagedAvatar src={getFamilyAvatarImage(data.familyImage ?? null)} title={data.guardianLegalNameSnapshot} size="sm" classNames={{ avatar: "bg-muted" }} />} />
+        ) : null}
+        {!hideFamilyIdentity && data.deliveryPhoneSnapshot ? <NCardInfo icon={Phone} label={t("common.orderPhone")} value={data.deliveryPhoneSnapshot} /> : null}
+        {!hideFamilyIdentity && data.deliveryAddressSnapshot ? <NCardInfo icon={MapPin} label={t("common.orderDeliveryAddress")} value={data.deliveryAddressSnapshot} /> : null}
+        <NCardInfo icon={Truck} label={t("operator.orders.delivery.column")} value={deliveryValue} />
+        {data.articleCount !== undefined ? <NCardInfo icon={Package} label={t("common.orderArticles")} value={data.articleCount} /> : null}
+        {data.requestedTotalMinor !== undefined && data.requestedTotalMinor !== total ? <NCardInfo icon={ReceiptText} label={t("common.orderRequested")} value={formatMad(data.requestedTotalMinor)} /> : null}
+        {data.merchantName ? <NCardInfo icon={ReceiptText} label={t("common.orderMerchant")} value={data.merchantName} /> : null}
+        {placedAt ? <NCardInfo icon={CalendarClock} label={t("common.orderPlaced")} value={formatKafilDate(placedAt)} /> : null}
       </NCardSection>
+      {actions ? <NCardSection className="flex-row flex-wrap justify-end gap-2">{actions}</NCardSection> : null}
     </NCard>
   );
 }

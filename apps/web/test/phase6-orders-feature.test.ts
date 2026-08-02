@@ -177,7 +177,9 @@ describe("Phase 6D order command contracts", () => {
     expect(sheet).toContain("attempt.id === latestAttemptId");
     expect(sheet).toContain('order.status !== "delivered"');
     expect(sheet).toContain('attempt.status === "delivered"');
-    expect(sheet).toContain("getSponsorAvatarImage(featured.image, featured.gender)");
+    expect(sheet).toContain(
+      "getSponsorAvatarImage(delivery.image, delivery.gender)",
+    );
     expect(sheet).toContain("deliveryPhoneSnapshot");
     expect(sheet).toContain("formatDateTime");
     expect(sheet).toContain("DeliveryAttemptCard");

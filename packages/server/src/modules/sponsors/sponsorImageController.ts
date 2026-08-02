@@ -20,13 +20,17 @@ import {
 } from "../../storage/managedImageController";
 import { decodeManagedImageFileName } from "../../storage/managedImages";
 import { SponsorRepository } from "./sponsorRepository";
+import { SupportAssignmentRepository } from "../supportAssignments/supportAssignmentRepository";
 
 export const SPONSOR_IMAGE_SERVE_PREFIX =
   "/api/sponsor-images/files/serve/" as const;
 
 @Service()
 export class SponsorImageAccess {
-  constructor(private readonly sponsors: SponsorRepository) {}
+  constructor(
+    private readonly sponsors: SponsorRepository,
+    private readonly assignments: SupportAssignmentRepository,
+  ) {}
 
   async assertCanRead(fileName: string, requester: { role: string; userId: string }) {
     const role = requester.role?.toLowerCase();
@@ -34,6 +38,13 @@ export class SponsorImageAccess {
     if (role === ROLES.SPONSOR) {
       const sponsor = await this.sponsors.findByUserId(requester.userId);
       if (sponsor?.image === `${SPONSOR_IMAGE_SERVE_PREFIX}${fileName}`) return;
+    }
+    if (role === ROLES.FAMILY) {
+      const canRead = await this.assignments.familyCanReadSponsorImage(
+        requester.userId,
+        `${SPONSOR_IMAGE_SERVE_PREFIX}${fileName}`,
+      );
+      if (canRead) return;
     }
     HttpError.forbidden("Sponsor image access denied");
   }

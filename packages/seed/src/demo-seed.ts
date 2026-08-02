@@ -29,6 +29,7 @@ import type {
   DemoSponsor,
   DemoSupportAssignment,
 } from "./scripts/demo/generator";
+import { rebuildDemoBudgetSnapshots } from "./demo-budget";
 import { familyIntakeNeedsRepair } from "./scripts/demo/familyRepair";
 
 type DemoKind = "family" | "operator" | "sponsor";
@@ -135,6 +136,7 @@ export async function seedDemoData(
     summary.contributions,
     expiresAt,
   );
+  await rebuildDemoBudgetSnapshots(data.families.map((family) => family.id));
   await verifyDemoData(identities, data.families, data.contributions, assignments);
   await verifyDemoDeliveries(data.deliveries);
   return summary;
@@ -288,7 +290,12 @@ async function seedContributions(
       );
       result.inserted += 1;
     }
-    await alignManagedContributionTimeline(contributionId, item, expiresAt);
+    await alignManagedContributionTimeline(
+      contributionId,
+      item,
+      expiresAt,
+      index,
+    );
     logProgress("contributions", index + 1, desired.length);
   }
 }
@@ -331,9 +338,12 @@ async function alignManagedContributionTimeline(
   contributionId: string,
   item: DemoContribution,
   expiresAt: Date,
+  sequence: number,
 ) {
   const paidAt = new Date(`${item.paidAt}T12:00:00.000Z`);
-  const lifecycleAt = new Date(paidAt.getTime() + 6 * 60 * 60 * 1_000);
+  const lifecycleAt = new Date(
+    paidAt.getTime() + 6 * 60 * 60 * 1_000 + sequence,
+  );
   const statusTimestamp =
     item.expectedStatus === "validated"
       ? { validatedAt: lifecycleAt }

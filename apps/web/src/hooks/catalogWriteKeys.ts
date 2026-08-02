@@ -1,5 +1,5 @@
 import { categoryKeys } from "@/features/Categories/hooks/categoryKeys";
-import { familyOrderingKeys } from "@/features/FamilyOrdering/hooks/familyOrderingKeys";
+import { familyOrderingKeys } from "@/features/Orders/hooks/familyOrderingKeys";
 import { productKeys } from "@/features/Products/hooks/productKeys";
 
 /**

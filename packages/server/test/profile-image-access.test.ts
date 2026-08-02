@@ -10,6 +10,7 @@ import {
   SPONSOR_IMAGE_SERVE_PREFIX,
 } from "../src/modules/sponsors/sponsorImageController";
 import { SponsorRepository } from "../src/modules/sponsors/sponsorRepository";
+import { SupportAssignmentRepository } from "../src/modules/supportAssignments/supportAssignmentRepository";
 
 const fileName = "00000000-0000-4000-8000-000000000099.webp";
 
@@ -36,14 +37,20 @@ describe("profile image ownership", () => {
   });
 
   it("allows a sponsor to read only its own photo", async () => {
-    const access = new SponsorImageAccess({
-      findByUserId: async (userId: string) => ({
-        image:
-          userId === "owner"
-            ? `${SPONSOR_IMAGE_SERVE_PREFIX}${fileName}`
-            : `${SPONSOR_IMAGE_SERVE_PREFIX}00000000-0000-4000-8000-000000000098.webp`,
-      }),
-    } as unknown as SponsorRepository);
+    const access = new SponsorImageAccess(
+      {
+        findByUserId: async (userId: string) => ({
+          image:
+            userId === "owner"
+              ? `${SPONSOR_IMAGE_SERVE_PREFIX}${fileName}`
+              : `${SPONSOR_IMAGE_SERVE_PREFIX}00000000-0000-4000-8000-000000000098.webp`,
+        }),
+      } as unknown as SponsorRepository,
+      {
+        familyCanReadSponsorImage: async (userId: string, image: string) =>
+          userId === "assigned-family" && image === `${SPONSOR_IMAGE_SERVE_PREFIX}${fileName}`,
+      } as unknown as SupportAssignmentRepository,
+    );
 
     await expect(
       access.assertCanRead(fileName, { role: "sponsor", userId: "owner" }),
@@ -52,13 +59,19 @@ describe("profile image ownership", () => {
       access.assertCanRead(fileName, { role: "sponsor", userId: "other" }),
     ).rejects.toThrow("Sponsor image access denied");
     await expect(
-      access.assertCanRead(fileName, { role: "family", userId: "family" }),
+      access.assertCanRead(fileName, { role: "family", userId: "assigned-family" }),
+    ).resolves.toBeUndefined();
+    await expect(
+      access.assertCanRead(fileName, { role: "family", userId: "other-family" }),
     ).rejects.toThrow("Sponsor image access denied");
   });
 
   it("allows operators and admins to manage profile photos", async () => {
     const families = new FamilyImageAccess({} as FamilyRepository);
-    const sponsors = new SponsorImageAccess({} as SponsorRepository);
+    const sponsors = new SponsorImageAccess(
+      {} as SponsorRepository,
+      {} as SupportAssignmentRepository,
+    );
     for (const role of ["operator", "admin"]) {
       await expect(
         families.assertCanRead(fileName, { role, userId: role }),

@@ -4,7 +4,7 @@ import { Body, Controller, Delete, Get, Params, Post, Query, User,
 import { McpTool, ToolGroup } from "najm-mcp";
 import { Validate } from "najm-validation";
 
-import { isAdmin, isOperator, isSponsor } from "../../config/authConfig";
+import { isAdmin, isContributionReader, isOperator, isSponsor } from "../../config/authConfig";
 import {
   type BulkDeleteContributionsDto,
   bulkDeleteContributionsDto,
@@ -41,13 +41,17 @@ export class ContributionController {
   constructor(private readonly contributions: ContributionService) {}
 
   @Get()
-  @isOperator()
+  @isContributionReader()
   @CanList(Contribution)
   @Validate({ query: contributionListQuery })
-  @McpTool({ description: "List operator-managed contribution payment records", readOnly: true })
+  @McpTool({ description: "List role-scoped contribution payment records", readOnly: true })
   @ResMsg("contributions.success.retrieved")
-  list(@Query() query: ContributionListQuery) {
-    return this.contributions.list(query);
+  list(
+    @User("id") userId: string,
+    @User("role") role: string,
+    @Query() query: ContributionListQuery,
+  ) {
+    return this.contributions.listForPrincipal(userId, role, query);
   }
 
   @Get("/recording-options")
@@ -125,13 +129,17 @@ export class ContributionController {
   }
 
   @Get("/:id")
-  @isOperator()
+  @isContributionReader()
   @CanRead(Contribution)
   @Validate({ params: contributionIdParams })
-  @McpTool({ description: "Read an operator-managed contribution", readOnly: true })
+  @McpTool({ description: "Read a role-scoped contribution", readOnly: true })
   @ResMsg("contributions.success.retrieved")
-  get(@Params("id") id: string) {
-    return this.contributions.get(id);
+  get(
+    @Params("id") id: string,
+    @User("id") userId: string,
+    @User("role") role: string,
+  ) {
+    return this.contributions.getForPrincipal(id, userId, role);
   }
 
   @Post("/me/plans")

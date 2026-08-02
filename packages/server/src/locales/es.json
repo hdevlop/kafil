@@ -155,14 +155,16 @@
       "login": "Inicio de sesión exitoso",
       "registered": "Cuenta creada. Verifica tu correo para activarla.",
       "verificationRequested": "Si la cuenta está pendiente, se solicitó un correo de verificación.",
+      "verificationSetupRetrieved": "Configuración de activación del correo recuperada.",
+      "verificationCancelled": "Sesión de activación del correo cancelada.",
       "emailVerified": "Correo verificado. Tu cuenta está activa.",
       "passwordRequirementRetrieved": "Requisito de contraseña obtenido.",
-      "passwordChanged": "Contraseña cambiada. Inicia sesión de nuevo con la nueva contraseña."
+      "passwordChanged": "Contraseña cambiada. Inicia sesión de nuevo con la nueva contraseña.",
+      "passwordSetupCancelled": "Sesión de configuración de contraseña cancelada."
     },
     "firstLogin": {
       "title": "Elige una contraseña fácil",
       "description": "Este es tu primer inicio de sesión. Sustituye la contraseña temporal por una fácil de recordar.",
-      "currentPassword": "Contraseña temporal actual",
       "newPassword": "Nueva contraseña",
       "confirmPassword": "Repite la nueva contraseña",
       "passwordHelp": "Usa al menos 8 letras minúsculas y números, por ejemplo fatima2026.",
@@ -478,6 +480,14 @@
   },
   "ui": {
     "common": {
+      "orderCategory": "Categoría del pedido",
+      "orderFamily": "Familia",
+      "orderPhone": "Teléfono",
+      "orderDeliveryAddress": "Dirección de entrega",
+      "orderArticles": "Artículos",
+      "orderRequested": "Solicitado",
+      "orderMerchant": "Comerciante",
+      "orderPlaced": "Realizado",
       "all": "Todos",
       "loading": "Cargando...",
       "categoryFilterAria": "Filtrar productos por categoría",
@@ -565,7 +575,6 @@
       "firstLogin": {
         "title": "Elige una contraseña fácil",
         "description": "Este es tu primer inicio de sesión. Sustituye la contraseña temporal por una fácil de recordar.",
-        "currentPassword": "Contraseña temporal actual",
         "newPassword": "Nueva contraseña",
         "confirmPassword": "Repite la nueva contraseña",
         "passwordHelp": "Usa al menos 8 letras minúsculas y números, por ejemplo fatima2026.",
@@ -575,6 +584,45 @@
         "checking": "Comprobando tu cuenta...",
         "changed": "Contraseña cambiada. Inicia sesión con la nueva contraseña.",
         "changeFailed": "No se pudo cambiar la contraseña."
+      },
+      "emailOtp": {
+        "checking": "Comprobando la sesión de activación...",
+        "title": "Verifica tu correo",
+        "instructions": "Introduce el código de activación de seis dígitos enviado a tu correo.",
+        "destination": "Destino de correo oculto",
+        "expiresMinutes": "El código caduca 10 minutos después del envío.",
+        "expired": "Este código ha caducado. Solicita uno nuevo para continuar.",
+        "codeLabel": "Código de activación",
+        "codeDescription": "Seis dígitos",
+        "submit": "Verificar y continuar",
+        "submitting": "Verificando...",
+        "resend": "Enviar un código nuevo",
+        "resendIn": "Enviar de nuevo en {seconds}s",
+        "cancel": "Cancelar e iniciar sesión de nuevo",
+        "deliveryFailed": "No se pudo entregar el último correo. Podrás solicitar otro código al terminar el contador.",
+        "invalid": "El código no es válido o ha caducado. Solicita uno nuevo si es necesario.",
+        "success": "Correo verificado. Te damos la bienvenida a Kafil.",
+        "resendSuccess": "Se envió un código de activación nuevo."
+      },
+      "registration": {
+        "title": "Crea tu cuenta",
+        "name": "Nombre completo",
+        "namePlaceholder": "Introduce tu nombre completo",
+        "email": "Correo electrónico",
+        "emailPlaceholder": "Introduce tu correo electrónico",
+        "password": "Contraseña",
+        "passwordPlaceholder": "Al menos 8 caracteres",
+        "confirmPassword": "Confirmar contraseña",
+        "confirmPasswordPlaceholder": "Repite tu contraseña",
+        "submit": "Crear cuenta y enviar código",
+        "submitting": "Creando cuenta...",
+        "failed": "No se pudo completar el registro.",
+        "checkEmail": "Revisa tu correo",
+        "sent": "Enviamos un código de activación de seis dígitos a {email}. Inicia sesión con el correo y la contraseña que acabas de registrar para introducirlo.",
+        "notSent": "Tu cuenta está pendiente. Inicia sesión con el correo y la contraseña que acabas de registrar y solicita un nuevo código de activación.",
+        "activate": "Inicia sesión para activar tu cuenta",
+        "already": "¿Ya tienes una cuenta?",
+        "login": "Iniciar sesión"
       }
     },
     "language": {
@@ -763,7 +811,16 @@
         "budgetPosition": "Your budget",
         "orderPipeline": "Your order pipeline",
         "recentOrders": "Recent orders",
-        "noOrders": "No orders yet. Browse the catalog when you are ready."
+        "noOrders": "No orders yet. Browse the catalog when you are ready.",
+        "recentSponsors": "Patrocinadores recientes",
+        "supportingSince": "Patrocina desde {date}",
+        "noSponsors": "Aún no hay patrocinadores activos.",
+        "myFamily": "Mi familia",
+        "viewAll": "Ver todo",
+        "viewDetails": "Ver detalles",
+        "guardian": "Tutor o tutora",
+        "yearOld": "{count} año",
+        "yearsOld": "{count} años"
       },
       "sponsor": {
         "welcome": "Welcome, {name}",
@@ -779,13 +836,15 @@
         "recurringAndOneTime": "Monthly and one-time plans",
         "availableSupportBudget": "Supported budget available",
         "supportedFamiliesOnly": "Across active support only",
-        "supportedOrders": "Supported orders",
-        "privacySafeOrders": "Privacy-safe order summaries",
+        "supportedOrders": "Pedidos apoyados",
+        "privacySafeOrders": "Resúmenes de pedidos con privacidad protegida",
         "contributionTrend": "Contribution activity",
         "supportBudgetUse": "Supported budget use",
         "contributionStatuses": "Contribution statuses",
         "recentContributions": "Recent contributions",
-        "noContributions": "No contributions yet. Create a plan or submit your first contribution."
+        "noContributions": "No contributions yet. Create a plan or submit your first contribution.",
+        "items": "artículos",
+        "noSupportedOrders": "Aún no hay pedidos apoyados. Los pedidos aparecerán aquí cuando las familias apoyadas los realicen."
       }
     },
     "operator": {
@@ -1466,6 +1525,15 @@
       }
     },
     "family": {
+      "contributions": {
+        "title": "Historial de contribuciones",
+        "subtitle": "Consulta los pagos destinados al apoyo familiar sin mostrar datos del patrocinador.",
+        "viewTitle": "Detalles de la contribución",
+        "viewDescription": "Un registro de contribución seguro para la privacidad familiar.",
+        "emptyTitle": "Aún no hay contribuciones",
+        "emptyDescription": "Los pagos pendientes y validados aparecerán aquí.",
+        "noData": "No se encontró ninguna contribución"
+      },
       "cart": {
         "loadingTitle": "Loading your cart",
         "loadingDescription": "Retrieving your protected cart.",

@@ -10,7 +10,6 @@ import {
 } from "najm-kit";
 import { useRouter } from "next/navigation";
 
-import { Operator } from "@/shared/Authorization";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useCategoryCommands } from "@/features/Categories/hooks/useCategories";
@@ -31,7 +30,6 @@ import {
   UpdateCategoryDialogContent,
 } from "./CategoryForms";
 import type { CategoryRecord } from "../types";
-import type { FamilyCatalogCategory } from "@/features/FamilyCatalog/types";
 
 const pagination = createOffsetPagination(0, 100);
 
@@ -47,8 +45,14 @@ export function CategoriesPage() {
     isExactFamily ? createOffsetPagination(0, 100) : pagination,
   );
 
-  const categories = (workspace.categories ?? []) as CategoryRecord[];
-  const familyCategories = (workspace.categories ?? []) as FamilyCatalogCategory[];
+  const categories = (workspace.categories ?? []).map((category) => ({
+    ...category,
+    image: category.image ?? null,
+    sortOrder: "sortOrder" in category ? category.sortOrder : 0,
+    createdAt: "createdAt" in category ? category.createdAt : "",
+    updatedAt: "updatedAt" in category ? category.updatedAt : "",
+    status: category.status ?? "active",
+  })) as CategoryRecord[];
   const headerSubtitle = isExactFamily
     ? t("common.categoriesForHousehold")
     : t("common.categoriesManagementSubtitle");
@@ -119,34 +123,38 @@ export function CategoriesPage() {
     loading: workspace.loading,
     error: workspace.error,
     getRowId: (category) => category.id,
-    onCreate: openCreate,
+    onCreate: workspace.mode === "management" ? openCreate : undefined,
     onView: openView,
-    onEdit: openEdit,
+    onEdit: workspace.mode === "management" ? openEdit : undefined,
     onRowClick: (category) => {
       router.push(`/products?category=${encodeURIComponent(category.id)}`);
     },
     renderCard: CategoryCard,
     renderEmpty: () => (
-      <Operator>
-        <PageEmptyState
-          icon={Tags}
-          action={
+      <PageEmptyState
+        icon={Tags}
+        action={
+          workspace.mode === "management" ? (
             <NButton onClick={openCreate}>
               {t("common.createCategory")}
             </NButton>
-          }
-          title={t("common.emptyCatalogCategory")}
-          description={t("common.emptyCatalogCategoryHint")}
-        />
-      </Operator>
+          ) : undefined
+        }
+        title={t("common.emptyCatalogCategory")}
+        description={t("common.emptyCatalogCategoryHint")}
+      />
     ),
     renderError: (error) => (
       <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
     ),
     menu: {
       row: (category) => {
+        const viewAction = {
+          label: t("common.view"), icon: Eye, onSelect: () => openView(category),
+        };
+        if (workspace.mode !== "management") return [viewAction];
         const baseActions = [
-          { label: t("common.view"), icon: Eye, onSelect: () => openView(category) },
+          viewAction,
           { label: t("common.edit"), icon: Pencil, onSelect: () => openEdit(category) },
           {
             label: t(category.status === "active" ? "common.deactivate" : "common.activate"),
@@ -156,7 +164,6 @@ export function CategoriesPage() {
             onSelect: () => openStatus(category),
           },
         ];
-        if (workspace.mode !== "management") return baseActions;
         if (!isExactAdmin) return baseActions;
         const permanentDelete = {
           label: t("common.deleteForever"),
@@ -189,84 +196,9 @@ export function CategoriesPage() {
         subtitle={headerSubtitle}
         actions={<PageHeaderGlobalActions />}
       />
-      {isExactFamily ? (
-        <CategoriesFamilyGrid
-          categories={familyCategories}
-          loading={workspace.loading}
-          error={workspace.error}
-          refetch={() => void workspace.refetch()}
-          router={router}
-          t={t}
-        />
-      ) : (
-        <div className="min-h-0 flex-1">
-          <NTable {...tableProps} />
-        </div>
-      )}
+      <div className="min-h-0 flex-1">
+        <NTable {...tableProps} />
+      </div>
     </NPageLayout>
-  );
-}
-
-interface CategoriesFamilyGridProps {
-  loading: boolean;
-  error: unknown;
-  refetch: () => void;
-  categories: FamilyCatalogCategory[];
-  router: ReturnType<typeof useRouter>;
-  t: ReturnType<typeof useKafilLanguage>["t"];
-}
-
-function CategoriesFamilyGrid({
-  loading,
-  error,
-  refetch,
-  categories,
-  router,
-  t,
-}: Readonly<CategoriesFamilyGridProps>) {
-  if (error) {
-    return (
-      <NPageLayout className="grid min-h-64 place-items-center">
-        <PageErrorState error={error} onRetry={refetch} />
-      </NPageLayout>
-    );
-  }
-  if (loading && categories.length === 0) {
-    return (
-      <NPageLayout className="grid min-h-64 place-items-center">
-        <PageEmptyState
-          icon={Tags}
-          title={t("common.loadingCategories")}
-          description={t("common.loadingCategories")}
-        />
-      </NPageLayout>
-    );
-  }
-  if (categories.length === 0) {
-    return (
-      <NPageLayout className="grid min-h-64 place-items-center">
-        <PageEmptyState
-          icon={Tags}
-          title={t("common.emptyCategories")}
-          description={t("common.emptyCategoriesHint")}
-        />
-      </NPageLayout>
-    );
-  }
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-      {categories.map((category) => (
-        <button
-          key={category.id}
-          className="rounded-2xl text-left transition-transform hover:scale-[1.01]"
-          onClick={() =>
-            router.push(`/products?category=${encodeURIComponent(category.id)}`)
-          }
-          type="button"
-        >
-          <CategoryCard data={category} />
-        </button>
-      ))}
-    </div>
   );
 }

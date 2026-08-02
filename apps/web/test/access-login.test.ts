@@ -9,53 +9,96 @@ afterEach(() => {
   for (const spy of spies.splice(0)) spy.mockRestore();
 });
 
-describe("identifier login session recovery", () => {
-  test("uses Najm client login so a successful login resets an open refresh circuit", async () => {
-    const login = spyOn(auth.client, "login").mockResolvedValue({
-      id: "operator-user",
-      email: "admin@gmail.com",
-      role: "operator",
+describe("identifier login session selection", () => {
+  test("uses Kafil login directly and returns a regular-session result", async () => {
+    const post = spyOn(auth.api, "post").mockResolvedValue({
+      data: { nextStep: "authenticated" },
+      status: "success",
     } as never);
-    const hasRole = spyOn(auth.client, "hasRole").mockReturnValue(false);
-    spies.push(login, hasRole);
+    spies.push(post);
 
     await expect(
       loginWithIdentifier({
+        identifier: "ADMIN@gmail.com",
+        password: "Password1",
+        rememberMe: false,
+      }),
+    ).resolves.toEqual({ nextStep: "authenticated" });
+
+    expect(post).toHaveBeenCalledWith("/access/login", {
+      body: {
         identifier: "admin@gmail.com",
         password: "Password1",
-      }),
-    ).resolves.toEqual({ mustChangePassword: false });
-
-    expect(login).toHaveBeenCalledWith({
-      identifier: "admin@gmail.com",
-      password: "Password1",
+        rememberMe: false,
+      },
     });
   });
 
-  test("loads the server-owned first-password requirement after a family login", async () => {
-    const login = spyOn(auth.client, "login").mockResolvedValue({
-      id: "family-user",
-      email: "family@example.com",
-      role: "family",
-    } as never);
-    const hasRole = spyOn(auth.client, "hasRole").mockReturnValue(true);
-    const get = spyOn(auth.api, "get").mockResolvedValue({
-      data: { mustChangePassword: true },
+  test("returns the server-owned setup-only result without hydrating Najm auth", async () => {
+    const post = spyOn(auth.api, "post").mockResolvedValue({
+      data: {
+        nextStep: "family_password_setup",
+        expiresAt: "2026-08-01T12:10:00.000Z",
+      },
       status: "success",
     } as never);
-    spies.push(login, hasRole, get);
+    const login = spyOn(auth.client, "login");
+    spies.push(post, login);
 
     await expect(
       loginWithIdentifier({
         identifier: "06 12 34 56 78",
-        password: "Amrani1987",
+        password: "AB123456",
+        rememberMe: true,
       }),
-    ).resolves.toEqual({ mustChangePassword: true });
-
-    expect(login).toHaveBeenCalledWith({
-      identifier: "+212612345678",
-      password: "Amrani1987",
+    ).resolves.toEqual({
+      nextStep: "family_password_setup",
+      expiresAt: "2026-08-01T12:10:00.000Z",
     });
-    expect(get).toHaveBeenCalledWith("/access/family-password/requirement");
+
+    expect(post).toHaveBeenCalledWith("/access/login", {
+      body: {
+        identifier: "+212612345678",
+        password: "ab123456",
+        rememberMe: true,
+      },
+    });
+    expect(login).not.toHaveBeenCalled();
+  });
+
+  test("normalizes uppercase and lowercase family CIN credentials identically", async () => {
+    const post = spyOn(auth.api, "post").mockResolvedValue({
+      data: { nextStep: "family_password_setup", expiresAt: "soon" },
+      status: "success",
+    } as never);
+    spies.push(post);
+
+    await loginWithIdentifier({
+      identifier: "06 12 34 56 78",
+      password: "AB123456",
+      rememberMe: false,
+    });
+    await loginWithIdentifier({
+      identifier: "06 12 34 56 78",
+      password: "ab123456",
+      rememberMe: true,
+    });
+
+    expect(post.mock.calls.map((call) => call[1])).toEqual([
+      {
+        body: {
+          identifier: "+212612345678",
+          password: "ab123456",
+          rememberMe: false,
+        },
+      },
+      {
+        body: {
+          identifier: "+212612345678",
+          password: "ab123456",
+          rememberMe: true,
+        },
+      },
+    ]);
   });
 });

@@ -20,7 +20,7 @@ async function useRole(page: Page, role: ProductRole) {
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
   await page.getByRole("button", { name: "Log in" }).focus();
   await page.keyboard.press("Enter");
-  await page.waitForURL(new RegExp(role === "admin" ? "/operator$" : `/${role}$`));
+  await page.waitForURL(/\/dashboard$/);
   await page.waitForLoadState("networkidle");
 }
 

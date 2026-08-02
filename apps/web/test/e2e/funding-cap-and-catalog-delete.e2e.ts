@@ -33,7 +33,7 @@ async function login(page: Page, email: string, password: string) {
       `Browser login failed with ${response.status()}: ${await response.text()}`,
     );
   }
-  await page.waitForURL(/\/operator$|\/sponsor$/);
+  await page.waitForURL(/\/dashboard$/);
   await page.waitForLoadState("networkidle");
 }
 

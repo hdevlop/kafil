@@ -5,7 +5,8 @@ import { NButton, NCard, NPageLayout } from "najm-kit";
 import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { formatKafilDate, formatMad } from "@/lib/format";
+import { ContributionCard } from "@/features/Contributions/components/ContributionCard";
+import { formatMad } from "@/lib/format";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState } from "@/shared/PageState";
@@ -263,38 +264,21 @@ export function SponsorContributionsPage({
         </NCard>
         <NCard title={t("sponsor.contributions.history")}>
           {contributions.data?.length ? (
-            <div className="space-y-3">
-              {contributions.data.map((contribution) => (
-                <div className="border-t border-border pt-3" key={contribution.id}>
-                  <div className="flex justify-between">
-                    <span className="font-medium">
-                      {formatMad(contribution.amountMinor)}
-                    </span>
-                    <StatusBadge status={contribution.status} />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {contribution.paymentMethod}
-                    {" - "}
-                    {formatKafilDate(contribution.submittedAt)}
-                  </p>
-                  {contribution.status === "pending" &&
-                  contribution.expiresAt ? (
-                    <p className="text-xs text-muted-foreground">
-                      {t("sponsor.contributions.pendingDeadline", {
-                        date: formatKafilDate(contribution.expiresAt),
-                      })}
-                    </p>
-                  ) : null}
-                  {contribution.status === "expired" &&
-                  contribution.expiredAt ? (
-                    <p className="text-xs text-muted-foreground">
-                      {t("sponsor.contributions.expiredAt", {
-                        date: formatKafilDate(contribution.expiredAt),
-                      })}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
+            <div className="grid gap-3">
+              {contributions.data.map((contribution) => {
+                const assignment = active.find(
+                  (item) => item.assignment.id === contribution.supportAssignmentId,
+                );
+                return (
+                  <ContributionCard
+                    key={contribution.id}
+                    data={{
+                      ...contribution,
+                      supportLabel: assignment?.target.label,
+                    }}
+                  />
+                );
+              })}
             </div>
           ) : (
             <PageEmptyState

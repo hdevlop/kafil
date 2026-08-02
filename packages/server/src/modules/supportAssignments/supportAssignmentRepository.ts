@@ -105,6 +105,30 @@ export class SupportAssignmentRepository {
     return sponsor;
   }
 
+  async familyCanReadSponsorImage(familyUserId: string, image: string) {
+    const [assignment] = await this.db
+      .select({ id: supportAssignments.id })
+      .from(supportAssignments)
+      .innerJoin(
+        familyProfiles,
+        eq(supportAssignments.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(
+        sponsorProfiles,
+        eq(supportAssignments.sponsorProfileId, sponsorProfiles.id),
+      )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .where(and(
+        eq(familyProfiles.userId, familyUserId),
+        eq(supportAssignments.status, "active"),
+        isNull(supportAssignments.childId),
+        eq(usersTable.status, "active"),
+        eq(usersTable.image, image),
+      ))
+      .limit(1);
+    return Boolean(assignment);
+  }
+
   async findById(id: string) {
     const [assignment] = await this.db
       .select()

@@ -156,6 +156,41 @@ describe("demo seed generator", () => {
     expect(fundingStates(data)).toEqual({ full: 0, pending: 1, zero: 0 });
   });
 
+  it("keeps a dense two-family contribution history realistic and chronological", () => {
+    const data = generateDemoSeedData(
+      {
+        contributions: 40,
+        deliveries: 4,
+        families: 2,
+        operators: 6,
+        sponsors: 10,
+      },
+      new Date("2026-08-02T10:00:00.000Z"),
+    );
+    const pendingFamily = data.families[1]!;
+    const validated = data.contributions.filter(
+      (contribution) =>
+        contribution.familyProfileId === pendingFamily.id &&
+        contribution.expectedStatus === "validated",
+    );
+    const terminal = data.contributions.filter(
+      (contribution) =>
+        contribution.expectedStatus === "expired" ||
+        contribution.expectedStatus === "rejected",
+    );
+    const amounts = validated.map((contribution) => contribution.amountMinor);
+    const dates = data.contributions.map((contribution) => contribution.paidAt);
+
+    expect(validated).toHaveLength(29);
+    expect(Math.min(...amounts)).toBeGreaterThanOrEqual(10_000);
+    expect(Math.max(...amounts) - Math.min(...amounts)).toBeLessThanOrEqual(1);
+    expect(amounts.reduce((total, amount) => total + amount, 0)).toBe(300_000);
+    expect(terminal.every((contribution) => contribution.amountMinor >= 50_000)).toBe(
+      true,
+    );
+    expect(dates).toEqual([...dates].sort());
+  });
+
   it("keeps live pending reservations under capacity and generates expired history", () => {
     const data = generateDemoSeedData({
       contributions: 100,

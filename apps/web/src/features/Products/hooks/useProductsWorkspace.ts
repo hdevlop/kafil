@@ -11,12 +11,12 @@ import {
 import {
   useFamilyCatalogProducts,
   useFamilyCatalogCategories,
-} from "@/features/FamilyCatalog/hooks/useFamilyCatalog";
+} from "@/features/Products/hooks/useFamilyCatalog";
 import type { OffsetPagination } from "@/lib/pagination";
 import type { ProductRecord } from "@/features/Products/types";
 import type {
   FamilyCatalogProduct,
-} from "@/features/FamilyCatalog/types";
+} from "@/features/Products/familyCatalogTypes";
 
 export interface ProductsWorkspaceFilters {
   search?: string;

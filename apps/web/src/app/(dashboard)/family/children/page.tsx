@@ -1,4 +1,4 @@
-import { FamilyChildrenPage } from "@/features/FamilyDashboard";
+import { FamilyChildrenPage } from "@/features/Dashboard/FamilyDashboard";
 
 export const metadata = { title: "Your children" };
 

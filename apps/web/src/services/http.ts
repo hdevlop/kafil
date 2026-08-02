@@ -53,6 +53,9 @@ async function ensureAccessToken(path: string) {
     "/access/register/sponsor",
     "/access/email-verification/request",
     "/access/email-verification/confirm",
+    "/access/family-password/setup",
+    "/access/family-password/change",
+    "/access/family-password/cancel",
   ].includes(path);
   if (path.startsWith("/auth/") || isPublicAccessPath) return;
 

@@ -2,43 +2,66 @@
 
 import { CalendarClock, HandHeart, Hash, House, Timer } from "lucide-react";
 import { NCard, NCardAction, NCardInfo, NCardSection } from "najm-kit";
+import type { ReactNode } from "react";
 
 import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { StatusBadge } from "@/shared/StatusBadge";
 
-import type { ContributionRecord } from "../types";
+export interface ContributionCardData {
+  amountMinor: number;
+  paymentMethod?: string;
+  status: string;
+  externalReference?: string | null;
+  sponsorName?: string;
+  familyName?: string;
+  supportLabel?: string;
+  submittedAt: string;
+  expiresAt?: string | null;
+  expiredAt?: string | null;
+}
 
 export function ContributionCard({
   data,
-}: Readonly<{ data: ContributionRecord }>) {
+  actions,
+  familySafe = false,
+}: Readonly<{ data: ContributionCardData; actions?: ReactNode; familySafe?: boolean }>) {
   const { t } = useKafilLanguage();
   const isPending = data.status === "pending";
   return (
     <NCard
       embedded
       title={formatMad(data.amountMinor)}
-      description={data.paymentMethod}
+      description={familySafe ? data.externalReference || undefined : data.paymentMethod}
     >
       <NCardAction>
-        <StatusBadge status={data.status} />
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          <StatusBadge status={data.status} />
+          {actions}
+        </div>
       </NCardAction>
       <NCardSection>
-        <NCardInfo
-          icon={Hash}
-          label={t("operator.contributions.externalReference")}
-          value={data.externalReference || t("operator.contributions.notProvided")}
-        />
-        <NCardInfo
-          icon={HandHeart}
-          label={t("operator.assignments.sponsor")}
-          value={data.sponsorName}
-        />
-        <NCardInfo
-          icon={House}
-          label={t("operator.assignments.family")}
-          value={data.familyName}
-        />
+        {data.externalReference ? (
+          <NCardInfo
+            icon={Hash}
+            label={t("operator.contributions.externalReference")}
+            value={data.externalReference}
+          />
+        ) : null}
+        {data.sponsorName ? (
+          <NCardInfo
+            icon={HandHeart}
+            label={t("operator.assignments.sponsor")}
+            value={data.sponsorName}
+          />
+        ) : null}
+        {data.familyName || data.supportLabel ? (
+          <NCardInfo
+            icon={House}
+            label={t("operator.assignments.family")}
+            value={data.familyName ?? data.supportLabel}
+          />
+        ) : null}
         <NCardInfo
           icon={CalendarClock}
           label={t("operator.contributions.submitted")}

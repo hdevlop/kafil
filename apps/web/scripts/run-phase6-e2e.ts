@@ -97,6 +97,7 @@ try {
           "test/e2e/funding-cap-and-catalog-delete.e2e.ts",
           "test/e2e/image-delivery.e2e.ts",
           "test/e2e/staff-delivery-assignment.e2e.ts",
+          "test/e2e/plan-acceptance.e2e.ts",
         ]),
   ];
   if (Bun.env.KAFIL_E2E_GREP) {

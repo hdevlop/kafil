@@ -18,6 +18,7 @@ import {
   ContributionRepository,
   ContributionService,
   ContributionValidator,
+  familyContributionSelection,
   contributionListQuery,
   createContributionDto,
   createContributionPlanDto,
@@ -103,6 +104,74 @@ describe("Phase 3 contribution contracts", () => {
       "refund",
       "bulkDelete",
       "delete",
+    ]);
+  });
+
+  it("scopes family reads by authenticated ownership and returns only safe fields", async () => {
+    const calls: unknown[][] = [];
+    const safeContribution = {
+      id: contributionId,
+      amountMinor: 500,
+      currency: "MAD",
+      externalReference: null,
+      status: "validated" as const,
+      submittedAt: new Date(),
+      paidAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      expiredAt: null,
+      validatedAt: new Date(),
+      rejectedAt: null,
+      createdAt: new Date(),
+    };
+    const service = new ContributionService(
+      {
+        listFamily: async (...args: unknown[]) => {
+          calls.push(["listFamily", ...args]);
+          return [safeContribution];
+        },
+        findFamilyById: async (...args: unknown[]) => {
+          calls.push(["findFamilyById", ...args]);
+          return safeContribution;
+        },
+      } as unknown as ContributionRepository,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(service.listForPrincipal("family-user", "family", {
+      limit: 25,
+      offset: 0,
+      status: "validated",
+    })).resolves.toEqual([safeContribution]);
+    await expect(service.getForPrincipal(contributionId, "family-user", "family"))
+      .resolves.toEqual(safeContribution);
+    expect(calls).toEqual([
+      ["listFamily", "family-user", 25, 0, { status: "validated" }],
+      ["findFamilyById", contributionId, "family-user"],
+    ]);
+    expect(() => service.listForPrincipal("family-user", "family", {
+      familyProfileId: householdId,
+    })).toThrow("Family contribution scope cannot be selected by the client");
+    expect(Object.keys(familyContributionSelection)).toEqual([
+      "id",
+      "amountMinor",
+      "currency",
+      "externalReference",
+      "status",
+      "submittedAt",
+      "paidAt",
+      "expiresAt",
+      "expiredAt",
+      "validatedAt",
+      "rejectedAt",
+      "createdAt",
     ]);
   });
 });

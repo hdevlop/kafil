@@ -14,12 +14,12 @@ import { orderKeys } from "@/features/Orders/hooks/orderKeys";
 import {
   useFamilyCart,
   useFamilyOrderingCommands,
-} from "@/features/FamilyOrdering/hooks/useFamilyOrdering";
-import { familyOrderingKeys } from "@/features/FamilyOrdering/hooks/familyOrderingKeys";
+} from "@/features/Orders/hooks/useFamilyOrdering";
+import { familyOrderingKeys } from "@/features/Orders/hooks/familyOrderingKeys";
 import { useOrderCommands } from "@/features/Orders/hooks/useOrders";
 import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
 import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
-import type { FamilyCartItem } from "@/features/FamilyOrdering/types";
+import type { FamilyCartItem } from "@/features/Orders/familyTypes";
 import { useKafilRole } from "@/shared/Authorization";
 
 export interface OrderCartAddInput {
