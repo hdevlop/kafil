@@ -1,0 +1,2 @@
+ALTER TABLE "applicants" DROP CONSTRAINT "applicants_rejection_reason_only_when_rejected";--> statement-breakpoint
+ALTER TABLE "applicants" ADD CONSTRAINT "applicants_rejection_reason_only_when_rejected" CHECK (("applicants"."rejection_reason" IS NULL OR "applicants"."status" = 'rejected') AND ("applicants"."status" <> 'rejected' OR "applicants"."rejection_reason" IS NOT NULL));

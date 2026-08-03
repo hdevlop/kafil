@@ -1,13 +1,16 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { BadgeCheck, CircleX, Eye, RotateCcw, Trash2 } from "lucide-react";
+import { BadgeCheck, CircleX, Eye, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   IconButton,
   NButton,
   NPageLayout,
-  NRowActions,
   NTable,
   SimpleTooltip,
   type NTableProps,
@@ -15,14 +18,16 @@ import {
 } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
+import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
-import { Admin, Operator, useKafilRole } from "@/shared/Authorization";
+import { Admin, OnlySponsor, Operator, useKafilRole } from "@/shared/Authorization";
 
 import { ContributionCard } from "./ContributionCard";
-import { ContributionDetails } from "./ContributionDetails";
+import { ContributionDetailsSheet } from "./ContributionDetails";
+import { SponsorContributionWorkspace } from "./SponsorContributionWorkspace";
 import { RecordContributionDialogContent } from "./RecordContributionForm";
 import {
   BulkDeleteContributionsDialogContent,
@@ -44,17 +49,26 @@ function ContributionsIcon({ className }: Readonly<{ className?: string }>) {
 }
 
 function isManagement(record: ContributionListRecord): record is ContributionRecord {
-  return "sponsorName" in record;
+  return "paymentMethod" in record && "familyName" in record;
 }
 
-export function ContributionsPage() {
+export function ContributionsPage({
+  initialAssignmentId = "",
+}: Readonly<{ initialAssignmentId?: string }>) {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const user = useUser();
   const { exact } = useKafilRole();
-  const audience: ContributionAudience = exact === "family" ? "family" : "management";
+  const tableMode = useDesktopTableMode();
+  const audience: ContributionAudience =
+    exact === "family"
+      ? "family"
+      : exact === "sponsor"
+        ? "sponsor"
+        : "management";
   const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [viewingContribution, setViewingContribution] = useState<ContributionListRecord | null>(null);
   const bulkDeleteDialogOpenRef = useRef(false);
   const contributions = useContributions<ContributionListRecord>({ ...pagination, audience });
   const { validate, reject, refund, remove } = useContributionCommands();
@@ -65,14 +79,7 @@ export function ContributionsPage() {
   const isAdmin = user?.role === "admin";
 
   function openView(contribution: ContributionListRecord) {
-    void dialog.openDialog({
-      title: t(audience === "family" ? "family.contributions.viewTitle" : "operator.contributions.viewTitle"),
-      description: t(audience === "family" ? "family.contributions.viewDescription" : "operator.contributions.viewDescription"),
-      children: <ContributionDetails contribution={contribution} />,
-      showButtons: false,
-      size: "lg",
-      height: "xl",
-    });
+    setViewingContribution(contribution);
   }
 
   function openRecord() {
@@ -128,13 +135,17 @@ export function ContributionsPage() {
     }).finally(() => { bulkDeleteDialogOpenRef.current = false; });
   }
 
-  function actionButton(label: string, icon: React.ReactNode, onClick: () => void, options?: { danger?: boolean; disabled?: boolean; title?: string }) {
+  function actionItem(label: string, icon: React.ReactNode, onClick: () => void, options?: { danger?: boolean; disabled?: boolean; title?: string }) {
     return (
-      <SimpleTooltip content={options?.title ?? label}>
-        <IconButton aria-label={label} disabled={options?.disabled} size="md" variant={options?.danger ? "destructive" : "ghost"} onClick={(event) => { event.stopPropagation(); onClick(); }}>
-          {icon}
-        </IconButton>
-      </SimpleTooltip>
+      <DropdownMenuItem
+        disabled={options?.disabled}
+        title={options?.title}
+        variant={options?.danger ? "destructive" : "default"}
+        onSelect={(event) => { event.stopPropagation(); onClick(); }}
+      >
+        {icon}
+        {label}
+      </DropdownMenuItem>
     );
   }
 
@@ -143,21 +154,36 @@ export function ContributionsPage() {
     const isPending = contribution.status === "pending";
     const isExpired = isPending && Boolean(contribution.expiresAt) && new Date(contribution.expiresAt!).getTime() <= Date.now();
     return (
-      <NRowActions>
-        {actionButton(t("operator.contributions.view"), <Eye className="size-4" />, () => openView(contribution))}
-        {management ? (
-          <Operator>
-            {isPending ? (
-              <>
-                {actionButton(t("operator.contributions.validateAndCredit"), <BadgeCheck className="size-4" />, () => openValidate(contribution), { disabled: validate.isPending || isExpired, title: isExpired ? t("operator.contributions.expiredWarning") : undefined })}
-                {actionButton(t("operator.contributions.reject"), <CircleX className="size-4" />, () => openReason("reject", contribution), { danger: true, disabled: reject.isPending })}
-              </>
-            ) : null}
-            {contribution.status === "validated" ? actionButton(t("operator.contributions.refund"), <RotateCcw className="size-4" />, () => openReason("refund", contribution), { danger: true, disabled: refund.isPending }) : null}
-          </Operator>
-        ) : null}
-        {management ? <Admin>{actionButton(t("operator.contributions.delete"), <Trash2 className="size-4" />, () => openDelete(contribution), { danger: true, disabled: remove.isPending })}</Admin> : null}
-      </NRowActions>
+      <DropdownMenu>
+        <SimpleTooltip content={t("common.actions")}>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={t("common.actions")}
+              size="sm"
+              variant="ghost"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <MoreHorizontal className="size-4" />
+            </IconButton>
+          </DropdownMenuTrigger>
+        </SimpleTooltip>
+        <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+          {actionItem(t("operator.contributions.view"), <Eye className="size-4" />, () => openView(contribution))}
+          {management ? (
+            <Operator>
+              {isPending ? (
+                <>
+                  {actionItem(t("operator.contributions.validateAndCredit"), <BadgeCheck className="size-4" />, () => openValidate(contribution), { disabled: validate.isPending || isExpired, title: isExpired ? t("operator.contributions.expiredWarning") : undefined })}
+                  {actionItem(t("operator.contributions.reject"), <CircleX className="size-4" />, () => openReason("reject", contribution), { danger: true, disabled: reject.isPending })}
+                </>
+              ) : null}
+              {contribution.status === "validated" ? actionItem(t("operator.contributions.refund"), <RotateCcw className="size-4" />, () => openReason("refund", contribution), { danger: true, disabled: refund.isPending }) : null}
+            </Operator>
+          ) : null}
+          {management ? <Admin>{actionItem(t("operator.contributions.delete"), <Trash2 className="size-4" />, () => openDelete(contribution), { danger: true, disabled: remove.isPending })}</Admin> : null}
+          {audience === "sponsor" ? null : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 
@@ -170,14 +196,25 @@ export function ContributionsPage() {
     error: contributions.error,
     getRowId: (contribution) => contribution.id,
     onCreate: audience === "management" ? openRecord : undefined,
-    onView: openView,
-    renderCard: (props) => <ContributionCard {...props} actions={renderActions(props.data)} familySafe={audience === "family"} />,
+    renderCard: (props) => <ContributionCard {...props} actions={renderActions(props.data)} />,
     renderEmpty: () => (
       <PageEmptyState
         action={audience === "management" ? <NButton onClick={openRecord}>{t("operator.contributions.record")}</NButton> : undefined}
         icon={ContributionsIcon}
-        title={t(audience === "family" ? "family.contributions.emptyTitle" : "operator.contributions.emptyTitle")}
-        description={t(audience === "family" ? "family.contributions.emptyDescription" : "operator.contributions.emptyDescription")}
+        title={t(
+          audience === "family"
+            ? "family.contributions.emptyTitle"
+            : audience === "sponsor"
+              ? "sponsor.contributions.emptyTitle"
+              : "operator.contributions.emptyTitle"
+        )}
+        description={t(
+          audience === "family"
+            ? "family.contributions.emptyDescription"
+            : audience === "sponsor"
+              ? "sponsor.contributions.emptyDescription"
+              : "operator.contributions.emptyDescription"
+        )}
       />
     ),
     renderError: (error) => <PageErrorState error={error} onRetry={() => void contributions.refetch()} />,
@@ -191,9 +228,20 @@ export function ContributionsPage() {
     pageCount,
     onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),
     pageSizeOptions: [10, 25, 50, 100],
-    responsiveCards: true,
+    classNames: { pagination: "hidden lg:flex" },
+    availableModes: ["cards", "table"],
+    mode: tableMode,
     defaultMode: "table",
-    noDataText: t(audience === "family" ? "family.contributions.noData" : "operator.contributions.noData"),
+    responsiveCards: false,
+    showColumnVisibility: false,
+    showViewToggle: false,
+    noDataText: t(
+      audience === "family"
+        ? "family.contributions.noData"
+        : audience === "sponsor"
+          ? "sponsor.contributions.noData"
+          : "operator.contributions.noData"
+    ),
     loadingText: t("operator.contributions.loading"),
     dynamicHeight: true,
     addButtonText: audience === "management" ? t("operator.contributions.record") : undefined,
@@ -203,11 +251,33 @@ export function ContributionsPage() {
     <NPageLayout className="flex h-full min-h-0 flex-col gap-4">
       <NPageHeader
         icon={ContributionsIcon}
-        title={t(audience === "family" ? "family.contributions.title" : "operator.contributions.title")}
-        subtitle={t(audience === "family" ? "family.contributions.subtitle" : "operator.contributions.subtitle")}
+        title={t(
+          audience === "family"
+            ? "family.contributions.title"
+            : audience === "sponsor"
+              ? "sponsor.contributions.title"
+              : "operator.contributions.title"
+        )}
+        subtitle={t(
+          audience === "family"
+            ? "family.contributions.subtitle"
+            : audience === "sponsor"
+              ? "sponsor.contributions.subtitle"
+              : "operator.contributions.subtitle"
+        )}
         actions={<PageHeaderGlobalActions />}
       />
+      <OnlySponsor>
+        <SponsorContributionWorkspace initialAssignmentId={initialAssignmentId} />
+      </OnlySponsor>
       <div className="min-h-0 flex-1"><NTable {...tableProps} /></div>
+      <ContributionDetailsSheet
+        contribution={viewingContribution}
+        open={Boolean(viewingContribution)}
+        onOpenChange={(open) => {
+          if (!open) setViewingContribution(null);
+        }}
+      />
     </NPageLayout>
   );
 }

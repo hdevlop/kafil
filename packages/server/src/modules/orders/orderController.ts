@@ -13,7 +13,7 @@ import {
 import { McpTool, ToolGroup } from "najm-mcp";
 import { Validate } from "najm-validation";
 
-import { isAdmin, isFamily, isOperator, isSponsor } from "../../config/authConfig";
+import { isAdmin, isFamily, isOperator, isOrderReader, isSponsor } from "../../config/authConfig";
 import {
   type AssignDeliveryDto,
   assignDeliveryDto,
@@ -181,21 +181,29 @@ export class OrderController {
   }
 
   @Get()
-  @isOperator()
+  @isOrderReader()
   @Validate({ query: orderListQuery })
-  @McpTool({ description: "List operator-managed orders by household, state, or date", readOnly: true })
+  @McpTool({ description: "List role-scoped orders for the authenticated principal", readOnly: true })
   @ResMsg("orders.success.retrieved")
-  list(@Query() query: OrderListQuery) {
-    return this.orders.list(query);
+  list(
+    @Query() query: OrderListQuery,
+    @User("id") userId: string,
+    @User("role") role: string,
+  ) {
+    return this.orders.listForPrincipal(userId, role, query);
   }
 
   @Get("/:id")
-  @isOperator()
+  @isOrderReader()
   @Validate({ params: orderIdParams })
-  @McpTool({ description: "Read an operator-managed order with snapshots and timeline", readOnly: true })
+  @McpTool({ description: "Read a role-scoped order for the authenticated principal", readOnly: true })
   @ResMsg("orders.success.retrieved")
-  get(@Params("id") id: string) {
-    return this.orders.get(id);
+  get(
+    @Params("id") id: string,
+    @User("id") userId: string,
+    @User("role") role: string,
+  ) {
+    return this.orders.getForPrincipal(id, userId, role);
   }
 
   @Delete("/:id")

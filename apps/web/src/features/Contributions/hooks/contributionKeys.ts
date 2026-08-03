@@ -4,13 +4,15 @@ import type { ContributionListQuery } from "../types";
 
 export const contributionKeys = {
   all: entityKeys.all("contributions"),
-  list(query: ContributionListQuery) {
+  list(query: ContributionListQuery & { role?: string | null }) {
+    const { role, ...rest } = query;
     return entityKeys.list("contributions", {
-      audience: query.audience ?? "management",
-      familyProfileId: query.familyProfileId,
-      limit: query.limit,
-      offset: query.offset,
-      status: query.status,
+      audience: rest.audience ?? "management",
+      familyProfileId: rest.familyProfileId,
+      limit: rest.limit,
+      offset: rest.offset,
+      role: role ?? null,
+      status: rest.status,
     });
   },
   recordingOptions: ["contributions", "recording-options"] as const,

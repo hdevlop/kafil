@@ -2,10 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
 const ntableCardFiles = [
+  "../src/features/Applicants/components/ApplicantCard.tsx",
   "../src/features/Categories/components/CategoryCard.tsx",
   "../src/features/Children/components/ChildCard.tsx",
   "../src/features/Contributions/components/ContributionCard.tsx",
-  "../src/features/Families/components/FamilyCard.tsx",
+  "../src/features/Families/components/FamilyCard/FamilyCard.tsx",
   "../src/features/Orders/components/OrderCard.tsx",
   "../src/features/Products/components/ProductCard.tsx",
   "../src/features/Sponsors/components/SponsorCard.tsx",
@@ -63,7 +64,7 @@ describe("NTable responsive card layouts", () => {
   });
 
   test("all renderers use the embedded NCard information contract", () => {
-    expect(ntableCardFiles).toHaveLength(8);
+    expect(ntableCardFiles).toHaveLength(9);
 
     for (const relativePath of ntableCardFiles) {
       const source = readSource(relativePath);
@@ -78,25 +79,40 @@ describe("NTable responsive card layouts", () => {
     }
   });
 
-  test("role-scoped data reuses the shared catalog, order, and contribution components", () => {
+test("role-scoped data reuses the shared catalog, order, and contribution components", () => {
     const orders = readSource(
       "../src/features/Orders/components/OrdersPage.tsx",
     );
-    const sponsorContributions = readSource(
-      "../src/features/SponsorWorkspace/components/SponsorContributionsPage.tsx",
-    );
-    expect(orders).toContain("familyTableProps");
-    expect(orders).toContain("sponsorTableProps");
+    expect(orders).not.toContain("familyTableProps");
+    expect(orders).not.toContain("sponsorTableProps");
+    expect(orders).not.toContain("operatorTableProps");
+    expect(orders).not.toContain("audience=");
+    expect(orders).toContain("tableProps: NTableProps<SharedOrderRecord>");
     expect(orders).not.toContain("function FamilyOrderCard");
     expect(
       existsSync(
         new URL(
-          "../src/features/SponsorWorkspace/components/SponsorOrdersPage.tsx",
+          "../src/features/SponsorWorkspace",
           import.meta.url,
         ),
       ),
     ).toBe(false);
-    expect(sponsorContributions).toContain('import { ContributionCard }');
+    expect(
+      existsSync(
+        new URL(
+          "../src/features/SponsorOverview",
+          import.meta.url,
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      existsSync(
+        new URL(
+          "../src/features/SponsorProfile",
+          import.meta.url,
+        ),
+      ),
+    ).toBe(false);
     for (const removedFeature of [
       "FamilyBudget",
       "FamilyCatalog",
@@ -111,7 +127,9 @@ describe("NTable responsive card layouts", () => {
   });
 
   test("entity cards use responsive media variants", () => {
-    const family = readSource("../src/features/Families/components/FamilyCard.tsx");
+    const family = readSource(
+      "../src/features/Families/components/FamilyCard/FamilyCard.tsx",
+    );
     expect(family).toContain('<NCardMedia variant="image" size={104}>');
     expect(family).toContain('className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4"');
     expect(family).toContain("<FundingProgressBar inline progress={data.funding} />");

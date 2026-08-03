@@ -1,0 +1,1 @@
+export { FamilyCard } from "./FamilyCard";

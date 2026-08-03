@@ -48,6 +48,7 @@ export interface FamilyOrder {
   deliveredAt: string | null;
   deliveryProofRecorded: boolean;
   assisted: boolean;
+  canCancelOwn?: boolean;
   currency: "MAD" | string;
   createdAt: string;
   updatedAt: string;

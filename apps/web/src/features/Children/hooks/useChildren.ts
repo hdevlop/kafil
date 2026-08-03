@@ -1,5 +1,7 @@
 "use client";
 
+import { useUser } from "najm-auth/client/react";
+
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import type { OffsetPagination } from "@/lib/pagination";
@@ -17,9 +19,15 @@ import {
 import { childKeys } from "./childKeys";
 
 export function useChildren(pagination: OffsetPagination) {
+  const user = useUser();
   return useEntityQuery({
-    queryKey: childKeys.list(pagination),
+    queryKey: childKeys.list({
+      ...pagination,
+      role: user?.role,
+      userId: user?.id,
+    }),
     queryFn: () => listChildren(pagination),
+    enabled: Boolean(user),
   });
 }
 

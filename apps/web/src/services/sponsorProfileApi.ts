@@ -2,7 +2,7 @@ import type {
   CreateOwnSponsorProfileInput,
   OwnSponsorProfile,
   UpdateOwnSponsorProfileInput,
-} from "@/features/SponsorProfile/types";
+} from "@/features/Sponsors/types";
 import { api } from "@/services/http";
 
 export function getOwnSponsorProfile() {

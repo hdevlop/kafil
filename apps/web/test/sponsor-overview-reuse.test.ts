@@ -4,16 +4,16 @@ import { sponsorDashboardKeys } from "../src/features/Dashboard/SponsorDashboard
 import { sponsorKeys } from "../src/features/Sponsors/hooks/sponsorKeys";
 
 describe("Sponsor overview shared-card reuse contracts", () => {
-  test("the sponsor dashboard page imports shared SponsorOverview cards, not local duplicates", async () => {
+  test("the sponsor dashboard page imports shared overview cards from Sponsors, not local duplicates", async () => {
     const pageSource = await Bun.file(
       new URL("../src/features/Dashboard/SponsorDashboard/components/SponsorDashboardPage.tsx", import.meta.url),
     ).text();
 
-    expect(pageSource).toContain("@/features/SponsorOverview/components/SponsorKpiGrid");
-    expect(pageSource).toContain("@/features/SponsorOverview/components/SupportBudgetCard");
-    expect(pageSource).toContain("@/features/SponsorOverview/components/ContributionOverviewCard");
-    expect(pageSource).toContain("@/features/SponsorOverview/components/RecentContributionsCard");
-    expect(pageSource).toContain("@/features/SponsorOverview/components/RecentSupportedOrdersCard");
+    expect(pageSource).toContain("@/features/Sponsors/components/overview/SponsorKpiGrid");
+    expect(pageSource).toContain("@/features/Sponsors/components/overview/SupportBudgetCard");
+    expect(pageSource).toContain("@/features/Sponsors/components/overview/ContributionOverviewCard");
+    expect(pageSource).toContain("@/features/Sponsors/components/overview/RecentContributionsCard");
+    expect(pageSource).toContain("@/features/Sponsors/components/overview/RecentSupportedOrdersCard");
     expect(pageSource).toContain("<SponsorKpiGrid desktopColumns={5}");
     expect(pageSource).toContain('import Link from "next/link"');
     expect(pageSource).not.toContain("<a");
@@ -21,7 +21,7 @@ describe("Sponsor overview shared-card reuse contracts", () => {
 
   test("the shared contribution activity card uses a lightweight SVG trend", async () => {
     const source = await Bun.file(
-      new URL("../src/features/SponsorOverview/components/ContributionOverviewCard.tsx", import.meta.url),
+      new URL("../src/features/Sponsors/components/overview/ContributionOverviewCard.tsx", import.meta.url),
     ).text();
 
     expect(source).toContain('preserveAspectRatio="none"');
@@ -41,19 +41,19 @@ describe("Sponsor overview shared-card reuse contracts", () => {
 
     for (const fileName of componentFiles) {
       const source = await Bun.file(
-        new URL(`../src/features/SponsorOverview/components/${fileName}.tsx`, import.meta.url),
+        new URL(`../src/features/Sponsors/components/overview/${fileName}.tsx`, import.meta.url),
       ).text();
       expect(source).not.toContain("/sponsor/");
     }
   });
 
-  test("operator dialog imports shared cards via direct imports, not barrel", async () => {
+  test("operator dialog imports shared cards via direct imports from Sponsors overview", async () => {
     const source = await Bun.file(
       new URL("../src/features/Sponsors/components/SponsorOverviewDialogContent.tsx", import.meta.url),
     ).text();
 
-    expect(source).toContain("@/features/SponsorOverview/components/");
-    expect(source).not.toContain('from "@/features/SponsorOverview"');
+    expect(source).toContain("@/features/Sponsors/components/overview/");
+    expect(source).not.toContain("@/features/SponsorOverview");
   });
 
   test("query keys isolate overview data by sponsor ID", () => {

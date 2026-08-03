@@ -1,7 +1,5 @@
-import { FamiliesPage } from "@/features/Families";
-
-export const metadata = { title: "Families" };
+import { redirect } from "next/navigation";
 
 export default function OperatorFamiliesPage() {
-  return <FamiliesPage />;
+  redirect("/family");
 }

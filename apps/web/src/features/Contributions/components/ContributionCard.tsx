@@ -1,12 +1,15 @@
 "use client";
 
-import { CalendarClock, HandHeart, Hash, House, Timer } from "lucide-react";
-import { NCard, NCardAction, NCardInfo, NCardSection } from "najm-kit";
+import { CalendarClock, CreditCard, House, Timer } from "lucide-react";
+import { NCard, NCardAction, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
 import type { ReactNode } from "react";
 
 import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { getSponsorAvatarImage } from "@/lib/personImages";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
+import { Operator, Sponsor, useKafilRole } from "@/shared/Authorization";
 
 export interface ContributionCardData {
   amountMinor: number;
@@ -14,6 +17,8 @@ export interface ContributionCardData {
   status: string;
   externalReference?: string | null;
   sponsorName?: string;
+  sponsorImage?: string | null;
+  sponsorGender?: "F" | "M" | null;
   familyName?: string;
   supportLabel?: string;
   submittedAt: string;
@@ -24,49 +29,53 @@ export interface ContributionCardData {
 export function ContributionCard({
   data,
   actions,
-  familySafe = false,
-}: Readonly<{ data: ContributionCardData; actions?: ReactNode; familySafe?: boolean }>) {
+}: Readonly<{ data: ContributionCardData; actions?: ReactNode }>) {
   const { t } = useKafilLanguage();
+  const { isExactSponsor } = useKafilRole();
   const isPending = data.status === "pending";
   return (
     <NCard
       embedded
-      title={formatMad(data.amountMinor)}
-      description={familySafe ? data.externalReference || undefined : data.paymentMethod}
+      title={isExactSponsor ? t("common.you") : data.sponsorName}
+      description={formatMad(data.amountMinor)}
     >
+      <NCardMedia variant="avatar" placement="header" size="sm">
+        <ManagedAvatar
+          src={getSponsorAvatarImage(data.sponsorImage ?? null, data.sponsorGender ?? null)}
+          alt={data.sponsorName ?? t("common.you")}
+          size="xl"
+          classNames={{ avatar: "bg-muted" }}
+        />
+      </NCardMedia>
       <NCardAction>
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          <StatusBadge status={data.status} />
-          {actions}
-        </div>
+        {actions}
       </NCardAction>
       <NCardSection>
-        {data.externalReference ? (
-          <NCardInfo
-            icon={Hash}
-            label={t("operator.contributions.externalReference")}
-            value={data.externalReference}
-          />
-        ) : null}
-        {data.sponsorName ? (
-          <NCardInfo
-            icon={HandHeart}
-            label={t("operator.assignments.sponsor")}
-            value={data.sponsorName}
-          />
-        ) : null}
-        {data.familyName || data.supportLabel ? (
-          <NCardInfo
-            icon={House}
-            label={t("operator.assignments.family")}
-            value={data.familyName ?? data.supportLabel}
-          />
-        ) : null}
-        <NCardInfo
-          icon={CalendarClock}
-          label={t("operator.contributions.submitted")}
-          value={formatKafilDate(data.submittedAt)}
-        />
+        <Operator>
+          {data.paymentMethod ? (
+            <NCardInfo
+              icon={CreditCard}
+              label={t("operator.contributions.paymentMethod")}
+              value={data.paymentMethod}
+            />
+          ) : null}
+          {data.familyName ? (
+            <NCardInfo
+              icon={House}
+              label={t("operator.assignments.family")}
+              value={data.familyName}
+            />
+          ) : null}
+        </Operator>
+        <Sponsor>
+          {data.supportLabel ? (
+            <NCardInfo
+              icon={House}
+              label={t("sponsor.directory.support")}
+              value={data.supportLabel}
+            />
+          ) : null}
+        </Sponsor>
         {isPending && data.expiresAt ? (
           <NCardInfo
             icon={Timer}
@@ -81,6 +90,15 @@ export function ContributionCard({
             value={formatDateTime(data.expiredAt)}
           />
         ) : null}
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <NCardInfo
+            className="min-w-0 flex-1"
+            icon={CalendarClock}
+            label={t("operator.contributions.submitted")}
+            value={formatKafilDate(data.submittedAt)}
+          />
+          <StatusBadge status={data.status} />
+        </div>
       </NCardSection>
     </NCard>
   );

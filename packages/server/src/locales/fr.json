@@ -74,8 +74,8 @@
       "loading": "Chargement…",
       "yourOrders": "Vos commandes",
       "noOrders": "Aucune commande",
-      "createProduct": "Créer un produit"
-    },
+"createProduct": "Créer un produit"
+  },
   "status": {
     "active": "Actif",
     "inactive": "Inactif",
@@ -174,6 +174,74 @@
       "checking": "Vérification de votre compte...",
       "changed": "Mot de passe modifié. Connectez-vous avec le nouveau mot de passe.",
       "changeFailed": "Impossible de modifier le mot de passe."
+    }
+  },
+  "applicants": {
+    "success": {
+      "submitted": "Candidature reçue. Vérifiez votre e-mail pour confirmer et continuer.",
+      "setupRetrieved": "Configuration de vérification de l'e-mail de la candidature récupérée.",
+      "statusRetrieved": "Statut de la candidature récupéré.",
+      "retrieved": "Candidatures récupérées.",
+      "verificationRequested": "Un nouveau code d'activation a été envoyé si la candidature est toujours en attente de vérification.",
+      "emailVerified": "E-mail vérifié. Votre candidature est en cours d'examen."
+    },
+    "form": {
+      "title": "Devenir parrain ou marraine Kafil",
+      "subtitle": "Postulez pour devenir parrain ou marraine vérifié(e) Kafil.",
+      "description": "Complétez la candidature ci-dessous. Kafil examinera votre dossier et vous répondra par e-mail.",
+      "personal": "Informations personnelles",
+      "name": "Nom complet",
+      "namePlaceholder": "Votre nom légal complet",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "cin": "CIN",
+      "gender": "Genre",
+      "male": "Homme",
+      "female": "Femme",
+      "address": "Adresse",
+      "dateOfBirth": "Date de naissance",
+      "credentials": "Identifiants du compte",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Au moins 8 caractères",
+      "confirmPassword": "Confirmer le mot de passe",
+      "passwordHelp": "Utilisez 8 caractères ou plus avec un mélange de lettres, chiffres ou symboles.",
+      "submit": "Envoyer la candidature",
+      "submitting": "Envoi de la candidature...",
+      "success": "Candidature envoyée. Vérifiez votre e-mail pour continuer.",
+      "error": "Impossible d'envoyer votre candidature. Veuillez vérifier le formulaire et réessayer."
+    },
+    "otp": {
+      "title": "Vérifiez votre e-mail",
+      "subtitle": "Saisissez le code d'activation à 6 chiffres envoyé à votre e-mail.",
+      "code": "Code d'activation",
+      "resend": "Renvoyer le code",
+      "resending": "Envoi d'un nouveau code...",
+      "resendCooldown": "Veuillez patienter {seconds}s avant de demander un autre code.",
+      "verify": "Vérifier l'e-mail",
+      "verifying": "Vérification...",
+      "resent": "Un nouveau code a été envoyé à votre e-mail.",
+      "genericError": "Le code d'activation est invalide ou expiré."
+    },
+    "pending": {
+      "title": "Votre candidature est en cours d'examen",
+      "subtitle": "Merci pour votre candidature. Kafil examinera votre dossier et vous répondra par e-mail.",
+      "next": "Vous recevrez un e-mail dès qu'une décision sera prise."
+    },
+    "approved": {
+      "title": "Votre candidature a été approuvée",
+      "subtitle": "Veuillez vous connecter pour accéder à votre espace parrain ou marraine.",
+      "signIn": "Se connecter"
+    },
+    "rejected": {
+      "title": "Cette candidature ne peut pas être rouverte",
+      "subtitle": "Veuillez contacter le support Kafil si vous pensez qu'il s'agit d'une erreur."
+    },
+    "errors": {
+      "duplicateEmail": "Une candidature existe déjà pour cet e-mail. Vérifiez votre boîte de réception pour le code d'activation.",
+      "duplicatePhone": "Une candidature existe déjà pour ce numéro de téléphone.",
+      "duplicateCin": "Une candidature existe déjà pour ce CIN.",
+      "rateLimit": "Trop de demandes. Veuillez réessayer plus tard.",
+      "codeInvalid": "Le code d'activation est invalide ou expiré."
     }
   },
   "language": {
@@ -628,6 +696,64 @@
         "login": "Se connecter"
       }
     },
+    "applicants": {
+      "form": {
+        "title": "Devenir parrain ou marraine",
+        "subtitle": "Postulez pour devenir un parrain Kafil vérifié. Nous examinons chaque demande avant d'activer le compte.",
+        "name": "Nom complet",
+        "namePlaceholder": "Saisissez votre nom complet",
+        "email": "Adresse e-mail",
+        "emailPlaceholder": "Saisissez votre adresse e-mail",
+        "phone": "Numéro de téléphone",
+        "phonePlaceholder": "Exemple : +212 6 12 34 56 78",
+        "cin": "Numéro d'identité nationale",
+        "cinPlaceholder": "Exemple : AB123456",
+        "gender": "Genre",
+        "genderPlaceholder": "Choisissez votre genre",
+        "gender.female": "Femme",
+        "gender.male": "Homme",
+        "dateOfBirth": "Date de naissance",
+        "dateOfBirthPlaceholder": "Choisissez une date",
+        "address": "Adresse",
+        "addressPlaceholder": "Saisissez votre adresse postale",
+        "password": "Mot de passe",
+        "passwordPlaceholder": "Au moins 8 caractères",
+        "confirmPassword": "Confirmer le mot de passe",
+        "confirmPasswordPlaceholder": "Répétez votre mot de passe",
+        "submit": "Envoyer la candidature",
+        "submitting": "Envoi de la candidature...",
+        "failed": "Impossible d'envoyer votre candidature. Veuillez réessayer."
+      },
+      "otp": {
+        "checking": "Vérification de la session de validation...",
+        "title": "Vérifiez votre e-mail",
+        "instructions": "Saisissez le code à six chiffres envoyé à votre e-mail pour confirmer cette candidature.",
+        "destination": "Destination e-mail masquée",
+        "expiresMinutes": "Le code expire 10 minutes après son envoi.",
+        "expired": "Ce code a expiré. Demandez un nouveau code pour continuer.",
+        "codeLabel": "Code de vérification",
+        "codeDescription": "Six chiffres",
+        "submit": "Vérifier l'e-mail",
+        "submitting": "Vérification...",
+        "resend": "Envoyer un nouveau code",
+        "resendIn": "Renvoyer dans {seconds}s",
+        "cancel": "Annuler et revenir à l'accueil",
+        "refresh": "Actualiser l'état de la vérification",
+        "deliveryFailed": "Le dernier e-mail n'a pas pu être livré. Vous pourrez demander un nouveau code à la fin du compte à rebours.",
+        "invalid": "Le code est invalide ou expiré. Demandez un nouveau code si nécessaire.",
+        "success": "E-mail vérifié. Votre candidature est maintenant en attente de validation.",
+        "resendSuccess": "Un nouveau code de vérification a été envoyé."
+      },
+      "review": {
+        "title": "Candidature en attente de validation",
+        "body": "Votre e-mail est vérifié. Un administrateur Kafil examinera votre candidature. Vous ne pourrez vous connecter qu'après approbation et activation de votre compte.",
+        "destination": "Code envoyé à {destination}",
+        "destinationAria": "Destination e-mail",
+        "nextSteps": "L'approbation prend généralement un à trois jours ouvrés. Nous vous enverrons un e-mail dès qu'une décision sera disponible.",
+        "backHome": "Retour à l'accueil",
+        "signIn": "Se connecter"
+      }
+    },
     "language": {
       "label": "Langue",
       "english": "Anglais",
@@ -668,6 +794,7 @@
       "families": "Familles",
       "children": "Enfants",
       "sponsors": "Parrains",
+      "applicants": "Candidatures",
       "staff": "Personnel",
       "assignments": "Attributions",
       "contributions": "Contributions",
@@ -1295,6 +1422,55 @@
         "imageUrl": "Avatar de l’enfant",
         "imageUploadGuidance": "PNG, JPEG ou WebP · jusqu’à 5 Mo"
       },
+      "applicants": {
+        "title": "Candidatures",
+        "subtitle": "Examinez les candidatures avant l’activation d’un compte parrain.",
+        "add": "Ajouter une candidature",
+        "addTitle": "Ajouter une candidature",
+        "addDescription": "Le candidat doit suivre le parcours public vérifié.",
+        "addGuideTitle": "Partager le formulaire de candidature",
+        "addGuideDescription": "Envoyez le lien public au candidat. Il choisit son mot de passe et vérifie son e-mail avant d’apparaître dans la file d’examen.",
+        "copyLink": "Copier le lien",
+        "linkCopied": "Lien de candidature copié.",
+        "emptyTitle": "Aucune candidature",
+        "emptyDescription": "Les nouvelles candidatures de sponsors apparaîtront ici après vérification de l’adresse e-mail.",
+        "noData": "Aucune candidature trouvée",
+        "loading": "Chargement des candidatures...",
+        "view": "Voir",
+        "viewTitle": "Détails de la candidature",
+        "viewDescription": "Informations privées visibles uniquement par les administrateurs.",
+        "name": "Candidat",
+        "email": "E-mail",
+        "phone": "Téléphone",
+        "status": "Statut",
+        "submitted": "Envoyée le",
+        "searchName": "Rechercher un candidat...",
+        "searchEmail": "Rechercher un e-mail...",
+        "searchPhone": "Rechercher un téléphone...",
+        "filterStatus": "Filtrer par statut",
+        "pendingEmailVerification": "E-mail à vérifier",
+        "pendingReview": "En attente d’examen",
+        "approved": "Approuvée",
+        "rejected": "Rejetée",
+        "statusLabel": {
+          "pending_email_verification": "E-mail à vérifier",
+          "pending_review": "En attente d’examen",
+          "approved": "Approuvée",
+          "rejected": "Rejetée"
+        },
+        "contact": "Contact et identité",
+        "gender": "Genre",
+        "female": "Femme",
+        "male": "Homme",
+        "dateOfBirth": "Date de naissance",
+        "privateVerification": "Vérification privée",
+        "cin": "CIN",
+        "address": "Adresse",
+        "review": "Historique d’examen",
+        "reviewed": "Examinée le",
+        "notReviewed": "Pas encore examinée",
+        "rejectionReason": "Motif du rejet"
+      },
       "sponsors": {
         "title": "Parrains",
         "subtitle": "Invitez des parrains et gérez leur profil privé ainsi que le cycle de vie audité de leur compte.",
@@ -1641,6 +1817,15 @@
         "emptyDescription": "Les paiements en attente et validés apparaîtront ici.",
         "noData": "Aucune contribution trouvée"
       },
+      "children": {
+        "title": "Vos enfants",
+        "subtitle": "Consultez les enfants liés au profil de votre famille.",
+        "viewTitle": "Détails de l'enfant",
+        "viewDescription": "Informations respectueuses de la confidentialité concernant cet enfant.",
+        "emptyTitle": "Aucun enfant enregistré",
+        "emptyDescription": "Un opérateur peut ajouter des fiches enfants au profil de votre famille.",
+        "noData": "Aucun enfant trouvé"
+      },
       "cart": {
         "loadingTitle": "Chargement de votre panier",
         "loadingDescription": "Récupération de votre panier protégé.",
@@ -1727,6 +1912,8 @@
       "contributions": {
         "title": "Contributions",
         "subtitle": "Créez des plans de soutien et envoyez des contributions pour validation par un opérateur.",
+        "viewTitle": "Détails de la contribution",
+        "viewDescription": "Un enregistrement de contribution que vous avez soumis, respectueux de la confidentialité.",
         "createTitle": "Créer un soutien",
         "chooseSupport": "Choisir un soutien actif",
         "amount": "Montant en MAD",
@@ -1746,7 +1933,8 @@
         "planReason": "Motif de cette modification du plan",
         "stopReason": "Motif de l'arrêt de ce plan",
         "pendingDeadline": "En attente jusqu'au {date}",
-        "expiredAt": "Expirée le {date}"
+        "expiredAt": "Expirée le {date}",
+        "noData": "Aucune contribution trouvée"
       },
       "directory": {
         "title": "Familles à soutenir",

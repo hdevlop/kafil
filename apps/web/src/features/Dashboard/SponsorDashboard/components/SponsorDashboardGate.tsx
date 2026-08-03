@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { useOwnSponsorProfile } from "@/features/SponsorProfile/hooks/useSponsorProfile";
-import { isSponsorProfileMissing } from "@/features/SponsorProfile/lib/isSponsorProfileMissing";
+import { useOwnSponsorProfile } from "@/features/Sponsors/hooks/useSponsorProfile";
+import { isSponsorProfileMissing } from "@/features/Sponsors/lib/isSponsorProfileMissing";
 import { PageErrorState, PageLoadingState } from "@/shared/PageState";
 
 import { SponsorDashboardPage } from "./SponsorDashboardPage";

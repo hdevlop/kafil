@@ -1,4 +1,4 @@
-import type { SponsorContribution, SponsorContributionPlan, SponsorFamilyCatalogEntry, SponsorListQuery, SponsorSupportAssignment, SponsorSupportSummary } from "@/features/SponsorWorkspace/types";
+import type { SponsorContribution, SponsorContributionPlan, SponsorFamilyCatalogEntry, SponsorListQuery, SponsorSupportAssignment, SponsorSupportSummary } from "@/features/Contributions/lib/sponsorTypes";
 import { api } from "@/services/http";
 
 export async function listSponsorSupport() {

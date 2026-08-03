@@ -1,7 +1,5 @@
-import { ChildrenPage } from "@/features/Children";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Children" };
-
-export default function OperatorChildrenPage() {
-  return <ChildrenPage />;
+export default function OperatorChildrenRedirectPage() {
+  redirect("/children");
 }

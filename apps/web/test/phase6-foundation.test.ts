@@ -153,12 +153,33 @@ describe("Phase 6A authentication schemas", () => {
     );
 
     expect(authSource).toMatch(/publicRoutes:[\s\S]*"\/change-password"/);
+    expect(authSource).toContain('"/auth/oauth/callback"');
     expect(dashboardLayoutSource).not.toContain(
       "FamilyPasswordRequirementGuard",
     );
     expect(changePasswordPageSource).toContain(
       'cookieStore.has("kafil.family-setup")',
     );
+  });
+
+  test("wires Google OAuth through Najm without bypassing sponsor onboarding", () => {
+    const loginSource = readFileSync(
+      new URL(
+        "../src/features/Auth/components/LoginForm.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const callbackSource = readFileSync(
+      new URL("../src/app/auth/oauth/callback/page.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(loginSource).toContain("GoogleLoginButton");
+    expect(loginSource).toContain("<GoogleMark />");
+    expect(loginSource).toContain("returnTo={redirectTo}");
+    expect(callbackSource).toContain("OAuthCallback");
+    expect(callbackSource).toContain('defaultRedirect="/dashboard"');
   });
 
   test("uses a document navigation after login changes auth cookies", () => {

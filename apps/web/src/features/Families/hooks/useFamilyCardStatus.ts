@@ -1,0 +1,39 @@
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { fundingProgressPercent } from "@/shared/FundingProgressCard";
+
+import type { FamilyRecord } from "../types";
+
+export function useFamilyCardStatus(data: FamilyRecord) {
+  const { t } = useKafilLanguage();
+
+  const fundingStatus = data.funding?.status === "active" ? "active" : "pending";
+  const capacityStatus = data.funding?.capacityStatus ?? "open";
+  const hasReachedTarget = data.funding
+    ? fundingProgressPercent(data.funding) >= 100
+    : false;
+  const isClosed =
+    hasReachedTarget ||
+    capacityStatus === "reserved" ||
+    capacityStatus === "funded";
+  const disabledReason =
+    hasReachedTarget || capacityStatus === "funded"
+      ? t("funding.funded")
+      : capacityStatus === "reserved"
+        ? t("funding.reserved")
+        : null;
+  const supportPriorityLabel =
+    data.supportPriority === "urgent"
+      ? t("operator.families.supportPriorityUrgent")
+      : data.supportPriority === "high"
+        ? t("operator.families.supportPriorityHigh")
+        : t("operator.families.supportPriorityNormal");
+
+  return {
+    fundingStatus,
+    capacityStatus,
+    hasReachedTarget,
+    isClosed,
+    disabledReason,
+    supportPriorityLabel,
+  };
+}

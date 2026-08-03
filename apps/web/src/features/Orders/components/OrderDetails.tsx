@@ -6,26 +6,29 @@ import {
   Truck,
   UserRoundCog,
 } from "lucide-react";
-import { NCard, NSheet } from "najm-kit";
+import { NCard, NDetailList, NSheet } from "najm-kit";
 
 import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatStatusLabel } from "@/lib/format";
+import { formatKafilDate, formatMad } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import { useOrder } from "../hooks/useOrders";
 import { useFamilyOrder } from "../hooks/useFamilyOrdering";
+import { useSponsorOrder } from "../hooks/useSponsorOrders";
+import type { SharedOrderRecord } from "../sharedTypes";
 import type { FamilyOrderDetail } from "../familyTypes";
-import type { OrderRecord } from "../types";
 import {
   DeliveryAssignmentCard,
   DeliveryPersonCard,
 } from "./DeliveryDetailsSheet";
 
-export function OrderDetailsSheet({ open, order, onOpenChange }: Readonly<{
+export function OrderDetailsSheet({ open, order, sponsor = false, onOpenChange }: Readonly<{
   open: boolean;
-  order: OrderRecord | null;
+  order: SharedOrderRecord | null;
+  sponsor?: boolean;
   onOpenChange: (open: boolean) => void;
 }>) {
   const { language, t } = useKafilLanguage();
@@ -36,13 +39,64 @@ export function OrderDetailsSheet({ open, order, onOpenChange }: Readonly<{
       onOpenChange={onOpenChange}
       icon={ClipboardCheck}
       title={order ? `${t("common.view")} ${order.orderNumber}` : t("common.view")}
-      description={t("operator.orders.snapshot")}
+      description={sponsor ? t("dashboard.sponsor.privacySafeOrders") : t("operator.orders.snapshot")}
       width={480}
       side={language === "ar" ? "left" : "right"}
       classNames={{ content: "max-w-full bg-background", header: "bg-background", body: "bg-background" }}
     >
-      {order ? <OrderDetails orderId={order.id} /> : null}
+      {order ? (
+        sponsor ? <SponsorOrderDetails orderId={order.id} /> : <OrderDetails orderId={order.id} />
+      ) : null}
     </NSheet>
+  );
+}
+
+function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
+  const { t } = useKafilLanguage();
+  const order = useSponsorOrder(orderId);
+
+  if (order.isPending) return <NCard title={t("common.loadingOrders")} loading />;
+  if (order.isError) {
+    return (
+      <PageErrorState
+        error={order.error}
+        title={t("common.orderNoOrdersTitle")}
+        onRetry={() => void order.refetch()}
+      />
+    );
+  }
+  if (!order.data) return null;
+
+  const data = order.data;
+  return (
+    <div className="space-y-4">
+      <NCard title={data.orderNumber}>
+        <NDetailList
+          items={[
+            { label: "Status", value: <StatusBadge status={data.status} /> },
+            { label: "Total", value: formatMad(data.actualTotalMinor ?? data.totalMinor) },
+            { label: "Placed", value: formatKafilDate(data.placedAt) },
+            {
+              label: t("operator.orders.delivery.column"),
+              value: data.deliveryName ?? formatStatusLabel(data.deliveryStatus ?? "not_assigned"),
+            },
+          ]}
+        />
+      </NCard>
+      <NCard title={`${data.items.length} ${data.items.length === 1 ? "article" : "articles"}`}>
+        <div className="space-y-3">
+          {data.items.map((item) => (
+            <div className="flex items-start justify-between gap-4 border-t border-border pt-3 first:border-t-0 first:pt-0" key={`${item.sku}-${item.productName}`}>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{item.productName}</p>
+                <p className="text-xs text-muted-foreground">{item.sku} · {item.quantity}</p>
+              </div>
+              <span className="shrink-0 text-sm font-medium">{formatMad(item.lineTotalMinor)}</span>
+            </div>
+          ))}
+        </div>
+      </NCard>
+    </div>
   );
 }
 

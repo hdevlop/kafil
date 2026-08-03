@@ -1,21 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useUser } from "najm-auth/client/react";
 
+import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
-import { useOrders } from "@/features/Orders/hooks/useOrders";
-import { useFamilyOrders } from "@/features/Orders/hooks/useFamilyOrdering";
-import { useSponsorOrders } from "@/features/Orders/hooks/useSponsorOrders";
 import type { OffsetPagination } from "@/lib/pagination";
-import type { OrderRecord } from "@/features/Orders/types";
-import type { FamilyOrder } from "@/features/Orders/familyTypes";
-import type { SponsorSupportedOrder } from "@/features/Orders/sponsorTypes";
+import { listOrders } from "@/services/orderApi";
+
+import { orderKeys } from "./orderKeys";
+import {
+  normalizeFamilyOrder,
+  normalizeOrderRecord,
+  normalizeSponsorOrder,
+} from "../lib/normalizeOrder";
+import type { SharedOrderRecord } from "../sharedTypes";
+import type { FamilyOrder } from "../familyTypes";
+import type { SponsorSupportedOrder } from "../sponsorTypes";
+import type { OrderRecord } from "../types";
 
 export type OrdersScope = "management" | "family" | "sponsor";
 
 export interface OrdersWorkspace {
   scope: OrdersScope;
-  orders: OrderRecord[] | FamilyOrder[] | SponsorSupportedOrder[];
+  orders: SharedOrderRecord[];
   loading: boolean;
   error: unknown;
   refetch: () => Promise<unknown>;
@@ -29,45 +37,32 @@ export function useOrdersWorkspace(
   highlightOrderId: string | null = null,
 ): OrdersWorkspace {
   const { isExactFamily, isExactSponsor } = useKafilRole();
+  const user = useUser();
   const [internalPagination, setInternalPagination] = useState(pagination);
-  const familyOrders = useFamilyOrders(internalPagination, { enabled: isExactFamily });
-  const sponsorOrders = useSponsorOrders(internalPagination, { enabled: isExactSponsor });
-  const managementOrders = useOrders(internalPagination, {
-    enabled: !isExactFamily && !isExactSponsor,
+
+  const orders = useEntityQuery({
+    queryKey: [...orderKeys.list(internalPagination), "principal", user?.id ?? null, user?.role ?? null],
+    queryFn: () => listOrders(internalPagination),
+    enabled: Boolean(user),
   });
 
-  if (isExactFamily) {
-    return {
-      scope: "family",
-      orders: familyOrders.data ?? [],
-      loading: familyOrders.isPending,
-      error: familyOrders.error,
-      refetch: familyOrders.refetch,
-      pagination: internalPagination,
-      setPagination: setInternalPagination,
-      highlightOrderId,
-    };
-  }
-
-  if (isExactSponsor) {
-    return {
-      scope: "sponsor",
-      orders: sponsorOrders.data ?? [],
-      loading: sponsorOrders.isPending,
-      error: sponsorOrders.error,
-      refetch: sponsorOrders.refetch,
-      pagination: internalPagination,
-      setPagination: setInternalPagination,
-      highlightOrderId,
-    };
-  }
+  const raw = orders.data ?? [];
+  const normalized: SharedOrderRecord[] = raw.map((order: unknown) => {
+    if (isExactFamily) return normalizeFamilyOrder(order as FamilyOrder);
+    if (isExactSponsor) return normalizeSponsorOrder(order as SponsorSupportedOrder);
+    return normalizeOrderRecord(order as OrderRecord);
+  });
 
   return {
-    scope: "management",
-    orders: managementOrders.data ?? [],
-    loading: managementOrders.isPending,
-    error: managementOrders.error,
-    refetch: managementOrders.refetch,
+    scope: isExactFamily
+      ? "family"
+      : isExactSponsor
+        ? "sponsor"
+        : "management",
+    orders: normalized,
+    loading: orders.isPending,
+    error: orders.error,
+    refetch: orders.refetch,
     pagination: internalPagination,
     setPagination: setInternalPagination,
     highlightOrderId,

@@ -5,6 +5,7 @@ import { Eye, Pencil, Trash2 } from "lucide-react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
+import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -77,6 +78,7 @@ function decorateAssignments(
 export function SupportAssignmentsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
+  const tableMode = useDesktopTableMode();
   const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
   const assignments = useSupportAssignments(pagination);
   const sources = useSupportAssignmentSources();
@@ -188,8 +190,12 @@ export function SupportAssignmentsPage() {
     pageCount,
     onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),
     pageSizeOptions: [10, 25, 50, 100],
-    responsiveCards: true,
+    availableModes: ["cards", "table"],
+    mode: tableMode,
     defaultMode: "table",
+    responsiveCards: false,
+    showColumnVisibility: false,
+    showViewToggle: false,
     classNames: {
       cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4",
     },

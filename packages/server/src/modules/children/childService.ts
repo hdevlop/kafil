@@ -33,8 +33,35 @@ export class ChildService {
     return this.children.list(limit, offset, familyProfileId);
   }
 
+  async listForPrincipal(input: {
+    userId: string;
+    role: string;
+    query: ChildListQuery;
+  }) {
+    if (input.role === "family") {
+      const family = await this.families.findByUserId(input.userId);
+      if (!family || family.role !== "family") {
+        HttpError.notFound("Family profile not found");
+      }
+      const children = await this.children.listByFamilyId(family.id);
+      return children.map(toFamilyChildProjection);
+    }
+    return this.list(input.query);
+  }
+
   get(id: string) {
     return this.validator.ensureExists(id);
+  }
+
+  async getForPrincipal(input: {
+    id: string;
+    userId: string;
+    role: string;
+  }) {
+    if (input.role === "family") {
+      return this.getOwn(input.id, input.userId);
+    }
+    return this.get(input.id);
   }
 
   async listOwn(userId: string) {

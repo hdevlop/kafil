@@ -5,6 +5,7 @@ import { KeyRound } from "lucide-react";
 import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
@@ -13,10 +14,12 @@ import { useAccessPermissions } from "../hooks/useAdminAccess";
 import { useAdminPermissionsTableFilters } from "../hooks/useAdminPermissionsTableFilters";
 import type { AccessPermissionView } from "../types";
 import { CreateAccessPermissionDialogContent } from "./AdminAccessCreateDialogs";
+import { AdminPermissionCard } from "./AdminAccessCards";
 
 export function AdminPermissionsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
+  const tableMode = useDesktopTableMode();
   const permissions = useAccessPermissions();
   const rows = permissions.data ?? [];
   const filters = useAdminPermissionsTableFilters(rows);
@@ -79,6 +82,7 @@ export function AdminPermissionsPage() {
           loading={permissions.isPending}
           error={permissions.error}
           getRowId={(permission) => permission.id}
+          renderCard={AdminPermissionCard}
           renderEmpty={() => (
             <PageEmptyState
               icon={KeyRound}
@@ -92,7 +96,13 @@ export function AdminPermissionsPage() {
               onRetry={() => void permissions.refetch()}
             />
           )}
-          responsiveCards
+          availableModes={["cards", "table"]}
+          mode={tableMode}
+          defaultMode="table"
+          responsiveCards={false}
+          showColumnVisibility={false}
+          showViewToggle={false}
+          classNames={{ pagination: "hidden lg:flex" }}
           addButtonText={t("adminAccess.permissions.create")}
           noDataText={t("adminAccess.permissions.noData")}
           loadingText={t("adminAccess.permissions.loading")}

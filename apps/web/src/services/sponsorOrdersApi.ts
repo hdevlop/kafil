@@ -9,3 +9,7 @@ export function listSponsorOrders(query: SponsorOrderQuery) {
     query: { limit: query.limit, offset: query.offset },
   });
 }
+
+export function getSponsorOrder(id: string) {
+  return api.get<SponsorSupportedOrder>(`/orders/${id}`);
+}

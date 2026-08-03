@@ -26,8 +26,8 @@ describe("image delivery source gates", () => {
     const consumers = [
       "features/Categories/components/CategoryCard.tsx",
       "features/Categories/components/CategoryDetails.tsx",
-      "features/Families/components/FamilyCard.tsx",
-      "features/Families/components/FamilyDetails.tsx",
+      "features/Families/components/FamilyCard/FamilyCard.tsx",
+      "features/Families/components/FamilyDetails/FamilyDetailsHero.tsx",
       "features/OrderCart/components/OrderCartDialog.tsx",
       "features/Products/components/ProductCard.tsx",
       "features/Products/components/ProductDetails.tsx",

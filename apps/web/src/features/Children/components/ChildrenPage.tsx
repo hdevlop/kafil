@@ -9,8 +9,8 @@ import {
   UserRoundCheck,
   UserRoundX,
 } from "lucide-react";
-import { useUser } from "najm-auth/client/react";
 import {
+  type ContextMenuItem,
   NButton,
   NPageLayout,
   NTable,
@@ -22,6 +22,7 @@ import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { Operator, useKafilRole } from "@/shared/Authorization";
 
 import { ChildCard } from "./ChildCard";
 import { ChildDetails } from "./ChildDetails";
@@ -42,14 +43,13 @@ const CHILD_LIST_LIMIT = 100;
 export function ChildrenPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
-  const user = useUser();
+  const { isExactAdmin, isExactFamily } = useKafilRole();
   const children = useChildren({ limit: CHILD_LIST_LIMIT, offset: 0 });
   const columns = useChildrenTableColumns();
   const filters = useChildrenTableFilters();
   const rows = children.data ?? [];
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);
-  const isAdmin = user?.role === "admin";
 
   const getRowClassName = (child: ChildRecord) =>
     child.status === "inactive" ||
@@ -71,7 +71,9 @@ export function ChildrenPage() {
   function openView(child: ChildRecord) {
     void dialog.openDialog({
       title: child.legalName,
-      description: "Operator-only child and family relationship details.",
+      description: isExactFamily
+        ? t("family.children.viewDescription")
+        : "Operator-only child and family relationship details.",
       children: <ChildDetails child={child} />,
       showButtons: false,
       size: "lg",
@@ -137,49 +139,57 @@ export function ChildrenPage() {
     loading: children.isPending,
     error: children.error,
     getRowId: (child) => child.id,
-    onCreate: openCreate,
+    onCreate: isExactFamily ? undefined : openCreate,
     onView: openView,
-    onEdit: openEdit,
+    onEdit: isExactFamily ? undefined : openEdit,
     onRowClick: openView,
     renderCard: ChildCard,
     getRowClassName,
-      renderEmpty: () => (
-        <PageEmptyState
-          action={<NButton onClick={openCreate}>{t("operator.children.create")}</NButton>}
-          icon={Baby}
-          title={t("operator.children.emptyTitle")}
-          description={t("operator.children.emptyDescription")}
-        />
-      ),
+    renderEmpty: () => (
+      <PageEmptyState
+        action={
+          <Operator>
+            <NButton onClick={openCreate}>
+              {t("operator.children.create")}
+            </NButton>
+          </Operator>
+        }
+        icon={Baby}
+        title={t(isExactFamily ? "family.children.emptyTitle" : "operator.children.emptyTitle")}
+        description={t(isExactFamily ? "family.children.emptyDescription" : "operator.children.emptyDescription")}
+      />
+    ),
     renderError: (error) => (
       <PageErrorState error={error} onRetry={() => void children.refetch()} />
     ),
     menu: {
       row: (child) => {
         const isActive = child.status === "active";
-
-        const actions = [
+        const list: ContextMenuItem[] = [
           {
             label: t("operator.children.view"),
             icon: Eye,
             onSelect: () => openView(child),
           },
-          {
+        ];
+
+        if (!isExactFamily) {
+          list.push({
             label: t("operator.children.edit"),
             icon: Pencil,
             onSelect: () => openEdit(child),
-          },
-          {
+          });
+          list.push({
             label: t(isActive ? "operator.children.deactivate" : "operator.children.reactivate"),
             icon: isActive ? UserRoundX : UserRoundCheck,
             danger: isActive,
             separatorBefore: true,
             onSelect: () => openStatus(child),
-          },
-        ];
+          });
+        }
 
-        if (isAdmin) {
-          actions.push({
+        if (isExactAdmin) {
+          list.push({
             label: t("operator.children.delete"),
             icon: Trash2,
             danger: true,
@@ -188,14 +198,14 @@ export function ChildrenPage() {
           });
         }
 
-        return actions;
+        return list;
       },
     },
-    menuButton: true,
-    showCheckbox: isAdmin,
+    menuButton: !isExactFamily,
+    showCheckbox: isExactAdmin,
     rowSelection,
     onRowSelectionChange: setRowSelection,
-    onBulkDelete: isAdmin ? openBulkDelete : undefined,
+    onBulkDelete: isExactAdmin ? openBulkDelete : undefined,
     showPagination: false,
     responsiveCards: true,
     defaultMode: "cards",
@@ -203,7 +213,7 @@ export function ChildrenPage() {
       cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
     },
     addButtonText: t("operator.children.create"),
-    noDataText: t("operator.children.noData"),
+    noDataText: t(isExactFamily ? "family.children.noData" : "operator.children.noData"),
     loadingText: t("operator.children.loading"),
     dynamicHeight: true,
   };
@@ -212,8 +222,8 @@ export function ChildrenPage() {
     <NPageLayout className="flex h-full min-h-0 flex-col gap-4">
       <NPageHeader
         icon={Baby}
-        title={t("operator.children.title")}
-        subtitle={t("operator.children.subtitle")}
+        title={t(isExactFamily ? "family.children.title" : "operator.children.title")}
+        subtitle={t(isExactFamily ? "family.children.subtitle" : "operator.children.subtitle")}
         actions={<PageHeaderGlobalActions />}
       />
       <div className="min-h-0 flex-1">

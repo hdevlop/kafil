@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react";
+
 export interface SponsorRecord {
   id: string;
   userId: string;
@@ -107,4 +109,87 @@ export interface OperatorSponsorOverviewData {
       itemCount: number;
     }>;
   };
+}
+
+export interface OwnSponsorProfile {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null;
+  emailVerified: boolean;
+  status: "active" | "inactive" | string;
+  role: string | null;
+  phone: string | null;
+  cin: string | null;
+  gender: "F" | "M" | null;
+  address: string | null;
+  dateOfBirth: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOwnSponsorProfileInput {
+  phone: string;
+  cin: string;
+  gender: "F" | "M";
+  address: string;
+  dateOfBirth: string;
+}
+
+export interface UpdateOwnSponsorProfileInput {
+  phone?: string;
+  cin?: string;
+  gender?: "F" | "M";
+  address?: string;
+  dateOfBirth?: string;
+}
+
+export interface SponsorKpiItem {
+  key: string;
+  icon: LucideIcon;
+  label: string;
+  subtext?: string;
+  value: string;
+  link?: string;
+}
+
+export interface BudgetSegment {
+  label: string;
+  value: number;
+  color: string;
+}
+
+export interface ContributionTrendPoint {
+  month: string;
+  [key: string]: number | string;
+}
+
+export interface ChartSeries {
+  key: string;
+  label: string;
+  color: string;
+}
+
+export interface ContributionEntry {
+  id: string;
+  status: string;
+  amountMinor: number;
+  submittedAt: string;
+}
+
+export interface OrderEntry {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalMinor: number;
+  placedAt: string;
+  itemCount: number;
+}
+
+export interface UpcomingPlanEntry {
+  planId: string;
+  amountMinor: number;
+  dueAt: string;
+  supportReference: string;
 }

@@ -82,6 +82,23 @@ const familyOrderSelection = {
   dominantCategoryImage: dominantOrderCategoryField("image"),
 };
 
+const sponsorOrderSelection = {
+  id: orders.id,
+  orderNumber: orders.orderNumber,
+  status: orders.status,
+  subtotalMinor: orders.subtotalMinor,
+  totalMinor: orders.totalMinor,
+  currency: orders.currency,
+  placedAt: orders.createdAt,
+  approvedAt: orders.approvedAt,
+  preparationStartedAt: orders.preparationStartedAt,
+  deliveryStartedAt: orders.deliveryStartedAt,
+  deliveredAt: orders.deliveredAt,
+  deliveryProofRecorded: sql<boolean>`${orders.deliveryProofStoragePath} IS NOT NULL`,
+  dominantCategoryName: dominantOrderCategoryField("name"),
+  dominantCategoryImage: dominantOrderCategoryField("image"),
+};
+
 @Repository("default")
 export class CartRepository {
   @DB() private db!: KafilDatabase;
@@ -195,7 +212,7 @@ export class OrderRepository {
         )
       : eq(orders.familyProfileId, familyProfileId);
     return this.db
-      .select()
+      .select(familyOrderSelection)
       .from(orders)
       .where(condition)
       .orderBy(desc(orders.createdAt))
@@ -233,22 +250,7 @@ export class OrderRepository {
           eq(supportAssignments.status, "active"),
         );
     return this.db
-      .selectDistinct({
-        id: orders.id,
-        orderNumber: orders.orderNumber,
-        status: orders.status,
-        subtotalMinor: orders.subtotalMinor,
-        totalMinor: orders.totalMinor,
-        currency: orders.currency,
-        placedAt: orders.createdAt,
-        approvedAt: orders.approvedAt,
-        preparationStartedAt: orders.preparationStartedAt,
-        deliveryStartedAt: orders.deliveryStartedAt,
-        deliveredAt: orders.deliveredAt,
-        deliveryProofRecorded: sql<boolean>`${orders.deliveryProofStoragePath} IS NOT NULL`,
-        dominantCategoryName: dominantOrderCategoryField("name"),
-        dominantCategoryImage: dominantOrderCategoryField("image"),
-      })
+      .selectDistinct(sponsorOrderSelection)
       .from(orders)
       .innerJoin(
         supportAssignments,
@@ -262,6 +264,29 @@ export class OrderRepository {
       .orderBy(desc(orders.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  async findSupportedBySponsor(id: string, sponsorUserId: string) {
+    const [order] = await this.db
+      .selectDistinct(sponsorOrderSelection)
+      .from(orders)
+      .innerJoin(
+        supportAssignments,
+        eq(orders.familyProfileId, supportAssignments.familyProfileId),
+      )
+      .innerJoin(
+        sponsorProfiles,
+        eq(supportAssignments.sponsorProfileId, sponsorProfiles.id),
+      )
+      .where(
+        and(
+          eq(orders.id, id),
+          eq(sponsorProfiles.userId, sponsorUserId),
+          eq(supportAssignments.status, "active"),
+        ),
+      )
+      .limit(1);
+    return order;
   }
 
   async findById(id: string) {

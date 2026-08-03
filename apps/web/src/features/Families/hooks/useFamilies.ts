@@ -10,10 +10,12 @@ import {
   deactivateFamily,
   deleteFamily,
   listFamilies,
+  listSponsorFamilyCatalog,
   reactivateFamily,
   updateFamily,
 } from "@/services/familyApi";
 
+import { toSponsorFamilyRecord } from "../lib/toSponsorFamilyRecord";
 import { familyKeys } from "./familyKeys";
 
 export function useFamilies(
@@ -24,6 +26,15 @@ export function useFamilies(
   return useEntityQuery({
     queryKey: familyKeys.list({ ...pagination, ...filters }),
     queryFn: () => listFamilies(pagination, filters),
+    enabled,
+  });
+}
+
+export function useSponsorFamilyCatalog(enabled = true) {
+  return useEntityQuery({
+    queryKey: familyKeys.sponsorCatalog(),
+    queryFn: async () =>
+      (await listSponsorFamilyCatalog()).map(toSponsorFamilyRecord),
     enabled,
   });
 }

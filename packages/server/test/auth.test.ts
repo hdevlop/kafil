@@ -44,6 +44,31 @@ describe("Kafil auth definitions", () => {
     expect(authConfig().config).toMatchObject({ defaultRole: "sponsor" });
   });
 
+  it("enables Google only with complete credentials and links existing accounts", () => {
+    const originalClientId = process.env.GOOGLE_CLIENT_ID;
+    const originalClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    try {
+      delete process.env.GOOGLE_CLIENT_ID;
+      delete process.env.GOOGLE_CLIENT_SECRET;
+      expect(authConfig().config.oauth?.google).toBeUndefined();
+
+      process.env.GOOGLE_CLIENT_ID = "test-client-id";
+      process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
+      expect(authConfig().config.oauth).toMatchObject({
+        google: {
+          allowSignup: false,
+          autoLinkVerifiedEmail: true,
+        },
+      });
+    } finally {
+      if (originalClientId === undefined) delete process.env.GOOGLE_CLIENT_ID;
+      else process.env.GOOGLE_CLIENT_ID = originalClientId;
+      if (originalClientSecret === undefined) delete process.env.GOOGLE_CLIENT_SECRET;
+      else process.env.GOOGLE_CLIENT_SECRET = originalClientSecret;
+    }
+  });
+
   it("authorizes the canonical role from an already resolved user", async () => {
     const guard = new KafilRoleGuard({} as never);
 

@@ -7,11 +7,11 @@ import Link from "next/link";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatMad } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
-import { ContributionOverviewCard } from "@/features/SponsorOverview/components/ContributionOverviewCard";
-import { RecentContributionsCard } from "@/features/SponsorOverview/components/RecentContributionsCard";
-import { RecentSupportedOrdersCard } from "@/features/SponsorOverview/components/RecentSupportedOrdersCard";
-import { SponsorKpiGrid } from "@/features/SponsorOverview/components/SponsorKpiGrid";
-import { SupportBudgetCard } from "@/features/SponsorOverview/components/SupportBudgetCard";
+import { ContributionOverviewCard } from "@/features/Sponsors/components/overview/ContributionOverviewCard";
+import { RecentContributionsCard } from "@/features/Sponsors/components/overview/RecentContributionsCard";
+import { RecentSupportedOrdersCard } from "@/features/Sponsors/components/overview/RecentSupportedOrdersCard";
+import { SponsorKpiGrid } from "@/features/Sponsors/components/overview/SponsorKpiGrid";
+import { SupportBudgetCard } from "@/features/Sponsors/components/overview/SupportBudgetCard";
 
 import { useSponsorDashboard } from "../hooks/useSponsorDashboard";
 import { buildSponsorDashboardViewModel } from "../lib/buildSponsorDashboardViewModel";

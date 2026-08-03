@@ -64,16 +64,16 @@
     "orderDeliveryStarted": "Delivery started {date}",
     "orderDeliveryAssigned": "Preparing for delivery",
     "orderDeliveryProofRecorded": "Delivery proof recorded",
-    "orderTrack": "Track",
-    "orderCancel": "Cancel",
-    "orderNoOrdersTitle": "No orders yet",
-    "orderNoOrdersDescription": "Submit your prepared cart when your household is ready.",
-    "orderYourOrders": "Your orders",
-    "orderYourOrdersSubtitle": "Track the status and recorded timeline of orders placed by your household.",
-    "requestedAmount": "Requested {amount}",
-    "yourOrders": "Your orders",
-    "noOrders": "No orders yet",
-    "createProduct": "Create product"
+"orderTrack": "Track",
+      "orderCancel": "Cancel",
+      "orderNoOrdersTitle": "No orders yet",
+"orderNoOrdersDescription": "Submit your prepared cart when your household is ready.",
+      "orderYourOrders": "Your orders",
+      "orderYourOrdersSubtitle": "Track the status and recorded timeline of orders placed by your household.",
+      "requestedAmount": "Requested {amount}",
+      "yourOrders": "Your orders",
+      "noOrders": "No orders yet",
+      "createProduct": "Create product"
   },
   "status": {
     "active": "Active",
@@ -250,6 +250,74 @@
       "checking": "Checking your account...",
       "changed": "Password changed. Sign in with your new password.",
       "changeFailed": "Could not change the password."
+    }
+  },
+  "applicants": {
+    "success": {
+      "submitted": "Application received. Check your email to verify and continue.",
+      "setupRetrieved": "Application email verification setup retrieved.",
+      "statusRetrieved": "Application status retrieved.",
+      "retrieved": "Applications retrieved.",
+      "verificationRequested": "A new activation code has been sent if the application is still pending verification.",
+      "emailVerified": "Email verified. Your application is awaiting review."
+    },
+    "form": {
+      "title": "Apply to become a Kafil sponsor",
+      "subtitle": "Apply to become a verified Kafil sponsor.",
+      "description": "Complete the application below. Kafil will review your submission and follow up by email once a decision is made.",
+      "personal": "Personal information",
+      "name": "Full name",
+      "namePlaceholder": "Your full legal name",
+      "email": "Email",
+      "phone": "Phone",
+      "cin": "CIN",
+      "gender": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "address": "Address",
+      "dateOfBirth": "Date of birth",
+      "credentials": "Account credentials",
+      "password": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "confirmPassword": "Confirm password",
+      "passwordHelp": "Use 8 characters or more with a mix of letters, numbers, or symbols.",
+      "submit": "Submit application",
+      "submitting": "Submitting application...",
+      "success": "Application submitted. Verify your email to continue.",
+      "error": "We could not submit your application. Please review the form and try again."
+    },
+    "otp": {
+      "title": "Verify your email",
+      "subtitle": "Enter the 6-digit activation code we sent to your email.",
+      "code": "Activation code",
+      "resend": "Resend code",
+      "resending": "Sending a new code...",
+      "resendCooldown": "Please wait {seconds}s before requesting another code.",
+      "verify": "Verify email",
+      "verifying": "Verifying...",
+      "resent": "A new code has been sent to your email.",
+      "genericError": "The activation code is invalid or expired."
+    },
+    "pending": {
+      "title": "Your application is under review",
+      "subtitle": "Thanks for applying. Kafil will review your submission and follow up by email.",
+      "next": "You will receive an email when a decision is made."
+    },
+    "approved": {
+      "title": "Your application has been approved",
+      "subtitle": "Please sign in to access your sponsor workspace.",
+      "signIn": "Sign in"
+    },
+    "rejected": {
+      "title": "This application cannot be reopened",
+      "subtitle": "Please contact Kafil support if you believe this was a mistake."
+    },
+    "errors": {
+      "duplicateEmail": "An application already exists for this email. Check your inbox for the activation code.",
+      "duplicatePhone": "An application already exists for this phone number.",
+      "duplicateCin": "An application already exists for this CIN.",
+      "rateLimit": "Too many requests. Please try again later.",
+      "codeInvalid": "The activation code is invalid or expired."
     }
   },
   "users": {
@@ -549,6 +617,7 @@
       "categoriesForHousehold": "Browse the catalog categories that organize active products for your household.",
       "orderLifecycleAudit": "This lifecycle command is audited by the backend.",
       "explicitTransition": "This is an explicit server-owned order transition.",
+      "you": "You",
       "cancelOrderDescription": "An audited cancellation reverses the order's current financial effects.",
       "rejectOrderDescription": "An audited rejection releases this pending order's budget reservation.",
       "startDelivery": "Start delivery",
@@ -640,6 +709,64 @@
         "login": "Log in"
       }
     },
+    "applicants": {
+      "form": {
+        "title": "Become a sponsor",
+        "subtitle": "Apply to become a verified Kafil sponsor. We review every application before activating the account.",
+        "name": "Full name",
+        "namePlaceholder": "Enter your full name",
+        "email": "Email address",
+        "emailPlaceholder": "Enter your email address",
+        "phone": "Phone number",
+        "phonePlaceholder": "For example: +212 6 12 34 56 78",
+        "cin": "National identity number",
+        "cinPlaceholder": "For example: AB123456",
+        "gender": "Gender",
+        "genderPlaceholder": "Choose your gender",
+        "gender.female": "Female",
+        "gender.male": "Male",
+        "dateOfBirth": "Date of birth",
+        "dateOfBirthPlaceholder": "Pick a date",
+        "address": "Address",
+        "addressPlaceholder": "Enter your mailing address",
+        "password": "Password",
+        "passwordPlaceholder": "At least 8 characters",
+        "confirmPassword": "Confirm password",
+        "confirmPasswordPlaceholder": "Repeat your password",
+        "submit": "Submit application",
+        "submitting": "Submitting application...",
+        "failed": "We could not submit your application. Please try again."
+      },
+      "otp": {
+        "checking": "Checking verification session...",
+        "title": "Verify your email",
+        "instructions": "Enter the six-digit code we sent to your email to confirm this application.",
+        "destination": "Masked email destination",
+        "expiresMinutes": "The code expires 10 minutes after it is sent.",
+        "expired": "This code has expired. Request a new code to continue.",
+        "codeLabel": "Verification code",
+        "codeDescription": "Six numeric digits",
+        "submit": "Verify email",
+        "submitting": "Verifying...",
+        "resend": "Send a new code",
+        "resendIn": "Send again in {seconds}s",
+        "cancel": "Cancel and return home",
+        "refresh": "Refresh verification status",
+        "deliveryFailed": "The last email could not be delivered. You can request a new code when the timer ends.",
+        "invalid": "The code is invalid or expired. Request a new code if needed.",
+        "success": "Email verified. Your application is now pending review.",
+        "resendSuccess": "A new verification code was sent."
+      },
+      "review": {
+        "title": "Application pending review",
+        "body": "Your email is verified. A Kafil administrator will review your application. You will only be able to sign in after we approve and activate your account.",
+        "destination": "Code sent to {destination}",
+        "destinationAria": "Email destination",
+        "nextSteps": "Approval usually takes one to three business days. We will email you when a decision is ready.",
+        "backHome": "Back to home",
+        "signIn": "Sign in"
+      }
+    },
     "language": {
       "label": "Language",
       "english": "English",
@@ -680,6 +807,7 @@
       "families": "Families",
       "children": "Children",
       "sponsors": "Sponsors",
+      "applicants": "Applicants",
       "staff": "Staff",
       "assignments": "Assignments",
       "contributions": "Contributions",
@@ -1320,6 +1448,55 @@
         "imageUrl": "Child avatar",
         "imageUploadGuidance": "PNG, JPEG or WebP · up to 5 MB"
       },
+      "applicants": {
+        "title": "Applicants",
+        "subtitle": "Review sponsor applications before an account becomes active.",
+        "add": "Add applicant",
+        "addTitle": "Add an applicant",
+        "addDescription": "Applicants must complete the verified public application flow.",
+        "addGuideTitle": "Share the application form",
+        "addGuideDescription": "Send the public application link to the applicant. They set their own password and verify their email before appearing in the review queue.",
+        "copyLink": "Copy application link",
+        "linkCopied": "Application link copied.",
+        "emptyTitle": "No applications yet",
+        "emptyDescription": "New sponsor applications will appear here after email verification.",
+        "noData": "No application found",
+        "loading": "Loading applicants...",
+        "view": "View",
+        "viewTitle": "Applicant details",
+        "viewDescription": "Private application information visible to administrators only.",
+        "name": "Applicant",
+        "email": "Email",
+        "phone": "Phone",
+        "status": "Status",
+        "submitted": "Submitted",
+        "searchName": "Search applicant name...",
+        "searchEmail": "Search email...",
+        "searchPhone": "Search phone number...",
+        "filterStatus": "Filter by status",
+        "pendingEmailVerification": "Pending email verification",
+        "pendingReview": "Pending review",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "statusLabel": {
+          "pending_email_verification": "Pending email verification",
+          "pending_review": "Pending review",
+          "approved": "Approved",
+          "rejected": "Rejected"
+        },
+        "contact": "Contact and identity",
+        "gender": "Gender",
+        "female": "Female",
+        "male": "Male",
+        "dateOfBirth": "Date of birth",
+        "privateVerification": "Private verification",
+        "cin": "CIN",
+        "address": "Address",
+        "review": "Review history",
+        "reviewed": "Reviewed",
+        "notReviewed": "Not reviewed yet",
+        "rejectionReason": "Rejection reason"
+      },
       "sponsors": {
         "title": "Sponsors",
         "subtitle": "Invite sponsors and manage their private profile and audited account lifecycle.",
@@ -1698,6 +1875,15 @@
         "emptyDescription": "Validated and pending support payments will appear here.",
         "noData": "No contribution found"
       },
+      "children": {
+        "title": "Your children",
+        "subtitle": "Review the children linked to your family profile.",
+        "viewTitle": "Child details",
+        "viewDescription": "Privacy-safe information about this child.",
+        "emptyTitle": "No children linked yet",
+        "emptyDescription": "An operator can add child records to your family profile.",
+        "noData": "No child found"
+      },
       "cart": {
         "loadingTitle": "Loading your cart",
         "loadingDescription": "Retrieving your protected cart.",
@@ -1784,6 +1970,8 @@
       "contributions": {
         "title": "Contributions",
         "subtitle": "Create support plans and submit contributions for operator validation.",
+        "viewTitle": "Contribution details",
+        "viewDescription": "A privacy-safe contribution record you submitted.",
         "createTitle": "Create support",
         "chooseSupport": "Choose active support",
         "amount": "Amount in MAD",
@@ -1803,7 +1991,8 @@
         "planReason": "Reason for this plan change",
         "stopReason": "Reason for stopping this plan",
         "pendingDeadline": "Pending until {date}",
-        "expiredAt": "Expired on {date}"
+        "expiredAt": "Expired on {date}",
+        "noData": "No contribution found"
       },
       "directory": {
         "title": "Families to support",

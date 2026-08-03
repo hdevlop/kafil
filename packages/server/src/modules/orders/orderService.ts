@@ -137,6 +137,34 @@ export class OrderService {
     return this.orderDetail(order, "operator");
   }
 
+  async listForPrincipal(userId: string, role: string, query: OrderListQuery) {
+    if (role === "family") {
+      return this.listOwn(userId, query as OwnOrderListQuery);
+    }
+    if (role === "sponsor") {
+      return this.listSupported(userId, query as OwnOrderListQuery);
+    }
+    return this.list(query);
+  }
+
+  async getForPrincipal(id: string, userId: string, role: string) {
+    if (role === "family") {
+      return this.getOwn(id, userId);
+    }
+    if (role === "sponsor") {
+      return this.getSupported(id, userId);
+    }
+    return this.get(id);
+  }
+
+  async getSupported(id: string, userId: string) {
+    const order = await this.orders.findSupportedBySponsor(id, userId);
+    if (!order) {
+      HttpError.notFound("Order not found");
+    }
+    return (await this.enrichSupportedOrders([order]))[0];
+  }
+
   /** Bootstrap-admin correction for an order entered by mistake before any purchase. */
   @Transaction({ retries: 2 })
   async delete(id: string, actorUserId: string) {
@@ -223,6 +251,7 @@ export class OrderService {
           ),
           deliveryName: latestDelivery?.deliveryNameSnapshot ?? null,
           articleCount: articleCountsByOrder.get(order.id) ?? 0,
+          canCancelOwn: order.status === "pending",
         };
       }),
     );
@@ -241,11 +270,15 @@ export class OrderService {
       offset,
       status,
     );
-    const latestByOrder = await this.deliveries.listLatestByOrderIds(
-      summaries.map((order) => order.id),
-    );
+    return this.enrichSupportedOrders(summaries);
+  }
+
+  private async enrichSupportedOrders(
+    summaries: Awaited<ReturnType<OrderRepository["listSupportedBySponsor"]>>,
+  ) {
     const orderIds = summaries.map((order) => order.id);
-    const [purchasesByOrder, itemsByOrder] = await Promise.all([
+    const [latestByOrder, purchasesByOrder, itemsByOrder] = await Promise.all([
+      this.deliveries.listLatestByOrderIds(orderIds),
       this.purchases.listActiveByOrderIds(orderIds),
       this.orders.listItemsByOrderIds(orderIds),
     ]);

@@ -3,10 +3,17 @@ import type { OffsetPagination } from "@/lib/pagination";
 
 export const childKeys = {
   all: entityKeys.all("children"),
-  list(pagination: OffsetPagination) {
+  list(
+    pagination: OffsetPagination & {
+      role?: string | null;
+      userId?: string | null;
+    },
+  ) {
+    const { role, userId, ...rest } = pagination;
     return entityKeys.list("children", {
-      limit: pagination.limit,
-      offset: pagination.offset,
+      ...rest,
+      role: role ?? null,
+      userId: userId ?? null,
     });
   },
   detail(id: string) {

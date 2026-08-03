@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 import { usersTable } from "najm-auth/pg";
@@ -14,6 +15,8 @@ import {
   type NewContribution,
   type NewContributionPlan,
 } from "./contributionSchema";
+
+const familyUsers = alias(usersTable, "family_users");
 
 export interface ContributionFilters {
   familyProfileId?: string;
@@ -44,6 +47,9 @@ const ownContributionSelection = {
 
 export const familyContributionSelection = {
   id: contributions.id,
+  sponsorName: usersTable.name,
+  sponsorImage: usersTable.image,
+  sponsorGender: sponsorProfiles.gender,
   amountMinor: contributions.amountMinor,
   currency: contributions.currency,
   externalReference: contributions.externalReference,
@@ -84,6 +90,7 @@ const operatorContributionSelection = {
   sponsorGender: sponsorProfiles.gender,
   sponsorEmail: usersTable.email,
   familyName: familyProfiles.guardianLegalName,
+  familyImage: familyUsers.image,
 };
 
 const ownPlanSelection = {
@@ -151,6 +158,7 @@ export class ContributionRepository {
         familyProfiles,
         eq(contributions.familyProfileId, familyProfiles.id),
       )
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id))
       .orderBy(desc(contributions.submittedAt))
       .limit(limit)
       .offset(offset);
@@ -170,6 +178,7 @@ export class ContributionRepository {
         familyProfiles,
         eq(contributions.familyProfileId, familyProfiles.id),
       )
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id))
       .where(eq(contributions.id, id))
       .limit(1);
     return contribution;
@@ -183,6 +192,11 @@ export class ContributionRepository {
         familyProfiles,
         eq(contributions.familyProfileId, familyProfiles.id),
       )
+      .innerJoin(
+        sponsorProfiles,
+        eq(contributions.sponsorProfileId, sponsorProfiles.id),
+      )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
       .where(and(eq(contributions.id, id), eq(familyProfiles.userId, userId)))
       .limit(1);
     return contribution;
@@ -207,6 +221,11 @@ export class ContributionRepository {
         familyProfiles,
         eq(contributions.familyProfileId, familyProfiles.id),
       )
+      .innerJoin(
+        sponsorProfiles,
+        eq(contributions.sponsorProfileId, sponsorProfiles.id),
+      )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
       .where(condition)
       .orderBy(desc(contributions.submittedAt))
       .limit(limit)

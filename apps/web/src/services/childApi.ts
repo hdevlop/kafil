@@ -14,6 +14,10 @@ export function listChildren(pagination: OffsetPagination) {
   });
 }
 
+export function listOwnFamilyChildren() {
+  return api.get<ChildRecord[]>("/children/me");
+}
+
 export function getChild(id: string) {
   return api.get<ChildRecord>(`/children/${id}`);
 }

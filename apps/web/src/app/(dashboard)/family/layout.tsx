@@ -1,8 +1,7 @@
-import { requireRole } from "@/lib/session";
+import type { ReactNode } from "react";
 
-export default async function FamilyLayout({
+export default function FamilyLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
-  await requireRole(["family"]);
+}: Readonly<{ children: ReactNode }>) {
   return children;
 }

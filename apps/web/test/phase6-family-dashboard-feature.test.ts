@@ -43,6 +43,7 @@ describe("Phase 6E family household and children contracts", () => {
         familyProfileId: "11111111-1111-4111-8111-111111111111",
         limit: 3,
         offset: 0,
+        role: null,
         status: undefined,
       },
     ]);

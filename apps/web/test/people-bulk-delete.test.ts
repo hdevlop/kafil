@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
 const pagePaths = [
-  "src/features/Families/components/FamiliesPage.tsx",
-  "src/features/Children/components/ChildrenPage.tsx",
-  "src/features/Sponsors/components/SponsorsPage.tsx",
+  ["src/features/Children/components/ChildrenPage.tsx"],
+  ["src/features/Sponsors/components/SponsorsPage.tsx"],
+] as const;
+
+const familySources = [
+  "src/features/Families/hooks/useFamiliesTableProps.tsx",
+  "src/features/Families/hooks/useFamiliesPageDialogs.tsx",
+  "src/features/Families/components/FamilyForms/BulkDeleteFamiliesDialog.tsx",
 ] as const;
 
 const apiPaths = [
@@ -14,16 +19,31 @@ const apiPaths = [
 
 describe("people-list bulk deletion", () => {
   test("wires admin selection to the NTable keyboard bulk-delete callback", async () => {
-    for (const path of pagePaths) {
-      const source = await Bun.file(path).text();
+    for (const paths of pagePaths) {
+      const source = (
+        await Promise.all(paths.map((path) => Bun.file(path).text()))
+      ).join("\n");
 
-      expect(source).toContain("showCheckbox: isAdmin");
+      expect(source).toMatch(/showCheckbox:\s*is(?:Exact)?Admin/);
       expect(source).toContain("rowSelection,");
       expect(source).toContain("onRowSelectionChange: setRowSelection");
-      expect(source).toContain("onBulkDelete: isAdmin ? openBulkDelete : undefined");
+      expect(source).toMatch(/onBulkDelete:\s*is(?:Exact)?Admin/);
       expect(source).toContain("onDeleted={() => setRowSelection({})}");
       expect(source).toContain("bulkDeleteDialogOpenRef.current) return");
     }
+
+    const familySource = (
+      await Promise.all(familySources.map((path) => Bun.file(path).text()))
+    ).join("\n");
+    expect(familySource).toMatch(/showCheckbox:\s*is(?:Exact)?Admin/);
+    expect(familySource).toContain("rowSelection,");
+    expect(familySource).toContain("onRowSelectionChange: setRowSelection");
+    expect(familySource).toMatch(/onBulkDelete:\s*is(?:Exact)?Admin/);
+    expect(familySource).toContain(
+      "openBulkDelete(ids, () => setRowSelection({}))",
+    );
+    expect(familySource).toContain("onDeleted={onDeleted}");
+    expect(familySource).toContain("bulkDeleteDialogOpenRef.current) return");
   });
 
   test("prevents repeated contribution keyboard events and confirm clicks", async () => {

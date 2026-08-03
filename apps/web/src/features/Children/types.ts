@@ -8,7 +8,7 @@ export interface ChildRecord {
   schoolLevel: string | null;
   clothingSize: string | null;
   shoeSize: string | null;
-  notes: string | null;
+  notes?: string | null;
   status: "active" | "inactive" | string;
   familyStatus?: string | null;
   guardianLegalName?: string | null;

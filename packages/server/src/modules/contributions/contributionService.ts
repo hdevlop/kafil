@@ -51,13 +51,24 @@ export class ContributionService {
     return this.contributions.list(limit, offset, filters);
   }
 
-  listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
+listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
     const parsed = contributionListQuery.parse(query ?? {});
     if (role === "family") {
       if (parsed.familyProfileId) {
         HttpError.forbidden("Family contribution scope cannot be selected by the client");
       }
       return this.contributions.listFamily(
+        userId,
+        parsed.limit,
+        parsed.offset,
+        { status: parsed.status },
+      );
+    }
+    if (role === "sponsor") {
+      if (parsed.familyProfileId) {
+        HttpError.forbidden("Sponsor contribution scope cannot be selected by the client");
+      }
+      return this.contributions.listOwn(
         userId,
         parsed.limit,
         parsed.offset,
@@ -79,9 +90,14 @@ export class ContributionService {
     return this.validator.ensureContributionExists(id);
   }
 
-  async getForPrincipal(id: string, userId: string, role: string) {
+async getForPrincipal(id: string, userId: string, role: string) {
     if (role === "family") {
       const contribution = await this.contributions.findFamilyById(id, userId);
+      if (!contribution) HttpError.notFound("Contribution not found");
+      return contribution;
+    }
+    if (role === "sponsor") {
+      const contribution = await this.contributions.findOwnById(id, userId);
       if (!contribution) HttpError.notFound("Contribution not found");
       return contribution;
     }

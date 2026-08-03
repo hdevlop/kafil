@@ -2,7 +2,7 @@ import { HandCoins, HeartHandshake, UserRound } from "lucide-react";
 
 import type { KafilLanguage } from "@/lib/format";
 import { formatKafilDate, formatKafilNumber, formatMad } from "@/lib/format";
-import type { SponsorKpiItem, ChartSeries } from "@/features/SponsorOverview";
+import type { SponsorKpiItem, ChartSeries } from "@/features/Sponsors/types";
 import type { OperatorSponsorOverviewData } from "../types";
 import type { SponsorInfoViewModel } from "../components/SponsorInformationCard";
 

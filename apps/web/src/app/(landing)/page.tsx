@@ -23,7 +23,7 @@ export default function LandingPage() {
           </Link>
           <Link
             className="rounded-full border border-emerald-200 bg-white px-6 py-3 font-medium text-emerald-800 transition hover:border-emerald-300"
-            href="/register/sponsor"
+            href="/apply"
           >
             Become a sponsor
           </Link>

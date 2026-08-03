@@ -26,12 +26,28 @@ export {
   Policy,
 };
 
+function googleOAuthConfig() {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return undefined;
+  }
+
+  return {
+    google: {
+      // Kafil domain profiles are created by the app onboarding workflows.
+      // OAuth may link an active account, but must not create a bare auth user.
+      allowSignup: false,
+      autoLinkVerifiedEmail: true,
+    },
+  } as const;
+}
+
 export const authConfig = () =>
   auth({
     defaultRole: "sponsor",
     dialect: "pg",
     encryptionKey: envConfig.auth.encryptionKey,
     frontendUrl: envConfig.auth.frontendUrl,
+    oauth: googleOAuthConfig(),
     registrationMode: "pending",
     jwt: {
       accessSecret: envConfig.auth.jwtAccessSecret!,
@@ -177,9 +193,32 @@ class ContributionReaderRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
+      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR] },
+      user, context,
+    );
+  }
+}
+
+@Service()
+class ChildReaderRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
       { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY] },
-      user,
-      context,
+      user, context,
+    );
+  }
+}
+
+@Service()
+class OrderReaderRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR] },
+      user, context,
     );
   }
 }
@@ -215,6 +254,8 @@ const OperatorRole = createGuard(OperatorRoleGuard);
 const FamilyRole = createGuard(FamilyRoleGuard);
 const SponsorRole = createGuard(SponsorRoleGuard);
 const ContributionReaderRole = createGuard(ContributionReaderRoleGuard);
+const ChildReaderRole = createGuard(ChildReaderRoleGuard);
+const OrderReaderRole = createGuard(OrderReaderRoleGuard);
 const SponsorImageViewerRole = createGuard(SponsorImageViewerRoleGuard);
 const FamilyImageViewerRole = createGuard(FamilyImageViewerRoleGuard);
 const ChildImageViewerRole = createGuard(ChildImageViewerRoleGuard);
@@ -225,6 +266,8 @@ export const isOperator = composeGuards(OperatorRole());
 export const isFamily = composeGuards(FamilyRole());
 export const isSponsor = composeGuards(SponsorRole());
 export const isContributionReader = composeGuards(ContributionReaderRole());
+export const isChildReader = composeGuards(ChildReaderRole());
+export const isOrderReader = composeGuards(OrderReaderRole());
 
 export function hasRole(userRole: string | null | undefined, ...keys: RoleKey[]) {
   if (!userRole) return false;

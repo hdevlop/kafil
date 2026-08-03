@@ -1,0 +1,1 @@
+export { FamilyDetails } from "./FamilyDetails";

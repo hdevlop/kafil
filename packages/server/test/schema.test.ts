@@ -166,6 +166,9 @@ describe("Kafil database schema", () => {
     expect(documentColumns).not.toContain("publicCaseId");
     expect(Object.keys(kafilSchema).sort()).toEqual(
       [
+        "applicantEmailOtpChallenges",
+        "applicantStatusEnum",
+        "applicants",
         "auditEvents",
         "budgetAccounts",
         "budgetLedgerEntries",

@@ -8,11 +8,13 @@ import { getChildAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { Operator, useKafilRole } from "@/shared/Authorization";
 
 import type { ChildRecord } from "../types";
 
 export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
   const { t } = useKafilLanguage();
+  const { isExactFamily } = useKafilRole();
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
@@ -43,18 +45,21 @@ export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
         />
       </NSection>
 
-      <NSection icon={House} title={t("operator.families.profile")}>
-        <NDetailList items={[{ label: "Household ID", value: child.familyProfileId }]} />
-      </NSection>
-
-      <NSection icon={NotebookPen} title={t("operator.families.notes")}>
-        <NDetailList
-          items={[
-            { label: t("operator.families.notes"), value: child.notes || t("operator.families.noNotes") },
-            { label: t("operator.families.created"), value: formatKafilDate(child.createdAt) },
-          ]}
-        />
-      </NSection>
+      <Operator>
+        <NSection icon={House} title={t("operator.families.profile")}>
+          <NDetailList items={[{ label: "Household ID", value: child.familyProfileId }]} />
+        </NSection>
+        {!isExactFamily && child.notes !== undefined ? (
+          <NSection icon={NotebookPen} title={t("operator.families.notes")}>
+            <NDetailList
+              items={[
+                { label: t("operator.families.notes"), value: child.notes || t("operator.families.noNotes") },
+                { label: t("operator.families.created"), value: formatKafilDate(child.createdAt) },
+              ]}
+            />
+          </NSection>
+        ) : null}
+      </Operator>
     </div>
   );
 }

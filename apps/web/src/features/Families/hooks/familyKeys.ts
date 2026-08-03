@@ -15,6 +15,9 @@ export const familyKeys = {
       ...(filters.status ? { status: filters.status } : {}),
     });
   },
+  sponsorCatalog() {
+    return ["families", "sponsor-catalog"] as const;
+  },
   detail(id: string) {
     return entityKeys.detail("families", id);
   },

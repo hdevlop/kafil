@@ -90,7 +90,7 @@ describe("Phase 6C child lifecycle contracts", () => {
     expect(childKeys.list({ limit: 25, offset: 50 })).toEqual([
       "children",
       "list",
-      { limit: 25, offset: 50 },
+      { limit: 25, offset: 50, role: null, userId: null },
     ]);
     expect(childKeys.detail("child-1")).toEqual([
       "children",

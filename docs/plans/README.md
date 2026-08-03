@@ -15,6 +15,9 @@ bounded implementation detail and decision records.
 - [`SECTION-TEMPLATE.md`](SECTION-TEMPLATE.md) - template for future sections
 - [`SPONSOR-DASHBOARD-REDESIGN.md`](SPONSOR-DASHBOARD-REDESIGN.md) - bounded
   internal-coder handoff for the sponsor overview redesign
+- [`APPLICANT-CREATION.md`](APPLICANT-CREATION.md) - bounded frontend-and-backend
+  plan for the separate pre-approval applicant entity and email verification
+  through pending admin review
 - [`VPS-DOCKER-DEPLOYMENT.md`](VPS-DOCKER-DEPLOYMENT.md) - implementation
   handoff for the production-like demo VPS, automated releases, and the later
   clean production-data transition

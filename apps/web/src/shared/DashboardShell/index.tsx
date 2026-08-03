@@ -4,6 +4,7 @@ import { SignOutButton } from "najm-auth/client/react";
 import {
   Baby,
   ClipboardCheck,
+  ClipboardList,
   HandCoins,
   HeartHandshake,
   House,
@@ -43,18 +44,19 @@ interface DashboardUser {
 function operatorItems(
   t: ReturnType<typeof useKafilLanguage>["t"],
   includeStaff = false,
+  includeApplicants = false,
 ): NavItem[] {
   return [
     { id: "/dashboard", href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
     {
-      id: "/operator/families",
-      href: "/operator/families",
+      id: "/family",
+      href: "/family",
       label: t("nav.families"),
       icon: UsersRound,
       sectionLabel: t("nav.supportOperations"),
       sectionIcon: HeartHandshake,
     },
-    { id: "/operator/children", href: "/operator/children", label: t("nav.children"), icon: Baby },
+    { id: "/children", href: "/children", label: t("nav.children"), icon: Baby },
     { id: "/operator/sponsors", href: "/operator/sponsors", label: t("nav.sponsors"), icon: UserRound },
     ...(includeStaff
       ? [{
@@ -65,6 +67,9 @@ function operatorItems(
         }]
       : []),
     { id: "/operator/assignments", href: "/operator/assignments", label: t("nav.assignments"), icon: HeartHandshake },
+    ...(includeApplicants
+      ? [{ id: "/applicants", href: "/applicants", label: t("nav.applicants"), icon: ClipboardList }]
+      : []),
     {
       id: "/contribution",
       href: "/contribution",
@@ -117,8 +122,8 @@ function familyItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
   return [
     { id: "/dashboard", href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
     {
-      id: "/family/children",
-      href: "/family/children",
+      id: "/children",
+      href: "/children",
       label: t("nav.children"),
       icon: Baby,
       sectionLabel: t("nav.household"),
@@ -154,14 +159,14 @@ function sponsorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
   return [
     { id: "/dashboard", href: "/dashboard", label: t("nav.overview"), icon: LayoutDashboard },
     {
-      id: "/sponsor/support",
-      href: "/sponsor/support",
+      id: "/family",
+      href: "/family",
       label: t("nav.mySupport"),
       icon: UsersRound,
       sectionLabel: t("nav.supportAndFinance"),
       sectionIcon: HeartHandshake,
     },
-    { id: "/sponsor/contributions", href: "/sponsor/contributions", label: t("nav.contributions"), icon: HandCoins },
+    { id: "/contribution", href: "/contribution", label: t("nav.contributions"), icon: HandCoins },
     { id: "/orders", href: "/orders", label: t("nav.orders"), icon: ClipboardCheck },
     {
       id: "/sponsor/profile",
@@ -193,7 +198,7 @@ function LinkAdapter({
 }
 
 export function getDashboardNavigation(role: string | null | undefined, t: ReturnType<typeof useKafilLanguage>["t"]) {
-  if (role === "admin") return [...operatorItems(t, true), ...adminAccessItems(t)];
+  if (role === "admin") return [...operatorItems(t, true, true), ...adminAccessItems(t)];
   if (role === "operator") return operatorItems(t);
   if (role === "family") return familyItems(t);
   if (role === "sponsor") return sponsorItems(t);
@@ -210,6 +215,12 @@ export function isDashboardNavigationActive(item: NavItem, pathname: string) {
       return true;
     }
     return false;
+  }
+  if (item.href === "/family") {
+    return pathname === "/family";
+  }
+  if (item.href === "/children") {
+    return pathname === "/children";
   }
   if (item.href === "/categories") {
     return pathname === "/categories" || pathname.startsWith("/categories/");

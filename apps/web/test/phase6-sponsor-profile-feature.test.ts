@@ -5,9 +5,9 @@ import {
   toCreateOwnSponsorProfileInput,
   toUpdateOwnSponsorProfileInput,
   updateOwnSponsorProfileFormSchema,
-} from "../src/features/SponsorProfile/config/sponsorProfileSchemas";
-import { sponsorProfileKeys } from "../src/features/SponsorProfile/hooks/sponsorProfileKeys";
-import { isSponsorProfileMissing } from "../src/features/SponsorProfile/lib/isSponsorProfileMissing";
+} from "../src/features/Sponsors/config/sponsorProfileSchemas";
+import { sponsorProfileKeys } from "../src/features/Sponsors/hooks/sponsorProfileKeys";
+import { isSponsorProfileMissing } from "../src/features/Sponsors/lib/isSponsorProfileMissing";
 import { KafilApiError } from "../src/services/apiError";
 
 describe("Phase 6F sponsor profile completion", () => {

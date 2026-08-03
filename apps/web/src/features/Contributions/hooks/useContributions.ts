@@ -1,5 +1,7 @@
 "use client";
 
+import { useUser } from "najm-auth/client/react";
+
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -19,9 +21,18 @@ import { contributionKeys } from "./contributionKeys";
 import type { ContributionListQuery, ContributionListRecord, ContributionRecord } from "../types";
 
 export function useContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery) {
+  const user = useUser();
+  const isFamily = user?.role === "family";
+  const isSponsor = user?.role === "sponsor";
   return useEntityQuery({
-    queryKey: contributionKeys.list(query),
-    queryFn: () => listContributions<TRecord>(query),
+    queryKey: contributionKeys.list({ ...query, role: user?.role }),
+    queryFn: () => {
+      if (isFamily || isSponsor) {
+        return listContributions<TRecord>({ ...query, audience: isSponsor ? "sponsor" : "family" });
+      }
+      return listContributions<TRecord>(query);
+    },
+    enabled: Boolean(user),
   });
 }
 

@@ -1,3 +1,5 @@
-import { SponsorSupportPage } from "@/features/SponsorWorkspace";
-export const metadata = { title: "My support" };
-export default function SponsorSupportRoutePage() { return <SponsorSupportPage />; }
+import { redirect } from "next/navigation";
+
+export default function SponsorSupportRedirectPage() {
+  redirect("/family");
+}

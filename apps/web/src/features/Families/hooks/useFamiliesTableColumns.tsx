@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePermissions } from "najm-auth/client/react";
 import { type NTableProps } from "najm-kit";
 
 import { formatKafilDate } from "@/lib/format";
@@ -10,12 +9,12 @@ import { StatusBadge } from "@/shared/StatusBadge";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { Operator } from "@/shared/Authorization";
 
 import type { FamilyRecord } from "../types";
 
 export function useFamiliesTableColumns() {
   const { t } = useKafilLanguage();
-  const { hasRole } = usePermissions();
   return useMemo<NTableProps<FamilyRecord>["columns"]>(
     () => [
       {
@@ -32,26 +31,33 @@ export function useFamiliesTableColumns() {
       {
         accessorKey: "email",
         header: t("operator.families.email"),
+        cell: ({ row }) => {
+          const email = row.original.email;
+          return (
+            <Operator fallback="—">{email}</Operator>
+          );
+        },
         meta: {
-          visible: hasRole("admin"),
           hiddenBelow: "2xl",
         },
       },
       {
         accessorKey: "phone",
         header: t("operator.families.phone"),
-        cell: ({ getValue }) => getValue<string | null>() || "—",
+        cell: ({ getValue }) => (
+          <Operator fallback="—">{getValue<string | null>() || "—"}</Operator>
+        ),
         meta: {
-          visible: hasRole("admin"),
           hiddenBelow: "lg",
         },
       },
       {
         accessorKey: "relationshipToChildren",
         header: t("operator.families.relationship"),
-        cell: ({ getValue }) => getValue<string | null>() || "—",
+        cell: ({ getValue }) => (
+          <Operator fallback="—">{getValue<string | null>() || "—"}</Operator>
+        ),
         meta: {
-          visible: hasRole("admin"),
           hiddenBelow: "lg",
         },
       },
@@ -77,11 +83,10 @@ export function useFamiliesTableColumns() {
         header: t("operator.families.created"),
         cell: ({ getValue }) => formatKafilDate(getValue<string>()),
         meta: {
-          visible: hasRole("admin"),
           hiddenBelow: "lg",
         },
       },
     ],
-    [hasRole, t],
+    [t],
   );
 }

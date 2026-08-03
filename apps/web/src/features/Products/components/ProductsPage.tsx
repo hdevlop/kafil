@@ -210,7 +210,7 @@ export function ProductsPage() {
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
-      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-8",
+      cards: "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-8",
     },
     addButtonText: t("common.createProduct"),
     noDataText: t("common.noCatalogProduct"),

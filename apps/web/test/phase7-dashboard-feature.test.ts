@@ -28,8 +28,8 @@ describe("Phase 7 dashboard presentation contracts", () => {
 
     expect(navigation.map((item) => item.id)).toEqual([
       "/dashboard",
-      "/operator/families",
-      "/operator/children",
+      "/family",
+      "/children",
       "/operator/sponsors",
       "/operator/assignments",
       "/contribution",
@@ -50,7 +50,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
 
     expect(navigation.map((item) => item.id)).toEqual([
       "/dashboard",
-      "/family/children",
+      "/children",
       "/contribution",
       "/categories",
       "/products",
@@ -131,12 +131,12 @@ describe("Phase 7 dashboard presentation contracts", () => {
   test("keeps each role overview exact while matching nested destination routes", () => {
     const navigation = getDashboardNavigation("operator", ((key: string) => key) as never);
     const overview = navigation.find((item) => item.id === "/dashboard");
-    const families = navigation.find((item) => item.id === "/operator/families");
+    const families = navigation.find((item) => item.id === "/family");
     const products = navigation.find((item) => item.id === "/products");
 
     expect(overview && isDashboardNavigationActive(overview, "/dashboard")).toBe(true);
-    expect(overview && isDashboardNavigationActive(overview, "/operator/families")).toBe(false);
-    expect(families && isDashboardNavigationActive(families, "/operator/families/record-1")).toBe(true);
+    expect(overview && isDashboardNavigationActive(overview, "/family")).toBe(false);
+    expect(families && isDashboardNavigationActive(families, "/family")).toBe(true);
     expect(products && isDashboardNavigationActive(products, "/products")).toBe(true);
     expect(products && isDashboardNavigationActive(products, "/products/123")).toBe(true);
   });

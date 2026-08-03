@@ -13,7 +13,7 @@ function uniqueOptions(values: string[]) {
   }));
 }
 
-export function useContributionsTableFilters(audience: "management" | "family") {
+export function useContributionsTableFilters(audience: "management" | "family" | "sponsor") {
   const { t } = useKafilLanguage();
   const management = audience === "management";
   const families = useFamilies({ limit: 100, offset: 0 }, {}, management);
@@ -50,16 +50,7 @@ export function useContributionsTableFilters(audience: "management" | "family") 
           { value: "other", label: t("operator.contributions.other") },
         ],
       },
-      {
-        type: "text" as const,
-        name: "externalReference",
-        placeholder: t("operator.contributions.searchReference"),
-      },
-      ] : [{
-        type: "text" as const,
-        name: "externalReference",
-        placeholder: t("operator.contributions.searchReference"),
-      }]),
+      ] : []),
       {
         type: "select" as const,
         name: "status",

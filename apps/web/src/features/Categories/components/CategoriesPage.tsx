@@ -180,7 +180,7 @@ export function CategoriesPage() {
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
-      cards: "grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-6",
+      cards: "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6",
     },
     addButtonText: t("common.createCategory"),
     noDataText: t("common.noCatalogCategory"),

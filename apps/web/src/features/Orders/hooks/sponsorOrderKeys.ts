@@ -10,4 +10,7 @@ export const sponsorOrderKeys = {
       offset: query.offset,
     });
   },
+  detail(id: string) {
+    return entityKeys.detail("sponsor-orders", id);
+  },
 };

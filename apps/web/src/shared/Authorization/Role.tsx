@@ -71,7 +71,10 @@ export interface OperatorProps {
   fallback?: ReactNode;
 }
 
-export function Operator({ children, fallback = null }: Readonly<OperatorProps>) {
+export function Operator({
+  children,
+  fallback = null,
+}: Readonly<OperatorProps>) {
   return (
     <Role is="operator" fallback={fallback}>
       {children}
@@ -103,4 +106,15 @@ export function Sponsor({ children, fallback = null }: Readonly<SponsorProps>) {
       {children}
     </Role>
   );
+}
+
+export type OnlySponsorProps = SponsorProps;
+
+export function OnlySponsor({
+  children,
+  fallback = null,
+}: Readonly<OnlySponsorProps>) {
+  const { isExactSponsor } = useKafilRole();
+
+  return <>{isExactSponsor ? children : fallback}</>;
 }

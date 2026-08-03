@@ -13,7 +13,7 @@ import {
 import { McpTool, ToolGroup } from "najm-mcp";
 import { Validate } from "najm-validation";
 
-import { isAdmin, isFamily, isOperator } from "../../config/authConfig";
+import { isAdmin, isChildReader, isFamily, isOperator } from "../../config/authConfig";
 import {
   type BulkDeleteChildrenDto,
   bulkDeleteChildrenDto,
@@ -43,7 +43,7 @@ export class ChildController {
   constructor(private readonly children: ChildService) {}
 
   @Get()
-  @isOperator()
+  @isChildReader()
   @CanList(Child)
   @Validate({ query: childListQuery })
   @McpTool({
@@ -51,8 +51,12 @@ export class ChildController {
     readOnly: true,
   })
   @ResMsg("children.success.retrieved")
-  list(@Query() query: ChildListQuery) {
-    return this.children.list(query);
+  list(
+    @Query() query: ChildListQuery,
+    @User("id") userId: string,
+    @User("role") role: string,
+  ) {
+    return this.children.listForPrincipal({ userId, role, query });
   }
 
   @Get("/me")
@@ -81,7 +85,7 @@ export class ChildController {
   }
 
   @Get("/:id")
-  @isOperator()
+  @isChildReader()
   @CanRead(Child)
   @Validate({ params: childIdParams })
   @McpTool({
@@ -89,8 +93,12 @@ export class ChildController {
     readOnly: true,
   })
   @ResMsg("children.success.retrieved")
-  get(@Params("id") id: string) {
-    return this.children.get(id);
+  get(
+    @Params("id") id: string,
+    @User("id") userId: string,
+    @User("role") role: string,
+  ) {
+    return this.children.getForPrincipal({ id, userId, role });
   }
 
   @Post()

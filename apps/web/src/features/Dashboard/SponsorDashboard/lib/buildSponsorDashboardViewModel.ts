@@ -2,7 +2,7 @@ import { Calendar, ClipboardCheck, HandCoins, HeartHandshake, UserRound } from "
 
 import type { KafilLanguage } from "@/lib/format";
 import { formatKafilDate, formatKafilNumber, formatMad } from "@/lib/format";
-import type { SponsorKpiItem } from "@/features/SponsorOverview/types";
+import type { SponsorKpiItem } from "@/features/Sponsors/types";
 
 import type { SponsorDashboardData } from "../types";
 

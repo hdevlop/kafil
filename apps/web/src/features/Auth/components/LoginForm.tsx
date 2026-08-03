@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, UserRoundPlus } from "lucide-react";
+import { GoogleLoginButton } from "najm-auth/client/react";
 import { FormInput, NButton, NForm, toast } from "najm-kit";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { loginSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
@@ -24,10 +25,18 @@ function GoogleMark() {
   );
 }
 
-export function LoginForm({ redirectTo }: LoginFormProps) {
+export function LoginForm({
+  googleEnabled,
+  oauthErrorMessage,
+  redirectTo,
+}: LoginFormProps) {
   const router = useRouter();
   const { language } = useKafilLanguage();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (oauthErrorMessage) toast.error(oauthErrorMessage);
+  }, [oauthErrorMessage]);
 
   async function handleSubmit(values: LoginValues) {
     setIsLoading(true);
@@ -42,10 +51,6 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     } finally {
       setIsLoading(false);
     }
-  }
-
-  function handleGoogleLogin() {
-    toast.error("Google sign-in is not configured yet.");
   }
 
   return (
@@ -103,29 +108,37 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
           </NButton>
         </NForm>
 
-        <div className="my-5 flex items-center gap-4 text-sm font-semibold text-muted-foreground">
-          <span aria-hidden="true" className="h-px flex-1 bg-border" />
-          OR
-          <span aria-hidden="true" className="h-px flex-1 bg-border" />
-        </div>
+        {googleEnabled ? (
+          <>
+            <div className="my-5 flex items-center gap-4 text-sm font-semibold text-muted-foreground">
+              <span aria-hidden="true" className="h-px flex-1 bg-border" />
+              OR
+              <span aria-hidden="true" className="h-px flex-1 bg-border" />
+            </div>
 
-        <NButton
-          fullWidth
-          leftIcon={<GoogleMark />}
-          onClick={handleGoogleLogin}
-          rounded="lg"
-          size="xl"
-          type="button"
-          variant="outline"
-        >
-          Continue with Google
-        </NButton>
+            <GoogleLoginButton
+              onError={() => toast.error("Google sign-in could not start.")}
+              returnTo={redirectTo}
+            >
+              <NButton
+                fullWidth
+                leftIcon={<GoogleMark />}
+                rounded="lg"
+                size="xl"
+                type="button"
+                variant="outline"
+              >
+                Continue with Google
+              </NButton>
+            </GoogleLoginButton>
+          </>
+        ) : null}
 
         <NButton
           className="mt-3"
           fullWidth
           leftIcon={UserRoundPlus}
-          onClick={() => router.push("/register/sponsor")}
+          onClick={() => router.push("/apply")}
           rounded="lg"
           size="xl"
           type="button"

@@ -2,15 +2,17 @@
 
 import { useMemo } from "react";
 
-export function useOrdersTableFilters() {
+export function useOrdersTableFilters(includeRecipient: boolean) {
   return useMemo(
     () => [
       { type: "text", name: "orderNumber", placeholder: "Search order number..." },
-      {
-        type: "text",
-        name: "guardianLegalNameSnapshot",
-        placeholder: "Search recipient...",
-      },
+      ...(includeRecipient
+        ? [{
+            type: "text",
+            name: "guardianLegalNameSnapshot",
+            placeholder: "Search recipient...",
+          }]
+        : []),
       {
         type: "select",
         name: "status",
@@ -27,6 +29,6 @@ export function useOrdersTableFilters() {
         ],
       },
     ],
-    [],
+    [includeRecipient],
   );
 }

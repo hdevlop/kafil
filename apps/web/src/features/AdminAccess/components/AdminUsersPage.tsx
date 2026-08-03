@@ -6,6 +6,7 @@ import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex } from "@/lib/pagination";
 import { formatKafilDate } from "@/lib/format";
+import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -21,10 +22,12 @@ import {
   RevokeSessionsDialog,
 } from "./AdminAccessUserDialogs";
 import { CreateAccessUserDialogContent } from "./AdminAccessCreateDialogs";
+import { AdminUserCard } from "./AdminAccessCards";
 
 export function AdminUsersPage() {
   const dialog = useDialog();
   const { t } = useKafilLanguage();
+  const tableMode = useDesktopTableMode();
   const [query, setQuery] = useState<AccessUserListQuery>(() => ({
     ...createOffsetPagination(0, 25),
   }));
@@ -111,6 +114,7 @@ export function AdminUsersPage() {
           error={users.error}
           getRowId={(user) => user.id}
           onView={view}
+          renderCard={AdminUserCard}
           renderEmpty={() => (
             <PageEmptyState
               icon={Users}
@@ -161,7 +165,13 @@ export function AdminUsersPage() {
             })
           }
           pageSizeOptions={[10, 25, 50, 100]}
-          responsiveCards
+          availableModes={["cards", "table"]}
+          mode={tableMode}
+          defaultMode="table"
+          responsiveCards={false}
+          showColumnVisibility={false}
+          showViewToggle={false}
+          classNames={{ pagination: "hidden lg:flex" }}
           noDataText={t("adminAccess.users.noData")}
           loadingText={t("adminAccess.users.loading")}
           dynamicHeight

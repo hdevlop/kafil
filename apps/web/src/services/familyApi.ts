@@ -5,6 +5,7 @@ import type {
   CreatedFamilyRecord,
   FamilyRecord,
   FamilyStatusInput,
+  SponsorFamilyCatalogEntry,
   UpdateFamilyInput,
 } from "@/features/Families/types";
 
@@ -29,6 +30,12 @@ export function listFamilies(
 
 export function getFamily(id: string) {
   return api.get<FamilyRecord>(`/families/${id}`);
+}
+
+export function listSponsorFamilyCatalog() {
+  return api.get<SponsorFamilyCatalogEntry[]>("/support-assignments/catalog", {
+    query: { limit: 100, offset: 0 },
+  });
 }
 
 export function createFamily(input: CreateFamilyInput) {

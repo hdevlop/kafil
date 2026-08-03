@@ -122,6 +122,48 @@ describe("Phase 5 cart and route contracts", () => {
     });
   });
 
+  it("loads sponsor order details by id and active sponsor scope without a capped list", async () => {
+    let scopedLookup: [string, string] | null = null;
+    const service = new OrderService(
+      {} as CartRepository,
+      {
+        findSupportedBySponsor: async (id: string, userId: string) => {
+          scopedLookup = [id, userId];
+          return { id, orderNumber: "KAF-OLDER", totalMinor: 900, deliveryProofRecorded: false };
+        },
+        listSupportedBySponsor: async () => {
+          throw new Error("getSupported must not scan a paginated list");
+        },
+        listItemsByOrderIds: async () => new Map([[orderId, []]]),
+      } as unknown as OrderRepository,
+      {
+        listLatestByOrderIds: async () => new Map(),
+      } as unknown as OrderDeliveryRepository,
+      {
+        listActiveByOrderIds: async () => new Map(),
+      } as unknown as OrderPurchaseRepository,
+      {} as StaffRepository,
+      {} as ProductRepository,
+      {} as BudgetAccountRepository,
+      {} as BudgetLedgerRepository,
+      {} as MonthlyBudgetLimitRepository,
+      {} as AuditService,
+      {} as OutboxService,
+      {} as OrderValidator,
+      {} as FundingService,
+      {} as OrderEvidenceService,
+    );
+
+    const result = await service.getSupported(orderId, "sponsor-user");
+
+    expect(scopedLookup as unknown).toEqual([orderId, "sponsor-user"]);
+    expect(result).toMatchObject({
+      id: orderId,
+      orderNumber: "KAF-OLDER",
+      items: [],
+    });
+  });
+
   it("accepts only positive bounded cart quantities and idempotent submission keys", () => {
     expect(
       cartItemDto.parse({ productId, quantity: "2", priceMinor: 1 }),

@@ -1,0 +1,154 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Eye,
+  Pencil,
+  Trash2,
+  UserRoundCheck,
+  UserRoundX,
+} from "lucide-react";
+import { type ContextMenuItem, NButton, type NTableProps } from "najm-kit";
+
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { Operator, useKafilRole } from "@/shared/Authorization";
+
+import { FamiliesPageIcon } from "../components/FamiliesPage/FamiliesPageIcon";
+import { FamilyCard } from "../components/FamilyCard";
+import type { FamilyRecord } from "../types";
+import { useFamilies, useSponsorFamilyCatalog } from "./useFamilies";
+import { useFamiliesPageDialogs } from "./useFamiliesPageDialogs";
+import { useFamiliesTableColumns } from "./useFamiliesTableColumns";
+import { useFamiliesTableFilters } from "./useFamiliesTableFilters";
+
+const FAMILY_LIST_LIMIT = 100;
+
+export function useFamiliesTableProps() {
+  const { t } = useKafilLanguage();
+  const { isExactAdmin, isExactSponsor } = useKafilRole();
+  const operatorFamilies = useFamilies(
+    { limit: FAMILY_LIST_LIMIT, offset: 0 },
+    {},
+    !isExactSponsor,
+  );
+  const sponsorFamilies = useSponsorFamilyCatalog(isExactSponsor);
+  const columns = useFamiliesTableColumns();
+  const filters = useFamiliesTableFilters();
+  const rows: FamilyRecord[] = isExactSponsor
+    ? sponsorFamilies.data ?? []
+    : operatorFamilies.data ?? [];
+  const loading = isExactSponsor
+    ? sponsorFamilies.isPending
+    : operatorFamilies.isPending;
+  const error = isExactSponsor
+    ? sponsorFamilies.error
+    : operatorFamilies.error;
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
+  const {
+    openCreate,
+    openView,
+    openEdit,
+    openStatus,
+    openDelete,
+    openBulkDelete,
+  } = useFamiliesPageDialogs();
+
+  const refetch = () => {
+    if (isExactSponsor) void sponsorFamilies.refetch();
+    else void operatorFamilies.refetch();
+  };
+
+  const tableProps: NTableProps<FamilyRecord> = {
+    data: rows,
+    columns,
+    filters,
+    loading,
+    error,
+    getRowId: (family) => family.id,
+    onCreate: isExactSponsor ? undefined : openCreate,
+    onView: openView,
+    onEdit: openEdit,
+    onRowClick: openView,
+    renderCard: FamilyCard,
+    renderEmpty: () => (
+      <PageEmptyState
+        action={
+          <Operator>
+            <NButton onClick={openCreate}>
+              {t("operator.families.create")}
+            </NButton>
+          </Operator>
+        }
+        icon={FamiliesPageIcon}
+        title={t("operator.families.emptyTitle")}
+        description={t("operator.families.emptyDescription")}
+      />
+    ),
+    renderError: (error) => <PageErrorState error={error} onRetry={refetch} />,
+    menu: {
+      row: (family) => {
+        const isActive = family.status === "active";
+        const result: ContextMenuItem[] = [
+          {
+            label: t("operator.families.view"),
+            icon: Eye,
+            onSelect: () => openView(family),
+          },
+        ];
+
+        if (!isExactSponsor) {
+          result.push({
+            label: t("operator.families.edit"),
+            icon: Pencil,
+            onSelect: () => openEdit(family),
+          });
+          result.push({
+            label: t(
+              isActive
+                ? "operator.families.deactivate"
+                : "operator.families.reactivate",
+            ),
+            icon: isActive ? UserRoundX : UserRoundCheck,
+            danger: isActive,
+            separatorBefore: true,
+            onSelect: () => openStatus(family),
+          });
+        }
+
+        if (isExactAdmin) {
+          result.push({
+            label: t("operator.families.delete"),
+            icon: Trash2,
+            danger: true,
+            separatorBefore: true,
+            onSelect: () => openDelete(family),
+          });
+        }
+
+        return result;
+      },
+    },
+    menuButton: true,
+    showCheckbox: isExactAdmin,
+    rowSelection,
+    onRowSelectionChange: setRowSelection,
+    onBulkDelete: isExactAdmin
+      ? (ids) => openBulkDelete(ids, () => setRowSelection({}))
+      : undefined,
+    showPagination: false,
+    responsiveCards: true,
+    defaultMode: "cards",
+    classNames: {
+      cards:
+        "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
+    },
+    addButtonText: t("operator.families.create"),
+    noDataText: t("operator.families.noData"),
+    loadingText: t("operator.families.loading"),
+    dynamicHeight: true,
+  };
+
+  return tableProps;
+}

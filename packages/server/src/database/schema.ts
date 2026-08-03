@@ -14,6 +14,7 @@ import {
 
 import { auditSchema } from "../modules/audit/auditSchema";
 import { accessSchema } from "../modules/access/accessSchema";
+import { applicantSchema } from "../modules/applicants/applicantSchema";
 import { budgetSchema } from "../modules/budgets/budgetSchema";
 import { childSchema } from "../modules/children/childSchema";
 import { catalogSchema } from "../modules/catalog/catalogSchema";
@@ -87,6 +88,7 @@ export {
 };
 export * from "../modules/audit/auditSchema";
 export * from "../modules/access/accessSchema";
+export * from "../modules/applicants/applicantSchema";
 export * from "../modules/budgets/budgetSchema";
 export * from "../modules/catalog/catalogSchema";
 export * from "../modules/children/childSchema";
@@ -103,6 +105,7 @@ export * from "../modules/supportAssignments/supportAssignmentSchema";
 
 export const kafilSchema = {
   ...accessSchema,
+  ...applicantSchema,
   ...auditSchema,
   ...budgetSchema,
   ...catalogSchema,

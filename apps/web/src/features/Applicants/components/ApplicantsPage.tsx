@@ -1,0 +1,91 @@
+"use client";
+
+import { ClipboardList, Eye } from "lucide-react";
+import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
+import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
+import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+
+import { ApplicantCard } from "./ApplicantCard";
+import { ApplicantDetails } from "./ApplicantDetails";
+import { useApplicants } from "../hooks/useApplicants";
+import { useApplicantsTableColumns } from "../hooks/useApplicantsTableColumns";
+import { useApplicantsTableFilters } from "../hooks/useApplicantsTableFilters";
+import type { ApplicantRecord } from "../types";
+
+export function ApplicantsPage() {
+  const { t } = useKafilLanguage();
+  const dialog = useDialog();
+  const applicants = useApplicants();
+  const columns = useApplicantsTableColumns();
+  const filters = useApplicantsTableFilters();
+  const rows = applicants.data ?? [];
+
+  function openView(applicant: ApplicantRecord) {
+    void dialog.openDialog({
+      title: t("operator.applicants.viewTitle"),
+      description: t("operator.applicants.viewDescription"),
+      children: <ApplicantDetails applicant={applicant} />,
+      showButtons: false,
+      size: "lg",
+      height: "auto",
+    });
+  }
+
+  const tableProps: NTableProps<ApplicantRecord> = {
+    availableModes: ["cards", "table"],
+    classNames: {
+      cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
+    },
+    columns,
+    data: rows,
+    defaultMode: "cards",
+    dynamicHeight: true,
+    error: applicants.error,
+    filters,
+    getRowId: (applicant) => applicant.id,
+    loading: applicants.isPending,
+    loadingText: t("operator.applicants.loading"),
+    menu: {
+      row: (applicant) => [
+        {
+          icon: Eye,
+          label: t("operator.applicants.view"),
+          onSelect: () => openView(applicant),
+        },
+      ],
+    },
+    menuButton: true,
+    noDataText: t("operator.applicants.noData"),
+    onView: openView,
+    renderCard: ApplicantCard,
+    renderEmpty: () => (
+      <PageEmptyState
+        description={t("operator.applicants.emptyDescription")}
+        icon={ClipboardList}
+        title={t("operator.applicants.emptyTitle")}
+      />
+    ),
+    renderError: (error) => (
+      <PageErrorState error={error} onRetry={() => void applicants.refetch()} />
+    ),
+    responsiveCards: true,
+    showPagination: false,
+  };
+
+  return (
+    <NPageLayout className="flex h-full min-h-0 flex-col gap-4">
+      <NPageHeader
+        actions={<PageHeaderGlobalActions />}
+        icon={ClipboardList}
+        subtitle={t("operator.applicants.subtitle")}
+        title={t("operator.applicants.title")}
+      />
+      <div className="min-h-0 flex-1">
+        <NTable {...tableProps} />
+      </div>
+    </NPageLayout>
+  );
+}

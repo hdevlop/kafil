@@ -1122,6 +1122,9 @@ canonical destinations.
       worker/offline fallback
 - [x] Add admin-only Users, Roles, and Permissions views with safe account
       lifecycle commands, session revocation, code-managed grant drift, and MCP
+- [x] Add Google sign-in for existing active Kafil accounts using verified-email
+      linking, while preserving the complete sponsor profile and OTP onboarding
+      workflow for new accounts
 - [x] Add protected receipt/delivery evidence reconciliation and orphan cleanup
 - [ ] Add CSV export with explicit permission and privacy filtering
 - [ ] Add durable outbox events for email and reminders

@@ -111,6 +111,9 @@ describe("Phase 3 contribution contracts", () => {
     const calls: unknown[][] = [];
     const safeContribution = {
       id: contributionId,
+      sponsorName: "Sponsor One",
+      sponsorImage: null,
+      sponsorGender: "M" as const,
       amountMinor: 500,
       currency: "MAD",
       externalReference: null,
@@ -161,6 +164,9 @@ describe("Phase 3 contribution contracts", () => {
     })).toThrow("Family contribution scope cannot be selected by the client");
     expect(Object.keys(familyContributionSelection)).toEqual([
       "id",
+      "sponsorName",
+      "sponsorImage",
+      "sponsorGender",
       "amountMinor",
       "currency",
       "externalReference",

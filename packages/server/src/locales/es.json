@@ -74,8 +74,8 @@
       "loading": "Cargando…",
       "yourOrders": "Tus pedidos",
       "noOrders": "No hay pedidos",
-      "createProduct": "Crear producto"
-    },
+"createProduct": "Crear producto"
+  },
   "status": {
     "active": "Activo",
     "inactive": "Inactivo",
@@ -174,6 +174,74 @@
       "checking": "Comprobando tu cuenta...",
       "changed": "Contraseña cambiada. Inicia sesión con la nueva contraseña.",
       "changeFailed": "No se pudo cambiar la contraseña."
+    }
+  },
+  "applicants": {
+    "success": {
+      "submitted": "Solicitud recibida. Revisa tu correo para verificar y continuar.",
+      "setupRetrieved": "Configuración de verificación de correo de la solicitud recuperada.",
+      "statusRetrieved": "Estado de la solicitud recuperado.",
+      "retrieved": "Solicitudes recuperadas.",
+      "verificationRequested": "Se envió un nuevo código de activación si la solicitud sigue pendiente de verificación.",
+      "emailVerified": "Correo verificado. Tu solicitud está en revisión."
+    },
+    "form": {
+      "title": "Solicita ser patrocinador de Kafil",
+      "subtitle": "Solicita ser patrocinador verificado de Kafil.",
+      "description": "Completa la solicitud a continuación. Kafil revisará tu candidatura y responderá por correo electrónico.",
+      "personal": "Información personal",
+      "name": "Nombre completo",
+      "namePlaceholder": "Tu nombre legal completo",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "cin": "CIN",
+      "gender": "Género",
+      "male": "Hombre",
+      "female": "Mujer",
+      "address": "Dirección",
+      "dateOfBirth": "Fecha de nacimiento",
+      "credentials": "Credenciales de la cuenta",
+      "password": "Contraseña",
+      "passwordPlaceholder": "Al menos 8 caracteres",
+      "confirmPassword": "Confirmar contraseña",
+      "passwordHelp": "Usa 8 caracteres o más con una mezcla de letras, números o símbolos.",
+      "submit": "Enviar solicitud",
+      "submitting": "Enviando solicitud...",
+      "success": "Solicitud enviada. Verifica tu correo para continuar.",
+      "error": "No pudimos enviar tu solicitud. Revisa el formulario e inténtalo de nuevo."
+    },
+    "otp": {
+      "title": "Verifica tu correo",
+      "subtitle": "Introduce el código de activación de 6 dígitos que enviamos a tu correo.",
+      "code": "Código de activación",
+      "resend": "Reenviar código",
+      "resending": "Enviando un nuevo código...",
+      "resendCooldown": "Espera {seconds}s antes de solicitar otro código.",
+      "verify": "Verificar correo",
+      "verifying": "Verificando...",
+      "resent": "Se ha enviado un nuevo código a tu correo.",
+      "genericError": "El código de activación es inválido o ha caducado."
+    },
+    "pending": {
+      "title": "Tu solicitud está en revisión",
+      "subtitle": "Gracias por solicitar. Kafil revisará tu candidatura y responderá por correo.",
+      "next": "Recibirás un correo cuando se tome una decisión."
+    },
+    "approved": {
+      "title": "Tu solicitud ha sido aprobada",
+      "subtitle": "Inicia sesión para acceder a tu espacio de patrocinio.",
+      "signIn": "Iniciar sesión"
+    },
+    "rejected": {
+      "title": "Esta solicitud no se puede reabrir",
+      "subtitle": "Contacta con el soporte de Kafil si crees que se trata de un error."
+    },
+    "errors": {
+      "duplicateEmail": "Ya existe una solicitud para este correo. Revisa tu bandeja de entrada para el código de activación.",
+      "duplicatePhone": "Ya existe una solicitud para este número de teléfono.",
+      "duplicateCin": "Ya existe una solicitud para este CIN.",
+      "rateLimit": "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
+      "codeInvalid": "El código de activación es inválido o ha caducado."
     }
   },
   "language": {
@@ -625,6 +693,64 @@
         "login": "Iniciar sesión"
       }
     },
+    "applicants": {
+      "form": {
+        "title": "Conviértete en padrino o madrina",
+        "subtitle": "Solicita ser un padrino verificado de Kafil. Revisamos cada solicitud antes de activar la cuenta.",
+        "name": "Nombre completo",
+        "namePlaceholder": "Introduce tu nombre completo",
+        "email": "Correo electrónico",
+        "emailPlaceholder": "Introduce tu correo electrónico",
+        "phone": "Número de teléfono",
+        "phonePlaceholder": "Ejemplo: +212 6 12 34 56 78",
+        "cin": "Número de identidad nacional",
+        "cinPlaceholder": "Ejemplo: AB123456",
+        "gender": "Género",
+        "genderPlaceholder": "Elige tu género",
+        "gender.female": "Mujer",
+        "gender.male": "Hombre",
+        "dateOfBirth": "Fecha de nacimiento",
+        "dateOfBirthPlaceholder": "Elige una fecha",
+        "address": "Dirección",
+        "addressPlaceholder": "Introduce tu dirección postal",
+        "password": "Contraseña",
+        "passwordPlaceholder": "Al menos 8 caracteres",
+        "confirmPassword": "Confirmar contraseña",
+        "confirmPasswordPlaceholder": "Repite tu contraseña",
+        "submit": "Enviar solicitud",
+        "submitting": "Enviando solicitud...",
+        "failed": "No pudimos enviar tu solicitud. Inténtalo de nuevo."
+      },
+      "otp": {
+        "checking": "Comprobando la sesión de verificación...",
+        "title": "Verifica tu correo",
+        "instructions": "Introduce el código de seis dígitos que enviamos a tu correo para confirmar esta solicitud.",
+        "destination": "Destino de correo enmascarado",
+        "expiresMinutes": "El código caduca 10 minutos después de enviarse.",
+        "expired": "Este código ha caducado. Solicita uno nuevo para continuar.",
+        "codeLabel": "Código de verificación",
+        "codeDescription": "Seis dígitos",
+        "submit": "Verificar correo",
+        "submitting": "Verificando...",
+        "resend": "Enviar un nuevo código",
+        "resendIn": "Reenviar en {seconds}s",
+        "cancel": "Cancelar y volver al inicio",
+        "refresh": "Actualizar estado de verificación",
+        "deliveryFailed": "No se pudo entregar el último correo. Podrás solicitar un nuevo código cuando termine el temporizador.",
+        "invalid": "El código no es válido o ha caducado. Solicita uno nuevo si es necesario.",
+        "success": "Correo verificado. Tu solicitud está ahora pendiente de revisión.",
+        "resendSuccess": "Se envió un nuevo código de verificación."
+      },
+      "review": {
+        "title": "Solicitud pendiente de revisión",
+        "body": "Tu correo está verificado. Un administrador de Kafil revisará tu solicitud. Solo podrás iniciar sesión después de que aprobemos y activemos tu cuenta.",
+        "destination": "Código enviado a {destination}",
+        "destinationAria": "Destino de correo",
+        "nextSteps": "La aprobación suele tardar de uno a tres días hábiles. Te enviaremos un correo cuando haya una decisión.",
+        "backHome": "Volver al inicio",
+        "signIn": "Iniciar sesión"
+      }
+    },
     "language": {
       "label": "Idioma",
       "english": "Inglés",
@@ -665,6 +791,7 @@
       "families": "Families",
       "children": "Children",
       "sponsors": "Sponsors",
+      "applicants": "Solicitudes",
       "staff": "Personal",
       "assignments": "Assignments",
       "contributions": "Contributions",
@@ -1258,6 +1385,55 @@
         "imageUrl": "Avatar del niño",
         "imageUploadGuidance": "PNG, JPEG o WebP · hasta 5 MB"
       },
+      "applicants": {
+        "title": "Solicitudes",
+        "subtitle": "Revisa las solicitudes antes de activar una cuenta de patrocinador.",
+        "add": "Añadir solicitud",
+        "addTitle": "Añadir una solicitud",
+        "addDescription": "El solicitante debe completar el proceso público verificado.",
+        "addGuideTitle": "Compartir el formulario",
+        "addGuideDescription": "Envía el enlace público al solicitante. Configura su contraseña y verifica su correo antes de aparecer en la cola de revisión.",
+        "copyLink": "Copiar enlace",
+        "linkCopied": "Enlace de solicitud copiado.",
+        "emptyTitle": "Aún no hay solicitudes",
+        "emptyDescription": "Las nuevas solicitudes de patrocinadores aparecerán aquí después de verificar el correo electrónico.",
+        "noData": "No se encontró ninguna solicitud",
+        "loading": "Cargando solicitudes...",
+        "view": "Ver",
+        "viewTitle": "Detalles de la solicitud",
+        "viewDescription": "Información privada visible solo para administradores.",
+        "name": "Solicitante",
+        "email": "Correo",
+        "phone": "Teléfono",
+        "status": "Estado",
+        "submitted": "Enviada",
+        "searchName": "Buscar solicitante...",
+        "searchEmail": "Buscar correo...",
+        "searchPhone": "Buscar teléfono...",
+        "filterStatus": "Filtrar por estado",
+        "pendingEmailVerification": "Verificación de correo pendiente",
+        "pendingReview": "Pendiente de revisión",
+        "approved": "Aprobada",
+        "rejected": "Rechazada",
+        "statusLabel": {
+          "pending_email_verification": "Verificación de correo pendiente",
+          "pending_review": "Pendiente de revisión",
+          "approved": "Aprobada",
+          "rejected": "Rechazada"
+        },
+        "contact": "Contacto e identidad",
+        "gender": "Género",
+        "female": "Mujer",
+        "male": "Hombre",
+        "dateOfBirth": "Fecha de nacimiento",
+        "privateVerification": "Verificación privada",
+        "cin": "CIN",
+        "address": "Dirección",
+        "review": "Historial de revisión",
+        "reviewed": "Revisada",
+        "notReviewed": "Aún no revisada",
+        "rejectionReason": "Motivo del rechazo"
+      },
       "sponsors": {
         "title": "Patrocinadores",
         "subtitle": "Invita patrocinadores y gestiona su perfil privado y el ciclo de vida auditado de su cuenta.",
@@ -1534,6 +1710,15 @@
         "emptyDescription": "Los pagos pendientes y validados aparecerán aquí.",
         "noData": "No se encontró ninguna contribución"
       },
+      "children": {
+        "title": "Tus hijos",
+        "subtitle": "Consulta los hijos asociados al perfil de tu familia.",
+        "viewTitle": "Detalles del niño",
+        "viewDescription": "Información segura para la privacidad sobre este niño.",
+        "emptyTitle": "Aún no hay niños",
+        "emptyDescription": "Un operador puede añadir fichas de niños al perfil de tu familia.",
+        "noData": "No se encontró ningún niño"
+      },
       "cart": {
         "loadingTitle": "Loading your cart",
         "loadingDescription": "Retrieving your protected cart.",
@@ -1620,6 +1805,8 @@
       "contributions": {
         "title": "Contributions",
         "subtitle": "Create support plans and submit contributions for operator validation.",
+        "viewTitle": "Detalles de la contribución",
+        "viewDescription": "Un registro de contribución seguro que enviaste.",
         "createTitle": "Create support",
         "chooseSupport": "Choose active support",
         "amount": "Amount in MAD",
@@ -1639,7 +1826,8 @@
         "planReason": "Motivo de este cambio del plan",
         "stopReason": "Motivo para detener este plan",
         "pendingDeadline": "Pendiente hasta {date}",
-        "expiredAt": "Caducó el {date}"
+        "expiredAt": "Caducó el {date}",
+        "noData": "No se encontró ninguna contribución"
       },
       "directory": {
         "title": "Families to support",

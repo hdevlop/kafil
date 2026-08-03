@@ -19,6 +19,18 @@ const packageConfig = tseslint.configs.recommended.map((config) => ({
 const eslintConfig = defineConfig([
   ...webConfig,
   ...packageConfig,
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
   globalIgnores([
     "**/.next/**",
     "**/.next-*/**",

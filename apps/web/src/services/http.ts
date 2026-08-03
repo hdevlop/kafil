@@ -47,7 +47,10 @@ export function buildApiPath(
   return queryString ? `${path}?${queryString}` : path;
 }
 
-async function ensureAccessToken(path: string) {
+async function ensureAccessToken(
+  method: "delete" | "get" | "patch" | "post" | "put",
+  path: string,
+) {
   const isPublicAccessPath = [
     "/access/login",
     "/access/register/sponsor",
@@ -56,8 +59,13 @@ async function ensureAccessToken(path: string) {
     "/access/family-password/setup",
     "/access/family-password/change",
     "/access/family-password/cancel",
+    "/applicants/email-verification/setup",
+    "/applicants/email-verification/status",
+    "/applicants/email-verification/resend",
+    "/applicants/email-verification/confirm",
   ].includes(path);
-  if (path.startsWith("/auth/") || isPublicAccessPath) return;
+  const isPublicApplicantSubmission = method === "post" && path === "/applicants";
+  if (path.startsWith("/auth/") || isPublicAccessPath || isPublicApplicantSubmission) return;
 
   const state = auth.client.getState();
   if (!state.isAuthenticated || state.accessToken) return;
@@ -75,7 +83,7 @@ async function binaryRequest<T = void>(
   body?: Blob,
   retried = false,
 ) {
-  await ensureAccessToken(path);
+  await ensureAccessToken(method === "DELETE" ? "delete" : "post", path);
 
   const token = auth.client.getState().accessToken;
   const response = await fetch(`/api${path}`, {
@@ -112,7 +120,7 @@ async function request<T>(
   path: string,
   body?: unknown,
 ) {
-  await ensureAccessToken(path);
+  await ensureAccessToken(method, path);
 
   if (method === "get") {
     return unwrapApiResponse(await auth.api.get<T | ApiResponseEnvelope<T>>(path));

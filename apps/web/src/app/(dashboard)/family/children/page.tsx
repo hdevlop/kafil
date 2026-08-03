@@ -1,7 +1,5 @@
-import { FamilyChildrenPage } from "@/features/Dashboard/FamilyDashboard";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Your children" };
-
-export default function FamilyChildrenRoutePage() {
-  return <FamilyChildrenPage />;
+export default function FamilyChildrenRedirectPage() {
+  redirect("/children");
 }

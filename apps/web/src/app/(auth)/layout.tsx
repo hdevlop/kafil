@@ -17,7 +17,7 @@ export default async function AuthLayout({
   }
 
   return (
-    <section className="fixed inset-0 z-20 overflow-y-auto bg-background p-2 text-foreground lg:p-12">
+    <section className="fixed inset-0 z-20 overflow-y-auto bg-background  text-foreground lg:p-12">
       <div className="grid min-h-full overflow-hidden rounded-3xl bg-card text-card-foreground shadow-2xl shadow-foreground/15 lg:grid-cols-2">
         <aside className="relative xl:flex overflow-hidden hidden ">
           <BrandingImage

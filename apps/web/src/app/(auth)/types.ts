@@ -17,7 +17,11 @@ export type AuthCardProps = Readonly<{
 }>;
 
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
-export type LoginFormProps = Readonly<{ redirectTo: string }>;
+export type LoginFormProps = Readonly<{
+  googleEnabled: boolean;
+  oauthErrorMessage?: string;
+  redirectTo: string;
+}>;
 export type LoginValues = z.infer<typeof loginSchema>;
 export type RegistrationValues = z.infer<typeof sponsorRegistrationSchema>;
 export type ResetPasswordFormProps = Readonly<{ token: string }>;

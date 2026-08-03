@@ -95,3 +95,11 @@ export interface FamilyStatusInput {
   id: string;
   reason: string;
 }
+
+export interface SponsorFamilyCatalogEntry {
+  id: string;
+  reference: string;
+  image: string | null;
+  activeChildCount: number;
+  funding: FamilyFundingProgress | null;
+}

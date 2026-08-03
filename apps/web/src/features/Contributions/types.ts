@@ -19,6 +19,7 @@ export interface ContributionRecord {
   sponsorGender: "F" | "M" | null;
   sponsorEmail: string;
   familyName: string;
+  familyImage: string | null;
   amountMinor: number;
   currency: "MAD" | string;
   paymentMethod: string;
@@ -39,6 +40,9 @@ export interface ContributionRecord {
 
 export interface FamilyContributionRecord {
   id: string;
+  sponsorName: string;
+  sponsorImage: string | null;
+  sponsorGender: "F" | "M" | null;
   amountMinor: number;
   currency: "MAD" | string;
   externalReference: string | null;
@@ -52,8 +56,29 @@ export interface FamilyContributionRecord {
   createdAt: string;
 }
 
-export type ContributionListRecord = ContributionRecord | FamilyContributionRecord;
-export type ContributionAudience = "management" | "family";
+export interface SponsorContributionRecord {
+  id: string;
+  contributionPlanId: string | null;
+  supportAssignmentId: string;
+  amountMinor: number;
+  currency: "MAD" | string;
+  paymentMethod: string;
+  externalReference: string | null;
+  status: ContributionStatus | string;
+  submittedAt: string;
+  paidAt: string | null;
+  expiresAt: string | null;
+  expiredAt: string | null;
+  validatedAt: string | null;
+  rejectedAt: string | null;
+  createdAt: string;
+}
+
+export type ContributionListRecord =
+  | ContributionRecord
+  | FamilyContributionRecord
+  | SponsorContributionRecord;
+export type ContributionAudience = "management" | "family" | "sponsor";
 
 export type ContributionListQuery = OffsetPagination & {
   audience?: ContributionAudience;

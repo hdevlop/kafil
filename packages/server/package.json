@@ -20,7 +20,7 @@
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test",
-    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/order-delivery-database-concurrency.test.js ./dist/test/order-delete-integration.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/appearance-database-concurrency.test.js ./dist/test/branding-database-concurrency.test.js ./dist/test/family-recreate-integration.test.js ./dist/test/family-password-setup-integration.test.js ./dist/test/sponsor-email-otp-database-concurrency.test.js"
+    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/order-delivery-database-concurrency.test.js ./dist/test/order-delete-integration.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/appearance-database-concurrency.test.js ./dist/test/branding-database-concurrency.test.js ./dist/test/family-recreate-integration.test.js ./dist/test/family-password-setup-integration.test.js ./dist/test/sponsor-email-otp-database-concurrency.test.js ./dist/test/applicant-database-concurrency.test.js"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

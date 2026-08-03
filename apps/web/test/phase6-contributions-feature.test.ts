@@ -60,6 +60,7 @@ describe("Phase 6D contribution command contracts", () => {
         familyProfileId: undefined,
         limit: 25,
         offset: 50,
+        role: null,
         status: undefined,
       },
     ]);
