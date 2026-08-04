@@ -14,6 +14,11 @@
     "actions": "Actions",
     "confirm": "Confirm",
     "warning": "Warning",
+    "loadMore": "Load more",
+    "loadingMore": "Loading more...",
+    "retryLoadMore": "Try again",
+    "loadMoreError": "Could not load more results.",
+    "itemsLoaded": "{{count}} more results loaded",
     "notAvailable": "N/A",
     "notSpecified": "Not specified",
     "deactivate": "Deactivate",
@@ -229,11 +234,6 @@
   "access": {
     "success": {
       "login": "Login successful",
-      "registered": "Account created. Verify your email to activate it.",
-      "verificationRequested": "If the account is pending, a verification email has been requested.",
-      "verificationSetupRetrieved": "Email activation setup retrieved.",
-      "verificationCancelled": "Email activation session cancelled.",
-      "emailVerified": "Email verified. Your account is active.",
       "passwordRequirementRetrieved": "Password requirement retrieved.",
       "passwordChanged": "Password changed. Sign in again with your new password.",
       "passwordSetupCancelled": "Password setup session cancelled."
@@ -259,7 +259,9 @@
       "statusRetrieved": "Application status retrieved.",
       "retrieved": "Applications retrieved.",
       "verificationRequested": "A new activation code has been sent if the application is still pending verification.",
-      "emailVerified": "Email verified. Your application is awaiting review."
+      "emailVerified": "Email verified. Your application is awaiting review.",
+      "approved": "Applicant approved and sponsor account activated.",
+      "rejected": "Applicant rejected and identity deactivated."
     },
     "form": {
       "title": "Apply to become a Kafil sponsor",
@@ -563,6 +565,11 @@
   },
   "ui": {
     "common": {
+      "loadMore": "Load more",
+      "loadingMore": "Loading more...",
+      "retryLoadMore": "Try again",
+      "loadMoreError": "Could not load more results.",
+      "itemsLoaded": "{{count}} more results loaded",
       "orderCategory": "Order category",
       "orderFamily": "Family",
       "orderPhone": "Phone",
@@ -668,51 +675,12 @@
         "checking": "Checking your account...",
         "changed": "Password changed. Sign in with your new password.",
         "changeFailed": "Could not change the password."
-      },
-      "emailOtp": {
-        "checking": "Checking activation session...",
-        "title": "Verify your email",
-        "instructions": "Enter the six-digit activation code sent to your email.",
-        "destination": "Masked email destination",
-        "expiresMinutes": "The code expires 10 minutes after it is sent.",
-        "expired": "This code has expired. Request a new code to continue.",
-        "codeLabel": "Activation code",
-        "codeDescription": "Six numeric digits",
-        "submit": "Verify and continue",
-        "submitting": "Verifying...",
-        "resend": "Send a new code",
-        "resendIn": "Send again in {seconds}s",
-        "cancel": "Cancel and sign in again",
-        "deliveryFailed": "The last email could not be delivered. You can request a new code when the timer ends.",
-        "invalid": "The code is invalid or expired. Request a new code if needed.",
-        "success": "Email verified. Welcome to Kafil.",
-        "resendSuccess": "A new activation code was sent."
-      },
-      "registration": {
-        "title": "Create your account",
-        "name": "Full name",
-        "namePlaceholder": "Enter your full name",
-        "email": "Email address",
-        "emailPlaceholder": "Enter your email address",
-        "password": "Password",
-        "passwordPlaceholder": "At least 8 characters",
-        "confirmPassword": "Confirm password",
-        "confirmPasswordPlaceholder": "Repeat your password",
-        "submit": "Create account and send code",
-        "submitting": "Creating account...",
-        "failed": "Registration failed.",
-        "checkEmail": "Check your email",
-        "sent": "We sent a six-digit activation code to {email}. Sign in with the email and password you just registered to enter it.",
-        "notSent": "Your account is pending. Sign in with the email and password you just registered, then request a new activation code.",
-        "activate": "Sign in to activate your account",
-        "already": "Already have an account?",
-        "login": "Log in"
       }
     },
     "applicants": {
       "form": {
         "title": "Become a sponsor",
-        "subtitle": "Apply to become a verified Kafil sponsor. We review every application before activating the account.",
+        "subtitle": "Apply to become a verified Kafil sponsor. Every application is reviewed before activation.",
         "name": "Full name",
         "namePlaceholder": "Enter your full name",
         "email": "Email address",
@@ -721,14 +689,12 @@
         "phonePlaceholder": "For example: +212 6 12 34 56 78",
         "cin": "National identity number",
         "cinPlaceholder": "For example: AB123456",
-        "gender": "Gender",
+        "genderLabel": "Gender",
         "genderPlaceholder": "Choose your gender",
-        "gender.female": "Female",
-        "gender.male": "Male",
-        "dateOfBirth": "Date of birth",
-        "dateOfBirthPlaceholder": "Pick a date",
-        "address": "Address",
-        "addressPlaceholder": "Enter your mailing address",
+        "gender": {
+          "female": "Female",
+          "male": "Male"
+        },
         "password": "Password",
         "passwordPlaceholder": "At least 8 characters",
         "confirmPassword": "Confirm password",
@@ -1009,7 +975,14 @@
         "viewAllOrders": "View all orders",
         "upcomingContributions": "Upcoming contributions",
         "noUpcomingContributions": "No upcoming contributions. Create an active contribution plan to see scheduled dates.",
-        "viewAllPlans": "View all plans"
+        "viewAllPlans": "View all plans",
+        "quickActions": "Quick actions",
+        "findSupportHint": "Browse privacy-safe family profiles",
+        "contribute": "Make a contribution",
+        "contributeHint": "Submit support or manage your plans",
+        "ordersHint": "Follow how supported budgets are used",
+        "manageProfile": "Manage profile",
+        "profileHint": "Keep your sponsor details current"
       }
     },
     "operator": {
@@ -1127,6 +1100,8 @@
           "uploadingCount": "Uploading {count} asset(s)…",
           "uploadSuccess": "Brand asset uploaded",
           "uploadError": "Could not upload the brand asset",
+          "missingAsset": "The saved custom file is unavailable. A safe fallback is shown.",
+          "recoverFallback": "Use fallback",
           "saveSuccess": "Brand assets updated",
           "saveError": "Could not save the brand assets",
           "resetSuccess": "Factory brand assets restored",
@@ -1488,14 +1463,32 @@
         "gender": "Gender",
         "female": "Female",
         "male": "Male",
-        "dateOfBirth": "Date of birth",
         "privateVerification": "Private verification",
         "cin": "CIN",
-        "address": "Address",
         "review": "Review history",
         "reviewed": "Reviewed",
         "notReviewed": "Not reviewed yet",
-        "rejectionReason": "Rejection reason"
+        "rejectionReason": "Rejection reason",
+        "approve": "Approve",
+        "approveTitle": "Approve {name}?",
+        "approveDescription": "Approving activates the sponsor account and creates the sponsor profile. The applicant can sign in immediately with the credentials they used during the public application.",
+        "approving": "Approving...",
+        "approveSuccess": "Applicant approved and sponsor account activated.",
+        "approveError": "Could not approve the applicant.",
+        "reject": "Reject",
+        "rejectTitle": "Reject {name}?",
+        "rejectDescription": "Rejecting deactivates the applicant identity and revokes every pending setup or session. Provide a short internal reason for the audit log.",
+        "rejecting": "Rejecting...",
+        "rejectSuccess": "Applicant rejected and identity deactivated.",
+        "rejectError": "Could not reject the applicant.",
+        "rejectionReasonLabel": "Rejection reason",
+        "rejectionReasonPlaceholder": "Explain why this application is rejected",
+        "rejectionReasonRequired": "Provide a rejection reason",
+        "rejectionReasonTooLong": "Rejection reason must be 500 characters or fewer",
+        "allStatuses": "All statuses",
+        "loadDetailError": "Could not refresh the applicant details",
+        "pendingReviewBadge": "Pending review",
+        "pendingReviewCount": "{count} pending review"
       },
       "sponsors": {
         "title": "Sponsors",
@@ -1967,6 +1960,17 @@
       }
     },
     "sponsor": {
+      "profile": {
+        "sheetTitle": "Sponsor profile",
+        "sheetDescription": "Update your private sponsor details without leaving this page.",
+        "completeTitle": "Complete your sponsor profile",
+        "completeDescription": "Add the required private details before using sponsor features.",
+        "completeAction": "Complete profile",
+        "editTitle": "Your sponsor profile",
+        "open": "Profile",
+        "loading": "Loading your profile...",
+        "loadError": "We could not load your sponsor profile"
+      },
       "contributions": {
         "title": "Contributions",
         "subtitle": "Create support plans and submit contributions for operator validation.",
@@ -1995,8 +1999,18 @@
         "noData": "No contribution found"
       },
       "directory": {
-        "title": "Families to support",
-        "subtitle": "Choose a family and contribute directly to its funding goal.",
+        "title": "Families",
+        "subtitle": "Browse available families or continue supporting families you selected.",
+        "family": "Family",
+        "familyReference": "Family {reference}",
+        "relationship": "Support relationship",
+        "allFamilies": "All families",
+        "mySupport": "My support",
+        "otherFamilies": "Other families",
+        "search": "Search family reference...",
+        "supporting": "Supporting",
+        "available": "Available",
+        "funded": "Funded",
         "activeChildren": "Active children",
         "support": "Support",
         "contribute": "Contribute",
@@ -2004,6 +2018,8 @@
         "error": "We could not load families",
         "emptyTitle": "No families available",
         "emptyDescription": "There are no active families available for support right now.",
+        "filteredEmptyTitle": "No matching families",
+        "filteredEmptyDescription": "Try another search or support filter.",
         "targetReached": "Target reached",
         "coveredByPending": "Covered by pending payments"
       }

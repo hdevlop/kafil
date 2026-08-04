@@ -17,6 +17,7 @@ import { useSponsorDashboard } from "../hooks/useSponsorDashboard";
 import { buildSponsorDashboardViewModel } from "../lib/buildSponsorDashboardViewModel";
 import { SponsorDashboardHeader } from "./SponsorDashboardHeader";
 import { SponsorDashboardSkeleton } from "./SponsorDashboardSkeleton";
+import { SponsorQuickActionsCard } from "./SponsorQuickActionsCard";
 import { SupportedFamiliesCard } from "./SupportedFamiliesCard";
 import { UpcomingContributionsCard } from "./UpcomingContributionsCard";
 
@@ -44,7 +45,7 @@ export function SponsorDashboardPage() {
   const vm = buildSponsorDashboardViewModel(data, language, tString);
 
   return (
-    <NPageLayout className="flex min-h-full flex-col gap-4">
+    <NPageLayout className="flex min-h-full flex-col gap-4 xl:h-full xl:min-h-0">
       <SponsorDashboardHeader
         subtitle={t("dashboard.sponsor.subtitle")}
         title={t("dashboard.sponsor.welcome", { name: vm.displayName })}
@@ -52,8 +53,13 @@ export function SponsorDashboardPage() {
 
       <SponsorKpiGrid desktopColumns={5} kpis={vm.kpis} />
 
-      <NGrid cols={1} xlCols={12}>
-        <NGridItem span={1} xlSpan={5}>
+      <NGrid
+        cols={1}
+        mdCols={2}
+        xlCols={12}
+        className="flex-1 xl:min-h-0 xl:grid-rows-[auto_minmax(0,1fr)]"
+      >
+        <NGridItem span={1} xlSpan={3}>
           <SupportedFamiliesCard
             families={vm.supportedFamilies}
             hasMore={vm.hasMoreFamilies}
@@ -61,20 +67,10 @@ export function SponsorDashboardPage() {
             t={tString}
           />
         </NGridItem>
-        <NGridItem span={1} xlSpan={3}>
-          <SupportBudgetCard
-            icon={WalletCards}
-            segments={vm.budgetSegments}
-            total={vm.budgetTotal}
-            title={tString("dashboard.sponsor.supportBudgetUse")}
-            totalLabel={tString("dashboard.sponsor.totalBudget")}
-            emptyLabel={tString("dashboard.sponsor.noSupportedBudget")}
-            language={language}
-          />
-        </NGridItem>
-        <NGridItem span={1} xlSpan={4}>
+        <NGridItem span={1} xlSpan={6}>
           <ContributionOverviewCard
             data={vm.contributionTrend}
+            emptyLabel={tString("dashboard.sponsor.noContributions")}
             icon={HandCoins}
             language={language}
             series={[
@@ -85,28 +81,37 @@ export function SponsorDashboardPage() {
             valueFormatter={money}
           />
         </NGridItem>
-      </NGrid>
-
-      <NGrid cols={1} xlCols={12}>
-        <NGridItem span={1} xlSpan={5}>
+        <NGridItem span={1} xlSpan={3}>
+          <SupportBudgetCard
+            compact={false}
+            icon={WalletCards}
+            segments={vm.budgetSegments}
+            total={vm.budgetTotal}
+            title={tString("dashboard.sponsor.supportBudgetUse")}
+            totalLabel={tString("dashboard.sponsor.totalBudget")}
+            emptyLabel={tString("dashboard.sponsor.noSupportedBudget")}
+            language={language}
+          />
+        </NGridItem>
+        <NGridItem span={1} xlSpan={3}>
           <RecentContributionsCard
             contributions={vm.recentContributions}
             icon={HandCoins}
             title={tString("dashboard.sponsor.recentContributions")}
             emptyLabel={tString("dashboard.sponsor.noContributions")}
             language={language}
-            rowHref="/sponsor/contributions"
+            rowHref="/contribution"
             footer={
               <Link
                 className="mt-3 block rounded-lg border border-dashed border-border/70 px-4 py-2.5 text-center text-sm font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                href="/sponsor/contributions"
+                href="/contribution"
               >
                 {tString("dashboard.sponsor.viewAllContributions")}
               </Link>
             }
           />
         </NGridItem>
-        <NGridItem span={1} xlSpan={4}>
+        <NGridItem span={1} xlSpan={3}>
           <RecentSupportedOrdersCard
             orders={vm.recentSupportedOrders}
             icon={WalletCards}
@@ -131,6 +136,9 @@ export function SponsorDashboardPage() {
             language={language}
             t={tString}
           />
+        </NGridItem>
+        <NGridItem span={1} xlSpan={3}>
+          <SponsorQuickActionsCard t={tString} />
         </NGridItem>
       </NGrid>
     </NPageLayout>

@@ -14,6 +14,7 @@ const webServer = Bun.spawn({
     process.execPath,
     "node_modules/next/dist/bin/next",
     "dev",
+    "--webpack",
     "-p",
     "3210",
   ],
@@ -25,7 +26,7 @@ const webServer = Bun.spawn({
 
 async function available(url: string) {
   try {
-    return (await fetch(`${url}/register/sponsor`)).ok;
+    return (await fetch(`${url}/apply`)).ok;
   } catch {
     return false;
   }

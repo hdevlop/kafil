@@ -32,7 +32,7 @@ export function SupportedFamiliesCard({
             {families.map((family) => (
               <SupportedFamilyRow
                 family={family}
-                key={family.assignmentId}
+                key={family.familyReference}
                 language={language}
                 t={t}
               />
@@ -40,7 +40,7 @@ export function SupportedFamiliesCard({
             {hasMore && (
               <Link
                 className="block rounded-lg border border-dashed border-border/70 px-4 py-3 text-center text-sm font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                href="/sponsor/support"
+                href="/family"
               >
                 {t("dashboard.sponsor.viewAllSupport")}
               </Link>
@@ -49,7 +49,7 @@ export function SupportedFamiliesCard({
         ) : (
           <Link
             className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/70 px-4 py-10 hover:bg-muted/60"
-            href="/sponsor/support"
+            href="/family"
           >
             <HeartHandshake className="size-8 text-muted-foreground/50" />
             <span className="text-sm text-muted-foreground">

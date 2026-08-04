@@ -2,6 +2,7 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
@@ -21,6 +22,14 @@ export function useSponsors(pagination: OffsetPagination, enabled = true) {
     queryKey: sponsorKeys.list(pagination),
     queryFn: () => listSponsors(pagination),
     enabled,
+  });
+}
+
+export function useResponsiveSponsors(enabled = true) {
+  return useResponsiveOffsetList({
+    enabled,
+    queryKey: [...sponsorKeys.all, "responsive"],
+    fetchPage: listSponsors,
   });
 }
 

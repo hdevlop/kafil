@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { localDateInput } from "@/lib/date";
-
 const password = z
   .string()
   .min(8, "Password must be at least 8 characters")
@@ -33,42 +31,21 @@ const phone = z
 const cin = z
   .string()
   .trim()
-  .min(4, "Enter your national identity number")
-  .max(32, "Enter your national identity number");
+  .min(8, "Enter your national identity number")
+  .max(20, "Enter your national identity number");
 
 const gender = z.enum(["female", "male"], {
   message: "Choose your gender",
 });
 
-const address = z
-  .string()
-  .trim()
-  .min(4, "Enter your address")
-  .max(240, "Enter your address");
-
-const dateOfBirth = z
-  .iso
-  .date("Enter a valid date of birth")
-  .refine((value) => value <= localDateInput(), {
-    message: "Date of birth cannot be in the future",
-  });
-
-export const applicantFormSchema = z
-  .object({
-    name,
-    email,
-    phone,
-    cin,
-    gender,
-    address,
-    dateOfBirth,
-    password,
-    confirmPassword: z.string(),
-  })
-  .refine((value) => value.password === value.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+export const applicantFormSchema = z.object({
+  name,
+  email,
+  phone,
+  cin,
+  gender,
+  password,
+});
 
 export type ApplicantFormValues = z.infer<typeof applicantFormSchema>;
 
@@ -77,6 +54,23 @@ export const applicantEmailOtpSchema = z.object({
 });
 
 export type ApplicantEmailOtpValues = z.infer<typeof applicantEmailOtpSchema>;
+
+export function applicantRejectReasonSchema(messages: {
+  required: string;
+  tooLong: string;
+}) {
+  return z.object({
+    reason: z
+      .string()
+      .trim()
+      .min(3, messages.required)
+      .max(500, messages.tooLong),
+  });
+}
+
+export type ApplicantRejectReasonValues = z.infer<
+  ReturnType<typeof applicantRejectReasonSchema>
+>;
 
 export const applicantGenderOptions = [
   { value: "female", label: "Female" },

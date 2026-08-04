@@ -60,6 +60,11 @@ export interface SponsorContributionRecord {
   id: string;
   contributionPlanId: string | null;
   supportAssignmentId: string;
+  sponsorName: string;
+  sponsorImage: string | null;
+  sponsorGender: "F" | "M" | null;
+  familyName: string;
+  familyImage: string | null;
   amountMinor: number;
   currency: "MAD" | string;
   paymentMethod: string;

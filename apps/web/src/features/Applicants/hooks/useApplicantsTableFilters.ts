@@ -27,24 +27,18 @@ export function useApplicantsTableFilters() {
       {
         type: "select",
         name: "status",
-        placeholder: t("operator.applicants.filterStatus"),
+        placeholder: t("operator.applicants.allStatuses"),
         options: [
-          {
-            value: "pending_email_verification",
-            label: t("operator.applicants.pendingEmailVerification"),
-          },
           {
             value: "pending_review",
             label: t("operator.applicants.pendingReview"),
           },
           {
-            value: "approved",
-            label: t("operator.applicants.approved"),
+            value: "pending_email_verification",
+            label: t("operator.applicants.pendingEmailVerification"),
           },
-          {
-            value: "rejected",
-            label: t("operator.applicants.rejected"),
-          },
+          { value: "approved", label: t("operator.applicants.approved") },
+          { value: "rejected", label: t("operator.applicants.rejected") },
         ],
       },
     ],

@@ -2,13 +2,16 @@ import "server-only";
 
 import type { ServerSession } from "najm-auth/client/server";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { auth } from "./auth";
 
 export type ProductRole = "operator" | "family" | "sponsor";
 
+export const getSession = cache(() => auth.getSession());
+
 export async function requireSession(): Promise<ServerSession> {
-  const session = await auth.getSession();
+  const session = await getSession();
 
   if (!session?.user) {
     redirect("/login");

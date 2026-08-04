@@ -23,6 +23,7 @@ import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { Operator, useKafilRole } from "@/shared/Authorization";
+import { createCardPagination } from "@/lib/tablePagination";
 
 import { ChildCard } from "./ChildCard";
 import { ChildDetails } from "./ChildDetails";
@@ -33,21 +34,19 @@ import {
   DeleteChildDialogContent,
   UpdateChildDialogContent,
 } from "./ChildForms";
-import { useChildren } from "../hooks/useChildren";
+import { useResponsiveChildren } from "../hooks/useChildren";
 import { useChildrenTableColumns } from "../hooks/useChildrenTableColumns";
 import { useChildrenTableFilters } from "../hooks/useChildrenTableFilters";
 import type { ChildRecord } from "../types";
-
-const CHILD_LIST_LIMIT = 100;
 
 export function ChildrenPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const { isExactAdmin, isExactFamily } = useKafilRole();
-  const children = useChildren({ limit: CHILD_LIST_LIMIT, offset: 0 });
+  const children = useResponsiveChildren();
   const columns = useChildrenTableColumns();
   const filters = useChildrenTableFilters();
-  const rows = children.data ?? [];
+  const rows = children.data;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);
 
@@ -136,7 +135,7 @@ export function ChildrenPage() {
     data: rows,
     columns,
     filters,
-    loading: children.isPending,
+    loading: children.loading,
     error: children.error,
     getRowId: (child) => child.id,
     onCreate: isExactFamily ? undefined : openCreate,
@@ -206,7 +205,12 @@ export function ChildrenPage() {
     rowSelection,
     onRowSelectionChange: setRowSelection,
     onBulkDelete: isExactAdmin ? openBulkDelete : undefined,
-    showPagination: false,
+    manualPagination: true,
+    pageCount: children.pageCount,
+    pagination: children.pagination,
+    onPaginationChange: children.onPaginationChange,
+    cardPagination: createCardPagination(children, t),
+    showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {

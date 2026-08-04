@@ -15,7 +15,7 @@ export function useFamilyCatalogCategories(
 ) {
   return useEntityQuery<FamilyCatalogCategory[]>({
     queryKey: familyCatalogKeys.categories,
-    queryFn: listFamilyCatalogCategories,
+    queryFn: () => listFamilyCatalogCategories(),
     ...options,
   });
 }

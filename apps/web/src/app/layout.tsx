@@ -3,7 +3,7 @@ import { Cairo } from "next/font/google";
 import { cookies } from "next/headers";
 import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { PwaRegistration } from "@/components/PwaRegistration";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
 import { normalizeKafilLanguage, normalizeKafilTimeZone } from "@/lib/format";
 import { loadServerAppearance } from "@/lib/serverAppearance";
@@ -46,7 +46,7 @@ export default async function RootLayout({
 }>) {
   const [session, cookieStore, appearance, branding, brandingConfig] =
     await Promise.all([
-      auth.getSession().catch(() => null),
+      getSession().catch(() => null),
       cookies(),
       loadServerAppearance(),
       loadServerBranding(),

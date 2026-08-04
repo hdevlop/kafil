@@ -13,37 +13,25 @@ import { type ContextMenuItem, NButton, type NTableProps } from "najm-kit";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import { Operator, useKafilRole } from "@/shared/Authorization";
+import { createCardPagination } from "@/lib/tablePagination";
 
 import { FamiliesPageIcon } from "../components/FamiliesPage/FamiliesPageIcon";
 import { FamilyCard } from "../components/FamilyCard";
 import type { FamilyRecord } from "../types";
-import { useFamilies, useSponsorFamilyCatalog } from "./useFamilies";
+import { useResponsiveFamilies } from "./useFamilies";
 import { useFamiliesPageDialogs } from "./useFamiliesPageDialogs";
 import { useFamiliesTableColumns } from "./useFamiliesTableColumns";
 import { useFamiliesTableFilters } from "./useFamiliesTableFilters";
 
-const FAMILY_LIST_LIMIT = 100;
-
 export function useFamiliesTableProps() {
   const { t } = useKafilLanguage();
-  const { isExactAdmin, isExactSponsor } = useKafilRole();
-  const operatorFamilies = useFamilies(
-    { limit: FAMILY_LIST_LIMIT, offset: 0 },
-    {},
-    !isExactSponsor,
-  );
-  const sponsorFamilies = useSponsorFamilyCatalog(isExactSponsor);
+  const { isExactAdmin } = useKafilRole();
+  const operatorFamilies = useResponsiveFamilies();
   const columns = useFamiliesTableColumns();
   const filters = useFamiliesTableFilters();
-  const rows: FamilyRecord[] = isExactSponsor
-    ? sponsorFamilies.data ?? []
-    : operatorFamilies.data ?? [];
-  const loading = isExactSponsor
-    ? sponsorFamilies.isPending
-    : operatorFamilies.isPending;
-  const error = isExactSponsor
-    ? sponsorFamilies.error
-    : operatorFamilies.error;
+  const rows: FamilyRecord[] = operatorFamilies.data;
+  const loading = operatorFamilies.loading;
+  const error = operatorFamilies.error;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   const {
@@ -56,8 +44,7 @@ export function useFamiliesTableProps() {
   } = useFamiliesPageDialogs();
 
   const refetch = () => {
-    if (isExactSponsor) void sponsorFamilies.refetch();
-    else void operatorFamilies.refetch();
+    void operatorFamilies.refetch();
   };
 
   const tableProps: NTableProps<FamilyRecord> = {
@@ -67,7 +54,7 @@ export function useFamiliesTableProps() {
     loading,
     error,
     getRowId: (family) => family.id,
-    onCreate: isExactSponsor ? undefined : openCreate,
+    onCreate: openCreate,
     onView: openView,
     onEdit: openEdit,
     onRowClick: openView,
@@ -98,24 +85,22 @@ export function useFamiliesTableProps() {
           },
         ];
 
-        if (!isExactSponsor) {
-          result.push({
-            label: t("operator.families.edit"),
-            icon: Pencil,
-            onSelect: () => openEdit(family),
-          });
-          result.push({
-            label: t(
-              isActive
-                ? "operator.families.deactivate"
-                : "operator.families.reactivate",
-            ),
-            icon: isActive ? UserRoundX : UserRoundCheck,
-            danger: isActive,
-            separatorBefore: true,
-            onSelect: () => openStatus(family),
-          });
-        }
+        result.push({
+          label: t("operator.families.edit"),
+          icon: Pencil,
+          onSelect: () => openEdit(family),
+        });
+        result.push({
+          label: t(
+            isActive
+              ? "operator.families.deactivate"
+              : "operator.families.reactivate",
+          ),
+          icon: isActive ? UserRoundX : UserRoundCheck,
+          danger: isActive,
+          separatorBefore: true,
+          onSelect: () => openStatus(family),
+        });
 
         if (isExactAdmin) {
           result.push({
@@ -137,7 +122,12 @@ export function useFamiliesTableProps() {
     onBulkDelete: isExactAdmin
       ? (ids) => openBulkDelete(ids, () => setRowSelection({}))
       : undefined,
-    showPagination: false,
+    manualPagination: true,
+    pageCount: operatorFamilies.pageCount,
+    pagination: operatorFamilies.pagination,
+    onPaginationChange: operatorFamilies.onPaginationChange,
+    cardPagination: createCardPagination(operatorFamilies, t),
+    showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {

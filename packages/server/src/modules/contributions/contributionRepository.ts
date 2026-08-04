@@ -27,10 +27,15 @@ export interface ContributionPlanFilters {
   status?: "active" | "paused" | "stopped" | "completed";
 }
 
-const ownContributionSelection = {
+export const sponsorContributionSelection = {
   id: contributions.id,
   contributionPlanId: contributions.contributionPlanId,
   supportAssignmentId: contributions.supportAssignmentId,
+  sponsorName: usersTable.name,
+  sponsorImage: usersTable.image,
+  sponsorGender: sponsorProfiles.gender,
+  familyName: familyProfiles.guardianLegalName,
+  familyImage: familyUsers.image,
   amountMinor: contributions.amountMinor,
   currency: contributions.currency,
   paymentMethod: contributions.paymentMethod,
@@ -244,12 +249,18 @@ export class ContributionRepository {
 
   async findOwnById(id: string, userId: string) {
     const [contribution] = await this.db
-      .select(ownContributionSelection)
+      .select(sponsorContributionSelection)
       .from(contributions)
       .innerJoin(
         sponsorProfiles,
         eq(contributions.sponsorProfileId, sponsorProfiles.id),
       )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .innerJoin(
+        familyProfiles,
+        eq(contributions.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id))
       .where(and(eq(contributions.id, id), eq(sponsorProfiles.userId, userId)))
       .limit(1);
     return contribution;
@@ -268,12 +279,18 @@ export class ContributionRepository {
         )
       : eq(sponsorProfiles.userId, userId);
     return this.db
-      .select(ownContributionSelection)
+      .select(sponsorContributionSelection)
       .from(contributions)
       .innerJoin(
         sponsorProfiles,
         eq(contributions.sponsorProfileId, sponsorProfiles.id),
       )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .innerJoin(
+        familyProfiles,
+        eq(contributions.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id))
       .where(condition)
       .orderBy(desc(contributions.submittedAt))
       .limit(limit)

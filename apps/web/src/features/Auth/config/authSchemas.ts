@@ -14,27 +14,9 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().default(false),
 });
 
-export const sponsorRegistrationSchema = z
-  .object({
-    name: z.string().trim().min(2, "Enter your full name"),
-    email: z.email("Enter a valid email address"),
-    password,
-    confirmPassword: z.string(),
-  })
-  .refine((value) => value.password === value.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
 export const forgotPasswordSchema = z.object({
   email: z.email("Enter a valid email address"),
 });
-
-export const sponsorEmailOtpSchema = z.object({
-  code: z.string().regex(/^\d{6}$/, "Enter the six-digit activation code"),
-});
-
-export type SponsorEmailOtpValues = z.infer<typeof sponsorEmailOtpSchema>;
 
 export const resetPasswordSchema = z
   .object({

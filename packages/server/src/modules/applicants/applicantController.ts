@@ -1,17 +1,26 @@
-import { Body, Controller, Get, Params, Post, Query, ResMsg } from "najm-core";
+import { Body, Controller, Get, Params, Post, Query, ResMsg, User } from "najm-core";
 import { authIdentityRateLimitKey } from "najm-auth";
+import {
+  CanList,
+  CanRead,
+  CanUpdate,
+} from "./applicantGuards";
 import { RateLimit } from "najm-rate";
 import { Validate } from "najm-validation";
 
 import {
   type ApplicantEmailOtpConfirmDto,
+  type ApplicantCountQuery,
   type ApplicantIdParams,
   type ApplicantListQuery,
   applicantEmailOtpConfirmDto,
+  applicantCountQuery,
   applicantIdParams,
   applicantListQuery,
   type CreateApplicantInput,
   createApplicantDto,
+  type RejectApplicantInput,
+  rejectApplicantDto,
 } from "./applicantDto";
 import { isAdmin } from "../../config/authConfig";
 import { resolveApplicantRateLimitConfig } from "./applicantRateLimitConfig";
@@ -24,11 +33,22 @@ export class ApplicantController {
   constructor(private readonly applicants: ApplicantService) {}
 
   @Get()
+  @CanList("applicants")
   @isAdmin()
   @Validate({ query: applicantListQuery })
   @ResMsg("applicants.success.retrieved")
   list(@Query() query: ApplicantListQuery) {
     return this.applicants.list(query);
+  }
+
+  @Get("/count")
+  @CanList("applicants")
+  @isAdmin()
+  @Validate({ query: applicantCountQuery })
+  @ResMsg("applicants.success.retrieved")
+  async count(@Query() query: ApplicantCountQuery) {
+    const status = applicantCountQuery.parse(query).status;
+    return { count: await this.applicants.countByStatus(status) };
   }
 
   @Post()
@@ -75,7 +95,33 @@ export class ApplicantController {
     return this.applicants.confirm(body.code);
   }
 
+  @Post("/:id/approve")
+  @CanUpdate("applicants")
+  @isAdmin()
+  @Validate({ params: applicantIdParams })
+  @ResMsg("applicants.success.approved")
+  approve(
+    @Params("id") id: ApplicantIdParams["id"],
+    @User("id") actorUserId: string,
+  ) {
+    return this.applicants.approve(id, actorUserId);
+  }
+
+  @Post("/:id/reject")
+  @CanUpdate("applicants")
+  @isAdmin()
+  @Validate({ params: applicantIdParams, body: rejectApplicantDto })
+  @ResMsg("applicants.success.rejected")
+  reject(
+    @Params("id") id: ApplicantIdParams["id"],
+    @Body() body: RejectApplicantInput,
+    @User("id") actorUserId: string,
+  ) {
+    return this.applicants.reject(id, body, actorUserId);
+  }
+
   @Get("/:id")
+  @CanRead("applicants")
   @isAdmin()
   @Validate({ params: applicantIdParams })
   @ResMsg("applicants.success.retrieved")

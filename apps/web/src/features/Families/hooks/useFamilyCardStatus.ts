@@ -1,9 +1,9 @@
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { fundingProgressPercent } from "@/shared/FundingProgressCard";
 
-import type { FamilyRecord } from "../types";
+import type { FamilyRecord, SponsorFamilyView } from "../types";
 
-export function useFamilyCardStatus(data: FamilyRecord) {
+export function useFamilyCardStatus(data: FamilyRecord | SponsorFamilyView) {
   const { t } = useKafilLanguage();
 
   const fundingStatus = data.funding?.status === "active" ? "active" : "pending";

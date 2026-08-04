@@ -40,22 +40,22 @@ describe("NTable responsive card layouts", () => {
     expect(categoryCard).toContain('sizes="120px"');
   });
 
-  test("catalog card pages load their full data source without pagination controls", () => {
+  test("catalog card pages use server pages with responsive Load more controls", () => {
     const categories = readSource(
       "../src/features/Categories/components/CategoriesPage.tsx",
     );
-    expect(categories).toContain("createOffsetPagination(0, 100)");
-    expect(categories).toContain("showPagination: false");
-    expect(categories).not.toContain("manualPagination: true");
+    expect(categories).toContain("createOffsetPagination(0, 25)");
+    expect(categories).toContain("showPagination: true");
+    expect(categories).toContain("manualPagination: true");
+    expect(categories).toContain("createCardPagination(workspace.paginationController, t)");
 
     const products = readSource(
       "../src/features/Products/components/ProductsPage.tsx",
     );
-    expect(products).toContain("productsPagination = createOffsetPagination(0, 100)");
-    expect(products).toContain("defaultPagination: { pageIndex: 0, pageSize: productsPagination.limit }");
-    expect(products).toContain("showPagination: false");
-    expect(products).not.toContain("manualPagination: true");
-    expect(products).not.toContain("pageSizeOptions:");
+    expect(products).toContain("productsPagination = createOffsetPagination(0, 25)");
+    expect(products).toContain("showPagination: true");
+    expect(products).toContain("manualPagination: true");
+    expect(products).toContain("createCardPagination(workspace.paginationController, t)");
     expect(products).not.toContain('className="hidden justify-between sm:flex"');
     expect(products.match(/xl:grid-cols-6/g)).toHaveLength(1);
     expect(products.match(/2xl:grid-cols-8/g)).toHaveLength(1);

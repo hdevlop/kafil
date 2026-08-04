@@ -6,6 +6,7 @@ import {
 import type { KafilLanguage } from "@/lib/format";
 
 export type TranslationKey = UiTranslationKey;
+export { uiTranslations };
 
 export function getNestedTranslation(
   dictionary: unknown,

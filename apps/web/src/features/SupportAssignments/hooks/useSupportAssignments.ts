@@ -2,11 +2,14 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
   createSupportAssignment,
   endSupportAssignment,
+  listAllSupportAssignments,
   listSupportAssignments,
   listSupportAssignmentSources,
   updateSupportAssignmentNotes,
@@ -14,10 +17,35 @@ import {
 
 import { supportAssignmentKeys } from "./supportAssignmentKeys";
 
-export function useSupportAssignments(pagination: OffsetPagination) {
+export function useSupportAssignments(pagination: OffsetPagination, enabled = true) {
   return useEntityQuery({
     queryKey: supportAssignmentKeys.list(pagination),
     queryFn: () => listSupportAssignments(pagination),
+    enabled,
+  });
+}
+
+export function useAllSupportAssignments(enabled = true) {
+  return useEntityQuery({
+    queryKey: supportAssignmentKeys.full,
+    queryFn: listAllSupportAssignments,
+    enabled,
+  });
+}
+
+export function useInfiniteSupportAssignments(enabled = true) {
+  return useOffsetInfiniteQuery({
+    enabled,
+    queryKey: supportAssignmentKeys.full,
+    fetchPage: listSupportAssignments,
+  });
+}
+
+export function useResponsiveSupportAssignments(enabled = true) {
+  return useResponsiveOffsetList({
+    enabled,
+    queryKey: [...supportAssignmentKeys.all, "responsive"],
+    fetchPage: listSupportAssignments,
   });
 }
 

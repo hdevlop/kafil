@@ -172,8 +172,9 @@ describe("Phase 7 dashboard report boundaries", () => {
       sponsorContributionStatuses: async () => [{ status: "validated", count: 2 }],
       sponsorRecentContributions: async () => [],
       sponsorSupportedFamilies: async () => [{
-        assignmentId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         familyProfileId: "private-household-id",
+        familyName: "Family Atlas",
+        image: "/api/family-images/files/serve/family-demo.webp",
         activeChildCount: 3,
         startedAt: new Date("2025-06-01"),
         fundingTargetMinor: 10000,
@@ -211,7 +212,14 @@ describe("Phase 7 dashboard report boundaries", () => {
     });
     expect(result.memberSince).toBeTruthy();
     expect(result.nextPlannedContribution).toMatchObject({ planId: "plan-1", amountMinor: 500 });
-    expect(result.supportedFamilies).toHaveLength(1);
+      expect(result.supportedFamilies).toHaveLength(1);
+      expect(result.supportedFamilies[0]).toMatchObject({
+        familyName: "Family Atlas",
+        familyReference: "KF-SEHOLDID",
+      });
+    expect(result.supportedFamilies[0].image).toBe(
+      "/api/family-images/files/serve/family-demo.webp",
+    );
     expect(result.supportedFamilies[0].funding).toMatchObject({
       targetMinor: 10000,
       fundedMinor: 7500,
@@ -238,8 +246,9 @@ describe("Phase 7 dashboard report boundaries", () => {
       sponsorContributionStatuses: async () => [],
       sponsorRecentContributions: async () => [],
       sponsorSupportedFamilies: async () => [{
-        assignmentId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         familyProfileId: "household-1",
+        familyName: "Family One",
+        image: null,
         activeChildCount: 0,
         startedAt: new Date("2025-06-01"),
         fundingTargetMinor: 0,
@@ -261,7 +270,7 @@ describe("Phase 7 dashboard report boundaries", () => {
     expect(result.recentSupportedOrders).toHaveLength(0);
   });
 
-  it("excludes sensitive family identity fields from sponsor dashboard JSON", async () => {
+  it("includes the privacy-safe family name while excluding sensitive identity fields", async () => {
     const dashboard = new DashboardService({
       sponsorIdentity: async () => ({ id: "sponsor-profile", displayName: "Sponsor One", createdAt: new Date("2025-01-15") }),
       sponsorSummary: async () => ({
@@ -275,8 +284,9 @@ describe("Phase 7 dashboard report boundaries", () => {
       sponsorContributionStatuses: async () => [],
       sponsorRecentContributions: async () => [],
       sponsorSupportedFamilies: async () => [{
-        assignmentId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         familyProfileId: "household-1",
+        familyName: "Family One",
+        image: null,
         activeChildCount: 2,
         startedAt: new Date("2025-06-01"),
         fundingTargetMinor: 5000,
@@ -301,6 +311,6 @@ describe("Phase 7 dashboard report boundaries", () => {
      expect(json).not.toContain("registrationDate");
      expect(json).not.toContain("supportPriority");
      expect(json).not.toContain("childName");
-    expect(json).not.toContain("familyName");
+    expect(result.supportedFamilies[0]?.familyName).toBe("Family One");
   });
 });

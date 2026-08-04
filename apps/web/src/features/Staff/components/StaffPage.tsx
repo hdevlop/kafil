@@ -17,6 +17,7 @@ import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";
+import { createCardPagination } from "@/lib/tablePagination";
 
 import { StaffCard } from "./StaffCard";
 import { StaffDetails } from "./StaffDetails";
@@ -28,24 +29,19 @@ import {
   StaffStatusDialogContent,
   UpdateStaffDialogContent,
 } from "./StaffForms";
-import { useStaff } from "../hooks/useStaff";
+import { useResponsiveStaff } from "../hooks/useStaff";
 import { useStaffTableColumns } from "../hooks/useStaffTableColumns";
 import { useStaffTableFilters } from "../hooks/useStaffTableFilters";
 import type { StaffRecord } from "../types";
-
-const STAFF_LIST_LIMIT = 100;
 
 export function StaffPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const user = useUser();
-  const staff = useStaff({
-    limit: STAFF_LIST_LIMIT,
-    offset: 0,
-  });
+  const staff = useResponsiveStaff();
   const columns = useStaffTableColumns();
   const tableFilters = useStaffTableFilters();
-  const rows = staff.data?.items ?? [];
+  const rows = staff.data;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);
   const isAdmin = user?.role === "admin";
@@ -158,7 +154,7 @@ export function StaffPage() {
     error: staff.error,
     filters: tableFilters,
     getRowId: (target) => target.id,
-    loading: staff.isPending,
+    loading: staff.loading,
     loadingText: t("operator.staff.loading"),
     menu: {
       row: (target) => {
@@ -236,7 +232,12 @@ export function StaffPage() {
     responsiveCards: true,
     rowSelection,
     showCheckbox: isAdmin,
-    showPagination: false,
+    manualPagination: true,
+    pageCount: staff.pageCount,
+    pagination: staff.pagination,
+    onPaginationChange: staff.onPaginationChange,
+    cardPagination: createCardPagination(staff, t),
+    showPagination: true,
   };
 
   return (

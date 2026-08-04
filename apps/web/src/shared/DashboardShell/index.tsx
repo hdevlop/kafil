@@ -20,7 +20,6 @@ import {
   UsersRound,
 } from "lucide-react";
 import { NButton, NajmScroll, NSidebar, type NavItem } from "najm-kit";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -31,6 +30,10 @@ import {
 } from "@/features/Settings/components/GlobalSettingsSheet";
 import { useKafilBranding } from "@/providers/KafilBrandingProvider";
 import { OrderCartOverlay } from "@/features/OrderCart";
+import {
+  openSponsorProfileSheet,
+  SponsorProfileSheet,
+} from "@/features/Sponsors/components/profile/SponsorProfileSheet";
 import { KafilRoleProvider } from "@/shared/Authorization";
 import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";
 import { DashboardSidebarProvider } from "./DashboardPageHeader";
@@ -161,21 +164,13 @@ function sponsorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
     {
       id: "/family",
       href: "/family",
-      label: t("nav.mySupport"),
+      label: t("nav.families"),
       icon: UsersRound,
       sectionLabel: t("nav.supportAndFinance"),
       sectionIcon: HeartHandshake,
     },
     { id: "/contribution", href: "/contribution", label: t("nav.contributions"), icon: HandCoins },
     { id: "/orders", href: "/orders", label: t("nav.orders"), icon: ClipboardCheck },
-    {
-      id: "/sponsor/profile",
-      href: "/sponsor/profile",
-      label: t("nav.profile"),
-      icon: UserRound,
-      sectionLabel: t("nav.account"),
-      sectionIcon: Settings2,
-    },
   ];
 }
 
@@ -191,13 +186,16 @@ function LinkAdapter({
   onClick?: React.MouseEventHandler;
 }>) {
   return (
-    <Link className={className} href={href} onClick={onClick} prefetch={false}>
+    <a className={className} href={href} onClick={onClick}>
       {children}
-    </Link>
+    </a>
   );
 }
 
-export function getDashboardNavigation(role: string | null | undefined, t: ReturnType<typeof useKafilLanguage>["t"]) {
+export function getDashboardNavigation(
+  role: string | null | undefined,
+  t: ReturnType<typeof useKafilLanguage>["t"],
+) {
   if (role === "admin") return [...operatorItems(t, true, true), ...adminAccessItems(t)];
   if (role === "operator") return operatorItems(t);
   if (role === "family") return familyItems(t);
@@ -292,6 +290,20 @@ export function DashboardShell({
           showHamburgerButton={false}
           footer={
             <div className="space-y-1">
+              {user.role === "sponsor" ? (
+                <NButton
+                  className="w-full justify-start gap-2 lg:justify-center lg:px-0 xl:justify-start xl:px-3"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    openSponsorProfileSheet();
+                  }}
+                >
+                  <UserRound className="size-4" />
+                  <span className="lg:hidden xl:inline">{t("sponsor.profile.open")}</span>
+                </NButton>
+              ) : null}
               {canOpenGlobalSettings(user.role) ? (
                 <NButton
                   className="w-full justify-start gap-2 lg:justify-center lg:px-0 xl:justify-start xl:px-3"
@@ -337,6 +349,7 @@ export function DashboardShell({
             role={user.role}
           />
         ) : null}
+        {user.role === "sponsor" ? <SponsorProfileSheet /> : null}
         <OrderCartOverlay />
       </DashboardSidebarProvider>
     </KafilRoleProvider>

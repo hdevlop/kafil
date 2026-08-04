@@ -224,7 +224,7 @@ export class DashboardRepository {
   async sponsorSummary(sponsorProfileId: string) {
     const [[assignmentRows], [planRows], [contributionRows], [orderRows]] = await Promise.all([
       this.db.select({
-        active: sql<number>`count(*) filter (where ${supportAssignments.status} = 'active' AND ${supportAssignments.childId} IS NULL)::int`,
+        active: sql<number>`count(distinct ${supportAssignments.familyProfileId}) filter (where ${supportAssignments.status} = 'active' AND ${supportAssignments.childId} IS NULL)::int`,
       }).from(supportAssignments).where(eq(supportAssignments.sponsorProfileId, sponsorProfileId)),
       this.sponsorPlanSummary(sponsorProfileId),
       this.sponsorContributionSummary(sponsorProfileId),
@@ -344,10 +344,11 @@ export class DashboardRepository {
   sponsorSupportedFamilies(sponsorProfileId: string) {
     return this.db
       .select({
-        assignmentId: supportAssignments.id,
         familyProfileId: familyProfiles.id,
+        familyName: usersTable.name,
+        image: usersTable.image,
         activeChildCount: sql<number>`(SELECT COUNT(*) FROM ${children} WHERE ${children.familyProfileId} = ${familyProfiles.id} AND ${children.status} = 'active')::int`,
-        startedAt: supportAssignments.startedAt,
+        startedAt: sql<Date>`min(${supportAssignments.startedAt})`,
         fundingTargetMinor: familyProfiles.fundingTargetMinor,
         fundingStatus: familyProfiles.fundingStatus,
         fundingActivatedAt: familyProfiles.fundingActivatedAt,
@@ -355,12 +356,21 @@ export class DashboardRepository {
       })
       .from(supportAssignments)
       .innerJoin(familyProfiles, eq(supportAssignments.familyProfileId, familyProfiles.id))
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
       .where(and(
         eq(supportAssignments.sponsorProfileId, sponsorProfileId),
         eq(supportAssignments.status, "active"),
         isNull(supportAssignments.childId),
       ))
-      .orderBy(asc(supportAssignments.startedAt));
+      .groupBy(
+        familyProfiles.id,
+        usersTable.name,
+        usersTable.image,
+        familyProfiles.fundingTargetMinor,
+        familyProfiles.fundingStatus,
+        familyProfiles.fundingActivatedAt,
+      )
+      .orderBy(sql`min(${supportAssignments.startedAt})`, asc(familyProfiles.id));
   }
 
   sponsorEarliestPlan(sponsorProfileId: string) {

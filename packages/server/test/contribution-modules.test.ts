@@ -19,6 +19,7 @@ import {
   ContributionService,
   ContributionValidator,
   familyContributionSelection,
+  sponsorContributionSelection,
   contributionListQuery,
   createContributionDto,
   createContributionPlanDto,
@@ -179,6 +180,43 @@ describe("Phase 3 contribution contracts", () => {
       "rejectedAt",
       "createdAt",
     ]);
+  });
+
+  it("keeps sponsor contribution rows owner-scoped with safe shared-table fields", async () => {
+    const database = drizzle(
+      new pg.Pool({ connectionString: "postgresql://localhost/not-used" }),
+    );
+    const repository = new ContributionRepository();
+    Object.assign(repository, { db: database });
+
+    const query = repository.listOwn("sponsor-user", 25, 0, {});
+
+    expect(query.toSQL().params).toContain("sponsor-user");
+    expect(Object.keys(sponsorContributionSelection)).toEqual([
+      "id",
+      "contributionPlanId",
+      "supportAssignmentId",
+      "sponsorName",
+      "sponsorImage",
+      "sponsorGender",
+      "familyName",
+      "familyImage",
+      "amountMinor",
+      "currency",
+      "paymentMethod",
+      "externalReference",
+      "status",
+      "submittedAt",
+      "paidAt",
+      "expiresAt",
+      "expiredAt",
+      "validatedAt",
+      "rejectedAt",
+      "createdAt",
+    ]);
+    expect(Object.keys(sponsorContributionSelection)).not.toContain("sponsorEmail");
+    expect(Object.keys(sponsorContributionSelection)).not.toContain("rejectionReason");
+    await database.$client.end();
   });
 });
 

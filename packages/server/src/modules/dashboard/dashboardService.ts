@@ -8,6 +8,7 @@ import type {
   SponsorDashboard,
   SponsorMetrics,
 } from "./dashboardTypes";
+import { sponsorFamilyReference } from "../supportAssignments/supportAssignmentProjection";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 
@@ -142,8 +143,9 @@ export class DashboardService {
         const target = numberValue(row.fundingTargetMinor);
         const funded = numberValue(row.fundedMinor);
         return {
-          assignmentId: row.assignmentId,
-          supportReference: `Support ${row.assignmentId.slice(0, 8)}`,
+          familyReference: sponsorFamilyReference(row.familyProfileId),
+          familyName: row.familyName || "Supported family",
+          image: row.image ?? null,
           activeChildCount: numberValue(row.activeChildCount),
           startedAt: row.startedAt,
           funding: target > 0

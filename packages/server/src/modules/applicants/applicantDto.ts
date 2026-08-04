@@ -9,6 +9,14 @@ const applicantStatusSchema = z.enum([
   "rejected",
 ]);
 
+export const applicantDecisionStatus = z.enum([
+  "pending_email_verification",
+  "pending_review",
+  "approved",
+  "rejected",
+]);
+export type ApplicantDecisionStatus = z.infer<typeof applicantDecisionStatus>;
+
 export const supportedApplicantLocales = ["en", "fr", "ar", "es"] as const;
 export type SupportedApplicantLocale =
   (typeof supportedApplicantLocales)[number];
@@ -25,31 +33,18 @@ const applicantIdentityDto = z.object({
   cin: z
     .string()
     .trim()
-    .min(8)
-    .max(20)
+    .min(8, "CIN must be at least 8 characters")
+    .max(20, "CIN must be at most 20 characters")
     .transform((value) => value.toUpperCase()),
   gender: z.enum(["M", "F", "male", "female"]).transform((value) =>
     value === "male" ? "M" : value === "female" ? "F" : value,
   ),
-  address: z.string().trim().min(1).max(500),
-  dateOfBirth: z.iso.date(),
   locale: z.enum(supportedApplicantLocales).optional().default("en"),
 });
 
-export const createApplicantDto = applicantIdentityDto
-  .extend({
-    password: applicantPasswordDto,
-    confirmPassword: applicantPasswordDto,
-  })
-  .refine((input) => input.password === input.confirmPassword, {
-    message: "Password confirmation does not match",
-    path: ["confirmPassword"],
-  })
-  .transform((input) => {
-    const { confirmPassword, ...rest } = input;
-    void confirmPassword;
-    return rest;
-  });
+export const createApplicantDto = applicantIdentityDto.extend({
+  password: applicantPasswordDto,
+});
 
 export type CreateApplicantDto = z.output<typeof createApplicantDto>;
 export type CreateApplicantInput = z.input<typeof createApplicantDto>;
@@ -73,7 +68,31 @@ export const applicantStatusDto = applicantStatusSchema;
 export const applicantListQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(100),
   offset: z.coerce.number().int().min(0).default(0),
+  status: applicantDecisionStatus.optional(),
+  search: z.string().trim().max(120).optional(),
 });
+
+export const applicantCountQuery = z.object({
+  status: applicantDecisionStatus.default("pending_review"),
+});
+export type ApplicantCountQuery = z.input<typeof applicantCountQuery>;
+
+export const rejectApplicantDto = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(3, "Provide a rejection reason")
+    .max(500, "Rejection reason is too long"),
+});
+export type RejectApplicantDto = z.input<typeof rejectApplicantDto>;
+export type RejectApplicantInput = z.input<typeof rejectApplicantDto>;
+
+export const applicantDecisionActionDto = z.object({
+  id: z.string().uuid(),
+});
+export type ApplicantDecisionActionInput = z.input<
+  typeof applicantDecisionActionDto
+>;
 
 export type ApplicantStatus = z.infer<typeof applicantStatusDto>;
 export type ApplicantListQuery = z.input<typeof applicantListQuery>;

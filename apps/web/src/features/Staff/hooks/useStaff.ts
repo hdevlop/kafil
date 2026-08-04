@@ -2,6 +2,7 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
@@ -54,6 +55,16 @@ export function useStaff(pagination: StaffPagination) {
   return useEntityQuery({
     queryKey: staffKeys.list(query),
     queryFn: () => listStaff(query),
+  });
+}
+
+export function useResponsiveStaff(filters: StaffFilters = {}) {
+  return useResponsiveOffsetList({
+    queryKey: [...staffKeys.all, "responsive", filters],
+    fetchPage: async (pagination) => {
+      const page = await listStaff(toListQuery({ ...pagination, filters }));
+      return page.items;
+    },
   });
 }
 

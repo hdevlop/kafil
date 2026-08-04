@@ -5,10 +5,10 @@ import { NCard, NGrid, NGridItem } from "najm-kit";
 export function SponsorOverviewSkeleton() {
   return (
     <div className="space-y-4">
-      <NGrid cols={1} smCols={2} xlCols={5}>
-        {Array.from({ length: 5 }, (_, index) => (
+      <NGrid cols={1} smCols={2} xlCols={4}>
+        {Array.from({ length: 4 }, (_, index) => (
           <NGridItem key={index} span={1}>
-            <NCard loading className="h-24" />
+            <NCard loading className="h-16" />
           </NGridItem>
         ))}
       </NGrid>

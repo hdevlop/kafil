@@ -22,13 +22,14 @@ test("F8 fills the active form when the runtime setting is enabled", async ({
   const runtimeSettingLoaded = page.waitForResponse(
     "**/api/settings/form-fill",
   );
-  await page.goto("/register/sponsor");
+  await page.goto("/apply", { waitUntil: "domcontentloaded" });
   await runtimeSettingLoaded;
 
   const name = page.getByPlaceholder("Enter your full name");
   const email = page.getByPlaceholder("Enter your email address");
+  const phone = page.getByPlaceholder(/For example: \+212/);
+  const cin = page.getByPlaceholder("For example: AB123456");
   const password = page.getByPlaceholder("At least 8 characters");
-  const confirmPassword = page.getByPlaceholder("Repeat your password");
 
   await expect(name).toHaveValue("");
   await page.keyboard.press("F8");
@@ -38,8 +39,9 @@ test("F8 fills the active form when the runtime setting is enabled", async ({
   await expect(page.locator("html")).toHaveAttribute("data-last-key", "F8");
   await expect(name).not.toHaveValue("");
   await expect(email).toHaveValue(/@/);
+  await expect(phone).not.toHaveValue("");
+  await expect(cin).not.toHaveValue("");
   await expect(password).toHaveValue("KafilDev123");
-  await expect(confirmPassword).toHaveValue("KafilDev123");
 });
 
 test("F8 leaves the form unchanged when the runtime setting is disabled", async ({
@@ -58,7 +60,7 @@ test("F8 leaves the form unchanged when the runtime setting is disabled", async 
     "**/api/settings/form-fill",
   );
 
-  await page.goto("/register/sponsor");
+  await page.goto("/apply", { waitUntil: "domcontentloaded" });
   await runtimeSettingLoaded;
   const name = page.getByPlaceholder("Enter your full name");
   await page.keyboard.press("F8");

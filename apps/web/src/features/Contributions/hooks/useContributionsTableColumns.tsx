@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import { type NTableProps } from "najm-kit";
 
 import { formatKafilDate, formatMad } from "@/lib/format";
@@ -15,7 +15,6 @@ type Column = NTableProps<ContributionListRecord>["columns"][number];
 
 export function useContributionsTableColumns(
   audience: ContributionAudience,
-  renderActions: (record: ContributionListRecord) => ReactNode,
 ) {
   const { t } = useKafilLanguage();
   return useMemo<NTableProps<ContributionListRecord>["columns"]>(() => {
@@ -51,7 +50,7 @@ export function useContributionsTableColumns(
       });
     }
 
-    if (audience === "management") {
+    if (audience === "management" || audience === "sponsor") {
       columns.push({
         accessorKey: "familyName",
         header: t("operator.assignments.family"),
@@ -59,20 +58,6 @@ export function useContributionsTableColumns(
       columns.push({
         accessorKey: "paymentMethod",
         header: t("operator.contributions.paymentMethod"),
-      });
-    }
-
-    if (audience === "sponsor") {
-      columns.push({
-        id: "supportLabel",
-        header: t("sponsor.directory.support"),
-        cell: ({ row }) => {
-          const record = row.original;
-          if ("supportAssignmentId" in record) {
-            return `Support ${record.supportAssignmentId.slice(0, 8)}`;
-          }
-          return "—";
-        },
       });
     }
 
@@ -96,13 +81,6 @@ export function useContributionsTableColumns(
       header: t("operator.contributions.submitted"),
       cell: ({ getValue }) => formatKafilDate(getValue<string>()),
     });
-    columns.push({
-      id: "actions",
-      header: t("common.actions"),
-      enableSorting: false,
-      cell: ({ row }) => renderActions(row.original),
-    });
-
     return columns;
-  }, [audience, renderActions, t]);
+  }, [audience, t]);
 }

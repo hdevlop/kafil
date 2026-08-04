@@ -65,7 +65,6 @@ async function waitUntilReady() {
 const publicPaths = [
   "/",
   "/login",
-  "/register/sponsor",
   "/forgot-password",
   "/reset-password?token=smoke",
 ];

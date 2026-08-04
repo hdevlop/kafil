@@ -7,6 +7,7 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
+import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ApplicantRecord } from "../types";
 
@@ -17,12 +18,17 @@ export function ApplicantCard({ data }: Readonly<{ data: ApplicantRecord }>) {
     <NCard
       embedded
       title={data.name}
-      description={t(`operator.applicants.statusLabel.${data.status}`)}
+      description={
+        <StatusBadge
+          label={t(`operator.applicants.statusLabel.${data.status}`)}
+          size="sm"
+          status={data.status}
+        />
+      }
       className="w-full overflow-hidden transition-colors"
       classNames={{
         title: "text-base font-semibold text-foreground",
-        description: "hidden sm:block",
-        header: "[&>div:last-child]:hidden sm:[&>div:last-child]:flex",
+        description: "mt-1 flex",
       }}
     >
       <NCardMedia

@@ -9,16 +9,15 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
+import { createCardPagination } from "@/lib/tablePagination";
 
 import { SponsorCard } from "./SponsorCard";
 import { SponsorOverviewDialogContent } from "./SponsorOverviewDialogContent";
 import { BulkDeleteSponsorsDialogContent, CreateSponsorDialogContent, DeleteSponsorDialogContent, SponsorStatusDialogContent, UpdateSponsorDialogContent } from "./SponsorForms";
-import { useSponsors } from "../hooks/useSponsors";
+import { useResponsiveSponsors } from "../hooks/useSponsors";
 import { useSponsorsTableColumns } from "../hooks/useSponsorsTableColumns";
 import { useSponsorsTableFilters } from "../hooks/useSponsorsTableFilters";
 import type { SponsorRecord } from "../types";
-
-const SPONSOR_LIST_LIMIT = 100;
 
 function SponsorsIcon({ className }: Readonly<{ className?: string }>) {
   return (
@@ -38,10 +37,10 @@ export function SponsorsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const user = useUser();
-  const sponsors = useSponsors({ limit: SPONSOR_LIST_LIMIT, offset: 0 });
+  const sponsors = useResponsiveSponsors();
   const columns = useSponsorsTableColumns();
   const filters = useSponsorsTableFilters();
-  const rows = sponsors.data ?? [];
+  const rows = sponsors.data;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);
   const isAdmin = user?.role === "admin";
@@ -125,11 +124,12 @@ export function SponsorsPage() {
     data: rows,
     columns,
     filters,
-    loading: sponsors.isPending,
+    loading: sponsors.loading,
     error: sponsors.error,
     getRowId: (sponsor) => sponsor.id,
     onCreate: openCreate,
     onView: openView,
+    onRowClick: openView,
     onEdit: openEdit,
     renderCard: SponsorCard,
     renderEmpty: () => <PageEmptyState icon={SponsorsIcon} action={<NButton onClick={openCreate}>{t("operator.sponsors.create")}</NButton>} title={t("operator.sponsors.emptyTitle")} description={t("operator.sponsors.emptyDescription")} />,
@@ -176,7 +176,12 @@ export function SponsorsPage() {
     rowSelection,
     onRowSelectionChange: setRowSelection,
     onBulkDelete: isAdmin ? openBulkDelete : undefined,
-    showPagination: false,
+    manualPagination: true,
+    pageCount: sponsors.pageCount,
+    pagination: sponsors.pagination,
+    onPaginationChange: sponsors.onPaginationChange,
+    cardPagination: createCardPagination(sponsors, t),
+    showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {

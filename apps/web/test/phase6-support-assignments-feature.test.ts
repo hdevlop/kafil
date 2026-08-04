@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import {
   createSupportAssignmentFormSchema,
@@ -88,5 +89,32 @@ describe("Phase 6C support assignment lifecycle contracts", () => {
       "detail",
       "assignment-1",
     ]);
+  });
+
+  test("uses server pages and explicit card Load more for assignments and contributions", () => {
+    const assignmentsPage = readFileSync(
+      new URL(
+        "../src/features/SupportAssignments/components/SupportAssignmentsPage.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const contributionsPage = readFileSync(
+      new URL(
+        "../src/features/Contributions/components/ContributionsPage.tsx",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    for (const source of [assignmentsPage, contributionsPage]) {
+      expect(source).toContain("showPagination: true");
+      expect(source).toContain("createCardPagination(");
+    }
+
+    expect(assignmentsPage).toContain("useResponsiveSupportAssignments()");
+    expect(contributionsPage).toContain("useInfiniteContributions<ContributionListRecord>");
+    expect(assignmentsPage).not.toContain("useAllSupportAssignments(");
+    expect(contributionsPage).not.toContain("useAllContributions<ContributionListRecord>");
   });
 });

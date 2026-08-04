@@ -336,14 +336,19 @@ describe("Phase 2 support assignment workflow", () => {
   it("returns a directory without private family identity fields", async () => {
     const service = new SupportAssignmentService(
       {
+        findSponsorByUserId: async () => ({ id: "sponsor-profile-1" }),
         listSponsorFamilyCatalog: async () => [
           {
             id: householdId,
-            image: "/images/family.webp",
+            name: "Karima Iraqi",
+            image: `${"/api/family-images/files/serve/"}family.webp`,
+            supportPriority: "normal" as const,
             fundingStatus: "pending_funding" as const,
             fundingTargetMinor: 750_000,
             fundingActivatedAt: null,
             activeChildCount: 2,
+            activeSponsorCount: 4,
+            assignmentId: "assignment-1",
           },
         ],
       } as unknown as SupportAssignmentRepository,
@@ -363,14 +368,18 @@ describe("Phase 2 support assignment workflow", () => {
       } as never,
     );
 
-    const catalog = await service.listSponsorFamilyCatalog({});
+    const catalog = await service.listSponsorFamilyCatalog("sponsor-user-1", {});
 
     expect(catalog).toEqual([
       expect.objectContaining({
         id: householdId,
-        image: null,
-        reference: "Family 00000000",
+        name: "Karima Iraqi",
+        image: "/api/family-images/files/serve/family.webp",
+        supportPriority: "normal",
+        reference: "KF-00000042",
         activeChildCount: 2,
+        activeSponsorCount: 4,
+        assignmentId: "assignment-1",
       }),
     ]);
     expect(JSON.stringify(catalog)).not.toContain("exactAddress");
@@ -378,7 +387,6 @@ describe("Phase 2 support assignment workflow", () => {
      expect(JSON.stringify(catalog)).not.toContain("guardianDateOfBirth");
      expect(JSON.stringify(catalog)).not.toContain("housingSituation");
      expect(JSON.stringify(catalog)).not.toContain("registrationDate");
-     expect(JSON.stringify(catalog)).not.toContain("supportPriority");
   });
 
   it("returns a sponsor-safe family projection only", async () => {
@@ -414,7 +422,7 @@ describe("Phase 2 support assignment workflow", () => {
         startedAt: expect.any(Date),
       },
       family: {
-        reference: "Family 12345678",
+        reference: "KF-00000000",
         activeChildCount: 2,
       },
     });

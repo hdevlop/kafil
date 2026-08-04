@@ -142,7 +142,7 @@ describe("Kafil auth definitions", () => {
     expect(guardName("getSponsor")).toBe("SponsorRoleGuard");
   });
 
-  it("keeps protected image serve routes on their explicit role boundaries", () => {
+  it("keeps image routes on their explicit public and protected boundaries", () => {
     const guardName = (controller: object, method: string) =>
       getGuardMetadata(controller as never, method)[0]?.guardClass.name;
 
@@ -158,8 +158,12 @@ describe("Kafil auth definitions", () => {
     expect(guardName(ChildImageController, "serve")).toBe(
       "ChildImageViewerRoleGuard",
     );
-    expect(guardName(FamilyImageController, "serve")).toBe(
-      "FamilyImageViewerRoleGuard",
+    expect(getGuardMetadata(FamilyImageController, "serve")).toEqual([]);
+    expect(guardName(FamilyImageController, "upload")).toBe(
+      "OperatorRoleGuard",
+    );
+    expect(guardName(FamilyImageController, "remove")).toBe(
+      "OperatorRoleGuard",
     );
   });
 });

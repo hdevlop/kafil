@@ -1,6 +1,7 @@
 "use client";
 
 import { HandCoins, MessageSquareText } from "lucide-react";
+import type { ReactNode } from "react";
 import {
   FormInput,
   NButton,
@@ -25,12 +26,32 @@ const sponsorContributionSchema = z.object({
   supportAssignmentId: z.string().min(1),
   amountMad: z.coerce.number().positive().max(1_000_000),
   kind: z.enum(["monthly", "one_time"]),
+  paymentMethod: z.enum([
+    "cash",
+    "bank_transfer",
+    "cheque",
+    "mobile_transfer",
+    "other",
+  ]),
 });
 
 const planReasonSchema = z.object({ reason: z.string().trim().min(1).max(500) });
 
 type SponsorContributionValues = z.infer<typeof sponsorContributionSchema>;
 type PlanAction = "pause" | "resume" | "stop";
+
+function ContributionFormSurface({
+  children,
+  title,
+  withCard,
+}: Readonly<{
+  children: ReactNode;
+  title: ReactNode;
+  withCard: boolean;
+}>) {
+  if (!withCard) return children;
+  return <NCard title={title}>{children}</NCard>;
+}
 
 function toMinor(amountMad: number) {
   return Math.round(amountMad * 100);
@@ -79,7 +100,17 @@ function PlanReasonDialogContent({
 
 export function SponsorContributionWorkspace({
   initialAssignmentId = "",
-}: Readonly<{ initialAssignmentId?: string }>) {
+  hideFunding = false,
+  lockAssignment = false,
+  onCompleted,
+  showPlans = true,
+}: Readonly<{
+  initialAssignmentId?: string;
+  hideFunding?: boolean;
+  lockAssignment?: boolean;
+  onCompleted?: () => void;
+  showPlans?: boolean;
+}>) {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const { isExactSponsor } = useKafilRole();
@@ -90,6 +121,7 @@ export function SponsorContributionWorkspace({
       supportAssignmentId: initialAssignmentId,
       amountMad: 0,
       kind: "monthly",
+      paymentMethod: "bank_transfer",
     },
   });
   const assignmentId = form.watch("supportAssignmentId");
@@ -134,8 +166,9 @@ export function SponsorContributionWorkspace({
     await workspace.submit.mutateAsync({
       supportAssignmentId: values.supportAssignmentId,
       amountMinor: toMinor(values.amountMad),
-      paymentMethod: "manual",
+      paymentMethod: values.paymentMethod,
     });
+    onCompleted?.();
   }
 
   async function createPlan() {
@@ -146,6 +179,7 @@ export function SponsorContributionWorkspace({
       amountMinor: toMinor(values.amountMad),
       kind: values.kind,
     });
+    onCompleted?.();
   }
 
   function openPlanAction(plan: SponsorContributionPlan, action: PlanAction) {
@@ -163,56 +197,39 @@ export function SponsorContributionWorkspace({
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
-      <NCard title={t("sponsor.contributions.createTitle")}>
+    <div
+      className={
+        showPlans
+          ? "grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]"
+          : "min-w-0"
+      }
+    >
+      <ContributionFormSurface
+        title={t("sponsor.contributions.createTitle")}
+        withCard={showPlans}
+      >
         <NForm
           id="sponsor-contribution-form"
           schema={sponsorContributionSchema}
           form={form}
           onSubmit={submit}
         >
-          <NFormSectionHeader
-            icon={HandCoins}
-            title={t("sponsor.contributions.createTitle")}
-          />
-          <div className="grid gap-4 md:grid-cols-3">
-            <FormInput
-              name="supportAssignmentId"
-              type="combobox"
-              formLabel={t("sponsor.contributions.chooseSupport")}
-              placeholder={t("sponsor.contributions.chooseSupport")}
-              searchPlaceholder={t("sponsor.contributions.chooseSupport")}
-              emptyMessage={t("sponsor.contributions.none")}
-              items={supportOptions}
-              icon="HeartHandshake"
-              disabled={!isExactSponsor || workspace.support.isPending}
-              required
+          {showPlans ? (
+            <NFormSectionHeader
+              icon={HandCoins}
+              title={t("sponsor.contributions.createTitle")}
             />
-            <FormInput
-              name="amountMad"
-              type="number"
-              formLabel={t("sponsor.contributions.amount")}
-              icon="CircleDollarSign"
-              disabled={!isExactSponsor}
-              required
-            />
-            <FormInput
-              name="kind"
-              type="select"
-              formLabel={t("sponsor.contributions.monthlyPlan")}
-              items={[
-                { value: "monthly", label: t("sponsor.contributions.monthlyPlan") },
-                { value: "one_time", label: t("sponsor.contributions.oneTimePlan") },
-              ]}
-              icon="CalendarClock"
-              disabled={!isExactSponsor}
-              required
-            />
-          </div>
-          {selectedFunding ? (
+          ) : null}
+          {!hideFunding && lockAssignment && selectedFunding ? (
             <div className="space-y-2 bg-muted/40 p-3">
               <FundingProgressBar inline progress={selectedFunding} />
-              <p className={amountTooHigh || closedByFunding ? "text-sm font-medium text-destructive" : "text-sm text-muted-foreground"}>
+              <p
+                className={
+                  amountTooHigh || closedByFunding
+                    ? "text-sm font-medium text-destructive"
+                    : "text-sm text-muted-foreground"
+                }
+              >
                 {closedByFunding
                   ? t(
                       selectedFunding.capacityStatus === "funded"
@@ -221,7 +238,9 @@ export function SponsorContributionWorkspace({
                     )
                   : amountTooHigh
                     ? t("sponsor.contributions.amountTooHigh", {
-                        amount: formatMad(selectedFunding.availableToContributeMinor),
+                        amount: formatMad(
+                          selectedFunding.availableToContributeMinor,
+                        ),
                       })
                     : t("sponsor.contributions.availableAmount", {
                         amount: formatMad(selectedFunding.availableToContributeMinor),
@@ -229,16 +248,126 @@ export function SponsorContributionWorkspace({
               </p>
             </div>
           ) : null}
-          <div className="flex flex-wrap justify-end gap-2 pt-4">
+          <div
+            className={
+              lockAssignment
+                ? "grid grid-cols-1 gap-4"
+                : "grid gap-4 md:grid-cols-3"
+            }
+          >
+            {!lockAssignment ? (
+              <FormInput
+                name="supportAssignmentId"
+                type="combobox"
+                formLabel={t("sponsor.contributions.chooseSupport")}
+                placeholder={t("sponsor.contributions.chooseSupport")}
+                searchPlaceholder={t("sponsor.contributions.chooseSupport")}
+                emptyMessage={t("sponsor.contributions.none")}
+                items={supportOptions}
+                icon="HeartHandshake"
+                disabled={!isExactSponsor || workspace.support.isPending}
+                required
+              />
+            ) : null}
+            <FormInput
+              name="amountMad"
+              type="number"
+              formLabel={t("sponsor.contributions.amount")}
+              icon="CircleDollarSign"
+              disabled={!isExactSponsor}
+              required
+            />
+            {lockAssignment ? (
+              <FormInput
+                name="paymentMethod"
+                type="select"
+                formLabel={t("operator.contributions.paymentMethod")}
+                items={[
+                  { value: "cash", label: t("operator.contributions.cash") },
+                  {
+                    value: "bank_transfer",
+                    label: t("operator.contributions.bankTransfer"),
+                  },
+                  { value: "cheque", label: t("operator.contributions.cheque") },
+                  {
+                    value: "mobile_transfer",
+                    label: t("operator.contributions.mobileTransfer"),
+                  },
+                  { value: "other", label: t("operator.contributions.other") },
+                ]}
+                icon="CreditCard"
+                disabled={!isExactSponsor}
+                required
+              />
+            ) : null}
+            {!lockAssignment ? (
+              <FormInput
+                name="kind"
+                type="select"
+                formLabel={t("sponsor.contributions.monthlyPlan")}
+                items={[
+                  {
+                    value: "monthly",
+                    label: t("sponsor.contributions.monthlyPlan"),
+                  },
+                  {
+                    value: "one_time",
+                    label: t("sponsor.contributions.oneTimePlan"),
+                  },
+                ]}
+                icon="CalendarClock"
+                disabled={!isExactSponsor}
+                required
+              />
+            ) : null}
+          </div>
+          {!hideFunding && !lockAssignment && selectedFunding ? (
+            <div className="space-y-2 bg-muted/40 p-3">
+              <FundingProgressBar inline progress={selectedFunding} />
+              <p
+                className={
+                  amountTooHigh || closedByFunding
+                    ? "text-sm font-medium text-destructive"
+                    : "text-sm text-muted-foreground"
+                }
+              >
+                {closedByFunding
+                  ? t(
+                      selectedFunding.capacityStatus === "funded"
+                        ? "sponsor.contributions.targetReached"
+                        : "sponsor.contributions.coveredByPending",
+                    )
+                  : amountTooHigh
+                    ? t("sponsor.contributions.amountTooHigh", {
+                        amount: formatMad(
+                          selectedFunding.availableToContributeMinor,
+                        ),
+                      })
+                    : t("sponsor.contributions.availableAmount", {
+                        amount: formatMad(selectedFunding.availableToContributeMinor),
+                      })}
+              </p>
+            </div>
+          ) : null}
+          <div
+            className={
+              lockAssignment
+                ? "pt-4"
+                : "flex flex-wrap justify-end gap-2 pt-4"
+            }
+          >
+            {!lockAssignment ? (
+              <NButton
+                type="button"
+                variant="outline"
+                disabled={commandDisabled || workspace.createPlan.isPending}
+                onClick={() => void createPlan()}
+              >
+                {t("action.createPlan")}
+              </NButton>
+            ) : null}
             <NButton
-              type="button"
-              variant="outline"
-              disabled={commandDisabled || workspace.createPlan.isPending}
-              onClick={() => void createPlan()}
-            >
-              {t("action.createPlan")}
-            </NButton>
-            <NButton
+              className={lockAssignment ? "w-full" : undefined}
               type="submit"
               disabled={commandDisabled || workspace.submit.isPending}
             >
@@ -246,9 +375,9 @@ export function SponsorContributionWorkspace({
             </NButton>
           </div>
         </NForm>
-      </NCard>
+      </ContributionFormSurface>
 
-      <NCard title={t("sponsor.contributions.plans")}>
+      {showPlans ? <NCard title={t("sponsor.contributions.plans")}>
         {workspace.plans.data?.length ? (
           <div className="space-y-3">
             {workspace.plans.data.map((plan) => (
@@ -299,7 +428,7 @@ export function SponsorContributionWorkspace({
             {t("sponsor.contributions.none")}
           </p>
         )}
-      </NCard>
+      </NCard> : null}
     </div>
   );
 }

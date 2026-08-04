@@ -12,7 +12,11 @@ import {
   User,
 } from "najm-core";
 
-import { isOperator, isSponsorImageViewer, ROLES } from "../../config/authConfig";
+import {
+  isSponsorImageManager,
+  isSponsorImageViewer,
+  ROLES,
+} from "../../config/authConfig";
 import {
   removeManagedImage,
   serveManagedImage,
@@ -48,13 +52,25 @@ export class SponsorImageAccess {
     }
     HttpError.forbidden("Sponsor image access denied");
   }
+
+  async assertCanDelete(fileName: string, requester: { role: string }) {
+    const role = requester.role?.toLowerCase();
+    if (role === ROLES.ADMIN || role === ROLES.OPERATOR) return;
+    if (role === ROLES.SPONSOR) {
+      const referenced = await this.sponsors.findByImage(
+        `${SPONSOR_IMAGE_SERVE_PREFIX}${fileName}`,
+      );
+      if (!referenced) return;
+    }
+    HttpError.forbidden("Sponsor image deletion denied");
+  }
 }
 
 @Controller("/sponsor-images")
 export class SponsorImageController {
   constructor(private readonly access: SponsorImageAccess) {}
   @Post("/files/:fileName")
-  @isOperator()
+  @isSponsorImageManager()
   @ResMsg("sponsors.success.updated")
   async upload(
     @Params("fileName") rawFileName: string,
@@ -85,9 +101,14 @@ export class SponsorImageController {
   }
 
   @Delete("/files/:fileName")
-  @isOperator()
+  @isSponsorImageManager()
   @ResMsg("sponsors.success.deleted")
-  async remove(@Params("fileName") rawFileName: string) {
+  async remove(
+    @Params("fileName") rawFileName: string,
+    @User("role") role: string,
+  ) {
+    const fileName = decodeManagedImageFileName(rawFileName);
+    await this.access.assertCanDelete(fileName, { role });
     return removeManagedImage("sponsor-images", rawFileName);
   }
 }

@@ -1,18 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import {
-  useProducts,
+  useResponsiveProducts,
   useProductCategories,
   useProductCommands,
 } from "@/features/Products/hooks/useProducts";
 import {
-  useFamilyCatalogProducts,
   useFamilyCatalogCategories,
 } from "@/features/Products/hooks/useFamilyCatalog";
 import type { OffsetPagination } from "@/lib/pagination";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import { listFamilyCatalogProducts } from "@/services/familyCatalogApi";
+import { familyCatalogKeys } from "./familyCatalogKeys";
 import type { ProductRecord } from "@/features/Products/types";
 import type {
   FamilyCatalogProduct,
@@ -44,6 +46,7 @@ export interface ProductsWorkspace {
   setFilters: (next: ProductsWorkspaceFilters) => void;
   managementActions?: ReturnType<typeof useProductCommands>;
   canMutate: boolean;
+  paginationController: ReturnType<typeof useResponsiveProducts>;
 }
 
 const FAMILY_PAGE_SIZE = 12;
@@ -61,74 +64,67 @@ export function useProductsWorkspace(
     }),
     [filters.search, filters.status, filters.categoryId],
   );
-  const filterKey = JSON.stringify({
-    ...stableFilters,
-    family: isExactFamily,
-    limit: pagination.limit,
-  });
-  const [paginationState, setPaginationState] = useState({
-    filterKey,
-    pagination,
-  });
-  const internalPagination =
-    paginationState.filterKey === filterKey
-      ? paginationState.pagination
-      : pagination;
-  const setInternalPagination = (next: OffsetPagination) => {
-    setPaginationState({ filterKey, pagination: next });
-  };
-
-  const managementProducts = useProducts(
-    internalPagination,
+  const managementProducts = useResponsiveProducts(
     {
       categoryId: stableFilters.categoryId,
       status: stableFilters.status,
       search: stableFilters.search,
     },
-    { enabled: !isExactFamily },
+    !isExactFamily,
   );
   const managementCategories = useProductCategories(!isExactFamily);
   const managementActions = useProductCommands();
 
-  const familyProducts = useFamilyCatalogProducts({
-    limit: internalPagination.limit || FAMILY_PAGE_SIZE,
-    offset: internalPagination.offset,
-    categoryId: stableFilters.categoryId,
-    search: stableFilters.search,
-  }, { enabled: isExactFamily });
+  const familyProducts = useResponsiveOffsetList({
+    enabled: isExactFamily,
+    pageSize: FAMILY_PAGE_SIZE,
+    queryKey: [...familyCatalogKeys.products({
+      limit: FAMILY_PAGE_SIZE,
+      offset: 0,
+      categoryId: stableFilters.categoryId,
+      search: stableFilters.search,
+    }), "responsive"],
+    fetchPage: (page) => listFamilyCatalogProducts({
+      ...page,
+      categoryId: stableFilters.categoryId,
+      search: stableFilters.search,
+    }),
+  });
   const familyCategories = useFamilyCatalogCategories({
     enabled: isExactFamily,
   });
 
   if (isExactFamily) {
-    const products = (familyProducts.data ?? []) as FamilyCatalogProduct[];
+    const products = familyProducts.data as FamilyCatalogProduct[];
     return {
       mode: "family",
       products,
       categories: familyCategories.data ?? [],
-      pagination: internalPagination,
-      setPagination: setInternalPagination,
-      loading: familyProducts.isPending,
+      pagination,
+      setPagination: () => undefined,
+      loading: familyProducts.loading,
       error: familyProducts.error,
       refetch: familyProducts.refetch,
       filters: stableFilters,
       setFilters: () => undefined,
       canMutate: false,
+      paginationController: familyProducts as ReturnType<typeof useResponsiveProducts>,
     };
   }
 
   return {
     mode: "management",
-    products: managementProducts.data ?? [],
+    products: managementProducts.data,
     categories: managementCategories.data ?? [],
-    pagination: internalPagination,
-    setPagination: setInternalPagination,
-    loading: managementProducts.isPending,
+    pagination,
+    setPagination: () => undefined,
+    loading: managementProducts.loading,
     error: managementProducts.error,
     refetch: managementProducts.refetch,
     filters: stableFilters,
     setFilters: () => undefined,
     managementActions,
     canMutate: true,
+    paginationController: managementProducts,
   };
 }

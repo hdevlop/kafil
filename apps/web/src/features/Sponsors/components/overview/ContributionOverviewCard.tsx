@@ -16,6 +16,7 @@ function formatChartMonth(month: string, language: KafilLanguage) {
 
 export function ContributionOverviewCard({
   data,
+  emptyLabel,
   icon,
   language,
   series,
@@ -23,6 +24,7 @@ export function ContributionOverviewCard({
   valueFormatter,
 }: Readonly<{
   data: ContributionTrendPoint[];
+  emptyLabel?: string;
   icon: LucideIcon;
   language: KafilLanguage;
   series: ChartSeries[];
@@ -37,9 +39,18 @@ export function ContributionOverviewCard({
     x: data.length <= 1 ? 50 : 3 + (index / (data.length - 1)) * 94,
     y: 94 - (Number(point[key] ?? 0) / maximum) * 82,
   }));
+  const hasActivity = data.some((point) =>
+    series.some((item) => Number(point[item.key] ?? 0) > 0),
+  );
 
   return (
-    <NCard className="h-full" icon={icon} title={title}>
+    <NCard
+      className="h-full"
+      empty={Boolean(emptyLabel) && !hasActivity}
+      emptyText={emptyLabel}
+      icon={icon}
+      title={title}
+    >
       <NCardAction>
         <div className="flex flex-wrap gap-3">
           {series.map((item) => (

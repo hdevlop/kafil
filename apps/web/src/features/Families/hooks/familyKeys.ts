@@ -1,6 +1,9 @@
 import { entityKeys } from "@/hooks/queryKeys";
 import type { OffsetPagination } from "@/lib/pagination";
-import type { ListFamiliesFilters } from "@/services/familyApi";
+import type {
+  ListFamiliesFilters,
+  SponsorFamilyCatalogFilters,
+} from "@/services/familyApi";
 
 export const familyKeys = {
   all: entityKeys.all("families"),
@@ -15,8 +18,8 @@ export const familyKeys = {
       ...(filters.status ? { status: filters.status } : {}),
     });
   },
-  sponsorCatalog() {
-    return ["families", "sponsor-catalog"] as const;
+  sponsorCatalog(filters: SponsorFamilyCatalogFilters = {}) {
+    return ["families", "sponsor-catalog", filters] as const;
   },
   detail(id: string) {
     return entityKeys.detail("families", id);

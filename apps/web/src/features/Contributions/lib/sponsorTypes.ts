@@ -17,9 +17,12 @@ export interface SponsorSupportSummary {
 
 export interface SponsorFamilyCatalogEntry {
   id: string;
+  name: string;
   image: string | null;
+  supportPriority: "normal" | "high" | "urgent";
   reference: string;
   activeChildCount: number;
+  activeSponsorCount: number;
   funding: FamilyFundingProgress | null;
 }
 

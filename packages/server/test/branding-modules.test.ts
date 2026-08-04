@@ -319,9 +319,9 @@ describe("branding service", () => {
   });
 
   it("uses the factory sidebar expanded path as the auth logo fallback", async () => {
-    const customExpanded = brandingAssetPath(
-      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png",
-    );
+    const customExpandedName = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png";
+    const customExpanded = brandingAssetPath(customExpandedName);
+    await seedFile(customExpandedName, PNG_BYTES);
     const { service } = buildService({
       find: async () => ({
         sidebarLogoExpandedPath: customExpanded,
@@ -338,6 +338,23 @@ describe("branding service", () => {
       authLogoPath: customExpanded,
       authHeroImagePath: FACTORY_AUTH_HERO_IMAGE_PATH,
       revision: 4,
+    });
+  });
+
+  it("projects factory fallbacks when stored branding files are missing", async () => {
+    const { service } = buildService({
+      find: async () => ({
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: validCollapsedPath,
+        authLogoPath: validAuthLogoPath,
+        authHeroImagePath: validHeroPath,
+        brandingRevision: 11,
+      }),
+    });
+
+    await expect(service.get()).resolves.toEqual({
+      ...getFactoryBranding(),
+      revision: 11,
     });
   });
 
@@ -873,6 +890,7 @@ describe("branding service", () => {
   it("returns an admin config with customPath and resolvedPath projections", async () => {
     const committedName = "cccccccc-cccc-4ccc-8ccc-cccccccccccc.png";
     const committedPath = brandingAssetPath(committedName);
+    await seedFile(committedName, PNG_BYTES);
     const { service } = buildService({
       find: async () => ({
         sidebarLogoExpandedPath: committedPath,

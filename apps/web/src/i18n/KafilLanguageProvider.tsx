@@ -1,40 +1,18 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { I18nProvider, useTranslation } from "najm-i18n/react";
+import { useCallback, useMemo } from "react";
 
 import type { KafilLanguage } from "@/lib/format";
-import { getUiTranslation, type TranslationKey } from "./translations";
+import { uiTranslations, type TranslationKey } from "./translations";
 
 type TranslationValues = Record<string, string | number>;
-
-interface KafilLanguageContextValue {
-  language: KafilLanguage;
-  setLanguage: (language: KafilLanguage) => Promise<void>;
-  t: (key: TranslationKey, values?: TranslationValues) => string;
-}
-
-const KafilLanguageContext = createContext<KafilLanguageContextValue | null>(null);
-
-function interpolate(template: string, values?: TranslationValues) {
-  if (!values) return template;
-  return template.replace(/\{(\w+)\}/g, (placeholder, name: string) =>
-    Object.prototype.hasOwnProperty.call(values, name)
-      ? String(values[name])
-      : placeholder,
-  );
-}
 
 export function KafilLanguageProvider({
   children,
   initialLanguage,
 }: Readonly<{ children: React.ReactNode; initialLanguage: KafilLanguage }>) {
-  const [language, setLanguageState] = useState(initialLanguage);
-  const router = useRouter();
-
-  const setLanguage = useCallback(async (nextLanguage: KafilLanguage) => {
-    if (nextLanguage === language) return;
-
+  const persistLanguage = useCallback(async (nextLanguage: KafilLanguage) => {
     const response = await fetch("/api/ui-language", {
       body: JSON.stringify({ language: nextLanguage }),
       headers: { "content-type": "application/json" },
@@ -42,24 +20,35 @@ export function KafilLanguageProvider({
     });
 
     if (!response.ok) throw new Error("Could not update language preference.");
+  }, []);
 
-    document.documentElement.dir = nextLanguage === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = nextLanguage;
-    setLanguageState(nextLanguage);
-    router.refresh();
-  }, [language, router]);
-
-  const value = useMemo<KafilLanguageContextValue>(() => ({
-    language,
-    setLanguage,
-    t: (key, values) => interpolate(getUiTranslation(language, key), values),
-  }), [language, setLanguage]);
-
-  return <KafilLanguageContext.Provider value={value}>{children}</KafilLanguageContext.Provider>;
+  return (
+    <I18nProvider
+      translations={uiTranslations}
+      initialLanguage={initialLanguage}
+      defaultLanguage="en"
+      onLanguageChange={persistLanguage}
+    >
+      {children}
+    </I18nProvider>
+  );
 }
 
 export function useKafilLanguage() {
-  const context = useContext(KafilLanguageContext);
-  if (!context) throw new Error("useKafilLanguage must be used within KafilLanguageProvider.");
-  return context;
+  const { language, t, changeLanguage } = useTranslation<
+    TranslationKey,
+    KafilLanguage
+  >();
+
+  const setLanguage = useCallback(async (nextLanguage: KafilLanguage) => {
+    if (nextLanguage === language) return;
+    const changed = await changeLanguage(nextLanguage);
+    if (!changed) throw new Error(`Unsupported language: ${nextLanguage}`);
+  }, [changeLanguage, language]);
+
+  return useMemo(() => ({
+    language,
+    setLanguage,
+    t: t as (key: TranslationKey, values?: TranslationValues) => string,
+  }), [language, setLanguage, t]);
 }

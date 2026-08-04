@@ -1,15 +1,14 @@
 "use client";
 
 import { CalendarClock, CreditCard, House, Timer } from "lucide-react";
-import { NCard, NCardAction, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
-import type { ReactNode } from "react";
+import { NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
 
 import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
-import { Operator, Sponsor, useKafilRole } from "@/shared/Authorization";
+import { useKafilRole } from "@/shared/Authorization";
 
 export interface ContributionCardData {
   amountMinor: number;
@@ -28,8 +27,7 @@ export interface ContributionCardData {
 
 export function ContributionCard({
   data,
-  actions,
-}: Readonly<{ data: ContributionCardData; actions?: ReactNode }>) {
+}: Readonly<{ data: ContributionCardData }>) {
   const { t } = useKafilLanguage();
   const { isExactSponsor } = useKafilRole();
   const isPending = data.status === "pending";
@@ -47,35 +45,21 @@ export function ContributionCard({
           classNames={{ avatar: "bg-muted" }}
         />
       </NCardMedia>
-      <NCardAction>
-        {actions}
-      </NCardAction>
       <NCardSection>
-        <Operator>
-          {data.paymentMethod ? (
-            <NCardInfo
-              icon={CreditCard}
-              label={t("operator.contributions.paymentMethod")}
-              value={data.paymentMethod}
-            />
-          ) : null}
-          {data.familyName ? (
-            <NCardInfo
-              icon={House}
-              label={t("operator.assignments.family")}
-              value={data.familyName}
-            />
-          ) : null}
-        </Operator>
-        <Sponsor>
-          {data.supportLabel ? (
-            <NCardInfo
-              icon={House}
-              label={t("sponsor.directory.support")}
-              value={data.supportLabel}
-            />
-          ) : null}
-        </Sponsor>
+        {data.paymentMethod ? (
+          <NCardInfo
+            icon={CreditCard}
+            label={t("operator.contributions.paymentMethod")}
+            value={data.paymentMethod}
+          />
+        ) : null}
+        {data.familyName ? (
+          <NCardInfo
+            icon={House}
+            label={t("operator.assignments.family")}
+            value={data.familyName}
+          />
+        ) : null}
         {isPending && data.expiresAt ? (
           <NCardInfo
             icon={Timer}

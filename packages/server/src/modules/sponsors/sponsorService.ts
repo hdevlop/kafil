@@ -10,6 +10,7 @@ import { Transaction } from "najm-database";
 import { AuditService } from "../audit/auditService";
 import { DashboardService } from "../dashboard/dashboardService";
 import { generateInitialPassword } from "../access/initialPassword";
+import { removeManagedImage } from "../../storage/managedImageController";
 import {
   type CreateOwnSponsorProfileDto,
   createOwnSponsorProfileDto,
@@ -26,6 +27,7 @@ import {
 } from "./sponsorDto";
 import { SponsorRepository } from "./sponsorRepository";
 import { SponsorValidator } from "./sponsorValidator";
+import { SPONSOR_IMAGE_SERVE_PREFIX } from "./sponsorImageController";
 
 const SPONSOR_ROLE = "sponsor";
 
@@ -147,13 +149,14 @@ export class SponsorService {
 
   @Transaction({ retries: 2 })
   async createOwn(userId: string, data: CreateOwnSponsorProfileDto) {
-    const input = createOwnSponsorProfileDto.parse(data);
+    const { image, ...input } = createOwnSponsorProfileDto.parse(data);
     await this.validator.ensureProfileMissing(userId);
     await this.validator.ensurePhoneUnique(input.phone, undefined, userId);
     await this.validator.ensureCinUnique(input.cin);
     await this.userRecords?.update(userId, {
       phone: input.phone,
       phoneVerified: false,
+      image: image ?? null,
     });
     return this.sponsors.create({
       ...input,
@@ -165,20 +168,41 @@ export class SponsorService {
   @Transaction({ retries: 2 })
   async updateOwn(userId: string, data: UpdateOwnSponsorProfileDto) {
     const sponsor = await this.ensureOwn(userId);
-    const input = updateOwnSponsorProfileDto.parse(data);
+    const { image, ...input } = updateOwnSponsorProfileDto.parse(data);
     await this.validator.ensurePhoneUnique(
       input.phone,
       sponsor.id,
       sponsor.userId,
     );
     await this.validator.ensureCinUnique(input.cin, sponsor.id);
-    if (input.phone !== undefined) {
+    if (input.phone !== undefined || image !== undefined) {
       await this.userRecords?.update(sponsor.userId, {
-        phone: input.phone,
-        phoneVerified: false,
+        ...(input.phone !== undefined
+          ? { phone: input.phone, phoneVerified: false }
+          : {}),
+        ...(image !== undefined ? { image: image ?? null } : {}),
       });
     }
-    return this.sponsors.update(sponsor.id, input);
+    const profile = await this.sponsors.update(sponsor.id, input);
+    return {
+      profile,
+      replacedImagePath:
+        image !== undefined && sponsor.image && sponsor.image !== image
+          ? sponsor.image
+          : null,
+    };
+  }
+
+  async cleanupImageAfterCommit(imagePath: string | null) {
+    if (!imagePath?.startsWith(SPONSOR_IMAGE_SERVE_PREFIX)) return;
+    const fileName = imagePath.slice(SPONSOR_IMAGE_SERVE_PREFIX.length);
+    try {
+      await removeManagedImage("sponsor-images", fileName);
+    } catch (error) {
+      console.warn("Sponsor image cleanup failed after profile update", {
+        error: error instanceof Error ? error.message : "unknown error",
+      });
+    }
   }
 
   @Transaction({ retries: 2 })

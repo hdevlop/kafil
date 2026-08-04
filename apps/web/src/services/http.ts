@@ -53,9 +53,6 @@ async function ensureAccessToken(
 ) {
   const isPublicAccessPath = [
     "/access/login",
-    "/access/register/sponsor",
-    "/access/email-verification/request",
-    "/access/email-verification/confirm",
     "/access/family-password/setup",
     "/access/family-password/change",
     "/access/family-password/cancel",

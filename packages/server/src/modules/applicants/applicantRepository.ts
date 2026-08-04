@@ -1,4 +1,5 @@
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, ilike, isNull, or, sql } from "drizzle-orm";
+import { credentialSetupSessionsTable, usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 
@@ -10,6 +11,12 @@ import {
   type NewApplicantEmailOtpChallenge,
 } from "./applicantSchema";
 
+type ApplicantStatusFilter =
+  | "pending_email_verification"
+  | "pending_review"
+  | "approved"
+  | "rejected";
+
 const applicantSelection = {
   id: applicants.id,
   authUserId: applicants.authUserId,
@@ -18,8 +25,6 @@ const applicantSelection = {
   phone: applicants.phone,
   cin: applicants.cin,
   gender: applicants.gender,
-  address: applicants.address,
-  dateOfBirth: applicants.dateOfBirth,
   status: applicants.status,
   submittedAt: applicants.submittedAt,
   reviewedAt: applicants.reviewedAt,
@@ -27,6 +32,10 @@ const applicantSelection = {
   rejectionReason: applicants.rejectionReason,
   createdAt: applicants.createdAt,
   updatedAt: applicants.updatedAt,
+};
+
+const applicantListSelection = {
+  ...applicantSelection,
 };
 
 const applicantChallengeSelection = {
@@ -52,8 +61,6 @@ export interface ApplicantRecord {
   phone: string;
   cin: string;
   gender: "M" | "F";
-  address: string;
-  dateOfBirth: string;
   status: "pending_email_verification" | "pending_review" | "approved" | "rejected";
   submittedAt: Date;
   reviewedAt: Date | null;
@@ -92,10 +99,29 @@ function mapChallenge(
 export class ApplicantRepository {
   @DB() private db!: KafilDatabase;
 
-  async list(limit: number, offset: number) {
+  async list(
+    limit: number,
+    offset: number,
+    filters: { status?: ApplicantStatusFilter; search?: string } = {},
+  ) {
+    const conditions = [];
+    if (filters.status) {
+      conditions.push(eq(applicants.status, filters.status));
+    }
+    if (filters.search) {
+      const pattern = `%${filters.search.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+      const searchOr = or(
+        ilike(applicants.name, pattern),
+        ilike(applicants.email, pattern),
+        ilike(applicants.phone, pattern),
+      );
+      if (searchOr) conditions.push(searchOr);
+    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const rows = await this.db
-      .select(applicantSelection)
+      .select(applicantListSelection)
       .from(applicants)
+      .where(whereClause)
       .orderBy(desc(applicants.submittedAt), desc(applicants.id))
       .limit(limit)
       .offset(offset);
@@ -109,6 +135,55 @@ export class ApplicantRepository {
       .where(eq(applicants.id, id))
       .limit(1);
     return row ? mapApplicant(row) : undefined;
+  }
+
+  async findByIdForUpdate(id: string) {
+    const [row] = await this.db
+      .select(applicantSelection)
+      .from(applicants)
+      .where(eq(applicants.id, id))
+      .for("update")
+      .limit(1);
+    return row ? mapApplicant(row) : undefined;
+  }
+
+  async findAuthUserByIdForUpdate(id: string) {
+    const [row] = await this.db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        name: usersTable.name,
+        emailVerified: usersTable.emailVerified,
+        status: usersTable.status,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, id))
+      .for("update")
+      .limit(1);
+    return row;
+  }
+
+  async revokeCredentialSetupSessions(authUserId: string, revokedAt: Date) {
+    const revokedAtIso = revokedAt.toISOString();
+    return this.db
+      .update(credentialSetupSessionsTable)
+      .set({ revokedAt: revokedAtIso, updatedAt: revokedAtIso })
+      .where(
+        and(
+          eq(credentialSetupSessionsTable.userId, authUserId),
+          isNull(credentialSetupSessionsTable.consumedAt),
+          isNull(credentialSetupSessionsTable.revokedAt),
+        ),
+      )
+      .returning({ id: credentialSetupSessionsTable.id });
+  }
+
+  async countByStatus(status: ApplicantStatusFilter) {
+    const [row] = await this.db
+      .select({ value: sql<number>`count(*)::int` })
+      .from(applicants)
+      .where(eq(applicants.status, status));
+    return Number(row?.value ?? 0);
   }
 
   async findByAuthUserId(authUserId: string) {
@@ -159,7 +234,7 @@ export class ApplicantRepository {
     id: string,
     data: Pick<
       NewApplicant,
-      "name" | "email" | "phone" | "cin" | "gender" | "address" | "dateOfBirth"
+      "name" | "email" | "phone" | "cin" | "gender"
     >,
   ) {
     const [row] = await this.db
@@ -177,6 +252,57 @@ export class ApplicantRepository {
       .set({ status: "pending_review", updatedAt: now })
       .where(
         and(eq(applicants.id, id), eq(applicants.status, "pending_email_verification")),
+      )
+      .returning(applicantSelection);
+    return row ? mapApplicant(row) : undefined;
+  }
+
+  async approve(
+    id: string,
+    reviewerUserId: string,
+    expectedStatus: ApplicantStatusFilter,
+    reviewedAt: Date,
+  ) {
+    const [row] = await this.db
+      .update(applicants)
+      .set({
+        status: "approved",
+        reviewedAt,
+        reviewedByUserId: reviewerUserId,
+        rejectionReason: null,
+        updatedAt: reviewedAt,
+      })
+      .where(
+        and(
+          eq(applicants.id, id),
+          eq(applicants.status, expectedStatus),
+        ),
+      )
+      .returning(applicantSelection);
+    return row ? mapApplicant(row) : undefined;
+  }
+
+  async reject(
+    id: string,
+    reviewerUserId: string,
+    expectedStatus: ApplicantStatusFilter,
+    reason: string,
+    reviewedAt: Date,
+  ) {
+    const [row] = await this.db
+      .update(applicants)
+      .set({
+        status: "rejected",
+        reviewedAt,
+        reviewedByUserId: reviewerUserId,
+        rejectionReason: reason,
+        updatedAt: reviewedAt,
+      })
+      .where(
+        and(
+          eq(applicants.id, id),
+          eq(applicants.status, expectedStatus),
+        ),
       )
       .returning(applicantSelection);
     return row ? mapApplicant(row) : undefined;

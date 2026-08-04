@@ -1,13 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createHmac } from "node:crypto";
 import { pool } from "@kafil/server/database";
 
 import { phase6BrowserPassword, phase6BrowserUsers } from "../../scripts/phase6-e2e-fixtures";
 
 const baseUrl = process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210";
-const otpEmail = "plan-otp-browser@example.test";
-const otpPassword = "PlanBrowserPass1!";
-const otpCode = "482731";
 
 function json(route: Parameters<Parameters<Page["route"]>[1]>[0], value: unknown) {
   return route.fulfill({ contentType: "application/json", body: JSON.stringify(value) });
@@ -35,18 +31,6 @@ async function expectNoHorizontalOverflow(page: Page) {
 
 test.describe.serial("root PLAN acceptance", () => {
   test.afterAll(async () => {
-    const user = await pool.query<{ id: string }>(
-      "SELECT id FROM users WHERE lower(email) = lower($1)",
-      [otpEmail],
-    );
-    const userId = user.rows[0]?.id;
-    if (userId) {
-      await pool.query("DELETE FROM sponsor_email_otp_challenges WHERE user_id = $1", [userId]);
-      await pool.query("DELETE FROM credential_setup_sessions WHERE user_id = $1", [userId]);
-      await pool.query("DELETE FROM tokens WHERE user_id = $1", [userId]);
-      await pool.query("DELETE FROM sponsor_profiles WHERE user_id = $1", [userId]);
-      await pool.query("DELETE FROM users WHERE id = $1", [userId]);
-    }
     await pool.end();
   });
 
@@ -176,42 +160,5 @@ test.describe.serial("root PLAN acceptance", () => {
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByRole("img", { name: "نشاط الطلبات — آخر 12 شهرًا" }).locator(":scope > div")).toHaveCount(12);
     await expectNoHorizontalOverflow(page);
-  });
-
-  test("new pending sponsor completes the OTP activation login", async ({ page }) => {
-    await page.goto("/register/sponsor");
-    await page.getByLabel("Full name").fill("Plan OTP Sponsor");
-    await page.getByLabel("Email address").fill(otpEmail);
-    await page.getByPlaceholder("At least 8 characters").fill(otpPassword);
-    await page.getByPlaceholder("Repeat your password").fill(otpPassword);
-    await page.getByRole("button", { name: "Create account and send code" }).click();
-    await expect(page.getByText("Check your email")).toBeVisible();
-    await page.getByRole("link", { name: "Sign in to activate your account" }).click();
-    await page.getByLabel("Email or phone").fill(otpEmail.toUpperCase());
-    await page.getByPlaceholder("Enter your password").fill(otpPassword);
-    await page.getByText("Remember me", { exact: true }).click();
-    await page.getByRole("button", { name: "Log in" }).click();
-    await page.waitForURL(/\/verify-email$/);
-    await expect(page.getByText("Verify your email")).toBeVisible();
-
-    const key = process.env.NAJM_ENCRYPTION_KEY;
-    if (!key) throw new Error("NAJM_ENCRYPTION_KEY is required for OTP browser acceptance.");
-    const codeHash = createHmac("sha256", Buffer.from(key, "hex")).update(otpCode).digest("hex");
-    await pool.query(
-      `UPDATE sponsor_email_otp_challenges c
-       SET code_hash = $1, expires_at = now() + interval '10 minutes', attempts_remaining = 5
-       FROM users u
-       WHERE c.user_id = u.id AND lower(u.email) = lower($2)`,
-      [codeHash, otpEmail],
-    );
-
-    await page.getByLabel("One-time code 1 of 6").fill(otpCode);
-    await page.getByRole("button", { name: "Verify and continue" }).click();
-    await page.waitForURL(/\/dashboard$/);
-    const active = await pool.query<{ status: string; email_verified: boolean }>(
-      "SELECT status, email_verified FROM users WHERE lower(email) = lower($1)",
-      [otpEmail],
-    );
-    expect(active.rows).toEqual([{ status: "active", email_verified: true }]);
   });
 });

@@ -1,8 +1,7 @@
 export function getPostLoginRoute(
-  nextStep: "authenticated" | "family_password_setup" | "sponsor_email_otp",
+  nextStep: "authenticated" | "family_password_setup",
   requestedRoute: string,
 ) {
   if (nextStep === "family_password_setup") return "/change-password";
-  if (nextStep === "sponsor_email_otp") return "/verify-email";
   return requestedRoute;
 }

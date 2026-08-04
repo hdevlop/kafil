@@ -117,7 +117,10 @@ test("sponsor funding controls disable closed and excessive actions", async ({
             pendingMinor: 10_000,
           },
           id: "family-reserved",
-          image: null,
+          image: "/api/family-images/files/serve/family-reserved.webp",
+          name: "Reserved Family",
+          supportPriority: "normal",
+          activeSponsorCount: 2,
           reference: "FAM-RESERVED",
         },
         {
@@ -132,14 +135,20 @@ test("sponsor funding controls disable closed and excessive actions", async ({
             status: "active",
           },
           id: "family-funded",
-          image: null,
+          image: "/api/family-images/files/serve/family-funded.webp",
+          name: "Funded Family",
+          supportPriority: "high",
+          activeSponsorCount: 1,
           reference: "FAM-FUNDED",
         },
         {
           activeChildCount: 3,
           funding: openFunding,
           id: "family-open",
-          image: null,
+          image: "/api/family-images/files/serve/family-open.webp",
+          name: "Open Family",
+          supportPriority: "urgent",
+          activeSponsorCount: 4,
           reference: "FAM-OPEN",
         },
       ]);
@@ -209,6 +218,13 @@ test("sponsor funding controls disable closed and excessive actions", async ({
   });
 
   await page.goto("/sponsor/support");
+  await expect(page).toHaveURL(/\/family$/);
+  await expect(page.getByRole("heading", { name: "Families" })).toBeVisible();
+  await expect(page.getByText("All families")).toBeVisible();
+  await expect(page.getByText("Open Family")).toBeVisible();
+  await expect(
+    page.locator('[data-slot="card"]').filter({ hasText: "Open Family" }).locator("img"),
+  ).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: "Covered by pending payments" }),
   ).toBeDisabled();

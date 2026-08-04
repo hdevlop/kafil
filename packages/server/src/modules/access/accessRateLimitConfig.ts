@@ -4,17 +4,11 @@ const DEFAULT_WINDOW: TimeWindow = "15m";
 
 const defaultLimits = {
   login: 5,
-  sponsorRegistration: 5,
-  verificationResend: 3,
-  verificationConfirm: 5,
   familyPasswordChange: 5,
 } as const;
 
 const routeLimitEnv = {
   login: "KAFIL_ACCESS_LOGIN_RATE_LIMIT",
-  sponsorRegistration: "KAFIL_ACCESS_SPONSOR_REGISTRATION_RATE_LIMIT",
-  verificationResend: "KAFIL_ACCESS_VERIFICATION_REQUEST_RATE_LIMIT",
-  verificationConfirm: "KAFIL_ACCESS_VERIFICATION_CONFIRM_RATE_LIMIT",
   familyPasswordChange: "KAFIL_ACCESS_FAMILY_PASSWORD_RATE_LIMIT",
 } as const;
 

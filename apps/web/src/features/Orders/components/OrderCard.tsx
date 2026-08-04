@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, MapPin, Package, Phone, ReceiptText, ShoppingBag, Truck } from "lucide-react";
+import { CalendarClock, MapPin, Package, Phone, ShoppingBag, Truck } from "lucide-react";
 import { NCard, NCardInfo, NCardSection } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -74,7 +74,19 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
       <NCardSection className="gap-1.5">
         <Operator>
           {data.guardianLegalNameSnapshot ? (
-            <NCardInfo icon={ReceiptText} label={t("common.orderFamily")} value={<ManagedAvatar src={getFamilyAvatarImage(data.familyImage ?? null)} title={data.guardianLegalNameSnapshot} size="sm" classNames={{ avatar: "bg-muted" }} />} />
+            <div className="flex min-w-0 items-center gap-2">
+              <ManagedAvatar
+                alt={data.guardianLegalNameSnapshot}
+                src={getFamilyAvatarImage(data.familyImage ?? null)}
+                title={data.guardianLegalNameSnapshot}
+                size="sm"
+                className="shrink-0"
+                classNames={{ avatar: "bg-muted" }}
+              />
+              <span className="min-w-0 truncate text-sm font-medium">
+                {data.guardianLegalNameSnapshot}
+              </span>
+            </div>
           ) : null}
           {data.deliveryPhoneSnapshot ? <NCardInfo icon={Phone} label={t("common.orderPhone")} value={data.deliveryPhoneSnapshot} /> : null}
           {data.deliveryAddressSnapshot ? <NCardInfo icon={MapPin} label={t("common.orderDeliveryAddress")} value={data.deliveryAddressSnapshot} /> : null}

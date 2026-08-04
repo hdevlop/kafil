@@ -11,10 +11,8 @@ export const auth = defineAuth({
     "/change-password",
     "/auth/oauth/callback",
     "/login",
-    "/register/sponsor",
     "/forgot-password",
     "/reset-password",
-    "/verify-email",
   ],
 protectedRoutes: [
     "/dashboard",

@@ -20,6 +20,7 @@ import { createOffsetPagination } from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
+import { createCardPagination } from "@/lib/tablePagination";
 
 import { CategoryCard } from "./CategoryCard";
 import { CategoryDetails } from "./CategoryDetails";
@@ -31,7 +32,7 @@ import {
 } from "./CategoryForms";
 import type { CategoryRecord } from "../types";
 
-const pagination = createOffsetPagination(0, 100);
+const pagination = createOffsetPagination(0, 25);
 
 export function CategoriesPage() {
   const dialog = useDialog();
@@ -42,7 +43,7 @@ export function CategoriesPage() {
   const filters = useCategoriesTableFilters();
   useCategoryCommands();
   const workspace = useCategoriesWorkspace(
-    isExactFamily ? createOffsetPagination(0, 100) : pagination,
+    pagination,
   );
 
   const categories = (workspace.categories ?? []).map((category) => ({
@@ -176,7 +177,12 @@ export function CategoriesPage() {
       },
     },
     menuButton: true,
-    showPagination: false,
+    manualPagination: true,
+    pageCount: workspace.paginationController.pageCount,
+    pagination: workspace.paginationController.pagination,
+    onPaginationChange: workspace.paginationController.onPaginationChange,
+    cardPagination: createCardPagination(workspace.paginationController, t),
+    showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {

@@ -1,4 +1,3 @@
-import { registerDto } from "najm-auth";
 import { z } from "zod";
 
 import { isFamilyCinCredential } from "./initialPassword";
@@ -8,14 +7,6 @@ export const accessLoginDto = z.object({
   password: z.string().min(1).max(72),
   rememberMe: z.boolean().optional().default(false),
   locale: z.enum(["en", "fr", "ar", "es"]).optional().default("en"),
-});
-
-export const sponsorAccessRegistrationDto = registerDto.extend({
-  locale: z.enum(["en", "fr", "ar", "es"]).optional().default("en"),
-});
-
-export const confirmEmailVerificationDto = z.object({
-  code: z.string().regex(/^\d{6}$/),
 });
 
 export const familyFirstPasswordDto = z.object({
@@ -32,10 +23,4 @@ export const familyFirstPasswordDto = z.object({
 });
 
 export type AccessLoginDto = z.input<typeof accessLoginDto>;
-export type SponsorAccessRegistrationDto = z.input<
-  typeof sponsorAccessRegistrationDto
->;
-export type ConfirmEmailVerificationDto = z.infer<
-  typeof confirmEmailVerificationDto
->;
 export type FamilyFirstPasswordDto = z.infer<typeof familyFirstPasswordDto>;

@@ -2,6 +2,8 @@ import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import {
   AuthService,
   CredentialSetupService,
+  type SanitizedUser,
+  TokenService,
   UserRepository,
   UserService,
 } from "najm-auth";
@@ -10,14 +12,19 @@ import { Transaction } from "najm-database";
 import { EmailService } from "najm-email";
 
 import { envConfig } from "../../config/envConfig";
+import { AuditService } from "../audit/auditService";
+import { OutboxService } from "../outbox/outboxService";
+import { SponsorRepository } from "../sponsors/sponsorRepository";
 import { normalizePhone } from "../access/phone";
 import {
   type ApplicantListQuery,
   type CreateApplicantDto,
   type CreateApplicantInput,
+  type RejectApplicantInput,
   type SupportedApplicantLocale,
   applicantListQuery,
   createApplicantDto,
+  rejectApplicantDto,
 } from "./applicantDto";
 import {
   ApplicantRepository,
@@ -31,6 +38,10 @@ export const APPLICANT_EMAIL_OTP_TTL_MS = 10 * 60 * 1_000;
 export const APPLICANT_EMAIL_OTP_RESEND_COOLDOWN_MS = 60 * 1_000;
 export const APPLICANT_EMAIL_OTP_MAX_ATTEMPTS = 5;
 export const APPLICANT_EMAIL_OTP_PURPOSE = "applicant-email-otp";
+
+const APPLICANT_SPONSOR_ROLE = "sponsor";
+const APPLICANT_OUTBOX_TOPIC_APPROVED = "applicant.approved" as const;
+const APPLICANT_OUTBOX_TOPIC_REJECTED = "applicant.rejected" as const;
 
 const APPLICANT_EMAIL_OTP_OPTIONS = {
   cookieName: APPLICANT_EMAIL_OTP_COOKIE,
@@ -51,6 +62,15 @@ interface OtpEmailCopy {
   instruction: string;
   expiry: string;
   warning: string;
+}
+
+interface DecisionEmailCopy {
+  approvedSubject: string;
+  approvedHeading: string;
+  approvedBody: string;
+  rejectedSubject: string;
+  rejectedHeading: string;
+  rejectedBody: string;
 }
 
 const otpEmailCopy: Record<SupportedApplicantLocale, OtpEmailCopy> = {
@@ -82,6 +102,53 @@ const otpEmailCopy: Record<SupportedApplicantLocale, OtpEmailCopy> = {
     expiry: "Este código caduca en 10 minutos.",
     warning: "No compartas este código con nadie.",
   },
+};
+
+const decisionEmailCopy: Record<SupportedApplicantLocale, DecisionEmailCopy> = {
+  en: {
+    approvedSubject: "Your Kafil sponsor application was approved",
+    approvedHeading: "Welcome to Kafil",
+    approvedBody: "Your sponsor account is active. You can now sign in to your Kafil workspace.",
+    rejectedSubject: "Update on your Kafil sponsor application",
+    rejectedHeading: "Your application was reviewed",
+    rejectedBody: "Your sponsor application was not approved. Contact Kafil support if you need more information.",
+  },
+  fr: {
+    approvedSubject: "Votre candidature de parrainage Kafil a ete approuvee",
+    approvedHeading: "Bienvenue sur Kafil",
+    approvedBody: "Votre compte de parrain est actif. Vous pouvez maintenant vous connecter a votre espace Kafil.",
+    rejectedSubject: "Mise a jour de votre candidature Kafil",
+    rejectedHeading: "Votre candidature a ete examinee",
+    rejectedBody: "Votre candidature de parrainage n'a pas ete approuvee. Contactez l'assistance Kafil pour plus d'informations.",
+  },
+  ar: {
+    approvedSubject: "تمت الموافقة على طلب الرعاية في كافل",
+    approvedHeading: "مرحبا بك في كافل",
+    approvedBody: "تم تفعيل حساب الراعي. يمكنك الآن تسجيل الدخول إلى مساحة كافل الخاصة بك.",
+    rejectedSubject: "تحديث بشأن طلب الرعاية في كافل",
+    rejectedHeading: "تمت مراجعة طلبك",
+    rejectedBody: "لم تتم الموافقة على طلب الرعاية. تواصل مع دعم كافل إذا احتجت إلى مزيد من المعلومات.",
+  },
+  es: {
+    approvedSubject: "Tu solicitud de patrocinio de Kafil fue aprobada",
+    approvedHeading: "Te damos la bienvenida a Kafil",
+    approvedBody: "Tu cuenta de patrocinador esta activa. Ya puedes iniciar sesion en tu espacio de Kafil.",
+    rejectedSubject: "Actualizacion sobre tu solicitud de Kafil",
+    rejectedHeading: "Tu solicitud fue revisada",
+    rejectedBody: "Tu solicitud de patrocinio no fue aprobada. Contacta con el soporte de Kafil si necesitas mas informacion.",
+  },
+};
+
+type DecisionNotification = {
+  applicantId: string;
+  authUserId: string;
+  actorUserId: string;
+  email: string;
+  name: string;
+  locale: SupportedApplicantLocale;
+  topic: typeof APPLICANT_OUTBOX_TOPIC_APPROVED | typeof APPLICANT_OUTBOX_TOPIC_REJECTED;
+  transition: "pending_review->approved" | "pending_review->rejected" | "rejected->approved";
+  sponsorProfileId?: string;
 };
 
 function escapeHtml(value: string) {
@@ -162,19 +229,293 @@ export class ApplicantService {
     private readonly applicants: ApplicantRepository,
     private readonly validator: ApplicantValidator,
     private readonly setup: CredentialSetupService,
+    private readonly sponsors: SponsorRepository,
+    private readonly audits: AuditService,
+    private readonly outbox: OutboxService,
+    private readonly tokens: TokenService,
   ) {}
 
   async list(query: ApplicantListQuery) {
-    const { limit, offset } = applicantListQuery.parse(query ?? {});
-    return this.applicants.list(limit, offset);
+    const { limit, offset, status, search } = applicantListQuery.parse(
+      query ?? {},
+    );
+    return this.applicants.list(limit, offset, { status, search });
+  }
+
+  async countByStatus(status: ApplicantRecord["status"]) {
+    return this.applicants.countByStatus(status);
   }
 
   get(id: string) {
     return this.validator.ensureExists(id);
   }
 
+  async approve(applicantId: string, actorUserId: string) {
+    const result = await this.approveInTransaction(applicantId, actorUserId);
+    await this.deliverDecisionNotification(result.notification);
+    return result.applicant;
+  }
+
   /**
-   * Public submission. Atomically creates a pending Najm sponsor user and a
+   * Approve one pending applicant and create the matching sponsor profile
+   * in one transaction. Existing sponsor profiles, conflicting auth state,
+   * or non-pending-review applicants all terminate as conflicts.
+   */
+  @Transaction({ retries: 2 })
+  async approveInTransaction(applicantId: string, actorUserId: string) {
+    const applicant = await this.applicants.findByIdForUpdate(applicantId);
+    if (!applicant) HttpError.notFound("Application not found");
+    if (applicant.status !== "pending_review" && applicant.status !== "rejected") {
+      HttpError.conflict("Only pending review or rejected applications can be approved");
+    }
+    const approvalTransition = applicant.status === "rejected"
+      ? "rejected->approved" as const
+      : "pending_review->approved" as const;
+
+    const user = await this.applicants.findAuthUserByIdForUpdate(
+      applicant.authUserId,
+    );
+    if (!user || !user.emailVerified) {
+      HttpError.conflict("Application email is not verified");
+    }
+    const expectedUserStatus = applicant.status === "rejected" ? "inactive" : "pending";
+    if (user.status !== expectedUserStatus) {
+      HttpError.conflict("Application identity status does not match its review state");
+    }
+
+    const existingProfile = await this.sponsors.findByUserId(applicant.authUserId);
+    if (existingProfile) {
+      HttpError.conflict("A sponsor profile already exists for this applicant");
+    }
+    const profileByEmail = await this.sponsors.findByEmail(applicant.email);
+    if (profileByEmail) {
+      HttpError.conflict("A sponsor profile already exists for this email");
+    }
+    const profileByPhone = await this.sponsors.findByPhone(applicant.phone);
+    if (profileByPhone) {
+      HttpError.conflict("A sponsor profile already exists for this phone");
+    }
+    const profileByCin = await this.sponsors.findByCin(applicant.cin);
+    if (profileByCin) {
+      HttpError.conflict("A sponsor profile already exists for this CIN");
+    }
+
+    const reviewedAt = new Date();
+    const updatedApplicant = await this.applicants.approve(
+      applicant.id,
+      actorUserId,
+      applicant.status,
+      reviewedAt,
+    );
+    if (!updatedApplicant) {
+      HttpError.conflict("Application decision was already made");
+    }
+
+    const sponsor = await this.sponsors.create({
+      userId: applicant.authUserId,
+      phone: applicant.phone,
+      cin: applicant.cin,
+      gender: applicant.gender,
+      legacyCountryCode: null,
+      legacyPreferredLanguage: "en",
+      legacyPreferredCurrency: "MAD",
+      legacyCommunicationOptIn: true,
+      address: null,
+      dateOfBirth: null,
+      notes: null,
+    });
+    if (!sponsor) {
+      HttpError.internal("Could not create the sponsor profile");
+    }
+
+    const activated = await this.users.assignRole(
+      applicant.authUserId,
+      undefined,
+      APPLICANT_SPONSOR_ROLE,
+    );
+    if (!activated) {
+      HttpError.internal("Could not activate the sponsor account");
+    }
+    const statusUpdated = await this.users.update(applicant.authUserId, {
+      status: "active",
+    });
+    if (!statusUpdated) {
+      HttpError.internal("Could not activate the sponsor account");
+    }
+
+    const challenge = await this.applicants.findChallengeByApplicant(applicant.id);
+    await this.applicants.revokeChallenge(applicant.id);
+
+    await this.audits.record({
+      action: APPLICANT_OUTBOX_TOPIC_APPROVED,
+      actorUserId,
+      metadata: {
+        applicantId: applicant.id,
+        authUserId: applicant.authUserId,
+        sponsorProfileId: sponsor.id,
+        transition: approvalTransition,
+      },
+      resource: "applicants",
+      resourceId: applicant.id,
+    });
+
+    return {
+      applicant: {
+        ...updatedApplicant,
+        sponsorProfileId: sponsor.id,
+      },
+      notification: {
+        applicantId: applicant.id,
+        authUserId: applicant.authUserId,
+        actorUserId,
+        email: applicant.email,
+        name: applicant.name,
+        locale: (challenge?.locale ?? "en") as SupportedApplicantLocale,
+        topic: APPLICANT_OUTBOX_TOPIC_APPROVED,
+        transition: approvalTransition,
+        sponsorProfileId: sponsor.id,
+      },
+    };
+  }
+
+  /**
+   * Reject one pending applicant. Marks the applicant rejected with a
+   * required, length-bounded reason and revokes every auth/setup/session
+   * state without granting a sponsor role or profile.
+   */
+  async reject(
+    applicantId: string,
+    input: RejectApplicantInput,
+    actorUserId: string,
+  ) {
+    const { reason } = rejectApplicantDto.parse(input);
+    const result = await this.rejectInTransaction(
+      applicantId,
+      reason,
+      actorUserId,
+    );
+    await this.deliverDecisionNotification(result.notification);
+    return result.applicant;
+  }
+
+  @Transaction({ retries: 2 })
+  async rejectInTransaction(
+    applicantId: string,
+    reason: string,
+    actorUserId: string,
+  ) {
+    const applicant = await this.applicants.findByIdForUpdate(applicantId);
+    if (!applicant) HttpError.notFound("Application not found");
+    if (applicant.status !== "pending_review") {
+      HttpError.conflict("Only pending review applications can be rejected");
+    }
+
+    const user = await this.applicants.findAuthUserByIdForUpdate(
+      applicant.authUserId,
+    );
+    if (!user) HttpError.conflict("Application identity is unavailable");
+    if (user.status !== "pending") {
+      HttpError.conflict("Application identity is not pending");
+    }
+
+    const reviewedAt = new Date();
+    const updatedApplicant = await this.applicants.reject(
+      applicant.id,
+      actorUserId,
+      applicant.status,
+      reason,
+      reviewedAt,
+    );
+    if (!updatedApplicant) {
+      HttpError.conflict("Application decision was already made");
+    }
+
+    const challenge = await this.applicants.findChallengeByApplicant(applicant.id);
+    await this.applicants.revokeChallenge(applicant.id);
+    await this.applicants.revokeCredentialSetupSessions(
+      applicant.authUserId,
+      reviewedAt,
+    );
+
+    await this.tokens.invalidateUserAccessTokens(applicant.authUserId);
+    await this.tokens.revokeAllForUser(applicant.authUserId);
+
+    await this.users.update(applicant.authUserId, {
+      status: "inactive",
+    });
+
+    await this.audits.record({
+      action: APPLICANT_OUTBOX_TOPIC_REJECTED,
+      actorUserId,
+      metadata: {
+        applicantId: applicant.id,
+        authUserId: applicant.authUserId,
+        transition: "pending_review->rejected",
+      },
+      resource: "applicants",
+      resourceId: applicant.id,
+    });
+
+    return {
+      applicant: updatedApplicant,
+      notification: {
+        applicantId: applicant.id,
+        authUserId: applicant.authUserId,
+        actorUserId,
+        email: applicant.email,
+        name: applicant.name,
+        locale: (challenge?.locale ?? "en") as SupportedApplicantLocale,
+        topic: APPLICANT_OUTBOX_TOPIC_REJECTED,
+        transition: "pending_review->rejected" as const,
+      },
+    };
+  }
+
+  private async deliverDecisionNotification(notification: DecisionNotification) {
+    let event: Awaited<ReturnType<OutboxService["enqueue"]>> | undefined;
+    try {
+      event = await this.outbox.enqueue({
+        topic: notification.topic,
+        aggregateType: "applicant",
+        aggregateId: notification.applicantId,
+        payload: {
+          applicantId: notification.applicantId,
+          authUserId: notification.authUserId,
+          actorUserId: notification.actorUserId,
+          ...(notification.sponsorProfileId
+            ? { sponsorProfileId: notification.sponsorProfileId }
+            : {}),
+          transition: notification.transition,
+        },
+      });
+    } catch {
+      return;
+    }
+
+    const copy = decisionEmailCopy[notification.locale] ?? decisionEmailCopy.en;
+    const approved = notification.topic === APPLICANT_OUTBOX_TOPIC_APPROVED;
+    const heading = approved ? copy.approvedHeading : copy.rejectedHeading;
+    const body = approved ? copy.approvedBody : copy.rejectedBody;
+    const subject = approved ? copy.approvedSubject : copy.rejectedSubject;
+    const direction = notification.locale === "ar" ? "rtl" : "ltr";
+    const loginUrl = `${envConfig.auth.frontendUrl?.replace(/\/$/, "") ?? ""}/login`;
+    const html = `<!doctype html><html dir="${direction}"><body style="font-family:Arial,sans-serif;line-height:1.6"><h2>${escapeHtml(heading)}</h2><p>${escapeHtml(notification.name)},</p><p>${escapeHtml(body)}</p>${approved ? `<p><a href="${escapeHtml(loginUrl)}">${escapeHtml(copy.approvedHeading)}</a></p>` : ""}</body></html>`;
+
+    try {
+      const delivered = await this.email.sendHtml(
+        notification.email,
+        subject,
+        html,
+      );
+      if (!delivered.success) throw new Error("Email provider rejected the notification");
+      await this.outbox.markDelivered(event.id);
+    } catch (error) {
+      await this.outbox.markDeliveryFailed(event.id, error).catch(() => undefined);
+    }
+  }
+
+  /**
+   * Public submission. Atomically creates a pending Najm auth user and a
    * single applicant record, then begins a purpose-bound email-OTP setup
    * session. Repeated submissions for an unverified pending applicant
    * re-issue a bounded challenge without making a duplicate. Verified,
@@ -205,17 +546,13 @@ export class ApplicantService {
     await this.validator.ensurePhoneAvailable(normalizedPhone);
     await this.validator.ensureCinAvailable(cin);
 
-    const user = await this.auth.registerUser({
-      name: data.name,
+    const identity = await this.createOrReclaimIdentity({
+      ...data,
       email,
-      password: data.password,
-    });
-    await this.userRecords.update(user.id, {
       phone: normalizedPhone,
-      phoneVerified: false,
-      emailVerified: false,
-      roleId: null,
+      cin,
     });
+    const { user } = identity;
 
     const applicant = await this.applicants.create({
       authUserId: user.id,
@@ -224,8 +561,6 @@ export class ApplicantService {
       phone: normalizedPhone,
       cin,
       gender: data.gender,
-      address: data.address,
-      dateOfBirth: data.dateOfBirth,
       status: "pending_email_verification",
     });
     if (!applicant) {
@@ -246,8 +581,58 @@ export class ApplicantService {
       resendAvailableAt: issued.resendAvailableAt,
       maskedDestination: maskEmail(user.email),
       emailSent: issued.emailSent,
-      reused: false,
+      reused: identity.reused,
     };
+  }
+
+  /**
+   * Reclaims only identities created by the retired direct-registration flow:
+   * pending, unverified sponsor users that never acquired a sponsor profile.
+   * Real sponsor profiles and every active or verified account stay protected.
+   */
+  private async createOrReclaimIdentity(
+    data: CreateApplicantDto,
+  ): Promise<{ user: SanitizedUser; reused: boolean }> {
+    const legacy = await this.users.findByEmailInsensitive(data.email);
+    if (!legacy) {
+      const user = await this.auth.registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      });
+      await this.userRecords.update(user.id, {
+        phone: data.phone,
+        phoneVerified: false,
+        emailVerified: false,
+        roleId: null,
+      });
+      return { user, reused: false };
+    }
+
+    const sponsorProfile = await this.sponsors.findByUserId(legacy.id);
+    const reclaimable =
+      legacy.role?.toLowerCase() === "sponsor" &&
+      legacy.status === "pending" &&
+      !legacy.emailVerified &&
+      !sponsorProfile;
+    if (!reclaimable) {
+      HttpError.conflict("An account with this email already exists");
+    }
+
+    await this.users.update(legacy.id, {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      status: "pending",
+      emailVerified: false,
+    });
+    await this.userRecords.update(legacy.id, {
+      phone: data.phone,
+      phoneVerified: false,
+      emailVerified: false,
+      roleId: null,
+    });
+    return { user: await this.users.getById(legacy.id), reused: true };
   }
 
   async setupSession(): Promise<ApplicantSetupResult> {
@@ -382,8 +767,6 @@ export class ApplicantService {
       phone: data.phone,
       cin: data.cin,
       gender: data.gender,
-      address: data.address,
-      dateOfBirth: data.dateOfBirth,
     });
     if (!updated) HttpError.internal("Could not update sponsor application");
 

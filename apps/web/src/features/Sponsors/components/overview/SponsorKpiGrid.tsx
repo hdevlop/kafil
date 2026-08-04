@@ -8,9 +8,11 @@ import type { SponsorKpiItem } from "../../types";
 export function SponsorKpiGrid({
   desktopColumns = 4,
   kpis,
+  variant = "default",
 }: Readonly<{
   desktopColumns?: 3 | 4 | 5;
   kpis: SponsorKpiItem[];
+  variant?: "default" | "compact";
 }>) {
   return (
     <NGrid cols={1} smCols={2} lgCols={desktopColumns}>
@@ -24,8 +26,8 @@ export function SponsorKpiGrid({
             }}
             icon={kpi.icon}
             label={kpi.label}
-            subtext={kpi.subtext}
             value={kpi.value}
+            {...(variant === "compact" ? { variant: "compact" as const } : {})}
           />
         );
 

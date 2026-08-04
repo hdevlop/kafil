@@ -3,8 +3,9 @@ import type { DashboardStatusCount } from "@/features/Dashboard/types";
 import type { FamilyFundingProgress } from "@/types/funding";
 
 export interface SupportedFamilyEntry {
-  assignmentId: string;
-  supportReference: string;
+  familyReference: string;
+  familyName: string;
+  image: string | null;
   activeChildCount: number;
   startedAt: string;
   funding: FamilyFundingProgress | null;

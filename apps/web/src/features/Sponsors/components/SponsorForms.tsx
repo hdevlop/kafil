@@ -23,21 +23,11 @@ import {
 } from "../config/sponsorSchemas";
 import { useSponsorCommands } from "../hooks/useSponsors";
 import type { SponsorRecord } from "../types";
-
-const MAX_SPONSOR_IMAGE_SIZE = 5_000_000;
-const SPONSOR_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
-
-function sponsorImageError(file: File) {
-  if (!SPONSOR_IMAGE_TYPES.has(file.type)) {
-    return "Select a PNG, JPEG, or WebP image.";
-  }
-  if (file.size > MAX_SPONSOR_IMAGE_SIZE) return "Image must be 5 MB or smaller.";
-  return null;
-}
+import {
+  getSponsorImageError,
+  SPONSOR_IMAGE_ACCEPT,
+  SponsorDemographicFields,
+} from "./SponsorProfileFields";
 
 function selectSponsorImage(
   file: File | null,
@@ -50,7 +40,7 @@ function selectSponsorImage(
     return;
   }
 
-  const error = sponsorImageError(file);
+  const error = getSponsorImageError(file);
   if (error) {
     setError(error);
     return;
@@ -109,7 +99,7 @@ export function CreateSponsorDialogContent() {
             name="image"
             formLabel={t("operator.sponsors.imageUrl")}
             subtitle={t("operator.sponsors.imageUploadGuidance")}
-            accept="image/jpeg,image/png,image/webp"
+            accept={SPONSOR_IMAGE_ACCEPT}
             allowClear
             disabled={isSubmitting}
             fill
@@ -128,22 +118,7 @@ export function CreateSponsorDialogContent() {
           <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" required />
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <FormInput
-          name="gender"
-          type="select"
-          formLabel={t("operator.sponsors.gender")}
-          items={[
-            { value: "F", label: t("operator.sponsors.female") },
-            { value: "M", label: t("operator.sponsors.male") },
-          ]}
-          icon="Users"
-          required
-        />
-        <FormInput name="dateOfBirth" type="date" formLabel={t("operator.sponsors.dateOfBirth")} placeholder={t("operator.sponsors.datePlaceholder")} icon="Calendar" required />
-        <FormInput name="address" type="textarea" formLabel={t("operator.sponsors.address")} placeholder={t("operator.sponsors.addressPlaceholder")} icon="MapPin" required />
-        <FormInput name="notes" type="textarea" formLabel={t("operator.sponsors.operatorNotes")} placeholder={t("operator.sponsors.notesPlaceholder")} icon="NotebookPen" />
-      </div>
+      <SponsorDemographicFields includeNotes required />
       <div className="flex justify-end pt-5">
         <NButton type="submit" disabled={isSubmitting}>
           {isSubmitting ? t("operator.sponsors.creating") : t("operator.sponsors.createAndInvite")}
@@ -171,7 +146,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
       return;
     }
 
-    const error = sponsorImageError(file);
+    const error = getSponsorImageError(file);
     if (error) {
       setImageError(error);
       return;
@@ -239,7 +214,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
             name="image"
             formLabel={t("operator.sponsors.imageUrl")}
             subtitle={t("operator.sponsors.imageUploadGuidance")}
-            accept="image/jpeg,image/png,image/webp"
+            accept={SPONSOR_IMAGE_ACCEPT}
             allowClear
             disabled={isSubmitting}
             fill
@@ -259,21 +234,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
           <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" />
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <FormInput
-          name="gender"
-          type="select"
-          formLabel={t("operator.sponsors.gender")}
-          items={[
-            { value: "F", label: t("operator.sponsors.female") },
-            { value: "M", label: t("operator.sponsors.male") },
-          ]}
-          icon="Users"
-        />
-        <FormInput name="dateOfBirth" type="date" formLabel={t("operator.sponsors.dateOfBirth")} placeholder={t("operator.sponsors.datePlaceholder")} icon="Calendar" />
-        <FormInput name="address" type="textarea" formLabel={t("operator.sponsors.address")} placeholder={t("operator.sponsors.addressPlaceholder")} icon="MapPin" />
-        <FormInput name="notes" type="textarea" formLabel={t("operator.sponsors.operatorNotes")} placeholder={t("operator.sponsors.notesPlaceholder")} icon="NotebookPen" />
-      </div>
+      <SponsorDemographicFields includeNotes />
       <div className="flex justify-end pt-5">
         <NButton type="submit" disabled={isSubmitting}>
           {isSubmitting ? t("operator.sponsors.saving") : t("operator.sponsors.saveProfile")}

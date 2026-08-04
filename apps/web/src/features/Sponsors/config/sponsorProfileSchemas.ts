@@ -19,7 +19,15 @@ export const createOwnSponsorProfileFormSchema = z.object(
 
 export const updateOwnSponsorProfileFormSchema = z.object({
   phone: z.string().trim().max(40).optional(),
-  cin: z.string().trim().max(20).optional(),
+  cin: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .refine(
+      (value) => !value || (value.length >= 8 && value.length <= 20),
+      "Enter a valid CIN",
+    ),
   gender: z.enum(["M", "F"]).optional(),
   address: z.string().trim().max(500).optional(),
   dateOfBirth: z.union([z.literal(""), z.iso.date("Enter a valid date of birth")]),
@@ -39,8 +47,10 @@ function optional(value: string | undefined) {
 
 export function toCreateOwnSponsorProfileInput(
   values: CreateOwnSponsorProfileFormValues,
+  image?: string | null,
 ): CreateOwnSponsorProfileInput {
   return {
+    ...(image !== undefined ? { image } : {}),
     phone: values.phone.trim(),
     cin: values.cin.trim().toUpperCase(),
     gender: values.gender,
@@ -51,6 +61,7 @@ export function toCreateOwnSponsorProfileInput(
 
 export function toUpdateOwnSponsorProfileInput(
   values: UpdateOwnSponsorProfileFormValues,
+  image?: string | null,
 ): UpdateOwnSponsorProfileInput {
   const phone = optional(values.phone);
   const cin = optional(values.cin);
@@ -58,6 +69,7 @@ export function toUpdateOwnSponsorProfileInput(
   const dateOfBirth = values.dateOfBirth || undefined;
 
   return {
+    ...(image !== undefined ? { image } : {}),
     ...(phone ? { phone } : {}),
     ...(cin ? { cin: cin.toUpperCase() } : {}),
     ...(values.gender ? { gender: values.gender } : {}),

@@ -2,9 +2,12 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
   type ListFamiliesFilters,
+  type SponsorFamilyCatalogFilters,
   bulkDeleteFamilies,
   createFamily,
   deactivateFamily,
@@ -15,7 +18,6 @@ import {
   updateFamily,
 } from "@/services/familyApi";
 
-import { toSponsorFamilyRecord } from "../lib/toSponsorFamilyRecord";
 import { familyKeys } from "./familyKeys";
 
 export function useFamilies(
@@ -30,12 +32,48 @@ export function useFamilies(
   });
 }
 
-export function useSponsorFamilyCatalog(enabled = true) {
-  return useEntityQuery({
-    queryKey: familyKeys.sponsorCatalog(),
-    queryFn: async () =>
-      (await listSponsorFamilyCatalog()).map(toSponsorFamilyRecord),
+export function useResponsiveFamilies(
+  filters: ListFamiliesFilters = {},
+  enabled = true,
+) {
+  return useResponsiveOffsetList({
     enabled,
+    queryKey: [...familyKeys.all, "responsive", filters],
+    fetchPage: (pagination) => listFamilies(pagination, filters),
+  });
+}
+
+export function useSponsorFamilyCatalog(
+  pagination: OffsetPagination,
+  filters: SponsorFamilyCatalogFilters = {},
+  enabled = true,
+) {
+  return useEntityQuery({
+    queryKey: [...familyKeys.sponsorCatalog(filters), pagination],
+    queryFn: () => listSponsorFamilyCatalog(pagination, filters),
+    enabled,
+  });
+}
+
+export function useInfiniteSponsorFamilyCatalog(
+  filters: SponsorFamilyCatalogFilters = {},
+  enabled = true,
+) {
+  return useOffsetInfiniteQuery({
+    enabled,
+    queryKey: familyKeys.sponsorCatalog(filters),
+    fetchPage: (pagination) => listSponsorFamilyCatalog(pagination, filters),
+  });
+}
+
+export function useResponsiveSponsorFamilyCatalog(
+  filters: SponsorFamilyCatalogFilters = {},
+  enabled = true,
+) {
+  return useResponsiveOffsetList({
+    enabled,
+    queryKey: [...familyKeys.sponsorCatalog(filters), "responsive"],
+    fetchPage: (pagination) => listSponsorFamilyCatalog(pagination, filters),
   });
 }
 

@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import {
   familyFirstPasswordSchema,
   loginSchema,
-  sponsorRegistrationSchema,
 } from "../src/features/Auth/config/authSchemas";
 import { getPostLoginRoute } from "../src/features/Auth/lib/getPostLoginRoute";
 import { resolveDashboard } from "../src/features/Dashboard/resolveDashboard";
@@ -63,26 +62,6 @@ describe("Phase 6A authentication schemas", () => {
     ).toBe(true);
   });
 
-  test("requires the Najm password contract and matching confirmation", () => {
-    expect(
-      sponsorRegistrationSchema.safeParse({
-        name: "Kafil Sponsor",
-        email: "sponsor@example.com",
-        password: "weak",
-        confirmPassword: "different",
-      }).success,
-    ).toBe(false);
-
-    expect(
-      sponsorRegistrationSchema.safeParse({
-        name: "Kafil Sponsor",
-        email: "sponsor@example.com",
-        password: "StrongPass1",
-        confirmPassword: "StrongPass1",
-      }).success,
-    ).toBe(true);
-  });
-
   test("accepts a simple lowercase family password with matching confirmation", () => {
     expect(
       familyFirstPasswordSchema.safeParse({
@@ -110,9 +89,6 @@ describe("Phase 6A authentication schemas", () => {
   test("routes a setup-only login before the dashboard", () => {
     expect(getPostLoginRoute("family_password_setup", "/orders")).toBe(
       "/change-password",
-    );
-    expect(getPostLoginRoute("sponsor_email_otp", "/orders")).toBe(
-      "/verify-email",
     );
     expect(getPostLoginRoute("authenticated", "/orders")).toBe(
       "/orders",

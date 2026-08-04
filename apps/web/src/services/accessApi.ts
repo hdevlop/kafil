@@ -1,23 +1,11 @@
 import { api } from "@/services/http";
 
-export interface SponsorRegistrationResult {
-  emailSent: boolean;
-}
-
 export interface AccessLoginResult {
-  nextStep: "authenticated" | "family_password_setup" | "sponsor_email_otp";
+  nextStep: "authenticated" | "family_password_setup";
   expiresAt?: string;
   resendAvailableAt?: string;
   maskedDestination?: string;
   emailSent?: boolean;
-}
-
-export interface SponsorEmailOtpSetup {
-  nextStep: "sponsor_email_otp";
-  expiresAt: string;
-  resendAvailableAt: string;
-  maskedDestination: string;
-  emailSent: boolean;
 }
 
 function normalizeLoginIdentifier(identifier: string) {
@@ -74,36 +62,4 @@ export function changeFamilyFirstPassword(input: {
 
 export function cancelFamilyPasswordSetup() {
   return api.post<{ cancelled: true }>("/access/family-password/cancel");
-}
-
-export function registerSponsorAccess(input: {
-  name: string;
-  email: string;
-  password: string;
-  locale: "en" | "fr" | "ar" | "es";
-}) {
-  return api.post<SponsorRegistrationResult>("/access/register/sponsor", input);
-}
-
-export function getSponsorEmailOtpSetup() {
-  return api.get<SponsorEmailOtpSetup>("/access/email-verification/setup");
-}
-
-export function resendSponsorEmailOtp() {
-  return api.post<SponsorEmailOtpSetup & { accepted: true }>(
-    "/access/email-verification/resend",
-  );
-}
-
-export function confirmEmailVerification(code: string) {
-  return api.post<{ nextStep: "authenticated" }>(
-    "/access/email-verification/confirm",
-    { code },
-  );
-}
-
-export function cancelSponsorEmailOtp() {
-  return api.post<{ cancelled: true }>(
-    "/access/email-verification/cancel",
-  );
 }

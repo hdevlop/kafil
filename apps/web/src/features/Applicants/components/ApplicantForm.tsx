@@ -24,8 +24,6 @@ export function ApplicantForm({
   const devTools = useDevFormTools(applicantFormSchema, {
     phone: "+212612345678",
     password: "KafilDev123",
-    confirmPassword: "KafilDev123",
-    dateOfBirth: "1990-01-15",
     gender: "female",
   });
 
@@ -47,7 +45,7 @@ export function ApplicantForm({
   }
 
   return (
-    <div className="flex w-full flex-col">
+    <div className="flex w-full flex-col gap-6">
       <div className="text-center">
         <p className="mt-1 text-3xl text-muted-foreground">
           {t("applicants.form.title")}
@@ -66,22 +64,35 @@ export function ApplicantForm({
           phone: "",
           cin: "",
           gender: "female",
-          address: "",
-          dateOfBirth: "",
           password: "",
-          confirmPassword: "",
         }}
         onSubmit={handleSubmit}
         devTools={devTools}
       >
-        <FormInput
-          name="name"
-          type="text"
-          formLabel={t("applicants.form.name")}
-          placeholder={t("applicants.form.namePlaceholder")}
-          icon="User"
-          required
-        />
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <FormInput
+              name="name"
+              type="text"
+              formLabel={t("applicants.form.name")}
+              placeholder={t("applicants.form.namePlaceholder")}
+              icon="User"
+              required
+            />
+          </div>
+          <FormInput
+            name="gender"
+            type="select"
+            formLabel={t("applicants.form.genderLabel")}
+            items={applicantGenderOptions.map((option) => ({
+              value: option.value,
+              label: t(`applicants.form.gender.${option.value}`),
+            }))}
+            placeholder={t("applicants.form.genderPlaceholder")}
+            icon="Users"
+            required
+          />
+        </div>
         <FormInput
           name="email"
           type="text"
@@ -107,46 +118,10 @@ export function ApplicantForm({
           required
         />
         <FormInput
-          name="gender"
-          type="select"
-          formLabel={t("applicants.form.gender")}
-          items={applicantGenderOptions.map((option) => ({
-            value: option.value,
-            label: t(`applicants.form.gender.${option.value}`),
-          }))}
-          placeholder={t("applicants.form.genderPlaceholder")}
-          icon="Users"
-          required
-        />
-        <FormInput
-          name="dateOfBirth"
-          type="date"
-          formLabel={t("applicants.form.dateOfBirth")}
-          placeholder={t("applicants.form.dateOfBirthPlaceholder")}
-          icon="Calendar"
-          required
-        />
-        <FormInput
-          name="address"
-          type="textarea"
-          formLabel={t("applicants.form.address")}
-          placeholder={t("applicants.form.addressPlaceholder")}
-          icon="MapPin"
-          required
-        />
-        <FormInput
           name="password"
-          type="password"
+          type="text"
           formLabel={t("applicants.form.password")}
           placeholder={t("applicants.form.passwordPlaceholder")}
-          icon="Lock"
-          required
-        />
-        <FormInput
-          name="confirmPassword"
-          type="password"
-          formLabel={t("applicants.form.confirmPassword")}
-          placeholder={t("applicants.form.confirmPasswordPlaceholder")}
           icon="Lock"
           required
         />

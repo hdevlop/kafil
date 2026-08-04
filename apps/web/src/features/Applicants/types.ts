@@ -12,8 +12,6 @@ export interface ApplicantRecord {
   phone: string;
   cin: string;
   gender: "M" | "F";
-  address: string;
-  dateOfBirth: string;
   status: ApplicantStatus;
   submittedAt: string;
   reviewedAt: string | null;
@@ -60,3 +58,21 @@ export type ApplicantStep =
   | { kind: "form" }
   | { kind: "otp"; setup: ApplicantEmailOtpSetup }
   | { kind: "pending_review"; destination: string };
+
+export interface ApplicantDecisionPayload {
+  id: string;
+  authUserId: string;
+  name: string;
+  email: string;
+  phone: string;
+  cin: string;
+  gender: "M" | "F";
+  status: ApplicantStatus;
+  submittedAt: string;
+  reviewedAt: string | null;
+  reviewedByUserId: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sponsorProfileId?: string;
+}

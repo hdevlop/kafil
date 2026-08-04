@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 import { usersTable } from "najm-auth/pg";
@@ -33,7 +33,9 @@ const sponsorAssignmentSelection = {
 
 const sponsorFamilyCatalogSelection = {
   id: familyProfiles.id,
+  name: usersTable.name,
   image: usersTable.image,
+  supportPriority: familyProfiles.supportPriority,
   fundingStatus: familyProfiles.fundingStatus,
   fundingTargetMinor: familyProfiles.fundingTargetMinor,
   fundingActivatedAt: familyProfiles.fundingActivatedAt,
@@ -42,6 +44,12 @@ const sponsorFamilyCatalogSelection = {
     from ${children}
     where ${children.familyProfileId} = ${familyProfiles.id}
       and ${children.status} = 'active'
+  )`,
+  activeSponsorCount: sql<number>`(
+    select count(distinct ${supportAssignments.sponsorProfileId})::int
+    from ${supportAssignments}
+    where ${supportAssignments.familyProfileId} = ${familyProfiles.id}
+      and ${supportAssignments.status} = 'active'
   )`,
 };
 
@@ -54,7 +62,10 @@ export class SupportAssignmentRepository {
     const query = this.db
       .select()
       .from(supportAssignments)
-      .orderBy(asc(supportAssignments.createdAt))
+      .orderBy(
+        desc(supportAssignments.createdAt),
+        desc(supportAssignments.id),
+      )
       .limit(limit)
       .offset(offset);
     return condition ? query.where(condition) : query;
@@ -85,12 +96,37 @@ export class SupportAssignmentRepository {
       .offset(offset);
   }
 
-  listSponsorFamilyCatalog(limit: number, offset: number) {
+  listSponsorFamilyCatalog(
+    sponsorProfileId: string,
+    limit: number,
+    offset: number,
+    filters: { search?: string; relationship?: "supported" | "available" },
+  ) {
+    const ownAssignmentId = sql<string | null>`(
+      select ${supportAssignments.id}
+      from ${supportAssignments}
+      where ${supportAssignments.familyProfileId} = ${familyProfiles.id}
+        and ${supportAssignments.sponsorProfileId} = ${sponsorProfileId}
+        and ${supportAssignments.status} = 'active'
+        and ${supportAssignments.childId} is null
+      order by ${supportAssignments.startedAt} asc
+      limit 1
+    )`;
+    const conditions = [eq(usersTable.status, "active")];
+    if (filters.search) {
+      conditions.push(sql`${usersTable.name} ilike ${`%${filters.search}%`}`);
+    }
+    if (filters.relationship === "supported") {
+      conditions.push(sql`${ownAssignmentId} is not null`);
+    } else if (filters.relationship === "available") {
+      conditions.push(sql`${ownAssignmentId} is null`);
+    }
+
     return this.db
-      .select(sponsorFamilyCatalogSelection)
+      .select({ ...sponsorFamilyCatalogSelection, assignmentId: ownAssignmentId })
       .from(familyProfiles)
       .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
-      .where(eq(usersTable.status, "active"))
+      .where(and(...conditions))
       .orderBy(asc(familyProfiles.createdAt))
       .limit(limit)
       .offset(offset);

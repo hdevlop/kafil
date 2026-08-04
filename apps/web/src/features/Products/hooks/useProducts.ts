@@ -2,6 +2,7 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
@@ -28,6 +29,17 @@ export function useProducts(
     queryKey: productKeys.list(pagination, filters),
     queryFn: () => listProducts(pagination, filters),
     ...options,
+  });
+}
+
+export function useResponsiveProducts(
+  filters: ListProductsFilters = {},
+  enabled = true,
+) {
+  return useResponsiveOffsetList({
+    enabled,
+    queryKey: [...productKeys.all, "responsive", filters],
+    fetchPage: (pagination) => listProducts(pagination, filters),
   });
 }
 

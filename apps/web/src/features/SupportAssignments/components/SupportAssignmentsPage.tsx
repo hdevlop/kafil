@@ -1,15 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
-import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
+import { createCardPagination } from "@/lib/tablePagination";
 
 import { SupportAssignmentCard } from "./SupportAssignmentCard";
 import { SupportAssignmentDetails } from "./SupportAssignmentDetails";
@@ -19,7 +19,7 @@ import {
   EndSupportAssignmentDialogContent,
 } from "./SupportAssignmentForms";
 import {
-  useSupportAssignments,
+  useResponsiveSupportAssignments,
   useSupportAssignmentSources,
 } from "../hooks/useSupportAssignments";
 import { useSupportAssignmentsTableColumns } from "../hooks/useSupportAssignmentsTableColumns";
@@ -79,20 +79,21 @@ export function SupportAssignmentsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const tableMode = useDesktopTableMode();
-  const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
-  const assignments = useSupportAssignments(pagination);
+  const assignments = useResponsiveSupportAssignments();
   const sources = useSupportAssignmentSources();
   const columns = useSupportAssignmentsTableColumns();
   const filters = useSupportAssignmentsTableFilters();
   const rows = useMemo(
-    () => (sources.data ? decorateAssignments(assignments.data ?? [], sources.data, {
+    () => (sources.data ? decorateAssignments(
+      assignments.data,
+      sources.data,
+      {
       sponsor: t("operator.assignments.sponsor"),
       family: t("operator.assignments.family"),
-    }) : []),
+      },
+    ) : []),
     [assignments.data, sources.data, t],
   );
-  const pageIndex = getPageIndex(pagination);
-  const pageCount = hasPossibleNextPage(rows.length, pagination) ? pageIndex + 2 : pageIndex + 1;
   const error = assignments.error ?? sources.error;
 
   function openCreate() {
@@ -141,7 +142,7 @@ export function SupportAssignmentsPage() {
     data: rows,
     columns,
     filters,
-    loading: assignments.isPending || sources.isPending,
+    loading: assignments.loading || sources.isPending,
     error,
     getRowId: (assignment) => assignment.id,
     onCreate: openCreate,
@@ -184,11 +185,12 @@ export function SupportAssignmentsPage() {
         ],
     },
     menuButton: true,
+    showPagination: true,
     manualPagination: true,
-    showPagination: false,
-    pagination: { pageIndex, pageSize: pagination.limit },
-    pageCount,
-    onPaginationChange: ({ pageIndex: nextIndex, pageSize }) => setPagination(createOffsetPagination(nextIndex, pageSize)),
+    pagination: assignments.pagination,
+    pageCount: assignments.pageCount,
+    onPaginationChange: assignments.onPaginationChange,
+    cardPagination: createCardPagination(assignments, t),
     pageSizeOptions: [10, 25, 50, 100],
     availableModes: ["cards", "table"],
     mode: tableMode,

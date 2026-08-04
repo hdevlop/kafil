@@ -1,25 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
 import { useOwnSponsorProfile } from "@/features/Sponsors/hooks/useSponsorProfile";
 import { isSponsorProfileMissing } from "@/features/Sponsors/lib/isSponsorProfileMissing";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { PageErrorState, PageLoadingState } from "@/shared/PageState";
 
 import { SponsorDashboardPage } from "./SponsorDashboardPage";
 
 export function SponsorDashboardGate() {
-  const router = useRouter();
+  const { t } = useKafilLanguage();
   const profile = useOwnSponsorProfile();
   const profileMissing = profile.isError && isSponsorProfileMissing(profile.error);
 
-  useEffect(() => {
-    if (profileMissing) router.replace("/sponsor/profile");
-  }, [profileMissing, router]);
-
   if (profile.isPending || profileMissing) {
-    return <PageLoadingState label={profileMissing ? "Opening profile completion..." : "Checking your sponsor profile..."} />;
+    return <PageLoadingState label={t(profileMissing ? "sponsor.profile.completeDescription" : "sponsor.profile.loading")} />;
   }
 
   if (profile.isError) {

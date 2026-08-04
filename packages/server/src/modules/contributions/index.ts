@@ -5,6 +5,7 @@ export {
   ContributionPlanRepository,
   ContributionRepository,
   familyContributionSelection,
+  sponsorContributionSelection,
 } from "./contributionRepository";
 export * from "./contributionSchema";
 export { ContributionService } from "./contributionService";

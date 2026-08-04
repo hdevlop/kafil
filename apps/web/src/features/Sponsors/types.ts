@@ -130,6 +130,7 @@ export interface OwnSponsorProfile {
 }
 
 export interface CreateOwnSponsorProfileInput {
+  image?: string | null;
   phone: string;
   cin: string;
   gender: "F" | "M";
@@ -138,6 +139,7 @@ export interface CreateOwnSponsorProfileInput {
 }
 
 export interface UpdateOwnSponsorProfileInput {
+  image?: string | null;
   phone?: string;
   cin?: string;
   gender?: "F" | "M";

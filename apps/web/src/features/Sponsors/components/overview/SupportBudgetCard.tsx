@@ -17,6 +17,7 @@ export function SupportBudgetCard({
   language,
   emptyLabel,
   footer,
+  compact = true,
 }: Readonly<{
   icon: LucideIcon;
   segments: BudgetSegment[];
@@ -26,6 +27,7 @@ export function SupportBudgetCard({
   emptyLabel: string;
   language: KafilLanguage;
   footer?: ReactNode;
+  compact?: boolean;
 }>) {
   const money = (value: number) => formatMad(value, language);
   const number = (value: number) => formatKafilNumber(value / 100, language);
@@ -33,11 +35,6 @@ export function SupportBudgetCard({
   return (
     <NDonutCard
       className="h-full"
-      variant="compact"
-      layout="horizontal"
-      centerOrientation="column"
-      centerValueFormatter={number}
-      centerUnit="MAD"
       icon={icon}
       title={title}
       items={segments.map((s, i) => ({ ...s, id: `seg-${i}` }))}
@@ -45,6 +42,15 @@ export function SupportBudgetCard({
       totalLabel={totalLabel}
       emptyLabel={emptyLabel}
       footer={footer}
+      {...(compact
+        ? {
+            centerOrientation: "column" as const,
+            centerUnit: "MAD",
+            centerValueFormatter: number,
+            layout: "horizontal" as const,
+            variant: "compact" as const,
+          }
+        : {})}
     />
   );
 }

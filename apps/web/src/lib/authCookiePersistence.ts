@@ -116,9 +116,8 @@ function isDeletionCookie(setCookie: string) {
 async function getAccessFlowResponse(response: Response) {
   const payload = (await response.clone().json().catch(() => null)) as
     | {
-        data?: { nextStep?: unknown; rememberMe?: unknown; setupRequired?: unknown };
+        data?: { nextStep?: unknown; setupRequired?: unknown };
         nextStep?: unknown;
-        rememberMe?: unknown;
         setupRequired?: unknown;
       }
     | null;
@@ -174,28 +173,14 @@ export function withAuthCookiePersistence(handler: RequestHandler): RequestHandl
 
     if (!response.ok) return response;
 
-    const pathname = new URL(request.url).pathname;
     const flow = await getAccessFlowResponse(response);
 
     if (
       action?.type === "apply" &&
       (flow?.setupRequired === true ||
-        flow?.nextStep === "family_password_setup" ||
-        flow?.nextStep === "sponsor_email_otp")
+        flow?.nextStep === "family_password_setup")
     ) {
       action = { type: "setup" };
-    }
-
-    if (
-      !action &&
-      pathname === "/api/access/email-verification/confirm" &&
-      flow?.nextStep === "authenticated" &&
-      typeof flow.rememberMe === "boolean"
-    ) {
-      action = {
-        type: "apply",
-        mode: flow.rememberMe ? "persistent" : "session",
-      };
     }
 
     if (!action) return response;

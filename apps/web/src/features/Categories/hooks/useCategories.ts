@@ -2,6 +2,7 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
@@ -28,6 +29,14 @@ export function useCategories(
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     ...options,
+  });
+}
+
+export function useResponsiveCategories(enabled = true) {
+  return useResponsiveOffsetList({
+    enabled,
+    queryKey: [...categoryKeys.all, "responsive"],
+    fetchPage: listCategories,
   });
 }
 

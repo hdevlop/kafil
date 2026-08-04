@@ -1,13 +1,17 @@
 "use client";
 
+import { keepPreviousData } from "@tanstack/react-query";
 import { useUser } from "najm-auth/client/react";
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import {
   bulkDeleteContributions,
   deleteContribution,
+  listAllContributions,
+  listContributionPage,
   listContributions,
   listContributionRecordingOptions,
   recordContribution,
@@ -20,7 +24,7 @@ import { contributionInvalidation } from "./contributionInvalidation";
 import { contributionKeys } from "./contributionKeys";
 import type { ContributionListQuery, ContributionListRecord, ContributionRecord } from "../types";
 
-export function useContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery) {
+export function useContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery, enabled = true) {
   const user = useUser();
   const isFamily = user?.role === "family";
   const isSponsor = user?.role === "sponsor";
@@ -32,7 +36,69 @@ export function useContributions<TRecord extends ContributionListRecord = Contri
       }
       return listContributions<TRecord>(query);
     },
-    enabled: Boolean(user),
+    enabled: Boolean(user) && enabled,
+  });
+}
+
+export function useContributionPage<TRecord extends ContributionListRecord = ContributionRecord>(
+  query: ContributionListQuery,
+  enabled = true,
+) {
+  const user = useUser();
+  const audience = user?.role === "sponsor"
+    ? "sponsor"
+    : user?.role === "family"
+      ? "family"
+      : query.audience;
+
+  return useEntityQuery({
+    queryKey: contributionKeys.page({ ...query, audience, role: user?.role }),
+    queryFn: () => listContributionPage<TRecord>({ ...query, audience }),
+    enabled: Boolean(user) && enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAllContributions<TRecord extends ContributionListRecord = ContributionRecord>(
+  query: Omit<ContributionListQuery, "limit" | "offset">,
+  enabled = true,
+) {
+  const user = useUser();
+  const isSponsor = user?.role === "sponsor";
+  const audience = isSponsor
+    ? "sponsor"
+    : user?.role === "family"
+      ? "family"
+      : query.audience;
+
+  return useEntityQuery({
+    queryKey: contributionKeys.full({ ...query, audience, role: user?.role }),
+    queryFn: () => listAllContributions<TRecord>({ ...query, audience }),
+    enabled: Boolean(user) && enabled,
+  });
+}
+
+export function useInfiniteContributions<
+  TRecord extends ContributionListRecord = ContributionRecord,
+>(
+  query: Omit<ContributionListQuery, "limit" | "offset">,
+  enabled = true,
+) {
+  const user = useUser();
+  const audience = user?.role === "sponsor"
+    ? "sponsor"
+    : user?.role === "family"
+      ? "family"
+      : query.audience;
+
+  return useOffsetInfiniteQuery<TRecord>({
+    enabled: Boolean(user) && enabled,
+    queryKey: contributionKeys.full({ ...query, audience, role: user?.role }),
+    fetchPage: (pagination) => listContributions<TRecord>({
+      ...query,
+      ...pagination,
+      audience,
+    }),
   });
 }
 

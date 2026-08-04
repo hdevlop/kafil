@@ -9,6 +9,7 @@ import {
 } from "@/services/sponsorProfileApi";
 
 import { sponsorProfileKeys } from "./sponsorProfileKeys";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 export function useOwnSponsorProfile() {
   return useEntityQuery({
@@ -18,20 +19,21 @@ export function useOwnSponsorProfile() {
 }
 
 export function useOwnSponsorProfileCommands() {
+  const { t } = useKafilLanguage();
   const invalidate = [sponsorProfileKeys.all];
 
   const create = useEntityCommand({
     mutationFn: createOwnSponsorProfile,
     invalidate,
-    successMessage: "Sponsor profile completed.",
-    errorMessage: "Could not complete your sponsor profile.",
+    successMessage: t("operator.sponsors.updateSuccess"),
+    errorMessage: t("sponsor.profile.loadError"),
   });
 
   const update = useEntityCommand({
     mutationFn: updateOwnSponsorProfile,
     invalidate,
-    successMessage: "Sponsor profile updated.",
-    errorMessage: "Could not update your sponsor profile.",
+    successMessage: t("operator.sponsors.updateSuccess"),
+    errorMessage: t("operator.sponsors.updateError"),
   });
 
   return { create, update };

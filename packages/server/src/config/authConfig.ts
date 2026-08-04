@@ -180,7 +180,14 @@ class ChildImageViewerRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.ADMIN] },
+      {
+        allowedRoles: [
+          ROLES.OPERATOR,
+          ROLES.FAMILY,
+          ROLES.SPONSOR,
+          ROLES.ADMIN,
+        ],
+      },
       user,
       context,
     );
@@ -224,12 +231,12 @@ class OrderReaderRoleGuard {
 }
 
 @Service()
-class FamilyImageViewerRoleGuard {
+class SponsorImageManagerRoleGuard {
   constructor(private readonly guard: KafilRoleGuard) {}
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.ADMIN] },
+      { allowedRoles: [ROLES.OPERATOR, ROLES.SPONSOR, ROLES.ADMIN] },
       user,
       context,
     );
@@ -257,7 +264,7 @@ const ContributionReaderRole = createGuard(ContributionReaderRoleGuard);
 const ChildReaderRole = createGuard(ChildReaderRoleGuard);
 const OrderReaderRole = createGuard(OrderReaderRoleGuard);
 const SponsorImageViewerRole = createGuard(SponsorImageViewerRoleGuard);
-const FamilyImageViewerRole = createGuard(FamilyImageViewerRoleGuard);
+const SponsorImageManagerRole = createGuard(SponsorImageManagerRoleGuard);
 const ChildImageViewerRole = createGuard(ChildImageViewerRoleGuard);
 const CatalogImageViewerRole = createGuard(CatalogImageViewerRoleGuard);
 
@@ -283,7 +290,7 @@ export const isInGroup = (
 ) => hasRole(userRole, ...keys);
 
 export const isSponsorImageViewer = composeGuards(SponsorImageViewerRole());
-export const isFamilyImageViewer = composeGuards(FamilyImageViewerRole());
+export const isSponsorImageManager = composeGuards(SponsorImageManagerRole());
 export const isChildImageViewer = composeGuards(ChildImageViewerRole());
 export const isCatalogImageViewer = composeGuards(CatalogImageViewerRole());
 

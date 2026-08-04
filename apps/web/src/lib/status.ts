@@ -8,6 +8,8 @@ export const KAFIL_STATUS_COLORS: Record<string, BadgeColor> = {
   validated: "success",
 
   pending: "warning",
+  pending_email_verification: "warning",
+  pending_review: "warning",
   in_preparation: "warning",
   purchased: "info",
   out_for_delivery: "warning",

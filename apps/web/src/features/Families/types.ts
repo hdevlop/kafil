@@ -98,8 +98,18 @@ export interface FamilyStatusInput {
 
 export interface SponsorFamilyCatalogEntry {
   id: string;
-  reference: string;
+  assignmentId: string | null;
+  name: string;
   image: string | null;
+  supportPriority: FamilySupportPriority;
+  reference: string;
   activeChildCount: number;
+  activeSponsorCount: number;
   funding: FamilyFundingProgress | null;
+}
+
+export type SponsorFamilyRelationship = "supported" | "available";
+
+export interface SponsorFamilyView extends SponsorFamilyCatalogEntry {
+  relationship: SponsorFamilyRelationship;
 }

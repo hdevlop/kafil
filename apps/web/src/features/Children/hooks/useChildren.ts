@@ -4,6 +4,7 @@ import { useUser } from "najm-auth/client/react";
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
   bulkDeleteChildren,
@@ -28,6 +29,15 @@ export function useChildren(pagination: OffsetPagination) {
     }),
     queryFn: () => listChildren(pagination),
     enabled: Boolean(user),
+  });
+}
+
+export function useResponsiveChildren() {
+  const user = useUser();
+  return useResponsiveOffsetList({
+    enabled: Boolean(user),
+    queryKey: [...childKeys.all, "responsive", user?.role, user?.id],
+    fetchPage: listChildren,
   });
 }
 

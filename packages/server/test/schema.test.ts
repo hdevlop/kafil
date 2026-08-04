@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { getTableColumns } from "drizzle-orm";
 
 import {
+  applicants,
   auditEvents,
   budgetAccounts,
   budgetLedgerEntries,
@@ -26,7 +27,6 @@ import {
   platformSettings,
   products,
   schema,
-  sponsorEmailOtpChallenges,
   sponsorProfiles,
   staffFunctions,
   staffProfiles,
@@ -47,6 +47,12 @@ describe("Kafil database schema", () => {
         ...Object.keys(kafilSchema),
       ].sort(),
     );
+  });
+
+  it("keeps applicant intake free of birth date and address fields", () => {
+    const applicantColumns = Object.keys(getTableColumns(applicants));
+    expect(applicantColumns).not.toContain("dateOfBirth");
+    expect(applicantColumns).not.toContain("address");
   });
 
   it("keeps one family domain root without standalone households", () => {
@@ -195,7 +201,6 @@ describe("Kafil database schema", () => {
         "outboxEvents",
         "platformSettings",
         "products",
-        "sponsorEmailOtpChallenges",
         "sponsorProfiles",
         "staffFunctions",
         "staffProfiles",
@@ -216,27 +221,6 @@ describe("Kafil database schema", () => {
     ]);
     expect(columns.userId.notNull).toBe(true);
     expect(columns.required.notNull).toBe(true);
-  });
-
-  it("stores only hashed, bounded sponsor activation challenges", () => {
-    const columns = getTableColumns(sponsorEmailOtpChallenges);
-    expect(Object.keys(columns)).toEqual([
-      "id",
-      "userId",
-      "codeHash",
-      "expiresAt",
-      "resendAvailableAt",
-      "attemptsRemaining",
-      "rememberMe",
-      "emailSent",
-      "locale",
-      "consumedAt",
-      "createdAt",
-      "updatedAt",
-    ]);
-    expect(columns).not.toHaveProperty("code");
-    expect(columns.codeHash.notNull).toBe(true);
-    expect(columns.attemptsRemaining.notNull).toBe(true);
   });
 
   it("composes Najm's hashed, expiring, purpose-bound setup sessions", () => {

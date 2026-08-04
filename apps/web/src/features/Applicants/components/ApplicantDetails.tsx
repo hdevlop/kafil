@@ -1,7 +1,7 @@
 "use client";
 
-import { Contact, FileKey2, MapPin, UserRoundSearch } from "lucide-react";
-import { NDetailList, NSection } from "najm-kit";
+import { CheckCircle2, Contact, FileKey2, UserRoundSearch, XCircle } from "lucide-react";
+import { NButton, NDetailList, NErrorState, NLoadingState, NSection, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { formatKafilDate } from "@/lib/format";
@@ -9,10 +9,53 @@ import { getSponsorPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
+import {
+  ApproveApplicantDialogContent,
+  RejectApplicantDialogContent,
+} from "./ApplicantDecisionDialogs";
 import type { ApplicantRecord } from "../types";
+import { useApplicant } from "../hooks/useApplicants";
 
-export function ApplicantDetails({ applicant }: Readonly<{ applicant: ApplicantRecord }>) {
+export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplicant: ApplicantRecord }>) {
   const { language, t } = useKafilLanguage();
+  const dialog = useDialog();
+  const applicantQuery = useApplicant(initialApplicant.id, initialApplicant);
+  const applicant = applicantQuery.data ?? initialApplicant;
+
+  if (applicantQuery.isPending) {
+    return <NLoadingState label={t("operator.applicants.loading")} />;
+  }
+  if (applicantQuery.isError) {
+    return (
+      <NErrorState
+        title={t("operator.applicants.loadDetailError")}
+        onRetry={() => void applicantQuery.refetch()}
+      />
+    );
+  }
+
+  const isPendingReview = applicant.status === "pending_review";
+  const canApprove = isPendingReview || applicant.status === "rejected";
+
+  function openApprove() {
+    void dialog.openDialog({
+      title: t("operator.applicants.approveTitle", { name: applicant.name }),
+      description: t("operator.applicants.approveDescription", { name: applicant.name }),
+      children: <ApproveApplicantDialogContent applicant={applicant} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function openReject() {
+    void dialog.openDialog({
+      title: t("operator.applicants.rejectTitle", { name: applicant.name }),
+      description: t("operator.applicants.rejectDescription", { name: applicant.name }),
+      children: <RejectApplicantDialogContent applicant={applicant} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
 
   return (
     <div className="space-y-5">
@@ -41,20 +84,12 @@ export function ApplicantDetails({ applicant }: Readonly<{ applicant: ApplicantR
                 ? t("operator.applicants.female")
                 : t("operator.applicants.male"),
             },
-            {
-              label: t("operator.applicants.dateOfBirth"),
-              value: formatKafilDate(applicant.dateOfBirth, language),
-            },
           ]}
         />
       </NSection>
 
       <NSection icon={FileKey2} title={t("operator.applicants.privateVerification")}>
         <NDetailList items={[{ label: t("operator.applicants.cin"), value: applicant.cin }]} />
-      </NSection>
-
-      <NSection icon={MapPin} title={t("operator.applicants.address")}>
-        <NDetailList items={[{ label: t("operator.applicants.address"), value: applicant.address }]} />
       </NSection>
 
       <NSection icon={UserRoundSearch} title={t("operator.applicants.review")}>
@@ -79,6 +114,24 @@ export function ApplicantDetails({ applicant }: Readonly<{ applicant: ApplicantR
           ]}
         />
       </NSection>
+
+      {canApprove ? (
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+          {isPendingReview ? (
+            <NButton
+              type="button"
+              variant="destructive"
+              leftIcon={XCircle}
+              onClick={openReject}
+            >
+              {t("operator.applicants.reject")}
+            </NButton>
+          ) : null}
+          <NButton type="button" leftIcon={CheckCircle2} onClick={openApprove}>
+            {t("operator.applicants.approve")}
+          </NButton>
+        </div>
+      ) : null}
     </div>
   );
 }

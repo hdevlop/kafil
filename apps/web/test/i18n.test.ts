@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import {
   getNestedTranslation,
@@ -6,6 +8,17 @@ import {
 } from "../src/i18n/translations";
 
 describe("shared web locale adapter", () => {
+  test("uses the reactive Najm React adapter without a router refresh", () => {
+    const provider = readFileSync(
+      join(import.meta.dir, "../src/i18n/KafilLanguageProvider.tsx"),
+      "utf8",
+    );
+    expect(provider).toContain('from "najm-i18n/react"');
+    expect(provider).toContain("<I18nProvider");
+    expect(provider).toContain("onLanguageChange={persistLanguage}");
+    expect(provider).not.toContain("router.refresh");
+  });
+
   test("reads the server-owned UI catalog in each visible language", () => {
     expect(getUiTranslation("en", "dashboard.operator.title")).toBe("Operator dashboard");
     expect(getUiTranslation("fr", "dashboard.operator.title")).toBeTruthy();
@@ -16,6 +29,24 @@ describe("shared web locale adapter", () => {
     expect(getNestedTranslation({ nested: { value: "ok" } }, "nested.value"))
       .toBe("ok");
     expect(getNestedTranslation({ nested: {} }, "nested.missing")).toBeUndefined();
+  });
+
+  test("resolves nested applicant gender keys", () => {
+    expect(
+      getNestedTranslation(
+        { applicants: { form: { gender: { female: "Female" } } } },
+        "applicants.form.gender.female",
+      ),
+    ).toBe("Female");
+
+    for (const language of ["en", "fr", "ar", "es"] as const) {
+      expect(getUiTranslation(language, "applicants.form.genderLabel"))
+        .not.toBe("applicants.form.genderLabel");
+      expect(getUiTranslation(language, "applicants.form.gender.female"))
+        .not.toBe("applicants.form.gender.female");
+      expect(getUiTranslation(language, "applicants.form.gender.male"))
+        .not.toBe("applicants.form.gender.male");
+    }
   });
 
   test("localizes the complete operator sponsor workflow", () => {

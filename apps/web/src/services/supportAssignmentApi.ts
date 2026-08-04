@@ -1,4 +1,4 @@
-import type { OffsetPagination } from "@/lib/pagination";
+import { listAllOffsetPages, type OffsetPagination } from "@/lib/pagination";
 import { api } from "@/services/http";
 import type {
   CreateSupportAssignmentInput,
@@ -13,6 +13,10 @@ export function listSupportAssignments(pagination: OffsetPagination) {
   return api.get<SupportAssignmentRecord[]>("/support-assignments", {
     query: { limit: pagination.limit, offset: pagination.offset },
   });
+}
+
+export function listAllSupportAssignments() {
+  return listAllOffsetPages(listSupportAssignments);
 }
 
 export function createSupportAssignment(input: CreateSupportAssignmentInput) {

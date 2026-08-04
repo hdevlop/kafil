@@ -578,4 +578,49 @@ it("adds assisted procurement, immutable purchases, and delivery without destruc
     expect(migration).not.toContain('"code" varchar');
     expect(migration).not.toContain("DROP TABLE");
   });
+
+  it("removes birth date and address from applicant intake only", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0036_plain_sway.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'ALTER TABLE "applicants" DROP COLUMN "address"',
+    );
+    expect(migration).toContain(
+      'ALTER TABLE "applicants" DROP COLUMN "date_of_birth"',
+    );
+    expect(migration).not.toContain("DROP TABLE");
+  });
+
+  it("drops the legacy sponsor email OTP challenge table after the applicant flow replaces it", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0037_wooden_payback.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'DROP TABLE "sponsor_email_otp_challenges";',
+    );
+    expect(migration).toContain(
+      `WHERE "purpose" = 'sponsor-email-otp'`,
+    );
+    expect(migration).not.toContain("CASCADE");
+    expect(migration).not.toContain("CREATE TABLE");
+  });
+
+  it("prevents OAuth links from persisting for non-active identities", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0038_active_oauth_links.sql"),
+    ).text();
+
+    expect(migration).toContain(
+      'CREATE TRIGGER "oauth_accounts_require_active_user"',
+    );
+    expect(migration).toContain(
+      `AND "users"."status" = 'active'`,
+    );
+    expect(migration).toContain(`USING ERRCODE = '23514'`);
+    expect(migration).toContain('BEFORE INSERT OR UPDATE OF "user_id"');
+    expect(migration).not.toContain("DROP TABLE");
+  });
 });

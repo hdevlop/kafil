@@ -76,8 +76,11 @@ export class SupportAssignmentController {
     readOnly: true,
   })
   @ResMsg("families.success.retrieved")
-  listSponsorFamilyCatalog(@Query() query: SponsorFamilyCatalogQuery) {
-    return this.assignments.listSponsorFamilyCatalog(query);
+  listSponsorFamilyCatalog(
+    @User("id") userId: string,
+    @Query() query: SponsorFamilyCatalogQuery,
+  ) {
+    return this.assignments.listSponsorFamilyCatalog(userId, query);
   }
 
   @Get("/me/:id/family")

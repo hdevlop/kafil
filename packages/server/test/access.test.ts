@@ -8,7 +8,6 @@ import {
   UserService,
   UserValidator,
 } from "najm-auth";
-import { EmailService } from "najm-email";
 import { getRateLimitOptions } from "najm-rate";
 
 import {
@@ -22,7 +21,6 @@ import {
   normalizeFamilyCinCredential,
   normalizePhone,
   resolveAccessRateLimitConfig,
-  sponsorAccessRegistrationDto,
 } from "../src/modules/access";
 
 describe("accessible account credentials", () => {
@@ -52,25 +50,6 @@ describe("accessible account credentials", () => {
     expect(normalizeFamilyCinCredential("StrongPass1")).toBe("StrongPass1");
   });
 
-  it("keeps public sponsor registration pinned to safe fields", () => {
-    const parsed = sponsorAccessRegistrationDto.parse({
-      name: "Public Sponsor",
-      email: "public@example.test",
-      password: "StrongPass1",
-      locale: "fr",
-      role: "admin",
-      status: "active",
-      emailVerified: true,
-    });
-
-    expect(parsed).toEqual({
-      name: "Public Sponsor",
-      email: "public@example.test",
-      password: "StrongPass1",
-      locale: "fr",
-    });
-  });
-
   it("allows a simple lowercase family replacement password only", () => {
     expect(familyFirstPasswordDto.safeParse({ newPassword: "fatima2026" }).success).toBe(true);
     expect(familyFirstPasswordDto.safeParse({ newPassword: "Fatima2026" }).success).toBe(false);
@@ -80,26 +59,20 @@ describe("accessible account credentials", () => {
 });
 
 describe("Kafil access service", () => {
-  it("buckets login by normalized identity and OTP commands by IP", () => {
+  it("buckets login by normalized identity only", () => {
     expect(getRateLimitOptions(AccessController, "login")?.key).toBe(authIdentityRateLimitKey);
     expect(getRateLimitOptions(AccessController, "login")?.limit).toBe(5);
-    expect(getRateLimitOptions(AccessController, "resendVerification")?.key).toBe("ip");
-    expect(getRateLimitOptions(AccessController, "confirmVerification")?.key).toBe("ip");
   });
 
   it("keeps production-safe access rate defaults and overrides", () => {
     expect(resolveAccessRateLimitConfig({})).toEqual({
       login: { limit: 5, window: "15m" },
-      sponsorRegistration: { limit: 5, window: "15m" },
-      verificationResend: { limit: 3, window: "15m" },
-      verificationConfirm: { limit: 5, window: "15m" },
       familyPasswordChange: { limit: 5, window: "15m" },
     });
     expect(resolveAccessRateLimitConfig({
       KAFIL_ACCESS_RATE_LIMIT: "100",
       KAFIL_ACCESS_RATE_WINDOW: "1h",
-      KAFIL_ACCESS_VERIFICATION_REQUEST_RATE_LIMIT: "20",
-    }).verificationResend).toEqual({ limit: 20, window: "1h" });
+    }).login).toEqual({ limit: 100, window: "1h" });
     expect(() => resolveAccessRateLimitConfig({ KAFIL_ACCESS_RATE_LIMIT: "0" })).toThrow();
   });
 
@@ -137,192 +110,114 @@ describe("Kafil access service", () => {
     expect(result).toMatchObject({ nextStep: "authenticated", accessToken: "access" });
   });
 
-  it("valid pending sponsor credentials create only the scoped OTP next step", async () => {
-    const calls: unknown[][] = [];
+  it("lets an approved sponsor sign in through the email they used to apply", async () => {
+    const sessionEvents: unknown[] = [];
     const service = accessService({
-      users: {
-        findByEmailInsensitive: async () => pendingSponsor,
-      },
       auth: {
-        verifyPendingCredentials: async (credentials: unknown, role: string) => {
-          calls.push(["verify", credentials, role]);
-          return pendingSponsor;
-        },
-        verifyCredentials: async () => {
-          throw new Error("ordinary active verification must not run");
-        },
-      },
-      setup: {
-        begin: async (userId: string, options: unknown) => {
-          calls.push(["begin", userId, options]);
-          return { expiresAt: "2030-01-01T00:00:00.000Z" };
+        verifyCredentials: async () => ({
+          id: "sponsor-user",
+          email: "approved@example.test",
+          role: "sponsor",
+          status: "active",
+          emailVerified: true,
+        }),
+        establishSession: async (user: Record<string, unknown>) => {
+          sessionEvents.push(user);
+          return {
+            accessToken: "approved-access",
+            refreshToken: "approved-refresh",
+            user,
+          };
         },
       },
     });
 
     const result = await service.login({
-      identifier: "Sponsor@Example.Test",
+      identifier: "approved@example.test",
       password: "StrongPass1",
-      rememberMe: true,
-      locale: "ar",
     });
     expect(result).toMatchObject({
-      nextStep: "sponsor_email_otp",
-      maskedDestination: "s***@e***.test",
-      emailSent: true,
+      nextStep: "authenticated",
+      accessToken: "approved-access",
     });
-    expect(JSON.stringify(result)).not.toContain("123456");
-    expect(calls[0]).toEqual([
-      "verify",
-      { identifier: "sponsor@example.test", password: "StrongPass1" },
-      "sponsor",
-    ]);
+    expect(sessionEvents).toHaveLength(1);
   });
 
-  it("registration stores only a keyed hash and repeated pending registration rotates it", async () => {
-    const stored: Record<string, unknown>[] = [];
-    const messages: unknown[][] = [];
+  it("resolves the same approved sponsor through the normalized phone", async () => {
+    const resolvedIdentifiers: string[] = [];
     const service = accessService({
-      users: { findByEmailInsensitive: async () => pendingSponsor },
-      auth: { registerUser: async () => { throw new Error("must not duplicate"); } },
-      access: {
-        replaceSponsorEmailOtpChallenge: async (input: Record<string, unknown>) => {
-          stored.push(input);
-          return input;
-        },
-      },
-      email: {
-        sendHtml: async (...input: unknown[]) => {
-          messages.push(input);
-          return { success: true };
-        },
-      },
-    });
-
-    await service.registerSponsor({
-      name: "Ignored",
-      email: "SPONSOR@example.test",
-      password: "StrongPass1",
-      locale: "fr",
-    });
-    await service.registerSponsor({
-      name: "Ignored",
-      email: "SPONSOR@example.test",
-      password: "StrongPass1",
-      locale: "fr",
-    });
-
-    expect(stored).toHaveLength(2);
-    expect(stored[0]?.codeHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(stored[1]?.codeHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(stored[1]?.codeHash).not.toBe(stored[0]?.codeHash);
-    expect(JSON.stringify(stored)).not.toMatch(/"code"\s*:/);
-    expect(String(messages[0]?.[2])).not.toContain("verify-email?token=");
-    expect(String(messages[0]?.[2])).toMatch(/\d{6}/);
-  });
-
-  it("never reuses an active sponsor through registration", async () => {
-    let sent = false;
-    const service = accessService({
-      users: {
-        findByEmailInsensitive: async () => ({ ...pendingSponsor, status: "active", emailVerified: true }),
-      },
-      auth: { registerUser: async () => { throw new Error("email already exists"); } },
-      email: { sendHtml: async () => { sent = true; return { success: true }; } },
-    });
-    await expect(service.registerSponsor({
-      email: pendingSponsor.email,
-      password: "StrongPass1",
-    })).rejects.toThrow("email already exists");
-    expect(sent).toBe(false);
-  });
-
-  it("wrong OTP decrements attempts without consuming the setup session", async () => {
-    let attempts = 5;
-    let consumed = false;
-    const service = accessService({
-      setup: {
-        require: async () => ({ userId: pendingSponsor.id }),
-        consume: async () => { consumed = true; },
-      },
-      access: {
-        findSponsorEmailOtpChallenge: async () => ({
-          userId: pendingSponsor.id,
-          codeHash: "0".repeat(64),
-          expiresAt: new Date(Date.now() + 60_000),
-          attemptsRemaining: attempts,
-          consumedAt: null,
-        }),
-        decrementSponsorEmailOtpAttempts: async () => ({ attemptsRemaining: --attempts }),
-      },
-    });
-    await expect(service.confirmVerification("123456")).rejects.toBeDefined();
-    expect(attempts).toBe(4);
-    expect(consumed).toBe(false);
-  });
-
-  it("correct OTP atomically consumes challenge, activates sponsor, and remembers preference", async () => {
-    const events: unknown[][] = [];
-    let storedHash = "";
-    const service = accessService({
-      users: {
-        findByEmailInsensitive: async () => pendingSponsor,
-        getById: async () => pendingSponsor,
-        update: async (...input: unknown[]) => { events.push(["update", ...input]); },
-      },
       auth: {
+        verifyCredentials: async (creds: { identifier: string }) => {
+          resolvedIdentifiers.push(creds.identifier);
+          return {
+            id: "sponsor-user",
+            email: "approved@example.test",
+            role: "sponsor",
+            status: "active",
+            emailVerified: true,
+          };
+        },
         establishSession: async (user: Record<string, unknown>) => ({
-          accessToken: "access",
-          refreshToken: "refresh",
+          accessToken: "approved-access",
+          refreshToken: "approved-refresh",
           user,
         }),
       },
-      setup: {
-        require: async () => ({ userId: pendingSponsor.id }),
-        consume: async (_options: unknown, complete: (value: { userId: string }) => Promise<unknown>) => {
-          events.push(["consume-setup"]);
-          return complete({ userId: pendingSponsor.id });
+    });
+
+    const result = await service.login({
+      identifier: "06 12 34 56 78",
+      password: "StrongPass1",
+    });
+    expect(result).toMatchObject({ nextStep: "authenticated" });
+    expect(resolvedIdentifiers[0]).toBe("+212612345678");
+  });
+
+  it("never mints tokens for a still-pending applicant", async () => {
+    const pendingCalls: unknown[] = [];
+    const service = accessService({
+      auth: {
+        verifyCredentials: async (creds: { identifier: string }) => {
+          pendingCalls.push(creds.identifier);
+          throw new Error(
+            "Najm should block pending applicants before reaching AccessService",
+          );
+        },
+        establishSession: async () => {
+          throw new Error("establishSession must not run for pending applicants");
         },
       },
-      access: {
-        replaceSponsorEmailOtpChallenge: async (input: Record<string, unknown>) => {
-          storedHash = String(input.codeHash);
-          return input;
+    });
+
+    await expect(
+      service.login({
+        identifier: "pending@example.test",
+        password: "StrongPass1",
+      }),
+    ).rejects.toThrow(/Najm should block/);
+    expect(pendingCalls).toHaveLength(1);
+  });
+
+  it("never mints tokens for a rejected or inactive identity", async () => {
+    const blocked = accessService({
+      auth: {
+        verifyCredentials: async () => {
+          throw new Error(
+            "Najm should block rejected or inactive identities before AccessService",
+          );
         },
-        findSponsorEmailOtpChallenge: async () => ({
-          userId: pendingSponsor.id,
-          codeHash: storedHash,
-          expiresAt: new Date(Date.now() + 60_000),
-          attemptsRemaining: 5,
-          rememberMe: true,
-          consumedAt: null,
-        }),
-        consumeSponsorEmailOtpChallenge: async (_userId: string, hash: string) => ({
-          rememberMe: true,
-          codeHash: hash,
-        }),
+        establishSession: async () => {
+          throw new Error("establishSession must not run for rejected identities");
+        },
       },
     });
-    // Capture a valid hash by issuing a challenge; the six-digit code stays only in the email body.
-    let deliveredCode = "";
-    (service as unknown as { email: { sendHtml: (...args: unknown[]) => Promise<{ success: boolean }> } }).email = {
-      sendHtml: async (_to, _subject, html) => {
-        deliveredCode = String(html).match(/\d{6}/)?.[0] ?? "";
-        return { success: true };
-      },
-    };
-    await service.registerSponsor({ email: pendingSponsor.email, password: "StrongPass1" });
-    const result = await service.confirmVerification(deliveredCode);
-    expect(result).toMatchObject({
-      nextStep: "authenticated",
-      rememberMe: true,
-      accessToken: "access",
-    });
-    expect(events).toContainEqual([
-      "update",
-      pendingSponsor.id,
-      { emailVerified: true, status: "active" },
-    ]);
+
+    await expect(
+      blocked.login({
+        identifier: "rejected@example.test",
+        password: "StrongPass1",
+      }),
+    ).rejects.toThrow(/Najm should block/);
   });
 });
 
@@ -367,49 +262,18 @@ describe("family first-login password change", () => {
   });
 });
 
-const pendingSponsor = {
-  id: "sponsor-user",
-  email: "sponsor@example.test",
-  name: "Public Sponsor",
-  role: "sponsor",
-  status: "pending",
-  emailVerified: false,
-};
-
 function accessService(overrides: {
   auth?: Record<string, unknown>;
-  users?: Record<string, unknown>;
-  email?: Record<string, unknown>;
   access?: Record<string, unknown>;
   familyPasswords?: Record<string, unknown>;
-  setup?: Record<string, unknown>;
 }) {
-  const users = {
-    findByEmailInsensitive: async () => undefined,
-    findByPhone: async () => undefined,
-    getById: async () => pendingSponsor,
-    ...overrides.users,
-  };
   const access = {
     requiresFamilyPasswordChange: async () => false,
-    replaceSponsorEmailOtpChallenge: async (input: Record<string, unknown>) => input,
-    setSponsorEmailOtpDelivery: async () => ({ emailSent: true }),
     ...overrides.access,
-  };
-  const email = {
-    sendHtml: async () => ({ success: true }),
-    ...overrides.email,
-  };
-  const setup = {
-    begin: async () => ({ expiresAt: new Date(Date.now() + 60_000).toISOString() }),
-    ...overrides.setup,
   };
   return new AccessService(
     (overrides.auth ?? {}) as unknown as AuthService,
-    users as unknown as UserService,
-    email as unknown as EmailService,
     access as unknown as AccessRepository,
     (overrides.familyPasswords ?? {}) as unknown as FamilyPasswordService,
-    setup as unknown as CredentialSetupService,
   );
 }

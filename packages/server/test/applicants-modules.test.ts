@@ -28,10 +28,7 @@ const validSubmission = {
   phone: "+212600112233",
   cin: "ab123456",
   gender: "F" as const,
-  address: "Rabat, Morocco",
-  dateOfBirth: "1990-05-12",
   password: "StrongPass1",
-  confirmPassword: "StrongPass1",
 };
 
 const storedApplicants: Record<string, Record<string, unknown>> = {};
@@ -55,8 +52,6 @@ function baseApplicant(overrides: Partial<Record<string, unknown>> = {}) {
     phone: "+212600112233",
     cin: "AB123456",
     gender: "F",
-    address: "Rabat",
-    dateOfBirth: "1990-05-12",
     status: "pending_email_verification",
     submittedAt: new Date(),
     reviewedAt: null,
@@ -84,15 +79,13 @@ afterEach(() => {
 });
 
 describe("applicant DTOs", () => {
-  it("accepts the complete identity + credentials + confirmation contract", () => {
+  it("accepts the complete identity and password contract", () => {
     expect(createApplicantDto.parse(validSubmission)).toEqual({
       name: "Fatima Zahra",
       email: "fatima@example.test",
       phone: "+212600112233",
       cin: "AB123456",
       gender: "F",
-      address: "Rabat, Morocco",
-      dateOfBirth: "1990-05-12",
       password: "StrongPass1",
       locale: "en",
     });
@@ -108,19 +101,10 @@ describe("applicant DTOs", () => {
     expect(parsed.cin).toBe("AB123456");
   });
 
-  it("rejects mismatched password confirmation", () => {
-    const result = createApplicantDto.safeParse({
-      ...validSubmission,
-      confirmPassword: "DifferentPass1",
-    });
-    expect(result.success).toBe(false);
-  });
-
   it("rejects passwords shorter than 8 characters", () => {
     const result = createApplicantDto.safeParse({
       ...validSubmission,
       password: "short",
-      confirmPassword: "short",
     });
     expect(result.success).toBe(false);
   });
@@ -276,6 +260,95 @@ describe("applicant service", () => {
     expect(emailSentHtml).not.toMatch(/verify-email\?token=/);
     expect(Object.keys(storedUsers)).toHaveLength(1);
     expect(Object.keys(storedApplicants)).toHaveLength(1);
+  });
+
+  it("reclaims a legacy pending registration without granting sponsor capabilities", async () => {
+    const legacyUser = {
+      ...applicantUser(),
+      id: "legacy-pending-sponsor",
+      role: "sponsor",
+      status: "pending",
+      emailVerified: false,
+    } as SanitizedUser;
+    const userUpdates: unknown[][] = [];
+    const recordUpdates: unknown[][] = [];
+    const service = applicantService({
+      auth: {
+        registerUser: async () => {
+          throw new Error("must reclaim the existing identity");
+        },
+      },
+      users: {
+        findByEmailInsensitive: async () => legacyUser,
+        getById: async () => ({ ...legacyUser, role: null }),
+        update: async (id: string, input: Record<string, unknown>) => {
+          userUpdates.push([id, input]);
+          return legacyUser;
+        },
+      },
+      userRecords: {
+        update: async (id: string, input: Record<string, unknown>) => {
+          recordUpdates.push([id, input]);
+          return legacyUser;
+        },
+      },
+    });
+
+    const result = await service.submit(validSubmission);
+
+    expect(result).toMatchObject({
+      nextStep: "applicant_email_otp",
+      reused: true,
+    });
+    expect(userUpdates).toEqual([
+      [
+        legacyUser.id,
+        {
+          name: validSubmission.name,
+          email: validSubmission.email,
+          password: validSubmission.password,
+          status: "pending",
+          emailVerified: false,
+        },
+      ],
+    ]);
+    expect(recordUpdates).toEqual([
+      [
+        legacyUser.id,
+        {
+          phone: validSubmission.phone,
+          phoneVerified: false,
+          emailVerified: false,
+          roleId: null,
+        },
+      ],
+    ]);
+    expect(Object.values(storedApplicants)).toContainEqual(
+      expect.objectContaining({ authUserId: legacyUser.id }),
+    );
+  });
+
+  it("never reclaims an identity that already owns a sponsor profile", async () => {
+    const legacyUser = {
+      ...applicantUser(),
+      id: "real-sponsor",
+      role: "sponsor",
+      status: "pending",
+      emailVerified: false,
+    } as SanitizedUser;
+    const service = applicantService({
+      users: {
+        findByEmailInsensitive: async () => legacyUser,
+      },
+      sponsors: {
+        findByUserId: async () => ({ id: "sponsor-profile" }),
+      },
+    });
+
+    await expect(service.submit(validSubmission)).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(Object.keys(storedApplicants)).toHaveLength(0);
   });
 
   it("does not create a sponsor profile or sponsor capabilities", async () => {
@@ -501,6 +574,372 @@ describe("applicant service", () => {
   });
 });
 
+describe("applicant decision service", () => {
+  const pendingApplicant = baseApplicant({
+    id: "applicant-decision-1",
+    authUserId: "auth-user-decision-1",
+    email: "decision@example.test",
+    phone: "+212600000099",
+    cin: "DEC12345",
+    status: "pending_review",
+  });
+
+  function setupDecision(
+    repositoryOverrides: Record<string, unknown> = {},
+    sponsorOverrides: Record<string, unknown> = {},
+    extraOverrides: Partial<{
+      tokens: Record<string, unknown>;
+      audits: Record<string, unknown>;
+      outbox: Record<string, unknown>;
+    }> = {},
+  ) {
+    if (!storedApplicants[pendingApplicant.id]) {
+      storedApplicants[pendingApplicant.id] = { ...pendingApplicant };
+    }
+    const readApplicant = () =>
+      (storedApplicants[pendingApplicant.id] ??
+      pendingApplicant) as ReturnType<typeof baseApplicant>;
+    const userUpdates: unknown[][] = [];
+    const roleAssignments: unknown[][] = [];
+    const audits: unknown[][] = [];
+    const outboxEvents: unknown[][] = [];
+    const sponsorCreates: unknown[][] = [];
+    const tokenInvalidations: unknown[][] = [];
+    const tokenRevocations: unknown[][] = [];
+
+    const service = applicantService({
+      repository: applicantRepository({
+        findById: async (id) =>
+          id === pendingApplicant.id
+            ? readApplicant()
+            : undefined,
+        findByIdForUpdate: async (id) =>
+          id === pendingApplicant.id
+            ? readApplicant()
+            : undefined,
+        ...repositoryOverrides,
+      }),
+      users: {
+        getById: async () => ({
+          ...applicantUser(),
+          id: pendingApplicant.authUserId,
+          emailVerified: true,
+          status: "pending",
+        }),
+        update: async (id: string, input: Record<string, unknown>) => {
+          userUpdates.push([id, input]);
+          return { ...applicantUser(), id };
+        },
+        assignRole: async (id: string, _roleId: unknown, roleName: unknown) => {
+          roleAssignments.push([id, roleName]);
+          return { ...applicantUser(), id, role: roleName };
+        },
+      },
+      sponsors: {
+        create: async (input: Record<string, unknown>) => {
+          sponsorCreates.push([input]);
+          return { id: "sponsor-profile-decision", userId: input.userId, ...input };
+        },
+        ...sponsorOverrides,
+      },
+      tokens: {
+        invalidateUserAccessTokens: async (id: string) => {
+          tokenInvalidations.push([id]);
+          return 0;
+        },
+        revokeAllForUser: async (id: string) => {
+          tokenRevocations.push([id]);
+          return 0;
+        },
+        ...(extraOverrides.tokens ?? {}),
+      },
+      audits: {
+        record: async (input: Record<string, unknown>) => {
+          audits.push([input]);
+          return input;
+        },
+        ...(extraOverrides.audits ?? {}),
+      },
+      outbox: {
+        enqueue: async (input: Record<string, unknown>) => {
+          outboxEvents.push([input]);
+          return { id: `outbox-${outboxEvents.length}`, ...input };
+        },
+        markDelivered: async () => undefined,
+        markDeliveryFailed: async () => undefined,
+        ...(extraOverrides.outbox ?? {}),
+      },
+    });
+    return {
+      service,
+      userUpdates,
+      roleAssignments,
+      audits,
+      outboxEvents,
+      sponsorCreates,
+      tokenInvalidations,
+      tokenRevocations,
+    };
+  }
+
+  it("approves a pending review applicant once and never duplicates the graph", async () => {
+    const ctx = setupDecision();
+
+    const result = await ctx.service.approve(pendingApplicant.id, "admin-actor");
+
+    expect(result.status).toBe("approved");
+    expect(result.sponsorProfileId).toBe("sponsor-profile-decision");
+    expect(result.reviewedByUserId).toBe("admin-actor");
+    expect(storedApplicants[pendingApplicant.id]?.status).toBe("approved");
+
+    expect(ctx.roleAssignments).toEqual([
+      [pendingApplicant.authUserId, "sponsor"],
+    ]);
+    expect(
+      ctx.userUpdates.find(
+        ([, input]) =>
+          (input as Record<string, unknown>).status === "active",
+      ),
+    ).toBeDefined();
+    expect(ctx.sponsorCreates).toHaveLength(1);
+    expect(ctx.sponsorCreates[0]?.[0]).toMatchObject({
+      userId: pendingApplicant.authUserId,
+      phone: pendingApplicant.phone,
+      cin: pendingApplicant.cin,
+      gender: pendingApplicant.gender,
+    });
+    expect(ctx.audits).toHaveLength(1);
+    expect(ctx.audits[0]?.[0]).toMatchObject({
+      action: "applicant.approved",
+      actorUserId: "admin-actor",
+      resourceId: pendingApplicant.id,
+    });
+    expect(ctx.outboxEvents).toHaveLength(1);
+    expect(ctx.outboxEvents[0]?.[0]).toMatchObject({
+      topic: "applicant.approved",
+      aggregateType: "applicant",
+      aggregateId: pendingApplicant.id,
+    });
+  });
+
+  it("creates no support assignment or session during approval", async () => {
+    const ctx = setupDecision();
+
+    await ctx.service.approve(pendingApplicant.id, "admin-actor");
+
+    const supportCalls = (ctx.audits as unknown[][]).filter(
+      ([entry]) =>
+        String((entry as Record<string, unknown>).resource ?? "") ===
+        "supportAssignments",
+    );
+    expect(supportCalls).toHaveLength(0);
+  });
+
+  it("refuses approval when the applicant is not pending review", async () => {
+    storedApplicants[pendingApplicant.id] = {
+      ...pendingApplicant,
+      status: "approved",
+    };
+    const ctx = setupDecision();
+
+    await expect(
+      ctx.service.approve(pendingApplicant.id, "admin-actor"),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(ctx.roleAssignments).toHaveLength(0);
+    expect(ctx.sponsorCreates).toHaveLength(0);
+  });
+
+  it("allows an admin to approve a previously rejected applicant", async () => {
+    storedApplicants[pendingApplicant.id] = {
+      ...pendingApplicant,
+      status: "rejected",
+      rejectionReason: "Previously not eligible",
+      reviewedAt: new Date(),
+      reviewedByUserId: "previous-admin",
+    };
+    const ctx = setupDecision({
+      findAuthUserByIdForUpdate: async () => ({
+        ...applicantUser(),
+        id: pendingApplicant.authUserId,
+        emailVerified: true,
+        status: "inactive",
+      }) as SanitizedUser,
+    });
+
+    const result = await ctx.service.approve(pendingApplicant.id, "admin-actor");
+
+    expect(result.status).toBe("approved");
+    expect(result.rejectionReason).toBeNull();
+    expect(ctx.sponsorCreates).toHaveLength(1);
+    expect(ctx.roleAssignments).toEqual([[pendingApplicant.authUserId, "sponsor"]]);
+    expect(ctx.audits[0]?.[0]).toMatchObject({
+      action: "applicant.approved",
+      metadata: { transition: "rejected->approved" },
+    });
+    expect(ctx.outboxEvents[0]?.[0]).toMatchObject({
+      topic: "applicant.approved",
+      payload: { transition: "rejected->approved" },
+    });
+  });
+
+  it("refuses approval when the linked auth identity is not pending", async () => {
+    const ctx = setupDecision(undefined, undefined, {
+      ...{},
+    });
+    (ctx.service as unknown as {
+      applicants: {
+        findAuthUserByIdForUpdate: () => Promise<SanitizedUser>;
+      };
+    }).applicants.findAuthUserByIdForUpdate = async () =>
+      ({
+        ...applicantUser(),
+        id: pendingApplicant.authUserId,
+        emailVerified: true,
+        status: "active",
+      }) as SanitizedUser;
+
+    await expect(
+      ctx.service.approve(pendingApplicant.id, "admin-actor"),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(ctx.roleAssignments).toHaveLength(0);
+    expect(ctx.sponsorCreates).toHaveLength(0);
+  });
+
+  it("refuses approval when a sponsor profile already exists for the user", async () => {
+    const ctx = setupDecision(undefined, {
+      findByUserId: async () => ({ id: "existing-profile" }),
+    });
+
+    await expect(
+      ctx.service.approve(pendingApplicant.id, "admin-actor"),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(ctx.sponsorCreates).toHaveLength(0);
+  });
+
+  it("rejects a pending review applicant with a required reason", async () => {
+    const ctx = setupDecision();
+
+    const result = await ctx.service.reject(
+      pendingApplicant.id,
+      { reason: "  Not eligible  " },
+      "admin-actor",
+    );
+
+    expect(result.status).toBe("rejected");
+    expect(result.rejectionReason).toBe("Not eligible");
+    expect(storedApplicants[pendingApplicant.id]?.status).toBe("rejected");
+    expect(ctx.tokenInvalidations).toEqual([[pendingApplicant.authUserId]]);
+    expect(ctx.tokenRevocations).toEqual([[pendingApplicant.authUserId]]);
+    expect(
+      ctx.userUpdates.find(
+        ([, input]) =>
+          (input as Record<string, unknown>).status === "inactive",
+      ),
+    ).toBeDefined();
+    expect(ctx.roleAssignments).toHaveLength(0);
+    expect(ctx.sponsorCreates).toHaveLength(0);
+    expect(ctx.audits).toHaveLength(1);
+    expect(ctx.audits[0]?.[0]).toMatchObject({
+      action: "applicant.rejected",
+      resourceId: pendingApplicant.id,
+    });
+    expect(ctx.outboxEvents).toHaveLength(1);
+    expect(ctx.outboxEvents[0]?.[0]).toMatchObject({
+      topic: "applicant.rejected",
+      aggregateId: pendingApplicant.id,
+    });
+  });
+
+  it("requires a non-empty bounded rejection reason", async () => {
+    const ctx = setupDecision();
+
+    await expect(
+      ctx.service.reject(pendingApplicant.id, { reason: "" }, "admin-actor"),
+    ).rejects.toBeInstanceOf(Error);
+    await expect(
+      ctx.service.reject(
+        pendingApplicant.id,
+        { reason: "x".repeat(501) },
+        "admin-actor",
+      ),
+    ).rejects.toBeInstanceOf(Error);
+    expect(ctx.outboxEvents).toHaveLength(0);
+  });
+
+  it("refuses rejection when the applicant is not pending review", async () => {
+    storedApplicants[pendingApplicant.id] = {
+      ...pendingApplicant,
+      status: "rejected",
+    };
+    const ctx = setupDecision();
+
+    await expect(
+      ctx.service.reject(
+        pendingApplicant.id,
+        { reason: "Late reject" },
+        "admin-actor",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(ctx.tokenRevocations).toHaveLength(0);
+  });
+
+  it("returns the terminal applicant without duplicating the graph when re-approving", async () => {
+    storedApplicants[pendingApplicant.id] = {
+      ...pendingApplicant,
+      status: "approved",
+      reviewedAt: new Date(),
+      reviewedByUserId: "previous-admin",
+    };
+    const ctx = setupDecision();
+
+    await expect(
+      ctx.service.approve(pendingApplicant.id, "admin-actor"),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(ctx.roleAssignments).toHaveLength(0);
+    expect(ctx.sponsorCreates).toHaveLength(0);
+    expect(ctx.outboxEvents).toHaveLength(0);
+  });
+
+  it("filters the admin queue by status and search term", async () => {
+    const search = baseApplicant({
+      id: "search-applicant",
+      authUserId: "auth-search",
+      name: "Search Person",
+      email: "search@example.test",
+      phone: "+212600000088",
+      cin: "SEARCH1",
+      status: "approved",
+    });
+    storedApplicants[pendingApplicant.id] = { ...pendingApplicant };
+    storedApplicants[search.id] = { ...search };
+
+    const service = applicantService({
+      repository: applicantRepository(),
+    });
+
+    const pendingOnly = await service.list({ status: "pending_review" });
+    expect(pendingOnly.map((row) => row.id)).toContain(pendingApplicant.id);
+    expect(pendingOnly.map((row) => row.id)).not.toContain(search.id);
+
+    const approvedOnly = await service.list({ status: "approved" });
+    expect(approvedOnly.map((row) => row.id)).toContain(search.id);
+    expect(approvedOnly.map((row) => row.id)).not.toContain(pendingApplicant.id);
+
+    const byEmail = await service.list({ search: "search@example.test" });
+    expect(byEmail.map((row) => row.id)).toEqual([search.id]);
+
+    const byPhone = await service.list({ search: "+212600000099" });
+    expect(byPhone.map((row) => row.id)).toEqual([pendingApplicant.id]);
+  });
+
+  it("counts pending review applicants for the queue header", async () => {
+    storedApplicants[pendingApplicant.id] = { ...pendingApplicant };
+    const service = applicantService();
+    const count = await service.countByStatus("pending_review");
+    expect(count).toBeGreaterThanOrEqual(1);
+  });
+});
+
 function applicantUser(): SanitizedUser {
   return {
     id: "applicant-user",
@@ -514,6 +953,8 @@ function applicantUser(): SanitizedUser {
 function applicantRepository(overrides: Partial<{
   list: (limit: number, offset: number) => Promise<ReturnType<typeof baseApplicant>[]>;
   findById: (id: string) => Promise<ReturnType<typeof baseApplicant> | undefined>;
+  findByIdForUpdate: (id: string) => Promise<ReturnType<typeof baseApplicant> | undefined>;
+  findAuthUserByIdForUpdate: (id: string) => Promise<Record<string, unknown> | undefined>;
   findByAuthUserId: (id: string) => Promise<ReturnType<typeof baseApplicant> | undefined>;
   findByEmailInsensitive: (email: string) => Promise<ReturnType<typeof baseApplicant> | undefined>;
   findByPhone: (phone: string) => Promise<ReturnType<typeof baseApplicant> | undefined>;
@@ -524,6 +965,20 @@ function applicantRepository(overrides: Partial<{
     input: Record<string, unknown>,
   ) => Promise<ReturnType<typeof baseApplicant>>;
   markReviewPending: (id: string) => Promise<ReturnType<typeof baseApplicant>>;
+  approve: (
+    id: string,
+    reviewerUserId: string,
+    expectedStatus: string,
+    reviewedAt: Date,
+  ) => Promise<ReturnType<typeof baseApplicant> | undefined>;
+  reject: (
+    id: string,
+    reviewerUserId: string,
+    expectedStatus: string,
+    reason: string,
+    reviewedAt: Date,
+  ) => Promise<ReturnType<typeof baseApplicant> | undefined>;
+  countByStatus: (status: string) => Promise<number>;
   findChallengeByApplicant: (id: string) => Promise<Record<string, unknown> | undefined>;
   replaceChallenge: (input: Record<string, unknown>) => Promise<Record<string, unknown>>;
   setChallengeDelivery: (
@@ -540,6 +995,7 @@ function applicantRepository(overrides: Partial<{
     hash: string,
   ) => Promise<Record<string, unknown> | undefined>;
   revokeChallenge: (id: string) => Promise<void>;
+  revokeCredentialSetupSessions: (id: string, revokedAt: Date) => Promise<unknown[]>;
 }> = {}): ApplicantRepository {
   const findByEmailInsensitive = overrides.findByEmailInsensitive ?? (async () => undefined);
   const createApplicant: NonNullable<typeof overrides.create> = overrides.create ?? (async (input) => {
@@ -603,12 +1059,33 @@ function applicantRepository(overrides: Partial<{
   });
 
   return {
-    list: overrides.list ?? (async () => Object.values(storedApplicants) as ReturnType<typeof baseApplicant>[]),
     findById,
+    findByIdForUpdate: overrides.findByIdForUpdate ?? findById,
+    findAuthUserByIdForUpdate: overrides.findAuthUserByIdForUpdate ?? (async (id) => ({
+      id,
+      email: "decision@example.test",
+      name: "Decision Applicant",
+      emailVerified: true,
+      status: "pending",
+    })),
     findByAuthUserId,
     findByEmailInsensitive,
     findByPhone: overrides.findByPhone ?? (async () => undefined),
     findByCin: overrides.findByCin ?? (async () => undefined),
+    list: overrides.list ?? (async (limit: number, offset: number, filters: { status?: string; search?: string } = {}) => {
+      let rows = Object.values(storedApplicants) as ReturnType<typeof baseApplicant>[];
+      if (filters.status) rows = rows.filter((row) => row.status === filters.status);
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        rows = rows.filter(
+          (row) =>
+            row.name.toLowerCase().includes(q) ||
+            row.email.toLowerCase().includes(q) ||
+            row.phone.toLowerCase().includes(q),
+        );
+      }
+      return rows.slice(offset, offset + limit);
+    }),
     create: createApplicant,
     updateIdentity: overrides.updateIdentity ?? (async (id: string, input: Record<string, unknown>) => {
       if (storedApplicants[id]) {
@@ -617,12 +1094,40 @@ function applicantRepository(overrides: Partial<{
       return storedApplicants[id] as ReturnType<typeof baseApplicant>;
     }),
     markReviewPending,
+    approve: overrides.approve ?? (async (id, reviewerUserId, expectedStatus, reviewedAt) => {
+      if (storedApplicants[id] && storedApplicants[id]?.status === expectedStatus) {
+        storedApplicants[id] = {
+          ...storedApplicants[id],
+          status: "approved",
+          reviewedAt,
+          reviewedByUserId: reviewerUserId,
+          rejectionReason: null,
+        };
+        return storedApplicants[id] as ReturnType<typeof baseApplicant>;
+      }
+      return undefined;
+    }),
+    reject: overrides.reject ?? (async (id, reviewerUserId, expectedStatus, reason, reviewedAt) => {
+      if (storedApplicants[id] && storedApplicants[id]?.status === expectedStatus) {
+        storedApplicants[id] = {
+          ...storedApplicants[id],
+          status: "rejected",
+          reviewedAt,
+          reviewedByUserId: reviewerUserId,
+          rejectionReason: reason,
+        };
+        return storedApplicants[id] as ReturnType<typeof baseApplicant>;
+      }
+      return undefined;
+    }),
+    countByStatus: overrides.countByStatus ?? (async () => Object.values(storedApplicants).filter((row) => row.status === "pending_review").length),
     findChallengeByApplicant,
     replaceChallenge,
     setChallengeDelivery,
     decrementChallengeAttempts,
     consumeChallenge,
     revokeChallenge: overrides.revokeChallenge ?? (async () => undefined),
+    revokeCredentialSetupSessions: overrides.revokeCredentialSetupSessions ?? (async () => []),
   } as unknown as ApplicantRepository;
 }
 
@@ -652,6 +1157,10 @@ function applicantService(overrides: Partial<{
   email: EmailService;
   repository: ApplicantRepository;
   validator: ApplicantValidator;
+  sponsors: Record<string, unknown>;
+  tokens: Record<string, unknown>;
+  audits: Record<string, unknown>;
+  outbox: Record<string, unknown>;
   setup: {
     begin?: (...args: unknown[]) => Promise<{ expiresAt: string }>;
     require?: (...args: unknown[]) => Promise<{ userId: string }>;
@@ -659,8 +1168,10 @@ function applicantService(overrides: Partial<{
   };
 }> = {}): ApplicantService {
   const users = {
+    findByEmailInsensitive: async () => undefined,
     getById: async () => applicantUser(),
     update: async () => applicantUser(),
+    assignRole: async () => applicantUser(),
     ...overrides.users,
   };
   const auth: AuthService = {
@@ -713,5 +1224,31 @@ function applicantService(overrides: Partial<{
     overrides.repository ?? applicantRepository(),
     overrides.validator ?? applicantValidator(),
     setup as unknown as ConstructorParameters<typeof ApplicantService>[6],
+    {
+      findByUserId: async () => undefined,
+      findByEmail: async () => undefined,
+      findByPhone: async () => undefined,
+      findByCin: async () => undefined,
+      create: async (input: Record<string, unknown>) => ({
+        id: "sponsor-profile-1",
+        userId: String(input.userId),
+        ...input,
+      }),
+      ...overrides.sponsors,
+    } as unknown as ConstructorParameters<typeof ApplicantService>[7],
+    {
+      record: async () => undefined,
+      ...((overrides as { audits?: Record<string, unknown> }).audits ?? {}),
+    } as unknown as ConstructorParameters<typeof ApplicantService>[8],
+    {
+      enqueue: async (input: Record<string, unknown>) => ({
+        id: "outbox-event-1",
+        ...input,
+      }),
+      markDelivered: async () => undefined,
+      markDeliveryFailed: async () => undefined,
+      ...((overrides as { outbox?: Record<string, unknown> }).outbox ?? {}),
+    } as unknown as ConstructorParameters<typeof ApplicantService>[9],
+    overrides.tokens as unknown as ConstructorParameters<typeof ApplicantService>[10],
   );
 }

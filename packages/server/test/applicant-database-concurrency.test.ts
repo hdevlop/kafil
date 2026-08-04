@@ -52,8 +52,8 @@ async function applyOnce(): Promise<string> {
 
       const applicantResult = await client.query<{ id: string }>(
         `INSERT INTO applicants
-           (auth_user_id, name, email, phone, cin, gender, address, date_of_birth)
-         VALUES ($1, $2, $3, $4, $5, 'F', 'Rabat', '1990-05-12')
+           (auth_user_id, name, email, phone, cin, gender)
+         VALUES ($1, $2, $3, $4, $5, 'F')
          ON CONFLICT (auth_user_id) DO UPDATE SET updated_at = now()
          RETURNING id`,
         [userId, "Race Applicant", sharedEmail, sharedPhone, sharedCin],
@@ -97,22 +97,25 @@ databaseDescribe("applicant duplicate-submission PostgreSQL integration", () => 
 
   it("serializes repeated submissions to a single applicant + single challenge", async () => {
     await cleanup();
-    const firstId = await applyOnce();
     const results = await Promise.allSettled([
+      applyOnce(),
       applyOnce(),
       applyOnce(),
       applyOnce(),
     ]);
     const successes = results.filter((r) => r.status === "fulfilled") as PromiseFulfilledResult<string>[];
     const failed = results.filter((r) => r.status === "rejected");
-    expect(successes.length).toBeGreaterThanOrEqual(1);
+    expect(successes).toHaveLength(1);
+    expect(failed).toHaveLength(3);
+    const firstId = successes[0]?.value;
+    expect(firstId).toBeDefined();
 
     const persisted = await pool.query<{ id: string; auth_user_id: string }>(
       `SELECT id, auth_user_id FROM applicants WHERE lower(email) = lower($1)`,
       [sharedEmail],
     );
     const persistedIds = persisted.rows.map((row) => row.id);
-    expect(persistedIds).toContain(firstId);
+    expect(persistedIds).toContain(firstId!);
     expect(new Set(persistedIds).size).toBe(persistedIds.length);
     for (const id of persistedIds) {
       const challenges = await pool.query<{ id: string }>(
@@ -121,7 +124,6 @@ databaseDescribe("applicant duplicate-submission PostgreSQL integration", () => 
       );
       expect(challenges.rows.length).toBeLessThanOrEqual(1);
     }
-    expect(failed.length).toBe(2);
   });
 
   it("rejects a rejected applicant via CHECK constraints", async () => {

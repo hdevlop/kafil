@@ -28,7 +28,15 @@ export const updateSponsorFormSchema = z.object({
   name: z.string().trim().min(2, "Enter the sponsor's name").max(200),
   email: z.email("Enter a valid email address"),
   phone: optionalText(40),
-  cin: optionalText(20),
+  cin: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .refine(
+      (value) => !value || (value.length >= 8 && value.length <= 20),
+      "Enter a valid CIN",
+    ),
   gender: z.enum(["M", "F"]).optional(),
   address: optionalText(500),
   dateOfBirth: z.union([z.literal(""), z.iso.date("Enter a valid date of birth")]),

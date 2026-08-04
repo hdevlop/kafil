@@ -1,28 +1,25 @@
 "use client";
 
 import { CalendarDays, House } from "lucide-react";
-import {
-  NCard,
-  NCardAction,
-  NCardInfo,
-  NCardMedia,
-  NCardSection,
-} from "najm-kit";
+import { NCard, NCardInfo, NCardMedia, NCardSection, cn } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { formatKafilDate } from "@/lib/format";
+import { formatKafilDate, formatStatusLabel } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SupportAssignmentView } from "../types";
 
 export function SupportAssignmentCard({ data }: Readonly<{ data: SupportAssignmentView }>) {
   const { language, t } = useKafilLanguage();
+  const isInactive = data.status !== "active";
   return (
     <NCard
       embedded
       title={data.sponsorLabel}
+      className={cn(
+        isInactive && "bg-muted/60 text-muted-foreground opacity-60 grayscale",
+      )}
     >
       <NCardMedia variant="avatar" size="sm">
         <ManagedAvatar
@@ -32,10 +29,10 @@ export function SupportAssignmentCard({ data }: Readonly<{ data: SupportAssignme
           classNames={{ avatar: "bg-muted" }}
         />
       </NCardMedia>
-      <NCardAction>
-        <StatusBadge status={data.status} />
-      </NCardAction>
       <NCardSection>
+        <span className="sr-only">
+          {t("operator.assignments.status")}: {formatStatusLabel(data.status, language)}
+        </span>
         <NCardInfo icon={House} label={t("operator.assignments.family")} value={data.familyLabel} />
         <NCardInfo icon={CalendarDays} label={t("operator.assignments.started")} value={formatKafilDate(data.startedAt, language)} />
       </NCardSection>

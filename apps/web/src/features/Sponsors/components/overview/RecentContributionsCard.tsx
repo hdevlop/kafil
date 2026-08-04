@@ -30,7 +30,13 @@ export function RecentContributionsCard({
   const money = (value: number) => formatMad(value, language);
 
   return (
-    <NCard className="h-full" icon={icon} title={title}>
+    <NCard
+      className="h-full"
+      empty={contributions.length === 0}
+      emptyText={emptyLabel}
+      icon={icon}
+      title={title}
+    >
       {contributions.length > 0 ? (
         <>
           <div className="space-y-2">
@@ -71,9 +77,7 @@ export function RecentContributionsCard({
           </div>
           {footer}
         </>
-      ) : (
-        <p className="py-10 text-center text-sm text-muted-foreground">{emptyLabel}</p>
-      )}
+      ) : null}
     </NCard>
   );
 }

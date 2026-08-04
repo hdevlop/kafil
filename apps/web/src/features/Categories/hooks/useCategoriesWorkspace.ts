@@ -3,8 +3,10 @@
 import { useState } from "react";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
-import { useCategories, useCategoryCommands } from "@/features/Categories/hooks/useCategories";
-import { useFamilyCatalogCategories } from "@/features/Products/hooks/useFamilyCatalog";
+import { useCategoryCommands, useResponsiveCategories } from "@/features/Categories/hooks/useCategories";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import { listFamilyCatalogCategories } from "@/services/familyCatalogApi";
+import { familyCatalogKeys } from "@/features/Products/hooks/familyCatalogKeys";
 import type { OffsetPagination } from "@/lib/pagination";
 import type { CategoryRecord } from "@/features/Categories/types";
 import type { FamilyCatalogCategory } from "@/features/Products/familyCatalogTypes";
@@ -25,6 +27,7 @@ export interface CategoriesWorkspace {
   setFilters: (next: CategoriesWorkspaceFilters) => void;
   managementActions?: ReturnType<typeof useCategoryCommands>;
   canMutate: boolean;
+  paginationController: ReturnType<typeof useResponsiveCategories>;
 }
 
 export function useCategoriesWorkspace(
@@ -36,34 +39,40 @@ export function useCategoriesWorkspace(
     initialFilters,
   );
 
-  const managementCategories = useCategories(pagination, { enabled: !isExactFamily });
+  const managementCategories = useResponsiveCategories(!isExactFamily);
   const managementActions = useCategoryCommands();
-  const familyCategories = useFamilyCatalogCategories({ enabled: isExactFamily });
+  const familyCategories = useResponsiveOffsetList({
+    enabled: isExactFamily,
+    queryKey: [...familyCatalogKeys.categories, "responsive"],
+    fetchPage: listFamilyCatalogCategories,
+  });
 
   if (isExactFamily) {
     return {
       mode: "family",
-      categories: familyCategories.data ?? [],
+      categories: familyCategories.data,
       pagination,
-      loading: familyCategories.isPending,
+      loading: familyCategories.loading,
       error: familyCategories.error,
       refetch: familyCategories.refetch,
       filters,
       setFilters,
       canMutate: false,
+      paginationController: familyCategories as ReturnType<typeof useResponsiveCategories>,
     };
   }
 
   return {
     mode: "management",
-    categories: managementCategories.data ?? [],
+    categories: managementCategories.data,
     pagination,
-    loading: managementCategories.isPending,
+    loading: managementCategories.loading,
     error: managementCategories.error,
     refetch: managementCategories.refetch,
     filters,
     setFilters,
     managementActions,
     canMutate: true,
+    paginationController: managementCategories,
   };
 }

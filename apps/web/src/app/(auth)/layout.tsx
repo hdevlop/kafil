@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { BrandingImage } from "@/features/Branding";
 import { loadServerBranding } from "@/lib/serverBranding";
 
@@ -8,7 +8,7 @@ export default async function AuthLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const [session, branding] = await Promise.all([
-    auth.getSession(),
+    getSession(),
     loadServerBranding(),
   ]);
 

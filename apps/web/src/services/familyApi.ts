@@ -14,6 +14,11 @@ export interface ListFamiliesFilters {
   status?: "active" | "inactive";
 }
 
+export interface SponsorFamilyCatalogFilters {
+  search?: string;
+  relationship?: "supported" | "available";
+}
+
 export function listFamilies(
   pagination: OffsetPagination,
   filters: ListFamiliesFilters = {},
@@ -32,9 +37,17 @@ export function getFamily(id: string) {
   return api.get<FamilyRecord>(`/families/${id}`);
 }
 
-export function listSponsorFamilyCatalog() {
+export function listSponsorFamilyCatalog(
+  pagination: OffsetPagination,
+  filters: SponsorFamilyCatalogFilters = {},
+) {
   return api.get<SponsorFamilyCatalogEntry[]>("/support-assignments/catalog", {
-    query: { limit: 100, offset: 0 },
+    query: {
+      limit: pagination.limit,
+      offset: pagination.offset,
+      ...(filters.search ? { search: filters.search } : {}),
+      ...(filters.relationship ? { relationship: filters.relationship } : {}),
+    },
   });
 }
 

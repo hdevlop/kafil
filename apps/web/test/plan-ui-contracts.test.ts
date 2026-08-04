@@ -15,20 +15,38 @@ describe("root PLAN shared UI contracts", () => {
     expect(existsSync(new URL("../src/app/(dashboard)/family/contributions/page.tsx", import.meta.url))).toBe(false);
     expect(operatorRoute).toContain('redirect("/contribution")');
     expect(page).toContain('audience === "family"');
-    expect(page).toContain("<DropdownMenu");
-    expect(page).toContain("<IconButton");
-    expect(page).toContain("<Operator>");
-    expect(page).toContain("<Admin>");
+    expect(page).toContain("menu: { row: rowActions }");
+    expect(page).toContain("menuButton: true");
+    expect(page).not.toContain("<DropdownMenu");
+    expect(page).not.toContain("<IconButton");
     expect(details).toContain("const management = isManagement(contribution)");
     expect(details).toContain("management ?");
-    expect(page).toContain("<OnlySponsor>");
-    expect(page).toContain("<SponsorContributionWorkspace");
-    const sponsorWorkspace = source(
-      "../src/features/Contributions/components/SponsorContributionWorkspace.tsx",
-    );
-    expect(sponsorWorkspace).toContain("createPlan.mutateAsync");
-    expect(sponsorWorkspace).toContain("submit.mutateAsync");
-    expect(sponsorWorkspace).toContain("changePlan.mutateAsync");
+    expect(page).not.toContain("<OnlySponsor>");
+    expect(page).not.toContain("<SponsorContributionWorkspace");
+    expect(page).toContain("useContributionsTableFilters(audience, rows)");
+  });
+
+  test("keeps contribution pagination on populated pages while requests are in flight", () => {
+    const page = source("../src/features/Contributions/components/ContributionsPage.tsx");
+    const hooks = source("../src/features/Contributions/hooks/useContributions.ts");
+    const api = source("../src/services/contributionApi.ts");
+
+    expect(page).toContain("useContributionPage<ContributionListRecord>");
+    expect(page).toContain("pagedContributions.data?.hasNextPage");
+    expect(page).toContain("if (pagedContributions.isFetching) return;");
+    expect(hooks).toContain("placeholderData: keepPreviousData");
+    expect(api).toContain("offset: query.offset + query.limit");
+  });
+
+  test("sizes contribution pages to the available desktop table height", () => {
+    const page = source("../src/features/Contributions/components/ContributionsPage.tsx");
+    const sizing = source("../src/hooks/useAvailableTablePageSize.ts");
+
+    expect(page).toContain("useAvailableTablePageSize((availablePageSize) =>");
+    expect(page).toContain("ref={containerRef}");
+    expect(page).toContain("createOffsetPagination(0, availablePageSize)");
+    expect(sizing).toContain("new ResizeObserver(update)");
+    expect(sizing).toContain("Math.floor((height - TABLE_CHROME_HEIGHT) / TABLE_ROW_HEIGHT)");
   });
 
   test("keeps one compact role-aware order card with category and delivery context", () => {
@@ -53,11 +71,16 @@ describe("root PLAN shared UI contracts", () => {
     const families = source(
       "../src/features/Families/hooks/useFamiliesTableProps.tsx",
     );
+    const sponsorFamilies = source(
+      "../src/features/Families/hooks/useSponsorFamiliesTableProps.tsx",
+    );
     const children = source(
       "../src/features/Children/components/ChildrenPage.tsx",
     );
 
-    expect(families).toContain("onCreate: isExactSponsor ? undefined : openCreate");
+    expect(families).toContain("onCreate: openCreate");
+    expect(sponsorFamilies).not.toContain("onCreate");
+    expect(sponsorFamilies).not.toContain("onEdit");
     expect(children).toContain("onCreate: isExactFamily ? undefined : openCreate");
     expect(children).toContain("onEdit: isExactFamily ? undefined : openEdit");
   });

@@ -124,8 +124,9 @@ export interface NextPlannedContribution {
 }
 
 export interface SupportedFamilyProjection {
-  assignmentId: string;
-  supportReference: string;
+  familyReference: string;
+  familyName: string;
+  image: string | null;
   activeChildCount: number;
   startedAt: Date;
   funding: {

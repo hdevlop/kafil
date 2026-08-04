@@ -46,6 +46,8 @@ export const updateSponsorDto = updateUserDto
   });
 export const createOwnSponsorProfileDto = sponsorProfileDto.omit({
   notes: true,
+}).extend({
+  image: sponsorImage.nullish(),
 });
 export const updateOwnSponsorProfileDto = createOwnSponsorProfileDto.partial();
 export const sponsorIdParams = z.object({

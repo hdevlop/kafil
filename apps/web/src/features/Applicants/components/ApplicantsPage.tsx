@@ -1,7 +1,13 @@
 "use client";
 
-import { ClipboardList, Eye } from "lucide-react";
-import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { CheckCircle2, ClipboardList, Eye, XCircle } from "lucide-react";
+import {
+  NPageLayout,
+  NTable,
+  type ContextMenuItem,
+  type NTableProps,
+  useDialog,
+} from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
@@ -10,7 +16,13 @@ import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 
 import { ApplicantCard } from "./ApplicantCard";
 import { ApplicantDetails } from "./ApplicantDetails";
-import { useApplicants } from "../hooks/useApplicants";
+import {
+  ApproveApplicantDialogContent,
+  RejectApplicantDialogContent,
+} from "./ApplicantDecisionDialogs";
+import {
+  useApplicants,
+} from "../hooks/useApplicants";
 import { useApplicantsTableColumns } from "../hooks/useApplicantsTableColumns";
 import { useApplicantsTableFilters } from "../hooks/useApplicantsTableFilters";
 import type { ApplicantRecord } from "../types";
@@ -27,11 +39,65 @@ export function ApplicantsPage() {
     void dialog.openDialog({
       title: t("operator.applicants.viewTitle"),
       description: t("operator.applicants.viewDescription"),
-      children: <ApplicantDetails applicant={applicant} />,
+      children: <ApplicantDetails initialApplicant={applicant} />,
       showButtons: false,
       size: "lg",
       height: "auto",
     });
+  }
+
+  function openApprove(applicant: ApplicantRecord) {
+    void dialog.openDialog({
+      title: t("operator.applicants.approveTitle", { name: applicant.name }),
+      description: t("operator.applicants.approveDescription", { name: applicant.name }),
+      children: <ApproveApplicantDialogContent applicant={applicant} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function openReject(applicant: ApplicantRecord) {
+    void dialog.openDialog({
+      title: t("operator.applicants.rejectTitle", { name: applicant.name }),
+      description: t("operator.applicants.rejectDescription", { name: applicant.name }),
+      children: <RejectApplicantDialogContent applicant={applicant} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function rowActions(applicant: ApplicantRecord): ContextMenuItem[] {
+    const actions: ContextMenuItem[] = [
+      {
+        icon: Eye,
+        label: t("operator.applicants.view"),
+        onSelect: () => openView(applicant),
+      },
+    ];
+    if (applicant.status === "pending_review") {
+      actions.push(
+        {
+          icon: XCircle,
+          label: t("operator.applicants.reject"),
+          danger: true,
+          separatorBefore: true,
+          onSelect: () => openReject(applicant),
+        },
+        {
+          icon: CheckCircle2,
+          label: t("operator.applicants.approve"),
+          onSelect: () => openApprove(applicant),
+        },
+      );
+    } else if (applicant.status === "rejected") {
+      actions.push({
+        icon: CheckCircle2,
+        label: t("operator.applicants.approve"),
+        separatorBefore: true,
+        onSelect: () => openApprove(applicant),
+      });
+    }
+    return actions;
   }
 
   const tableProps: NTableProps<ApplicantRecord> = {
@@ -49,13 +115,7 @@ export function ApplicantsPage() {
     loading: applicants.isPending,
     loadingText: t("operator.applicants.loading"),
     menu: {
-      row: (applicant) => [
-        {
-          icon: Eye,
-          label: t("operator.applicants.view"),
-          onSelect: () => openView(applicant),
-        },
-      ],
+      row: rowActions,
     },
     menuButton: true,
     noDataText: t("operator.applicants.noData"),

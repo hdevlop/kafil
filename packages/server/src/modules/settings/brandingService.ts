@@ -429,18 +429,29 @@ export class BrandingService {
   }
 
   private project(setting: StoredBranding): PublicBranding {
-    const expanded =
-      setting.sidebarLogoExpandedPath ??
-      getFactoryBranding(DEFAULT_BRANDING_REVISION).sidebarLogoExpandedPath;
+    const factory = getFactoryBranding(DEFAULT_BRANDING_REVISION);
+    const expanded = this.resolveStoredPath(
+      setting.sidebarLogoExpandedPath,
+      factory.sidebarLogoExpandedPath,
+    );
     return {
       sidebarLogoExpandedPath: expanded,
-      sidebarLogoCollapsedPath: setting.sidebarLogoCollapsedPath ?? expanded,
-      authLogoPath: setting.authLogoPath ?? expanded,
-      authHeroImagePath:
-        setting.authHeroImagePath ??
-        getFactoryBranding(DEFAULT_BRANDING_REVISION).authHeroImagePath,
+      sidebarLogoCollapsedPath: this.resolveStoredPath(
+        setting.sidebarLogoCollapsedPath,
+        expanded,
+      ),
+      authLogoPath: this.resolveStoredPath(setting.authLogoPath, expanded),
+      authHeroImagePath: this.resolveStoredPath(
+        setting.authHeroImagePath,
+        factory.authHeroImagePath,
+      ),
       revision: setting.brandingRevision,
     };
+  }
+
+  private resolveStoredPath(path: string | null, fallback: string): string {
+    if (!path || !BRANDING_ASSET_PATH_PATTERN.test(path)) return fallback;
+    return isBrandingAssetFileOnDisk(fileNameOfPath(path)) ? path : fallback;
   }
 
   private changedSlots(

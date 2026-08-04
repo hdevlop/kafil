@@ -15,6 +15,9 @@ describe("Sponsor overview shared-card reuse contracts", () => {
     expect(pageSource).toContain("@/features/Sponsors/components/overview/RecentContributionsCard");
     expect(pageSource).toContain("@/features/Sponsors/components/overview/RecentSupportedOrdersCard");
     expect(pageSource).toContain("<SponsorKpiGrid desktopColumns={5}");
+    expect(pageSource).toContain("xl:h-full xl:min-h-0");
+    expect(pageSource).toContain("xl:grid-rows-[auto_minmax(0,1fr)]");
+    expect(pageSource).not.toContain("xl:auto-rows-fr");
     expect(pageSource).toContain('import Link from "next/link"');
     expect(pageSource).not.toContain("<a");
   });
@@ -53,7 +56,27 @@ describe("Sponsor overview shared-card reuse contracts", () => {
     ).text();
 
     expect(source).toContain("@/features/Sponsors/components/overview/");
+    expect(source).toContain('<SponsorKpiGrid desktopColumns={4} kpis={vm.kpis} variant="compact" />');
     expect(source).not.toContain("@/features/SponsorOverview");
+  });
+
+  test("sponsor rows and cards open the sponsor overview when clicked", async () => {
+    const source = await Bun.file(
+      new URL("../src/features/Sponsors/components/SponsorsPage.tsx", import.meta.url),
+    ).text();
+
+    expect(source).toContain("onRowClick: openView");
+    expect(source).toContain("onView: openView");
+  });
+
+  test("the shared KPI grid supports Najm Kit compact stat cards without losing dashboard defaults", async () => {
+    const source = await Bun.file(
+      new URL("../src/features/Sponsors/components/overview/SponsorKpiGrid.tsx", import.meta.url),
+    ).text();
+
+    expect(source).toContain('variant?: "default" | "compact"');
+    expect(source).toContain('variant = "default"');
+    expect(source).toContain('variant: "compact" as const');
   });
 
   test("query keys isolate overview data by sponsor ID", () => {

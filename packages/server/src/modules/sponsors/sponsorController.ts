@@ -184,11 +184,13 @@ export class SponsorController {
     },
   })
   @ResMsg("sponsors.success.profileUpdated")
-  updateOwn(
+  async updateOwn(
     @Body() body: UpdateOwnSponsorProfileDto,
     @User("id") userId: string,
   ) {
-    return this.sponsors.updateOwn(userId, body);
+    const result = await this.sponsors.updateOwn(userId, body);
+    await this.sponsors.cleanupImageAfterCommit(result.replacedImagePath);
+    return result.profile;
   }
 
   @Delete("/:id")

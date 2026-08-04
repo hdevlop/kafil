@@ -6,9 +6,11 @@ import type {
 import { cleanQuery } from "@/lib/pagination";
 import { api } from "@/services/http";
 
-export function listFamilyCatalogCategories() {
+export function listFamilyCatalogCategories(
+  pagination = { limit: 100, offset: 0 },
+) {
   return api.get<FamilyCatalogCategory[]>("/catalog/browse/categories", {
-    query: { limit: 100, offset: 0 },
+    query: pagination,
   });
 }
 

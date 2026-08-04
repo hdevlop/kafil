@@ -29,6 +29,7 @@ import {
   createOffsetPagination,
 } from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { createCardPagination } from "@/lib/tablePagination";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 
@@ -42,7 +43,7 @@ import {
 } from "./ProductForms";
 import type { ProductRecord } from "../types";
 
-const productsPagination = createOffsetPagination(0, 100);
+const productsPagination = createOffsetPagination(0, 25);
 
 export function ProductsPage() {
   const dialog = useDialog();
@@ -205,8 +206,12 @@ export function ProductsPage() {
       },
     },
     menuButton: true,
-    defaultPagination: { pageIndex: 0, pageSize: productsPagination.limit },
-    showPagination: false,
+    manualPagination: true,
+    pageCount: workspace.paginationController.pageCount,
+    pagination: workspace.paginationController.pagination,
+    onPaginationChange: workspace.paginationController.onPaginationChange,
+    cardPagination: createCardPagination(workspace.paginationController, t),
+    showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {

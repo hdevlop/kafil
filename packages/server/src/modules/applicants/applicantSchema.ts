@@ -2,7 +2,6 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
-  date,
   index,
   integer,
   pgEnum,
@@ -37,8 +36,6 @@ export const applicants = pgTable(
     phone: varchar("phone", { length: 40 }).notNull(),
     cin: varchar("cin", { length: 20 }).notNull(),
     gender: varchar("gender", { length: 1 }).notNull(),
-    address: text("address").notNull(),
-    dateOfBirth: date("date_of_birth").notNull(),
     status: applicantStatusEnum("status")
       .notNull()
       .default("pending_email_verification"),

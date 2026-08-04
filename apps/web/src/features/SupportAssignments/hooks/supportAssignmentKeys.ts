@@ -12,5 +12,6 @@ export const supportAssignmentKeys = {
   detail(id: string) {
     return entityKeys.detail("support-assignments", id);
   },
+  full: ["support-assignments", "list", "all"] as const,
   sources: ["support-assignments", "sources"] as const,
 };

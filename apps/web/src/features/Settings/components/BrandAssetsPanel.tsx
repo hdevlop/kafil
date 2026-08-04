@@ -133,6 +133,9 @@ export function BrandAssetsPanel({
     if (draft) {
       const draftValue = draft[key];
       if (draftValue !== undefined && draftValue !== null) {
+        if (draftValue === config[key] && resolved[key] !== draftValue) {
+          return resolved[key];
+        }
         return draftValue;
       }
     }
@@ -188,6 +191,11 @@ export function BrandAssetsPanel({
           const customPath = customPathFor(definition.key);
           const isUploading = uploading[definition.slot];
           const draftChanged = customPath !== config[definition.key];
+          const customAssetUnavailable = Boolean(
+            customPath &&
+              customPath === config[definition.key] &&
+              resolved[definition.key] !== customPath,
+          );
           return (
             <li
               key={definition.key}
@@ -213,6 +221,15 @@ export function BrandAssetsPanel({
                 <p className="truncate text-xs text-muted-foreground">
                   {t(SHAPE_RATIO_LABEL[definition.shape])}
                 </p>
+                {customAssetUnavailable ? (
+                  <p
+                    className="mt-1 text-xs text-warning"
+                    data-branding-unavailable={definition.slot}
+                    role="status"
+                  >
+                    {t("operator.settings.branding.missingAsset")}
+                  </p>
+                ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 {draftChanged ? (
@@ -235,7 +252,11 @@ export function BrandAssetsPanel({
                   disabled={isUploading || customPath === null}
                   onClick={() => clearSlot(definition.key)}
                 >
-                  {t(definition.fallbackLabelKey)}
+                  {t(
+                    customAssetUnavailable
+                      ? "operator.settings.branding.recoverFallback"
+                      : definition.fallbackLabelKey,
+                  )}
                 </NButton>
               </div>
             </li>

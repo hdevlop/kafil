@@ -44,7 +44,7 @@ export function SponsorOverviewDialogContent({
 
   return (
     <div className="space-y-4">
-      <SponsorKpiGrid desktopColumns={4} kpis={vm.kpis} />
+      <SponsorKpiGrid desktopColumns={4} kpis={vm.kpis} variant="compact" />
 
       <SponsorInformationCard sponsor={vm.sponsorInfo} t={t} />
 

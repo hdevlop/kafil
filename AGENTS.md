@@ -155,7 +155,9 @@ When a mutation touches both inventory and budget, always lock **inventory first
 - `family` — self-service for budget, cart, orders (profile created by operators)
 - `sponsor` — self-registration, contributions to supported families, privacy-safe usage views
 
-Public registration creates sponsor accounts only. Family accounts are created by operators via Najm `provisionUser` (no stored password).
+Public registration creates pending applicant identities only. Approval later
+creates the sponsor account and profile. Family accounts are created by
+operators via Najm `provisionUser` (no stored password).
 
 ## Security notes
 

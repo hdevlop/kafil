@@ -6,16 +6,45 @@ import type {
   ApplicantSubmissionResponse,
   ApplicantEmailOtpConfirmResult,
   ApplicantEmailOtpSetup,
+  ApplicantDecisionPayload,
 } from "../types";
 
-export function listApplicants() {
+export interface ListApplicantsParams {
+  limit?: number;
+  offset?: number;
+  status?: ApplicantRecord["status"];
+  search?: string;
+}
+
+export function listApplicants(params: ListApplicantsParams = {}) {
   return api.get<ApplicantRecord[]>("/applicants", {
-    query: { limit: 100, offset: 0 },
+    query: {
+      limit: params.limit ?? 100,
+      offset: params.offset ?? 0,
+      ...(params.status ? { status: params.status } : {}),
+      ...(params.search ? { search: params.search } : {}),
+    },
   });
 }
 
 export function getApplicant(id: string) {
   return api.get<ApplicantRecord>(`/applicants/${id}`);
+}
+
+export function countApplicants(status: ApplicantRecord["status"] = "pending_review") {
+  return api.get<{ count: number }>("/applicants/count", {
+    query: { status },
+  });
+}
+
+export function approveApplicant(id: string) {
+  return api.post<ApplicantDecisionPayload>(`/applicants/${id}/approve`);
+}
+
+export function rejectApplicant(id: string, reason: string) {
+  return api.post<ApplicantDecisionPayload>(`/applicants/${id}/reject`, {
+    reason: reason.trim(),
+  });
 }
 
 function normalizePhone(phone: string) {
@@ -27,10 +56,6 @@ function normalizePhone(phone: string) {
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
-}
-
-function sanitizeAddress(address: string) {
-  return address.replace(/\s+/g, " ").trim();
 }
 
 export type ApplicantLocale = "en" | "fr" | "ar" | "es";
@@ -45,10 +70,7 @@ export function submitApplicant(input: {
     phone: normalizePhone(input.values.phone),
     cin: input.values.cin.toUpperCase(),
     gender: input.values.gender === "female" ? "F" : "M",
-    address: sanitizeAddress(input.values.address),
-    dateOfBirth: input.values.dateOfBirth,
     password: input.values.password,
-    confirmPassword: input.values.confirmPassword,
     locale: input.locale,
   });
 }

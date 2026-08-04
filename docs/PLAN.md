@@ -2,7 +2,7 @@
 
 Status: **ACTIVE**
 
-Last updated: 2026-07-27
+Last updated: 2026-08-03
 
 This document is the source of truth for implementation order, phase status,
 and release gates. Detailed requirements live under
@@ -40,7 +40,9 @@ These decisions apply unless this plan is deliberately revised:
 1. Visible roles are `operator`, `family`, and `sponsor`.
 2. `admin` remains a hidden bootstrap/emergency role and is a Najm super-role.
 3. Operators create family accounts; families cannot self-register.
-4. Public registration creates sponsor accounts only.
+4. Public registration creates a pending applicant identity only. It creates
+   no sponsor profile, sponsor capabilities, session, or assignment; explicit
+   admin approval owns sponsor activation.
 5. `familyProfiles` is the sole private-family domain root. Every family
    profile has exactly one Najm login and cannot exist independently from it.
 6. One sponsor may support many families; one family may have many sponsors.
@@ -81,8 +83,9 @@ These decisions apply unless this plan is deliberately revised:
     either uppercase or lowercase works. Sponsor initial passwords retain a
     random suffix. Kafil stores only Najm's password hash and never places the
     CIN in auth logs, audit metadata, or outbox payloads.
-26. Public sponsor registration remains email-first. New accounts stay pending
-    until an expiring, one-time email-verification link activates them.
+26. Public sponsor application remains email-first. A hashed, expiring,
+    one-time OTP proves email ownership and moves the applicant only to
+    `pending_review`; it never activates or authenticates the account.
 27. Email and normalized phone are both accepted login identifiers. Phone is
     globally unique at the Najm user boundary; profile tables retain the domain
     contact field.
@@ -145,7 +148,8 @@ The current workspace already contains a useful foundation:
 - [x] Validation, policy guards, MCP exposure, schema tests, and migrations
 - [x] Drizzle reconciliation and append-only Phase 1 migration generation
 - [x] Family profiles enforce one login per family through a unique `userId`
-- [x] Sponsor public onboarding and self-profile completion
+- [x] One canonical `/apply` applicant onboarding flow, separate from approved
+      sponsor profile ownership
 - [x] Email-or-phone authentication with globally normalized phone identities
 - [x] Explicit remember-me persistence for normal logins: unchecked logins use
       browser-session cookies and checked logins persist through browser
@@ -154,8 +158,8 @@ The current workspace already contains a useful foundation:
       session recovery for the single Next.js production process
 - [x] One-time operator credential handoff for family and sponsor accounts
 - [x] Server-owned first-login password replacement for newly created families
-- [x] Pending public sponsor registration with email activation through
-      `najm-email`
+- [x] Pending applicant email OTP through `najm-email`, ending in
+      `pending_review` without a session or sponsor capabilities
 - [x] Family auth role, family profile, and child ownership model
 - [x] Children with family-profile ownership and lifecycle controls
 - [x] Sponsor-family assignments
@@ -382,7 +386,7 @@ the private domain root.
 
 - [x] Add `FAMILY: "family"` to `defineRoles`
 - [x] Keep `ADMIN` as the only super-role
-- [x] Change public registration default to `sponsor`
+- [x] Keep sponsor as the eventual approved public role
 - [x] Add family permissions and update seed verification tests
 - [x] Reconcile the current Drizzle snapshot/schema column prompt with a
       data-preserving expand strategy
@@ -392,7 +396,7 @@ the private domain root.
 - [x] Add append-only `auditEvents`
 - [x] Implement transactional operator-created family accounts
 - [x] Use Najm `provisionUser` invitation behavior; do not store passwords
-- [x] Add sponsor self-onboarding after `/auth/register`
+- [x] Add context-free applicant onboarding at `/apply`
 - [x] Add `/me` profile endpoints for family and sponsor
 - [x] Replace normal account deletion with deactivate/reactivate commands
 - [x] Add family ownership rules and privacy DTOs
@@ -405,13 +409,13 @@ the private domain root.
       family children with configurable SMS-style count arguments
 
 Phase 1 evidence (2026-07-16): `FAMILY` is now a first-class Najm role,
-public registration defaults to `sponsor`, and idempotent seed definitions now
+approved public accounts use the `sponsor` role, and idempotent seed definitions now
 cover the family role and its least-privilege family/child permissions.
 The Phase 1 domain slice now includes feature-owned `familyProfiles`,
 `children`, and append-only `auditEvents` schemas; transactional
 operator-created family provisioning through Najm without a stored password;
-family-owned child reads; and metadata-sanitized auditing. Sponsor public
-registration is now separate from sponsor self-profile completion, and normal
+family-owned child reads; and metadata-sanitized auditing. Public applicant
+intake is separate from sponsor profile completion, and normal
 sponsor deletion is replaced with audited deactivate/reactivate commands.
 Family and sponsor `/me` routes have explicit self-only projections, and MCP
 discovery covers the new family, child, and sponsor lifecycle tools.
@@ -760,7 +764,7 @@ Goal: replace the placeholder dashboard with complete role-specific workflows.
 
 Detailed active plan: [`plans/sections/06-web-dashboards.md`](plans/sections/06-web-dashboards.md).
 
-- [x] Add login, sponsor registration, reset-password, and activation pages
+- [x] Add login, applicant submission/OTP, reset-password, and pending-review pages
 - [x] Resolve the session server-side with Najm auth
 - [x] Render the correct exact-role dashboard directly at `/dashboard`
 - [x] Add operator navigation and management screens (Families, Children,
@@ -1081,7 +1085,7 @@ canonical destinations.
     staff, and 40 contributions completed successfully. Both accounts reconcile
     with zero row-level snapshot mismatches; the dense family has 29 validated
     contributions between MAD 103.44 and MAD 103.45.
-  - `bun run check` passed, including the 36-route production build, and
+  - `bun run check` passed, including the 37-route production build, and
     `bun run db:generate` reported no schema drift. Interactive browser
     inspection was unavailable because no browser backend was exposed.
 
@@ -1092,17 +1096,62 @@ canonical destinations.
   audiences with compact mobile density, safe delivery summaries, and a
   deterministic quantity-ranked dominant category loaded without list N+1s.
   The family 12-month order chart fits 320–430 px without horizontal scrolling.
-  Sponsor activation now uses a hashed, six-digit, ten-minute OTP entered after
-  valid pending credentials; resend cooldown, bounded attempts, setup-only
-  cookies, atomic consumption, and Remember me are server-owned. Append-only
-  migration `0032_same_rachel_grey.sql` applied successfully.
+  Applicant email verification now uses a hashed, six-digit, ten-minute OTP
+  after `/apply`; resend cooldown, bounded attempts, setup-only cookies, and
+  atomic consumption are server-owned. Verification ends at `pending_review`
+  without a session or sponsor capabilities. The retired direct-registration
+  flow is removed, and eligible legacy pending identities are safely reclaimed
+  when they resubmit the complete application.
   `najm-kit@2.1.47` and `najm-auth@2.0.13` are published and installed. Root
-  lint, typecheck, tests, and the 36-route production build pass; PostgreSQL
-  integration is 23/23 and Drizzle reports no schema drift. Focused isolated
+  lint, typecheck, tests, and the 37-route production build pass; PostgreSQL
+  integration is 24/24 and Drizzle reports no schema drift. Focused isolated
   Chrome acceptance passes contribution privacy/actions, order cards at
-  375/390/430 px plus Arabic RTL, the 12-point chart at 320/375/390/430 px plus
-  Arabic RTL, and real registration-to-OTP-to-dashboard activation. Phase 7
+  375/390/430 px plus Arabic RTL, and the 12-point chart at
+  320/375/390/430 px plus Arabic RTL. Applicant browser acceptance is tracked
+  by the dedicated applicant creation plan. Phase 7
   remains active only for the unrelated release and infrastructure items below.
+
+Sponsor decision closeout (2026-08-03): sponsor CRUD permissions are restored
+and applicant permissions are additive and exact-admin-only. Approval and
+rejection lock both the applicant and linked auth user, serialize terminal
+decisions, revoke rejection auth/setup state, commit privacy-minimal audits,
+and deliver localized decision email after commit through a durable outbox
+record with sent/failed delivery state. Migration
+`0038_active_oauth_links.sql` prevents Google or other OAuth accounts from
+linking to pending/rejected users while preserving exact-user linking after
+approval. The admin queue defaults to `pending_review`, exposes explicit card,
+table, and fresh-detail actions, localizes bounded rejection validation in all
+four UI languages, and shows the exact pending count in the page header. The
+header is the documented Najm fallback because a live sidebar query races the
+rotating SSR auth recovery; protected sidebar links use full-document
+navigation and server session reads are request-cached.
+
+Closeout evidence: root lint and all workspace typechecks pass; the web,
+server, and seed suites pass 274 + 374 + 79 tests with 48 opt-in database tests
+skipped by the default server run; the 37-route production build passes;
+Drizzle reports no schema drift; and the applied PostgreSQL suite passes 30/30.
+The focused decision database suite passes 6/6 for approval/approval,
+approval/rejection, forced late rollback, rejection revocation, and
+approved-vs-rejected OAuth persistence. Isolated Playwright acceptance passes
+2/2 across English approval, French rejection validation, Arabic RTL denial,
+pending denial, fresh terminal details, Remember Me, email/phone identity
+convergence, and the complete sponsor workspace. A live Google consent-screen
+redirect remains an environment/provider smoke for staging; deployment remains
+a separate authorization gate.
+
+Sponsor Families correction (2026-08-03): the sponsor sidebar now names the
+shared `/family` surface **Families**. Sponsors receive a dedicated anonymous
+projection through the same guarded `FamilyCard`, with no managed household
+image or private family-record coercion, stable `KF-xxxxxxxx` references that remain distinct for deterministic
+demo UUIDs, and All families, My support, and Other families filters. Existing
+assignments show Contribute while other eligible families show Support;
+operator/admin family-management cards remain unchanged. `bun run check`
+passes, including the 37-route production build, and `bun run db:generate`
+reports no schema changes. Focused sponsor projection tests pass 3/3 and locale
+adapter tests pass 11/11 together. The isolated browser attempt was
+inconclusive because the already-running development server reused a
+profile-completion session before the mocked catalog journey; interactive
+browser control was unavailable in this session.
 
 
 - [~] Add operator statistics and financial reports (live overview statistics,

@@ -1,9 +1,10 @@
 "use client";
 
 import { Baby, BadgeCheck, Flag, HeartHandshake } from "lucide-react";
-import { useRouter } from "next/navigation";
+import type { SVGProps } from "react";
 import {
   NButton,
+  NBadge,
   NCard,
   NCardAction,
   NCardInfo,
@@ -13,11 +14,7 @@ import {
 } from "najm-kit";
 
 import { CreateSupportAssignmentDialogContent } from "@/features/SupportAssignments/components/SupportAssignmentForms";
-import {
-  useSponsorFamilySupportCommand,
-  useSponsorSupport,
-} from "@/features/SupportAssignments/hooks/useSponsorSupport";
-import { OnlySponsor, Operator, useKafilRole } from "@/shared/Authorization";
+import { useSponsorFamilySupportCommand } from "@/features/SupportAssignments/hooks/useSponsorSupport";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { ProtectedImage } from "@/shared/ProtectedImage";
@@ -25,72 +22,89 @@ import { getFamilyAvatarImage } from "@/lib/personImages";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
 import { useFamilyCardStatus } from "../../hooks/useFamilyCardStatus";
-import type { FamilyRecord } from "../../types";
+import type { FamilyRecord, SponsorFamilyView } from "../../types";
 
-function SupportFamilyButton({
+type FamilyCardData = FamilyRecord | SponsorFamilyView;
+
+function SupportedFamilyIcon(props: Readonly<SVGProps<SVGSVGElement>>) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden {...props}>
+      <path
+        d="m12 2.75 2.72 5.52 6.09.89-4.41 4.29 1.04 6.07L12 16.66l-5.44 2.86 1.04-6.07-4.41-4.29 6.09-.89L12 2.75Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1"
+      />
+    </svg>
+  );
+}
+
+function isSponsorFamily(data: FamilyCardData): data is SponsorFamilyView {
+  return "relationship" in data;
+}
+
+function SponsorFamilyAction({
   data,
   isClosed,
-  disabledReason,
+  onContribute,
 }: Readonly<{
-  data: FamilyRecord;
+  data: SponsorFamilyView;
   isClosed: boolean;
-  disabledReason: string | null;
+  onContribute?: (family: SponsorFamilyView, assignmentId: string) => void;
 }>) {
   const { t } = useKafilLanguage();
-  const { isExactSponsor } = useKafilRole();
-  const router = useRouter();
-  const support = useSponsorSupport(isExactSponsor);
   const selectFamily = useSponsorFamilySupportCommand();
-  const activeAssignment = support.data?.find(
-    (item) =>
-      item.assignment.familyProfileId === data.id &&
-      item.assignment.status === "active",
-  );
+  const closedLabel = data.funding?.capacityStatus === "reserved"
+    ? t("sponsor.directory.coveredByPending")
+    : t("sponsor.directory.targetReached");
 
-  async function handleSupport() {
+  async function continueSupport() {
+    if (data.assignmentId) {
+      onContribute?.(data, data.assignmentId);
+      return;
+    }
+
     const assignment = await selectFamily.mutateAsync({
       familyProfileId: data.id,
     });
-    router.push(
-      `/contribution?assignment=${encodeURIComponent(assignment.id)}`,
-    );
-  }
-
-  function handleContribute() {
-    if (activeAssignment) {
-      router.push(
-        `/contribution?assignment=${encodeURIComponent(activeAssignment.assignment.id)}`,
-      );
-    }
+    onContribute?.(data, assignment.id);
   }
 
   return (
     <NButton
-      className={
-        isClosed
-          ? "w-full bg-gray-400/70 text-gray-700 hover:bg-gray-400/70 disabled:opacity-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-          : "w-full"
-      }
-      leftIcon={HeartHandshake}
-      variant={isClosed ? "secondary" : "default"}
-      disabled={!isExactSponsor || isClosed || selectFamily.isPending}
-      title={disabledReason ?? undefined}
-      onClick={(event) => {
-        event.stopPropagation();
-        if (activeAssignment) handleContribute();
-        else void handleSupport();
-      }}
-    >
-      {activeAssignment
-        ? t("sponsor.directory.contribute")
-        : t("sponsor.directory.support")}
-    </NButton>
+        className={
+          isClosed
+            ? "w-full bg-gray-400/70 text-gray-700 hover:bg-gray-400/70 disabled:opacity-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+            : "w-full"
+        }
+        disabled={isClosed || selectFamily.isPending}
+        leftIcon={HeartHandshake}
+        title={isClosed ? t("funding.funded") : undefined}
+        variant={isClosed ? "secondary" : "default"}
+        onClick={() => void continueSupport()}
+      >
+        {isClosed
+          ? closedLabel
+          : t(
+              data.assignmentId
+                ? "sponsor.directory.contribute"
+                : "sponsor.directory.support",
+            )}
+      </NButton>
   );
 }
 
-export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
+export function FamilyCard({
+  data,
+  onContribute,
+}: Readonly<{
+  data: FamilyCardData;
+  onContribute?: (family: SponsorFamilyView, assignmentId: string) => void;
+}>) {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
+  const sponsorFamily = isSponsorFamily(data) ? data : null;
   const { fundingStatus, isClosed, disabledReason, supportPriorityLabel } =
     useFamilyCardStatus(data);
 
@@ -109,7 +123,19 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
   }
 
   return (
-    <div className="w-full">
+    <div className="relative w-full">
+      {sponsorFamily?.relationship === "supported" ? (
+        <NBadge
+          aria-label={t("sponsor.directory.mySupport")}
+          className="absolute end-3 top-3 z-10 size-7 justify-center rounded-full border-2 border-amber-600 bg-amber-500 p-0 text-white shadow-md"
+          color="warning"
+          look="solid"
+          shape="square"
+          title={t("sponsor.directory.mySupport")}
+        >
+          <SupportedFamilyIcon className="!size-[22px] shrink-0" />
+        </NBadge>
+      ) : null}
       <NCard
         embedded
         title={
@@ -134,42 +160,44 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
           />
         </NCardMedia>
         <NCardAction>
-          <StatusBadge status={fundingStatus} />
+          <div
+            className={
+              sponsorFamily ? "translate-y-16 sm:translate-y-0" : undefined
+            }
+          >
+            <StatusBadge status={fundingStatus} />
+          </div>
         </NCardAction>
         <NCardSection>
-          <Operator>
-            <NCardInfo
-              icon={Flag}
-              label={t("operator.families.supportPriority")}
-              value={supportPriorityLabel}
-              valueClassName={
-                data.supportPriority === "urgent"
-                  ? "font-medium text-destructive"
-                  : data.supportPriority === "high"
-                    ? "font-medium text-warning"
-                    : undefined
-              }
-            />
-          </Operator>
+          <NCardInfo
+            icon={Flag}
+            label={t("operator.families.supportPriority")}
+            value={supportPriorityLabel}
+            valueClassName={
+              data.supportPriority === "urgent"
+                ? "font-medium text-destructive"
+                : data.supportPriority === "high"
+                  ? "font-medium text-warning"
+                  : undefined
+            }
+          />
           <NCardInfo
             icon={Baby}
             label={t("operator.families.children")}
             value={data.activeChildCount}
           />
-          <Operator>
-            <NCardInfo
-              icon={HeartHandshake}
-              label={t("operator.families.sponsors")}
-              value={data.activeSponsorCount}
-            />
-          </Operator>
+          <NCardInfo
+            icon={HeartHandshake}
+            label={t("operator.families.sponsors")}
+            value={data.activeSponsorCount}
+          />
         </NCardSection>
       </NCard>
       <div className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4">
         {data.funding ? (
           <FundingProgressBar inline progress={data.funding} />
         ) : null}
-        <Operator>
+        {!sponsorFamily ? (
           <NButton
             className={
               isClosed
@@ -187,14 +215,13 @@ export function FamilyCard({ data }: Readonly<{ data: FamilyRecord }>) {
           >
             {t("operator.assignments.create")}
           </NButton>
-        </Operator>
-        <OnlySponsor>
-          <SupportFamilyButton
-            data={data}
-            disabledReason={disabledReason}
+        ) : (
+          <SponsorFamilyAction
+            data={sponsorFamily}
             isClosed={isClosed}
+            onContribute={onContribute}
           />
-        </OnlySponsor>
+        )}
       </div>
     </div>
   );

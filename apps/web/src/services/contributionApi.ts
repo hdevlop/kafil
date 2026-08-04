@@ -7,6 +7,7 @@ import type {
   ContributionRecordingOption,
   RecordContributionInput,
 } from "@/features/Contributions/types";
+import { listAllOffsetPages } from "@/lib/pagination";
 import { api } from "@/services/http";
 
 export function listContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery) {
@@ -18,6 +19,25 @@ export function listContributions<TRecord extends ContributionListRecord = Contr
       status: query.status,
     },
   });
+}
+
+export async function listContributionPage<TRecord extends ContributionListRecord = ContributionRecord>(
+  query: ContributionListQuery,
+) {
+  const rows = await listContributions<TRecord>(query);
+  const hasNextPage = rows.length === query.limit
+    ? (await listContributions<TRecord>({ ...query, limit: 1, offset: query.offset + query.limit })).length > 0
+    : false;
+
+  return { rows, hasNextPage };
+}
+
+export function listAllContributions<TRecord extends ContributionListRecord = ContributionRecord>(
+  query: Omit<ContributionListQuery, "limit" | "offset">,
+) {
+  return listAllOffsetPages<TRecord>((pagination) =>
+    listContributions<TRecord>({ ...query, ...pagination }),
+  );
 }
 
 export function listContributionRecordingOptions() {

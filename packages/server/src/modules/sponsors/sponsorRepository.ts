@@ -78,6 +78,17 @@ export class SponsorRepository {
     return sponsor;
   }
 
+  async findByImage(image: string) {
+    const [sponsor] = await this.db
+      .select(sponsorSelection)
+      .from(sponsorProfiles)
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
+      .where(eq(usersTable.image, image))
+      .limit(1);
+    return sponsor;
+  }
+
   async findByPhone(phone: string) {
     const [sponsor] = await this.db
       .select(sponsorSelection)

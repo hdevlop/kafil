@@ -34,7 +34,15 @@ export const createStaffFormSchema = z.object({
   functions: z.array(z.enum(STAFF_FUNCTION_VALUES)).min(1).max(STAFF_FUNCTION_VALUES.length),
   jobTitle: optionalText(120),
   notes: optionalText(2_000),
-  cin: optionalText(20),
+  cin: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .refine(
+      (value) => !value || (value.length >= 8 && value.length <= 20),
+      "Enter a valid CIN",
+    ),
   gender: z.enum(["M", "F"]).optional(),
   address: optionalText(500),
   dateOfBirth: z.union([z.literal(""), z.iso.date("Enter a valid date")]).optional(),
@@ -80,7 +88,15 @@ export const updateStaffFormSchema = z.object({
   functions: z.array(z.enum(STAFF_FUNCTION_VALUES)).min(1).max(STAFF_FUNCTION_VALUES.length),
   jobTitle: optionalText(120),
   notes: optionalText(2_000),
-  cin: optionalText(20),
+  cin: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .refine(
+      (value) => !value || (value.length >= 8 && value.length <= 20),
+      "Enter a valid CIN",
+    ),
   gender: z.enum(["M", "F"]).optional(),
   address: optionalText(500),
   dateOfBirth: z.union([z.literal(""), z.iso.date("Enter a valid date")]).optional(),

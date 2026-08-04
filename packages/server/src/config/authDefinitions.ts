@@ -16,6 +16,7 @@ export const AUTH_ROLES = [
 export const AUTH_PERMISSIONS = [
   ...crudPermissions("operators", "operator profiles"),
   ...crudPermissions("sponsors", "sponsor profiles"),
+  ...crudPermissions("applicants", "sponsor applications"),
   ...crudPermissions("families", "family profiles"),
   ...crudPermissions("children", "children"),
   ...crudPermissions("staff", "staff profiles"),

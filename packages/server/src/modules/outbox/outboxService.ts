@@ -21,6 +21,21 @@ export class OutboxService {
       payload: sanitizePayload(input.payload ?? {}),
     });
   }
+
+
+  markDelivered(id: string, processedAt = new Date()) {
+    return this.events.markDelivered(id, processedAt);
+  }
+
+  markDeliveryFailed(id: string, error: unknown, attemptedAt = new Date()) {
+    const message = error instanceof Error ? error.message : String(error);
+    return this.events.markDeliveryFailed(
+      id,
+      message,
+      attemptedAt,
+      new Date(attemptedAt.getTime() + 5 * 60_000),
+    );
+  }
 }
 
 function sanitizePayload(

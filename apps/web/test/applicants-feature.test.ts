@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   applicantEmailOtpSchema,
   applicantFormSchema,
+  applicantRejectReasonSchema,
   submitApplicant,
   confirmApplicantEmailOtp,
   getApplicantEmailOtpSetup,
@@ -23,15 +24,12 @@ describe("applicant creation form", () => {
       phone: "+212612345678",
       cin: "AB123456",
       gender: "female",
-      address: "12 Avenue Hassan II, Casablanca",
-      dateOfBirth: "1990-04-15",
       password: "KafilDev123",
-      confirmPassword: "KafilDev123",
     });
     expect(result.success).toBe(true);
   });
 
-  test("rejects a weak password and matching-confirmation mismatch", () => {
+  test("rejects a weak password", () => {
     expect(
       applicantFormSchema.safeParse({
         name: "Amina Tazi",
@@ -39,29 +37,7 @@ describe("applicant creation form", () => {
         phone: "+212612345678",
         cin: "AB123456",
         gender: "female",
-        address: "12 Avenue Hassan II, Casablanca",
-        dateOfBirth: "1990-04-15",
         password: "weak",
-        confirmPassword: "different",
-      }).success,
-    ).toBe(false);
-  });
-
-  test("rejects a future date of birth", () => {
-    const future = new Date(Date.now() + 86_400_000)
-      .toISOString()
-      .slice(0, 10);
-    expect(
-      applicantFormSchema.safeParse({
-        name: "Amina Tazi",
-        email: "amina.tazi@example.com",
-        phone: "+212612345678",
-        cin: "AB123456",
-        gender: "female",
-        address: "12 Avenue Hassan II, Casablanca",
-        dateOfBirth: future,
-        password: "KafilDev123",
-        confirmPassword: "KafilDev123",
       }).success,
     ).toBe(false);
   });
@@ -86,10 +62,7 @@ describe("applicant creation form", () => {
         phone: "06 12 34 56 78",
         cin: "ab123456",
         gender: "female",
-        address: "12 Avenue Hassan II, Casablanca",
-        dateOfBirth: "1990-04-15",
         password: "KafilDev123",
-        confirmPassword: "KafilDev123",
       },
       locale: "en",
     });
@@ -101,10 +74,7 @@ describe("applicant creation form", () => {
         phone: "+212612345678",
         cin: "AB123456",
         gender: "F",
-        address: "12 Avenue Hassan II, Casablanca",
-        dateOfBirth: "1990-04-15",
         password: "KafilDev123",
-        confirmPassword: "KafilDev123",
         locale: "en",
       },
     });
@@ -149,11 +119,12 @@ describe("applicant creation thin route", () => {
     expect(form).toContain('t("applicants.form.email")');
     expect(form).toContain('t("applicants.form.phone")');
     expect(form).toContain('t("applicants.form.cin")');
-    expect(form).toContain('t("applicants.form.gender")');
-    expect(form).toContain('t("applicants.form.dateOfBirth")');
-    expect(form).toContain('t("applicants.form.address")');
+    expect(form).toContain('t("applicants.form.genderLabel")');
+    expect(form).not.toContain('name="dateOfBirth"');
+    expect(form).not.toContain('name="address"');
     expect(form).toContain('t("applicants.form.password")');
-    expect(form).toContain('t("applicants.form.confirmPassword")');
+    expect(form).toMatch(/name="password"\s+type="text"/);
+    expect(form).not.toContain('name="confirmPassword"');
     expect(form).toContain('t("applicants.form.submit")');
 
     expect(otp).toContain('type="otp"');
@@ -202,11 +173,8 @@ describe("applicant creation thin route", () => {
         "applicants.form.email",
         "applicants.form.phone",
         "applicants.form.cin",
-        "applicants.form.gender",
-        "applicants.form.dateOfBirth",
-        "applicants.form.address",
+        "applicants.form.genderLabel",
         "applicants.form.password",
-        "applicants.form.confirmPassword",
         "applicants.form.submit",
         "applicants.otp.title",
         "applicants.otp.codeLabel",
@@ -248,6 +216,43 @@ describe("admin applicant queue", () => {
     expect(page).not.toContain("onCreate:");
     expect(page).toContain("onView: openView");
     expect(page).toContain("dialog.openDialog");
+    expect(page).toContain('"pending_review"');
+    expect(page).toContain('applicant.status === "rejected"');
+    expect(page).toContain("useApplicantsTableFilters()");
+    expect(page).not.toContain("<NativeSelect");
+    expect(page).not.toContain("useApplicantPendingReviewCount");
+    expect(page).not.toContain("<NBadge");
+    const card = source(
+      "../src/features/Applicants/components/ApplicantCard.tsx",
+    );
+    expect(card).toContain("<StatusBadge");
+    expect(card).toContain("status={data.status}");
+  });
+
+  test("uses fresh detail queries and localized rejection validation", () => {
+    const details = source(
+      "../src/features/Applicants/components/ApplicantDetails.tsx",
+    );
+    expect(details).toContain("useApplicant(initialApplicant.id, initialApplicant)");
+    expect(details).toContain('applicant.status === "rejected"');
+
+    for (const language of ["en", "fr", "ar", "es"] as const) {
+      const required = getUiTranslation(
+        language,
+        "operator.applicants.rejectionReasonRequired",
+      );
+      const tooLong = getUiTranslation(
+        language,
+        "operator.applicants.rejectionReasonTooLong",
+      );
+      const schema = applicantRejectReasonSchema({ required, tooLong });
+      const empty = schema.safeParse({ reason: "" });
+      const long = schema.safeParse({ reason: "x".repeat(501) });
+      expect(empty.success).toBe(false);
+      expect(long.success).toBe(false);
+      if (!empty.success) expect(empty.error.issues[0]?.message).toBe(required);
+      if (!long.success) expect(long.error.issues[0]?.message).toBe(tooLong);
+    }
   });
 
   test("ships the admin applicant workspace copy in every UI language", () => {
@@ -263,9 +268,82 @@ describe("admin applicant queue", () => {
         "operator.applicants.filterStatus",
         "operator.applicants.viewTitle",
         "operator.applicants.copyLink",
+        "operator.applicants.rejectionReasonRequired",
+        "operator.applicants.rejectionReasonTooLong",
+        "operator.applicants.allStatuses",
+        "operator.applicants.loadDetailError",
       ] as const) {
         expect(getUiTranslation(language, key)).not.toBe(key);
       }
     }
+  });
+});
+
+describe("applicant form CIN boundary (8..20, aligned with server)", () => {
+  const validCinForm = {
+    name: "Amina Tazi",
+    email: "amina.tazi@example.com",
+    phone: "+212612345678",
+    cin: "AB123456",
+    gender: "female",
+    password: "KafilDev123",
+  };
+
+  test("accepts an 8-character CIN (lower boundary)", () => {
+    expect(
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "AB123456" }).success,
+    ).toBe(true);
+  });
+
+  test("accepts a 20-character CIN (upper boundary)", () => {
+    expect(
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(20) })
+        .success,
+    ).toBe(true);
+  });
+
+  test("rejects a 7-character CIN before submission", () => {
+    const result = applicantFormSchema.safeParse({
+      ...validCinForm,
+      cin: "A".repeat(7),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const cinIssue = result.error.issues.find((i) => i.path.includes("cin"));
+      expect(cinIssue?.message).toBe("Enter your national identity number");
+    }
+  });
+
+  test("rejects a 21-character CIN before submission", () => {
+    const result = applicantFormSchema.safeParse({
+      ...validCinForm,
+      cin: "A".repeat(21),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const cinIssue = result.error.issues.find((i) => i.path.includes("cin"));
+      expect(cinIssue?.message).toBe("Enter your national identity number");
+    }
+  });
+
+  test("client CIN boundary (8..20) matches the server authoritative rule", () => {
+    // The client and server share the same 8..20 CIN range so a seven-character
+    // value is rejected before submission; server validation stays authoritative.
+    expect(
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(7) })
+        .success,
+    ).toBe(false);
+    expect(
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(21) })
+        .success,
+    ).toBe(false);
+    expect(
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(8) })
+        .success,
+    ).toBe(true);
+    expect(
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(20) })
+        .success,
+    ).toBe(true);
   });
 });

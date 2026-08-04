@@ -22,6 +22,7 @@ import {
 } from "./supportAssignmentDto";
 import { SupportAssignmentRepository } from "./supportAssignmentRepository";
 import { SupportAssignmentValidator } from "./supportAssignmentValidator";
+import { sponsorFamilyReference } from "./supportAssignmentProjection";
 
 @Service()
 export class SupportAssignmentService {
@@ -51,17 +52,27 @@ export class SupportAssignmentService {
     return this.assignments.listOwn(userId, limit, offset, status);
   }
 
-  async listSponsorFamilyCatalog(query: SponsorFamilyCatalogQuery) {
-    const { limit, offset } = sponsorFamilyCatalogQuery.parse(query ?? {});
-    const families = await this.assignments.listSponsorFamilyCatalog(limit, offset);
+  async listSponsorFamilyCatalog(userId: string, query: SponsorFamilyCatalogQuery) {
+    const { limit, offset, ...filters } = sponsorFamilyCatalogQuery.parse(query ?? {});
+    const sponsor = await this.assignments.findSponsorByUserId(userId);
+    if (!sponsor) HttpError.notFound("Sponsor profile not found");
+    const families = await this.assignments.listSponsorFamilyCatalog(
+      sponsor.id,
+      limit,
+      offset,
+      filters,
+    );
     const funding = await this.funding.getProgressForFamilies(families);
 
     return families.map((family) => ({
       id: family.id,
-      // Sponsor-facing directory entries never expose managed household photos.
-      image: null,
-      reference: `Family ${family.id.slice(0, 8)}`,
+      name: family.name,
+      image: family.image,
+      supportPriority: family.supportPriority,
+      reference: sponsorFamilyReference(family.id),
       activeChildCount: family.activeChildCount,
+      activeSponsorCount: family.activeSponsorCount,
+      assignmentId: family.assignmentId,
       funding: funding.get(family.id) ?? null,
     }));
   }
@@ -83,7 +94,7 @@ export class SupportAssignmentService {
         startedAt: assignment.startedAt,
       },
       family: {
-        reference: `Family ${summary.familyProfileId.slice(0, 8)}`,
+        reference: sponsorFamilyReference(summary.familyProfileId),
         activeChildCount: summary.childCount,
       },
     };

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Users } from "lucide-react";
 
 import { formatKafilDate, type KafilLanguage } from "@/lib/format";
+import { getFamilyAvatarImage } from "@/lib/personImages";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
+import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { SupportedFamilyEntry } from "../types";
 
@@ -20,13 +21,16 @@ export function SupportedFamilyRow({
   return (
     <Link
       className="flex items-center gap-4 rounded-xl border border-border/70 p-4 hover:bg-muted/60"
-      href="/sponsor/support"
+      href="/family"
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
-        <Users className="size-5 text-muted-foreground" />
-      </div>
+      <ManagedAvatar
+        alt={family.familyName}
+        className="shrink-0"
+        size="xl"
+        src={getFamilyAvatarImage(family.image)}
+      />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{family.supportReference}</p>
+        <p className="truncate text-sm font-semibold">{family.familyName}</p>
         <div className="mt-0.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>
             {t("dashboard.sponsor.activeChildren")}: {family.activeChildCount}

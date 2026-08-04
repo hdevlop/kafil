@@ -12,6 +12,7 @@ import {
   createOffsetPagination,
   getPageIndex,
   hasPossibleNextPage,
+  listAllOffsetPages,
 } from "../src/lib/pagination";
 import { getStatusColor } from "../src/lib/status";
 import {
@@ -92,6 +93,8 @@ describe("Phase 6B formatters and status helpers", () => {
   test("maps Kafil workflow statuses to Najm badge colors", () => {
     expect(getStatusColor("validated")).toBe("success");
     expect(getStatusColor("pending")).toBe("warning");
+    expect(getStatusColor("pending_email_verification")).toBe("warning");
+    expect(getStatusColor("pending_review")).toBe("warning");
     expect(getStatusColor("rejected")).toBe("destructive");
     expect(getStatusColor("future_status")).toBe("neutral");
     expect(formatStatusLabel("in_preparation")).toBe("Purchasing and preparation");
@@ -124,5 +127,22 @@ describe("Phase 6B pagination helpers", () => {
         optional: null,
       }),
     ).toEqual({ limit: 25, offset: 0, status: "active" });
+  });
+
+  test("loads every offset page for mobile scroll lists", async () => {
+    const calls: Array<{ limit: number; offset: number }> = [];
+    const records = await listAllOffsetPages(async (pagination) => {
+      calls.push(pagination);
+      return pagination.offset < 4
+        ? [pagination.offset + 1, pagination.offset + 2]
+        : [];
+    }, 2);
+
+    expect(records).toEqual([1, 2, 3, 4]);
+    expect(calls).toEqual([
+      { limit: 2, offset: 0 },
+      { limit: 2, offset: 2 },
+      { limit: 2, offset: 4 },
+    ]);
   });
 });
