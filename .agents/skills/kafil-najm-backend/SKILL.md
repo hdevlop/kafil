@@ -7,7 +7,7 @@ description: Build, refactor, review, or test Kafil backend work in packages/ser
 
 ## Preflight
 
-1. Read the root `AGENTS.md`, `docs/PLAN.md`, and the active implementation
+1. Read the root `AGENTS.md`, the root `PLAN.md`, and the active implementation
    plan completely.
 2. Inspect the current module from controller through tests before editing.
 3. Verify the installed Najm versions and declarations under
