@@ -1,0 +1,32 @@
+# Normalize to LF in the repository. Without this, a Windows clone with
+# core.autocrlf=true rewrites shell scripts to CRLF, which breaks them inside
+# the Linux container built by Dockerfile (`COPY . .`) and on the VPS.
+* text=auto eol=lf
+
+# Files that must stay LF regardless of platform.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+deploy/Caddyfile* text eol=lf
+deploy/systemd/* text eol=lf
+
+# Windows-only helpers, if any are added later.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Never touch binaries.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.pem binary
+
+# Generated; keep diffs collapsed in review.
+bun.lock linguist-generated=true
+packages/server/migrations/** linguist-generated=true
