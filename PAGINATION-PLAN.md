@@ -14,18 +14,23 @@ root `overrides` block.
 
 ## Defects found 2026-08-05
 
-- **Card lists render a permanent dead footer.** `NTablePagination` renders
+Two of the three are fixed and released. The third is untouched.
+
+- **FIXED in `najm-kit@2.2.0`** — **Card lists render a permanent dead footer.**
+  `NTablePagination` renders
   outside the `NajmScroll` container owned by `NTableCards`, so the
   `load-more` footer is a fixed strip rather than content the user scrolls
   past. Every list shorter than one page (Categories at 18 rows, Support
   Assignments) permanently spends that strip on `No more items.`
-- **`dynamicHeight` is silently inert on every Kafil list.** Najm Kit measures
+- **FIXED in `najm-kit@2.2.0`** — **`dynamicHeight` is silently inert on every
+  Kafil list.** Najm Kit measures
   the container correctly but discards `calculatedPageSize` when
   `manualPagination` is set, and returns early before applying it. Kafil sets
   `manualPagination: true` everywhere, so all tables fall back to the store
   default of 10 rows regardless of viewport height. This is the empty band
   between the last row and the pagination bar on desktop.
-- **`pageCount` is fabricated.** `useResponsiveOffsetList` derives
+- **NOT FIXED** — **`pageCount` is fabricated.** `useResponsiveOffsetList`
+  derives
   `pageIndex + (hasNextPage ? 2 : 1)`, which can only ever report one page
   beyond the current one. A 100-row result still displays `Page 1 of 2`, and
   the last-page control jumps to page 2 rather than the last page. Root cause
@@ -111,14 +116,26 @@ Not started: Stage A. Until it lands, `pageCount` remains
 
 ## Stage A — Server result totals
 
-- [ ] Add a filtered `count()` alongside each list query and emit
-  `X-Total-Count` on every paginated list endpoint. Apply the same filters,
-  search, and authorization scope as the row query.
+**NOT STARTED.** This is the whole of the remaining work.
+
+Apply only to the ten list endpoints that back a numbered-pagination desktop
+table. Dashboard widgets and ledger reads take `limit`/`offset` but render no
+page controls, so they need no total.
+
+- [ ] Add a filtered `count()` alongside each list query, reusing the **same**
+  condition builder as the row query so the two can never diverge. Apply the
+  same filters, search, and authorization scope.
 - [ ] Keep sponsor and family privacy projections intact; a total must never
   disclose rows the caller cannot list.
-- [ ] Expose the header through the typed API client and surface it in
-  `useResponsiveOffsetList` so `pageCount` becomes `ceil(total / pageSize)`.
-- [ ] Remove the fabricated `pageIndex + (hasNextPage ? 2 : 1)` derivation.
+- [ ] Return `paginated(rows, { page, limit, total })` from the migrated
+  services. This changes the service return type from `T[]` to an envelope, so
+  migrate each module's service, MCP tool expectations, and tests together.
+- [ ] Add a total-aware reader to `apps/web/src/services/http.ts`. The response
+  body already carries `pagination` alongside `data`; `unwrapApiResponse`
+  discards it, so existing callers are unaffected and only the reader is new.
+- [ ] Surface the total in `useResponsiveOffsetList` so `pageCount` becomes
+  `ceil(total / pageSize)`, and remove the fabricated
+  `pageIndex + (hasNextPage ? 2 : 1)` derivation.
 - [ ] Verify the last-page control reaches the real last page, and that the
   count stays correct across search, filter, sort, and mutation invalidation.
 
@@ -126,32 +143,32 @@ Not started: Stage A. Until it lands, `pageCount` remains
 
 ### Infinite card continuation
 
-- [ ] Add an `infinite` card pagination mode to `NTableCardPagination`
+- [x] Add an `infinite` card pagination mode to `NTableCardPagination`
   carrying the existing `hasNextPage`, `loadingMore`, `loadMoreError`,
   `onLoadMore`, `retryLabel`, `loadMoreErrorLabel`, and `itemsLoadedLabel`
   fields, and no `loadMoreLabel`/`endLabel`.
-- [ ] Return `null` from `NTablePagination` for the `infinite` mode, matching
+- [x] Return `null` from `NTablePagination` for the `infinite` mode, matching
   the existing `all` behavior.
-- [ ] Own the sentinel inside `NTableCards`, within the `NajmScroll`
+- [x] Own the sentinel inside `NTableCards`, within the `NajmScroll`
   container, and set the observer `root` to that container. Reuse the
   exported `useInfiniteScroll` hook rather than adding a second observer.
-- [ ] Render skeleton cards at the grid tail while the next page is in
+- [x] Render skeleton cards at the grid tail while the next page is in
   flight; never a spinner in a fixed strip.
-- [ ] Render no end-of-list element when `hasNextPage` is false.
-- [ ] Reveal the continuation button only on append failure, preserving the
+- [x] Render no end-of-list element when `hasNextPage` is false.
+- [x] Reveal the continuation button only on append failure, preserving the
   existing pending guard, focus restoration, and `role="alert"` error text.
-- [ ] Preserve the polite `aria-live` region announcing appended row counts;
+- [x] Preserve the polite `aria-live` region announcing appended row counts;
   it is the only signal assistive technology receives.
 
 ### Container-aware page size
 
-- [ ] Apply `calculatedPageSize` under `manualPagination`, debounced, and
+- [x] Apply `calculatedPageSize` under `manualPagination`, debounced, and
   report the change through `onPaginationChange` so the consumer keeps
   ownership of fetching. A resize must not issue an undebounced request.
-- [ ] Snap card-mode page size to `cardColumnCount * rowsThatFit` so a card
+- [x] Snap card-mode page size to `cardColumnCount * rowsThatFit` so a card
   grid never ends in a ragged partial row. Today `pageSize: 10` against a
   four-column grid ends **every** page at 2.5 rows, not only the last one.
-- [ ] Compute that row count with `Math.floor`. The existing
+- [x] Compute that row count with `Math.floor`. The existing
   `calculateCardSkeletonCount` uses `Math.ceil`, which is correct for
   skeletons — overfilling is harmless there — but reusing it unchanged for
   page size overflows the container by a partial row and reintroduces the
@@ -159,40 +176,52 @@ Not started: Stage A. Until it lands, `pageCount` remains
 
 ### Whole-set rendering in table mode
 
-- [ ] Extend `renderAllSuppliedRows` beyond cards so `all` is honored in
+- [x] Extend `renderAllSuppliedRows` beyond cards so `all` is honored in
   table mode: render every supplied row, scroll the table body, and return
   `null` from `NTablePagination`.
-- [ ] Keep this separate from infinite table rows, which stay out of scope.
+- [x] Keep this separate from infinite table rows, which stay out of scope.
 
 ### Release
 
 - [ ] Add unit, type, accessibility, RTL, and reduced-motion coverage for the
   new mode; verify 0, 1, exact-page-size, and multi-page datasets.
-- [ ] Run the Najm Kit gate and publish; record the exact released version and
+  **Partly done.** `test/table/infinite-continuation.test.tsx` covers the unit
+  behavior, the sentinel lifecycle, duplicate-request guarding, tail
+  placeholders, failure/retry, the polite announcement, `all` in table mode,
+  and the `calculateCardPageSize` floor. **Still missing: RTL, reduced motion,
+  and the 0 / 1 / exact-page-size boundary matrix.**
+- [x] Run the Najm Kit gate and publish; record the exact released version and
   commit before Kafil adoption.
 
 ## Stage C — Kafil consumer adoption
 
-- [ ] Install the exact published Najm Kit release with Bun and verify the
+- [x] Install the exact published Najm Kit release with Bun and verify the
   root/app manifests, `bun.lock`, root `overrides`, runtime package metadata,
   and installed declarations all resolve it.
-- [ ] Switch `createCardPagination` to the `infinite` mode and drop the now
+- [x] Switch `createCardPagination` to the `infinite` mode and drop the now
   unused `loadMore` and `loadingMore` labels. Do not add the missing
   `endOfList` key; the English `No more items.` string is no longer rendered.
-- [ ] Add the `strategy` option to `useResponsiveOffsetList` and the feature
+- [x] Add the `strategy` option to `useResponsiveOffsetList` and the feature
   hooks that wrap it, and have `createCardPagination` resolve the rendered
   mode from it. Default behavior must be unchanged for callers that omit it.
-- [ ] Implement the `all` self-downgrade: one request at the ceiling, fall
+- [x] Implement the `all` self-downgrade: one request at the ceiling, fall
   back to `infinite` when the response fills the ceiling exactly, and log a
   development warning naming the list.
 - [ ] Assign a strategy per list only where a bound is proven. Record the
   evidence for each `all` list; an unbounded set keeps the default.
+  **Deliberately not done.** No list opts into `all`; every one keeps the
+  default. Opting a list in is a claim about its data bound that must be
+  proven, not assumed.
 - [ ] Reset the card scroll container to the top when the row set identity
   changes, so a search or filter cannot leave the user mid-list.
+  **Not done — open gap.** Typing in a search box starts a fresh query, but the
+  scroll offset is retained, so the user can land mid-list.
 - [ ] Confirm `dynamicHeight: true` now takes effect on all eleven list pages
   and that no page keeps a hard-coded page size to compensate.
+  **Not verified.** No browser run was performed; only the package unit tests
+  prove the measurement path.
 - [ ] Display the real result total in the page header where it helps the
-  operator judge scope.
+  operator judge scope. **Blocked on Stage A.**
 
 ## Stage D — Acceptance
 
@@ -212,13 +241,24 @@ Not started: Stage A. Until it lands, `pageCount` remains
 
 ## Gate
 
+Ticked only where evidence exists. Package unit tests are evidence; a browser
+run is not yet.
+
 - [ ] Paged lists request only the visible server page, fill the available
-  height, and report a total derived from the server.
-- [ ] Continuation fetches exactly one additional page at a time and no list
-  chains pages to download a whole result set.
-- [ ] No `all` list silently truncates; every one either proves its bound or
-  downgrades to `infinite` at runtime.
-- [ ] No list renders a permanent footer strip when there is nothing to load.
-- [ ] Append failure is recoverable without losing already-rendered rows.
-- [ ] Search, filters, and sorting are applied before pagination on the server.
-- [ ] Authorization and sponsor/family privacy projections remain intact.
+  height, and report a total derived from the server. **The total half fails —
+  Stage A.**
+- [x] Continuation fetches exactly one additional page at a time and no list
+  chains pages to download a whole result set. Covered by the duplicate-request
+  guard test.
+- [x] No `all` list silently truncates; every one either proves its bound or
+  downgrades to `infinite` at runtime. The downgrade is implemented; vacuously
+  satisfied while no list opts in.
+- [x] No list renders a permanent footer strip when there is nothing to load.
+- [x] Append failure is recoverable without losing already-rendered rows.
+- [x] Search, filters, and sorting are applied before pagination on the server.
+  Unchanged by this work; no server behavior was modified.
+- [x] Authorization and sponsor/family privacy projections remain intact. No
+  backend change was made, so nothing could regress.
+
+Outstanding before this plan can close: Stage A, the scroll-reset gap in Stage
+C, and the whole of Stage D.
