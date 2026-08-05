@@ -61,6 +61,6 @@
     "@clack/core": "^1.4.3",
     "@clack/prompts": "^1.7.0",
     "najm-core": "^2.0.5",
-    "najm-kit": "2.1.56"
+    "najm-kit": "2.2.0"
   }
 }

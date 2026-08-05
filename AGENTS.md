@@ -265,6 +265,9 @@ real environment. Never treat those values as valid at runtime.
 ## Roadmap
 
 The active roadmap is the root **`PLAN.md`** ("Kafil Remaining Work Plan").
+Its one companion is the root **`PAGINATION-PLAN.md`**, which carries the
+cross-repository list continuation, container height, and result total work
+owned by `PLAN.md` Phase 2.
 
 `docs/plans/` now holds only `NAJM-STACK.md` and a `README.md` index. That index
 still links `docs/PLAN.md`, `DECISIONS.md`, and `sections/*.md`, none of which

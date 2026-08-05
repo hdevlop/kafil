@@ -5,9 +5,14 @@ Status: **ACTIVE**
 Last updated: 2026-08-05
 
 This file contains only work that is still incomplete or not fully verified.
-Completed implementation history has been removed. This file is now the single
+Completed implementation history has been removed. This file is the
 authoritative roadmap; the former `docs/PLAN.md` and `apps/web/PLAN.md` were
 folded into it and deleted.
+
+`PAGINATION-PLAN.md` is the one deliberate companion file. It holds the
+cross-repository list continuation, container height, and result total work
+owned by Phase 2, which is too detailed to inline here. Do not fold it back in
+and do not start a third plan file.
 
 ## Current baseline
 
@@ -28,7 +33,9 @@ folded into it and deleted.
   verification matrix only because their complete test/browser evidence has
   not yet been recorded at one worktree commit.
 - Contributions now uses the shared `NTable` row menu, and the primary Kafil
-  list pages expose the shared card-pagination contract.
+  list pages expose the shared card-pagination contract. That contract is now
+  known to be incomplete for continuation, height, and totals; see
+  `PAGINATION-PLAN.md`.
 - A temporary Kafil Brand assets preview adapter is present in the working tree.
   Kafil must adopt the installed shared `ImageInput` contract and remove the
   local workaround.
@@ -73,8 +80,14 @@ Phase 1 gate:
 
 ## Phase 2 — Finish Kafil table adoption and pagination gaps
 
-Najm table implementation and release work is complete and is not tracked in
-this repository. This phase covers Kafil consumers and data behavior only.
+Earlier Najm table release work is complete. This phase covers Kafil consumers
+and data behavior.
+
+A 2026-08-05 review of the live list surfaces found three defects that Kafil
+cannot fix on its own — a permanent dead footer strip on card lists, an inert
+`dynamicHeight`, and a fabricated `pageCount`. The resulting cross-repository
+work is tracked in **`PAGINATION-PLAN.md`** at the repository root and must be
+complete before this phase's gate can pass.
 
 ### Kafil consumer regression audit
 
@@ -97,7 +110,7 @@ this repository. This phase covers Kafil consumers and data behavior only.
   downloads every page.
 - [ ] Confirm no unbounded list silently stops at 100 rows.
 - [ ] Convert any remaining first-100 list to server-backed pages with desktop
-  controls and explicit mobile/tablet **Load more**.
+  controls and scroll-driven mobile/tablet continuation.
 - [ ] Review 100-row lookups used inside filters/forms. Replace unbounded
   selectors with server search or document a proven small bound.
 - [ ] Verify `hasNextPage` metadata or one-row lookahead at exact-page-size
@@ -113,8 +126,7 @@ this repository. This phase covers Kafil consumers and data behavior only.
 
 Phase 2 gate:
 
-- [ ] Desktop lists request only the visible server page.
-- [ ] Mobile/tablet lists load one additional page only after user action.
+- [ ] The `PAGINATION-PLAN.md` gate passes in full.
 - [ ] Search, filters, and sorting are applied before pagination on the server.
 - [ ] Authorization and sponsor/family privacy projections remain intact.
 
