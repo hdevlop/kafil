@@ -7,10 +7,11 @@
     "apps/*",
     "packages/*"
   ],
-"overrides": {
+  "overrides": {
     "najm-core": "2.0.5",
     "najm-auth": "2.0.13",
     "najm-database": "2.0.3",
+    "najm-i18n": "2.0.3",
     "diject": "0.1.8"
   },
   "scripts": {
@@ -60,6 +61,6 @@
     "@clack/core": "^1.4.3",
     "@clack/prompts": "^1.7.0",
     "najm-core": "^2.0.5",
-    "najm-kit": "2.1.48"
+    "najm-kit": "2.1.56"
   }
 }
