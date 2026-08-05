@@ -17,6 +17,7 @@ export interface SponsorSupportSummary {
 
 export interface SponsorFamilyCatalogEntry {
   id: string;
+  assignmentId: string | null;
   name: string;
   image: string | null;
   supportPriority: "normal" | "high" | "urgent";
@@ -51,4 +52,7 @@ export interface SponsorContribution {
   expiredAt: string | null;
 }
 
-export type SponsorListQuery = OffsetPagination;
+export interface SponsorListQuery extends OffsetPagination {
+  search?: string;
+  relationship?: "supported" | "available";
+}

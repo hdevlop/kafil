@@ -18,6 +18,7 @@ import {
 } from "./catalogSchema";
 
 export interface CategoryFilters {
+  search?: string;
   status?: "active" | "inactive";
 }
 
@@ -69,11 +70,15 @@ export class CategoryRepository {
       .orderBy(asc(categories.sortOrder), asc(categories.name))
       .limit(limit)
       .offset(offset);
-    return filters.status ? query.where(eq(categories.status, filters.status)) : query;
+    const condition = and(
+      filters.status ? eq(categories.status, filters.status) : undefined,
+      filters.search ? ilike(categories.name, `%${filters.search}%`) : undefined,
+    );
+    return condition ? query.where(condition) : query;
   }
 
-  listActive(limit: number, offset: number) {
-    return this.list(limit, offset, { status: "active" });
+  listActive(limit: number, offset: number, search?: string) {
+    return this.list(limit, offset, { status: "active", search });
   }
 
   async findById(id: string) {

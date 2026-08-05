@@ -22,13 +22,15 @@ import { useResponsiveFamilies } from "./useFamilies";
 import { useFamiliesPageDialogs } from "./useFamiliesPageDialogs";
 import { useFamiliesTableColumns } from "./useFamiliesTableColumns";
 import { useFamiliesTableFilters } from "./useFamiliesTableFilters";
+import type { ListFamiliesFilters } from "@/services/familyApi";
 
 export function useFamiliesTableProps() {
   const { t } = useKafilLanguage();
   const { isExactAdmin } = useKafilRole();
-  const operatorFamilies = useResponsiveFamilies();
+  const [listFilters, setListFilters] = useState<ListFamiliesFilters>({});
+  const operatorFamilies = useResponsiveFamilies(listFilters);
   const columns = useFamiliesTableColumns();
-  const filters = useFamiliesTableFilters();
+  const filters = useFamiliesTableFilters(listFilters, setListFilters);
   const rows: FamilyRecord[] = operatorFamilies.data;
   const loading = operatorFamilies.loading;
   const error = operatorFamilies.error;

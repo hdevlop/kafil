@@ -1,33 +1,44 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type Dispatch, type SetStateAction } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import type { ListSupportAssignmentFilters } from "@/services/supportAssignmentApi";
 
-export function useSupportAssignmentsTableFilters() {
+export function useSupportAssignmentsTableFilters(
+  filters: ListSupportAssignmentFilters,
+  setFilters: Dispatch<SetStateAction<ListSupportAssignmentFilters>>,
+) {
   const { t } = useKafilLanguage();
   return useMemo(
     () => [
       {
         type: "text",
-        name: "sponsorLabel",
+        name: "sponsorSearch",
         placeholder: t("operator.assignments.searchSponsors"),
+        value: filters.sponsorSearch ?? "",
+        onChange: (sponsorSearch: string) => setFilters((current) => ({ ...current, sponsorSearch: sponsorSearch || undefined })),
       },
       {
         type: "text",
-        name: "familyLabel",
+        name: "familySearch",
         placeholder: t("operator.assignments.searchFamilies"),
+        value: filters.familySearch ?? "",
+        onChange: (familySearch: string) => setFilters((current) => ({ ...current, familySearch: familySearch || undefined })),
       },
       {
         type: "select",
+        showIcon: false,
         name: "status",
         placeholder: t("operator.assignments.filterStatus"),
+        value: filters.status ?? "",
+        onChange: (status: ListSupportAssignmentFilters["status"] | "") => setFilters((current) => ({ ...current, status: status || undefined })),
         options: [
           { value: "active", label: t("status.active") },
           { value: "ended", label: t("status.ended") },
         ],
       },
     ],
-    [t],
+    [filters.familySearch, filters.sponsorSearch, filters.status, setFilters, t],
   );
 }

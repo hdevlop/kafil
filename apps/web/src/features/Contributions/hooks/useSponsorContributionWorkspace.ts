@@ -2,12 +2,12 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
 import {
   changeSponsorPlan,
   createSponsorPlan,
   listSponsorFamilyCatalog,
   listSponsorPlans,
-  listSponsorSupport,
   submitSponsorContribution,
 } from "@/services/sponsorWorkspaceApi";
 
@@ -18,27 +18,27 @@ const sponsorContributionKeys = {
   plans: ["sponsor-workspace", "plans"] as const,
 };
 
-export function useSponsorContributionWorkspace(enabled: boolean) {
+export function useSponsorContributionWorkspace(enabled: boolean, search = "") {
   const catalog = useEntityQuery({
-    queryKey: sponsorContributionKeys.catalog,
-    queryFn: listSponsorFamilyCatalog,
+    queryKey: [...sponsorContributionKeys.catalog, search],
+    queryFn: () => listSponsorFamilyCatalog({
+      limit: 25,
+      offset: 0,
+      relationship: "supported",
+      search: search || undefined,
+    }),
     enabled,
   });
-  const support = useEntityQuery({
-    queryKey: sponsorContributionKeys.support,
-    queryFn: listSponsorSupport,
-    enabled,
-  });
-  const plans = useEntityQuery({
+  const plans = useOffsetInfiniteQuery({
     queryKey: sponsorContributionKeys.plans,
-    queryFn: () => listSponsorPlans({ limit: 50, offset: 0 }),
+    fetchPage: listSponsorPlans,
+    pageSize: 25,
     enabled,
   });
   const invalidate = [sponsorContributionKeys.all, ["contributions"] as const];
 
   return {
     catalog,
-    support,
     plans,
     createPlan: useEntityCommand({
       mutationFn: createSponsorPlan,

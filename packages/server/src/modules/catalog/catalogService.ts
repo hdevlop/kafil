@@ -53,8 +53,8 @@ export class CatalogService {
   }
 
   async listActiveCategories(query: CategoryListQuery) {
-    const { limit, offset } = categoryListQuery.parse(query ?? {});
-    const categoryRows = await this.categories.listActive(limit, offset);
+    const { limit, offset, search } = categoryListQuery.parse(query ?? {});
+    const categoryRows = await this.categories.listActive(limit, offset, search);
     return categoryRows.map((category) => ({
       ...category,
       itemCount: Number(category.itemCount ?? 0),

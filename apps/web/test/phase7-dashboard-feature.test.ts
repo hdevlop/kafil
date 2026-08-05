@@ -173,29 +173,50 @@ describe("Phase 7 dashboard presentation contracts", () => {
     const pageSource = await Bun.file(
       new URL("../src/features/Dashboard/AdminDashboard/components/AdminDashboardPage.tsx", import.meta.url),
     ).text();
-    const cardsSource = await Bun.file(
-      new URL("../src/features/Dashboard/AdminDashboard/components/AdminOperationsCards.tsx", import.meta.url),
+    const latestOrdersSource = await Bun.file(
+      new URL("../src/features/Dashboard/AdminDashboard/components/LatestOrdersCard.tsx", import.meta.url),
     ).text();
-    const chartsSource = await Bun.file(
-      new URL("../src/features/Dashboard/shared/DashboardCharts.tsx", import.meta.url),
+    const attentionSource = await Bun.file(
+      new URL("../src/features/Dashboard/AdminDashboard/components/AttentionCard.tsx", import.meta.url),
+    ).text();
+    const quickActionsSource = await Bun.file(
+      new URL("../src/features/Dashboard/AdminDashboard/components/QuickActionsCard.tsx", import.meta.url),
+    ).text();
+    const sponsorChartSource = await Bun.file(
+      new URL("../src/features/Sponsors/components/overview/ContributionOverviewCard.tsx", import.meta.url),
+    ).text();
+    const skeletonSource = await Bun.file(
+      new URL("../src/features/Dashboard/shared/DashboardSkeletons.tsx", import.meta.url),
     ).text();
 
     expect(pageSource).toContain('xlCols={12}');
     expect(pageSource).toContain('<LatestOrdersCard recentOrders={data.recentOrders ?? []} />');
-    expect(pageSource).toContain("<OperationalAttentionCard");
+    expect(pageSource).toContain("<AttentionCard");
     expect(pageSource).toContain("<QuickActionsCard />");
     expect(pageSource).not.toContain("<CalendarCard />");
     expect(pageSource).toContain('status !== "purchased"');
-    expect(pageSource).toContain('xlOnlyStatuses={["approved"]}');
-    expect(chartsSource).toContain('className="min-w-0 overflow-hidden pb-1"');
-    expect(chartsSource).toContain("grid-cols-12");
-    expect(chartsSource).toContain("h-44 min-w-0");
-    expect(chartsSource).not.toContain("overflow-x-auto");
-    expect(chartsSource).not.toContain("min-w-[42rem]");
-    expect(cardsSource).toContain('href="/orders"');
-    expect(cardsSource).toContain('href="/orders"');
-    expect(cardsSource).toContain('href: "/contribution"');
-    expect(cardsSource).toContain('href: "/products"');
+    expect(pageSource).toContain('className: "hidden xl:block"');
+    expect(pageSource).toContain("NLineChart");
+    expect(pageSource).toContain("NPieChart");
+    expect(pageSource).toContain("NStatusBreakdown");
+    expect(pageSource).not.toContain("MonthlyLineChart");
+    expect(pageSource).not.toContain("#55A7EE");
+    expect(sponsorChartSource).toContain("NLineChart");
+    expect(sponsorChartSource).not.toContain("<svg");
+    expect(skeletonSource).toContain("NChartSkeleton");
+    expect(skeletonSource).toContain("NStatCardSkeleton");
+    expect(latestOrdersSource).toContain('href="/orders"');
+    expect(attentionSource).toContain('href: "/orders"');
+    expect(attentionSource).toContain('href: "/contribution"');
+    expect(attentionSource).toContain('href: "/applicants"');
+    expect(attentionSource).toContain('awaitingApplicantReview');
+    expect(attentionSource).toContain('href: "/operator/families"');
+    expect(attentionSource).toContain('awaitingSponsorship');
+    expect(attentionSource).toContain('allClear');
+    expect(attentionSource).not.toContain('.filter((item) => item.count > 0)');
+    expect(quickActionsSource).toContain('href: "/products"');
+    expect(quickActionsSource).toContain('href: "/applicants"');
+    expect(quickActionsSource).toContain('reviewApplicants');
   });
 
   test("shows the dominant category image in family recent orders", async () => {

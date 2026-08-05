@@ -876,7 +876,10 @@
         "awaitingPurchase": "طلبات بانتظار الشراء",
         "awaitingDelivery": "طلبات مشتراة بانتظار التوصيل",
         "awaitingContributionReview": "مساهمات بانتظار المراجعة",
+        "awaitingApplicantReview": "طلبات الرعاية في انتظار المراجعة",
+        "awaitingSponsorship": "أسر في انتظار الكفالة",
         "noOperationalAttention": "لا توجد مشكلات تشغيلية تتطلب الانتباه.",
+        "allClear": "تم الانتهاء",
         "quickActions": "إجراءات سريعة",
         "reviewOrders": "مراجعة الطلبات المعلقة",
         "reviewOrdersHint": "تحقق من طلبات الأسر ووافق عليها",
@@ -885,7 +888,9 @@
         "reviewContributions": "مراجعة المساهمات",
         "reviewContributionsHint": "تحقق من دعم الكفلاء الوارد",
         "manageCatalog": "إدارة الكتالوج",
-        "manageCatalogHint": "حدّث المنتجات والفئات"
+        "manageCatalogHint": "حدّث المنتجات والفئات",
+        "reviewApplicants": "مراجعة طلبات الرعاية",
+        "reviewApplicantsHint": "الموافقة على تسجيلات الكفالة المعلقة"
       },
       "family": {
         "welcome": "مرحبًا، {name}",

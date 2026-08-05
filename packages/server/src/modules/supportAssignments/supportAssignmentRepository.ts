@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, ne, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 import { usersTable } from "najm-auth/pg";
@@ -7,17 +8,52 @@ import type { KafilDatabase } from "../../database/types";
 import { children } from "../children/childSchema";
 import { familyProfiles } from "../families/familySchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
+import { contributionPlans } from "../contributions/contributionSchema";
 import {
   supportAssignments,
   type NewSupportAssignment,
 } from "./supportAssignmentSchema";
 
 export interface SupportAssignmentFilters {
+  sponsorSearch?: string;
+  familySearch?: string;
   sponsorProfileId?: string;
   familyProfileId?: string;
   childId?: string;
   status?: "active" | "ended";
 }
+
+const sponsorUsers = alias(usersTable, "support_assignment_sponsor_users");
+const familyUsers = alias(usersTable, "support_assignment_family_users");
+
+const assignmentListSelection = {
+  id: supportAssignments.id,
+  sponsorProfileId: supportAssignments.sponsorProfileId,
+  familyProfileId: supportAssignments.familyProfileId,
+  childId: supportAssignments.childId,
+  status: supportAssignments.status,
+  startedAt: supportAssignments.startedAt,
+  endedAt: supportAssignments.endedAt,
+  assignedByUserId: supportAssignments.assignedByUserId,
+  endedByUserId: supportAssignments.endedByUserId,
+  notes: supportAssignments.notes,
+  createdAt: supportAssignments.createdAt,
+  updatedAt: supportAssignments.updatedAt,
+  sponsorLabel: sponsorUsers.name,
+  sponsorImage: sponsorUsers.image,
+  sponsorGender: sponsorProfiles.gender,
+  sponsorEmail: sponsorUsers.email,
+  sponsorPhone: sponsorProfiles.phone,
+  familyLabel: familyProfiles.guardianLegalName,
+  sponsorshipPriceMinor: sql<number | null>`(
+    select ${contributionPlans.amountMinor}
+    from ${contributionPlans}
+    where ${contributionPlans.supportAssignmentId} = ${supportAssignments.id}
+      and ${contributionPlans.status} = 'active'
+    order by ${contributionPlans.createdAt} desc
+    limit 1
+  )`,
+};
 
 const sponsorAssignmentSelection = {
   id: supportAssignments.id,
@@ -60,8 +96,12 @@ export class SupportAssignmentRepository {
   list(limit: number, offset: number, filters: SupportAssignmentFilters) {
     const condition = assignmentFilter(filters);
     const query = this.db
-      .select()
+      .select(assignmentListSelection)
       .from(supportAssignments)
+      .innerJoin(sponsorProfiles, eq(supportAssignments.sponsorProfileId, sponsorProfiles.id))
+      .innerJoin(sponsorUsers, eq(sponsorProfiles.userId, sponsorUsers.id))
+      .innerJoin(familyProfiles, eq(supportAssignments.familyProfileId, familyProfiles.id))
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id))
       .orderBy(
         desc(supportAssignments.createdAt),
         desc(supportAssignments.id),
@@ -300,6 +340,12 @@ export class SupportAssignmentRepository {
 
 function assignmentFilter(filters: SupportAssignmentFilters) {
   const conditions = [
+    filters.sponsorSearch
+      ? ilike(sponsorUsers.name, `%${filters.sponsorSearch}%`)
+      : undefined,
+    filters.familySearch
+      ? ilike(familyProfiles.guardianLegalName, `%${filters.familySearch}%`)
+      : undefined,
     filters.sponsorProfileId
       ? eq(supportAssignments.sponsorProfileId, filters.sponsorProfileId)
       : undefined,

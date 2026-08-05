@@ -23,8 +23,11 @@ async function login(page: Page, email: string, password: string) {
   await page.getByPlaceholder("Enter your password").fill(password);
   const loginResponse = page.waitForResponse(
     (response) =>
-      response.url().includes("/api/auth/login") &&
+      response.url().includes("/api/access/login") &&
       response.request().method() === "POST",
+  );
+  const refresh = page.waitForResponse(
+    (response) => response.url().endsWith("/api/auth/refresh") && response.ok(),
   );
   await page.getByRole("button", { name: "Log in" }).click();
   const response = await loginResponse;
@@ -34,7 +37,8 @@ async function login(page: Page, email: string, password: string) {
     );
   }
   await page.waitForURL(/\/dashboard$/);
-  await page.waitForLoadState("networkidle");
+  await refresh;
+  await page.waitForLoadState("domcontentloaded");
 }
 
 async function screenshot(page: Page, name: string) {
@@ -102,6 +106,7 @@ test("sponsor funding controls disable closed and excessive actions", async ({
     const { pathname } = new URL(request.url());
     if (
       pathname === "/api/auth/refresh" ||
+      pathname === "/api/auth/session/recover" ||
       pathname === "/api/ui-language"
     ) {
       return route.continue();
@@ -149,7 +154,9 @@ test("sponsor funding controls disable closed and excessive actions", async ({
           name: "Open Family",
           supportPriority: "urgent",
           activeSponsorCount: 4,
+          assignmentId: "assignment-open",
           reference: "FAM-OPEN",
+          relationship: "supported",
         },
       ]);
     }
@@ -217,9 +224,13 @@ test("sponsor funding controls disable closed and excessive actions", async ({
     return json(route, []);
   });
 
-  await page.goto("/sponsor/support");
+  const catalogResponse = page.waitForResponse(
+    (response) => response.url().includes("/api/support-assignments/catalog"),
+  );
+  await page.goto("/family");
   await expect(page).toHaveURL(/\/family$/);
-  await expect(page.getByRole("heading", { name: "Families" })).toBeVisible();
+  expect((await catalogResponse).ok()).toBe(true);
+  await expect(page.getByRole("heading", { name: "Families" }).first()).toBeVisible();
   await expect(page.getByText("All families")).toBeVisible();
   await expect(page.getByText("Open Family")).toBeVisible();
   await expect(
@@ -233,29 +244,18 @@ test("sponsor funding controls disable closed and excessive actions", async ({
   ).toBeDisabled();
   await screenshot(page, "sponsor-closed-family-actions.png");
 
-  await page.goto("/sponsor/contributions?assignment=assignment-open");
-  await page.getByLabel("Amount in MAD").first().fill("60");
-  await expect(page.getByText("Enter no more than MAD 50.00.")).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Create plan" }),
-  ).toBeDisabled();
+  await page.getByRole("button", { name: "Contribute" }).click();
+  await page.getByRole("spinbutton").fill("60");
   await expect(
     page.getByRole("button", { name: "Submit contribution" }),
   ).toBeDisabled();
-  await expect(page.getByText(/^Pending until /)).toBeVisible();
-  await expect(page.getByText(/^Expired on /)).toBeVisible();
-  await screenshot(page, "sponsor-cap-and-expiry-history.png");
+  await screenshot(page, "sponsor-cap-validation.png");
 });
 
-test("bootstrap admin sees catalog permanent-delete confirmations", async ({
+test("isolated admin sees catalog permanent-delete confirmations", async ({
   page,
 }) => {
-  const adminEmail = process.env.KAFIL_ADMIN_EMAIL;
-  const adminPassword = process.env.KAFIL_ADMIN_PASSWORD;
-  if (!adminEmail || !adminPassword) {
-    throw new Error("KAFIL_ADMIN_EMAIL and KAFIL_ADMIN_PASSWORD are required.");
-  }
-  await login(page, adminEmail, adminPassword);
+  await login(page, phase6BrowserUsers.admin, phase6BrowserPassword);
   const category = {
     createdAt: "2026-07-25T12:00:00.000Z",
     description: "Pristine category",
@@ -289,7 +289,7 @@ test("bootstrap admin sees catalog permanent-delete confirmations", async ({
     return json(route, []);
   });
 
-  await page.goto("/operator/categories");
+  await page.goto("/categories");
   await page.getByRole("button", { name: "Row actions" }).first().click();
   await page.getByRole("menuitem", { name: "Delete permanently" }).click();
   await expect(
@@ -298,7 +298,7 @@ test("bootstrap admin sees catalog permanent-delete confirmations", async ({
   await screenshot(page, "admin-category-delete-confirmation.png");
   await page.getByRole("button", { name: "Close" }).click();
 
-  await page.goto("/operator/products");
+  await page.goto("/products");
   await page.getByRole("button", { name: "Row actions" }).first().click();
   await page.getByRole("menuitem", { name: "Delete permanently" }).click();
   await expect(

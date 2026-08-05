@@ -10,7 +10,6 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import {
   bulkDeleteContributions,
   deleteContribution,
-  listAllContributions,
   listContributionPage,
   listContributions,
   listContributionRecordingOptions,
@@ -59,25 +58,6 @@ export function useContributionPage<TRecord extends ContributionListRecord = Con
   });
 }
 
-export function useAllContributions<TRecord extends ContributionListRecord = ContributionRecord>(
-  query: Omit<ContributionListQuery, "limit" | "offset">,
-  enabled = true,
-) {
-  const user = useUser();
-  const isSponsor = user?.role === "sponsor";
-  const audience = isSponsor
-    ? "sponsor"
-    : user?.role === "family"
-      ? "family"
-      : query.audience;
-
-  return useEntityQuery({
-    queryKey: contributionKeys.full({ ...query, audience, role: user?.role }),
-    queryFn: () => listAllContributions<TRecord>({ ...query, audience }),
-    enabled: Boolean(user) && enabled,
-  });
-}
-
 export function useInfiniteContributions<
   TRecord extends ContributionListRecord = ContributionRecord,
 >(
@@ -102,10 +82,13 @@ export function useInfiniteContributions<
   });
 }
 
-export function useContributionRecordingOptions() {
+export function useContributionRecordingOptions(query: {
+  search?: string;
+  familyProfileId?: string;
+} = {}) {
   return useEntityQuery({
-    queryKey: contributionKeys.recordingOptions,
-    queryFn: listContributionRecordingOptions,
+    queryKey: [...contributionKeys.recordingOptions, query],
+    queryFn: () => listContributionRecordingOptions(query),
   });
 }
 

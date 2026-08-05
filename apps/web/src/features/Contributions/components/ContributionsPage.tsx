@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState, type SetStateAction } from "react";
 import { BadgeCheck, CircleX, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import {
@@ -34,7 +34,7 @@ import {
 import { useContributionCommands, useContributionPage, useInfiniteContributions } from "../hooks/useContributions";
 import { useContributionsTableColumns } from "../hooks/useContributionsTableColumns";
 import { useContributionsTableFilters } from "../hooks/useContributionsTableFilters";
-import type { ContributionAudience, ContributionListRecord, ContributionRecord } from "../types";
+import type { ContributionAudience, ContributionListQuery, ContributionListRecord, ContributionRecord } from "../types";
 
 function ContributionsIcon({ className }: Readonly<{ className?: string }>) {
   return (
@@ -55,7 +55,26 @@ export function ContributionsPage() {
   const { exact } = useKafilRole();
   const tableMode = useDesktopTableMode();
   const isCardViewport = useCardViewport();
-  const [pagination, setPagination] = useState(() => createOffsetPagination(0, 25));
+  const [listFilters, setListFilters] = useState<Omit<ContributionListQuery, "limit" | "offset" | "audience">>({});
+  const filterIdentity = JSON.stringify(listFilters);
+  const [paginationState, setPaginationState] = useState(() => ({
+    identity: filterIdentity,
+    value: createOffsetPagination(0, 25),
+  }));
+  const pagination = paginationState.identity === filterIdentity
+    ? paginationState.value
+    : { ...paginationState.value, offset: 0 };
+  const setPagination = useCallback((updater: SetStateAction<ReturnType<typeof createOffsetPagination>>) => {
+    setPaginationState((current) => {
+      const base = current.identity === filterIdentity
+        ? current.value
+        : { ...current.value, offset: 0 };
+      return {
+        identity: filterIdentity,
+        value: typeof updater === "function" ? updater(base) : updater,
+      };
+    });
+  }, [filterIdentity]);
   const containerRef = useAvailableTablePageSize((availablePageSize) => {
     if (isCardViewport) return;
     setPagination((current) => current.limit === availablePageSize
@@ -72,17 +91,17 @@ export function ContributionsPage() {
   const [viewingContribution, setViewingContribution] = useState<ContributionListRecord | null>(null);
   const bulkDeleteDialogOpenRef = useRef(false);
   const pagedContributions = useContributionPage<ContributionListRecord>(
-    { ...pagination, audience },
+    { ...pagination, ...listFilters, audience },
     !isCardViewport,
   );
   const incrementalContributions = useInfiniteContributions<ContributionListRecord>(
-    { audience },
+    { ...listFilters, audience },
     isCardViewport,
   );
   const { validate, reject, refund, remove } = useContributionCommands();
   const rows = isCardViewport ? incrementalContributions.rows : (pagedContributions.data?.rows ?? []);
   const contributions = isCardViewport ? incrementalContributions : pagedContributions;
-  const filters = useContributionsTableFilters(audience, rows);
+  const filters = useContributionsTableFilters(listFilters, setListFilters);
   const pageIndex = getPageIndex(pagination);
   const pageCount = !isCardViewport && pagedContributions.data?.hasNextPage ? pageIndex + 2 : pageIndex + 1;
   const isAdmin = user?.role === "admin";

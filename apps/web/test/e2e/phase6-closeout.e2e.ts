@@ -18,10 +18,14 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
+  const refresh = page.waitForResponse(
+    (response) => response.url().endsWith("/api/auth/refresh") && response.ok(),
+  );
   await page.getByRole("button", { name: "Log in" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(/\/dashboard$/);
-  await page.waitForLoadState("networkidle");
+  await refresh;
+  await page.waitForLoadState("domcontentloaded");
 }
 
 function json(route: Parameters<Parameters<Page["route"]>[1]>[0], value: unknown) {
@@ -768,7 +772,7 @@ test("bootstrap admin can open read-only access management pages", async ({
   await page.getByPlaceholder("Enter your password").fill(adminPassword);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL(/\/dashboard$/);
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   await page.goto("/operator/access/users");
   await expect(page.getByRole("heading", { name: "Users", exact: true })).toBeVisible();
@@ -777,7 +781,7 @@ test("bootstrap admin can open read-only access management pages", async ({
   ).toBeVisible();
   await page.goto("/operator/access/roles");
   await expect(page.getByRole("heading", { name: "Roles", exact: true })).toBeVisible();
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
   await page.goto("/operator/access/permissions");
   await expect(
     page.getByRole("heading", { name: "Permissions", exact: true }),

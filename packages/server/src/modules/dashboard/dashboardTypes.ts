@@ -20,6 +20,8 @@ export interface OperatorDashboard {
     activeAssignments: number;
     pendingContributions: number;
     openOrders: number;
+    pendingApplicants: number;
+    familiesWithoutSponsorship: number;
   };
   money: {
     pendingContributionMinor: number;
@@ -35,6 +37,7 @@ export interface OperatorDashboard {
     id: string;
     orderNumber: string;
     familyName: string;
+    familyImage: string | null;
     status: string;
     totalMinor: number;
     placedAt: Date;

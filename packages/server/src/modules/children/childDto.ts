@@ -46,6 +46,9 @@ export const bulkDeleteChildrenDto = z
   });
 export const childListQuery = z.object({
   familyProfileId: z.string().uuid().optional(),
+  search: z.string().trim().min(1).max(100).optional(),
+  gender: z.enum(["F", "M"]).optional(),
+  status: z.enum(["active", "inactive"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });

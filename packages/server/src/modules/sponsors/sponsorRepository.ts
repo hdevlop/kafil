@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, ilike, or } from "drizzle-orm";
 import { rolesTable, usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -34,8 +34,23 @@ const sponsorSelection = {
 export class SponsorRepository {
   @DB() private db!: KafilDatabase;
 
-  list(limit: number, offset: number) {
-    return this.db
+  list(
+    limit: number,
+    offset: number,
+    filters: { search?: string; status?: "active" | "inactive" },
+  ) {
+    const search = filters.search ? `%${filters.search}%` : null;
+    const condition = and(
+      filters.status ? eq(usersTable.status, filters.status) : undefined,
+      search
+        ? or(
+            ilike(usersTable.name, search),
+            ilike(usersTable.email, search),
+            ilike(sponsorProfiles.phone, search),
+          )
+        : undefined,
+    );
+    const query = this.db
       .select(sponsorSelection)
       .from(sponsorProfiles)
       .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
@@ -43,6 +58,7 @@ export class SponsorRepository {
       .orderBy(asc(sponsorProfiles.createdAt))
       .limit(limit)
       .offset(offset);
+    return condition ? query.where(condition) : query;
   }
 
   async findById(id: string) {

@@ -165,7 +165,7 @@ describe("account module services", () => {
     expect(await service.list({ limit: 25, offset: 5 })).toEqual([
       expect.objectContaining({ id: sponsorId, role: "sponsor" }),
     ]);
-    expect(listCalls).toEqual([[25, 5]]);
+    expect(listCalls).toEqual([[25, 5, {}]]);
   });
 
   it("permanently deletes an unreferenced sponsor login and profile, then audits the admin action", async () => {

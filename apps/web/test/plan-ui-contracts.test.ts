@@ -23,7 +23,7 @@ describe("root PLAN shared UI contracts", () => {
     expect(details).toContain("management ?");
     expect(page).not.toContain("<OnlySponsor>");
     expect(page).not.toContain("<SponsorContributionWorkspace");
-    expect(page).toContain("useContributionsTableFilters(audience, rows)");
+    expect(page).toContain("useContributionsTableFilters(listFilters, setListFilters)");
   });
 
   test("keeps contribution pagination on populated pages while requests are in flight", () => {

@@ -8,9 +8,18 @@ import type {
   UpdateChildInput,
 } from "@/features/Children/types";
 
-export function listChildren(pagination: OffsetPagination) {
+export interface ListChildrenFilters {
+  search?: string;
+  gender?: "F" | "M";
+  status?: "active" | "inactive";
+}
+
+export function listChildren(
+  pagination: OffsetPagination,
+  filters: ListChildrenFilters = {},
+) {
   return api.get<ChildRecord[]>("/children", {
-    query: { limit: pagination.limit, offset: pagination.offset },
+    query: { ...pagination, ...filters },
   });
 }
 
@@ -79,8 +88,8 @@ export function reactivateChild({ id, reason }: ChildStatusInput) {
   return api.post<ChildRecord>(`/children/${id}/reactivate`, { reason });
 }
 
-export function listChildFamilies() {
+export function listChildFamilies(search?: string) {
   return api.get<FamilyOption[]>("/families", {
-    query: { limit: 100, offset: 0 },
+    query: { limit: 25, offset: 0, status: "active", search },
   });
 }

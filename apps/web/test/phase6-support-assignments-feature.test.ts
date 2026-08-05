@@ -112,7 +112,8 @@ describe("Phase 6C support assignment lifecycle contracts", () => {
       expect(source).toContain("createCardPagination(");
     }
 
-    expect(assignmentsPage).toContain("useResponsiveSupportAssignments()");
+    expect(assignmentsPage).toContain("useResponsiveSupportAssignments(listFilters)");
+    expect(assignmentsPage).toContain("useSupportAssignmentsTableFilters(listFilters, setListFilters)");
     expect(contributionsPage).toContain("useInfiniteContributions<ContributionListRecord>");
     expect(assignmentsPage).not.toContain("useAllSupportAssignments(");
     expect(contributionsPage).not.toContain("useAllContributions<ContributionListRecord>");

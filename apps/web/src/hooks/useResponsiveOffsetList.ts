@@ -17,6 +17,10 @@ interface PaginationState {
   pageSize: number;
 }
 
+interface InternalPaginationState extends PaginationState {
+  queryIdentity: string;
+}
+
 type PaginationUpdater =
   | PaginationState
   | ((current: PaginationState) => PaginationState);
@@ -33,10 +37,15 @@ export function useResponsiveOffsetList<T>({
   queryKey: readonly unknown[];
 }) {
   const cardViewport = useCardViewport();
-  const [pagination, setPagination] = useState<PaginationState>({
+  const queryIdentity = JSON.stringify(queryKey);
+  const [paginationState, setPagination] = useState<InternalPaginationState>({
     pageIndex: 0,
     pageSize,
+    queryIdentity,
   });
+  const pagination = paginationState.queryIdentity === queryIdentity
+    ? paginationState
+    : { ...paginationState, pageIndex: 0, queryIdentity };
   const offsetPagination = createOffsetPagination(
     pagination.pageIndex,
     pagination.pageSize,
@@ -54,11 +63,16 @@ export function useResponsiveOffsetList<T>({
   });
   const onPaginationChange = useCallback(
     (updater: PaginationUpdater) => {
-      setPagination((current) =>
-        typeof updater === "function" ? updater(current) : updater,
-      );
+      setPagination((current) => ({
+          ...(typeof updater === "function" ? updater(
+            current.queryIdentity === queryIdentity
+              ? { pageIndex: current.pageIndex, pageSize: current.pageSize }
+              : { pageIndex: 0, pageSize: current.pageSize },
+          ) : updater),
+          queryIdentity,
+        }));
     },
-    [],
+    [queryIdentity],
   );
   const pageCount = pagination.pageIndex + (page.data?.hasNextPage ? 2 : 1);
 
@@ -73,7 +87,10 @@ export function useResponsiveOffsetList<T>({
     onLoadMore: () => incremental.fetchNextPage(),
     onPaginationChange,
     pageCount,
-    pagination,
+    pagination: {
+      pageIndex: pagination.pageIndex,
+      pageSize: pagination.pageSize,
+    },
     refetch: cardViewport ? incremental.refetch : page.refetch,
   };
 }

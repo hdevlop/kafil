@@ -1,22 +1,31 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type Dispatch, type SetStateAction } from "react";
+import type { OrderListQuery } from "../types";
 
-export function useOrdersTableFilters(includeRecipient: boolean) {
+type OrderFilters = Omit<OrderListQuery, "limit" | "offset">;
+
+export function useOrdersTableFilters(
+  includeRecipient: boolean,
+  filters: OrderFilters,
+  setFilters: Dispatch<SetStateAction<OrderFilters>>,
+) {
   return useMemo(
     () => [
-      { type: "text", name: "orderNumber", placeholder: "Search order number..." },
-      ...(includeRecipient
-        ? [{
-            type: "text",
-            name: "guardianLegalNameSnapshot",
-            placeholder: "Search recipient...",
-          }]
-        : []),
+      {
+        type: "text",
+        name: "search",
+        placeholder: includeRecipient ? "Search order or recipient..." : "Search order number...",
+        value: filters.search ?? "",
+        onChange: (search: string) => setFilters((current) => ({ ...current, search: search || undefined })),
+      },
       {
         type: "select",
+        showIcon: false,
         name: "status",
         placeholder: "Filter by status",
+        value: filters.status ?? "",
+        onChange: (status: OrderFilters["status"] | "") => setFilters((current) => ({ ...current, status: status || undefined })),
         options: [
           { value: "pending", label: "Pending" },
           { value: "approved", label: "Approved" },
@@ -29,6 +38,6 @@ export function useOrdersTableFilters(includeRecipient: boolean) {
         ],
       },
     ],
-    [includeRecipient],
+    [filters.search, filters.status, includeRecipient, setFilters],
   );
 }

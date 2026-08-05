@@ -6,8 +6,10 @@ import {
   NButton,
   NForm,
   NFormSectionHeader,
+  useDebouncedValue,
   useDialog,
 } from "najm-kit";
+import { useState } from "react";
 import { useWatch } from "react-hook-form";
 
 import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";
@@ -105,7 +107,11 @@ export function RecordContributionDialogContent({
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { record } = useContributionCommands();
-  const sources = useContributionRecordingOptions();
+  const [assignmentSearch, setAssignmentSearch] = useState("");
+  const sources = useContributionRecordingOptions({
+    familyProfileId,
+    search: useDebouncedValue(assignmentSearch, 250) || undefined,
+  });
   const assignmentOptions = buildContributionRecordingOptions(
     sources.data,
     familyProfileId,
@@ -164,6 +170,10 @@ export function RecordContributionDialogContent({
             ? "operator.contributions.noActiveSponsor"
             : "operator.contributions.noActiveAssignment",
         )}
+        loading={sources.isFetching}
+        loadingMessage={t("operator.contributions.loadingAssignments")}
+        onSearchChange={setAssignmentSearch}
+        shouldFilter={false}
         items={assignmentOptions}
         icon="Search"
         disabled={sources.isPending}

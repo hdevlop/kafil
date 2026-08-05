@@ -20,6 +20,8 @@ export const updateSupportAssignmentNotesDto = z.object({
 }).strict();
 
 export const supportAssignmentListQuery = z.object({
+  sponsorSearch: z.string().trim().min(1).max(100).optional(),
+  familySearch: z.string().trim().min(1).max(100).optional(),
   sponsorProfileId: z.string().uuid().optional(),
   familyProfileId: z.string().uuid().optional(),
   childId: z.string().uuid().optional(),

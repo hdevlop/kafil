@@ -39,12 +39,12 @@ export function useCategoriesWorkspace(
     initialFilters,
   );
 
-  const managementCategories = useResponsiveCategories(!isExactFamily);
+  const managementCategories = useResponsiveCategories(filters, !isExactFamily);
   const managementActions = useCategoryCommands();
   const familyCategories = useResponsiveOffsetList({
     enabled: isExactFamily,
-    queryKey: [...familyCatalogKeys.categories, "responsive"],
-    fetchPage: listFamilyCatalogCategories,
+    queryKey: [...familyCatalogKeys.categories, "responsive", filters.search],
+    fetchPage: (page) => listFamilyCatalogCategories(page, filters.search),
   });
 
   if (isExactFamily) {

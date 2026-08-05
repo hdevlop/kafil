@@ -14,6 +14,8 @@ export interface OperatorDashboardData {
     activeAssignments: number;
     pendingContributions: number;
     openOrders: number;
+    pendingApplicants: number;
+    familiesWithoutSponsorship: number;
   };
   money: {
     pendingContributionMinor: number;
@@ -29,6 +31,7 @@ export interface OperatorDashboardData {
     id: string;
     orderNumber: string;
     familyName: string;
+    familyImage: string | null;
     status: string;
     totalMinor: number;
     placedAt: string;
@@ -65,4 +68,16 @@ export interface FamilyDashboardData {
     submittedAt: string;
     paidAt: string | null;
   }>;
+}
+
+
+export interface LatestOrdersCardProps {
+  recentOrders: OperatorDashboardData["recentOrders"];
+}
+
+export interface AttentionCardProps {
+  orderStatuses: DashboardStatusCount[];
+  pendingContributions: number;
+  pendingApplicants: number;
+  familiesWithoutSponsorship: number;
 }

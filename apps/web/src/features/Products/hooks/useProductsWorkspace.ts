@@ -5,15 +5,12 @@ import { useMemo } from "react";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import {
   useResponsiveProducts,
-  useProductCategories,
+  useResponsiveProductCategories,
   useProductCommands,
 } from "@/features/Products/hooks/useProducts";
-import {
-  useFamilyCatalogCategories,
-} from "@/features/Products/hooks/useFamilyCatalog";
 import type { OffsetPagination } from "@/lib/pagination";
 import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
-import { listFamilyCatalogProducts } from "@/services/familyCatalogApi";
+import { listFamilyCatalogCategories, listFamilyCatalogProducts } from "@/services/familyCatalogApi";
 import { familyCatalogKeys } from "./familyCatalogKeys";
 import type { ProductRecord } from "@/features/Products/types";
 import type {
@@ -47,6 +44,7 @@ export interface ProductsWorkspace {
   managementActions?: ReturnType<typeof useProductCommands>;
   canMutate: boolean;
   paginationController: ReturnType<typeof useResponsiveProducts>;
+  categoryPaginationController: ReturnType<typeof useResponsiveProductCategories>;
 }
 
 const FAMILY_PAGE_SIZE = 12;
@@ -72,7 +70,7 @@ export function useProductsWorkspace(
     },
     !isExactFamily,
   );
-  const managementCategories = useProductCategories(!isExactFamily);
+  const managementCategories = useResponsiveProductCategories("", !isExactFamily);
   const managementActions = useProductCommands();
 
   const familyProducts = useResponsiveOffsetList({
@@ -90,8 +88,11 @@ export function useProductsWorkspace(
       search: stableFilters.search,
     }),
   });
-  const familyCategories = useFamilyCatalogCategories({
+  const familyCategories = useResponsiveOffsetList({
     enabled: isExactFamily,
+    pageSize: 25,
+    queryKey: [...familyCatalogKeys.categories, "product-filter", "responsive"],
+    fetchPage: (page) => listFamilyCatalogCategories(page),
   });
 
   if (isExactFamily) {
@@ -109,13 +110,14 @@ export function useProductsWorkspace(
       setFilters: () => undefined,
       canMutate: false,
       paginationController: familyProducts as ReturnType<typeof useResponsiveProducts>,
+      categoryPaginationController: familyCategories as ReturnType<typeof useResponsiveProductCategories>,
     };
   }
 
   return {
     mode: "management",
     products: managementProducts.data,
-    categories: managementCategories.data ?? [],
+    categories: managementCategories.data,
     pagination,
     setPagination: () => undefined,
     loading: managementProducts.loading,
@@ -126,5 +128,6 @@ export function useProductsWorkspace(
     managementActions,
     canMutate: true,
     paginationController: managementProducts,
+    categoryPaginationController: managementCategories,
   };
 }

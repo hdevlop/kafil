@@ -18,6 +18,7 @@ import { useResponsiveSponsors } from "../hooks/useSponsors";
 import { useSponsorsTableColumns } from "../hooks/useSponsorsTableColumns";
 import { useSponsorsTableFilters } from "../hooks/useSponsorsTableFilters";
 import type { SponsorRecord } from "../types";
+import type { ListSponsorsFilters } from "@/services/sponsorApi";
 
 function SponsorsIcon({ className }: Readonly<{ className?: string }>) {
   return (
@@ -37,9 +38,10 @@ export function SponsorsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const user = useUser();
-  const sponsors = useResponsiveSponsors();
+  const [listFilters, setListFilters] = useState<ListSponsorsFilters>({});
+  const sponsors = useResponsiveSponsors(listFilters);
   const columns = useSponsorsTableColumns();
-  const filters = useSponsorsTableFilters();
+  const filters = useSponsorsTableFilters(listFilters, setListFilters);
   const rows = sponsors.data;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);

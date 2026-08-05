@@ -218,7 +218,7 @@ describe("admin applicant queue", () => {
     expect(page).toContain("dialog.openDialog");
     expect(page).toContain('"pending_review"');
     expect(page).toContain('applicant.status === "rejected"');
-    expect(page).toContain("useApplicantsTableFilters()");
+    expect(page).toContain("useApplicantsTableFilters(query, setQuery)");
     expect(page).not.toContain("<NativeSelect");
     expect(page).not.toContain("useApplicantPendingReviewCount");
     expect(page).not.toContain("<NBadge");

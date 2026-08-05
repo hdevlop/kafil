@@ -1,22 +1,27 @@
-import { listAllOffsetPages, type OffsetPagination } from "@/lib/pagination";
+import type { OffsetPagination } from "@/lib/pagination";
 import { api } from "@/services/http";
 import type {
   CreateSupportAssignmentInput,
   EndSupportAssignmentInput,
   UpdateSupportAssignmentNotesInput,
-  AssignmentContributionPlanOption,
   SupportAssignmentRecord,
+  SupportAssignmentView,
   SupportAssignmentSources,
 } from "@/features/SupportAssignments/types";
 
-export function listSupportAssignments(pagination: OffsetPagination) {
-  return api.get<SupportAssignmentRecord[]>("/support-assignments", {
-    query: { limit: pagination.limit, offset: pagination.offset },
-  });
+export interface ListSupportAssignmentFilters {
+  sponsorSearch?: string;
+  familySearch?: string;
+  status?: "active" | "ended";
 }
 
-export function listAllSupportAssignments() {
-  return listAllOffsetPages(listSupportAssignments);
+export function listSupportAssignments(
+  pagination: OffsetPagination,
+  filters: ListSupportAssignmentFilters = {},
+) {
+  return api.get<SupportAssignmentView[]>("/support-assignments", {
+    query: { ...pagination, ...filters },
+  });
 }
 
 export function createSupportAssignment(input: CreateSupportAssignmentInput) {
@@ -38,18 +43,18 @@ export function updateSupportAssignmentNotes({
   });
 }
 
-export async function listSupportAssignmentSources(): Promise<SupportAssignmentSources> {
-  const [sponsors, families, plans] = await Promise.all([
+export async function listSupportAssignmentSources(filters: {
+  sponsorSearch?: string;
+  familySearch?: string;
+} = {}): Promise<SupportAssignmentSources> {
+  const [sponsors, families] = await Promise.all([
     api.get<SupportAssignmentSources["sponsors"]>("/sponsors", {
-      query: { limit: 100, offset: 0 },
+      query: { limit: 25, offset: 0, status: "active", search: filters.sponsorSearch },
     }),
     api.get<SupportAssignmentSources["families"]>("/families", {
-      query: { limit: 100, offset: 0 },
-    }),
-    api.get<AssignmentContributionPlanOption[]>("/contributions/plans", {
-      query: { limit: 100, offset: 0 },
+      query: { limit: 25, offset: 0, status: "active", search: filters.familySearch },
     }),
   ]);
 
-  return { sponsors, families, plans };
+  return { sponsors, families };
 }

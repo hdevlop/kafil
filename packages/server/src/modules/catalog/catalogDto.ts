@@ -22,6 +22,7 @@ export const categoryIdParams = z.object({ id });
 export const productIdParams = z.object({ id });
 
 export const categoryListQuery = z.object({
+  search: z.string().trim().min(1).max(100).optional(),
   status: z.enum(["active", "inactive"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),

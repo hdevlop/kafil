@@ -17,7 +17,12 @@ import { api } from "@/services/http";
 
 export function listOrders(query: OrderListQuery) {
   return api.get<OrderRecord[]>("/orders", {
-    query: { limit: query.limit, offset: query.offset },
+    query: {
+      limit: query.limit,
+      offset: query.offset,
+      search: query.search,
+      status: query.status,
+    },
   });
 }
 

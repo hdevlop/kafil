@@ -164,6 +164,7 @@ export const familyCancelOrderDto = z.object({
 });
 
 export const orderListQuery = z.object({
+  search: z.string().trim().min(1).max(100).optional(),
   familyProfileId: id.optional(),
   status: status.optional(),
   from: z.coerce.date().optional(),
@@ -173,6 +174,7 @@ export const orderListQuery = z.object({
 });
 
 export const ownOrderListQuery = z.object({
+  search: z.string().trim().min(1).max(100).optional(),
   status: status.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),

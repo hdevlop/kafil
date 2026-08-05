@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   CircleCheck,
   CircleOff,
@@ -23,6 +23,7 @@ import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useOrderCart, useOrderCartStore } from "@/features/OrderCart";
 import { CategoryFilterSheet } from "@/features/Categories/components/CategoryBar";
 import { useProductsWorkspace } from "@/features/Products/hooks/useProductsWorkspace";
+import type { ProductsWorkspaceFilters } from "@/features/Products/hooks/useProductsWorkspace";
 import { useProductsTableColumns } from "@/features/Products/hooks/useProductsTableColumns";
 import { useProductsTableFilters } from "@/features/Products/hooks/useProductsTableFilters";
 import {
@@ -54,13 +55,18 @@ export function ProductsPage() {
   const columns = useProductsTableColumns();
   const searchParams = useSearchParams();
   const activeCategoryId = searchParams.get("category") ?? "";
+  const [listFilters, setListFilters] = useState<ProductsWorkspaceFilters>({});
   const workspace = useProductsWorkspace(
     productsPagination,
     {
+      ...listFilters,
       ...(activeCategoryId ? { categoryId: activeCategoryId } : {}),
     },
   );
-  const filters = useProductsTableFilters(workspace.categories);
+  const filters = useProductsTableFilters(workspace.categories, {
+    ...listFilters,
+    ...(activeCategoryId ? { categoryId: activeCategoryId } : {}),
+  }, setListFilters);
 
   const products = useMemo(
     () =>
@@ -233,6 +239,7 @@ export function ProductsPage() {
           <>
             <CategoryFilterSheet
               basePath="/products"
+              paginationController={workspace.categoryPaginationController}
               items={workspace.categories.map((category) => ({
                 id: category.id,
                 name: category.name,

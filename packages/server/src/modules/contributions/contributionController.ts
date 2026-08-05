@@ -11,6 +11,8 @@ import {
   type ContributionListQuery,
   contributionIdParams,
   contributionListQuery,
+  type ContributionRecordingOptionsQuery,
+  contributionRecordingOptionsQuery,
   type ContributionPlanListQuery,
   contributionPlanIdParams,
   contributionPlanListQuery,
@@ -43,6 +45,7 @@ export class ContributionController {
   @Get()
   @isContributionReader()
   @CanList(Contribution)
+  @Validate({ query: contributionRecordingOptionsQuery })
   @Validate({ query: contributionListQuery })
   @McpTool({ description: "List role-scoped contribution payment records", readOnly: true })
   @ResMsg("contributions.success.retrieved")
@@ -62,8 +65,8 @@ export class ContributionController {
     readOnly: true,
   })
   @ResMsg("contributions.success.retrieved")
-  listRecordingOptions() {
-    return this.contributions.listRecordingOptions();
+  listRecordingOptions(@Query() query: ContributionRecordingOptionsQuery) {
+    return this.contributions.listRecordingOptions(query);
   }
 
   @Get("/plans")

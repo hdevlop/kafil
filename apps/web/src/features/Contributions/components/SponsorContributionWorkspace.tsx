@@ -1,7 +1,7 @@
 "use client";
 
 import { HandCoins, MessageSquareText } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   FormInput,
   NButton,
@@ -9,6 +9,7 @@ import {
   NForm,
   NFormSectionHeader,
   useDialog,
+  useDebouncedValue,
   useNForm,
 } from "najm-kit";
 import { z } from "zod";
@@ -114,7 +115,11 @@ export function SponsorContributionWorkspace({
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const { isExactSponsor } = useKafilRole();
-  const workspace = useSponsorContributionWorkspace(isExactSponsor);
+  const [supportSearch, setSupportSearch] = useState("");
+  const workspace = useSponsorContributionWorkspace(
+    isExactSponsor,
+    useDebouncedValue(supportSearch, 250),
+  );
   const form = useNForm({
     schema: sponsorContributionSchema,
     defaultValues: {
@@ -126,16 +131,9 @@ export function SponsorContributionWorkspace({
   });
   const assignmentId = form.watch("supportAssignmentId");
   const amountMinor = toMinor(Number(form.watch("amountMad") || 0));
-  const active =
-    workspace.support.data?.filter(
-      (item) => item.assignment.status === "active",
-    ) ?? [];
-  const selectedAssignment = active.find(
-    (item) => item.assignment.id === assignmentId,
-  );
-  const selectedFunding = workspace.catalog.data?.find(
-    (family) => family.id === selectedAssignment?.assignment.familyProfileId,
-  )?.funding;
+  const active = workspace.catalog.data?.filter((family) => family.assignmentId) ?? [];
+  const selectedFamily = active.find((family) => family.assignmentId === assignmentId);
+  const selectedFunding = selectedFamily?.funding;
   const closedByFunding =
     selectedFunding?.capacityStatus === "funded" ||
     selectedFunding?.capacityStatus === "reserved";
@@ -147,16 +145,14 @@ export function SponsorContributionWorkspace({
   const commandDisabled =
     !isExactSponsor || closedByFunding || amountTooHigh || amountMinor <= 0;
 
-  const supportOptions = active.map((item) => {
-    const funding = workspace.catalog.data?.find(
-      (family) => family.id === item.assignment.familyProfileId,
-    )?.funding;
+  const supportOptions = active.map((family) => {
+    const funding = family.funding;
     const closed =
       funding?.capacityStatus === "funded" ||
       funding?.capacityStatus === "reserved";
     return {
-      value: item.assignment.id,
-      label: item.target.label,
+      value: family.assignmentId!,
+      label: `${family.reference} · ${family.activeChildCount}`,
       disabled: closed,
     };
   });
@@ -263,9 +259,13 @@ export function SponsorContributionWorkspace({
                 placeholder={t("sponsor.contributions.chooseSupport")}
                 searchPlaceholder={t("sponsor.contributions.chooseSupport")}
                 emptyMessage={t("sponsor.contributions.none")}
+                loading={workspace.catalog.isFetching}
+                loadingMessage={t("state.loading")}
+                onSearchChange={setSupportSearch}
+                shouldFilter={false}
                 items={supportOptions}
                 icon="HeartHandshake"
-                disabled={!isExactSponsor || workspace.support.isPending}
+                disabled={!isExactSponsor || workspace.catalog.isPending}
                 required
               />
             ) : null}
@@ -378,9 +378,9 @@ export function SponsorContributionWorkspace({
       </ContributionFormSurface>
 
       {showPlans ? <NCard title={t("sponsor.contributions.plans")}>
-        {workspace.plans.data?.length ? (
+        {workspace.plans.rows.length ? (
           <div className="space-y-3">
-            {workspace.plans.data.map((plan) => (
+            {workspace.plans.rows.map((plan) => (
               <div className="space-y-2 border-t border-border pt-3 first:border-t-0 first:pt-0" key={plan.id}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-medium">
@@ -422,6 +422,17 @@ export function SponsorContributionWorkspace({
                 ) : null}
               </div>
             ))}
+            {workspace.plans.hasNextPage ? (
+              <NButton
+                className="w-full"
+                disabled={workspace.plans.isFetchingNextPage}
+                onClick={() => void workspace.plans.fetchNextPage()}
+                type="button"
+                variant="outline"
+              >
+                {workspace.plans.isFetchingNextPage ? t("state.loading") : t("common.loadMore")}
+              </NButton>
+            ) : null}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">

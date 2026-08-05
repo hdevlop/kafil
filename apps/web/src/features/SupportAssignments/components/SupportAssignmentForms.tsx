@@ -1,7 +1,8 @@
 "use client";
 
 import { HeartHandshake } from "lucide-react";
-import { FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
+import { FormInput, NButton, NForm, NFormSectionHeader, useDebouncedValue, useDialog } from "najm-kit";
+import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useDevFormTools } from "@/lib/devFormFill";
@@ -28,7 +29,12 @@ export function CreateSupportAssignmentDialogContent({
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { create } = useSupportAssignmentCommands();
-  const sources = useSupportAssignmentSources();
+  const [sponsorSearch, setSponsorSearch] = useState("");
+  const [familySearch, setFamilySearch] = useState("");
+  const sources = useSupportAssignmentSources({
+    sponsorSearch: useDebouncedValue(sponsorSearch, 250) || undefined,
+    familySearch: useDebouncedValue(familySearch, 250) || undefined,
+  });
   const data = sources.data;
 
   async function handleSubmit(values: CreateSupportAssignmentFormValues) {
@@ -73,6 +79,10 @@ export function CreateSupportAssignmentDialogContent({
           placeholder={sources.isPending ? t("operator.assignments.loadingSponsors") : t("operator.assignments.chooseSponsor")}
           searchPlaceholder={t("operator.assignments.searchSponsors")}
           emptyMessage={t("operator.assignments.noActiveSponsor")}
+          loading={sources.isFetching}
+          loadingMessage={t("operator.assignments.loadingSponsors")}
+          onSearchChange={setSponsorSearch}
+          shouldFilter={false}
           items={sponsorOptions}
           icon="Search"
           disabled={sources.isPending}
@@ -85,6 +95,10 @@ export function CreateSupportAssignmentDialogContent({
           placeholder={sources.isPending ? t("operator.assignments.loadingFamilies") : t("operator.assignments.chooseFamily")}
           searchPlaceholder={t("operator.assignments.searchFamilies")}
           emptyMessage={t("operator.assignments.noFamily")}
+          loading={sources.isFetching}
+          loadingMessage={t("operator.assignments.loadingFamilies")}
+          onSearchChange={setFamilySearch}
+          shouldFilter={false}
           items={familyOptions}
           icon="Search"
           disabled={sources.isPending || Boolean(familyProfileId)}

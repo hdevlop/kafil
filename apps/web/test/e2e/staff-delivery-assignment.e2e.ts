@@ -19,9 +19,13 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
+  const refresh = page.waitForResponse(
+    (response) => response.url().endsWith("/api/auth/refresh") && response.ok(),
+  );
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL(/\/dashboard$/);
-  await page.waitForLoadState("networkidle");
+  await refresh;
+  await page.waitForLoadState("domcontentloaded");
 }
 
 function json(route: Parameters<Parameters<Page["route"]>[1]>[0], value: unknown) {

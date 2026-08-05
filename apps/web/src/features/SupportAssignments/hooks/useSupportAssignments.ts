@@ -2,20 +2,19 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
 import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
   createSupportAssignment,
   endSupportAssignment,
-  listAllSupportAssignments,
   listSupportAssignments,
   listSupportAssignmentSources,
   updateSupportAssignmentNotes,
 } from "@/services/supportAssignmentApi";
 
 import { supportAssignmentKeys } from "./supportAssignmentKeys";
+import type { ListSupportAssignmentFilters } from "@/services/supportAssignmentApi";
 
 export function useSupportAssignments(pagination: OffsetPagination, enabled = true) {
   return useEntityQuery({
@@ -25,34 +24,24 @@ export function useSupportAssignments(pagination: OffsetPagination, enabled = tr
   });
 }
 
-export function useAllSupportAssignments(enabled = true) {
-  return useEntityQuery({
-    queryKey: supportAssignmentKeys.full,
-    queryFn: listAllSupportAssignments,
-    enabled,
-  });
-}
-
-export function useInfiniteSupportAssignments(enabled = true) {
-  return useOffsetInfiniteQuery({
-    enabled,
-    queryKey: supportAssignmentKeys.full,
-    fetchPage: listSupportAssignments,
-  });
-}
-
-export function useResponsiveSupportAssignments(enabled = true) {
+export function useResponsiveSupportAssignments(
+  filters: ListSupportAssignmentFilters = {},
+  enabled = true,
+) {
   return useResponsiveOffsetList({
     enabled,
-    queryKey: [...supportAssignmentKeys.all, "responsive"],
-    fetchPage: listSupportAssignments,
+    queryKey: [...supportAssignmentKeys.all, "responsive", filters],
+    fetchPage: (pagination) => listSupportAssignments(pagination, filters),
   });
 }
 
-export function useSupportAssignmentSources(enabled = true) {
+export function useSupportAssignmentSources(
+  filters: { sponsorSearch?: string; familySearch?: string } = {},
+  enabled = true,
+) {
   return useEntityQuery({
-    queryKey: supportAssignmentKeys.sources,
-    queryFn: listSupportAssignmentSources,
+    queryKey: [...supportAssignmentKeys.sources, filters],
+    queryFn: () => listSupportAssignmentSources(filters),
     enabled,
   });
 }

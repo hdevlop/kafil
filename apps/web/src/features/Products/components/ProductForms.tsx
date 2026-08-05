@@ -1,7 +1,7 @@
 "use client";
 
 import { FolderTree, Package, PackagePlus } from "lucide-react";
-import { FormInput, ImageInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
+import { FormInput, ImageInput, NButton, NForm, NFormSectionHeader, useDebouncedValue, useDialog } from "najm-kit";
 import { useState } from "react";
 
 import { useDevFormTools } from "@/lib/devFormFill";
@@ -68,7 +68,8 @@ function ProductFields({
   onImageChange: (file: File | null) => void;
   product?: ProductRecord;
 }>) {
-  const categories = useProductCategories();
+  const [categorySearch, setCategorySearch] = useState("");
+  const categories = useProductCategories(useDebouncedValue(categorySearch, 250));
   const options = categoryOptions(categories.data ?? [], product);
 
   return (
@@ -95,6 +96,10 @@ function ProductFields({
             placeholder={categories.isPending ? "Loading categories..." : "Choose a category"}
             searchPlaceholder="Search categories..."
             emptyMessage="No active category found. Create and activate one first."
+            loading={categories.isFetching}
+            loadingMessage="Loading categories..."
+            onSearchChange={setCategorySearch}
+            shouldFilter={false}
             items={options}
             icon="Search"
             disabled={categories.isPending}

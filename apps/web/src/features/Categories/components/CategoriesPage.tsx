@@ -40,11 +40,11 @@ export function CategoriesPage() {
   const { t } = useKafilLanguage();
   const { isExactFamily, isExactAdmin } = useKafilRole();
   const columns = useCategoriesTableColumns();
-  const filters = useCategoriesTableFilters();
   useCategoryCommands();
   const workspace = useCategoriesWorkspace(
     pagination,
   );
+  const filters = useCategoriesTableFilters(workspace.filters, workspace.setFilters);
 
   const categories = (workspace.categories ?? []).map((category) => ({
     ...category,

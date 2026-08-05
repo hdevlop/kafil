@@ -61,22 +61,6 @@ export async function fetchOffsetPage<T>(
   };
 }
 
-export async function listAllOffsetPages<T>(
-  fetchPage: (pagination: OffsetPagination) => Promise<T[]>,
-  pageSize = 100,
-) {
-  const rows: T[] = [];
-  let offset = 0;
-
-  while (true) {
-    const page = await fetchPage({ limit: pageSize, offset });
-    rows.push(...page);
-
-    if (page.length < pageSize) return rows;
-    offset += pageSize;
-  }
-}
-
 export function cleanQuery(
   query: Record<string, QueryValue>,
 ): Record<string, QueryValue> {

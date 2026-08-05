@@ -7,9 +7,17 @@ import type {
   UpdateCategoryInput,
 } from "@/features/Categories/types";
 
-export function listCategories(pagination: OffsetPagination) {
+export interface ListCategoryFilters {
+  search?: string;
+  status?: "active" | "inactive";
+}
+
+export function listCategories(
+  pagination: OffsetPagination,
+  filters: ListCategoryFilters = {},
+) {
   return api.get<CategoryRecord[]>("/catalog/categories", {
-    query: { limit: pagination.limit, offset: pagination.offset },
+    query: { ...pagination, ...filters },
   });
 }
 

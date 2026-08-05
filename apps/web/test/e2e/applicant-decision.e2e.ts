@@ -124,8 +124,8 @@ test.describe.serial("applicant decision real browser workflow", () => {
     await expect(page.getByText("All statuses")).toBeVisible();
     await expect(page.getByText(approved.name)).toBeVisible();
 
-    const card = page.locator('[data-slot="card"]').filter({ hasText: approved.name });
-    await card.getByRole("button", { name: "Row actions" }).click();
+    const row = page.getByRole("row").filter({ hasText: approved.name });
+    await row.getByRole("button", { name: "Row actions" }).click();
     await page.getByRole("menuitem", { name: "View" }).click();
     await expect(page.getByRole("heading", { name: "Applicant details" })).toBeVisible();
     await page.getByRole("button", { name: "Approve" }).last().click();
@@ -166,14 +166,14 @@ test.describe.serial("applicant decision real browser workflow", () => {
     await page.getByRole("link", { name: "Candidatures" }).click();
     await page.waitForURL(/\/applicants$/);
     await expect(page.getByText("Tous les statuts")).toBeVisible();
-    const card = page.locator('[data-slot="card"]').filter({ hasText: rejected.name });
-    await card.getByRole("button", { name: "Row actions" }).click();
+    const row = page.getByRole("row").filter({ hasText: rejected.name });
+    await row.getByRole("button", { name: "Row actions" }).click();
     await page.getByRole("menuitem", { name: "Rejeter" }).click();
     await page.getByRole("button", { name: "Rejeter" }).last().click();
     await expect(page.getByText("Indiquez un motif de rejet")).toBeVisible();
     await page.getByRole("dialog").getByRole("textbox").fill("Identite non admissible");
     await page.getByRole("button", { name: "Rejeter" }).last().click();
-    await expect(page.getByText(rejected.name)).toHaveCount(0);
+    await expect(row).toContainText(/Rejet/);
     await signOut(page);
 
     await setLanguage(context, "ar");

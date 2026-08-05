@@ -7,7 +7,7 @@ import {
   toast,
 } from "najm-kit";
 import { RotateCcw, Undo2 } from "lucide-react";
-import { type CSSProperties, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { TranslationKey } from "@/i18n/translations";
@@ -71,19 +71,16 @@ const SHAPE_RATIO_LABEL: Record<"wide" | "square" | "panel", TranslationKey> =
     panel: "operator.settings.branding.ratioLandscape",
   };
 
-const IMAGE_INPUT_CLASS: Record<"wide" | "square" | "panel", string> = {
-  wide: "[&_img]:object-contain",
-  square: "[&_img]:object-contain",
-  panel: "[&_img]:object-cover",
+const PREVIEW_CLASS: Record<"wide" | "square" | "panel", string> = {
+  wide: "h-[42px] w-[126px] shrink-0",
+  square: "size-20 shrink-0",
+  panel: "h-28 w-24 shrink-0",
 };
 
-const IMAGE_PREVIEW_STYLE: Record<
-  "wide" | "square" | "panel",
-  CSSProperties
-> = {
-  wide: { width: 126, height: 42 },
-  square: { width: 80, height: 80 },
-  panel: { width: 96, height: 112 },
+const IMAGE_CLASS: Record<"wide" | "square" | "panel", string> = {
+  wide: "object-contain",
+  square: "object-contain",
+  panel: "object-cover",
 };
 
 export function BrandAssetsPanel({
@@ -114,6 +111,9 @@ export function BrandAssetsPanel({
     authLogo: false,
     authHeroImage: false,
   });
+  const [localFiles, setLocalFiles] = useState<
+    Partial<Record<BrandingSlot, File>>
+  >({});
   useEffect(() => {
     if (isAdmin && !draft) beginDraft();
   }, [isAdmin, beginDraft, draft]);
@@ -157,6 +157,7 @@ export function BrandAssetsPanel({
       toast.error(t("operator.settings.branding.uploadError"));
       return;
     }
+    setLocalFiles((current) => ({ ...current, [definition.slot]: file }));
     setUploading((current) => ({ ...current, [definition.slot]: true }));
     try {
       const uploaded = await uploadBrandingAsset({
@@ -172,6 +173,11 @@ export function BrandAssetsPanel({
           : t("operator.settings.branding.uploadError"),
       );
     } finally {
+      setLocalFiles((current) => {
+        const next = { ...current };
+        delete next[definition.slot];
+        return next;
+      });
       setUploading((current) => ({ ...current, [definition.slot]: false }));
     }
   };
@@ -190,6 +196,7 @@ export function BrandAssetsPanel({
           const slotValue = valueFor(definition.key);
           const customPath = customPathFor(definition.key);
           const isUploading = uploading[definition.slot];
+          const localFile = localFiles[definition.slot];
           const draftChanged = customPath !== config[definition.key];
           const customAssetUnavailable = Boolean(
             customPath &&
@@ -201,19 +208,27 @@ export function BrandAssetsPanel({
               key={definition.key}
               className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
             >
-              <div className={IMAGE_INPUT_CLASS[definition.shape]}>
-                <ImageInput
-                  value={slotValue}
-                  onChange={(file) => {
-                    if (file) void handleFile(definition, file);
-                  }}
-                  accept="image/png,image/jpeg,image/webp,image/avif"
-                  imageSize="sm"
-                  previewStyle={IMAGE_PREVIEW_STYLE[definition.shape]}
-                  allowClear={false}
-                  disabled={isUploading}
-                />
-              </div>
+              <ImageInput
+                value={localFile ?? slotValue}
+                onChange={(file) => {
+                  if (file) void handleFile(definition, file);
+                }}
+                accept="image/png,image/jpeg,image/webp,image/avif"
+                previewClassName={PREVIEW_CLASS[definition.shape]}
+                imageClassName={IMAGE_CLASS[definition.shape]}
+                fallbackImage={resolved[definition.key]}
+                previewAlt={t(definition.titleKey)}
+                fallbackAlt={t(definition.titleKey)}
+                unavailableContent={(
+                  <span className="px-2 text-center text-xs text-muted-foreground">
+                    {t("operator.settings.branding.noImage")}
+                  </span>
+                )}
+                allowClear={false}
+                disabled={isUploading}
+                replaceTitle={t("operator.settings.branding.replace")}
+                replaceAriaLabel={t("operator.settings.branding.replace")}
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
                   {t(definition.titleKey)}

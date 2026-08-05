@@ -12,11 +12,11 @@ import { RecentContributionsCard } from "@/features/Sponsors/components/overview
 import { RecentSupportedOrdersCard } from "@/features/Sponsors/components/overview/RecentSupportedOrdersCard";
 import { SponsorKpiGrid } from "@/features/Sponsors/components/overview/SponsorKpiGrid";
 import { SupportBudgetCard } from "@/features/Sponsors/components/overview/SupportBudgetCard";
+import { SponsorDashboardSkeleton } from "@/features/Dashboard/shared/DashboardSkeletons";
 
 import { useSponsorDashboard } from "../hooks/useSponsorDashboard";
 import { buildSponsorDashboardViewModel } from "../lib/buildSponsorDashboardViewModel";
 import { SponsorDashboardHeader } from "./SponsorDashboardHeader";
-import { SponsorDashboardSkeleton } from "./SponsorDashboardSkeleton";
 import { SponsorQuickActionsCard } from "./SponsorQuickActionsCard";
 import { SupportedFamiliesCard } from "./SupportedFamiliesCard";
 import { UpcomingContributionsCard } from "./UpcomingContributionsCard";
@@ -36,7 +36,12 @@ export function SponsorDashboardPage() {
   }
 
   if (dashboard.isPending || !dashboard.data) {
-    return <SponsorDashboardSkeleton />;
+    return (
+      <SponsorDashboardSkeleton
+        loadingLabel={t("state.loading")}
+        title={t("dashboard.sponsor.loading")}
+      />
+    );
   }
 
   const data = dashboard.data;
@@ -74,8 +79,8 @@ export function SponsorDashboardPage() {
             icon={HandCoins}
             language={language}
             series={[
-              { key: "validatedMinor", label: tString("dashboard.common.validated"), color: "var(--primary)" },
-              { key: "pendingMinor", label: tString("dashboard.common.pending"), color: "var(--secondary)" },
+              { key: "validatedMinor", label: tString("dashboard.common.validated") },
+              { key: "pendingMinor", label: tString("dashboard.common.pending") },
             ]}
             title={tString("dashboard.sponsor.contributionTrend")}
             valueFormatter={money}

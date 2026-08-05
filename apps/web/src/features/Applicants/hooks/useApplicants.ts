@@ -2,6 +2,7 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { sponsorKeys } from "@/features/Sponsors/hooks/sponsorKeys";
 
@@ -20,6 +21,15 @@ export function useApplicants(params: ListApplicantsParams = {}) {
   return useEntityQuery({
     queryKey: [...applicantKeys.list(), params],
     queryFn: () => listApplicants(params),
+  });
+}
+
+export function useResponsiveApplicants(
+  params: Omit<ListApplicantsParams, "limit" | "offset"> = {},
+) {
+  return useResponsiveOffsetList({
+    queryKey: [...applicantKeys.list(), "responsive", params],
+    fetchPage: (pagination) => listApplicants({ ...params, ...pagination }),
   });
 }
 

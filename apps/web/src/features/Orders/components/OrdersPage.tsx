@@ -24,7 +24,8 @@ import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import {
   useFamilyOrderingCommands,
 } from "@/features/Orders/hooks/useFamilyOrdering";
-import { createOffsetPagination, getPageIndex, hasPossibleNextPage } from "@/lib/pagination";
+import { createOffsetPagination, getPageIndex } from "@/lib/pagination";
+import { createCardPagination } from "@/lib/tablePagination";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
@@ -53,7 +54,7 @@ import { useOrdersWorkspace } from "../hooks/useOrdersWorkspace";
 import { useOrderCommands } from "../hooks/useOrders";
 import { useOrdersTableFilters } from "../hooks/useOrdersTableFilters";
 import type { SharedOrderRecord } from "../sharedTypes";
-import type { OrderRecord } from "../types";
+import type { OrderListQuery, OrderRecord } from "../types";
 
 const initialPagination = createOffsetPagination(0, 25);
 
@@ -95,9 +96,10 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
   const { t } = useKafilLanguage();
   const { isExactAdmin, isExactFamily, isExactSponsor } = useKafilRole();
   const tableMode = useDesktopTableMode();
-  const workspace = useOrdersWorkspace(initialPagination, highlightOrderId);
+  const [listFilters, setListFilters] = useState<Omit<OrderListQuery, "limit" | "offset">>({});
+  const workspace = useOrdersWorkspace(initialPagination, highlightOrderId, listFilters);
   const showFamilyIdentity = !isExactFamily;
-  const filters = useOrdersTableFilters(showFamilyIdentity);
+  const filters = useOrdersTableFilters(showFamilyIdentity, listFilters, setListFilters);
   const { setPagination } = workspace;
   const orderCommands = useOrderCommands();
   const familyCommands = useFamilyOrderingCommands();
@@ -285,9 +287,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
 
   const orders = workspace.orders;
   const pageIndex = getPageIndex(workspace.pagination);
-  const pageCount = hasPossibleNextPage(orders.length, workspace.pagination)
-    ? pageIndex + 2
-    : pageIndex + 1;
+  const pageCount = workspace.pageCount;
 
   const tableProps: NTableProps<SharedOrderRecord> = {
     addButtonText: isManagement ? t("common.createAssistedOrder") : undefined,
@@ -447,6 +447,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     pageCount,
     onPaginationChange: ({ pageIndex: nextIndex, pageSize }) =>
       setPagination(createOffsetPagination(nextIndex, pageSize)),
+    cardPagination: createCardPagination(workspace, t),
     pageSizeOptions: [10, 25, 50, 100],
     availableModes: ["cards", "table"],
     mode: tableMode,

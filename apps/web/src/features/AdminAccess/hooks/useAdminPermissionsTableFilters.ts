@@ -20,6 +20,7 @@ export function useAdminPermissionsTableFilters(
       },
       {
         type: "select",
+        showIcon: false,
         name: "resource",
         placeholder: t("adminAccess.permissions.resource"),
         options: [...new Set(permissions.map(({ resource }) => resource))]
@@ -28,6 +29,7 @@ export function useAdminPermissionsTableFilters(
       },
       {
         type: "select",
+        showIcon: false,
         name: "action",
         placeholder: t("adminAccess.permissions.action"),
         options: [...new Set(permissions.map(({ action }) => action))]
@@ -36,6 +38,7 @@ export function useAdminPermissionsTableFilters(
       },
       {
         type: "select",
+        showIcon: false,
         name: "drift",
         placeholder: t("adminAccess.permissions.canonicalState"),
         options: [

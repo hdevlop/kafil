@@ -33,14 +33,16 @@ import { useResponsiveStaff } from "../hooks/useStaff";
 import { useStaffTableColumns } from "../hooks/useStaffTableColumns";
 import { useStaffTableFilters } from "../hooks/useStaffTableFilters";
 import type { StaffRecord } from "../types";
+import type { StaffFilters } from "../hooks/useStaff";
 
 export function StaffPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const user = useUser();
-  const staff = useResponsiveStaff();
+  const [listFilters, setListFilters] = useState<StaffFilters>({});
+  const staff = useResponsiveStaff(listFilters);
   const columns = useStaffTableColumns();
-  const tableFilters = useStaffTableFilters();
+  const tableFilters = useStaffTableFilters(listFilters, setListFilters);
   const rows = staff.data;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);

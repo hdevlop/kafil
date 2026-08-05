@@ -18,6 +18,7 @@ import {
 } from "@/services/childApi";
 
 import { childKeys } from "./childKeys";
+import type { ListChildrenFilters } from "@/services/childApi";
 
 export function useChildren(pagination: OffsetPagination) {
   const user = useUser();
@@ -32,19 +33,19 @@ export function useChildren(pagination: OffsetPagination) {
   });
 }
 
-export function useResponsiveChildren() {
+export function useResponsiveChildren(filters: ListChildrenFilters = {}) {
   const user = useUser();
   return useResponsiveOffsetList({
     enabled: Boolean(user),
-    queryKey: [...childKeys.all, "responsive", user?.role, user?.id],
-    fetchPage: listChildren,
+    queryKey: [...childKeys.all, "responsive", user?.role, user?.id, filters],
+    fetchPage: (pagination) => listChildren(pagination, filters),
   });
 }
 
-export function useChildFamilies(enabled = true) {
+export function useChildFamilies(search = "", enabled = true) {
   return useEntityQuery({
-    queryKey: childKeys.families,
-    queryFn: listChildFamilies,
+    queryKey: [...childKeys.families, search],
+    queryFn: () => listChildFamilies(search || undefined),
     enabled,
   });
 }

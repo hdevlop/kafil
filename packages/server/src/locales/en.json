@@ -892,7 +892,10 @@
         "awaitingPurchase": "Orders awaiting purchase",
         "awaitingDelivery": "Purchased orders awaiting delivery",
         "awaitingContributionReview": "Contributions awaiting review",
+        "awaitingApplicantReview": "Applicants awaiting review",
+        "awaitingSponsorship": "Families awaiting sponsorship",
         "noOperationalAttention": "No operational issues need attention.",
+        "allClear": "All clear",
         "quickActions": "Quick actions",
         "reviewOrders": "Review pending orders",
         "reviewOrdersHint": "Check and approve family orders",
@@ -901,7 +904,9 @@
         "reviewContributions": "Review contributions",
         "reviewContributionsHint": "Validate incoming sponsor support",
         "manageCatalog": "Manage catalog",
-        "manageCatalogHint": "Update products and categories"
+        "manageCatalogHint": "Update products and categories",
+        "reviewApplicants": "Review applicants",
+        "reviewApplicantsHint": "Approve pending sponsor registrations"
       },
       "family": {
         "welcome": "Welcome, {name}",

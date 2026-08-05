@@ -16,10 +16,14 @@ async function useRole(page: Page, role: ProductRole, language = "en") {
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(browserUsers[role]);
   await page.getByPlaceholder("Enter your password").fill(browserPassword);
+  const refresh = page.waitForResponse(
+    (response) => response.url().endsWith("/api/auth/refresh") && response.ok(),
+  );
   await page.getByRole("button", { name: "Log in" }).focus();
   await page.keyboard.press("Enter");
-  await page.waitForURL(new RegExp(`/${role}$`));
-  await page.waitForLoadState("networkidle");
+  await page.waitForURL(/\/dashboard$/);
+  await refresh;
+  await page.waitForLoadState("domcontentloaded");
 }
 
 function json(
@@ -53,12 +57,11 @@ async function openCreateFamilyWizard(page: Page) {
     return json(route, { data: null, status: "success" });
   });
 
-  await page.goto("/operator/families");
+  await page.goto("/family");
   await expect(
     page.getByRole("heading", { name: "Families" }).first(),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Create family" }).first().focus();
-  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Create family" }).first().click();
 
   const dialog = page.getByRole("dialog", { name: "Create family account" });
   await expect(dialog).toBeVisible();

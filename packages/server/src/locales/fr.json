@@ -879,7 +879,10 @@
         "awaitingPurchase": "Commandes en attente d’achat",
         "awaitingDelivery": "Commandes achetées en attente de livraison",
         "awaitingContributionReview": "Contributions en attente de validation",
+        "awaitingApplicantReview": "Candidatures en attente d'examen",
+        "awaitingSponsorship": "Familles en attente de parrainage",
         "noOperationalAttention": "Aucun problème opérationnel à traiter.",
+        "allClear": "Tout est à jour",
         "quickActions": "Actions rapides",
         "reviewOrders": "Vérifier les commandes",
         "reviewOrdersHint": "Contrôler et approuver les commandes",
@@ -888,7 +891,9 @@
         "reviewContributions": "Vérifier les contributions",
         "reviewContributionsHint": "Valider les contributions des parrains",
         "manageCatalog": "Gérer le catalogue",
-        "manageCatalogHint": "Mettre à jour les produits et catégories"
+        "manageCatalogHint": "Mettre à jour les produits et catégories",
+        "reviewApplicants": "Examiner les candidats",
+        "reviewApplicantsHint": "Approuver les inscriptions de parrains en attente"
       },
       "family": {
         "welcome": "Bienvenue, {name}",

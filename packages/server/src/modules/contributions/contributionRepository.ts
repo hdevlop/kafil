@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -19,6 +19,8 @@ import {
 const familyUsers = alias(usersTable, "family_users");
 
 export interface ContributionFilters {
+  search?: string;
+  paymentMethod?: string;
   familyProfileId?: string;
   status?: "pending" | "validated" | "rejected" | "refunded" | "expired";
 }
@@ -116,7 +118,22 @@ const ownPlanSelection = {
 export class ContributionRepository {
   @DB() private db!: KafilDatabase;
 
-  listRecordingOptions() {
+  listRecordingOptions(
+    limit: number,
+    offset: number,
+    filters: { search?: string; familyProfileId?: string },
+  ) {
+    const condition = and(
+      eq(supportAssignments.status, "active"),
+      filters.familyProfileId ? eq(supportAssignments.familyProfileId, filters.familyProfileId) : undefined,
+      filters.search
+        ? or(
+            ilike(usersTable.name, `%${filters.search}%`),
+            ilike(usersTable.email, `%${filters.search}%`),
+            ilike(familyProfiles.guardianLegalName, `%${filters.search}%`),
+          )
+        : undefined,
+    );
     return this.db
       .select({
         id: supportAssignments.id,
@@ -136,21 +153,25 @@ export class ContributionRepository {
         familyProfiles,
         eq(supportAssignments.familyProfileId, familyProfiles.id),
       )
-      .where(eq(supportAssignments.status, "active"))
-      .orderBy(asc(usersTable.name), asc(familyProfiles.guardianLegalName));
+      .where(condition)
+      .orderBy(asc(usersTable.name), asc(familyProfiles.guardianLegalName))
+      .limit(limit)
+      .offset(offset);
   }
 
   list(limit: number, offset: number, filters: ContributionFilters) {
-    const condition = filters.status && filters.familyProfileId
-      ? and(
-          eq(contributions.status, filters.status),
-          eq(contributions.familyProfileId, filters.familyProfileId),
-        )
-      : filters.status
-        ? eq(contributions.status, filters.status)
-        : filters.familyProfileId
-          ? eq(contributions.familyProfileId, filters.familyProfileId)
-          : undefined;
+    const condition = and(
+      filters.status ? eq(contributions.status, filters.status) : undefined,
+      filters.familyProfileId ? eq(contributions.familyProfileId, filters.familyProfileId) : undefined,
+      filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
+      filters.search
+        ? or(
+            ilike(usersTable.name, `%${filters.search}%`),
+            ilike(familyProfiles.guardianLegalName, `%${filters.search}%`),
+            ilike(contributions.externalReference, `%${filters.search}%`),
+          )
+        : undefined,
+    );
     const query = this.db
       .select(operatorContributionSelection)
       .from(contributions)
@@ -211,14 +232,14 @@ export class ContributionRepository {
     userId: string,
     limit: number,
     offset: number,
-    filters: Pick<ContributionFilters, "status">,
+    filters: Pick<ContributionFilters, "status" | "search" | "paymentMethod">,
   ) {
-    const condition = filters.status
-      ? and(
-          eq(familyProfiles.userId, userId),
-          eq(contributions.status, filters.status),
-        )
-      : eq(familyProfiles.userId, userId);
+    const condition = and(
+      eq(familyProfiles.userId, userId),
+      filters.status ? eq(contributions.status, filters.status) : undefined,
+      filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
+      filters.search ? ilike(usersTable.name, `%${filters.search}%`) : undefined,
+    );
     return this.db
       .select(familyContributionSelection)
       .from(contributions)
@@ -272,12 +293,12 @@ export class ContributionRepository {
     offset: number,
     filters: ContributionFilters,
   ) {
-    const condition = filters.status
-      ? and(
-          eq(sponsorProfiles.userId, userId),
-          eq(contributions.status, filters.status),
-        )
-      : eq(sponsorProfiles.userId, userId);
+    const condition = and(
+      eq(sponsorProfiles.userId, userId),
+      filters.status ? eq(contributions.status, filters.status) : undefined,
+      filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
+      filters.search ? ilike(familyProfiles.guardianLegalName, `%${filters.search}%`) : undefined,
+    );
     return this.db
       .select(sponsorContributionSelection)
       .from(contributions)

@@ -36,15 +36,18 @@ describe("Phase 7 dashboard report boundaries", () => {
         id: "order-1",
         orderNumber: "ORD-001",
         familyName: "Atlas Family",
+        familyImage: null,
         status: "pending",
         totalMinor: "1800",
         placedAt: new Date("2026-07-20"),
       }],
+      operatorPendingApplicants: async () => [{ count: "4" }],
+      operatorFamiliesWithoutSponsorship: async () => [{ count: "2" }],
     } as unknown as DashboardRepository);
 
     const result = await dashboard.getOperator();
 
-    expect(result.counts).toMatchObject({ families: 3, activeFamilies: 2, openOrders: 2 });
+    expect(result.counts).toMatchObject({ families: 3, activeFamilies: 2, openOrders: 2, pendingApplicants: 4, familiesWithoutSponsorship: 2 });
     expect(result.money.validatedContributionMinor).toBe(9000);
     expect(result.contributionTrend).toHaveLength(12);
     expect(result.contributionTrend.find((row) => row.month === "2026-07")).toEqual({
@@ -56,6 +59,7 @@ describe("Phase 7 dashboard report boundaries", () => {
       id: "order-1",
       orderNumber: "ORD-001",
       familyName: "Atlas Family",
+      familyImage: null,
       status: "pending",
       totalMinor: 1800,
       placedAt: new Date("2026-07-20"),
@@ -132,6 +136,63 @@ describe("Phase 7 dashboard report boundaries", () => {
       "00000000-0000-4000-8000-000000000001",
       4,
     ]);
+  });
+
+  it("counts only applicants pending review for the operator dashboard", () => {
+    const repository = new DashboardRepository();
+    (repository as unknown as { db: ReturnType<typeof drizzle.mock> }).db = drizzle.mock();
+
+    const query = repository.operatorPendingApplicants().toSQL();
+
+    expect(query.sql).toContain('count(*)::int');
+    expect(query.sql).toContain('from "applicants"');
+    expect(query.sql).toContain('"applicants"."status" = $1');
+    expect(query.params).toEqual(["pending_review"]);
+  });
+
+  it("counts families without active sponsorship via left-join and is-null filter", () => {
+    const repository = new DashboardRepository();
+    (repository as unknown as { db: ReturnType<typeof drizzle.mock> }).db = drizzle.mock();
+
+    const query = repository.operatorFamiliesWithoutSponsorship().toSQL();
+
+    expect(query.sql).toContain('count(*)::int');
+    expect(query.sql).toContain('from "family_profiles"');
+    expect(query.sql).toContain('left join "support_assignments"');
+    expect(query.sql).toContain(
+      '"support_assignments"."family_profile_id" = "family_profiles"."id"',
+    );
+    expect(query.sql).toContain('"support_assignments"."status" = $1');
+    expect(query.sql).toContain('"support_assignments"."id" is null');
+    expect(query.params).toEqual(["active"]);
+  });
+
+  it("defaults both new counts to zero when the underlying queries return empty rows", async () => {
+    const dashboard = new DashboardService({
+      operatorPeopleCounts: async () => ({
+        families: { total: "0", active: "0" },
+        children: { total: "0", active: "0" },
+        sponsors: { total: "0", active: "0" },
+        assignments: { active: "0" },
+      }),
+      operatorMoneyCounts: async () => ({
+        contributions: { pendingCount: "0", pendingMinor: "0", validatedMinor: "0", refundedMinor: "0" },
+        budgets: { availableMinor: "0", reservedMinor: "0", spentMinor: "0" },
+        orders: { openCount: "0" },
+      }),
+      operatorContributionTrend: async () => [],
+      operatorOrderStatuses: async () => [],
+      operatorRecentOrders: async () => [],
+      operatorPendingApplicants: async () => [],
+      operatorFamiliesWithoutSponsorship: async () => [],
+    } as unknown as DashboardRepository);
+
+    const result = await dashboard.getOperator();
+
+    expect(result.counts).toMatchObject({
+      pendingApplicants: 0,
+      familiesWithoutSponsorship: 0,
+    });
   });
 
   it("qualifies every dominant-category subquery column", () => {

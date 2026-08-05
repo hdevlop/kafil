@@ -34,9 +34,12 @@ export function getProduct(id: string) {
   return api.get<ProductRecord>(`/catalog/products/${id}`);
 }
 
-export function listProductCategories() {
+export function listProductCategories(
+  search?: string,
+  pagination: OffsetPagination = { limit: 25, offset: 0 },
+) {
   return api.get<ProductCategory[]>("/catalog/categories", {
-    query: { status: "active", limit: 100, offset: 0 },
+    query: { status: "active", ...pagination, search },
   });
 }
 

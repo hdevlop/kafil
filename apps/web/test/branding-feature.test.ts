@@ -330,11 +330,15 @@ describe("branding server loaders", () => {
 });
 
 describe("branding UI fixes", () => {
-  test("BrandAssetsPanel preview shows the resolved fallback when the draft slot is null", () => {
+  test("BrandAssetsPanel previews resolved assets through the fallback-aware ImageInput contract", () => {
     const panel = readSource(
       "../src/features/Settings/components/BrandAssetsPanel.tsx",
     );
     expect(panel).toContain("draftValue !== undefined && draftValue !== null");
+    expect(panel).toContain("fallbackImage={resolved[definition.key]}");
+    expect(panel).toContain("localFiles");
+    expect(panel).toContain("unavailableContent");
+    expect(panel).toContain("previewAlt={t(definition.titleKey)}");
   });
 
   test("AppSettingsPanel includes the upload count in the sheet's pending calculation", () => {
@@ -500,7 +504,7 @@ describe("branding provider wiring", () => {
 });
 
 describe("branding UI integration", () => {
-  test("BrandAssetsPanel renders four compact rows with direct image inputs and a single formats summary", () => {
+  test("BrandAssetsPanel renders four compact rows with the resilient ImageInput contract", () => {
     const panel = readSource(
       "../src/features/Settings/components/BrandAssetsPanel.tsx",
     );
@@ -517,10 +521,12 @@ describe("branding UI integration", () => {
     expect(panel).toContain("uploadBrandingAsset");
     expect(panel).toContain("revertSlot");
     expect(panel).toContain("<ImageInput");
+    expect(panel).toContain("fallbackImage={resolved[definition.key]}");
     expect(panel).toContain('allowClear={false}');
+    expect(panel).toContain("localFiles");
     expect(panel).not.toContain("statusDefault");
     expect(panel).not.toContain("statusInherited");
-    expect(panel).not.toContain("branding.replace");
+    expect(panel).toContain("operator.settings.branding.replace");
     expect(panel).toContain("formatsSummary");
     expect(panel).not.toContain("discardDraft");
     expect(panel).not.toContain("remove");

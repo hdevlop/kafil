@@ -42,7 +42,6 @@ export interface AssignmentFamilyOption {
 export interface SupportAssignmentSources {
   sponsors: AssignmentSponsorOption[];
   families: AssignmentFamilyOption[];
-  plans: AssignmentContributionPlanOption[];
 }
 
 export interface SupportAssignmentView extends SupportAssignmentRecord {

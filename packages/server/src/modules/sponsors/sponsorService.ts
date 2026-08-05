@@ -45,8 +45,8 @@ export class SponsorService {
   ) {}
 
   async list(query: SponsorListQuery) {
-    const { limit, offset } = sponsorListQuery.parse(query ?? {});
-    return this.sponsors.list(limit, offset);
+    const { limit, offset, ...filters } = sponsorListQuery.parse(query ?? {});
+    return this.sponsors.list(limit, offset, filters);
   }
 
   async get(id: string) {

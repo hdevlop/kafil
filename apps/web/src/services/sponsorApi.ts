@@ -9,9 +9,22 @@ import type {
   UpdateSponsorInput,
 } from "@/features/Sponsors/types";
 
-export function listSponsors(pagination: OffsetPagination) {
+export interface ListSponsorsFilters {
+  search?: string;
+  status?: "active" | "inactive";
+}
+
+export function listSponsors(
+  pagination: OffsetPagination,
+  filters: ListSponsorsFilters = {},
+) {
   return api.get<SponsorRecord[]>("/sponsors", {
-    query: { limit: pagination.limit, offset: pagination.offset },
+    query: {
+      limit: pagination.limit,
+      offset: pagination.offset,
+      ...(filters.search ? { search: filters.search } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+    },
   });
 }
 

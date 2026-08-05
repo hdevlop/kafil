@@ -10,9 +10,9 @@ import {
 import {
   cleanQuery,
   createOffsetPagination,
+  fetchOffsetPage,
   getPageIndex,
   hasPossibleNextPage,
-  listAllOffsetPages,
 } from "../src/lib/pagination";
 import { getStatusColor } from "../src/lib/status";
 import {
@@ -129,20 +129,23 @@ describe("Phase 6B pagination helpers", () => {
     ).toEqual({ limit: 25, offset: 0, status: "active" });
   });
 
-  test("loads every offset page for mobile scroll lists", async () => {
-    const calls: Array<{ limit: number; offset: number }> = [];
-    const records = await listAllOffsetPages(async (pagination) => {
-      calls.push(pagination);
-      return pagination.offset < 4
-        ? [pagination.offset + 1, pagination.offset + 2]
-        : [];
-    }, 2);
+  test("uses one-row lookahead at every page boundary", async () => {
+    for (const size of [0, 1, 24, 25, 26, 61]) {
+      const records = Array.from({ length: size }, (_, index) => index + 1);
+      const page = await fetchOffsetPage(
+        ({ limit, offset }) => Promise.resolve(records.slice(offset, offset + limit)),
+        { limit: 25, offset: 0 },
+      );
+      expect(page.rows).toEqual(records.slice(0, 25));
+      expect(page.hasNextPage).toBe(size > 25);
+    }
 
-    expect(records).toEqual([1, 2, 3, 4]);
-    expect(calls).toEqual([
-      { limit: 2, offset: 0 },
-      { limit: 2, offset: 2 },
-      { limit: 2, offset: 4 },
-    ]);
+    const exactMaximum = Array.from({ length: 101 }, (_, index) => index + 1);
+    const page = await fetchOffsetPage(
+      ({ limit, offset }) => Promise.resolve(exactMaximum.slice(offset, offset + limit)),
+      { limit: 100, offset: 0 },
+    );
+    expect(page.rows).toHaveLength(100);
+    expect(page.hasNextPage).toBe(true);
   });
 });

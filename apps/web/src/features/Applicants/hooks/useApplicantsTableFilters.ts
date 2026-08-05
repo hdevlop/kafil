@@ -1,33 +1,43 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type Dispatch, type SetStateAction } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 
-export function useApplicantsTableFilters() {
+import type { ListApplicantsParams } from "../services/api";
+
+type ApplicantFilters = Omit<ListApplicantsParams, "limit" | "offset">;
+
+export function useApplicantsTableFilters(
+  query: ApplicantFilters,
+  setQuery: Dispatch<SetStateAction<ApplicantFilters>>,
+) {
   const { t } = useKafilLanguage();
 
   return useMemo(
     () => [
       {
         type: "text",
-        name: "name",
+        name: "search",
         placeholder: t("operator.applicants.searchName"),
-      },
-      {
-        type: "text",
-        name: "email",
-        placeholder: t("operator.applicants.searchEmail"),
-      },
-      {
-        type: "text",
-        name: "phone",
-        placeholder: t("operator.applicants.searchPhone"),
+        value: query.search ?? "",
+        onChange: (search: string) =>
+          setQuery((current) => ({
+            ...current,
+            search: search || undefined,
+          })),
       },
       {
         type: "select",
+        showIcon: false,
         name: "status",
         placeholder: t("operator.applicants.allStatuses"),
+        value: query.status ?? "",
+        onChange: (status: ListApplicantsParams["status"] | "") =>
+          setQuery((current) => ({
+            ...current,
+            status: status || undefined,
+          })),
         options: [
           {
             value: "pending_review",
@@ -42,6 +52,6 @@ export function useApplicantsTableFilters() {
         ],
       },
     ],
-    [t],
+    [query.search, query.status, setQuery, t],
   );
 }

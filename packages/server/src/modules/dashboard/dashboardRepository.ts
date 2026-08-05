@@ -4,6 +4,7 @@ import { Repository } from "najm-core";
 import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
+import { applicants } from "../applicants/applicantSchema";
 import { budgetAccounts } from "../budgets/budgetSchema";
 import { children } from "../children/childSchema";
 import { contributions, contributionPlans } from "../contributions/contributionSchema";
@@ -78,6 +79,31 @@ export class DashboardRepository {
     };
   }
 
+  operatorPendingApplicants() {
+    return this.db
+      .select({
+        count: sql<number>`count(*)::int`,
+      })
+      .from(applicants)
+      .where(eq(applicants.status, "pending_review"));
+  }
+
+  operatorFamiliesWithoutSponsorship() {
+    return this.db
+      .select({
+        count: sql<number>`count(*)::int`,
+      })
+      .from(familyProfiles)
+      .leftJoin(
+        supportAssignments,
+        and(
+          eq(supportAssignments.familyProfileId, familyProfiles.id),
+          eq(supportAssignments.status, "active"),
+        ),
+      )
+      .where(isNull(supportAssignments.id));
+  }
+
   operatorContributionTrend(since: Date) {
     const month = monthExpression(contributions.submittedAt);
     return this.db
@@ -106,6 +132,7 @@ export class DashboardRepository {
         id: orders.id,
         orderNumber: orders.orderNumber,
         familyName: usersTable.name,
+        familyImage: usersTable.image,
         status: orders.status,
         totalMinor: orders.totalMinor,
         placedAt: orders.createdAt,

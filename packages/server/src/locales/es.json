@@ -876,7 +876,10 @@
         "awaitingPurchase": "Pedidos pendientes de compra",
         "awaitingDelivery": "Pedidos comprados pendientes de entrega",
         "awaitingContributionReview": "Contribuciones pendientes de revisión",
+        "awaitingApplicantReview": "Solicitudes pendientes de revisión",
+        "awaitingSponsorship": "Familias en espera de patrocinio",
         "noOperationalAttention": "No hay problemas operativos pendientes.",
+        "allClear": "Todo al día",
         "quickActions": "Acciones rápidas",
         "reviewOrders": "Revisar pedidos pendientes",
         "reviewOrdersHint": "Comprobar y aprobar pedidos familiares",
@@ -885,7 +888,9 @@
         "reviewContributions": "Revisar contribuciones",
         "reviewContributionsHint": "Validar el apoyo entrante de patrocinadores",
         "manageCatalog": "Gestionar catálogo",
-        "manageCatalogHint": "Actualizar productos y categorías"
+        "manageCatalogHint": "Actualizar productos y categorías",
+        "reviewApplicants": "Revisar solicitudes",
+        "reviewApplicantsHint": "Aprobar registros de patrocinadores pendientes"
       },
       "family": {
         "welcome": "Welcome, {name}",

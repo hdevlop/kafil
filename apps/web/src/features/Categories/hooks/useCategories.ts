@@ -17,6 +17,7 @@ import {
 import { categoryKeys } from "./categoryKeys";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 import type { CategoryRecord } from "../types";
+import type { ListCategoryFilters } from "@/services/categoryApi";
 
 export function useCategories(
   pagination: OffsetPagination,
@@ -32,11 +33,14 @@ export function useCategories(
   });
 }
 
-export function useResponsiveCategories(enabled = true) {
+export function useResponsiveCategories(
+  filters: ListCategoryFilters = {},
+  enabled = true,
+) {
   return useResponsiveOffsetList({
     enabled,
-    queryKey: [...categoryKeys.all, "responsive"],
-    fetchPage: listCategories,
+    queryKey: [...categoryKeys.all, "responsive", filters],
+    fetchPage: (pagination) => listCategories(pagination, filters),
   });
 }
 

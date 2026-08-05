@@ -12,9 +12,18 @@ export const contributionIdParams = z.object({ id });
 export const contributionPlanIdParams = z.object({ id });
 
 export const contributionListQuery = z.object({
+  search: z.string().trim().min(1).max(100).optional(),
+  paymentMethod: z.string().trim().min(1).max(80).optional(),
   familyProfileId: id.optional(),
   status: z.enum(["pending", "validated", "rejected", "refunded", "expired"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const contributionRecordingOptionsQuery = z.object({
+  search: z.string().trim().min(1).max(100).optional(),
+  familyProfileId: id.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
   offset: z.coerce.number().int().min(0).default(0),
 });
 
@@ -87,6 +96,7 @@ export const bulkDeleteContributionsDto = z
   });
 
 export type ContributionListQuery = z.input<typeof contributionListQuery>;
+export type ContributionRecordingOptionsQuery = z.input<typeof contributionRecordingOptionsQuery>;
 export type ContributionPlanListQuery = z.input<
   typeof contributionPlanListQuery
 >;

@@ -27,10 +27,10 @@ export class ChildService {
   ) {}
 
   async list(query: ChildListQuery) {
-    const { limit, offset, familyProfileId } = childListQuery.parse(
+    const { limit, offset, ...filters } = childListQuery.parse(
       query ?? {},
     );
-    return this.children.list(limit, offset, familyProfileId);
+    return this.children.list(limit, offset, filters);
   }
 
   async listForPrincipal(input: {
@@ -43,7 +43,14 @@ export class ChildService {
       if (!family || family.role !== "family") {
         HttpError.notFound("Family profile not found");
       }
-      const children = await this.children.listByFamilyId(family.id);
+      const parsed = childListQuery.parse(input.query ?? {});
+      const { limit, offset } = parsed;
+      const filters = {
+        search: parsed.search,
+        gender: parsed.gender,
+        status: parsed.status,
+      };
+      const children = await this.children.listByFamilyId(family.id, limit, offset, filters);
       return children.map(toFamilyChildProjection);
     }
     return this.list(input.query);

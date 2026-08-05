@@ -7,6 +7,7 @@ import { useCallback, useMemo, useState } from "react";
 import { NButton, NSheet, NTable, type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { createCardPagination } from "@/lib/tablePagination";
 
 import { CategoryCard } from "./CategoryCard";
 
@@ -22,12 +23,24 @@ interface CategoryBarProps {
   items: CategoryBarItem[];
   basePath: string;
   queryParam?: string;
+  paginationController: {
+    cardViewport: boolean;
+    hasNextPage: boolean;
+    loadingMore: boolean;
+    loadMoreError: unknown;
+    onLoadMore: () => Promise<unknown>;
+    loading: boolean;
+    pageCount: number;
+    pagination: { pageIndex: number; pageSize: number };
+    onPaginationChange: (next: { pageIndex: number; pageSize: number }) => void;
+  };
 }
 
 export function CategoryFilterSheet({
   items,
   basePath,
   queryParam = "category",
+  paginationController,
 }: Readonly<CategoryBarProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,7 +104,6 @@ export function CategoryFilterSheet({
             classNames={{ cards: "grid grid-cols-3 gap-2" }}
             columns={columns}
             data={items}
-            defaultPagination={{ pageIndex: 0, pageSize: 100 }}
             defaultMode="cards"
             dynamicHeight={false}
             getRowClassName={(item) =>
@@ -101,6 +113,12 @@ export function CategoryFilterSheet({
             }
             getRowId={(item) => item.id}
             menuButton={false}
+            loading={paginationController.loading}
+            manualPagination
+            pagination={paginationController.pagination}
+            pageCount={paginationController.pageCount}
+            onPaginationChange={paginationController.onPaginationChange}
+            cardPagination={createCardPagination(paginationController, t)}
             noDataText={t("common.emptyCategories", {
               defaultValue: "No active categories",
             })}
@@ -120,7 +138,7 @@ export function CategoryFilterSheet({
             showAddButton={false}
             showCheckbox={false}
             showColumnVisibility={false}
-            showPagination={false}
+            showPagination
             showSorting={false}
             showViewToggle={false}
           />

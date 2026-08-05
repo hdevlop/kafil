@@ -8,7 +8,9 @@ import {
   isNotNull,
   isNull,
   inArray,
+  ilike,
   lte,
+  or,
   sql,
 } from "drizzle-orm";
 import { usersTable } from "najm-auth/pg";
@@ -42,6 +44,7 @@ import {
 import { dominantOrderCategoryField } from "./orderQueries";
 
 export interface OrderFilters {
+  search?: string;
   familyProfileId?: string;
   status?: OrderStatus;
   from?: Date;
@@ -204,13 +207,13 @@ export class OrderRepository {
     limit: number,
     offset: number,
     status?: OrderStatus,
+    search?: string,
   ) {
-    const condition = status
-      ? and(
-          eq(orders.familyProfileId, familyProfileId),
-          eq(orders.status, status),
-        )
-      : eq(orders.familyProfileId, familyProfileId);
+    const condition = and(
+      eq(orders.familyProfileId, familyProfileId),
+      status ? eq(orders.status, status) : undefined,
+      search ? ilike(orders.orderNumber, `%${search}%`) : undefined,
+    );
     return this.db
       .select(familyOrderSelection)
       .from(orders)
@@ -238,17 +241,14 @@ export class OrderRepository {
     limit: number,
     offset: number,
     status?: OrderStatus,
+    search?: string,
   ) {
-    const condition = status
-      ? and(
-          eq(sponsorProfiles.userId, sponsorUserId),
-          eq(supportAssignments.status, "active"),
-          eq(orders.status, status),
-        )
-      : and(
-          eq(sponsorProfiles.userId, sponsorUserId),
-          eq(supportAssignments.status, "active"),
-        );
+    const condition = and(
+      eq(sponsorProfiles.userId, sponsorUserId),
+      eq(supportAssignments.status, "active"),
+      status ? eq(orders.status, status) : undefined,
+      search ? ilike(orders.orderNumber, `%${search}%`) : undefined,
+    );
     return this.db
       .selectDistinct(sponsorOrderSelection)
       .from(orders)
@@ -726,6 +726,12 @@ export class OrderPurchaseRepository {
 
 function orderFilter(filters: OrderFilters) {
   const conditions = [
+    filters.search
+      ? or(
+          ilike(orders.orderNumber, `%${filters.search}%`),
+          ilike(orders.guardianLegalNameSnapshot, `%${filters.search}%`),
+        )
+      : undefined,
     filters.familyProfileId
       ? eq(orders.familyProfileId, filters.familyProfileId)
       : undefined,

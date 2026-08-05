@@ -7,13 +7,14 @@ import type {
   ContributionRecordingOption,
   RecordContributionInput,
 } from "@/features/Contributions/types";
-import { listAllOffsetPages } from "@/lib/pagination";
 import { api } from "@/services/http";
 
 export function listContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery) {
   return api.get<TRecord[]>("/contributions", {
     query: {
       familyProfileId: query.familyProfileId,
+      search: query.search,
+      paymentMethod: query.paymentMethod,
       limit: query.limit,
       offset: query.offset,
       status: query.status,
@@ -32,17 +33,13 @@ export async function listContributionPage<TRecord extends ContributionListRecor
   return { rows, hasNextPage };
 }
 
-export function listAllContributions<TRecord extends ContributionListRecord = ContributionRecord>(
-  query: Omit<ContributionListQuery, "limit" | "offset">,
-) {
-  return listAllOffsetPages<TRecord>((pagination) =>
-    listContributions<TRecord>({ ...query, ...pagination }),
-  );
-}
-
-export function listContributionRecordingOptions() {
+export function listContributionRecordingOptions(query: {
+  search?: string;
+  familyProfileId?: string;
+} = {}) {
   return api.get<ContributionRecordingOption[]>(
     "/contributions/recording-options",
+    { query: { limit: 25, offset: 0, ...query } },
   );
 }
 

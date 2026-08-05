@@ -228,13 +228,14 @@ describe("Phase 3 contribution transactions", () => {
     const repository = new ContributionRepository();
     Object.assign(repository, { db: database });
 
-    const query = repository.listRecordingOptions();
+    const query = repository.listRecordingOptions(25, 0, {});
     const contributionListQuery = repository.list(25, 0, {});
     const familyContributionQuery = repository.list(25, 0, {
       familyProfileId: householdId,
     });
 
-    expect(query.toSQL()).toMatchObject({ params: ["active"] });
+    expect(query.toSQL().params).toContain("active");
+    expect(query.toSQL().sql).toContain("limit $2");
     expect(query.toSQL().sql).toContain('inner join "sponsor_profiles"');
     expect(query.toSQL().sql).toContain('inner join "family_profiles"');
     expect(contributionListQuery.toSQL().sql).toContain(

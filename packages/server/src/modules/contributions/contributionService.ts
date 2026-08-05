@@ -14,6 +14,8 @@ import { SettingService } from "../settings/settingService";
 import {
   type ContributionListQuery,
   contributionListQuery,
+  type ContributionRecordingOptionsQuery,
+  contributionRecordingOptionsQuery,
   type ContributionPlanListQuery,
   contributionPlanListQuery,
   type ContributionReasonDto,
@@ -61,7 +63,11 @@ listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
         userId,
         parsed.limit,
         parsed.offset,
-        { status: parsed.status },
+        {
+          status: parsed.status,
+          search: parsed.search,
+          paymentMethod: parsed.paymentMethod,
+        },
       );
     }
     if (role === "sponsor") {
@@ -72,7 +78,11 @@ listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
         userId,
         parsed.limit,
         parsed.offset,
-        { status: parsed.status },
+        {
+          status: parsed.status,
+          search: parsed.search,
+          paymentMethod: parsed.paymentMethod,
+        },
       );
     }
     if (role !== "admin" && role !== "operator") {
@@ -82,8 +92,9 @@ listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
     return this.contributions.list(limit, offset, filters);
   }
 
-  listRecordingOptions() {
-    return this.contributions.listRecordingOptions();
+  listRecordingOptions(query: ContributionRecordingOptionsQuery = {}) {
+    const { limit, offset, ...filters } = contributionRecordingOptionsQuery.parse(query ?? {});
+    return this.contributions.listRecordingOptions(limit, offset, filters);
   }
 
   get(id: string) {

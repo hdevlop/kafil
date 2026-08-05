@@ -1,7 +1,7 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandHeart, House, ShoppingBag, WalletCards } from "lucide-react";
-import { NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard } from "najm-kit";
+import { NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown } from "najm-kit";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -15,7 +15,8 @@ import { ProtectedImage } from "@/shared/ProtectedImage";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { StatusBadge } from "@/shared/StatusBadge";
 
-import { MonthlyBarChart, StatusBreakdown } from "../../shared/DashboardCharts";
+import { toChartData } from "../../shared/chartData";
+import { FamilyDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import { useFamilyDashboard, useOwnFamilyChildren, useOwnFamilyProfile } from "../hooks/useFamilyDashboard";
 import { MyFamilyCard } from "./MyFamilyCard";
 
@@ -29,7 +30,7 @@ export function FamilyDashboardPage() {
     return <PageErrorState error={dashboard.error} title={t("dashboard.family.error")} onRetry={() => void dashboard.refetch()} />;
   }
   if (dashboard.isPending || !dashboard.data) {
-    return <NCard loading title={t("dashboard.family.loading")} />;
+    return <FamilyDashboardSkeleton loadingLabel={t("dashboard.family.loading")} />;
   }
 
   const data = dashboard.data;
@@ -82,11 +83,11 @@ export function FamilyDashboardPage() {
           ) : null}
         </NGridItem>
         <NGridItem span={1} xlSpan={6}>
-          <MonthlyBarChart
-            data={data.orderTrend}
+          <NBarChart
+            className="h-full"
+            data={toChartData(data.orderTrend, ["spentMinor"], language)}
             icon={ShoppingBag}
-            language={language}
-            series={[{ key: "spentMinor", label: t("dashboard.family.orderValue"), color: "var(--primary)" }]}
+            series={[{ id: "spentMinor", label: t("dashboard.family.orderValue") }]}
             title={t("dashboard.family.spendingTrend")}
             valueFormatter={money}
           />
@@ -96,9 +97,9 @@ export function FamilyDashboardPage() {
             className="h-full"
             icon={WalletCards}
             items={[
-              { id: "available", label: t("dashboard.common.available"), value: data.budget.availableMinor, color: "var(--primary)" },
-              { id: "reserved", label: t("dashboard.common.reserved"), value: data.budget.reservedMinor, color: "var(--secondary)" },
-              { id: "spent", label: t("dashboard.common.spent"), value: data.budget.spentMinor, color: "var(--destructive)" },
+              { id: "available", label: t("dashboard.common.available"), value: data.budget.availableMinor },
+              { id: "reserved", label: t("dashboard.common.reserved"), value: data.budget.reservedMinor },
+              { id: "spent", label: t("dashboard.common.spent"), value: data.budget.spentMinor },
             ]}
             title={t("dashboard.family.budgetPosition")}
             totalLabel={t("family.cart.total")}
@@ -109,12 +110,18 @@ export function FamilyDashboardPage() {
 
       <NGrid cols={1} lgCols={3} className="flex-1">
         <NGridItem span={1}>
-          <StatusBreakdown
-            data={data.orderStatuses}
+          <NStatusBreakdown
+            className="h-full"
             emptyLabel={t("state.empty")}
             icon={ClipboardCheck}
-            labelForStatus={(status) => formatStatusLabel(status, language)}
-            language={language}
+            items={(data.orderStatuses.some(({ status }) => status === "purchased")
+              ? data.orderStatuses
+              : [...data.orderStatuses, { status: "purchased", count: 0 }])
+              .map(({ status, count }) => ({
+                id: status,
+                label: formatStatusLabel(status, language),
+                value: count,
+              }))}
             title={t("dashboard.family.orderPipeline")}
           />
         </NGridItem>

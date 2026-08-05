@@ -8,6 +8,7 @@ import {
   NButton,
   NForm,
   NFormSectionHeader,
+  useDebouncedValue,
   useDialog,
 } from "najm-kit";
 import { ClipboardPlus, PackagePlus, TriangleAlert, Truck, UserRoundCheck } from "lucide-react";
@@ -74,8 +75,12 @@ const deliveryFailureSchema = z.object({
 });
 
 function AssistedOrderItemFields({
+  loading,
+  onSearchChange,
   productOptions,
 }: Readonly<{
+  loading: boolean;
+  onSearchChange: (query: string) => void;
   productOptions: Array<{ value: string; label: string }>;
 }>) {
   return (
@@ -86,6 +91,10 @@ function AssistedOrderItemFields({
         formLabel="Product"
         searchPlaceholder="Search active products"
         emptyMessage="No active products found"
+        loading={loading}
+        loadingMessage="Loading products..."
+        onSearchChange={onSearchChange}
+        shouldFilter={false}
         items={productOptions}
         icon="PackageSearch"
         required
@@ -103,8 +112,16 @@ function AssistedOrderItemFields({
 
 export function CreateAssistedOrderDialogContent() {
   const { pop } = useDialog();
-  const families = useFamilies({ limit: 100, offset: 0 });
-  const products = useProducts({ limit: 100, offset: 0 });
+  const [familySearch, setFamilySearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const families = useFamilies(
+    { limit: 25, offset: 0 },
+    { status: "active", search: useDebouncedValue(familySearch, 250) || undefined },
+  );
+  const products = useProducts(
+    { limit: 25, offset: 0 },
+    { status: "active", search: useDebouncedValue(productSearch, 250) || undefined },
+  );
   const { assisted } = useOrderCommands();
   const familyOptions =
     families.data
@@ -151,6 +168,10 @@ export function CreateAssistedOrderDialogContent() {
           formLabel="Family"
           searchPlaceholder="Search active families"
           emptyMessage="No active family found"
+          loading={families.isFetching}
+          loadingMessage="Loading families..."
+          onSearchChange={setFamilySearch}
+          shouldFilter={false}
           items={familyOptions}
           icon="Users"
           disabled={families.isPending}
@@ -185,7 +206,11 @@ export function CreateAssistedOrderDialogContent() {
         emptyLabel="Add at least one active product."
         onAdd={(append) => append({ productId: "", quantity: 1 })}
       >
-        <AssistedOrderItemFields productOptions={productOptions} />
+        <AssistedOrderItemFields
+          loading={products.isFetching}
+          onSearchChange={setProductSearch}
+          productOptions={productOptions}
+        />
       </DynamicArray>
       <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
         Kafil recalculates current catalog prices and reserves the family budget.

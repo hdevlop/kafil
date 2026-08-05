@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, ClipboardList, Eye, XCircle } from "lucide-react";
+import { useState } from "react";
 import {
   NPageLayout,
   NTable,
@@ -10,6 +11,8 @@ import {
 } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
+import { createCardPagination } from "@/lib/tablePagination";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
@@ -21,19 +24,22 @@ import {
   RejectApplicantDialogContent,
 } from "./ApplicantDecisionDialogs";
 import {
-  useApplicants,
+  useResponsiveApplicants,
 } from "../hooks/useApplicants";
 import { useApplicantsTableColumns } from "../hooks/useApplicantsTableColumns";
 import { useApplicantsTableFilters } from "../hooks/useApplicantsTableFilters";
 import type { ApplicantRecord } from "../types";
+import type { ListApplicantsParams } from "../services/api";
 
 export function ApplicantsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
-  const applicants = useApplicants();
+  const tableMode = useDesktopTableMode();
+  const [query, setQuery] = useState<Omit<ListApplicantsParams, "limit" | "offset">>({});
+  const applicants = useResponsiveApplicants(query);
   const columns = useApplicantsTableColumns();
-  const filters = useApplicantsTableFilters();
-  const rows = applicants.data ?? [];
+  const filters = useApplicantsTableFilters(query, setQuery);
+  const rows = applicants.data;
 
   function openView(applicant: ApplicantRecord) {
     void dialog.openDialog({
@@ -112,7 +118,7 @@ export function ApplicantsPage() {
     error: applicants.error,
     filters,
     getRowId: (applicant) => applicant.id,
-    loading: applicants.isPending,
+    loading: applicants.loading,
     loadingText: t("operator.applicants.loading"),
     menu: {
       row: rowActions,
@@ -132,7 +138,14 @@ export function ApplicantsPage() {
       <PageErrorState error={error} onRetry={() => void applicants.refetch()} />
     ),
     responsiveCards: true,
-    showPagination: false,
+    showPagination: true,
+    manualPagination: true,
+    pagination: applicants.pagination,
+    pageCount: applicants.pageCount,
+    onPaginationChange: applicants.onPaginationChange,
+    cardPagination: createCardPagination(applicants, t),
+    pageSizeOptions: [10, 25, 50, 100],
+    mode: tableMode,
   };
 
   return (

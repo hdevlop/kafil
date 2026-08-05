@@ -9,7 +9,7 @@ import type { SponsorInfoViewModel } from "../components/SponsorInformationCard"
 export interface OperatorSponsorOverviewViewModel {
   kpis: SponsorKpiItem[];
   sponsorInfo: SponsorInfoViewModel;
-  budgetSegments: Array<{ label: string; value: number; color: string }>;
+  budgetSegments: Array<{ label: string; value: number; color?: string }>;
   budgetTotal: number;
   contributionTrend: OperatorSponsorOverviewData["metrics"]["contributionTrend"];
   chartSeries: ChartSeries[];
@@ -61,9 +61,9 @@ export function buildOperatorSponsorOverviewViewModel(
     + data.metrics.money.supportedSpentMinor;
 
   const budgetSegments = [
-    { label: t("dashboard.common.available"), value: data.metrics.money.supportedAvailableMinor, color: "var(--primary)" },
-    { label: t("dashboard.common.reserved"), value: data.metrics.money.supportedReservedMinor, color: "var(--secondary)" },
-    { label: t("dashboard.common.spent"), value: data.metrics.money.supportedSpentMinor, color: "var(--destructive)" },
+    { label: t("dashboard.common.available"), value: data.metrics.money.supportedAvailableMinor },
+    { label: t("dashboard.common.reserved"), value: data.metrics.money.supportedReservedMinor },
+    { label: t("dashboard.common.spent"), value: data.metrics.money.supportedSpentMinor },
   ];
 
   return {
@@ -87,8 +87,8 @@ export function buildOperatorSponsorOverviewViewModel(
     budgetTotal,
     contributionTrend: data.metrics.contributionTrend,
     chartSeries: [
-      { key: "validatedMinor", label: t("dashboard.common.validated"), color: "var(--primary)" },
-      { key: "pendingMinor", label: t("dashboard.common.pending"), color: "var(--secondary)" },
+      { key: "validatedMinor", label: t("dashboard.common.validated") },
+      { key: "pendingMinor", label: t("dashboard.common.pending") },
     ],
     recentContributions: data.metrics.recentContributions,
     recentSupportedOrders: data.metrics.recentSupportedOrders,

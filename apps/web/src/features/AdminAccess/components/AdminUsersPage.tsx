@@ -5,6 +5,7 @@ import { Eye, KeyRound, UserCheck, UserRoundX, Users } from "lucide-react";
 import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex } from "@/lib/pagination";
+import { createCardPagination } from "@/lib/tablePagination";
 import { formatKafilDate } from "@/lib/format";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -13,7 +14,7 @@ import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
 
-import { useAccessUsers } from "../hooks/useAdminAccess";
+import { useResponsiveAccessUsers } from "../hooks/useAdminAccess";
 import { useAdminUsersTableFilters } from "../hooks/useAdminUsersTableFilters";
 import type { AccessUser, AccessUserListQuery } from "../types";
 import {
@@ -31,13 +32,13 @@ export function AdminUsersPage() {
   const [query, setQuery] = useState<AccessUserListQuery>(() => ({
     ...createOffsetPagination(0, 25),
   }));
-  const users = useAccessUsers(query);
+  const users = useResponsiveAccessUsers(query);
   const filters = useAdminUsersTableFilters(query, setQuery);
-  const rows = users.data?.items ?? [];
+  const rows = users.data;
   const pageIndex = getPageIndex(query);
   const pageCount = Math.max(
     1,
-    Math.ceil((users.data?.total ?? 0) / query.limit),
+    Math.ceil(users.total / query.limit),
   );
   const columns = useMemo<NTableProps<AccessUser>["columns"]>(
     () => [
@@ -164,6 +165,7 @@ export function AdminUsersPage() {
               offset: nextPage * pageSize,
             })
           }
+          cardPagination={createCardPagination(users, t)}
           pageSizeOptions={[10, 25, 50, 100]}
           availableModes={["cards", "table"]}
           mode={tableMode}

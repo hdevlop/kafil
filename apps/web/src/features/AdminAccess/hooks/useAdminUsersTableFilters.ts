@@ -32,6 +32,7 @@ export function useAdminUsersTableFilters(
       },
       {
         type: "select",
+        showIcon: false,
         name: "role",
         placeholder: t("adminAccess.users.allRoles"),
         value: query.role ?? "",
@@ -50,6 +51,7 @@ export function useAdminUsersTableFilters(
       },
       {
         type: "select",
+        showIcon: false,
         name: "status",
         placeholder: t("adminAccess.users.allStatuses"),
         value: query.status ?? "",
@@ -67,6 +69,7 @@ export function useAdminUsersTableFilters(
       },
       {
         type: "select",
+        showIcon: false,
         name: "verified",
         placeholder: t("adminAccess.users.anyVerification"),
         value: query.verified === undefined ? "" : String(query.verified),

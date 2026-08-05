@@ -87,6 +87,8 @@ export type ContributionAudience = "management" | "family" | "sponsor";
 
 export type ContributionListQuery = OffsetPagination & {
   audience?: ContributionAudience;
+  search?: string;
+  paymentMethod?: string;
   familyProfileId?: string;
   status?: ContributionStatus;
 };

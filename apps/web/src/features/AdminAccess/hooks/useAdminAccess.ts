@@ -1,7 +1,9 @@
 "use client";
 
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useCardViewport } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import {
   deactivateAccessUser,
@@ -29,11 +31,58 @@ export const adminAccessKeys = {
   permissions: ["admin-access", "permissions"] as const,
 };
 
-export function useAccessUsers(query: AccessUserListQuery) {
+export function useAccessUsers(query: AccessUserListQuery, enabled = true) {
   return useEntityQuery({
     queryKey: adminAccessKeys.userList(query),
     queryFn: () => listAccessUsers(query),
+    enabled,
   });
+}
+
+export function useResponsiveAccessUsers(query: AccessUserListQuery) {
+  const cardViewport = useCardViewport();
+  const page = useAccessUsers(query, !cardViewport);
+  const filters = {
+    role: query.role,
+    search: query.search,
+    status: query.status,
+    verified: query.verified,
+  };
+  const incremental = useInfiniteQuery({
+    enabled: cardViewport,
+    queryKey: [...adminAccessKeys.users, "responsive", filters, query.limit],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => listAccessUsers({
+      ...filters,
+      limit: query.limit,
+      offset: pageParam,
+    }),
+    getNextPageParam: (lastPage) => {
+      const nextOffset = lastPage.offset + lastPage.items.length;
+      return nextOffset < lastPage.total ? nextOffset : undefined;
+    },
+  });
+  const rows = cardViewport
+    ? (incremental.data?.pages.flatMap((entry) => entry.items) ?? [])
+    : (page.data?.items ?? []);
+
+  return {
+    cardViewport,
+    data: rows,
+    error: cardViewport ? incremental.error : page.error,
+    hasNextPage: cardViewport && Boolean(incremental.hasNextPage),
+    isPending: cardViewport ? incremental.isPending : page.isPending,
+    loadingMore: incremental.isFetchingNextPage,
+    loadMoreError: incremental.isFetchNextPageError ? incremental.error : null,
+    onLoadMore: () => incremental.fetchNextPage(),
+    refetch: async () => {
+      if (cardViewport) await incremental.refetch();
+      else await page.refetch();
+    },
+    total: cardViewport
+      ? (incremental.data?.pages[0]?.total ?? 0)
+      : (page.data?.total ?? 0),
+  };
 }
 
 export function useAccessUser(userId: string) {

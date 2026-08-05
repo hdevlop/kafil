@@ -7,10 +7,11 @@ import { cleanQuery } from "@/lib/pagination";
 import { api } from "@/services/http";
 
 export function listFamilyCatalogCategories(
-  pagination = { limit: 100, offset: 0 },
+  pagination = { limit: 25, offset: 0 },
+  search?: string,
 ) {
   return api.get<FamilyCatalogCategory[]>("/catalog/browse/categories", {
-    query: pagination,
+    query: cleanQuery({ ...pagination, search: search?.trim() }),
   });
 }
 

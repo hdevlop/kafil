@@ -38,14 +38,16 @@ import { useResponsiveChildren } from "../hooks/useChildren";
 import { useChildrenTableColumns } from "../hooks/useChildrenTableColumns";
 import { useChildrenTableFilters } from "../hooks/useChildrenTableFilters";
 import type { ChildRecord } from "../types";
+import type { ListChildrenFilters } from "@/services/childApi";
 
 export function ChildrenPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const { isExactAdmin, isExactFamily } = useKafilRole();
-  const children = useResponsiveChildren();
+  const [listFilters, setListFilters] = useState<ListChildrenFilters>({});
+  const children = useResponsiveChildren(listFilters);
   const columns = useChildrenTableColumns();
-  const filters = useChildrenTableFilters();
+  const filters = useChildrenTableFilters(listFilters, setListFilters);
   const rows = children.data;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);

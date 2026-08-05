@@ -22,15 +22,15 @@ describe("Sponsor overview shared-card reuse contracts", () => {
     expect(pageSource).not.toContain("<a");
   });
 
-  test("the shared contribution activity card uses a lightweight SVG trend", async () => {
+  test("the shared contribution activity card uses the published Najm chart", async () => {
     const source = await Bun.file(
       new URL("../src/features/Sponsors/components/overview/ContributionOverviewCard.tsx", import.meta.url),
     ).text();
 
-    expect(source).toContain('preserveAspectRatio="none"');
-    expect(source).toContain("getSmoothLinePath");
-    expect(source).toContain('role="img"');
-    expect(source).not.toContain("recharts");
+    expect(source).toContain('import { NLineChart } from "najm-kit"');
+    expect(source).toContain("<NLineChart");
+    expect(source).toContain("toChartData");
+    expect(source).not.toContain("<svg");
   });
 
   test("shared cards contain no hardcoded sponsor-self routes", async () => {

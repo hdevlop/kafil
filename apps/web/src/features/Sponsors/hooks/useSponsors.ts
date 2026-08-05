@@ -14,6 +14,7 @@ import {
   reactivateSponsor,
   updateSponsor,
 } from "@/services/sponsorApi";
+import type { ListSponsorsFilters } from "@/services/sponsorApi";
 
 import { sponsorKeys } from "./sponsorKeys";
 
@@ -25,11 +26,14 @@ export function useSponsors(pagination: OffsetPagination, enabled = true) {
   });
 }
 
-export function useResponsiveSponsors(enabled = true) {
+export function useResponsiveSponsors(
+  filters: ListSponsorsFilters = {},
+  enabled = true,
+) {
   return useResponsiveOffsetList({
     enabled,
-    queryKey: [...sponsorKeys.all, "responsive"],
-    fetchPage: listSponsors,
+    queryKey: [...sponsorKeys.all, "responsive", filters],
+    fetchPage: (pagination) => listSponsors(pagination, filters),
   });
 }
 

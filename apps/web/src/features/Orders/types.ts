@@ -135,7 +135,10 @@ export type OrderDetail = Omit<OrderRecord, "currentDelivery"> & {
   deliveryAttempts: DeliveryAttempt[];
 };
 
-export type OrderListQuery = OffsetPagination;
+export interface OrderListQuery extends OffsetPagination {
+  search?: string;
+  status?: OrderRecord["status"];
+}
 
 export interface OrderReasonInput {
   id: string;

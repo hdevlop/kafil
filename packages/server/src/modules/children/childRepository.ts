@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, ilike } from "drizzle-orm";
 import { usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -45,7 +45,16 @@ const childFamilySelection = {
 export class ChildRepository {
   @DB() private db!: KafilDatabase;
 
-  list(limit: number, offset: number, familyProfileId?: string) {
+  list(
+    limit: number,
+    offset: number,
+    filters: {
+      familyProfileId?: string;
+      search?: string;
+      gender?: "F" | "M";
+      status?: "active" | "inactive";
+    } = {},
+  ) {
     const query = this.db
       .select(childListSelection)
       .from(children)
@@ -58,9 +67,13 @@ export class ChildRepository {
       .limit(limit)
       .offset(offset);
 
-    return familyProfileId
-      ? query.where(eq(children.familyProfileId, familyProfileId))
-      : query;
+    const condition = and(
+      filters.familyProfileId ? eq(children.familyProfileId, filters.familyProfileId) : undefined,
+      filters.search ? ilike(children.legalName, `%${filters.search}%`) : undefined,
+      filters.gender ? eq(children.gender, filters.gender) : undefined,
+      filters.status ? eq(children.status, filters.status) : undefined,
+    );
+    return condition ? query.where(condition) : query;
   }
 
   async findById(id: string) {
@@ -72,12 +85,24 @@ export class ChildRepository {
     return child;
   }
 
-  listByFamilyId(familyProfileId: string) {
+  listByFamilyId(
+    familyProfileId: string,
+    limit = 100,
+    offset = 0,
+    filters: { search?: string; gender?: "F" | "M"; status?: "active" | "inactive" } = {},
+  ) {
     return this.db
       .select(childFamilySelection)
       .from(children)
-      .where(eq(children.familyProfileId, familyProfileId))
-      .orderBy(asc(children.createdAt));
+      .where(and(
+        eq(children.familyProfileId, familyProfileId),
+        filters.search ? ilike(children.legalName, `%${filters.search}%`) : undefined,
+        filters.gender ? eq(children.gender, filters.gender) : undefined,
+        filters.status ? eq(children.status, filters.status) : undefined,
+      ))
+      .orderBy(asc(children.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 
   async findByImagePath(imagePath: string) {

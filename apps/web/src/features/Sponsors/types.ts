@@ -159,7 +159,7 @@ export interface SponsorKpiItem {
 export interface BudgetSegment {
   label: string;
   value: number;
-  color: string;
+  color?: string;
 }
 
 export interface ContributionTrendPoint {
@@ -170,7 +170,7 @@ export interface ContributionTrendPoint {
 export interface ChartSeries {
   key: string;
   label: string;
-  color: string;
+  color?: string;
 }
 
 export interface ContributionEntry {

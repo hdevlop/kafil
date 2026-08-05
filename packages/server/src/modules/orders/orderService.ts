@@ -228,12 +228,13 @@ export class OrderService {
 
   async listOwn(userId: string, userQuery: OwnOrderListQuery) {
     const family = await this.validator.ensureFamily(userId);
-    const { limit, offset, status } = ownOrderListQuery.parse(userQuery ?? {});
+    const { limit, offset, status, search } = ownOrderListQuery.parse(userQuery ?? {});
     const records = await this.orders.listByFamilyId(
       family.id,
       limit,
       offset,
       status,
+      search,
     );
     const latestByOrder = await this.deliveries.listLatestByOrderIds(
       records.map((order) => order.id),
@@ -263,12 +264,13 @@ export class OrderService {
   }
 
   async listSupported(userId: string, userQuery: OwnOrderListQuery) {
-    const { limit, offset, status } = ownOrderListQuery.parse(userQuery ?? {});
+    const { limit, offset, status, search } = ownOrderListQuery.parse(userQuery ?? {});
     const summaries = await this.orders.listSupportedBySponsor(
       userId,
       limit,
       offset,
       status,
+      search,
     );
     return this.enrichSupportedOrders(summaries);
   }

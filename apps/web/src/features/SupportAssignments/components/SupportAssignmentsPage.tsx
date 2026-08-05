@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
@@ -20,11 +20,11 @@ import {
 } from "./SupportAssignmentForms";
 import {
   useResponsiveSupportAssignments,
-  useSupportAssignmentSources,
 } from "../hooks/useSupportAssignments";
 import { useSupportAssignmentsTableColumns } from "../hooks/useSupportAssignmentsTableColumns";
 import { useSupportAssignmentsTableFilters } from "../hooks/useSupportAssignmentsTableFilters";
-import type { SupportAssignmentRecord, SupportAssignmentView } from "../types";
+import type { SupportAssignmentView } from "../types";
+import type { ListSupportAssignmentFilters } from "@/services/supportAssignmentApi";
 
 function SupportAssignmentsIcon({ className }: Readonly<{ className?: string }>) {
   return (
@@ -40,61 +40,16 @@ function SupportAssignmentsIcon({ className }: Readonly<{ className?: string }>)
   );
 }
 
-function toView(
-  assignment: SupportAssignmentRecord,
-  sources: Parameters<typeof decorateAssignments>[1],
-  labels: { sponsor: string; family: string },
-): SupportAssignmentView {
-  const sponsor = sources.sponsors.find(
-    (entry) => entry.id === assignment.sponsorProfileId,
-  );
-  const family = sources.families.find(
-    (entry) => entry.id === assignment.familyProfileId,
-  );
-  const activePlan = sources.plans.find(
-    (plan) =>
-      plan.supportAssignmentId === assignment.id && plan.status === "active",
-  );
-  return {
-    ...assignment,
-    sponsorLabel: sponsor?.name ?? `${labels.sponsor} ${assignment.sponsorProfileId.slice(0, 8)}`,
-    familyLabel: family?.guardianLegalName ?? `${labels.family} ${assignment.familyProfileId.slice(0, 8)}`,
-    sponsorImage: sponsor?.image ?? null,
-    sponsorGender: sponsor?.gender ?? null,
-    sponsorEmail: sponsor?.email ?? null,
-    sponsorPhone: sponsor?.phone ?? null,
-    sponsorshipPriceMinor: activePlan?.amountMinor ?? null,
-  };
-}
-
-function decorateAssignments(
-  assignments: SupportAssignmentRecord[],
-  sources: NonNullable<ReturnType<typeof useSupportAssignmentSources>["data"]>,
-  labels: { sponsor: string; family: string },
-) {
-  return assignments.map((assignment) => toView(assignment, sources, labels));
-}
-
 export function SupportAssignmentsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
   const tableMode = useDesktopTableMode();
-  const assignments = useResponsiveSupportAssignments();
-  const sources = useSupportAssignmentSources();
+  const [listFilters, setListFilters] = useState<ListSupportAssignmentFilters>({});
+  const assignments = useResponsiveSupportAssignments(listFilters);
   const columns = useSupportAssignmentsTableColumns();
-  const filters = useSupportAssignmentsTableFilters();
-  const rows = useMemo(
-    () => (sources.data ? decorateAssignments(
-      assignments.data,
-      sources.data,
-      {
-      sponsor: t("operator.assignments.sponsor"),
-      family: t("operator.assignments.family"),
-      },
-    ) : []),
-    [assignments.data, sources.data, t],
-  );
-  const error = assignments.error ?? sources.error;
+  const filters = useSupportAssignmentsTableFilters(listFilters, setListFilters);
+  const rows = assignments.data;
+  const error = assignments.error;
 
   function openCreate() {
     void dialog.openDialog({
@@ -142,7 +97,7 @@ export function SupportAssignmentsPage() {
     data: rows,
     columns,
     filters,
-    loading: assignments.loading || sources.isPending,
+    loading: assignments.loading,
     error,
     getRowId: (assignment) => assignment.id,
     onCreate: openCreate,
@@ -154,7 +109,6 @@ export function SupportAssignmentsPage() {
         error={currentError}
         onRetry={() => {
           void assignments.refetch();
-          void sources.refetch();
         }}
       />
     ),

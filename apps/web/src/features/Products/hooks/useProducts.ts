@@ -43,11 +43,19 @@ export function useResponsiveProducts(
   });
 }
 
-export function useProductCategories(enabled = true) {
+export function useProductCategories(search = "", enabled = true) {
   return useEntityQuery<ProductCategory[]>({
-    queryKey: productKeys.categories,
-    queryFn: listProductCategories,
+    queryKey: [...productKeys.categories, search],
+    queryFn: () => listProductCategories(search || undefined),
     enabled,
+  });
+}
+
+export function useResponsiveProductCategories(search = "", enabled = true) {
+  return useResponsiveOffsetList<ProductCategory>({
+    enabled,
+    queryKey: [...productKeys.categories, "responsive", search],
+    fetchPage: (pagination) => listProductCategories(search || undefined, pagination),
   });
 }
 

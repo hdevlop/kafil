@@ -1,31 +1,21 @@
 "use client";
 
-import {
-  Baby,
-  ClipboardCheck,
-  HandCoins,
-  HeartHandshake,
-  LayoutDashboard,
-  UsersRound,
-  WalletCards,
-} from "lucide-react";
-import { NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard } from "najm-kit";
-
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
-import { PageErrorState } from "@/shared/PageState";
-import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
+import { Baby, ClipboardCheck, HandCoins, HeartHandshake, LayoutDashboard, UsersRound, WalletCards } from "lucide-react";
+import { NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown } from "najm-kit";
 import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
-
-import { MonthlyLineChart, PieBreakdown, StatusBreakdown } from "../../shared/DashboardCharts";
+import { toChartData } from "../../shared/chartData";
+import { AdminDashboardSkeleton } from "../../shared/DashboardSkeletons";
+import { formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
+import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
+import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
-import {
-  LatestOrdersCard,
-  OperationalAttentionCard,
-  QuickActionsCard,
-} from "./AdminOperationsCards";
+import { LatestOrdersCard } from "./LatestOrdersCard";
+import { QuickActionsCard } from "./QuickActionsCard";
+import { PageErrorState } from "@/shared/PageState";
+import { AttentionCard } from "./AttentionCard";
 
 export function AdminDashboardPage() {
+
   const dashboard = useAdminDashboard();
   const { language, t } = useKafilLanguage();
 
@@ -34,7 +24,7 @@ export function AdminDashboardPage() {
   }
 
   if (dashboard.isPending || !dashboard.data) {
-    return <DashboardLoading loadingLabel={t("state.loading")} title={t("dashboard.operator.title")} />;
+    return <AdminDashboardSkeleton loadingLabel={t("state.loading")} title={t("dashboard.operator.title")} />;
   }
 
   const data = dashboard.data;
@@ -81,39 +71,43 @@ export function AdminDashboardPage() {
       </NGrid>
 
       <NGrid cols={1} xlCols={12}>
+
         <NGridItem span={1} xlSpan={3}>
-          <PieBreakdown
-            data={[
-              { label: t("dashboard.operator.families"), value: data.counts.families, color: "#55A7EE" },
-              { label: t("dashboard.operator.children"), value: data.counts.children, color: "#9A7BD7" },
-              { label: t("dashboard.operator.sponsors"), value: data.counts.sponsors, color: "#F3C74F" },
+          <NPieChart
+            className="h-full"
+            items={[
+              { id: "families", label: t("dashboard.operator.families"), value: data.counts.families },
+              { id: "children", label: t("dashboard.operator.children"), value: data.counts.children },
+              { id: "sponsors", label: t("dashboard.operator.sponsors"), value: data.counts.sponsors },
             ]}
             icon={UsersRound}
             title={t("dashboard.operator.communityBreakdown")}
             valueFormatter={number}
           />
         </NGridItem>
+
         <NGridItem span={1} xlSpan={6}>
-          <MonthlyLineChart
-            data={data.contributionTrend}
+          <NLineChart
+            className="h-full"
+            data={toChartData(data.contributionTrend, ["validatedMinor", "refundedMinor"], language)}
             icon={HandCoins}
-            language={language}
             series={[
-              { key: "validatedMinor", label: t("dashboard.common.validated"), color: "var(--primary)" },
-              { key: "refundedMinor", label: t("dashboard.common.refunded"), color: "var(--destructive)" },
+              { id: "validatedMinor", label: t("dashboard.common.validated") },
+              { id: "refundedMinor", label: t("dashboard.common.refunded") },
             ]}
             title={t("dashboard.operator.contributionTrend")}
             valueFormatter={money}
           />
         </NGridItem>
+
         <NGridItem span={1} xlSpan={3}>
           <NDonutCard
             className="h-full"
             icon={WalletCards}
             items={[
-              { id: "available", label: t("dashboard.common.available"), value: data.money.availableBudgetMinor, color: "var(--primary)" },
-              { id: "reserved", label: t("dashboard.common.reserved"), value: data.money.reservedBudgetMinor, color: "var(--secondary)" },
-              { id: "spent", label: t("dashboard.common.spent"), value: data.money.spentBudgetMinor, color: "var(--destructive)" },
+              { id: "available", label: t("dashboard.common.available"), value: data.money.availableBudgetMinor },
+              { id: "reserved", label: t("dashboard.common.reserved"), value: data.money.reservedBudgetMinor },
+              { id: "spent", label: t("dashboard.common.spent"), value: data.money.spentBudgetMinor },
             ]}
             title={t("dashboard.operator.budgetPosition")}
             totalLabel={t("family.cart.total")}
@@ -123,44 +117,41 @@ export function AdminDashboardPage() {
       </NGrid>
 
       <NGrid cols={1} mdCols={2} xlCols={12} className="flex-1">
+
         <NGridItem span={1} xlSpan={3}>
-          <StatusBreakdown
-            data={data.orderStatuses.filter(({ status }) => status !== "purchased")}
+          <NStatusBreakdown
+            className="h-full"
             emptyLabel={t("state.empty")}
             icon={ClipboardCheck}
-            labelForStatus={(status) => formatStatusLabel(status, language)}
-            language={language}
+            items={data.orderStatuses
+              .filter(({ status }) => status !== "purchased")
+              .map(({ status, count }) => ({
+                id: status,
+                label: formatStatusLabel(status, language),
+                value: count,
+                ...(status === "approved" ? { className: "hidden xl:block" } : {}),
+              }))}
             title={t("dashboard.operator.orderPipeline")}
-            xlOnlyStatuses={["approved"]}
           />
         </NGridItem>
+
         <NGridItem span={1} xlSpan={3}>
           <LatestOrdersCard recentOrders={data.recentOrders ?? []} />
         </NGridItem>
+
         <NGridItem span={1} xlSpan={3}>
-          <OperationalAttentionCard
+          <AttentionCard
             orderStatuses={data.orderStatuses}
             pendingContributions={data.counts.pendingContributions}
+            pendingApplicants={data.counts.pendingApplicants}
+            familiesWithoutSponsorship={data.counts.familiesWithoutSponsorship}
           />
         </NGridItem>
+
         <NGridItem span={1} xlSpan={3}>
           <QuickActionsCard />
         </NGridItem>
-      </NGrid>
-    </NPageLayout>
-  );
-}
-
-function DashboardLoading({ loadingLabel, title }: Readonly<{ loadingLabel: string; title: string }>) {
-  return (
-    <NPageLayout className="flex min-h-full flex-col gap-4">
-      <NPageHeader icon={LayoutDashboard} title={title} subtitle={loadingLabel} />
-      <NGrid cols={1} smCols={2} lgCols={3} xlCols={6}>
-        {Array.from({ length: 6 }, (_, index) => <NCard key={index} loading title={loadingLabel} />)}
-      </NGrid>
-      <NGrid cols={1} lgCols={2}>
-        <NCard loading title={loadingLabel} />
-        <NCard loading title={loadingLabel} />
+        
       </NGrid>
     </NPageLayout>
   );

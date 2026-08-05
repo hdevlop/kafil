@@ -14,9 +14,13 @@ async function useRole(page: Page, role: Role) {
   await page.goto("/login");
   await page.getByLabel("Email or phone").fill(users[role]);
   await page.getByPlaceholder("Enter your password").fill(password);
+  const refresh = page.waitForResponse(
+    (response) => response.url().endsWith("/api/auth/refresh") && response.ok(),
+  );
   await page.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL(new RegExp(`/${role}$`));
-  await page.waitForLoadState("networkidle");
+  await page.waitForURL(/\/dashboard$/);
+  await refresh;
+  await page.waitForLoadState("domcontentloaded");
 }
 
 function isManagedImage(response: Response) {
@@ -34,7 +38,7 @@ test("protected images are bounded, cached, lazy, and role-isolated", async ({ p
   await useRole(page, "operator");
   await page.locator('a[href="/categories"]:visible').click();
   await page.waitForURL(/\/categories$/);
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   const categoryResponses = responses.filter((response) =>
     response.url().includes("/api/category-images/files/serve/"),
@@ -73,7 +77,7 @@ test("public auth branding uses responsive Next image URLs", async ({ page }) =>
     if (response.url().includes("/_next/image?")) optimizedResponses.push(response);
   });
   await page.goto("/login");
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   expect(optimizedResponses.length).toBeGreaterThan(0);
   let total = 0;

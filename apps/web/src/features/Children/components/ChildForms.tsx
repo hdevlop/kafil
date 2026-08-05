@@ -7,6 +7,7 @@ import {
   NButton,
   NForm,
   NFormSectionHeader,
+  useDebouncedValue,
   useDialog,
 } from "najm-kit";
 import { useRef, useState } from "react";
@@ -104,7 +105,8 @@ export function CreateChildDialogContent() {
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { create } = useChildCommands();
-  const families = useChildFamilies();
+  const [familySearch, setFamilySearch] = useState("");
+  const families = useChildFamilies(useDebouncedValue(familySearch, 250));
   const [childImage, setChildImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -175,6 +177,10 @@ export function CreateChildDialogContent() {
               }
               searchPlaceholder={t("operator.children.searchFamilies")}
               emptyMessage={t("operator.children.noFamily")}
+              loading={families.isFetching}
+              loadingMessage={t("operator.families.loading")}
+              onSearchChange={setFamilySearch}
+              shouldFilter={false}
               items={familyOptions}
               icon="Search"
               disabled={families.isPending}

@@ -53,22 +53,21 @@ describe("branding consumer integration", () => {
     expect(image).toContain("authHeroImage");
   });
 
-  test("BrandAssetsPanel renders a single-column compact list with direct image inputs and revert action", () => {
+  test("BrandAssetsPanel renders a single-column compact list with resilient ImageInput previews", () => {
     const panel = readSource(
       "../src/features/Settings/components/BrandAssetsPanel.tsx",
     );
     expect(panel).toContain("formatsSummary");
     expect(panel).toContain("<ImageInput");
-    expect(panel).toContain('imageSize="sm"');
+    expect(panel).toContain("fallbackImage={resolved[definition.key]}");
+    expect(panel).toContain("localFiles");
+    expect(panel).toContain("unavailableContent");
+    expect(panel).toContain("previewAlt={t(definition.titleKey)}");
     expect(panel).toContain('allowClear={false}');
-    expect(panel).toContain("wide: { width: 126, height: 42 }");
-    expect(panel).toContain("square: { width: 80, height: 80 }");
-    expect(panel).toContain("panel: { width: 96, height: 112 }");
-    expect(panel).toContain("previewStyle={IMAGE_PREVIEW_STYLE[definition.shape]}");
-    expect(panel).toContain("[&_img]:object-contain");
+    expect(panel).toContain("PREVIEW_CLASS");
     expect(panel).not.toContain("statusDefault");
     expect(panel).not.toContain("statusInherited");
-    expect(panel).not.toContain("branding.replace");
+    expect(panel).toContain("operator.settings.branding.replace");
     expect(panel).toContain("revertSlot");
     expect(panel).toContain("useDefault");
     expect(panel).toContain("useExpanded");
