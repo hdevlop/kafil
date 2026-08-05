@@ -1,43 +1,26 @@
 # Kafil Plan Index
 
-[`docs/PLAN.md`](../PLAN.md) is the active global roadmap. This directory holds
-bounded implementation detail and decision records.
+The root [`PLAN.md`](../../PLAN.md) is the single active roadmap. This directory
+holds supporting reference material only.
 
 ## Documents
 
-- [`DECISIONS.md`](DECISIONS.md) - locked MVP product and architecture decisions
-- [`IMAGE-DELIVERY-OPTIMIZATION.md`](IMAGE-DELIVERY-OPTIMIZATION.md) - bounded
-  full-stack plan for upload normalization, protected delivery, existing-image
-  backfill, and measurable loading budgets
-- [`NAJM-STACK.md`](NAJM-STACK.md) - installed framework contracts to reuse
-- [`OPERATOR-SPONSOR-DETAIL-OVERVIEW.md`](OPERATOR-SPONSOR-DETAIL-OVERVIEW.md) -
-  internal-coder handoff for the reusable operator/admin sponsor overview dialog
-- [`SECTION-TEMPLATE.md`](SECTION-TEMPLATE.md) - template for future sections
-- [`SPONSOR-DASHBOARD-REDESIGN.md`](SPONSOR-DASHBOARD-REDESIGN.md) - bounded
-  internal-coder handoff for the sponsor overview redesign
-- [`APPLICANT-CREATION.md`](APPLICANT-CREATION.md) - bounded frontend-and-backend
-  plan for the separate pre-approval applicant entity and email verification
-  through pending admin review
-- [`VPS-DOCKER-DEPLOYMENT.md`](VPS-DOCKER-DEPLOYMENT.md) - implementation
-  handoff for the production-like demo VPS, automated releases, and the later
-  clean production-data transition
+- [`NAJM-STACK.md`](NAJM-STACK.md) - installed framework contracts to reuse.
+  Treat its version list as indicative only; the workspace `package.json` files
+  and the installed declarations under `node_modules/` are authoritative.
 
-## Implementation Sections
-
-1. [`01-identity-families-and-children.md`](sections/01-identity-families-and-children.md)
-2. [`02-support-assignments.md`](sections/02-support-assignments.md)
-3. [`03-budgets-and-contributions.md`](sections/03-budgets-and-contributions.md)
-4. [`04-catalog-and-inventory.md`](sections/04-catalog-and-inventory.md)
-5. [`05-cart-orders-and-fulfillment.md`](sections/05-cart-orders-and-fulfillment.md)
-6. [`06-web-dashboards.md`](sections/06-web-dashboards.md)
-7. [`07-reports-operations-and-release.md`](sections/07-reports-operations-and-release.md)
+Earlier planning documents (`DECISIONS.md`, `IMAGE-DELIVERY-OPTIMIZATION.md`,
+`OPERATOR-SPONSOR-DETAIL-OVERVIEW.md`, `SECTION-TEMPLATE.md`,
+`SPONSOR-DASHBOARD-REDESIGN.md`, `APPLICANT-CREATION.md`,
+`VPS-DOCKER-DEPLOYMENT.md`, and `sections/01`-`07`) covered work that has since
+shipped and were removed. Their content remains in git history.
 
 ## Planning Rules
 
-- The global plan controls phase order and status.
-- A section plan controls detailed scope within its phase.
-- A new requirement that changes money rules, role boundaries, privacy, or
-  phase order must first update `DECISIONS.md` and `docs/PLAN.md`.
-- Deferred work stays deferred unless the global plan explicitly moves it into
-  the MVP.
-- Completed sections must include actual test and migration evidence.
+- The root `PLAN.md` controls phase order and status.
+- A requirement that changes money rules, role boundaries, privacy, or phase
+  order must update the root `PLAN.md` before implementation starts.
+- Deferred work stays deferred unless the root `PLAN.md` explicitly moves it
+  into the MVP.
+- Completed phases must cite real test, browser, and migration evidence.
+  Screenshots and browser evidence live in [`../evidence/`](../evidence/).

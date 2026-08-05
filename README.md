@@ -181,6 +181,4 @@ Optional demo images live together in `packages/seed/images` as files such as
 the library. The full organization and assignment rules are documented in
 [`packages/seed/README.md`](packages/seed/README.md).
 
-The active roadmap is [docs/PLAN.md](docs/PLAN.md), with the next implementation
-slice in
-[docs/plans/sections/07-reports-operations-and-release.md](docs/plans/sections/07-reports-operations-and-release.md).
+The active roadmap is [PLAN.md](PLAN.md).

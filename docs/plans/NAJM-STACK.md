@@ -6,18 +6,28 @@ these assumptions.
 
 ## Current Runtime
 
-- Bun workspace
+Versions below were last checked on 2026-08-05. They drift — read the workspace
+`package.json` files and `node_modules/` declarations before relying on them.
+
+- Bun workspace (`bun@1.3.14`)
 - Next.js `16.2.10`
 - React `19.2.4`
-- `najm-auth` `2.0.10`
-- `najm-core` `2.0.4`
+- `najm-auth` `2.0.13`
+- `najm-core` `2.0.5`
 - `najm-database` `2.0.3`
-- `najm-i18n` `2.0.2`
+- `najm-i18n` `2.0.3`
+- `najm-email` `2.0.2`
+- `najm-guard` `2.0.2`
 - `najm-mcp` `2.0.2`
+- `najm-rate` `2.0.2`
 - `najm-validation` `2.0.2`
-- `najm-kit` `2.1.23`
+- `najm-kit` `2.1.56`
 - Drizzle ORM `0.45.2`
 - PostgreSQL
+
+`najm-core`, `najm-auth`, `najm-database`, `najm-i18n`, and `diject` are pinned
+by the root `overrides` block so the single Next.js process loads exactly one
+copy of each.
 
 ## API Hosting
 
