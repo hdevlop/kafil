@@ -13,10 +13,12 @@ import { Download, RotateCcw, Save, SlidersHorizontal, Upload } from "lucide-rea
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useThemePresetCommands } from "@/hooks/useThemePresets";
 import { useKafilAppearance } from "@/providers/KafilAppearanceProvider";
 import { useKafilBranding } from "@/providers/KafilBrandingProvider";
 
 import { APP_SETTINGS_FORM_ID, AppSettingsPanel } from "./AppSettingsPanel";
+import { ThemePresetsPanel } from "./ThemePresetsPanel";
 import { ThemeSettingsPanel } from "./ThemeSettingsPanel";
 
 export type GlobalSettingsTab = "theme" | "app";
@@ -46,10 +48,11 @@ export function GlobalSettingsSheet({
     draft,
     beginDraft,
     setDraft,
-    cancelDraft: cancelAppearanceDraft,
     commitDraft,
     resetToFactory,
+    replaceCommitted,
   } = useKafilAppearance();
+  const { applyPreset } = useThemePresetCommands();
   const branding = useKafilBranding();
   const tabs = useMemo(() => getGlobalSettingsTabs(role), [role]);
   const [activeTab, setActiveTab] = useState<GlobalSettingsTab>(
@@ -60,11 +63,17 @@ export function GlobalSettingsSheet({
   const [isSavingTheme, setIsSavingTheme] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
 
   const themeDirty = Boolean(
     draft && JSON.stringify(draft) !== JSON.stringify(appearance.designConfig),
   );
-  const dirty = themeDirty || appState.dirty || branding.isDirty;
+  /**
+   * A previewed theme is deliberately kept when the sheet closes so the admin
+   * can browse the app before deciding. Only the panels that cannot survive a
+   * close still block it.
+   */
+  const dirty = appState.dirty || branding.isDirty;
 
   useEffect(() => {
     if (open && role === "admin") {
@@ -78,20 +87,38 @@ export function GlobalSettingsSheet({
       value: tab,
       label: t(tab === "theme" ? "operator.settings.themeTab" : "operator.settings.appTab"),
       content: tab === "theme" && draft ? (
-        <ThemeSettingsPanel
-          value={draft}
-          onChange={setDraft}
-          disabled={isSavingTheme}
-        />
+        <div className="flex flex-col gap-4">
+          <ThemePresetsPanel
+            enabled={open && activeTab === "theme"}
+            disabled={isSavingTheme}
+            selectedPresetId={selectedPresetId}
+            onSelectedPresetChange={setSelectedPresetId}
+          />
+          <ThemeSettingsPanel
+            value={draft}
+            onChange={setDraft}
+            disabled={isSavingTheme}
+          />
+        </div>
       ) : (
         <AppSettingsPanel onStateChange={setAppState} role={role} />
       ),
     })),
-    [draft, isSavingTheme, setDraft, t, tabs, role],
+    [
+      activeTab,
+      draft,
+      isSavingTheme,
+      open,
+      selectedPresetId,
+      setDraft,
+      t,
+      tabs,
+      role,
+    ],
   );
 
   function closeNow() {
-    cancelAppearanceDraft();
+    // The theme draft intentionally survives: it is the live preview.
     void branding.cancelDraft();
     setActiveTab(tabs[0] ?? "app");
     setAppState({ dirty: false, saving: false });
@@ -115,10 +142,30 @@ export function GlobalSettingsSheet({
     if (!draft || !themeDirty) return;
     setIsSavingTheme(true);
     try {
-      await commitDraft({
-        designConfig: draft,
-        expectedRevision: appearance.revision,
-      });
+      let revision = appearance.revision;
+
+      if (selectedPresetId) {
+        /**
+         * Applying writes the preset's complete design. The ordinary edit path
+         * merges only editable fields, which would drop the theme's typography
+         * and sidebar widths.
+         */
+        const applied = await applyPreset.mutateAsync({
+          id: selectedPresetId,
+          expectedRevision: revision,
+        });
+        replaceCommitted(applied);
+        revision = applied.revision;
+
+        // Anything the admin tweaked on top of the preset still needs a save.
+        if (JSON.stringify(draft) === JSON.stringify(applied.designConfig)) {
+          beginDraft();
+          toast.success(t("operator.settings.themeSaveSuccess"));
+          return;
+        }
+      }
+
+      await commitDraft({ designConfig: draft, expectedRevision: revision });
       beginDraft();
       toast.success(t("operator.settings.themeSaveSuccess"));
     } catch (error) {

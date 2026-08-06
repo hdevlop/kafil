@@ -15,28 +15,22 @@ import { matchesStaffFunction } from "../src/features/Staff/hooks/useStaffTableC
 
 describe("Staff admin-only navigation", () => {
   test("keeps the operator navigation free of the Staff management route", () => {
-    const navigation = getDashboardNavigation(
-      "operator",
-      ((key: string) => key) as never,
-    );
+    const navigation = getDashboardNavigation("operator");
 
-    expect(navigation.map((item) => item.id)).not.toContain("/operator/staff");
+    expect(navigation.map((item) => item.id)).not.toContain("/staff");
   });
 
   test("exposes the Staff management route only to admins inside the people group", () => {
-    const navigation = getDashboardNavigation(
-      "admin",
-      ((key: string) => key) as never,
-    );
-    const staffItem = navigation.find((item) => item.id === "/operator/staff");
+    const navigation = getDashboardNavigation("admin");
+    const staffItem = navigation.find((item) => item.id === "/staff");
     const staffIndex = navigation.findIndex(
-      (item) => item.id === "/operator/staff",
+      (item) => item.id === "/staff",
     );
     const sponsorsIndex = navigation.findIndex(
-      (item) => item.id === "/operator/sponsors",
+      (item) => item.id === "/sponsors",
     );
     const assignmentsIndex = navigation.findIndex(
-      (item) => item.id === "/operator/assignments",
+      (item) => item.id === "/assignments",
     );
 
     expect(staffItem).toBeDefined();

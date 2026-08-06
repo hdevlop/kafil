@@ -28,7 +28,7 @@ export function useChildren(pagination: OffsetPagination) {
       role: user?.role,
       userId: user?.id,
     }),
-    queryFn: () => listChildren(pagination),
+    queryFn: async () => (await listChildren(pagination)).rows,
     enabled: Boolean(user),
   });
 }

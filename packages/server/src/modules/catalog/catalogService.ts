@@ -5,6 +5,7 @@ import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
 import { envConfig } from "../../config/envConfig";
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import {
   CATEGORY_IMAGE_SERVE_PREFIX,
@@ -45,34 +46,54 @@ export class CatalogService {
 
   async listCategories(query: CategoryListQuery) {
     const { limit, offset, ...filters } = categoryListQuery.parse(query ?? {});
-    const categoryRows = await this.categories.list(limit, offset, filters);
-    return categoryRows.map((category) => ({
-      ...category,
-      itemCount: Number(category.itemCount ?? 0),
-    }));
+    const [categoryRows, total] = await Promise.all([
+      this.categories.list(limit, offset, filters),
+      this.categories.count(filters),
+    ]);
+    return listPage(
+      categoryRows.map((category) => ({
+        ...category,
+        itemCount: Number(category.itemCount ?? 0),
+      })),
+      { limit, offset, total },
+    );
   }
 
   async listActiveCategories(query: CategoryListQuery) {
     const { limit, offset, search } = categoryListQuery.parse(query ?? {});
-    const categoryRows = await this.categories.listActive(limit, offset, search);
-    return categoryRows.map((category) => ({
-      ...category,
-      itemCount: Number(category.itemCount ?? 0),
-    }));
+    const [categoryRows, total] = await Promise.all([
+      this.categories.listActive(limit, offset, search),
+      this.categories.countActive(search),
+    ]);
+    return listPage(
+      categoryRows.map((category) => ({
+        ...category,
+        itemCount: Number(category.itemCount ?? 0),
+      })),
+      { limit, offset, total },
+    );
   }
 
   getCategory(id: string) {
     return this.validator.ensureCategoryExists(id);
   }
 
-  listProducts(query: ProductListQuery) {
+  async listProducts(query: ProductListQuery) {
     const { limit, offset, ...filters } = productListQuery.parse(query ?? {});
-    return this.products.list(limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.products.list(limit, offset, filters),
+      this.products.count(filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
-  listActiveProducts(query: ProductListQuery) {
+  async listActiveProducts(query: ProductListQuery) {
     const { limit, offset, ...filters } = productListQuery.parse(query ?? {});
-    return this.products.listActive(limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.products.listActive(limit, offset, filters),
+      this.products.countActive(filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
   getProduct(id: string) {

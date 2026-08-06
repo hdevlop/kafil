@@ -9,6 +9,7 @@ import { KafilLanguageProvider } from "@/i18n/KafilLanguageProvider";
 import { KafilAppearanceProvider } from "@/providers/KafilAppearanceProvider";
 import { KafilBrandingProvider } from "@/providers/KafilBrandingProvider";
 import { KafilDesignProvider } from "@/providers/KafilDesignProvider";
+import { KafilTableDefaultsProvider } from "@/providers/KafilTableDefaultsProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ThemePreferenceProvider, type KafilTheme } from "@/providers/ThemePreferenceProvider";
 import { TimeZonePreferenceProvider } from "@/providers/TimeZonePreferenceProvider";
@@ -48,7 +49,11 @@ export function AppProviders({
                   initialResolved={initialBrandingResolved}
                   role={role}
                 >
-                  <KafilDesignProvider>{children}</KafilDesignProvider>
+                  <KafilDesignProvider>
+                    <KafilTableDefaultsProvider>
+                      {children}
+                    </KafilTableDefaultsProvider>
+                  </KafilDesignProvider>
                 </KafilBrandingProvider>
               </KafilAppearanceProvider>
             </TimeZonePreferenceProvider>

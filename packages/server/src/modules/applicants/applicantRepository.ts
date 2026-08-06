@@ -95,6 +95,29 @@ function mapChallenge(
   return { ...row };
 }
 
+export interface ApplicantListFilters {
+  status?: ApplicantStatusFilter;
+  search?: string;
+}
+
+/** The one place the applicant list decides which rows it is about. */
+function buildApplicantListCondition(filters: ApplicantListFilters) {
+  const conditions = [];
+  if (filters.status) {
+    conditions.push(eq(applicants.status, filters.status));
+  }
+  if (filters.search) {
+    const pattern = `%${filters.search.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+    const searchOr = or(
+      ilike(applicants.name, pattern),
+      ilike(applicants.email, pattern),
+      ilike(applicants.phone, pattern),
+    );
+    if (searchOr) conditions.push(searchOr);
+  }
+  return conditions.length > 0 ? and(...conditions) : undefined;
+}
+
 @Repository("default")
 export class ApplicantRepository {
   @DB() private db!: KafilDatabase;
@@ -102,22 +125,9 @@ export class ApplicantRepository {
   async list(
     limit: number,
     offset: number,
-    filters: { status?: ApplicantStatusFilter; search?: string } = {},
+    filters: ApplicantListFilters = {},
   ) {
-    const conditions = [];
-    if (filters.status) {
-      conditions.push(eq(applicants.status, filters.status));
-    }
-    if (filters.search) {
-      const pattern = `%${filters.search.replace(/[%_]/g, (m) => `\\${m}`)}%`;
-      const searchOr = or(
-        ilike(applicants.name, pattern),
-        ilike(applicants.email, pattern),
-        ilike(applicants.phone, pattern),
-      );
-      if (searchOr) conditions.push(searchOr);
-    }
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = buildApplicantListCondition(filters);
     const rows = await this.db
       .select(applicantListSelection)
       .from(applicants)
@@ -126,6 +136,18 @@ export class ApplicantRepository {
       .limit(limit)
       .offset(offset);
     return rows.map(mapApplicant);
+  }
+
+  /**
+   * Rows matching `filters`, ignoring the page window. Shares
+   * `buildApplicantListCondition` with `list` so the two cannot diverge.
+   */
+  async count(filters: ApplicantListFilters = {}) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(applicants)
+      .where(buildApplicantListCondition(filters));
+    return Number(row?.total ?? 0);
   }
 
   async findById(id: string) {

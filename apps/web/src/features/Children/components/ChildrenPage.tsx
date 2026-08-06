@@ -10,6 +10,7 @@ import {
   UserRoundX,
 } from "lucide-react";
 import {
+  NPageHeader,
   type ContextMenuItem,
   NButton,
   NPageLayout,
@@ -20,7 +21,6 @@ import {
 
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 import { createCardPagination } from "@/lib/tablePagination";

@@ -1,6 +1,8 @@
 import { describe, expect, spyOn, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
+import { getDashboardNavigation } from "../src/shared/DashboardShell";
+
 import {
   applicantEmailOtpSchema,
   applicantFormSchema,
@@ -198,13 +200,16 @@ describe("admin applicant queue", () => {
   test("uses the shared management workspace structure", () => {
     const page = source("../src/features/Applicants/components/ApplicantsPage.tsx");
     const route = source("../src/app/(dashboard)/applicants/page.tsx");
-    const sidebar = source("../src/shared/DashboardShell/index.tsx");
     const auth = source("../src/lib/auth.ts");
 
     expect(route).toContain("<ApplicantsPage />");
     expect(route).toContain('requireRole(["admin"])');
-    expect(sidebar).toContain('href: "/applicants"');
-    expect(sidebar).toContain("includeApplicants");
+    expect(getDashboardNavigation("admin").map((item) => item.href)).toContain(
+      "/applicants",
+    );
+    expect(
+      getDashboardNavigation("operator").map((item) => item.href),
+    ).not.toContain("/applicants");
     expect(auth).toContain('"/applicants": ["admin"]');
     expect(page).toContain("<NPageLayout");
     expect(page).toContain("<NPageHeader");

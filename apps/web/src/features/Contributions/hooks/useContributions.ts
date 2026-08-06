@@ -1,16 +1,14 @@
 "use client";
 
-import { keepPreviousData } from "@tanstack/react-query";
 import { useUser } from "najm-auth/client/react";
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
+import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import {
   bulkDeleteContributions,
   deleteContribution,
-  listContributionPage,
   listContributions,
   listContributionRecordingOptions,
   recordContribution,
@@ -29,36 +27,26 @@ export function useContributions<TRecord extends ContributionListRecord = Contri
   const isSponsor = user?.role === "sponsor";
   return useEntityQuery({
     queryKey: contributionKeys.list({ ...query, role: user?.role }),
-    queryFn: () => {
-      if (isFamily || isSponsor) {
-        return listContributions<TRecord>({ ...query, audience: isSponsor ? "sponsor" : "family" });
-      }
-      return listContributions<TRecord>(query);
+    queryFn: async () => {
+      const audience = isSponsor ? "sponsor" : isFamily ? "family" : undefined;
+      return (await listContributions<TRecord>(
+        audience ? { ...query, audience } : query,
+      )).rows;
     },
     enabled: Boolean(user) && enabled,
   });
 }
 
-export function useContributionPage<TRecord extends ContributionListRecord = ContributionRecord>(
-  query: ContributionListQuery,
-  enabled = true,
-) {
-  const user = useUser();
-  const audience = user?.role === "sponsor"
-    ? "sponsor"
-    : user?.role === "family"
-      ? "family"
-      : query.audience;
-
-  return useEntityQuery({
-    queryKey: contributionKeys.page({ ...query, audience, role: user?.role }),
-    queryFn: () => listContributionPage<TRecord>({ ...query, audience }),
-    enabled: Boolean(user) && enabled,
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useInfiniteContributions<
+/**
+ * The contributions list: numbered pages on desktop, scroll continuation on
+ * card viewports, one buffer behind both.
+ *
+ * This replaces a per-page query that carried its own `hasNextPage` probe. The
+ * endpoint reports a result total now, so the page count is the real one rather
+ * than the reader's position plus one — which is what made the page bar grow a
+ * button on every click.
+ */
+export function useResponsiveContributions<
   TRecord extends ContributionListRecord = ContributionRecord,
 >(
   query: Omit<ContributionListQuery, "limit" | "offset">,
@@ -71,7 +59,7 @@ export function useInfiniteContributions<
       ? "family"
       : query.audience;
 
-  return useOffsetInfiniteQuery<TRecord>({
+  return useResponsiveOffsetList<TRecord>({
     enabled: Boolean(user) && enabled,
     queryKey: contributionKeys.full({ ...query, audience, role: user?.role }),
     fetchPage: (pagination) => listContributions<TRecord>({

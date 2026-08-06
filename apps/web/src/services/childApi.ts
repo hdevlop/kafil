@@ -18,7 +18,7 @@ export function listChildren(
   pagination: OffsetPagination,
   filters: ListChildrenFilters = {},
 ) {
-  return api.get<ChildRecord[]>("/children", {
+  return api.getPage<ChildRecord>("/children", {
     query: { ...pagination, ...filters },
   });
 }

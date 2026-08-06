@@ -127,7 +127,8 @@ test("Arabic dashboard copy, switcher, and family cart submission work with RTL"
     }),
   );
 
-  await page.goto("/family/cart");
+  await page.goto("/products");
+  await page.getByTestId("floating-order-cart-button").click();
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByText("السلة", { exact: true })).toBeVisible();
@@ -150,7 +151,8 @@ test("Arabic dashboard copy, switcher, and family cart submission work with RTL"
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
   await expect(page.getByRole("button", { name: "Se déconnecter" })).toBeVisible();
 
-  await page.goto("/family/cart");
+  await page.goto("/products");
+  await page.getByTestId("floating-order-cart-button").click();
   await page.getByRole("button", { name: "Vérifier la commande" }).focus();
   await page.keyboard.press("Enter");
   await page.getByRole("button", { name: /Confirmer la commande/ }).focus();
@@ -175,7 +177,7 @@ test("operator can advance a mocked order through browser confirmation dialogs",
     operatorToken,
   );
   expect(operatorAdminApiStatus).toBe(401);
-  await page.goto("/operator/access/users");
+  await page.goto("/users");
   await expect(page).toHaveURL(/(?:\/forbidden$|\/login\?from=%2Fforbidden$)/);
   await useRole(page, "operator");
 
@@ -475,7 +477,7 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
     return json(route, { data: [], status: "success" });
   });
 
-  await page.goto("/operator/sponsors");
+  await page.goto("/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
   const overviewDialog = page.getByRole("dialog", { name: "Sponsor overview" });
   await expect(overviewDialog).toBeVisible();
@@ -511,7 +513,7 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
     { name: "kafil-ui-theme", value: "dark", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/operator/sponsors");
+  await page.goto("/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
   await expect(page.locator("html")).toHaveClass(/dark/);
   await captureSponsorOverviewEvidence(page, "operator-populated-dark.png");
@@ -520,7 +522,7 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
     { name: "kafil-ui-language", value: "fr", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
     { name: "kafil-ui-theme", value: "light", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
-  await page.goto("/operator/sponsors");
+  await page.goto("/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
   await captureSponsorOverviewEvidence(page, "operator-populated-french.png");
@@ -529,7 +531,7 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
     { name: "kafil-ui-language", value: "ar", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
     { name: "kafil-ui-theme", value: "light", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
-  await page.goto("/operator/sponsors");
+  await page.goto("/sponsors");
   await openSponsorOverview(page, populatedSponsorName);
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await captureSponsorOverviewEvidence(page, "operator-populated-arabic-rtl.png");
@@ -537,7 +539,7 @@ test("operator can open the sponsor overview dialog with KPIs and sponsor inform
   await page.context().addCookies([
     { name: "kafil-ui-language", value: "en", url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210" },
   ]);
-  await page.goto("/operator/sponsors");
+  await page.goto("/sponsors");
   await openSponsorOverview(page, "Inactive Empty Sponsor");
   await expect(page.getByText("No supported budget activity yet. Budget data will appear here when support is active.")).toBeVisible();
   await expect(
@@ -727,13 +729,13 @@ test("direct URLs and crafted API requests cannot cross role boundaries", async 
     const body = await response.json() as { data: { accessToken: string } };
     return body.data.accessToken;
   });
+  // The cart is a sheet mounted by OrderCartOverlay, not a route, so there is no
+  // page-level status left to assert — the API is the boundary that matters.
   const sponsorStatuses = await page.evaluate(async (accessToken) => Promise.all([
-    fetch("/family/cart", { redirect: "manual" }).then((response) => response.status),
     fetch("/api/orders/cart", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
     fetch("/api/sponsors/sponsor-overview-1/overview", { headers: { Authorization: `Bearer ${accessToken}` } }).then((response) => response.status),
   ]), sponsorToken);
-  expect(sponsorStatuses[0]).toBe(403);
-  expect(sponsorStatuses.slice(1)).toEqual([401, 401]);
+  expect(sponsorStatuses).toEqual([401, 401]);
 });
 
 test("bootstrap admin can open read-only access management pages", async ({
@@ -774,15 +776,15 @@ test("bootstrap admin can open read-only access management pages", async ({
   await page.waitForURL(/\/dashboard$/);
   await page.waitForLoadState("domcontentloaded");
 
-  await page.goto("/operator/access/users");
+  await page.goto("/users");
   await expect(page.getByRole("heading", { name: "Users", exact: true })).toBeVisible();
   await expect(
     page.getByRole("navigation").getByText("Access", { exact: true }),
   ).toBeVisible();
-  await page.goto("/operator/access/roles");
+  await page.goto("/roles");
   await expect(page.getByRole("heading", { name: "Roles", exact: true })).toBeVisible();
   await page.waitForLoadState("domcontentloaded");
-  await page.goto("/operator/access/permissions");
+  await page.goto("/permissions");
   await expect(
     page.getByRole("heading", { name: "Permissions", exact: true }),
   ).toBeVisible();

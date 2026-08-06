@@ -1,5 +1,5 @@
-import { AdminRolesPage } from "@/features/AdminAccess";
+import { redirect } from "next/navigation";
 
 export default function AdminAccessRolesRoute() {
-  return <AdminRolesPage />;
+  redirect("/roles");
 }

@@ -19,7 +19,7 @@ import type { ListSupportAssignmentFilters } from "@/services/supportAssignmentA
 export function useSupportAssignments(pagination: OffsetPagination, enabled = true) {
   return useEntityQuery({
     queryKey: supportAssignmentKeys.list(pagination),
-    queryFn: () => listSupportAssignments(pagination),
+    queryFn: async () => (await listSupportAssignments(pagination)).rows,
     enabled,
   });
 }

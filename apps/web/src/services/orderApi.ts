@@ -16,7 +16,7 @@ import type {
 import { api } from "@/services/http";
 
 export function listOrders(query: OrderListQuery) {
-  return api.get<OrderRecord[]>("/orders", {
+  return api.getPage<OrderRecord>("/orders", {
     query: {
       limit: query.limit,
       offset: query.offset,

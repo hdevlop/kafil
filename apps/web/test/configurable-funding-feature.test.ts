@@ -108,12 +108,9 @@ describe("configurable family funding web contracts", () => {
   });
 
   test("keeps settings out of operator page navigation", () => {
-    const t = ((key: string) => key) as Parameters<
-      typeof getDashboardNavigation
-    >[1];
     expect(
-      getDashboardNavigation("operator", t).map((item) => item.href),
-    ).not.toContain("/operator/settings");
+      getDashboardNavigation("operator").map((item) => item.href),
+    ).not.toContain("/settings");
   });
 
   test("requires an explicit form-fill flag", () => {

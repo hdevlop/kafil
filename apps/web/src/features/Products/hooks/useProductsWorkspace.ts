@@ -9,7 +9,10 @@ import {
   useProductCommands,
 } from "@/features/Products/hooks/useProducts";
 import type { OffsetPagination } from "@/lib/pagination";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import {
+  useResponsiveOffsetList,
+  type ListStrategy,
+} from "@/hooks/useResponsiveOffsetList";
 import { listFamilyCatalogCategories, listFamilyCatalogProducts } from "@/services/familyCatalogApi";
 import { familyCatalogKeys } from "./familyCatalogKeys";
 import type { ProductRecord } from "@/features/Products/types";
@@ -52,6 +55,7 @@ const FAMILY_PAGE_SIZE = 12;
 export function useProductsWorkspace(
   pagination: OffsetPagination,
   filters: ProductsWorkspaceFilters = {},
+  strategy: ListStrategy = "paged",
 ): ProductsWorkspace {
   const { isExactFamily } = useKafilRole();
   const stableFilters = useMemo(
@@ -69,12 +73,20 @@ export function useProductsWorkspace(
       search: stableFilters.search,
     },
     !isExactFamily,
+    strategy,
   );
-  const managementCategories = useResponsiveProductCategories("", !isExactFamily);
+  // The category filter sheet only ever renders cards, so it continues on
+  // scroll regardless of the list strategy chosen for the products grid.
+  const managementCategories = useResponsiveProductCategories(
+    "",
+    !isExactFamily,
+    "infinite",
+  );
   const managementActions = useProductCommands();
 
   const familyProducts = useResponsiveOffsetList({
     enabled: isExactFamily,
+    strategy,
     pageSize: FAMILY_PAGE_SIZE,
     queryKey: [...familyCatalogKeys.products({
       limit: FAMILY_PAGE_SIZE,
@@ -90,6 +102,7 @@ export function useProductsWorkspace(
   });
   const familyCategories = useResponsiveOffsetList({
     enabled: isExactFamily,
+    strategy: "infinite",
     pageSize: 25,
     queryKey: [...familyCatalogKeys.categories, "product-filter", "responsive"],
     fetchPage: (page) => listFamilyCatalogCategories(page),

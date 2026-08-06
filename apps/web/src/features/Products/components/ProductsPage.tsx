@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import {
+  NPageHeader,
   NButton,
   NPageLayout,
   NTable,
@@ -32,7 +33,6 @@ import {
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import { createCardPagination } from "@/lib/tablePagination";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 
 import { ProductCard, type ProductCardAddInput } from "./ProductCard";
 import { ProductDetails } from "./ProductDetails";
@@ -56,12 +56,17 @@ export function ProductsPage() {
   const searchParams = useSearchParams();
   const activeCategoryId = searchParams.get("category") ?? "";
   const [listFilters, setListFilters] = useState<ProductsWorkspaceFilters>({});
+  // The card grid continues on scroll on every viewport. The table view keeps
+  // numbered pages: rows there are unvirtualized, and infinite table scroll is
+  // out of scope (see PAGINATION-PLAN.md).
+  const [tableView, setTableView] = useState(false);
   const workspace = useProductsWorkspace(
     productsPagination,
     {
       ...listFilters,
       ...(activeCategoryId ? { categoryId: activeCategoryId } : {}),
     },
+    tableView ? "paged" : "infinite",
   );
   const filters = useProductsTableFilters(workspace.categories, {
     ...listFilters,
@@ -220,6 +225,7 @@ export function ProductsPage() {
     showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
+    onModeChange: (mode) => setTableView(mode === "table"),
     classNames: {
       cards: "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 xl:grid-cols-6 2xl:grid-cols-8",
     },

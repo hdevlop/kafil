@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { NPageLayout, NTable } from "najm-kit";
+import { NPageHeader, NPageLayout, NTable } from "najm-kit";
 
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useKafilRole } from "@/shared/Authorization";
 

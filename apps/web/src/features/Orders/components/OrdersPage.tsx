@@ -16,7 +16,7 @@ import {
   UserRoundCog,
   TriangleAlert,
 } from "lucide-react";
-import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { NPageHeader, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -31,7 +31,6 @@ import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import { getOrderActions, type OrderAction, type OrderCommand } from "../config/orderActions";

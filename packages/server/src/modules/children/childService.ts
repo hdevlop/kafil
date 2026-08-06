@@ -1,6 +1,7 @@
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { FamilyRepository } from "../families/familyRepository";
 import {
@@ -30,7 +31,11 @@ export class ChildService {
     const { limit, offset, ...filters } = childListQuery.parse(
       query ?? {},
     );
-    return this.children.list(limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.children.list(limit, offset, filters),
+      this.children.count(filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
   async listForPrincipal(input: {
@@ -50,8 +55,15 @@ export class ChildService {
         gender: parsed.gender,
         status: parsed.status,
       };
-      const children = await this.children.listByFamilyId(family.id, limit, offset, filters);
-      return children.map(toFamilyChildProjection);
+      const [children, total] = await Promise.all([
+        this.children.listByFamilyId(family.id, limit, offset, filters),
+        this.children.countByFamilyId(family.id, filters),
+      ]);
+      return listPage(children.map(toFamilyChildProjection), {
+        limit,
+        offset,
+        total,
+      });
     }
     return this.list(input.query);
   }

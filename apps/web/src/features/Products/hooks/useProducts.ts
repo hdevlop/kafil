@@ -18,6 +18,7 @@ import {
 
 import { productKeys } from "./productKeys";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
+import type { ListStrategy } from "@/hooks/useResponsiveOffsetList";
 import type { ProductCategory, ProductRecord } from "../types";
 
 export function useProducts(
@@ -27,7 +28,7 @@ export function useProducts(
 ) {
   return useEntityQuery<ProductRecord[]>({
     queryKey: productKeys.list(pagination, filters),
-    queryFn: () => listProducts(pagination, filters),
+    queryFn: async () => (await listProducts(pagination, filters)).rows,
     ...options,
   });
 }
@@ -35,9 +36,11 @@ export function useProducts(
 export function useResponsiveProducts(
   filters: ListProductsFilters = {},
   enabled = true,
+  strategy: ListStrategy = "paged",
 ) {
   return useResponsiveOffsetList({
     enabled,
+    strategy,
     queryKey: [...productKeys.all, "responsive", filters],
     fetchPage: (pagination) => listProducts(pagination, filters),
   });
@@ -46,14 +49,19 @@ export function useResponsiveProducts(
 export function useProductCategories(search = "", enabled = true) {
   return useEntityQuery<ProductCategory[]>({
     queryKey: [...productKeys.categories, search],
-    queryFn: () => listProductCategories(search || undefined),
+    queryFn: async () => (await listProductCategories(search || undefined)).rows,
     enabled,
   });
 }
 
-export function useResponsiveProductCategories(search = "", enabled = true) {
+export function useResponsiveProductCategories(
+  search = "",
+  enabled = true,
+  strategy: ListStrategy = "paged",
+) {
   return useResponsiveOffsetList<ProductCategory>({
     enabled,
+    strategy,
     queryKey: [...productKeys.categories, "responsive", search],
     fetchPage: (pagination) => listProductCategories(search || undefined, pagination),
   });

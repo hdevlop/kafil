@@ -17,7 +17,7 @@ export interface ListApplicantsParams {
 }
 
 export function listApplicants(params: ListApplicantsParams = {}) {
-  return api.get<ApplicantRecord[]>("/applicants", {
+  return api.getPage<ApplicantRecord>("/applicants", {
     query: {
       limit: params.limit ?? 100,
       offset: params.offset ?? 0,

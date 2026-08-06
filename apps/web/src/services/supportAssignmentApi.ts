@@ -19,7 +19,7 @@ export function listSupportAssignments(
   pagination: OffsetPagination,
   filters: ListSupportAssignmentFilters = {},
 ) {
-  return api.get<SupportAssignmentView[]>("/support-assignments", {
+  return api.getPage<SupportAssignmentView>("/support-assignments", {
     query: { ...pagination, ...filters },
   });
 }

@@ -87,7 +87,7 @@ test("operator settings renders the global pending expiry rule", async ({
     }),
   );
 
-  await page.goto("/operator/settings");
+  await page.goto("/settings");
   await expect(
     page.getByText("Pending payment expiry (hours)").first(),
   ).toBeVisible();

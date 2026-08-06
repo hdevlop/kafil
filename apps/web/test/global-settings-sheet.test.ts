@@ -28,7 +28,9 @@ describe("global settings sheet", () => {
     expect(sheet).toContain("<NSheet");
     expect(sheet).toContain("icon={SlidersHorizontal}");
     expect(sheet).toContain("APP_SETTINGS_FORM_ID");
-    expect(sheet).toContain("themeDirty || appState.dirty");
+    // A previewed theme survives a close on purpose, so it no longer blocks it.
+    expect(sheet).toContain("const dirty = appState.dirty || branding.isDirty;");
+    expect(sheet).toContain("!themeDirty || pending");
     expect(sheet).toContain("<NConfirmDialog");
     expect(theme).toContain('tabs={["theme"]}');
     expect(theme).toContain("showTabs={false}");

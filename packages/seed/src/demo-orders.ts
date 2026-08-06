@@ -33,10 +33,12 @@ interface DemoOrderRecord {
 }
 
 interface DemoOrderCatalogService {
+  // The catalog service reports a result total alongside the rows, so the seed
+  // reads the same page envelope every list endpoint now returns.
   listProducts(query: {
     limit: number;
     offset: number;
-  }): Promise<DemoOrderProduct[]>;
+  }): Promise<{ data: DemoOrderProduct[] }>;
 }
 
 interface DemoOrderEvidenceService {
@@ -119,7 +121,7 @@ export async function seedDemoOrders(
     throw new Error("Demo orders require at least one delivery staff fixture.");
   }
 
-  const products = await services.catalog.listProducts({
+  const { data: products } = await services.catalog.listProducts({
     limit: 100,
     offset: 0,
   });

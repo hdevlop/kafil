@@ -114,7 +114,10 @@ describe("Phase 6C support assignment lifecycle contracts", () => {
 
     expect(assignmentsPage).toContain("useResponsiveSupportAssignments(listFilters)");
     expect(assignmentsPage).toContain("useSupportAssignmentsTableFilters(listFilters, setListFilters)");
-    expect(contributionsPage).toContain("useInfiniteContributions<ContributionListRecord>");
+    // Contributions now uses the same responsive list hook as assignments, so
+    // both surfaces get numbered pages on desktop and scroll continuation on
+    // card viewports from one buffer.
+    expect(contributionsPage).toContain("useResponsiveContributions<ContributionListRecord>");
     expect(assignmentsPage).not.toContain("useAllSupportAssignments(");
     expect(contributionsPage).not.toContain("useAllContributions<ContributionListRecord>");
   });

@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike } from "drizzle-orm";
+import { and, asc, eq, ilike, sql } from "drizzle-orm";
 import { usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -41,6 +41,26 @@ const childFamilySelection = {
   updatedAt: children.updatedAt,
 };
 
+export interface ChildFamilyListFilters {
+  search?: string;
+  gender?: "F" | "M";
+  status?: "active" | "inactive";
+}
+
+export interface ChildListFilters extends ChildFamilyListFilters {
+  familyProfileId?: string;
+}
+
+/** The one place the child list decides which rows it is about. */
+function buildChildListCondition(filters: ChildListFilters) {
+  return and(
+    filters.familyProfileId ? eq(children.familyProfileId, filters.familyProfileId) : undefined,
+    filters.search ? ilike(children.legalName, `%${filters.search}%`) : undefined,
+    filters.gender ? eq(children.gender, filters.gender) : undefined,
+    filters.status ? eq(children.status, filters.status) : undefined,
+  );
+}
+
 @Repository("default")
 export class ChildRepository {
   @DB() private db!: KafilDatabase;
@@ -48,12 +68,7 @@ export class ChildRepository {
   list(
     limit: number,
     offset: number,
-    filters: {
-      familyProfileId?: string;
-      search?: string;
-      gender?: "F" | "M";
-      status?: "active" | "inactive";
-    } = {},
+    filters: ChildListFilters = {},
   ) {
     const query = this.db
       .select(childListSelection)
@@ -67,13 +82,27 @@ export class ChildRepository {
       .limit(limit)
       .offset(offset);
 
-    const condition = and(
-      filters.familyProfileId ? eq(children.familyProfileId, filters.familyProfileId) : undefined,
-      filters.search ? ilike(children.legalName, `%${filters.search}%`) : undefined,
-      filters.gender ? eq(children.gender, filters.gender) : undefined,
-      filters.status ? eq(children.status, filters.status) : undefined,
-    );
+    const condition = buildChildListCondition(filters);
     return condition ? query.where(condition) : query;
+  }
+
+  /**
+   * Rows matching `filters`, ignoring the page window. Keeps the profile join
+   * so a child whose family row is missing is excluded from the total exactly
+   * as it is from the rows.
+   */
+  async count(filters: ChildListFilters = {}) {
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(children)
+      .innerJoin(
+        familyProfiles,
+        eq(children.familyProfileId, familyProfiles.id),
+      )
+      .leftJoin(usersTable, eq(familyProfiles.userId, usersTable.id));
+    const condition = buildChildListCondition(filters);
+    const [row] = condition ? await query.where(condition) : await query;
+    return row?.total ?? 0;
   }
 
   async findById(id: string) {
@@ -89,20 +118,27 @@ export class ChildRepository {
     familyProfileId: string,
     limit = 100,
     offset = 0,
-    filters: { search?: string; gender?: "F" | "M"; status?: "active" | "inactive" } = {},
+    filters: ChildFamilyListFilters = {},
   ) {
     return this.db
       .select(childFamilySelection)
       .from(children)
-      .where(and(
-        eq(children.familyProfileId, familyProfileId),
-        filters.search ? ilike(children.legalName, `%${filters.search}%`) : undefined,
-        filters.gender ? eq(children.gender, filters.gender) : undefined,
-        filters.status ? eq(children.status, filters.status) : undefined,
-      ))
+      .where(buildChildListCondition({ ...filters, familyProfileId }))
       .orderBy(asc(children.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  /** The family-scoped counterpart of `count`, matching `listByFamilyId`. */
+  async countByFamilyId(
+    familyProfileId: string,
+    filters: ChildFamilyListFilters = {},
+  ) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(children)
+      .where(buildChildListCondition({ ...filters, familyProfileId }));
+    return row?.total ?? 0;
   }
 
   async findByImagePath(imagePath: string) {

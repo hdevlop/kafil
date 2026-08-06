@@ -67,6 +67,31 @@ const familySelection = {
   )`,
 };
 
+export interface FamilyListFilters {
+  search?: string;
+  status?: "active" | "inactive";
+}
+
+/** The one place the family list decides which rows it is about. */
+function buildFamilyListConditions(filters: FamilyListFilters) {
+  const conditions = [];
+  if (filters.status) {
+    conditions.push(eq(usersTable.status, filters.status));
+  }
+  if (filters.search) {
+    const pattern = `%${filters.search}%`;
+    conditions.push(
+      or(
+        ilike(familyProfiles.guardianLegalName, pattern),
+        ilike(usersTable.email, pattern),
+        ilike(usersTable.name, pattern),
+        ilike(familyProfiles.phone, pattern),
+      ),
+    );
+  }
+  return conditions;
+}
+
 @Repository("default")
 export class FamilyRepository {
   @DB() private db!: KafilDatabase;
@@ -74,23 +99,9 @@ export class FamilyRepository {
   list(
     limit: number,
     offset: number,
-    filters: { search?: string; status?: "active" | "inactive" } = {},
+    filters: FamilyListFilters = {},
   ) {
-    const conditions = [];
-    if (filters.status) {
-      conditions.push(eq(usersTable.status, filters.status));
-    }
-    if (filters.search) {
-      const pattern = `%${filters.search}%`;
-      conditions.push(
-        or(
-          ilike(familyProfiles.guardianLegalName, pattern),
-          ilike(usersTable.email, pattern),
-          ilike(usersTable.name, pattern),
-          ilike(familyProfiles.phone, pattern),
-        ),
-      );
-    }
+    const conditions = buildFamilyListConditions(filters);
     const query = this.selectFamily();
     if (conditions.length > 0) {
       return query
@@ -100,6 +111,25 @@ export class FamilyRepository {
         .offset(offset);
     }
     return query.orderBy(asc(familyProfiles.createdAt)).limit(limit).offset(offset);
+  }
+
+  /**
+   * Rows matching `filters`, ignoring the page window.
+   *
+   * Shares `buildFamilyListConditions` with `list` so the total can never
+   * describe a different set than the rows it is reported alongside.
+   */
+  async count(filters: FamilyListFilters = {}) {
+    const conditions = buildFamilyListConditions(filters);
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(familyProfiles)
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
+      .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id));
+    const [row] = conditions.length > 0
+      ? await query.where(and(...conditions))
+      : await query;
+    return row?.total ?? 0;
   }
 
   async findById(id: string) {

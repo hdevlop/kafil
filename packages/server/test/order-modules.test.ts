@@ -57,6 +57,7 @@ describe("Phase 5 cart and route contracts", () => {
       {} as CartRepository,
       {
         listSupportedBySponsor: async () => summaries,
+        countSupportedBySponsor: async () => summaries.length,
         listItemsByOrderIds: async (ids: readonly string[]) => {
           calls.items += 1;
           expect(ids).toEqual(["order-1", "order-2"]);
@@ -108,13 +109,14 @@ describe("Phase 5 cart and route contracts", () => {
     const result = await service.listSupported("sponsor-user", {});
 
     expect(calls).toEqual({ deliveries: 1, items: 1, purchases: 1 });
-    expect(result[0]).toMatchObject({
+    expect(result.pagination).toMatchObject({ page: 1, total: 2 });
+    expect(result.data[0]).toMatchObject({
       deliveryName: "Amina",
       deliveryStatus: "assigned",
       receiptRecorded: false,
       items: [{ productName: "Rice", quantity: 2 }],
     });
-    expect(result[1]).toMatchObject({
+    expect(result.data[1]).toMatchObject({
       actualTotalMinor: 775,
       merchantName: "Market",
       receiptRecorded: true,

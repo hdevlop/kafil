@@ -421,6 +421,14 @@
       "reset": "Apparence réinitialisée avec succès"
     }
   },
+  "themePresets": {
+    "success": {
+      "retrieved": "Thèmes enregistrés récupérés avec succès",
+      "created": "Thème enregistré dans la bibliothèque avec succès",
+      "applied": "Thème appliqué avec succès",
+      "deleted": "Thème enregistré supprimé avec succès"
+    }
+  },
   "branding": {
     "success": {
       "retrieved": "Image de marque récupérée avec succès",
@@ -558,6 +566,18 @@
       "retryLoadMore": "Réessayer",
       "loadMoreError": "Impossible de charger plus de résultats.",
       "itemsLoaded": "{{count}} résultats supplémentaires chargés",
+      "pagination": {
+        "rowsPerPage": "Lignes/page",
+        "label": "Pagination",
+        "goToPage": "Aller à la page {{page}}",
+        "currentPage": "Page {{page}}, page actuelle",
+        "firstPage": "Première page",
+        "previousPage": "Page précédente",
+        "nextPage": "Page suivante",
+        "lastPage": "Dernière page",
+        "pageOf": "Page {{page}} sur {{pageCount}}",
+        "rowsSelected": "{{selected}} sur {{total}} ligne(s) sélectionnée(s)."
+      },
       "orderCategory": "Catégorie de commande",
       "orderFamily": "Famille",
       "orderPhone": "Téléphone",
@@ -787,6 +807,12 @@
       "shopping": "Shopping",
       "supportAndFinance": "Soutien",
       "account": "Compte"
+    },
+    "sidebar": {
+      "open": "Ouvrir le menu",
+      "close": "Fermer le menu",
+      "collapse": "Réduire",
+      "expand": "Développer"
     },
     "action": {
       "signOut": "Se déconnecter",
@@ -1068,6 +1094,39 @@
         "discard": "Ignorer les modifications",
         "resetThemeTitle": "Réinitialiser le thème Kafil ?",
         "resetThemeDescription": "Cette action supprime le thème enregistré et restaure le thème d’usine versionné.",
+        "presets": {
+          "title": "Thèmes enregistrés",
+          "description": "Choisissez un thème pour le prévisualiser dans toute l’application. Rien n’est enregistré tant que vous ne sauvegardez pas.",
+          "empty": "Aucun thème enregistré. Enregistrez le thème actuel pour créer une bibliothèque.",
+          "loadError": "Impossible de charger les thèmes enregistrés.",
+          "builtIn": "Intégré",
+          "active": "Actif",
+          "select": "Thème enregistré",
+          "selectPlaceholder": "Choisissez un thème à prévisualiser",
+          "savedOption": "Thème enregistré actuel",
+          "previewing": "Aperçu — non enregistré",
+          "revert": "Annuler l’aperçu",
+          "revertDone": "Retour au thème enregistré.",
+          "apply": "Appliquer",
+          "applyLabel": "Appliquer {name}",
+          "applySuccess": "{name} est désormais le thème de la plateforme.",
+          "applyError": "Impossible d’appliquer ce thème.",
+          "delete": "Supprimer",
+          "deleteLabel": "Supprimer {name}",
+          "deleteTitle": "Supprimer ce thème enregistré ?",
+          "deleteDescription": "{name} sera retiré de la bibliothèque. Le thème actif de la plateforme n’est pas modifié.",
+          "deleteSuccess": "{name} a été supprimé.",
+          "deleteError": "Impossible de supprimer ce thème.",
+          "saveCurrent": "Enregistrer le thème actuel",
+          "saveTitle": "Enregistrer le thème actuel",
+          "saveDescription": "Donnez un nom à ce design pour pouvoir l’appliquer plus tard.",
+          "nameLabel": "Nom du thème",
+          "namePlaceholder": "Par exemple : Sable",
+          "nameRequired": "Saisissez un nom pour ce thème.",
+          "saveAction": "Enregistrer dans la bibliothèque",
+          "saveSuccess": "{name} a été enregistré dans la bibliothèque.",
+          "saveError": "Impossible d’enregistrer ce thème."
+        },
         "branding": {
           "cardTitle": "Ressources de marque",
           "cardDescription": "Téléversez les logos de la plateforme et l’image hero d’authentification. Les comptes opérateur ne peuvent pas les modifier.",

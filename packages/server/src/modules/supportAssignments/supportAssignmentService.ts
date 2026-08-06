@@ -1,6 +1,7 @@
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { BudgetAccountRepository } from "../budgets/budgetRepository";
 import { FundingService } from "../settings/fundingService";
@@ -38,7 +39,11 @@ export class SupportAssignmentService {
     const { limit, offset, ...filters } = supportAssignmentListQuery.parse(
       query ?? {},
     );
-    return this.assignments.list(limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.assignments.list(limit, offset, filters),
+      this.assignments.count(filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
   get(id: string) {
@@ -56,25 +61,26 @@ export class SupportAssignmentService {
     const { limit, offset, ...filters } = sponsorFamilyCatalogQuery.parse(query ?? {});
     const sponsor = await this.assignments.findSponsorByUserId(userId);
     if (!sponsor) HttpError.notFound("Sponsor profile not found");
-    const families = await this.assignments.listSponsorFamilyCatalog(
-      sponsor.id,
-      limit,
-      offset,
-      filters,
-    );
+    const [families, total] = await Promise.all([
+      this.assignments.listSponsorFamilyCatalog(sponsor.id, limit, offset, filters),
+      this.assignments.countSponsorFamilyCatalog(sponsor.id, filters),
+    ]);
     const funding = await this.funding.getProgressForFamilies(families);
 
-    return families.map((family) => ({
-      id: family.id,
-      name: family.name,
-      image: family.image,
-      supportPriority: family.supportPriority,
-      reference: sponsorFamilyReference(family.id),
-      activeChildCount: family.activeChildCount,
-      activeSponsorCount: family.activeSponsorCount,
-      assignmentId: family.assignmentId,
-      funding: funding.get(family.id) ?? null,
-    }));
+    return listPage(
+      families.map((family) => ({
+        id: family.id,
+        name: family.name,
+        image: family.image,
+        supportPriority: family.supportPriority,
+        reference: sponsorFamilyReference(family.id),
+        activeChildCount: family.activeChildCount,
+        activeSponsorCount: family.activeSponsorCount,
+        assignmentId: family.assignmentId,
+        funding: funding.get(family.id) ?? null,
+      })),
+      { limit, offset, total },
+    );
   }
 
   getOwn(id: string, userId: string) {

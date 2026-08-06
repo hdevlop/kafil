@@ -432,6 +432,14 @@
       "reset": "Appearance reset successfully"
     }
   },
+  "themePresets": {
+    "success": {
+      "retrieved": "Saved themes retrieved successfully",
+      "created": "Theme saved to the library successfully",
+      "applied": "Theme applied successfully",
+      "deleted": "Saved theme deleted successfully"
+    }
+  },
   "branding": {
     "success": {
       "retrieved": "Branding retrieved successfully",
@@ -570,6 +578,18 @@
       "retryLoadMore": "Try again",
       "loadMoreError": "Could not load more results.",
       "itemsLoaded": "{{count}} more results loaded",
+      "pagination": {
+        "rowsPerPage": "Rows/page",
+        "label": "Pagination",
+        "goToPage": "Go to page {{page}}",
+        "currentPage": "Page {{page}}, current page",
+        "firstPage": "First page",
+        "previousPage": "Previous page",
+        "nextPage": "Next page",
+        "lastPage": "Last page",
+        "pageOf": "Page {{page}} of {{pageCount}}",
+        "rowsSelected": "{{selected}} of {{total}} row(s) selected."
+      },
       "orderCategory": "Order category",
       "orderFamily": "Family",
       "orderPhone": "Phone",
@@ -800,6 +820,12 @@
       "shopping": "Shopping",
       "supportAndFinance": "Support",
       "account": "Account"
+    },
+    "sidebar": {
+      "open": "Open sidebar",
+      "close": "Close sidebar",
+      "collapse": "Collapse",
+      "expand": "Expand"
     },
     "action": {
       "signOut": "Sign out",
@@ -1081,6 +1107,39 @@
         "discard": "Discard changes",
         "resetThemeTitle": "Reset the Kafil theme?",
         "resetThemeDescription": "This removes the saved platform theme and restores the version-controlled factory design.",
+        "presets": {
+          "title": "Saved themes",
+          "description": "Pick a theme to preview it across the app. Nothing is stored until you save.",
+          "empty": "No saved themes yet. Save the current theme to start a library.",
+          "loadError": "We could not load the saved themes.",
+          "builtIn": "Built-in",
+          "active": "Active",
+          "select": "Saved theme",
+          "selectPlaceholder": "Choose a theme to preview",
+          "savedOption": "Current saved theme",
+          "previewing": "Previewing — not saved yet",
+          "revert": "Revert preview",
+          "revertDone": "Back to the saved theme.",
+          "apply": "Apply",
+          "applyLabel": "Apply {name}",
+          "applySuccess": "{name} is now the platform theme.",
+          "applyError": "Could not apply that theme.",
+          "delete": "Delete",
+          "deleteLabel": "Delete {name}",
+          "deleteTitle": "Delete this saved theme?",
+          "deleteDescription": "{name} will be removed from the library. The active platform theme is not changed.",
+          "deleteSuccess": "{name} was deleted.",
+          "deleteError": "Could not delete that theme.",
+          "saveCurrent": "Save current theme",
+          "saveTitle": "Save the current theme",
+          "saveDescription": "Give this design a name so you can apply it again later.",
+          "nameLabel": "Theme name",
+          "namePlaceholder": "For example: Sable",
+          "nameRequired": "Enter a name for this theme.",
+          "saveAction": "Save to library",
+          "saveSuccess": "{name} was saved to the library.",
+          "saveError": "Could not save that theme."
+        },
         "branding": {
           "cardTitle": "Brand assets",
           "cardDescription": "",

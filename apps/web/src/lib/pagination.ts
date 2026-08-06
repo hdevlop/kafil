@@ -1,4 +1,4 @@
-import type { QueryValue } from "@/services/http";
+import type { ApiPage, QueryValue } from "@/services/http";
 
 export interface OffsetPagination {
   limit: number;
@@ -9,6 +9,20 @@ export interface OffsetPage<T> {
   rows: T[];
   hasNextPage: boolean;
   nextOffset: number;
+  /** How many rows match in total, or `null` if the endpoint does not say. */
+  total: number | null;
+}
+
+/**
+ * A page fetcher. Endpoints that report a result total return an `ApiPage`;
+ * the bare array is what a list that has not been migrated still returns.
+ */
+export type OffsetPageFetcher<T> = (
+  pagination: OffsetPagination,
+) => Promise<ApiPage<T> | T[]>;
+
+function toApiPage<T>(result: ApiPage<T> | T[]): ApiPage<T> {
+  return Array.isArray(result) ? { rows: result, total: null } : result;
 }
 
 export const DEFAULT_PAGE_SIZE = 25;
@@ -38,26 +52,47 @@ export function hasPossibleNextPage(
 }
 
 export async function fetchOffsetPage<T>(
-  fetchPage: (pagination: OffsetPagination) => Promise<T[]>,
+  fetchPage: OffsetPageFetcher<T>,
   pagination: OffsetPagination,
 ): Promise<OffsetPage<T>> {
   const requestedLimit = Math.min(100, Math.max(1, pagination.limit));
+
+  // Whether this endpoint reports a total is only knowable from its response,
+  // so the first request still carries the probe row that the untotalled path
+  // needs. What a total saves is the *second* request: at the 100-row ceiling
+  // there is no room for a probe row, and continuation would otherwise need a
+  // separate lookahead call.
   const probeLimit = requestedLimit < 100 ? requestedLimit + 1 : requestedLimit;
-  const fetched = await fetchPage({
+  const probed = await fetchPage({
     limit: probeLimit,
     offset: pagination.offset,
   });
-  const rows = fetched.slice(0, requestedLimit);
-  const hasNextPage = fetched.length > requestedLimit || (
+  const page = toApiPage(probed);
+
+  if (page.total !== null) {
+    const rows = page.rows.slice(0, requestedLimit);
+    return {
+      rows,
+      hasNextPage: pagination.offset + rows.length < page.total,
+      nextOffset: pagination.offset + rows.length,
+      total: page.total,
+    };
+  }
+
+  const rows = page.rows.slice(0, requestedLimit);
+  const hasNextPage = page.rows.length > requestedLimit || (
     requestedLimit === 100 &&
-    fetched.length === requestedLimit &&
-    (await fetchPage({ limit: 1, offset: pagination.offset + requestedLimit })).length > 0
+    page.rows.length === requestedLimit &&
+    toApiPage(
+      await fetchPage({ limit: 1, offset: pagination.offset + requestedLimit }),
+    ).rows.length > 0
   );
 
   return {
     rows,
     hasNextPage,
     nextOffset: pagination.offset + rows.length,
+    total: null,
   };
 }
 

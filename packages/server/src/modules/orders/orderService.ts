@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import {
   BudgetAccountRepository,
@@ -112,24 +113,30 @@ export class OrderService {
 
   async list(userQuery: OrderListQuery) {
     const { limit, offset, ...filters } = orderListQuery.parse(userQuery ?? {});
-    const records = await this.orders.list(limit, offset, filters);
+    const [records, total] = await Promise.all([
+      this.orders.list(limit, offset, filters),
+      this.orders.count(filters),
+    ]);
     const latestByOrder = await this.deliveries.listLatestByOrderIds(
       records.map((order) => order.id),
     );
-    return records.map((order) => {
-      const latestDelivery = latestByOrder.get(order.id) ?? null;
-      return {
-        ...order,
-        currentDelivery:
-          latestDelivery &&
-          ["assigned", "in_progress"].includes(latestDelivery.status)
+    return listPage(
+      records.map((order) => {
+        const latestDelivery = latestByOrder.get(order.id) ?? null;
+        return {
+          ...order,
+          currentDelivery:
+            latestDelivery &&
+            ["assigned", "in_progress"].includes(latestDelivery.status)
+              ? deliveryAttemptSummary(latestDelivery)
+              : null,
+          latestDelivery: latestDelivery
             ? deliveryAttemptSummary(latestDelivery)
             : null,
-        latestDelivery: latestDelivery
-          ? deliveryAttemptSummary(latestDelivery)
-          : null,
-      };
-    });
+        };
+      }),
+      { limit, offset, total },
+    );
   }
 
   async get(id: string) {
@@ -229,20 +236,17 @@ export class OrderService {
   async listOwn(userId: string, userQuery: OwnOrderListQuery) {
     const family = await this.validator.ensureFamily(userId);
     const { limit, offset, status, search } = ownOrderListQuery.parse(userQuery ?? {});
-    const records = await this.orders.listByFamilyId(
-      family.id,
-      limit,
-      offset,
-      status,
-      search,
-    );
+    const [records, total] = await Promise.all([
+      this.orders.listByFamilyId(family.id, limit, offset, status, search),
+      this.orders.countByFamilyId(family.id, status, search),
+    ]);
     const latestByOrder = await this.deliveries.listLatestByOrderIds(
       records.map((order) => order.id),
     );
     const articleCountsByOrder = await this.orders.listArticleCountsByOrderIds(
       records.map((order) => order.id),
     );
-    return Promise.all(
+    const rows = await Promise.all(
       records.map(async (order) => {
         const latestDelivery = latestByOrder.get(order.id) ?? null;
         return {
@@ -256,6 +260,7 @@ export class OrderService {
         };
       }),
     );
+    return listPage(rows, { limit, offset, total });
   }
 
   async getOwn(id: string, userId: string) {
@@ -265,14 +270,15 @@ export class OrderService {
 
   async listSupported(userId: string, userQuery: OwnOrderListQuery) {
     const { limit, offset, status, search } = ownOrderListQuery.parse(userQuery ?? {});
-    const summaries = await this.orders.listSupportedBySponsor(
-      userId,
+    const [summaries, total] = await Promise.all([
+      this.orders.listSupportedBySponsor(userId, limit, offset, status, search),
+      this.orders.countSupportedBySponsor(userId, status, search),
+    ]);
+    return listPage(await this.enrichSupportedOrders(summaries), {
       limit,
       offset,
-      status,
-      search,
-    );
-    return this.enrichSupportedOrders(summaries);
+      total,
+    });
   }
 
   private async enrichSupportedOrders(

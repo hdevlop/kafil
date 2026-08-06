@@ -44,7 +44,11 @@ interface SeedCategoryInput {
 
 export interface CategorySeedService {
   createCategory(data: CreateCategoryDto, actorUserId: string): Promise<CategorySeedRecord>;
-  listCategories(query: { limit: number; offset: number }): Promise<CategorySeedRecord[]>;
+  // The catalog service reports a result total alongside the rows, so the seed
+  // reads the same page envelope every list endpoint now returns.
+  listCategories(
+    query: { limit: number; offset: number },
+  ): Promise<{ data: CategorySeedRecord[] }>;
   setCategoryStatus(
     id: string,
     status: "active" | "inactive",
@@ -75,7 +79,7 @@ export async function seedCatalogCategories(
   options: CategorySeedOptions = {},
 ): Promise<CategorySeedResult> {
   const prepared = await prepareCategorySeedImages(options);
-  const existing = await service.listCategories({ limit: 100, offset: 0 });
+  const { data: existing } = await service.listCategories({ limit: 100, offset: 0 });
   const bySlug = new Map(existing.map((category) => [category.slug, category]));
   const result: CategorySeedResult = { inserted: 0, repaired: 0, skipped: 0 };
 

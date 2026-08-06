@@ -23,15 +23,62 @@ describe("Phase 7 dashboard presentation contracts", () => {
     );
   });
 
+  test("filtering the nav table reproduces each role's ordering and headings", () => {
+    // The single nav table is filtered per role, so ordering and section runs
+    // are derived rather than hand-written. Admin and sponsor are the two ends
+    // of that derivation: the longest list, and the one that merges every
+    // destination into a single section.
+    expect(getDashboardNavigation("admin").map((item) => item.href)).toEqual([
+      "/dashboard",
+      "/family",
+      "/children",
+      "/sponsors",
+      "/staff",
+      "/assignments",
+      "/applicants",
+      "/contribution",
+      "/categories",
+      "/products",
+      "/orders",
+      "/users",
+      "/roles",
+      "/permissions",
+    ]);
+    expect(
+      getDashboardNavigation("admin")
+        .filter((item) => item.sectionLabel)
+        .map((item) => item.sectionLabel),
+    ).toEqual([
+      "nav.supportOperations",
+      "nav.finance",
+      "nav.catalogOperations",
+      "nav.accessManagement",
+    ]);
+
+    expect(getDashboardNavigation("sponsor").map((item) => item.href)).toEqual([
+      "/dashboard",
+      "/family",
+      "/contribution",
+      "/orders",
+    ]);
+    expect(
+      getDashboardNavigation("sponsor")
+        .filter((item) => item.sectionLabel)
+        .map((item) => item.sectionLabel),
+    ).toEqual(["nav.supportAndFinance"]);
+
+    expect(getDashboardNavigation(null)).toEqual([]);
+  });
+
   test("uses flat icon-backed operator destinations with native sidebar sections", () => {
-    const navigation = getDashboardNavigation("operator", ((key: string) => key) as never);
+    const navigation = getDashboardNavigation("operator");
 
     expect(navigation.map((item) => item.id)).toEqual([
       "/dashboard",
       "/family",
       "/children",
-      "/operator/sponsors",
-      "/operator/assignments",
+      "/sponsors",
+      "/assignments",
       "/contribution",
       "/categories",
       "/products",
@@ -46,7 +93,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
   });
 
   test("keeps family navigation focused on household, catalog, and orders", () => {
-    const navigation = getDashboardNavigation("family", ((key: string) => key) as never);
+    const navigation = getDashboardNavigation("family");
 
     expect(navigation.map((item) => item.id)).toEqual([
       "/dashboard",
@@ -77,10 +124,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
     }
 
     for (const role of ["admin", "operator", "family", "sponsor"]) {
-      const navigation = getDashboardNavigation(
-        role,
-        ((key: string) => key) as never,
-      );
+      const navigation = getDashboardNavigation(role);
       expect(navigation.some((item) => item.href?.includes("budget"))).toBe(
         false,
       );
@@ -88,10 +132,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
   });
 
   test("routes sponsor Orders through the same canonical surface", async () => {
-    const navigation = getDashboardNavigation(
-      "sponsor",
-      ((key: string) => key) as never,
-    );
+    const navigation = getDashboardNavigation("sponsor");
     const authSource = await Bun.file(
       new URL("../src/lib/auth.ts", import.meta.url),
     ).text();
@@ -129,7 +170,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
   });
 
   test("keeps each role overview exact while matching nested destination routes", () => {
-    const navigation = getDashboardNavigation("operator", ((key: string) => key) as never);
+    const navigation = getDashboardNavigation("operator");
     const overview = navigation.find((item) => item.id === "/dashboard");
     const families = navigation.find((item) => item.id === "/family");
     const products = navigation.find((item) => item.id === "/products");

@@ -16,7 +16,7 @@ export function listCategories(
   pagination: OffsetPagination,
   filters: ListCategoryFilters = {},
 ) {
-  return api.get<CategoryRecord[]>("/catalog/categories", {
+  return api.getPage<CategoryRecord>("/catalog/categories", {
     query: { ...pagination, ...filters },
   });
 }

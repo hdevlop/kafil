@@ -29,24 +29,49 @@ describe("root PLAN shared UI contracts", () => {
   test("keeps contribution pagination on populated pages while requests are in flight", () => {
     const page = source("../src/features/Contributions/components/ContributionsPage.tsx");
     const hooks = source("../src/features/Contributions/hooks/useContributions.ts");
-    const api = source("../src/services/contributionApi.ts");
 
-    expect(page).toContain("useContributionPage<ContributionListRecord>");
-    expect(page).toContain("pagedContributions.data?.hasNextPage");
-    expect(page).toContain("if (pagedContributions.isFetching) return;");
-    expect(hooks).toContain("placeholderData: keepPreviousData");
-    expect(api).toContain("offset: query.offset + query.limit");
+    // The buffer keeps the rows on screen across a page turn, so the page no
+    // longer needs a `keepPreviousData` query or an isFetching guard of its own.
+    expect(hooks).toContain("useResponsiveOffsetList<TRecord>({");
+    expect(page).toContain("useResponsiveContributions<ContributionListRecord>");
+    expect(page).toContain("loading: contributions.loading");
+    expect(page).not.toContain("isFetching");
   });
 
-  test("sizes contribution pages to the available desktop table height", () => {
+  test("counts contribution pages from the server total, never from the cursor", () => {
     const page = source("../src/features/Contributions/components/ContributionsPage.tsx");
-    const sizing = source("../src/hooks/useAvailableTablePageSize.ts");
+    const api = source("../src/services/contributionApi.ts");
+    const service = source("../../../packages/server/src/modules/contributions/contributionService.ts");
 
-    expect(page).toContain("useAvailableTablePageSize((availablePageSize) =>");
-    expect(page).toContain("ref={containerRef}");
-    expect(page).toContain("createOffsetPagination(0, availablePageSize)");
-    expect(sizing).toContain("new ResizeObserver(update)");
-    expect(sizing).toContain("Math.floor((height - TABLE_CHROME_HEIGHT) / TABLE_ROW_HEIGHT)");
+    // `pageIndex + 2` rendered a two-page result on page one and a three-page
+    // result on page two, so the numbered bar grew a button per click.
+    expect(page).not.toContain("pageIndex + 2");
+    expect(page).toContain("pageCount: contributions.pageCount");
+
+    // The total has to reach the client, which means the envelope reader and a
+    // server that fills it.
+    expect(api).toContain('api.getPage<TRecord>("/contributions"');
+    expect(service).toContain("this.contributions.count(filters)");
+    expect(service).toContain("this.contributions.countFamily(userId, scope)");
+    expect(service).toContain("this.contributions.countOwn(userId, scope)");
+
+    // The probe request that used to stand in for a total is gone.
+    expect(api).not.toContain("offset: query.offset + query.limit");
+  });
+
+  test("sizes contribution pages to the available table height", () => {
+    const page = source("../src/features/Contributions/components/ContributionsPage.tsx");
+    const list = source("../src/hooks/useResponsiveOffsetList.ts");
+
+    // NTable measures its own container and reports the page size it wants back
+    // through onPaginationChange, which is why the page keeps no ref, no
+    // ResizeObserver, and no page size of its own.
+    expect(page).toContain("onPaginationChange: contributions.onPaginationChange");
+    expect(page).toContain("dynamicHeight: true");
+    expect(page).not.toContain("containerRef");
+    expect(page).not.toContain("createOffsetPagination");
+    // A measurement correction re-slices the buffer instead of refetching.
+    expect(list).toContain("rows.slice(start, start + pagination.pageSize)");
   });
 
   test("keeps one compact role-aware order card with category and delivery context", () => {

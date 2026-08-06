@@ -351,6 +351,7 @@ describe("Phase 2 support assignment workflow", () => {
             assignmentId: "assignment-1",
           },
         ],
+        countSponsorFamilyCatalog: async () => 1,
       } as unknown as SupportAssignmentRepository,
       {} as AuditService,
       {} as SupportAssignmentValidator,
@@ -370,7 +371,7 @@ describe("Phase 2 support assignment workflow", () => {
 
     const catalog = await service.listSponsorFamilyCatalog("sponsor-user-1", {});
 
-    expect(catalog).toEqual([
+    expect(catalog.data).toEqual([
       expect.objectContaining({
         id: householdId,
         name: "Karima Iraqi",

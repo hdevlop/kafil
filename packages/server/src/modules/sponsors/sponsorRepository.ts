@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import { rolesTable, usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -30,6 +30,26 @@ const sponsorSelection = {
   updatedAt: sponsorProfiles.updatedAt,
 };
 
+export interface SponsorListFilters {
+  search?: string;
+  status?: "active" | "inactive";
+}
+
+/** The one place the sponsor list decides which rows it is about. */
+function buildSponsorListCondition(filters: SponsorListFilters) {
+  const search = filters.search ? `%${filters.search}%` : null;
+  return and(
+    filters.status ? eq(usersTable.status, filters.status) : undefined,
+    search
+      ? or(
+          ilike(usersTable.name, search),
+          ilike(usersTable.email, search),
+          ilike(sponsorProfiles.phone, search),
+        )
+      : undefined,
+  );
+}
+
 @Repository("default")
 export class SponsorRepository {
   @DB() private db!: KafilDatabase;
@@ -37,19 +57,9 @@ export class SponsorRepository {
   list(
     limit: number,
     offset: number,
-    filters: { search?: string; status?: "active" | "inactive" },
+    filters: SponsorListFilters,
   ) {
-    const search = filters.search ? `%${filters.search}%` : null;
-    const condition = and(
-      filters.status ? eq(usersTable.status, filters.status) : undefined,
-      search
-        ? or(
-            ilike(usersTable.name, search),
-            ilike(usersTable.email, search),
-            ilike(sponsorProfiles.phone, search),
-          )
-        : undefined,
-    );
+    const condition = buildSponsorListCondition(filters);
     const query = this.db
       .select(sponsorSelection)
       .from(sponsorProfiles)
@@ -59,6 +69,21 @@ export class SponsorRepository {
       .limit(limit)
       .offset(offset);
     return condition ? query.where(condition) : query;
+  }
+
+  /**
+   * Rows matching `filters`, ignoring the page window. Shares
+   * `buildSponsorListCondition` with `list` so the two cannot diverge.
+   */
+  async count(filters: SponsorListFilters) {
+    const condition = buildSponsorListCondition(filters);
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(sponsorProfiles)
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id));
+    const [row] = condition ? await query.where(condition) : await query;
+    return row?.total ?? 0;
   }
 
   async findById(id: string) {

@@ -197,5 +197,5 @@ supported browser form, open it and press `F8` to replace its current values
 with realistic fake data. Relation fields are selected from options already
 loaded by that form.
 
-Use `/operator/settings` to enable or disable the shortcut. The persisted
+Use `/settings` to enable or disable the shortcut. The persisted
 setting is disabled by default and applies without a Docker restart.

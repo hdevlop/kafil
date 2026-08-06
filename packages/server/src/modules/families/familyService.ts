@@ -9,6 +9,7 @@ import {
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { BudgetAccountRepository } from "../budgets/budgetRepository";
 import { BudgetService } from "../budgets/budgetService";
@@ -53,7 +54,10 @@ export class FamilyService {
 
   async list(query: FamilyListQuery) {
     const { limit, offset, search, status } = familyListQuery.parse(query ?? {});
-    const families = await this.families.list(limit, offset, { search, status });
+    const [families, total] = await Promise.all([
+      this.families.list(limit, offset, { search, status }),
+      this.families.count({ search, status }),
+    ]);
     const [fundingByFamily, activeSponsors] = await Promise.all([
       this.funding.getProgressForFamilies(families),
       this.families.listActiveSponsorsForFamilies(families.map(({ id }) => id)),
@@ -75,11 +79,14 @@ export class FamilyService {
       activeSponsorNamesByFamily.set(sponsor.familyProfileId, names);
     }
 
-    return families.map((family) => ({
-      ...family,
-      funding: fundingByFamily.get(family.id) ?? null,
-      activeSponsorNames: activeSponsorNamesByFamily.get(family.id) ?? [],
-    }));
+    return listPage(
+      families.map((family) => ({
+        ...family,
+        funding: fundingByFamily.get(family.id) ?? null,
+        activeSponsorNames: activeSponsorNamesByFamily.get(family.id) ?? [],
+      })),
+      { limit, offset, total },
+    );
   }
 
   get(id: string) {

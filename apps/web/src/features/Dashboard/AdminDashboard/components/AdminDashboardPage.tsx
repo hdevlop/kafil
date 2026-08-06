@@ -1,8 +1,7 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandCoins, HeartHandshake, LayoutDashboard, UsersRound, WalletCards } from "lucide-react";
-import { NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown } from "najm-kit";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
+import { NPageHeader, NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown } from "najm-kit";
 import { toChartData } from "../../shared/chartData";
 import { AdminDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import { formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";

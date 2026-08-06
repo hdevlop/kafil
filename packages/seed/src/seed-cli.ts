@@ -7,6 +7,7 @@ export const SEED_CLI_COMMANDS = [
   "admin",
   "categories",
   "products",
+  "themes",
   "verify",
   "images",
 ] as const;
@@ -108,6 +109,7 @@ Commands:
   admin      Repair admin access
   categories Seed catalog categories
   products   Seed demo catalog products
+  themes     Seed built-in theme presets (non-destructive)
   verify     Verify auth seed
   images     Check seed images
 

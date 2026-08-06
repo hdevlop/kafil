@@ -14,6 +14,26 @@ interface ApiResponseEnvelope<T> {
   status: "success";
 }
 
+interface PaginatedResponseEnvelope<T> extends ApiResponseEnvelope<T> {
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
+/**
+ * One page of a list endpoint, plus how many rows match in total.
+ *
+ * `total` is `null` for an endpoint that does not report one. Callers must
+ * treat that as "unknown", never as zero — a numbered page control has nothing
+ * honest to show without it.
+ */
+export interface ApiPage<T> {
+  rows: T[];
+  total: number | null;
+}
+
 let pendingAccessTokenRefresh: Promise<void> | null = null;
 
 export function unwrapApiResponse<T>(response: T | ApiResponseEnvelope<T>): T {
@@ -28,6 +48,19 @@ export function unwrapApiResponse<T>(response: T | ApiResponseEnvelope<T>): T {
   }
 
   return response as T;
+}
+
+/**
+ * Read the result total najm-core's `paginated()` puts beside `data`.
+ *
+ * Returns `null` rather than throwing for a list that has not been migrated to
+ * the envelope, so a single reader serves both.
+ */
+function readTotal(response: unknown): number | null {
+  if (typeof response !== "object" || response === null) return null;
+  if (!("pagination" in response)) return null;
+  const { pagination } = response as PaginatedResponseEnvelope<unknown>;
+  return typeof pagination?.total === "number" ? pagination.total : null;
 }
 
 export function buildApiPath(
@@ -129,9 +162,28 @@ async function request<T>(
   );
 }
 
+/**
+ * GET one page of a list, keeping the envelope's result total.
+ *
+ * `api.get` discards everything but `data`, which is why the total needs its
+ * own reader rather than a flag on the existing one.
+ */
+async function pageRequest<T>(path: string): Promise<ApiPage<T>> {
+  await ensureAccessToken("get", path);
+
+  const response = await auth.api.get<T[] | PaginatedResponseEnvelope<T[]>>(path);
+  return {
+    rows: unwrapApiResponse(response),
+    total: readTotal(response),
+  };
+}
+
 export const api = {
   get<T>(path: string, options?: RequestOptions) {
     return request<T>("get", buildApiPath(path, options?.query));
+  },
+  getPage<T>(path: string, options?: RequestOptions) {
+    return pageRequest<T>(buildApiPath(path, options?.query));
   },
   post<T>(path: string, body?: unknown) {
     return request<T>("post", path, body);

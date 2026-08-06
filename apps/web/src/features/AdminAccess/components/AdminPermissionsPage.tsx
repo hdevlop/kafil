@@ -2,11 +2,10 @@
 
 import { useMemo } from "react";
 import { KeyRound } from "lucide-react";
-import { NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { NPageHeader, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 

@@ -31,6 +31,7 @@ import {
   staffFunctions,
   staffProfiles,
   supportAssignments,
+  themePresets,
 } from "../src/database/schema";
 
 describe("Kafil database schema", () => {
@@ -205,6 +206,7 @@ describe("Kafil database schema", () => {
         "staffFunctions",
         "staffProfiles",
         "supportAssignments",
+        "themePresets",
       ].sort(),
     );
   });
@@ -424,6 +426,29 @@ describe("Kafil database schema", () => {
     expect(columns.designConfig.notNull).toBe(false);
     expect(columns.appearanceRevision.notNull).toBe(true);
     expect(columns.appearanceRevision.hasDefault).toBe(true);
+  });
+
+  it("stores reusable theme presets keyed by a unique slug", () => {
+    const columns = getTableColumns(themePresets);
+
+    expect(Object.keys(columns)).toEqual([
+      "id",
+      "slug",
+      "name",
+      "designConfig",
+      "isBuiltIn",
+      "createdByUserId",
+      "createdAt",
+      "updatedAt",
+    ]);
+    expect(columns.slug.notNull).toBe(true);
+    expect(columns.slug.isUnique).toBe(true);
+    expect(columns.name.notNull).toBe(true);
+    expect(columns.designConfig.notNull).toBe(true);
+    expect(columns.isBuiltIn.notNull).toBe(true);
+    expect(columns.isBuiltIn.hasDefault).toBe(true);
+    // A deleted admin must not take their saved themes with them.
+    expect(columns.createdByUserId.notNull).toBe(false);
   });
 
   it("composes support assignments with lifecycle and privacy boundaries", () => {

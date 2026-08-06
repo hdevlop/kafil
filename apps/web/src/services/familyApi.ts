@@ -23,7 +23,7 @@ export function listFamilies(
   pagination: OffsetPagination,
   filters: ListFamiliesFilters = {},
 ) {
-  return api.get<FamilyRecord[]>("/families", {
+  return api.getPage<FamilyRecord>("/families", {
     query: {
       limit: pagination.limit,
       offset: pagination.offset,
@@ -41,7 +41,7 @@ export function listSponsorFamilyCatalog(
   pagination: OffsetPagination,
   filters: SponsorFamilyCatalogFilters = {},
 ) {
-  return api.get<SponsorFamilyCatalogEntry[]>("/support-assignments/catalog", {
+  return api.getPage<SponsorFamilyCatalogEntry>("/support-assignments/catalog", {
     query: {
       limit: pagination.limit,
       offset: pagination.offset,

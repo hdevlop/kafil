@@ -222,6 +222,10 @@ describe("Kafil server", () => {
       "support-assignments_create",
       "support-assignments_update_notes",
       "support-assignments_end",
+      "theme-presets_list_presets",
+      "theme-presets_create_preset",
+      "theme-presets_apply_preset",
+      "theme-presets_delete_preset",
     ].sort());
   });
 

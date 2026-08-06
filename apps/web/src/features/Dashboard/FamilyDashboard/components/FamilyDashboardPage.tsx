@@ -1,7 +1,7 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandHeart, House, ShoppingBag, WalletCards } from "lucide-react";
-import { NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown } from "najm-kit";
+import { NPageHeader, NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown } from "najm-kit";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -12,7 +12,6 @@ import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { ProtectedImage } from "@/shared/ProtectedImage";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import { toChartData } from "../../shared/chartData";

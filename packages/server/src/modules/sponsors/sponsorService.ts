@@ -7,6 +7,7 @@ import {
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { DashboardService } from "../dashboard/dashboardService";
 import { generateInitialPassword } from "../access/initialPassword";
@@ -46,7 +47,11 @@ export class SponsorService {
 
   async list(query: SponsorListQuery) {
     const { limit, offset, ...filters } = sponsorListQuery.parse(query ?? {});
-    return this.sponsors.list(limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.sponsors.list(limit, offset, filters),
+      this.sponsors.count(filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
   async get(id: string) {

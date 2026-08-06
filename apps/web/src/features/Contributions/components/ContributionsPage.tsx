@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useRef, useState, type SetStateAction } from "react";
+import { useRef, useState } from "react";
 import { BadgeCheck, CircleX, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import {
+  NPageHeader,
   NButton,
   NPageLayout,
   NTable,
@@ -12,13 +13,10 @@ import {
   useDialog,
 } from "najm-kit";
 
-import { createOffsetPagination, getPageIndex } from "@/lib/pagination";
-import { useAvailableTablePageSize } from "@/hooks/useAvailableTablePageSize";
-import { useCardViewport, useDesktopTableMode } from "@/hooks/useDesktopTableMode";
+import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { useKafilRole } from "@/shared/Authorization";
 import { createCardPagination } from "@/lib/tablePagination";
 
@@ -31,7 +29,7 @@ import {
   DeleteContributionDialogContent,
   ValidateContributionDialogContent,
 } from "./ContributionForms";
-import { useContributionCommands, useContributionPage, useInfiniteContributions } from "../hooks/useContributions";
+import { useContributionCommands, useResponsiveContributions } from "../hooks/useContributions";
 import { useContributionsTableColumns } from "../hooks/useContributionsTableColumns";
 import { useContributionsTableFilters } from "../hooks/useContributionsTableFilters";
 import type { ContributionAudience, ContributionListQuery, ContributionListRecord, ContributionRecord } from "../types";
@@ -54,33 +52,10 @@ export function ContributionsPage() {
   const user = useUser();
   const { exact } = useKafilRole();
   const tableMode = useDesktopTableMode();
-  const isCardViewport = useCardViewport();
   const [listFilters, setListFilters] = useState<Omit<ContributionListQuery, "limit" | "offset" | "audience">>({});
-  const filterIdentity = JSON.stringify(listFilters);
-  const [paginationState, setPaginationState] = useState(() => ({
-    identity: filterIdentity,
-    value: createOffsetPagination(0, 25),
-  }));
-  const pagination = paginationState.identity === filterIdentity
-    ? paginationState.value
-    : { ...paginationState.value, offset: 0 };
-  const setPagination = useCallback((updater: SetStateAction<ReturnType<typeof createOffsetPagination>>) => {
-    setPaginationState((current) => {
-      const base = current.identity === filterIdentity
-        ? current.value
-        : { ...current.value, offset: 0 };
-      return {
-        identity: filterIdentity,
-        value: typeof updater === "function" ? updater(base) : updater,
-      };
-    });
-  }, [filterIdentity]);
-  const containerRef = useAvailableTablePageSize((availablePageSize) => {
-    if (isCardViewport) return;
-    setPagination((current) => current.limit === availablePageSize
-      ? current
-      : createOffsetPagination(0, availablePageSize));
-  });
+  // Page size, viewport strategy, and the reset on a filter change all belong to
+  // `useResponsiveContributions` now — NTable measures the container itself and
+  // reports the size it wants back through `onPaginationChange`.
   const audience: ContributionAudience =
     exact === "family"
       ? "family"
@@ -90,20 +65,13 @@ export function ContributionsPage() {
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [viewingContribution, setViewingContribution] = useState<ContributionListRecord | null>(null);
   const bulkDeleteDialogOpenRef = useRef(false);
-  const pagedContributions = useContributionPage<ContributionListRecord>(
-    { ...pagination, ...listFilters, audience },
-    !isCardViewport,
-  );
-  const incrementalContributions = useInfiniteContributions<ContributionListRecord>(
-    { ...listFilters, audience },
-    isCardViewport,
-  );
+  const contributions = useResponsiveContributions<ContributionListRecord>({
+    ...listFilters,
+    audience,
+  });
   const { validate, reject, refund, remove } = useContributionCommands();
-  const rows = isCardViewport ? incrementalContributions.rows : (pagedContributions.data?.rows ?? []);
-  const contributions = isCardViewport ? incrementalContributions : pagedContributions;
+  const rows = contributions.data;
   const filters = useContributionsTableFilters(listFilters, setListFilters);
-  const pageIndex = getPageIndex(pagination);
-  const pageCount = !isCardViewport && pagedContributions.data?.hasNextPage ? pageIndex + 2 : pageIndex + 1;
   const isAdmin = user?.role === "admin";
 
   function openView(contribution: ContributionListRecord) {
@@ -213,7 +181,7 @@ export function ContributionsPage() {
     data: rows,
     columns,
     filters,
-    loading: contributions.isPending,
+    loading: contributions.loading,
     error: contributions.error,
     getRowId: (contribution) => contribution.id,
     onCreate: audience === "management" ? openRecord : undefined,
@@ -245,28 +213,14 @@ export function ContributionsPage() {
     rowSelection,
     onRowSelectionChange: setRowSelection,
     onBulkDelete: audience === "management" && isAdmin ? openBulkDelete : undefined,
-    ...(!isCardViewport
-      ? {
-          manualPagination: true,
-          pagination: { pageIndex, pageSize: pagination.limit },
-          pageCount,
-          onPaginationChange: ({ pageIndex: nextIndex, pageSize }: { pageIndex: number; pageSize: number }) => {
-            if (pagedContributions.isFetching) return;
-            setPagination(createOffsetPagination(nextIndex, pageSize));
-          },
-        }
-      : {}),
-    pageSizeOptions: [...new Set([pagination.limit, 10, 25, 50, 100])].sort((a, b) => a - b),
+    manualPagination: true,
+    // A real result total, so the page buttons cover the whole result from the
+    // first page instead of appearing one at a time as the reader finds them.
+    pageCount: contributions.pageCount,
+    pagination: contributions.pagination,
+    onPaginationChange: contributions.onPaginationChange,
     showPagination: true,
-    cardPagination: createCardPagination({
-      cardViewport: isCardViewport,
-      hasNextPage: incrementalContributions.hasNextPage,
-      loadingMore: incrementalContributions.isFetchingNextPage,
-      loadMoreError: incrementalContributions.isFetchNextPageError
-        ? incrementalContributions.error
-        : null,
-      onLoadMore: () => incrementalContributions.fetchNextPage(),
-    }, t),
+    cardPagination: createCardPagination(contributions, t),
     availableModes: ["cards", "table"],
     mode: tableMode,
     responsiveSkeleton: true,
@@ -306,7 +260,7 @@ export function ContributionsPage() {
         )}
         actions={<PageHeaderGlobalActions />}
       />
-      <div ref={containerRef} className="min-h-0 flex-1"><NTable {...tableProps} /></div>
+      <div className="min-h-0 flex-1"><NTable {...tableProps} /></div>
       <ContributionDetailsSheet
         contribution={viewingContribution}
         open={Boolean(viewingContribution)}

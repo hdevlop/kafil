@@ -3,6 +3,7 @@
 import { CheckCircle2, ClipboardList, Eye, XCircle } from "lucide-react";
 import { useState } from "react";
 import {
+  NPageHeader,
   NPageLayout,
   NTable,
   type ContextMenuItem,
@@ -13,7 +14,6 @@ import {
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { createCardPagination } from "@/lib/tablePagination";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 

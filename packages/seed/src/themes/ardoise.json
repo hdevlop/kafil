@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "theme": {
+    "mode": "light",
+    "accent": "slate",
+    "tokens": {
+      "background": "oklch(1 0 0)",
+      "foreground": "oklch(0.21 0.012 255)",
+      "card": "oklch(1 0 0)",
+      "card-foreground": "oklch(0.21 0.012 255)",
+      "popover": "oklch(1 0 0)",
+      "popover-foreground": "oklch(0.21 0.012 255)",
+      "primary": "oklch(0.52 0.14 252)",
+      "primary-foreground": "oklch(0.99 0.004 255)",
+      "secondary": "oklch(0.955 0.006 255)",
+      "secondary-foreground": "oklch(0.3 0.014 255)",
+      "muted": "oklch(0.968 0.004 255)",
+      "muted-foreground": "oklch(0.5 0.014 255)",
+      "accent": "oklch(0.955 0.012 252)",
+      "accent-foreground": "oklch(0.32 0.06 252)",
+      "destructive": "oklch(0.55 0.2 25)",
+      "destructive-foreground": "oklch(0.99 0 0)",
+      "border": "oklch(0.912 0.005 255)",
+      "input": "oklch(0.912 0.005 255)",
+      "ring": "oklch(0.52 0.14 252)",
+      "sidebar": "oklch(0.981 0.003 255)",
+      "sidebar-foreground": "oklch(0.32 0.012 255)",
+      "sidebar-primary": "oklch(0.52 0.14 252)",
+      "sidebar-primary-foreground": "oklch(0.99 0.004 255)",
+      "sidebar-accent": "oklch(0.938 0.008 252)",
+      "sidebar-accent-foreground": "oklch(0.26 0.03 252)",
+      "sidebar-border": "oklch(0.918 0.005 255)",
+      "sidebar-ring": "oklch(0.52 0.14 252)",
+      "chart-1": "oklch(0.52 0.14 252)",
+      "chart-2": "oklch(0.62 0.12 195)",
+      "chart-3": "oklch(0.58 0.13 300)",
+      "chart-4": "oklch(0.66 0.13 145)",
+      "chart-5": "oklch(0.68 0.14 60)"
+    },
+    "overrides": {
+      "dark": {
+        "background": "oklch(0.155 0.008 255)",
+        "foreground": "oklch(0.96 0.005 255)",
+        "card": "oklch(0.19 0.01 255)",
+        "card-foreground": "oklch(0.96 0.005 255)",
+        "popover": "oklch(0.19 0.01 255)",
+        "popover-foreground": "oklch(0.96 0.005 255)",
+        "primary": "oklch(0.68 0.15 252)",
+        "primary-foreground": "oklch(0.16 0.02 255)",
+        "secondary": "oklch(0.26 0.012 255)",
+        "secondary-foreground": "oklch(0.94 0.005 255)",
+        "muted": "oklch(0.245 0.01 255)",
+        "muted-foreground": "oklch(0.71 0.012 255)",
+        "accent": "oklch(0.27 0.025 252)",
+        "accent-foreground": "oklch(0.95 0.008 255)",
+        "destructive": "oklch(0.63 0.2 25)",
+        "destructive-foreground": "oklch(0.99 0 0)",
+        "border": "oklch(0.29 0.012 255)",
+        "input": "oklch(0.29 0.012 255)",
+        "ring": "oklch(0.68 0.15 252)",
+        "sidebar": "oklch(0.178 0.009 255)",
+        "sidebar-foreground": "oklch(0.93 0.005 255)",
+        "sidebar-primary": "oklch(0.68 0.15 252)",
+        "sidebar-primary-foreground": "oklch(0.16 0.02 255)",
+        "sidebar-accent": "oklch(0.26 0.022 252)",
+        "sidebar-accent-foreground": "oklch(0.96 0.006 255)",
+        "sidebar-border": "oklch(0.28 0.012 255)",
+        "sidebar-ring": "oklch(0.68 0.15 252)",
+        "chart-1": "oklch(0.68 0.15 252)",
+        "chart-2": "oklch(0.74 0.12 195)",
+        "chart-3": "oklch(0.7 0.14 300)",
+        "chart-4": "oklch(0.76 0.13 145)",
+        "chart-5": "oklch(0.78 0.14 60)"
+      }
+    },
+    "radius": "4px"
+  },
+  "typography": {
+    "fontSans": "var(--font-cairo), Cairo, sans-serif",
+    "fontHeading": "var(--font-cairo), Cairo, sans-serif",
+    "fontMono": "ui-monospace, SFMono-Regular, Menlo, monospace",
+    "baseSize": "14px",
+    "scale": "compact",
+    "lineHeight": "1.4",
+    "letterSpacing": "-0.01em"
+  },
+  "components": {
+    "pageHeader": {
+      "card": false
+    },
+    "sidebar": {
+      "showSectionLabels": true,
+      "showSectionSeparators": false,
+      "expandedWidth": 200,
+      "collapsedWidth": 56,
+      "mobileWidth": 200
+    },
+    "table": {
+      "headerColor": "var(--muted)",
+      "headerTextColor": "var(--muted-foreground)",
+      "borderColor": "var(--border)"
+    },
+    "input": {
+      "borderWidth": "1px"
+    }
+  },
+  "layout": {
+    "pageGutter": "8px",
+    "sectionGap": "8px"
+  }
+}

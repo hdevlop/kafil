@@ -2,6 +2,7 @@
 
 import { House, LayoutDashboard } from "lucide-react";
 import {
+  NPageHeader,
   NCard,
   NChartSkeleton,
   NGrid,
@@ -12,7 +13,6 @@ import {
   NStatCardSkeleton,
 } from "najm-kit";
 
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 
 function StatSkeletonGrid({ count, xlColumns }: Readonly<{ count: number; xlColumns: 5 | 6 }>) {
   return (

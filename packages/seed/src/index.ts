@@ -3,6 +3,7 @@ import { migrateDatabase } from "./migrate-database";
 import { printVerification, runSeedCommand } from "./run-seed";
 import { readSeedConfig } from "./seed-config";
 import { seedAuthentication } from "./seed-auth";
+import { seedThemePresets } from "./theme-preset-seed";
 
 await runSeedCommand("Kafil database setup", async () => {
   const config = readSeedConfig();
@@ -32,4 +33,10 @@ await runSeedCommand("Kafil database setup", async () => {
       : "Admin email and password already match.",
   );
   printVerification(verification);
+
+  console.log("Seeding built-in theme presets...");
+  const presets = await seedThemePresets();
+  console.log(
+    `Theme presets: ${presets.inserted} inserted, ${presets.updated} refreshed (${presets.names.join(", ")}).`,
+  );
 });

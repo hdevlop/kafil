@@ -36,6 +36,7 @@ const COMMAND_LABELS: Readonly<Record<SeedCliCommand, string>> = {
   admin: "Repair admin access",
   categories: "Seed categories",
   products: "Seed products",
+  themes: "Seed theme presets",
   verify: "Verify auth",
   images: "Check images",
 };
@@ -49,6 +50,7 @@ const INTERACTIVE_COMMAND_ORDER: readonly SeedCliCommand[] = [
   "admin",
   "categories",
   "products",
+  "themes",
   "verify",
   "images",
 ];
@@ -63,6 +65,7 @@ const COMMAND_SCRIPTS: Readonly<
   admin: "src/scripts/seed-admin.ts",
   categories: "src/scripts/seed-categories.ts",
   products: "src/scripts/seed-products.ts",
+  themes: "src/scripts/seed-themes.ts",
   verify: "src/scripts/verify.ts",
   images: "src/scripts/demo/list-images.ts",
 };

@@ -33,6 +33,11 @@ interface KafilAppearanceContextValue {
   cancelDraft: () => void;
   commitDraft: (input: UpdateAppearanceInput) => Promise<PublicAppearance>;
   resetToFactory: (input: ResetAppearanceInput) => Promise<PublicAppearance>;
+  /**
+   * Adopts an appearance the server already committed, for commands that write
+   * the theme outside the draft flow (applying a saved theme preset).
+   */
+  replaceCommitted: (appearance: PublicAppearance) => void;
 }
 
 const KafilAppearanceContext = createContext<KafilAppearanceContextValue | null>(
@@ -83,6 +88,10 @@ export function KafilAppearanceProvider({
     [resetAppearance],
   );
 
+  const replaceCommitted = useCallback((appearance: PublicAppearance) => {
+    dispatch({ type: "replace_committed", appearance });
+  }, []);
+
   const value = useMemo<KafilAppearanceContextValue>(
     () => ({
       appearance: state.committed,
@@ -94,6 +103,7 @@ export function KafilAppearanceProvider({
       cancelDraft,
       commitDraft,
       resetToFactory,
+      replaceCommitted,
     }),
     [
       state,
@@ -102,6 +112,7 @@ export function KafilAppearanceProvider({
       cancelDraft,
       commitDraft,
       resetToFactory,
+      replaceCommitted,
     ],
   );
 

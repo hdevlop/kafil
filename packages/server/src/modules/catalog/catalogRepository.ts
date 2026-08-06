@@ -57,6 +57,14 @@ const catalogCategorySelection = {
   itemCount: sql<number>`count(${products.id})::int`,
 };
 
+/** The one place the category list decides which rows it is about. */
+function categoryFilter(filters: CategoryFilters) {
+  return and(
+    filters.status ? eq(categories.status, filters.status) : undefined,
+    filters.search ? ilike(categories.name, `%${filters.search}%`) : undefined,
+  );
+}
+
 @Repository("default")
 export class CategoryRepository {
   @DB() private db!: KafilDatabase;
@@ -70,15 +78,32 @@ export class CategoryRepository {
       .orderBy(asc(categories.sortOrder), asc(categories.name))
       .limit(limit)
       .offset(offset);
-    const condition = and(
-      filters.status ? eq(categories.status, filters.status) : undefined,
-      filters.search ? ilike(categories.name, `%${filters.search}%`) : undefined,
-    );
+    const condition = categoryFilter(filters);
     return condition ? query.where(condition) : query;
+  }
+
+  /**
+   * Categories matching `filters`, ignoring the page window.
+   *
+   * `list` left-joins products only to count items per category, and groups by
+   * category id, so the row set is one per matching category — which is what
+   * this counts, without the join.
+   */
+  async count(filters: CategoryFilters) {
+    const condition = categoryFilter(filters);
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(categories);
+    const [row] = condition ? await query.where(condition) : await query;
+    return row?.total ?? 0;
   }
 
   listActive(limit: number, offset: number, search?: string) {
     return this.list(limit, offset, { status: "active", search });
+  }
+
+  countActive(search?: string) {
+    return this.count({ status: "active", search });
   }
 
   async findById(id: string) {
@@ -143,12 +168,29 @@ export class ProductRepository {
     return condition ? query.where(condition) : query;
   }
 
+  /** Products matching `filters`, ignoring the page window. */
+  async count(filters: ProductFilters) {
+    const condition = productFilter(filters);
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(products)
+      .innerJoin(categories, eq(products.categoryId, categories.id));
+    const [row] = condition ? await query.where(condition) : await query;
+    return row?.total ?? 0;
+  }
+
+  /** The active-catalog counterpart of `count`, matching `listActive`. */
+  async countActive(filters: ProductFilters) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(products)
+      .innerJoin(categories, eq(products.categoryId, categories.id))
+      .where(activeProductCondition(filters));
+    return row?.total ?? 0;
+  }
+
   listActive(limit: number, offset: number, filters: ProductFilters) {
-    const condition = and(
-      eq(products.status, "active"),
-      eq(categories.status, "active"),
-      productFilter({ ...filters, status: undefined }),
-    );
+    const condition = activeProductCondition(filters);
     return this.db
       .select(catalogProductSelection)
       .from(products)
@@ -305,6 +347,18 @@ export class ProductRepository {
       );
     return result.rowCount ?? 0;
   }
+}
+
+/**
+ * The one place the family-facing catalog decides which products it is about:
+ * an active product inside an active category, plus the caller's own filters.
+ */
+function activeProductCondition(filters: ProductFilters) {
+  return and(
+    eq(products.status, "active"),
+    eq(categories.status, "active"),
+    productFilter({ ...filters, status: undefined }),
+  );
 }
 
 function productFilter(filters: ProductFilters) {

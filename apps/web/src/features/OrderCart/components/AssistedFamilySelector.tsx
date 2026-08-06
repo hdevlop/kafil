@@ -40,10 +40,10 @@ export function AssistedFamilySelector({
   const { t } = useKafilLanguage();
   const families = useQuery({
     queryKey: ["assisted-family-selector", "families", { status: "active" }] as const,
-    queryFn: () =>
-      listFamilies(createOffsetPagination(0, FAMILIES_FETCH_LIMIT), {
+    queryFn: async () =>
+      (await listFamilies(createOffsetPagination(0, FAMILIES_FETCH_LIMIT), {
         status: "active",
-      }),
+      })).rows,
     refetchOnMount: "always",
     staleTime: 0,
   });

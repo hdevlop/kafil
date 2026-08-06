@@ -1,10 +1,9 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
-import { NCard, NPageLayout } from "najm-kit";
+import { NPageHeader, NCard, NPageLayout } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 

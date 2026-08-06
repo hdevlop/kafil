@@ -1,7 +1,5 @@
-import { SponsorsPage } from "@/features/Sponsors";
-
-export const metadata = { title: "Sponsors" };
+import { redirect } from "next/navigation";
 
 export default function OperatorSponsorsPage() {
-  return <SponsorsPage />;
+  redirect("/sponsors");
 }

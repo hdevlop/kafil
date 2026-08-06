@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { CircleCheck, CircleOff, Eye, Pencil, Tags, Trash2 } from "lucide-react";
 import {
+  NPageHeader,
   NButton,
   NPageLayout,
   NTable,
@@ -19,7 +21,6 @@ import { useCategoriesTableFilters } from "@/features/Categories/hooks/useCatego
 import { createOffsetPagination } from "@/lib/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { DashboardPageHeader as NPageHeader } from "@/shared/DashboardShell/DashboardPageHeader";
 import { createCardPagination } from "@/lib/tablePagination";
 
 import { CategoryCard } from "./CategoryCard";
@@ -41,8 +42,14 @@ export function CategoriesPage() {
   const { isExactFamily, isExactAdmin } = useKafilRole();
   const columns = useCategoriesTableColumns();
   useCategoryCommands();
+  // The card grid continues on scroll on every viewport. The table view keeps
+  // numbered pages: rows there are unvirtualized, and infinite table scroll is
+  // out of scope (see PAGINATION-PLAN.md).
+  const [tableView, setTableView] = useState(false);
   const workspace = useCategoriesWorkspace(
     pagination,
+    {},
+    tableView ? "paged" : "infinite",
   );
   const filters = useCategoriesTableFilters(workspace.filters, workspace.setFilters);
 
@@ -185,6 +192,7 @@ export function CategoriesPage() {
     showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
+    onModeChange: (mode) => setTableView(mode === "table"),
     classNames: {
       cards: "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6",
     },

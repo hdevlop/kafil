@@ -35,7 +35,7 @@ export function useOrders(
 ) {
   return useEntityQuery<OrderRecord[]>({
     queryKey: orderKeys.list(query),
-    queryFn: () => listOrders(query),
+    queryFn: async () => (await listOrders(query)).rows,
     ...options,
   });
 }

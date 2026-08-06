@@ -8,6 +8,7 @@ import { NButton, NSheet, NTable, type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { createCardPagination } from "@/lib/tablePagination";
+import type { ResolvedListMode } from "@/hooks/useResponsiveOffsetList";
 
 import { CategoryCard } from "./CategoryCard";
 
@@ -25,6 +26,7 @@ interface CategoryBarProps {
   queryParam?: string;
   paginationController: {
     cardViewport: boolean;
+    mode?: ResolvedListMode;
     hasNextPage: boolean;
     loadingMore: boolean;
     loadMoreError: unknown;

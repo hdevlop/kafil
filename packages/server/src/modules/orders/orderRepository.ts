@@ -202,6 +202,21 @@ export class OrderRepository {
     return condition ? query.where(condition) : query;
   }
 
+  /** Orders matching `filters`, ignoring the page window. */
+  async count(filters: OrderFilters) {
+    const condition = orderFilter(filters);
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(orders)
+      .innerJoin(
+        familyProfiles,
+        eq(orders.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id));
+    const [row] = condition ? await query.where(condition) : await query;
+    return row?.total ?? 0;
+  }
+
   listByFamilyId(
     familyProfileId: string,
     limit: number,
@@ -209,18 +224,26 @@ export class OrderRepository {
     status?: OrderStatus,
     search?: string,
   ) {
-    const condition = and(
-      eq(orders.familyProfileId, familyProfileId),
-      status ? eq(orders.status, status) : undefined,
-      search ? ilike(orders.orderNumber, `%${search}%`) : undefined,
-    );
     return this.db
       .select(familyOrderSelection)
       .from(orders)
-      .where(condition)
+      .where(familyOrderCondition(familyProfileId, status, search))
       .orderBy(desc(orders.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  /** The family-scoped counterpart of `count`, matching `listByFamilyId`. */
+  async countByFamilyId(
+    familyProfileId: string,
+    status?: OrderStatus,
+    search?: string,
+  ) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(orders)
+      .where(familyOrderCondition(familyProfileId, status, search));
+    return row?.total ?? 0;
   }
 
   async listArticleCountsByOrderIds(orderIds: readonly string[]) {
@@ -243,12 +266,7 @@ export class OrderRepository {
     status?: OrderStatus,
     search?: string,
   ) {
-    const condition = and(
-      eq(sponsorProfiles.userId, sponsorUserId),
-      eq(supportAssignments.status, "active"),
-      status ? eq(orders.status, status) : undefined,
-      search ? ilike(orders.orderNumber, `%${search}%`) : undefined,
-    );
+    const condition = sponsorOrderCondition(sponsorUserId, status, search);
     return this.db
       .selectDistinct(sponsorOrderSelection)
       .from(orders)
@@ -264,6 +282,34 @@ export class OrderRepository {
       .orderBy(desc(orders.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  /**
+   * The sponsor-scoped counterpart of `count`.
+   *
+   * `listSupportedBySponsor` selects distinct because one family can carry
+   * several active assignments from the same sponsor; the total has to count
+   * distinct orders for the same reason, or a sponsor with child-level
+   * assignments would be told they have more orders than exist.
+   */
+  async countSupportedBySponsor(
+    sponsorUserId: string,
+    status?: OrderStatus,
+    search?: string,
+  ) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(distinct ${orders.id})::int` })
+      .from(orders)
+      .innerJoin(
+        supportAssignments,
+        eq(orders.familyProfileId, supportAssignments.familyProfileId),
+      )
+      .innerJoin(
+        sponsorProfiles,
+        eq(supportAssignments.sponsorProfileId, sponsorProfiles.id),
+      )
+      .where(sponsorOrderCondition(sponsorUserId, status, search));
+    return row?.total ?? 0;
   }
 
   async findSupportedBySponsor(id: string, sponsorUserId: string) {
@@ -722,6 +768,33 @@ export class OrderPurchaseRepository {
       ...proofs.flatMap(({ path }) => (path ? [path] : [])),
     ];
   }
+}
+
+/** The one place the family order list decides which rows it is about. */
+function familyOrderCondition(
+  familyProfileId: string,
+  status?: OrderStatus,
+  search?: string,
+) {
+  return and(
+    eq(orders.familyProfileId, familyProfileId),
+    status ? eq(orders.status, status) : undefined,
+    search ? ilike(orders.orderNumber, `%${search}%`) : undefined,
+  );
+}
+
+/** The one place the sponsor-supported order list decides which rows it is about. */
+function sponsorOrderCondition(
+  sponsorUserId: string,
+  status?: OrderStatus,
+  search?: string,
+) {
+  return and(
+    eq(sponsorProfiles.userId, sponsorUserId),
+    eq(supportAssignments.status, "active"),
+    status ? eq(orders.status, status) : undefined,
+    search ? ilike(orders.orderNumber, `%${search}%`) : undefined,
+  );
 }
 
 function orderFilter(filters: OrderFilters) {

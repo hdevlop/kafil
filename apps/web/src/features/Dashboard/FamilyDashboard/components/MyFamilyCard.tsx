@@ -37,7 +37,7 @@ export function MyFamilyCard({
     <NCard className="h-full" icon={UsersRound} title={t("dashboard.family.myFamily")}>
       <NCardAction>
         <NButton asChild size="2xs" variant="ghost" rightIcon={ArrowRight}>
-          <Link href="/family/children">{t("dashboard.family.viewAll")}</Link>
+          <Link href="/children">{t("dashboard.family.viewAll")}</Link>
         </NButton>
       </NCardAction>
 

@@ -29,6 +29,61 @@ export interface ContributionPlanFilters {
   status?: "active" | "paused" | "stopped" | "completed";
 }
 
+/** The scope-narrowing filters a family or sponsor reader may apply. */
+type ScopedContributionFilters = Pick<
+  ContributionFilters,
+  "status" | "search" | "paymentMethod"
+>;
+
+/*
+ * One condition builder per list scope, shared by the rows query and its count.
+ *
+ * A total assembled from conditions of its own would eventually describe a
+ * different set than the rows it is reported beside — and a page count built on
+ * it would send readers to pages that hold nothing. Each `count*` below reuses
+ * the builder its `list*` uses, and repeats that list's join chain, because an
+ * inner join narrows the set just as a `where` does.
+ */
+
+function buildContributionConditions(filters: ContributionFilters) {
+  return and(
+    filters.status ? eq(contributions.status, filters.status) : undefined,
+    filters.familyProfileId ? eq(contributions.familyProfileId, filters.familyProfileId) : undefined,
+    filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
+    filters.search
+      ? or(
+          ilike(usersTable.name, `%${filters.search}%`),
+          ilike(familyProfiles.guardianLegalName, `%${filters.search}%`),
+          ilike(contributions.externalReference, `%${filters.search}%`),
+        )
+      : undefined,
+  );
+}
+
+function buildFamilyContributionConditions(
+  userId: string,
+  filters: ScopedContributionFilters,
+) {
+  return and(
+    eq(familyProfiles.userId, userId),
+    filters.status ? eq(contributions.status, filters.status) : undefined,
+    filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
+    filters.search ? ilike(usersTable.name, `%${filters.search}%`) : undefined,
+  );
+}
+
+function buildOwnContributionConditions(
+  userId: string,
+  filters: ScopedContributionFilters,
+) {
+  return and(
+    eq(sponsorProfiles.userId, userId),
+    filters.status ? eq(contributions.status, filters.status) : undefined,
+    filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
+    filters.search ? ilike(familyProfiles.guardianLegalName, `%${filters.search}%`) : undefined,
+  );
+}
+
 export const sponsorContributionSelection = {
   id: contributions.id,
   contributionPlanId: contributions.contributionPlanId,
@@ -160,18 +215,7 @@ export class ContributionRepository {
   }
 
   list(limit: number, offset: number, filters: ContributionFilters) {
-    const condition = and(
-      filters.status ? eq(contributions.status, filters.status) : undefined,
-      filters.familyProfileId ? eq(contributions.familyProfileId, filters.familyProfileId) : undefined,
-      filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
-      filters.search
-        ? or(
-            ilike(usersTable.name, `%${filters.search}%`),
-            ilike(familyProfiles.guardianLegalName, `%${filters.search}%`),
-            ilike(contributions.externalReference, `%${filters.search}%`),
-          )
-        : undefined,
-    );
+    const condition = buildContributionConditions(filters);
     const query = this.db
       .select(operatorContributionSelection)
       .from(contributions)
@@ -189,6 +233,26 @@ export class ContributionRepository {
       .limit(limit)
       .offset(offset);
     return condition ? query.where(condition) : query;
+  }
+
+  /** Rows matching `filters` in the operator scope, ignoring the page window. */
+  async count(filters: ContributionFilters) {
+    const condition = buildContributionConditions(filters);
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(contributions)
+      .innerJoin(
+        sponsorProfiles,
+        eq(contributions.sponsorProfileId, sponsorProfiles.id),
+      )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .innerJoin(
+        familyProfiles,
+        eq(contributions.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id));
+    const [row] = condition ? await query.where(condition) : await query;
+    return row?.total ?? 0;
   }
 
   async findById(id: string) {
@@ -232,14 +296,8 @@ export class ContributionRepository {
     userId: string,
     limit: number,
     offset: number,
-    filters: Pick<ContributionFilters, "status" | "search" | "paymentMethod">,
+    filters: ScopedContributionFilters,
   ) {
-    const condition = and(
-      eq(familyProfiles.userId, userId),
-      filters.status ? eq(contributions.status, filters.status) : undefined,
-      filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
-      filters.search ? ilike(usersTable.name, `%${filters.search}%`) : undefined,
-    );
     return this.db
       .select(familyContributionSelection)
       .from(contributions)
@@ -252,10 +310,28 @@ export class ContributionRepository {
         eq(contributions.sponsorProfileId, sponsorProfiles.id),
       )
       .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
-      .where(condition)
+      .where(buildFamilyContributionConditions(userId, filters))
       .orderBy(desc(contributions.submittedAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  /** Rows visible to one family, ignoring the page window. */
+  async countFamily(userId: string, filters: ScopedContributionFilters) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(contributions)
+      .innerJoin(
+        familyProfiles,
+        eq(contributions.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(
+        sponsorProfiles,
+        eq(contributions.sponsorProfileId, sponsorProfiles.id),
+      )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .where(buildFamilyContributionConditions(userId, filters));
+    return row?.total ?? 0;
   }
 
   async lockById(id: string) {
@@ -291,14 +367,8 @@ export class ContributionRepository {
     userId: string,
     limit: number,
     offset: number,
-    filters: ContributionFilters,
+    filters: ScopedContributionFilters,
   ) {
-    const condition = and(
-      eq(sponsorProfiles.userId, userId),
-      filters.status ? eq(contributions.status, filters.status) : undefined,
-      filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
-      filters.search ? ilike(familyProfiles.guardianLegalName, `%${filters.search}%`) : undefined,
-    );
     return this.db
       .select(sponsorContributionSelection)
       .from(contributions)
@@ -312,10 +382,29 @@ export class ContributionRepository {
         eq(contributions.familyProfileId, familyProfiles.id),
       )
       .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id))
-      .where(condition)
+      .where(buildOwnContributionConditions(userId, filters))
       .orderBy(desc(contributions.submittedAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  /** Rows belonging to one sponsor, ignoring the page window. */
+  async countOwn(userId: string, filters: ScopedContributionFilters) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(contributions)
+      .innerJoin(
+        sponsorProfiles,
+        eq(contributions.sponsorProfileId, sponsorProfiles.id),
+      )
+      .innerJoin(usersTable, eq(sponsorProfiles.userId, usersTable.id))
+      .innerJoin(
+        familyProfiles,
+        eq(contributions.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id))
+      .where(buildOwnContributionConditions(userId, filters));
+    return row?.total ?? 0;
   }
 
   async create(data: NewContribution) {

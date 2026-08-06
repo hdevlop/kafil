@@ -19,7 +19,7 @@ export function listProducts(
   pagination: OffsetPagination,
   filters: ListProductsFilters = {},
 ) {
-  return api.get<ProductRecord[]>("/catalog/products", {
+  return api.getPage<ProductRecord>("/catalog/products", {
     query: {
       limit: pagination.limit,
       offset: pagination.offset,
@@ -38,7 +38,7 @@ export function listProductCategories(
   search?: string,
   pagination: OffsetPagination = { limit: 25, offset: 0 },
 ) {
-  return api.get<ProductCategory[]>("/catalog/categories", {
+  return api.getPage<ProductCategory>("/catalog/categories", {
     query: { status: "active", ...pagination, search },
   });
 }

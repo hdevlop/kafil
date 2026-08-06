@@ -64,7 +64,7 @@ describe("catalog category seed", () => {
     }> = [];
     const service: CategorySeedService = {
       async listCategories() {
-        return records;
+        return { data: records };
       },
       async createCategory(data) {
         const record = {

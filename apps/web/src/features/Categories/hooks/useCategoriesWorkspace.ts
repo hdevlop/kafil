@@ -4,7 +4,10 @@ import { useState } from "react";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useCategoryCommands, useResponsiveCategories } from "@/features/Categories/hooks/useCategories";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import {
+  useResponsiveOffsetList,
+  type ListStrategy,
+} from "@/hooks/useResponsiveOffsetList";
 import { listFamilyCatalogCategories } from "@/services/familyCatalogApi";
 import { familyCatalogKeys } from "@/features/Products/hooks/familyCatalogKeys";
 import type { OffsetPagination } from "@/lib/pagination";
@@ -33,16 +36,22 @@ export interface CategoriesWorkspace {
 export function useCategoriesWorkspace(
   pagination: OffsetPagination,
   initialFilters: CategoriesWorkspaceFilters = {},
+  strategy: ListStrategy = "paged",
 ): CategoriesWorkspace {
   const { isExactFamily } = useKafilRole();
   const [filters, setFilters] = useState<CategoriesWorkspaceFilters>(
     initialFilters,
   );
 
-  const managementCategories = useResponsiveCategories(filters, !isExactFamily);
+  const managementCategories = useResponsiveCategories(
+    filters,
+    !isExactFamily,
+    strategy,
+  );
   const managementActions = useCategoryCommands();
   const familyCategories = useResponsiveOffsetList({
     enabled: isExactFamily,
+    strategy,
     queryKey: [...familyCatalogKeys.categories, "responsive", filters.search],
     fetchPage: (page) => listFamilyCatalogCategories(page, filters.search),
   });

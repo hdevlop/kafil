@@ -18,7 +18,7 @@ export function listSponsors(
   pagination: OffsetPagination,
   filters: ListSponsorsFilters = {},
 ) {
-  return api.get<SponsorRecord[]>("/sponsors", {
+  return api.getPage<SponsorRecord>("/sponsors", {
     query: {
       limit: pagination.limit,
       offset: pagination.offset,

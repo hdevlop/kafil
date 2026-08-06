@@ -498,6 +498,7 @@ describe("Phase 1 family workflow", () => {
   it("includes each family's funding progress in the operator list", async () => {
     const family = familyProfile();
     const listCalls: unknown[][] = [];
+    const countCalls: unknown[][] = [];
     const progress = {
       status: "pending_funding" as const,
       targetMinor: 720000,
@@ -516,6 +517,10 @@ describe("Phase 1 family workflow", () => {
         list: async (...args: unknown[]) => {
           listCalls.push(args);
           return [family];
+        },
+        count: async (...args: unknown[]) => {
+          countCalls.push(args);
+          return 7;
         },
         listActiveSponsorsForFamilies: async (familyIds: string[]) => {
           expect(familyIds).toEqual([familyId]);
@@ -564,15 +569,25 @@ describe("Phase 1 family workflow", () => {
         search: "Amrani",
         status: "active",
       }),
-    ).resolves.toEqual([
-      {
-        ...family,
-        funding: progress,
-        activeSponsorNames: ["Sponsor One", "Sponsor Two"],
-      },
-    ]);
+    ).resolves.toEqual({
+      data: [
+        {
+          ...family,
+          funding: progress,
+          activeSponsorNames: ["Sponsor One", "Sponsor Two"],
+        },
+      ],
+      message: undefined,
+      status: "success",
+      pagination: { page: 1, limit: 25, total: 7 },
+    });
     expect(listCalls).toEqual([
       [25, 0, { search: "Amrani", status: "active" }],
+    ]);
+    // The total must describe the same set as the rows, so the count is asked
+    // the same question minus the page window.
+    expect(countCalls).toEqual([
+      [{ search: "Amrani", status: "active" }],
     ]);
   });
 

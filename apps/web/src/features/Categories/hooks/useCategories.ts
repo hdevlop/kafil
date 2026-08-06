@@ -16,6 +16,7 @@ import {
 
 import { categoryKeys } from "./categoryKeys";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
+import type { ListStrategy } from "@/hooks/useResponsiveOffsetList";
 import type { CategoryRecord } from "../types";
 import type { ListCategoryFilters } from "@/services/categoryApi";
 
@@ -25,7 +26,7 @@ export function useCategories(
 ) {
   return useEntityQuery<CategoryRecord[]>({
     queryKey: categoryKeys.list(pagination),
-    queryFn: () => listCategories(pagination),
+    queryFn: async () => (await listCategories(pagination)).rows,
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
@@ -36,9 +37,11 @@ export function useCategories(
 export function useResponsiveCategories(
   filters: ListCategoryFilters = {},
   enabled = true,
+  strategy: ListStrategy = "paged",
 ) {
   return useResponsiveOffsetList({
     enabled,
+    strategy,
     queryKey: [...categoryKeys.all, "responsive", filters],
     fetchPage: (pagination) => listCategories(pagination, filters),
   });

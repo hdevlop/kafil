@@ -27,7 +27,7 @@ export function useFamilies(
 ) {
   return useEntityQuery({
     queryKey: familyKeys.list({ ...pagination, ...filters }),
-    queryFn: () => listFamilies(pagination, filters),
+    queryFn: async () => (await listFamilies(pagination, filters)).rows,
     enabled,
   });
 }
@@ -50,7 +50,7 @@ export function useSponsorFamilyCatalog(
 ) {
   return useEntityQuery({
     queryKey: [...familyKeys.sponsorCatalog(filters), pagination],
-    queryFn: () => listSponsorFamilyCatalog(pagination, filters),
+    queryFn: async () => (await listSponsorFamilyCatalog(pagination, filters)).rows,
     enabled,
   });
 }

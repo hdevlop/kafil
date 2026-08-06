@@ -48,7 +48,16 @@ describe("list row buffering", () => {
     expect(list).toContain('loadingMore: mode === "infinite" && buffer.isFetchingNextPage,');
   });
 
-  test("page count is exact within the buffer", () => {
+  test("page count comes from the server total when there is one", () => {
+    // Without this the count was fabricated from the buffer, so a 500-row
+    // result rendered "Page 1 of 2" and the last-page control went to page 2.
+    expect(list).toContain("buffer.total !== null");
+    expect(list).toContain(
+      "Math.max(1, Math.ceil(buffer.total / pagination.pageSize))",
+    );
+  });
+
+  test("page count still falls back to the buffer for a list without a total", () => {
     expect(list).toContain(
       "const bufferedPages = Math.max(1, Math.ceil(rows.length / pagination.pageSize));",
     );

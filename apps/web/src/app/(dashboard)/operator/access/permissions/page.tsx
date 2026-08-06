@@ -1,5 +1,5 @@
-import { AdminPermissionsPage } from "@/features/AdminAccess";
+import { redirect } from "next/navigation";
 
 export default function AdminAccessPermissionsRoute() {
-  return <AdminPermissionsPage />;
+  redirect("/permissions");
 }

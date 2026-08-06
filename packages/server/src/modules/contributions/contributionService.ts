@@ -1,6 +1,7 @@
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import {
   BudgetAccountRepository,
@@ -48,48 +49,65 @@ export class ContributionService {
     private readonly fundingRepo: FundingRepository,
   ) {}
 
-  list(query: ContributionListQuery) {
+  async list(query: ContributionListQuery) {
     const { limit, offset, ...filters } = contributionListQuery.parse(query ?? {});
-    return this.contributions.list(limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.contributions.list(limit, offset, filters),
+      this.contributions.count(filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
-listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
+  /**
+   * One page of the contributions this principal may read, with the result
+   * total for its own scope.
+   *
+   * Each branch counts through the same scope it lists through, so a family
+   * never learns how many contributions exist beyond its own and a sponsor
+   * never learns how many exist beyond theirs. A shared total here would leak
+   * the size of the whole ledger to every reader of a slice of it.
+   */
+  async listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
     const parsed = contributionListQuery.parse(query ?? {});
     if (role === "family") {
       if (parsed.familyProfileId) {
         HttpError.forbidden("Family contribution scope cannot be selected by the client");
       }
-      return this.contributions.listFamily(
-        userId,
-        parsed.limit,
-        parsed.offset,
-        {
-          status: parsed.status,
-          search: parsed.search,
-          paymentMethod: parsed.paymentMethod,
-        },
-      );
+      const scope = {
+        status: parsed.status,
+        search: parsed.search,
+        paymentMethod: parsed.paymentMethod,
+      };
+      const [rows, total] = await Promise.all([
+        this.contributions.listFamily(userId, parsed.limit, parsed.offset, scope),
+        this.contributions.countFamily(userId, scope),
+      ]);
+      return listPage(rows, { limit: parsed.limit, offset: parsed.offset, total });
     }
     if (role === "sponsor") {
       if (parsed.familyProfileId) {
         HttpError.forbidden("Sponsor contribution scope cannot be selected by the client");
       }
-      return this.contributions.listOwn(
-        userId,
-        parsed.limit,
-        parsed.offset,
-        {
-          status: parsed.status,
-          search: parsed.search,
-          paymentMethod: parsed.paymentMethod,
-        },
-      );
+      const scope = {
+        status: parsed.status,
+        search: parsed.search,
+        paymentMethod: parsed.paymentMethod,
+      };
+      const [rows, total] = await Promise.all([
+        this.contributions.listOwn(userId, parsed.limit, parsed.offset, scope),
+        this.contributions.countOwn(userId, scope),
+      ]);
+      return listPage(rows, { limit: parsed.limit, offset: parsed.offset, total });
     }
     if (role !== "admin" && role !== "operator") {
       HttpError.forbidden("Contribution access denied");
     }
     const { limit, offset, ...filters } = parsed;
-    return this.contributions.list(limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.contributions.list(limit, offset, filters),
+      this.contributions.count(filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
   listRecordingOptions(query: ContributionRecordingOptionsQuery = {}) {
@@ -120,7 +138,11 @@ async getForPrincipal(id: string, userId: string, role: string) {
 
   async listOwn(userId: string, query: ContributionListQuery) {
     const { limit, offset, ...filters } = contributionListQuery.parse(query ?? {});
-    return this.contributions.listOwn(userId, limit, offset, filters);
+    const [rows, total] = await Promise.all([
+      this.contributions.listOwn(userId, limit, offset, filters),
+      this.contributions.countOwn(userId, filters),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
   getOwn(id: string, userId: string) {

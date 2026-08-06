@@ -5,4 +5,5 @@ export {
   GlobalSettingsSheet,
 } from "./components/GlobalSettingsSheet";
 export { SettingsPage } from "./components/SettingsPage";
+export { ThemePresetsPanel } from "./components/ThemePresetsPanel";
 export { ThemeSettingsPanel } from "./components/ThemeSettingsPanel";

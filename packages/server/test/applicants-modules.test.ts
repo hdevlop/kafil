@@ -38,6 +38,22 @@ let userSequence = 0;
 let emailSentHtml = "";
 let emailSendCount = 0;
 
+/** The in-memory stand-in for the repository's shared condition builder. */
+function matchStoredApplicants(filters: { status?: string; search?: string } = {}) {
+  let rows = Object.values(storedApplicants) as ReturnType<typeof baseApplicant>[];
+  if (filters.status) rows = rows.filter((row) => row.status === filters.status);
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    rows = rows.filter(
+      (row) =>
+        row.name.toLowerCase().includes(q) ||
+        row.email.toLowerCase().includes(q) ||
+        row.phone.toLowerCase().includes(q),
+    );
+  }
+  return rows;
+}
+
 function newUserId() {
   userSequence += 1;
   return `applicant-user-${userSequence}`;
@@ -233,6 +249,7 @@ describe("applicant service", () => {
           calls.push([limit, offset]);
           return [applicant as ReturnType<typeof baseApplicant>];
         },
+        count: async () => 1,
         findById: async () => applicant as ReturnType<typeof baseApplicant>,
       }),
       validator: applicantValidator({
@@ -240,7 +257,9 @@ describe("applicant service", () => {
       }),
     });
 
-    await expect(service.list({})).resolves.toEqual([applicant]);
+    const page = await service.list({});
+    expect(page.data).toEqual([applicant]);
+    expect(page.pagination).toEqual({ page: 1, limit: 100, total: 1 });
     await expect(service.get(applicant.id)).resolves.toEqual(applicant);
     expect(calls).toEqual([[100, 0]]);
   });
@@ -918,18 +937,21 @@ describe("applicant decision service", () => {
     });
 
     const pendingOnly = await service.list({ status: "pending_review" });
-    expect(pendingOnly.map((row) => row.id)).toContain(pendingApplicant.id);
-    expect(pendingOnly.map((row) => row.id)).not.toContain(search.id);
+    expect(pendingOnly.data.map((row) => row.id)).toContain(pendingApplicant.id);
+    expect(pendingOnly.data.map((row) => row.id)).not.toContain(search.id);
 
     const approvedOnly = await service.list({ status: "approved" });
-    expect(approvedOnly.map((row) => row.id)).toContain(search.id);
-    expect(approvedOnly.map((row) => row.id)).not.toContain(pendingApplicant.id);
+    expect(approvedOnly.data.map((row) => row.id)).toContain(search.id);
+    expect(approvedOnly.data.map((row) => row.id)).not.toContain(pendingApplicant.id);
 
     const byEmail = await service.list({ search: "search@example.test" });
-    expect(byEmail.map((row) => row.id)).toEqual([search.id]);
+    expect(byEmail.data.map((row) => row.id)).toEqual([search.id]);
+    // The total follows the filter, not the unfiltered table.
+    expect(byEmail.pagination.total).toBe(1);
 
     const byPhone = await service.list({ search: "+212600000099" });
-    expect(byPhone.map((row) => row.id)).toEqual([pendingApplicant.id]);
+    expect(byPhone.data.map((row) => row.id)).toEqual([pendingApplicant.id]);
+    expect(byPhone.pagination.total).toBe(1);
   });
 
   it("counts pending review applicants for the queue header", async () => {
@@ -952,6 +974,7 @@ function applicantUser(): SanitizedUser {
 
 function applicantRepository(overrides: Partial<{
   list: (limit: number, offset: number) => Promise<ReturnType<typeof baseApplicant>[]>;
+  count: (filters: Record<string, unknown>) => Promise<number>;
   findById: (id: string) => Promise<ReturnType<typeof baseApplicant> | undefined>;
   findByIdForUpdate: (id: string) => Promise<ReturnType<typeof baseApplicant> | undefined>;
   findAuthUserByIdForUpdate: (id: string) => Promise<Record<string, unknown> | undefined>;
@@ -1072,20 +1095,12 @@ function applicantRepository(overrides: Partial<{
     findByEmailInsensitive,
     findByPhone: overrides.findByPhone ?? (async () => undefined),
     findByCin: overrides.findByCin ?? (async () => undefined),
-    list: overrides.list ?? (async (limit: number, offset: number, filters: { status?: string; search?: string } = {}) => {
-      let rows = Object.values(storedApplicants) as ReturnType<typeof baseApplicant>[];
-      if (filters.status) rows = rows.filter((row) => row.status === filters.status);
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        rows = rows.filter(
-          (row) =>
-            row.name.toLowerCase().includes(q) ||
-            row.email.toLowerCase().includes(q) ||
-            row.phone.toLowerCase().includes(q),
-        );
-      }
-      return rows.slice(offset, offset + limit);
-    }),
+    list: overrides.list ?? (async (limit: number, offset: number, filters: { status?: string; search?: string } = {}) =>
+      matchStoredApplicants(filters).slice(offset, offset + limit)),
+    // Mirrors the real repository: the total answers the same filter question
+    // as the rows, minus the page window.
+    count: overrides.count ?? (async (filters: { status?: string; search?: string } = {}) =>
+      matchStoredApplicants(filters).length),
     create: createApplicant,
     updateIdentity: overrides.updateIdentity ?? (async (id: string, input: Record<string, unknown>) => {
       if (storedApplicants[id]) {

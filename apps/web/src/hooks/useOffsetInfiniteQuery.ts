@@ -5,7 +5,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   fetchOffsetPage,
   type OffsetPage,
-  type OffsetPagination,
+  type OffsetPageFetcher,
 } from "@/lib/pagination";
 
 /**
@@ -24,7 +24,7 @@ export function useOffsetInfiniteQuery<T>({
   windowSize = 50,
 }: {
   enabled?: boolean;
-  fetchPage: (pagination: OffsetPagination) => Promise<T[]>;
+  fetchPage: OffsetPageFetcher<T>;
   queryKey: readonly unknown[];
   windowSize?: number;
 }) {
@@ -40,9 +40,14 @@ export function useOffsetInfiniteQuery<T>({
       lastPage.hasNextPage ? lastPage.nextOffset : undefined,
   });
 
+  const pages = query.data?.pages;
+
   return {
     ...query,
-    rows: query.data?.pages.flatMap((page) => page.rows) ?? [],
+    rows: pages?.flatMap((page) => page.rows) ?? [],
     hasNextPage: Boolean(query.hasNextPage),
+    // The newest window carries the freshest count. Reading the first page
+    // instead would keep reporting a total from before the latest mutation.
+    total: pages?.[pages.length - 1]?.total ?? null,
   };
 }

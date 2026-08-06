@@ -1,8 +1,5 @@
-import { requireRole } from "@/lib/session";
+import { redirect } from "next/navigation";
 
-import { StaffPage } from "@/features/Staff";
-
-export default async function StaffRoute() {
-  await requireRole(["admin"]);
-  return <StaffPage />;
+export default function OperatorStaffPage() {
+  redirect("/staff");
 }

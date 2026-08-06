@@ -419,6 +419,14 @@
       "reset": "Apariencia restablecida correctamente"
     }
   },
+  "themePresets": {
+    "success": {
+      "retrieved": "Temas guardados recuperados correctamente",
+      "created": "Tema guardado en la biblioteca correctamente",
+      "applied": "Tema aplicado correctamente",
+      "deleted": "Tema guardado eliminado correctamente"
+    }
+  },
   "branding": {
     "success": {
       "retrieved": "Marca recuperada correctamente",
@@ -555,6 +563,18 @@
       "retryLoadMore": "Reintentar",
       "loadMoreError": "No se pudieron cargar más resultados.",
       "itemsLoaded": "Se cargaron {{count}} resultados más",
+      "pagination": {
+        "rowsPerPage": "Filas/página",
+        "label": "Paginación",
+        "goToPage": "Ir a la página {{page}}",
+        "currentPage": "Página {{page}}, página actual",
+        "firstPage": "Primera página",
+        "previousPage": "Página anterior",
+        "nextPage": "Página siguiente",
+        "lastPage": "Última página",
+        "pageOf": "Página {{page}} de {{pageCount}}",
+        "rowsSelected": "{{selected}} de {{total}} fila(s) seleccionada(s)."
+      },
       "orderCategory": "Categoría del pedido",
       "orderFamily": "Familia",
       "orderPhone": "Teléfono",
@@ -784,6 +804,12 @@
       "shopping": "Shopping",
       "supportAndFinance": "Support",
       "account": "Account"
+    },
+    "sidebar": {
+      "open": "Abrir menú lateral",
+      "close": "Cerrar menú lateral",
+      "collapse": "Contraer",
+      "expand": "Expandir"
     },
     "action": {
       "signOut": "Sign out",
@@ -1045,6 +1071,39 @@
         "discard": "Descartar cambios",
         "resetThemeTitle": "¿Restablecer el tema de Kafil?",
         "resetThemeDescription": "Esto elimina el tema guardado y restaura el diseño predeterminado versionado.",
+        "presets": {
+          "title": "Temas guardados",
+          "description": "Elige un tema para previsualizarlo en toda la app. No se guarda nada hasta que pulses guardar.",
+          "empty": "Aún no hay temas guardados. Guarda el tema actual para empezar una biblioteca.",
+          "loadError": "No pudimos cargar los temas guardados.",
+          "builtIn": "Integrado",
+          "active": "Activo",
+          "select": "Tema guardado",
+          "selectPlaceholder": "Elige un tema para previsualizar",
+          "savedOption": "Tema guardado actual",
+          "previewing": "Vista previa — sin guardar",
+          "revert": "Descartar vista previa",
+          "revertDone": "Vuelta al tema guardado.",
+          "apply": "Aplicar",
+          "applyLabel": "Aplicar {name}",
+          "applySuccess": "{name} ya es el tema de la plataforma.",
+          "applyError": "No se pudo aplicar ese tema.",
+          "delete": "Eliminar",
+          "deleteLabel": "Eliminar {name}",
+          "deleteTitle": "¿Eliminar este tema guardado?",
+          "deleteDescription": "{name} se quitará de la biblioteca. El tema activo de la plataforma no cambia.",
+          "deleteSuccess": "{name} se eliminó.",
+          "deleteError": "No se pudo eliminar ese tema.",
+          "saveCurrent": "Guardar el tema actual",
+          "saveTitle": "Guardar el tema actual",
+          "saveDescription": "Da un nombre a este diseño para poder aplicarlo más adelante.",
+          "nameLabel": "Nombre del tema",
+          "namePlaceholder": "Por ejemplo: Sable",
+          "nameRequired": "Escribe un nombre para este tema.",
+          "saveAction": "Guardar en la biblioteca",
+          "saveSuccess": "{name} se guardó en la biblioteca.",
+          "saveError": "No se pudo guardar ese tema."
+        },
         "branding": {
           "cardTitle": "Recursos de marca",
           "cardDescription": "",

@@ -58,7 +58,7 @@ function StaffRedirectCard() {
         {t("adminAccess.users.staffRedirectDescription")}
       </p>
       <div className="flex justify-end">
-        <Link className={buttonVariants()} href="/operator/staff">
+        <Link className={buttonVariants()} href="/staff">
           {t("adminAccess.users.openStaff")}
         </Link>
       </div>

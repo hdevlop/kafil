@@ -133,6 +133,10 @@ describe("Phase 3 contribution contracts", () => {
           calls.push(["listFamily", ...args]);
           return [safeContribution];
         },
+        countFamily: async (...args: unknown[]) => {
+          calls.push(["countFamily", ...args]);
+          return 1;
+        },
         findFamilyById: async (...args: unknown[]) => {
           calls.push(["findFamilyById", ...args]);
           return safeContribution;
@@ -149,20 +153,25 @@ describe("Phase 3 contribution contracts", () => {
       {} as never,
     );
 
-    await expect(service.listForPrincipal("family-user", "family", {
+    const familyPage = await service.listForPrincipal("family-user", "family", {
       limit: 25,
       offset: 0,
       status: "validated",
-    })).resolves.toEqual([safeContribution]);
+    });
+    expect(familyPage.data).toEqual([safeContribution]);
+    // The total is counted through the family's own scope, so it describes the
+    // rows this family may read and never the size of the whole ledger.
+    expect(familyPage.pagination).toEqual({ page: 1, limit: 25, total: 1 });
     await expect(service.getForPrincipal(contributionId, "family-user", "family"))
       .resolves.toEqual(safeContribution);
     expect(calls).toEqual([
       ["listFamily", "family-user", 25, 0, { status: "validated" }],
+      ["countFamily", "family-user", { status: "validated" }],
       ["findFamilyById", contributionId, "family-user"],
     ]);
-    expect(() => service.listForPrincipal("family-user", "family", {
+    await expect(service.listForPrincipal("family-user", "family", {
       familyProfileId: householdId,
-    })).toThrow("Family contribution scope cannot be selected by the client");
+    })).rejects.toThrow("Family contribution scope cannot be selected by the client");
     expect(Object.keys(familyContributionSelection)).toEqual([
       "id",
       "sponsorName",

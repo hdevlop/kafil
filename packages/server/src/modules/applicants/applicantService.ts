@@ -12,6 +12,7 @@ import { Transaction } from "najm-database";
 import { EmailService } from "najm-email";
 
 import { envConfig } from "../../config/envConfig";
+import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { OutboxService } from "../outbox/outboxService";
 import { SponsorRepository } from "../sponsors/sponsorRepository";
@@ -239,7 +240,11 @@ export class ApplicantService {
     const { limit, offset, status, search } = applicantListQuery.parse(
       query ?? {},
     );
-    return this.applicants.list(limit, offset, { status, search });
+    const [rows, total] = await Promise.all([
+      this.applicants.list(limit, offset, { status, search }),
+      this.applicants.count({ status, search }),
+    ]);
+    return listPage(rows, { limit, offset, total });
   }
 
   async countByStatus(status: ApplicantRecord["status"]) {

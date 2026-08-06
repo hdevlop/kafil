@@ -5,14 +5,9 @@ import { getDashboardNavigation } from "../src/shared/DashboardShell";
 
 describe("admin access management feature", () => {
   test("shows access management only to admins", () => {
-    const translate = ((key: string) => key) as never;
-    const operator = getDashboardNavigation("operator", translate);
-    const admin = getDashboardNavigation("admin", translate);
-    const accessIds = [
-      "/operator/access/users",
-      "/operator/access/roles",
-      "/operator/access/permissions",
-    ];
+    const operator = getDashboardNavigation("operator");
+    const admin = getDashboardNavigation("admin");
+    const accessIds = ["/users", "/roles", "/permissions"];
 
     expect(operator.map((item) => item.id)).not.toEqual(
       expect.arrayContaining(accessIds),
@@ -28,13 +23,20 @@ describe("admin access management feature", () => {
   });
 
   test("protects direct routes and keeps fixed roles read-only", async () => {
-    const [layout, roles, permissions] = await Promise.all([
-      Bun.file(
-        new URL(
-          "../src/app/(dashboard)/operator/access/layout.tsx",
-          import.meta.url,
+    // Each access route guards itself now that the /operator/access segment is
+    // gone — there is no shared layout left to carry the check.
+    const accessRoutes = ["users", "roles", "permissions"];
+    const [guards, roles, permissions] = await Promise.all([
+      Promise.all(
+        accessRoutes.map((route) =>
+          Bun.file(
+            new URL(
+              `../src/app/(dashboard)/${route}/page.tsx`,
+              import.meta.url,
+            ),
+          ).text(),
         ),
-      ).text(),
+      ),
       Bun.file(
         new URL(
           "../src/features/AdminAccess/components/AdminRolesPage.tsx",
@@ -49,7 +51,9 @@ describe("admin access management feature", () => {
       ).text(),
     ]);
 
-    expect(layout).toContain('requireRole(["admin"])');
+    for (const guard of guards) {
+      expect(guard).toContain('requireRole(["admin"])');
+    }
     expect(roles).not.toMatch(/createRole|updateRole|deleteRole/);
     expect(permissions).toContain("CreateAccessPermissionDialogContent");
     expect(permissions).not.toMatch(/updatePermission|deletePermission/);

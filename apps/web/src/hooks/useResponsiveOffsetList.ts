@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { OffsetPagination } from "@/lib/pagination";
+import type { OffsetPageFetcher } from "@/lib/pagination";
 
 import { useCardViewport } from "./useDesktopTableMode";
 import { useOffsetInfiniteQuery } from "./useOffsetInfiniteQuery";
@@ -64,7 +64,7 @@ export function useResponsiveOffsetList<T>({
   strategy = "paged",
 }: {
   enabled?: boolean;
-  fetchPage: (pagination: OffsetPagination) => Promise<T[]>;
+  fetchPage: OffsetPageFetcher<T>;
   pageSize?: number;
   queryKey: readonly unknown[];
   strategy?: ListStrategy;
@@ -152,15 +152,21 @@ export function useResponsiveOffsetList<T>({
     [queryIdentity],
   );
 
-  // Exact for everything buffered. Beyond the buffer the only honest claim is
-  // still that one more page exists.
+  // With a server total the page count is simply true. Without one, the only
+  // honest claim is still "everything buffered, and one more page if the
+  // buffer has not reached the end" — which understates a long result, and is
+  // why the endpoints backing numbered pages report a total.
   const bufferedPages = Math.max(1, Math.ceil(rows.length / pagination.pageSize));
-  const pageCount = buffer.hasNextPage ? bufferedPages + 1 : bufferedPages;
+  const pageCount = buffer.total !== null
+    ? Math.max(1, Math.ceil(buffer.total / pagination.pageSize))
+    : buffer.hasNextPage ? bufferedPages + 1 : bufferedPages;
 
   return {
     cardViewport,
     mode,
     data,
+    /** Rows matching the current filters on the server, or `null` if unknown. */
+    total: buffer.total,
     error: buffer.error,
     hasNextPage: mode === "infinite" && buffer.hasNextPage,
     // A background window extension is not a load. Paged readers keep the rows

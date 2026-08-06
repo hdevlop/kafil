@@ -9,8 +9,16 @@ import type {
 } from "@/features/Contributions/types";
 import { api } from "@/services/http";
 
+/**
+ * One page of contributions, with the result total the endpoint now reports.
+ *
+ * `getPage` rather than `get`: the total lives on the response envelope, which
+ * `api.get` discards. It is what lets the list render a real page count instead
+ * of the cursor bound it used to synthesize — and it retires the probe request
+ * that used to ask for one row past the page just to learn whether more existed.
+ */
 export function listContributions<TRecord extends ContributionListRecord = ContributionRecord>(query: ContributionListQuery) {
-  return api.get<TRecord[]>("/contributions", {
+  return api.getPage<TRecord>("/contributions", {
     query: {
       familyProfileId: query.familyProfileId,
       search: query.search,
@@ -20,17 +28,6 @@ export function listContributions<TRecord extends ContributionListRecord = Contr
       status: query.status,
     },
   });
-}
-
-export async function listContributionPage<TRecord extends ContributionListRecord = ContributionRecord>(
-  query: ContributionListQuery,
-) {
-  const rows = await listContributions<TRecord>(query);
-  const hasNextPage = rows.length === query.limit
-    ? (await listContributions<TRecord>({ ...query, limit: 1, offset: query.offset + query.limit })).length > 0
-    : false;
-
-  return { rows, hasNextPage };
 }
 
 export function listContributionRecordingOptions(query: {

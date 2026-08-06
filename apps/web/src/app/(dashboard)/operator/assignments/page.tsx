@@ -1,7 +1,5 @@
-import { SupportAssignmentsPage } from "@/features/SupportAssignments";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Support assignments" };
-
-export default function OperatorSupportAssignmentsPage() {
-  return <SupportAssignmentsPage />;
+export default function OperatorAssignmentsPage() {
+  redirect("/assignments");
 }

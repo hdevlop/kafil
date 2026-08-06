@@ -65,10 +65,10 @@ describe("demo catalog products", () => {
         return product;
       },
       async listCategories() {
-        return categories;
+        return { data: categories };
       },
       async listProducts() {
-        return products;
+        return { data: products };
       },
       async setProductStatus(id, status) {
         const product = products.find((candidate) => candidate.id === id)!;

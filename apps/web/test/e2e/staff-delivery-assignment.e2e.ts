@@ -71,7 +71,7 @@ test.describe("Staff completion", () => {
       return json(route, deliveryStaff);
     });
 
-    await page.goto("/operator/staff");
+    await page.goto("/staff");
     await expect(page.getByRole("heading", { name: "Staff", exact: true })).toBeVisible();
     await expect(page.getByText("Amina Zahra", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Add staff" })).toBeVisible();
@@ -92,7 +92,7 @@ test.describe("Staff completion", () => {
 
   test("normal operators are denied the Staff management route", async ({ page }) => {
     await useRole(page, "operator");
-    await page.goto("/operator/staff");
+    await page.goto("/staff");
     await expect(page).toHaveURL(/(?:\/forbidden$|\/login\?from=%2Fforbidden$)/);
   });
 
@@ -104,7 +104,7 @@ test.describe("Staff completion", () => {
         status: "success",
       }),
     );
-    await page.goto("/operator/staff");
+    await page.goto("/staff");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByRole("heading", { name: "الموظفون" })).toBeVisible();
     await expect(page.getByRole("button", { name: "إضافة موظف" })).toBeVisible();

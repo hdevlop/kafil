@@ -9,8 +9,11 @@ describe("branding consumer integration", () => {
   test("DashboardShell uses BrandingImage for both sidebar states and the factory fallbacks", () => {
     const shell = readSource("../src/shared/DashboardShell/index.tsx");
     expect(shell).toContain("useKafilBranding");
-    expect(shell).toContain("sidebarCollapsed");
-    expect(shell).toContain("onCollapsedChange={setSidebarCollapsed}");
+    // The collapsed/expanded swap is driven by NSidebar's own resolved state
+    // through the `logo` render prop, so the shell no longer mirrors that state
+    // itself or approximates it with responsive classes.
+    expect(shell).toContain("logo={({ collapsed }) =>");
+    expect(shell).not.toContain("sidebarCollapsed");
     expect(shell).toContain("branding.sidebarLogoExpandedPath");
     expect(shell).toContain("branding.sidebarLogoCollapsedPath");
     expect(shell).toContain("slot=\"sidebarLogoExpanded\"");

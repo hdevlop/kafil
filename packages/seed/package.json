@@ -16,6 +16,7 @@
     "seed:admin": "bun src/cli.ts admin",
     "seed:categories": "bun src/cli.ts categories",
     "seed:products": "bun src/cli.ts products",
+    "seed:themes": "bun src/cli.ts themes",
     "seed:verify": "bun src/cli.ts verify",
     "seed:images": "bun src/cli.ts images",
     "images:backfill": "bun src/scripts/backfill-images.ts",

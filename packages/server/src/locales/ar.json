@@ -420,6 +420,14 @@
       "reset": "تمت إعادة تعيين المظهر بنجاح"
     }
   },
+  "themePresets": {
+    "success": {
+      "retrieved": "تم جلب المظاهر المحفوظة بنجاح",
+      "created": "تم حفظ المظهر في المكتبة بنجاح",
+      "applied": "تم تطبيق المظهر بنجاح",
+      "deleted": "تم حذف المظهر المحفوظ بنجاح"
+    }
+  },
   "branding": {
     "success": {
       "retrieved": "تم جلب العلامة التجارية بنجاح",
@@ -556,6 +564,18 @@
       "retryLoadMore": "إعادة المحاولة",
       "loadMoreError": "تعذر تحميل المزيد من النتائج.",
       "itemsLoaded": "تم تحميل {{count}} نتائج إضافية",
+      "pagination": {
+        "rowsPerPage": "صفوف/صفحة",
+        "label": "ترقيم الصفحات",
+        "goToPage": "الانتقال إلى الصفحة {{page}}",
+        "currentPage": "الصفحة {{page}}، الصفحة الحالية",
+        "firstPage": "الصفحة الأولى",
+        "previousPage": "الصفحة السابقة",
+        "nextPage": "الصفحة التالية",
+        "lastPage": "الصفحة الأخيرة",
+        "pageOf": "الصفحة {{page}} من {{pageCount}}",
+        "rowsSelected": "تم تحديد {{selected}} من {{total}} صف."
+      },
       "orderCategory": "فئة الطلب",
       "orderFamily": "الأسرة",
       "orderPhone": "الهاتف",
@@ -785,6 +805,12 @@
       "shopping": "التسوق",
       "supportAndFinance": "الدعم",
       "account": "الحساب"
+    },
+    "sidebar": {
+      "open": "فتح القائمة الجانبية",
+      "close": "إغلاق القائمة الجانبية",
+      "collapse": "طي",
+      "expand": "توسيع"
     },
     "action": {
       "signOut": "تسجيل الخروج",
@@ -1065,6 +1091,39 @@
         "discard": "تجاهل التغييرات",
         "resetThemeTitle": "إعادة تعيين مظهر كفيل؟",
         "resetThemeDescription": "سيؤدي هذا إلى إزالة المظهر المحفوظ واستعادة المظهر الافتراضي المحفوظ في المشروع.",
+        "presets": {
+          "title": "المظاهر المحفوظة",
+          "description": "اختر مظهرًا لمعاينته في التطبيق بالكامل. لا يُحفظ شيء حتى تضغط حفظ.",
+          "empty": "لا توجد مظاهر محفوظة بعد. احفظ المظهر الحالي لبدء المكتبة.",
+          "loadError": "تعذّر تحميل المظاهر المحفوظة.",
+          "builtIn": "مدمج",
+          "active": "نشط",
+          "select": "مظهر محفوظ",
+          "selectPlaceholder": "اختر مظهرًا للمعاينة",
+          "savedOption": "المظهر المحفوظ الحالي",
+          "previewing": "معاينة — غير محفوظ",
+          "revert": "إلغاء المعاينة",
+          "revertDone": "تمت العودة إلى المظهر المحفوظ.",
+          "apply": "تطبيق",
+          "applyLabel": "تطبيق {name}",
+          "applySuccess": "أصبح {name} مظهر المنصة الآن.",
+          "applyError": "تعذّر تطبيق هذا المظهر.",
+          "delete": "حذف",
+          "deleteLabel": "حذف {name}",
+          "deleteTitle": "حذف هذا المظهر المحفوظ؟",
+          "deleteDescription": "ستتم إزالة {name} من المكتبة. لن يتغيّر مظهر المنصة النشط.",
+          "deleteSuccess": "تم حذف {name}.",
+          "deleteError": "تعذّر حذف هذا المظهر.",
+          "saveCurrent": "حفظ المظهر الحالي",
+          "saveTitle": "حفظ المظهر الحالي",
+          "saveDescription": "امنح هذا التصميم اسمًا لتتمكن من تطبيقه لاحقًا.",
+          "nameLabel": "اسم المظهر",
+          "namePlaceholder": "مثال: Sable",
+          "nameRequired": "أدخل اسمًا لهذا المظهر.",
+          "saveAction": "حفظ في المكتبة",
+          "saveSuccess": "تم حفظ {name} في المكتبة.",
+          "saveError": "تعذّر حفظ هذا المظهر."
+        },
         "branding": {
           "cardTitle": "أصول العلامة التجارية",
           "cardDescription": "قم بتحميل شعارات النظام وصورة البطل للمصادقة. لا يمكن لحسابات المشغل تغيير هذه الأصول.",

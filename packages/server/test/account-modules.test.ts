@@ -152,6 +152,7 @@ describe("account module services", () => {
         listCalls.push(args);
         return [sponsorProfile()];
       },
+      count: async () => 1,
     });
     const service = new SponsorService(
       authService({}),
@@ -162,9 +163,12 @@ describe("account module services", () => {
       {} as unknown as DashboardService,
     );
 
-    expect(await service.list({ limit: 25, offset: 5 })).toEqual([
+    const page = await service.list({ limit: 25, offset: 5 });
+    expect(page.data).toEqual([
       expect.objectContaining({ id: sponsorId, role: "sponsor" }),
     ]);
+    // Offset 5 is not page-aligned; it still sits inside the first 25 rows.
+    expect(page.pagination).toEqual({ page: 1, limit: 25, total: 1 });
     expect(listCalls).toEqual([[25, 5, {}]]);
   });
 
@@ -367,6 +371,7 @@ function auditService(
 function sponsorRepository(
   overrides: Partial<{
     list: (limit: number, offset: number) => Promise<unknown[]>;
+    count: (filters: Record<string, unknown>) => Promise<number>;
     findById: (id: string) => Promise<ReturnType<typeof sponsorProfile>>;
     findByPhone: (
       phone: string,

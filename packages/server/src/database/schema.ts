@@ -25,6 +25,7 @@ import { operatorSchema } from "../modules/operators/operatorSchema";
 import { orderSchema } from "../modules/orders/orderSchema";
 import { outboxSchema } from "../modules/outbox/outboxSchema";
 import { settingSchema } from "../modules/settings/settingSchema";
+import { themePresetSchema } from "../modules/settings/themePresetSchema";
 import { sponsorSchema } from "../modules/sponsors/sponsorSchema";
 import { staffSchema } from "../modules/staff/staffSchema";
 import { supportAssignmentSchema } from "../modules/supportAssignments/supportAssignmentSchema";
@@ -99,6 +100,7 @@ export * from "../modules/operators/operatorSchema";
 export * from "../modules/orders/orderSchema";
 export * from "../modules/outbox/outboxSchema";
 export * from "../modules/settings/settingSchema";
+export * from "../modules/settings/themePresetSchema";
 export * from "../modules/sponsors/sponsorSchema";
 export * from "../modules/staff/staffSchema";
 export * from "../modules/supportAssignments/supportAssignmentSchema";
@@ -116,6 +118,7 @@ export const kafilSchema = {
   ...orderSchema,
   ...outboxSchema,
   ...settingSchema,
+  ...themePresetSchema,
   ...sponsorSchema,
   ...staffSchema,
   ...supportAssignmentSchema,

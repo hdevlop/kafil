@@ -15,9 +15,6 @@ export const contributionKeys = {
       status: rest.status,
     });
   },
-  page(query: ContributionListQuery & { role?: string | null }) {
-    return ["contributions", "page", ...contributionKeys.list(query)] as const;
-  },
   full(
     query: Omit<ContributionListQuery, "limit" | "offset"> & {
       role?: string | null;

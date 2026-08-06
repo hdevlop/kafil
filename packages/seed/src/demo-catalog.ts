@@ -42,14 +42,16 @@ export interface DemoCatalogService {
     data: CreateProductDto,
     actorUserId: string,
   ): Promise<DemoProductRecord>;
+  // The catalog service reports a result total alongside the rows, so the seed
+  // reads the same page envelope every list endpoint now returns.
   listCategories(query: {
     limit: number;
     offset: number;
-  }): Promise<DemoCategoryRecord[]>;
+  }): Promise<{ data: DemoCategoryRecord[] }>;
   listProducts(query: {
     limit: number;
     offset: number;
-  }): Promise<DemoProductRecord[]>;
+  }): Promise<{ data: DemoProductRecord[] }>;
   setProductStatus(
     id: string,
     status: "active" | "inactive",
@@ -84,7 +86,7 @@ export async function seedDemoCatalogProducts(
   actorUserId: string,
   options: DemoCatalogOptions = {},
 ): Promise<DemoCatalogSeedResult> {
-  const [categories, existing, prepared] = await Promise.all([
+  const [{ data: categories }, { data: existing }, prepared] = await Promise.all([
     service.listCategories({ limit: 100, offset: 0 }),
     service.listProducts({ limit: 100, offset: 0 }),
     prepareDemoProductImages(options),

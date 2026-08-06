@@ -32,13 +32,13 @@ function controller(name: string) {
 
 describe("server response message contract", () => {
 it("assigns a direct, domain-specific response key to every controller endpoint", () => {
-    expect(controllers).toHaveLength(26);
+    expect(controllers).toHaveLength(27);
 
     const routes = controllers.flatMap((current) =>
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    expect(routes).toHaveLength(195);
+    expect(routes).toHaveLength(199);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

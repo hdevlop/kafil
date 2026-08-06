@@ -37,6 +37,7 @@
     "seed:migrate": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:migrate'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "seed:admin": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:admin'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "seed:products": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:products'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
+    "seed:themes": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:themes'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "seed:verify": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:verify'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "contributions:expire": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','src/scripts/expire-contributions.ts'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "setup": "bun --cwd packages/seed --env-file=../../.env src/cli.ts setup --yes"
@@ -61,6 +62,6 @@
     "@clack/core": "^1.4.3",
     "@clack/prompts": "^1.7.0",
     "najm-core": "^2.0.5",
-    "najm-kit": "2.2.9"
+    "najm-kit": "2.6.2"
   }
 }

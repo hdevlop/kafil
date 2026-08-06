@@ -89,6 +89,42 @@ const sponsorFamilyCatalogSelection = {
   )`,
 };
 
+export interface SponsorFamilyCatalogFilters {
+  search?: string;
+  relationship?: "supported" | "available";
+}
+
+/** The sponsor's own active whole-family assignment for each catalog row. */
+function sponsorOwnAssignmentId(sponsorProfileId: string) {
+  return sql<string | null>`(
+    select ${supportAssignments.id}
+    from ${supportAssignments}
+    where ${supportAssignments.familyProfileId} = ${familyProfiles.id}
+      and ${supportAssignments.sponsorProfileId} = ${sponsorProfileId}
+      and ${supportAssignments.status} = 'active'
+      and ${supportAssignments.childId} is null
+    order by ${supportAssignments.startedAt} asc
+    limit 1
+  )`;
+}
+
+/** The one place the sponsor family catalog decides which rows it is about. */
+function sponsorFamilyCatalogConditions(
+  ownAssignmentId: ReturnType<typeof sponsorOwnAssignmentId>,
+  filters: SponsorFamilyCatalogFilters,
+) {
+  const conditions = [eq(usersTable.status, "active")];
+  if (filters.search) {
+    conditions.push(sql`${usersTable.name} ilike ${`%${filters.search}%`}`);
+  }
+  if (filters.relationship === "supported") {
+    conditions.push(sql`${ownAssignmentId} is not null`);
+  } else if (filters.relationship === "available") {
+    conditions.push(sql`${ownAssignmentId} is null`);
+  }
+  return conditions;
+}
+
 @Repository("default")
 export class SupportAssignmentRepository {
   @DB() private db!: KafilDatabase;
@@ -109,6 +145,24 @@ export class SupportAssignmentRepository {
       .limit(limit)
       .offset(offset);
     return condition ? query.where(condition) : query;
+  }
+
+  /**
+   * Rows matching `filters`, ignoring the page window. Keeps every join from
+   * `list`, because the filters reach through them to the sponsor and family
+   * user rows.
+   */
+  async count(filters: SupportAssignmentFilters) {
+    const condition = assignmentFilter(filters);
+    const query = this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(supportAssignments)
+      .innerJoin(sponsorProfiles, eq(supportAssignments.sponsorProfileId, sponsorProfiles.id))
+      .innerJoin(sponsorUsers, eq(sponsorProfiles.userId, sponsorUsers.id))
+      .innerJoin(familyProfiles, eq(supportAssignments.familyProfileId, familyProfiles.id))
+      .innerJoin(familyUsers, eq(familyProfiles.userId, familyUsers.id));
+    const [row] = condition ? await query.where(condition) : await query;
+    return row?.total ?? 0;
   }
 
   listOwn(
@@ -140,36 +194,37 @@ export class SupportAssignmentRepository {
     sponsorProfileId: string,
     limit: number,
     offset: number,
-    filters: { search?: string; relationship?: "supported" | "available" },
+    filters: SponsorFamilyCatalogFilters,
   ) {
-    const ownAssignmentId = sql<string | null>`(
-      select ${supportAssignments.id}
-      from ${supportAssignments}
-      where ${supportAssignments.familyProfileId} = ${familyProfiles.id}
-        and ${supportAssignments.sponsorProfileId} = ${sponsorProfileId}
-        and ${supportAssignments.status} = 'active'
-        and ${supportAssignments.childId} is null
-      order by ${supportAssignments.startedAt} asc
-      limit 1
-    )`;
-    const conditions = [eq(usersTable.status, "active")];
-    if (filters.search) {
-      conditions.push(sql`${usersTable.name} ilike ${`%${filters.search}%`}`);
-    }
-    if (filters.relationship === "supported") {
-      conditions.push(sql`${ownAssignmentId} is not null`);
-    } else if (filters.relationship === "available") {
-      conditions.push(sql`${ownAssignmentId} is null`);
-    }
+    const ownAssignmentId = sponsorOwnAssignmentId(sponsorProfileId);
 
     return this.db
       .select({ ...sponsorFamilyCatalogSelection, assignmentId: ownAssignmentId })
       .from(familyProfiles)
       .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
-      .where(and(...conditions))
+      .where(and(...sponsorFamilyCatalogConditions(ownAssignmentId, filters)))
       .orderBy(asc(familyProfiles.createdAt))
       .limit(limit)
       .offset(offset);
+  }
+
+  /**
+   * Rows matching the sponsor's catalog filters, ignoring the page window.
+   *
+   * Recomputes the same correlated `assignmentId` subquery the rows use, so a
+   * `supported`/`available` total can never disagree with the page it labels.
+   */
+  async countSponsorFamilyCatalog(
+    sponsorProfileId: string,
+    filters: SponsorFamilyCatalogFilters,
+  ) {
+    const ownAssignmentId = sponsorOwnAssignmentId(sponsorProfileId);
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(familyProfiles)
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
+      .where(and(...sponsorFamilyCatalogConditions(ownAssignmentId, filters)));
+    return row?.total ?? 0;
   }
 
   async findSponsorByUserId(userId: string) {
