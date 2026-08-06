@@ -1,13 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  createOffsetPagination,
-  fetchOffsetPage,
-  type OffsetPagination,
-} from "@/lib/pagination";
+import type { OffsetPagination } from "@/lib/pagination";
 
 import { useCardViewport } from "./useDesktopTableMode";
 import { useOffsetInfiniteQuery } from "./useOffsetInfiniteQuery";
@@ -26,8 +21,25 @@ export type ListStrategy = "all" | "infinite" | "paged";
 export type ResolvedListMode = "all" | "infinite" | "paged";
 
 /**
+ * The size of one server request, in rows.
+ *
+ * This is not the page size. NTable measures how many rows fit and reports a
+ * display page size that moves — 25 on the first paint, then 24 once the grid
+ * is measured, then 16 once card images decode and the cards grow. Requesting
+ * that number would mean a fresh round trip per correction, and a second
+ * skeleton behind each one.
+ *
+ * Instead every request asks for the same window and the display page is a
+ * slice of what has already arrived. A correction becomes a re-slice. The
+ * window is comfortably larger than the largest page any viewport produces
+ * (a 4-column card grid tops out near 24), so the first request answers the
+ * first page whatever the measurement turns out to be.
+ */
+const ROW_WINDOW_SIZE = 50;
+
+/**
  * The server clamps `limit` to 100. `all` therefore issues exactly one request
- * and never chains pages.
+ * and never chains windows.
  */
 const ALL_STRATEGY_LIMIT = 100;
 
@@ -67,23 +79,22 @@ export function useResponsiveOffsetList<T>({
   const pagination = paginationState.queryIdentity === queryIdentity
     ? paginationState
     : { ...paginationState, pageIndex: 0, queryIdentity };
-  const offsetPagination = createOffsetPagination(
-    pagination.pageIndex,
-    pagination.pageSize,
-  );
 
   const wantsAll = strategy === "all";
   const wantsInfinite = strategy === "infinite" || (strategy === "paged" && cardViewport);
 
-  // `all` is a hint, not a promise: it asks for the ceiling in one request and
-  // proves the bound by the response being short of it.
-  const whole = useQuery({
-    enabled: enabled && wantsAll,
-    queryKey: [...queryKey, "whole"],
-    queryFn: () => fetchPage({ limit: ALL_STRATEGY_LIMIT, offset: 0 }),
+  // One buffer serves every mode. `all` asks for the ceiling in a single window
+  // and proves its bound by there being nothing after it.
+  const buffer = useOffsetInfiniteQuery({
+    enabled,
+    fetchPage,
+    queryKey,
+    windowSize: wantsAll ? ALL_STRATEGY_LIMIT : ROW_WINDOW_SIZE,
   });
-  const ceilingReached = (whole.data?.length ?? 0) >= ALL_STRATEGY_LIMIT;
-  const allDowngraded = wantsAll && ceilingReached;
+  const rows = buffer.rows;
+
+  // `all` is a hint, not a promise: filling the ceiling disproves the bound.
+  const allDowngraded = wantsAll && buffer.hasNextPage;
 
   const warnedRef = useRef(false);
   useEffect(() => {
@@ -99,20 +110,33 @@ export function useResponsiveOffsetList<T>({
     }
   }, [allDowngraded, queryIdentity]);
 
-  const usesInfinite = wantsInfinite || allDowngraded;
-  const usesPaged = !wantsAll && !wantsInfinite;
+  const mode: ResolvedListMode = wantsAll && !allDowngraded
+    ? "all"
+    : wantsInfinite || allDowngraded ? "infinite" : "paged";
 
-  const page = useQuery({
-    enabled: enabled && usesPaged,
-    queryKey: [...queryKey, "page", offsetPagination],
-    queryFn: () => fetchOffsetPage(fetchPage, offsetPagination),
-  });
-  const incremental = useOffsetInfiniteQuery({
-    enabled: enabled && usesInfinite,
-    fetchPage,
-    pageSize,
-    queryKey,
-  });
+  const start = pagination.pageIndex * pagination.pageSize;
+  const data = mode === "paged"
+    ? rows.slice(start, start + pagination.pageSize)
+    : rows;
+
+  // Extend the buffer while the reader is still on an earlier page, so moving
+  // forward reads from memory instead of waiting on the network. One page of
+  // lookahead is enough: a page cannot be turned faster than a window loads.
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = buffer;
+  useEffect(() => {
+    if (mode !== "paged") return;
+    if (!hasNextPage || isFetchingNextPage) return;
+    if (rows.length >= start + pagination.pageSize * 2) return;
+    void fetchNextPage();
+  }, [
+    mode,
+    hasNextPage,
+    isFetchingNextPage,
+    rows.length,
+    start,
+    pagination.pageSize,
+    fetchNextPage,
+  ]);
 
   const onPaginationChange = useCallback(
     (updater: PaginationUpdater) => {
@@ -128,39 +152,29 @@ export function useResponsiveOffsetList<T>({
     [queryIdentity],
   );
 
-  const mode: ResolvedListMode = wantsAll && !allDowngraded
-    ? "all"
-    : usesInfinite ? "infinite" : "paged";
-
-  // Without a server total the only honest claim is "one more page exists".
-  const pageCount = pagination.pageIndex + (page.data?.hasNextPage ? 2 : 1);
-
-  const data = mode === "all"
-    ? (whole.data ?? [])
-    : mode === "infinite" ? incremental.rows : (page.data?.rows ?? []);
+  // Exact for everything buffered. Beyond the buffer the only honest claim is
+  // still that one more page exists.
+  const bufferedPages = Math.max(1, Math.ceil(rows.length / pagination.pageSize));
+  const pageCount = buffer.hasNextPage ? bufferedPages + 1 : bufferedPages;
 
   return {
     cardViewport,
     mode,
     data,
-    error: mode === "all"
-      ? whole.error
-      : mode === "infinite" ? incremental.error : page.error,
-    hasNextPage: mode === "infinite" && incremental.hasNextPage,
-    loading: mode === "all"
-      ? whole.isPending
-      : mode === "infinite" ? incremental.isPending : page.isPending,
-    loadingMore: incremental.isFetchingNextPage,
-    loadMoreError: incremental.isFetchNextPageError ? incremental.error : null,
-    onLoadMore: () => incremental.fetchNextPage(),
+    error: buffer.error,
+    hasNextPage: mode === "infinite" && buffer.hasNextPage,
+    // A background window extension is not a load. Paged readers keep the rows
+    // they are looking at; only having nothing at all is a loading state.
+    loading: buffer.isPending,
+    loadingMore: mode === "infinite" && buffer.isFetchingNextPage,
+    loadMoreError: buffer.isFetchNextPageError ? buffer.error : null,
+    onLoadMore: () => buffer.fetchNextPage(),
     onPaginationChange,
     pageCount,
     pagination: {
       pageIndex: pagination.pageIndex,
       pageSize: pagination.pageSize,
     },
-    refetch: mode === "all"
-      ? whole.refetch
-      : mode === "infinite" ? incremental.refetch : page.refetch,
+    refetch: buffer.refetch,
   };
 }

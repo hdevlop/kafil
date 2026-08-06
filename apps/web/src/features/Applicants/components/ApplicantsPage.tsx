@@ -146,6 +146,7 @@ export function ApplicantsPage() {
     cardPagination: createCardPagination(applicants, t),
     pageSizeOptions: [10, 25, 50, 100],
     mode: tableMode,
+    responsiveSkeleton: true,
   };
 
   return (

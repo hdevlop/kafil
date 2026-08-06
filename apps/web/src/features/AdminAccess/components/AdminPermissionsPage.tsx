@@ -98,6 +98,7 @@ export function AdminPermissionsPage() {
           )}
           availableModes={["cards", "table"]}
           mode={tableMode}
+          responsiveSkeleton
           defaultMode="table"
           responsiveCards={false}
           showColumnVisibility={false}

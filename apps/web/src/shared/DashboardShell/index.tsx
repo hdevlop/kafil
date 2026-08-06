@@ -20,6 +20,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { NButton, NajmScroll, NSidebar, type NavItem } from "najm-kit";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
@@ -174,6 +175,12 @@ function sponsorItems(t: ReturnType<typeof useKafilLanguage>["t"]): NavItem[] {
   ];
 }
 
+/**
+ * A plain `<a>` here makes every sidebar click a full document navigation: the
+ * bundle is parsed again, React remounts, and the React Query cache — which is
+ * in memory — is destroyed, so each page re-runs its skeleton from nothing.
+ * `next/link` keeps the navigation client-side and prefetches the route.
+ */
 function LinkAdapter({
   children,
   className,
@@ -186,9 +193,9 @@ function LinkAdapter({
   onClick?: React.MouseEventHandler;
 }>) {
   return (
-    <a className={className} href={href} onClick={onClick}>
+    <Link className={className} href={href} onClick={onClick}>
       {children}
-    </a>
+    </Link>
   );
 }
 

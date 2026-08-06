@@ -451,6 +451,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     pageSizeOptions: [10, 25, 50, 100],
     availableModes: ["cards", "table"],
     mode: tableMode,
+    responsiveSkeleton: true,
     responsiveCards: false,
     defaultMode: "table",
     showColumnVisibility: false,

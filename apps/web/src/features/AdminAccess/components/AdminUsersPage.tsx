@@ -169,6 +169,7 @@ export function AdminUsersPage() {
           pageSizeOptions={[10, 25, 50, 100]}
           availableModes={["cards", "table"]}
           mode={tableMode}
+          responsiveSkeleton
           defaultMode="table"
           responsiveCards={false}
           showColumnVisibility={false}

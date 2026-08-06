@@ -269,6 +269,7 @@ export function ContributionsPage() {
     }, t),
     availableModes: ["cards", "table"],
     mode: tableMode,
+    responsiveSkeleton: true,
     defaultMode: "table",
     responsiveCards: false,
     showColumnVisibility: false,

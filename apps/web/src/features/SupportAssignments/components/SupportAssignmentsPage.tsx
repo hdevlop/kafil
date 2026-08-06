@@ -148,6 +148,7 @@ export function SupportAssignmentsPage() {
     pageSizeOptions: [10, 25, 50, 100],
     availableModes: ["cards", "table"],
     mode: tableMode,
+    responsiveSkeleton: true,
     defaultMode: "table",
     responsiveCards: false,
     showColumnVisibility: false,

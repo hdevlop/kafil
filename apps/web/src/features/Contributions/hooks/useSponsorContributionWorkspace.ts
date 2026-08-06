@@ -32,7 +32,6 @@ export function useSponsorContributionWorkspace(enabled: boolean, search = "") {
   const plans = useOffsetInfiniteQuery({
     queryKey: sponsorContributionKeys.plans,
     fetchPage: listSponsorPlans,
-    pageSize: 25,
     enabled,
   });
   const invalidate = [sponsorContributionKeys.all, ["contributions"] as const];
