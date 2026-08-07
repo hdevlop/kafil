@@ -16,10 +16,8 @@ export default async function FirstLoginLayout({
           slot="authLogo"
           alt="Kafil platform"
           className="h-auto w-44"
-          height={233}
           preload
           src={branding.authLogoPath}
-          width={701}
         />
         {children}
       </div>

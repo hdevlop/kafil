@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./branding": "./src/branding.ts",
+    "./branding-constants": "./src/modules/settings/brandingConstants.ts",
     "./config": "./src/config/index.ts",
     "./database": "./src/database/index.ts",
     "./database/schema": "./src/database/schema.ts",
@@ -24,7 +25,7 @@
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
-    "najm-auth": "2.0.13",
+    "najm-auth": "2.0.14",
     "najm-core": "2.0.5",
     "najm-database": "2.0.3",
     "najm-email": "2.0.2",

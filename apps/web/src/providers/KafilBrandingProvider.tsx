@@ -8,7 +8,7 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import { toast } from "najm-kit";
+import { NBrandingProvider, toast } from "najm-kit";
 
 import {
   deleteBrandingCandidates,
@@ -17,7 +17,7 @@ import {
   resetBranding as resetBrandingApi,
   updateBranding,
 } from "@/services/brandingApi";
-import { BRANDING_ASSET_ROUTE_PREFIX } from "@/types/branding";
+import { APP_NAME, BRANDING_ASSET_ROUTE_PREFIX } from "@/types/branding";
 import type {
   AdminBrandingConfig,
   BrandingCustomPaths,
@@ -258,7 +258,13 @@ export function KafilBrandingProvider({
 
   return (
     <KafilBrandingContext.Provider value={value}>
-      {children}
+      <NBrandingProvider
+        appName={APP_NAME}
+        logoExpanded={resolved.sidebarLogoExpandedPath}
+        logoCollapsed={resolved.sidebarLogoCollapsedPath}
+      >
+        {children}
+      </NBrandingProvider>
     </KafilBrandingContext.Provider>
   );
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import type { KafilTheme } from "@/providers/ThemePreferenceProvider";
+import type { KafilTheme } from "@/lib/format";
 
 const themeCookieName = "kafil-ui-theme";
 const supportedThemes = new Set<KafilTheme>(["light", "dark"]);

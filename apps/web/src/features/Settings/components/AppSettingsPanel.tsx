@@ -14,7 +14,7 @@ import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useDevFormTools } from "@/lib/devFormFill";
 import type { KafilTimeZone } from "@/lib/format";
 import { useKafilBranding } from "@/providers/KafilBrandingProvider";
-import { useKafilTimeZone } from "@/providers/TimeZonePreferenceProvider";
+import { useKafilTimeZone } from "@/providers/KafilPreferencesProvider";
 
 import {
   settingsFormDefault,

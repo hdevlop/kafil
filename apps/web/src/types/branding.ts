@@ -1,3 +1,6 @@
+/** Single source for the product name: page metadata, logo alt text, PWA title. */
+export const APP_NAME = "Kafil";
+
 export type BrandingSlot =
   | "sidebarLogoExpanded"
   | "sidebarLogoCollapsed"

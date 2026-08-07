@@ -1,14 +1,19 @@
 "use client";
 
-import Image, { type ImageProps } from "next/image";
-import { useState } from "react";
+import Image from "next/image";
+import { NImage } from "najm-kit";
+import {
+  FACTORY_AUTH_HERO_IMAGE_PATH,
+  FACTORY_SIDEBAR_LOGO_COLLAPSED_PATH,
+  FACTORY_SIDEBAR_LOGO_EXPANDED_PATH,
+} from "@kafil/server/branding-constants";
 
-const FACTORY_FALLBACKS: Record<string, string> = {
-  sidebarLogoExpanded: "/logoExpanded.webp",
-  sidebarLogoCollapsed: "/logoExpanded.webp",
-  authLogo: "/logoExpanded.webp",
-  authHeroImage: "/HeroA.webp",
-};
+const FACTORY_FALLBACKS = {
+  sidebarLogoExpanded: FACTORY_SIDEBAR_LOGO_EXPANDED_PATH,
+  sidebarLogoCollapsed: FACTORY_SIDEBAR_LOGO_COLLAPSED_PATH,
+  authLogo: FACTORY_SIDEBAR_LOGO_EXPANDED_PATH,
+  authHeroImage: FACTORY_AUTH_HERO_IMAGE_PATH,
+} as const;
 
 export type BrandingImageSlot = keyof typeof FACTORY_FALLBACKS;
 
@@ -18,56 +23,45 @@ type BrandingImageBaseProps = {
   alt: string;
   className?: string;
   preload?: boolean;
-};
-
-type BrandingImageFixedProps = BrandingImageBaseProps & {
-  fill?: false;
-  width: number;
-  height: number;
-  sizes?: string;
   "aria-hidden"?: boolean | "true" | "false";
 };
 
-type BrandingImageFillProps = BrandingImageBaseProps & {
-  fill: true;
-  width?: number;
-  height?: number;
-  sizes?: string;
-  "aria-hidden"?: boolean | "true" | "false";
-};
-
+type BrandingImageFixedProps = BrandingImageBaseProps & { fill?: false };
+type BrandingImageFillProps = BrandingImageBaseProps & { fill: true; sizes?: string };
 type BrandingImageProps = BrandingImageFixedProps | BrandingImageFillProps;
 
+/**
+ * `fill` covers responsive photography, where next/image earns its optimizer
+ * pass. A fixed-box branding mark does not: its CSS box already pins the size,
+ * so it renders as a plain image and skips the oversized srcset entirely.
+ */
 export function BrandingImage(props: BrandingImageProps) {
   const { slot, src, alt, className, preload } = props;
-  const [errorKey, setErrorKey] = useState<string | null>(null);
-  const fallback = FACTORY_FALLBACKS[slot] ?? src;
-  const candidate = !src ? fallback : src;
-  const isErrorForCurrent = errorKey === candidate;
-  const resolved = isErrorForCurrent ? fallback : candidate;
+  const fallback = FACTORY_FALLBACKS[slot];
+
   if (props.fill) {
-    const imageProps: ImageProps = {
-      alt,
-      src: resolved,
-      fill: true,
-      sizes: props.sizes ?? "(min-width: 1024px) 50vw, 100vw",
-      className,
-      onError: () => setErrorKey(candidate),
-      preload,
-      "aria-hidden": props["aria-hidden"],
-    };
-    return <Image {...imageProps} alt={alt} />;
+    return (
+      <Image
+        alt={alt}
+        src={src || fallback}
+        fill
+        sizes={props.sizes ?? "(min-width: 1024px) 50vw, 100vw"}
+        className={className}
+        preload={preload}
+        aria-hidden={props["aria-hidden"]}
+      />
+    );
   }
 
-  const imageProps: ImageProps = {
-    alt,
-    src: resolved,
-    width: props.width,
-    height: props.height,
-    className,
-    onError: () => setErrorKey(candidate),
-    preload,
-    "aria-hidden": props["aria-hidden"],
-  };
-  return <Image {...imageProps} alt={alt} />;
+  return (
+    <NImage
+      alt={alt}
+      src={src || fallback}
+      fallback={fallback}
+      className={className}
+      fetchPriority={preload ? "high" : undefined}
+      loading={preload ? "eager" : undefined}
+      aria-hidden={props["aria-hidden"]}
+    />
+  );
 }

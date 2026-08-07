@@ -7,14 +7,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
-import { BrandingImage } from "@/features/Branding";
 import { canOpenGlobalSettings, GlobalSettingsSheet, } from "@/features/Settings/components/GlobalSettingsSheet";
-import { useKafilBranding } from "@/providers/KafilBrandingProvider";
 import { OrderCartOverlay } from "@/features/OrderCart";
 import { openSponsorProfileSheet, SponsorProfileSheet, } from "@/features/Sponsors/components/profile/SponsorProfileSheet";
 import { KafilRoleProvider } from "@/shared/Authorization";
-import { getDashboardNavigation, isDashboardNavigationActive,  translateDashboardNavigation,} from "./navigation";
-export { getDashboardNavigation, isDashboardNavigationActive, translateDashboardNavigation,} from "./navigation";
+import { getDashboardNavigation, isDashboardNavigationActive, translateDashboardNavigation, } from "./navigation";
+export { getDashboardNavigation, isDashboardNavigationActive, translateDashboardNavigation, } from "./navigation";
 export type { DashboardRole } from "./navigation";
 
 interface DashboardUser {
@@ -23,32 +21,22 @@ interface DashboardUser {
    role?: string | null;
 }
 
-
 const SIDEBAR_ACTION_CLASS = "w-full justify-start gap-2 lg:justify-center lg:px-0 xl:justify-start xl:px-3";
 
-function SidebarAction({icon: Icon,label,onClick}: Readonly<{icon: ComponentType<{ className?: string }>;label: string; onClick?: () => void;}>) {
+function SidebarAction({ icon: Icon, label, onClick }: Readonly<{ icon: ComponentType<{ className?: string }>; label: string; onClick?: () => void; }>) {
    return (
-      <NButton
-         className={SIDEBAR_ACTION_CLASS}
-         size="sm"
-         variant="ghost"
-         onClick={onClick}
-      >
+      <NButton className={SIDEBAR_ACTION_CLASS} size="sm" variant="ghost" onClick={onClick}>
          <Icon className="size-4" />
          <span className="lg:hidden xl:inline">{label}</span>
       </NButton>
    );
 }
 
-function DashboardShellBody({ children,user}: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
+function DashboardShellBody({ children, user }: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
    const pathname = usePathname();
    const { t } = useKafilLanguage();
-   const { resolved: branding } = useKafilBranding();
    const sidebar = useNSidebar();
-   const navItems = useMemo(
-      () => translateDashboardNavigation(getDashboardNavigation(user.role), t),
-      [t, user.role],
-   );
+   const navItems = useMemo(() => translateDashboardNavigation(getDashboardNavigation(user.role), t), [t, user.role],);
    const [settingsOpen, setSettingsOpen] = useState(false);
    const closeMobile = () => sidebar?.closeMobile();
 
@@ -94,31 +82,6 @@ function DashboardShellBody({ children,user}: Readonly<{ children: React.ReactNo
       <>
          <div className="flex h-screen w-full overflow-hidden bg-background ">
             <NSidebar
-               logo={({ collapsed }) =>
-                  collapsed ? (
-                     <span className="size-8 overflow-hidden rounded-lg">
-                        <BrandingImage
-                           slot="sidebarLogoCollapsed"
-                           alt=""
-                           aria-hidden="true"
-                           className="size-full object-contain object-center"
-                           height={233}
-                           src={branding.sidebarLogoCollapsedPath}
-                           width={233}
-                        />
-                     </span>
-                  ) : (
-                     <BrandingImage
-                        slot="sidebarLogoExpanded"
-                        alt="Kafil platform"
-                        className="mx-auto h-10 w-32 object-contain"
-                        height={233}
-                        preload
-                        src={branding.sidebarLogoExpandedPath}
-                        width={701}
-                     />
-                  )
-               }
                navItems={navItems}
                activePath={pathname}
                isActive={isDashboardNavigationActive}
@@ -160,10 +123,7 @@ function DashboardShellBody({ children,user}: Readonly<{ children: React.ReactNo
    );
 }
 
-export function DashboardShell({
-   children,
-   user,
-}: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
+export function DashboardShell({ children, user, }: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
    return (
       <KafilRoleProvider role={user.role}>
          <NSidebarProvider mobileBreakpoint="lg">

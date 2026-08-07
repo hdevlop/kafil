@@ -3,7 +3,7 @@
 import { NajmDesignProvider } from "najm-kit";
 
 import { useKafilAppearance } from "@/providers/KafilAppearanceProvider";
-import { useThemePreference } from "@/providers/ThemePreferenceProvider";
+import { useThemePreference } from "@/providers/KafilPreferencesProvider";
 
 export function KafilDesignProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const { theme: activeTheme } = useThemePreference();

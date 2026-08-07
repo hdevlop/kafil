@@ -2,6 +2,8 @@ import { getUiTranslation, type TranslationKey } from "@/i18n/translations";
 
 export type KafilLanguage = "ar" | "en" | "es" | "fr";
 
+export type KafilTheme = "light" | "dark";
+
 export function normalizeKafilLanguage(value: unknown): KafilLanguage {
   return value === "ar" || value === "en" || value === "es" || value === "fr"
     ? value

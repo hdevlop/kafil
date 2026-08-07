@@ -14,7 +14,7 @@ import screenfull from "screenfull";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import type { KafilLanguage } from "@/lib/format";
-import { useThemePreference } from "@/providers/ThemePreferenceProvider";
+import { useThemePreference } from "@/providers/KafilPreferencesProvider";
 
 const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";
 

@@ -6,20 +6,23 @@ function readSource(relativePath: string) {
 }
 
 describe("branding consumer integration", () => {
-  test("DashboardShell uses BrandingImage for both sidebar states and the factory fallbacks", () => {
+  test("sidebar branding reaches NSidebar through NBrandingProvider, not the shell", () => {
+    // The mark is NSidebar's to render now: it reads appName and both logo
+    // paths off najm-kit's branding context, which is the only thing that knows
+    // its own resolved collapsed state.
+    const provider = readSource("../src/providers/KafilBrandingProvider.tsx");
+    expect(provider).toContain("NBrandingProvider");
+    expect(provider).toContain("appName={APP_NAME}");
+    expect(provider).toContain("logoExpanded={resolved.sidebarLogoExpandedPath}");
+    expect(provider).toContain("logoCollapsed={resolved.sidebarLogoCollapsedPath}");
+
+    // So the shell must not hand-roll the mark back in, nor mirror the
+    // collapsed state itself the way it used to.
     const shell = readSource("../src/shared/DashboardShell/index.tsx");
-    expect(shell).toContain("useKafilBranding");
-    // The collapsed/expanded swap is driven by NSidebar's own resolved state
-    // through the `logo` render prop, so the shell no longer mirrors that state
-    // itself or approximates it with responsive classes.
-    expect(shell).toContain("logo={({ collapsed }) =>");
+    expect(shell).toContain("<NSidebar");
+    expect(shell).not.toContain("BrandingImage");
+    expect(shell).not.toContain("logo={");
     expect(shell).not.toContain("sidebarCollapsed");
-    expect(shell).toContain("branding.sidebarLogoExpandedPath");
-    expect(shell).toContain("branding.sidebarLogoCollapsedPath");
-    expect(shell).toContain("slot=\"sidebarLogoExpanded\"");
-    expect(shell).toContain("slot=\"sidebarLogoCollapsed\"");
-    expect(shell).toContain("h-10 w-32 object-contain");
-    expect(shell).toContain("size-full object-contain object-center");
     expect(shell).not.toContain("src=\"/logoExpanded.png\"");
   });
 
@@ -48,8 +51,10 @@ describe("branding consumer integration", () => {
   test("BrandingImage falls back to the bundled factory asset on image error", () => {
     const image = readSource("../src/features/Branding/BrandingImage.tsx");
     expect(image).toContain("FACTORY_FALLBACKS");
-    expect(image).toContain("setErrorKey");
-    expect(image).toContain("onError");
+    // Recovering from a broken src is NImage's job now; BrandingImage only has
+    // to name the bundled asset it should land on.
+    expect(image).toContain("<NImage");
+    expect(image).toContain("fallback={fallback}");
     expect(image).toContain("sidebarLogoExpanded");
     expect(image).toContain("sidebarLogoCollapsed");
     expect(image).toContain("authLogo");

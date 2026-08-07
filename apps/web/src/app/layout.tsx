@@ -5,11 +5,11 @@ import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { PwaRegistration } from "@/components/PwaRegistration";
 import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
-import { normalizeKafilLanguage, normalizeKafilTimeZone } from "@/lib/format";
+import { normalizeKafilLanguage, normalizeKafilTimeZone, type KafilTheme } from "@/lib/format";
 import { loadServerAppearance } from "@/lib/serverAppearance";
 import { loadServerBranding } from "@/lib/serverBranding";
 import { loadServerBrandingConfig } from "@/lib/serverBrandingConfig";
-import type { KafilTheme } from "@/providers/ThemePreferenceProvider";
+import { APP_NAME } from "@/types/branding";
 import type { AdminBrandingConfig } from "@/types/branding";
 import "./globals.css";
 
@@ -20,15 +20,15 @@ const cairo = Cairo({
 
 export const metadata: Metadata = {
   title: {
-    default: "Kafil",
-    template: "%s | Kafil",
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`,
   },
   description: "Trusted sponsorship with privacy, accountability, and care.",
-  applicationName: "Kafil",
+  applicationName: APP_NAME,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Kafil",
+    title: APP_NAME,
   },
   icons: {
     apple: "/icons/kafil-apple-180.png",
