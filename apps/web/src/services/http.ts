@@ -1,5 +1,10 @@
 "use client";
 
+// The directive above is load-bearing. `auth.api` takes its bearer token from
+// `auth.client`'s state, which on the server is a per-process client najm-auth
+// deliberately leaves unhydrated — a call from a server component would go out
+// unauthenticated.
+
 import { auth } from "@/lib/auth";
 
 export type QueryValue = boolean | number | string | null | undefined;
