@@ -1,11 +1,15 @@
 "use client";
 
-import { NThemePresets, toast, type NThemePreset } from "najm-kit";
+import {
+  NThemePresets,
+  toast,
+  useNajmDesignEditor,
+  type NThemePreset,
+} from "najm-kit";
 import { useMemo } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useThemePresetCommands, useThemePresets } from "@/hooks/useThemePresets";
-import { useKafilAppearance } from "@/providers/KafilUIProvider";
 
 export function ThemePresetsPanel({
   enabled,
@@ -19,8 +23,8 @@ export function ThemePresetsPanel({
   onSelectedPresetChange: (presetId: string | null) => void;
 }>) {
   const { t } = useKafilLanguage();
-  const { appearance, draft, setDraft, cancelDraft, beginDraft } =
-    useKafilAppearance();
+  const { committed, draft, setDraft, cancelDraft, beginDraft } =
+    useNajmDesignEditor()!;
   const { data: presets, isLoading, isError } = useThemePresets(enabled);
   const { createPreset, deletePreset } = useThemePresetCommands();
 
@@ -53,7 +57,7 @@ export function ThemePresetsPanel({
   async function handleSave(name: string) {
     const created = await createPreset.mutateAsync({
       name,
-      designConfig: draft ?? appearance.designConfig,
+      designConfig: draft ?? committed,
     });
     onSelectedPresetChange(created.id);
     toast.success(t("operator.settings.presets.saveSuccess", { name }));
@@ -72,7 +76,7 @@ export function ThemePresetsPanel({
     <NThemePresets
       presets={items}
       selectedPresetId={selectedPresetId}
-      savedDesign={appearance.designConfig}
+      savedDesign={committed}
       status={isError ? "error" : isLoading ? "loading" : "idle"}
       onSelect={handleSelect}
       onSave={handleSave}

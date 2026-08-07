@@ -13,8 +13,8 @@ import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDevFormTools } from "@/lib/devFormFill";
-import { useKafilBranding } from "@/providers/KafilUIProvider";
 
+import { useBrandingEditor } from "../hooks/BrandingEditor";
 import {
   settingsFormDefault,
   settingsFormSchema,
@@ -34,7 +34,7 @@ export function AppSettingsPanel({
 }>) {
   const setting = usePlatformSettings();
   const { updateSettings } = useSettingCommands();
-  const branding = useKafilBranding();
+  const branding = useBrandingEditor();
   const devTools = useDevFormTools(settingsFormSchema);
   const { t } = useKafilLanguage();
   const { timeZone, setTimeZone } = useNajmTimeZone();

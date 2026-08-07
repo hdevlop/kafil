@@ -1,50 +1,47 @@
 "use client";
 
-import { AuthProvider } from "najm-auth/client/react";
-import type { ServerSession } from "najm-auth/client/server";
-
-import { auth } from "@/lib/auth";
 import type { KafilLanguage, KafilTheme, KafilTimeZone } from "@/lib/format";
-import { KafilUIProvider } from "@/providers/KafilUIProvider";
+import type { ServerSession } from "najm-auth/client/server";
 import { QueryProvider } from "@/providers/QueryProvider";
-import type { PublicAppearance } from "@/types/appearance";
-import type { AdminBrandingConfig, PublicBranding } from "@/types/branding";
+import type { PublicBranding } from "@/types/branding";
+import { AuthProvider } from "najm-auth/client/react";
+import { NajmAppProvider } from "najm-kit/app";
+import type { NajmDesignConfig } from "najm-kit";
+import { uiTranslations } from "@/i18n/translations";
+import { auth } from "@/lib/auth";
+import { APP_NAME } from "@/types/branding";
 
 export function AppProviders({
   children,
-  initialAppearance,
-  initialBrandingConfig,
-  initialBrandingResolved,
+  initialBranding,
+  initialDesign,
   initialLanguage,
   initialSession,
   initialTheme,
   initialTimeZone,
-  role,
 }: Readonly<{
   children: React.ReactNode;
-  initialAppearance: PublicAppearance;
-  initialBrandingConfig: AdminBrandingConfig;
-  initialBrandingResolved: PublicBranding;
+  initialBranding: PublicBranding;
+  initialDesign: NajmDesignConfig;
   initialLanguage: KafilLanguage;
   initialSession: ServerSession | null;
   initialTheme: KafilTheme;
   initialTimeZone: KafilTimeZone;
-  role?: string | null;
 }>) {
   return (
     <AuthProvider client={auth.client} initialSession={initialSession}>
       <QueryProvider>
-        <KafilUIProvider
-          initialAppearance={initialAppearance}
-          initialBrandingConfig={initialBrandingConfig}
-          initialBrandingResolved={initialBrandingResolved}
+        <NajmAppProvider
+          appName={APP_NAME}
+          initialBranding={initialBranding}
+          initialDesign={initialDesign}
           initialLanguage={initialLanguage}
           initialTheme={initialTheme}
           initialTimeZone={initialTimeZone}
-          role={role}
+          translations={uiTranslations}
         >
           {children}
-        </KafilUIProvider>
+        </NajmAppProvider>
       </QueryProvider>
     </AuthProvider>
   );

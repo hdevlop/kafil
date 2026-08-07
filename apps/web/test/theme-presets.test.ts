@@ -92,7 +92,7 @@ describe("theme preset selector", () => {
     // The kit hands back null for its "current saved theme" row.
     expect(source).toContain("if (!preset) {");
     expect(source).toContain("cancelDraft()");
-    expect(source).toContain("savedDesign={appearance.designConfig}");
+    expect(source).toContain("savedDesign={committed}");
   });
 
   test("maps the server projection onto the kit's preset shape", () => {
@@ -103,7 +103,7 @@ describe("theme preset selector", () => {
   });
 
   test("saves whatever the admin is currently previewing", () => {
-    expect(panel()).toContain("designConfig: draft ?? appearance.designConfig");
+    expect(panel()).toContain("designConfig: draft ?? committed");
   });
 
   test("localizes every kit label from the Kafil catalog", () => {
@@ -120,11 +120,13 @@ describe("theme preset selector", () => {
     }
   });
 
-  test("KafilUIProvider exposes replaceCommitted for out-of-draft writes", () => {
-    const hook = readSource("../src/providers/useAppearanceState.ts");
+  test("the appearance editor can adopt a design committed outside the draft flow", () => {
+    // Applying a saved preset writes the theme server-side without going
+    // through the draft, so the kit's committed design has to be told.
+    const hook = readSource("../src/features/Settings/hooks/useAppearanceEditor.ts");
 
-    expect(hook).toContain("replaceCommitted");
-    expect(hook).toContain('dispatch({ type: "replace_committed", appearance })');
+    expect(hook).toContain("adopt");
+    expect(hook).toContain("design.setCommitted(appearance.designConfig)");
   });
 });
 
@@ -160,9 +162,9 @@ describe("global settings theme tab", () => {
 
     expect(source).toContain("if (selectedPresetId) {");
     expect(source).toContain("applyPreset.mutateAsync({");
-    expect(source).toContain("expectedRevision: revision");
-    expect(source).toContain("replaceCommitted(applied)");
+    expect(source).toContain("expectedRevision,");
+    expect(source).toContain("adopt(applied)");
     // Tweaks layered on top of a preset still take the ordinary edit path.
-    expect(source).toContain("await commitDraft({ designConfig: draft, expectedRevision: revision });");
+    expect(source).toContain("await save(draft, expectedRevision);");
   });
 });

@@ -1,52 +1,23 @@
 "use client";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import {
-  deleteBrandingAsset,
-  getBranding,
-  resetBranding,
-  updateBranding,
-  uploadBrandingAsset,
-} from "@/services/brandingApi";
-import type {
-  PublicBranding,
-  ResetBrandingInput,
-  UpdateBrandingInput,
-  UploadBrandingAssetResult,
-} from "@/types/branding";
+import { getBrandingConfig } from "@/services/brandingApi";
+import type { AdminBrandingConfig } from "@/types/branding";
 
 import { brandingKeys } from "./brandingKeys";
 
-export function usePublicBranding() {
-  return useEntityQuery<PublicBranding>({
-    queryKey: brandingKeys.current,
-    queryFn: getBranding,
+/**
+ * The admin view of branding: the custom paths behind each slot, what they
+ * resolve to, and the revision a save must be based on.
+ *
+ * Admin-only on the server, and only the settings sheet needs it — the marks
+ * the rest of the app displays come from `NajmAppProvider`, seeded server-side.
+ */
+export function useBrandingConfig(enabled: boolean) {
+  return useEntityQuery<AdminBrandingConfig>({
+    queryKey: brandingKeys.config,
+    queryFn: getBrandingConfig,
+    enabled,
     staleTime: 60_000,
   });
-}
-
-export function useBrandingCommands() {
-  return {
-    updateBranding: useEntityCommand<PublicBranding, UpdateBrandingInput>({
-      mutationFn: updateBranding,
-      invalidate: [brandingKeys.all],
-    }),
-    resetBranding: useEntityCommand<PublicBranding, ResetBrandingInput>({
-      mutationFn: resetBranding,
-      invalidate: [brandingKeys.all],
-    }),
-    uploadBrandingAsset: useEntityCommand<
-      UploadBrandingAssetResult,
-      { slot: string; file: File }
-    >({
-      mutationFn: uploadBrandingAsset,
-    }),
-    deleteBrandingAsset: useEntityCommand<
-      { deleted: boolean; referenced: boolean },
-      string
-    >({
-      mutationFn: deleteBrandingAsset,
-    }),
-  };
 }

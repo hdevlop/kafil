@@ -15,10 +15,11 @@ import type {
 
 import { appearanceKeys } from "./appearanceKeys";
 
-export function usePublicAppearance() {
+export function usePublicAppearance(enabled = true) {
   return useEntityQuery<PublicAppearance>({
     queryKey: appearanceKeys.current,
     queryFn: getAppearance,
+    enabled,
     staleTime: 60_000,
   });
 }

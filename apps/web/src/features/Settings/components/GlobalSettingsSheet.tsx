@@ -14,9 +14,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useThemePresetCommands } from "@/hooks/useThemePresets";
-import { useKafilAppearance } from "@/providers/KafilUIProvider";
-import { useKafilBranding } from "@/providers/KafilUIProvider";
 
+import {
+  BrandingEditorProvider,
+  useBrandingEditor,
+} from "../hooks/BrandingEditor";
+import { useAppearanceEditor } from "../hooks/useAppearanceEditor";
 import { APP_SETTINGS_FORM_ID, AppSettingsPanel } from "./AppSettingsPanel";
 import { ThemePresetsPanel } from "./ThemePresetsPanel";
 import { ThemeSettingsPanel } from "./ThemeSettingsPanel";
@@ -33,7 +36,23 @@ export function getGlobalSettingsTabs(role: string | null | undefined): GlobalSe
   return [];
 }
 
-export function GlobalSettingsSheet({
+export function GlobalSettingsSheet(
+  props: Readonly<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    role: string | null | undefined;
+  }>,
+) {
+  if (!canOpenGlobalSettings(props.role)) return null;
+
+  return (
+    <BrandingEditorProvider enabled={props.open} role={props.role}>
+      <GlobalSettings {...props} />
+    </BrandingEditorProvider>
+  );
+}
+
+function GlobalSettings({
   open,
   onOpenChange,
   role,
@@ -43,17 +62,11 @@ export function GlobalSettingsSheet({
   role: string | null | undefined;
 }>) {
   const { t } = useKafilLanguage();
-  const {
-    appearance,
-    draft,
-    beginDraft,
-    setDraft,
-    commitDraft,
-    resetToFactory,
-    replaceCommitted,
-  } = useKafilAppearance();
+  const { design, revision, adopt, save, resetToFactory } =
+    useAppearanceEditor(open);
+  const { draft, committed, beginDraft, setDraft } = design;
   const { applyPreset } = useThemePresetCommands();
-  const branding = useKafilBranding();
+  const branding = useBrandingEditor();
   const tabs = useMemo(() => getGlobalSettingsTabs(role), [role]);
   const [activeTab, setActiveTab] = useState<GlobalSettingsTab>(
     getGlobalSettingsTabs(role)[0] ?? "app",
@@ -66,7 +79,7 @@ export function GlobalSettingsSheet({
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
 
   const themeDirty = Boolean(
-    draft && JSON.stringify(draft) !== JSON.stringify(appearance.designConfig),
+    draft && JSON.stringify(draft) !== JSON.stringify(committed),
   );
   /**
    * A previewed theme is deliberately kept when the sheet closes so the admin
@@ -139,10 +152,10 @@ export function GlobalSettingsSheet({
   }
 
   async function saveTheme() {
-    if (!draft || !themeDirty) return;
+    if (!draft || !themeDirty || revision === undefined) return;
     setIsSavingTheme(true);
     try {
-      let revision = appearance.revision;
+      let expectedRevision = revision;
 
       if (selectedPresetId) {
         /**
@@ -152,10 +165,10 @@ export function GlobalSettingsSheet({
          */
         const applied = await applyPreset.mutateAsync({
           id: selectedPresetId,
-          expectedRevision: revision,
+          expectedRevision,
         });
-        replaceCommitted(applied);
-        revision = applied.revision;
+        adopt(applied);
+        expectedRevision = applied.revision;
 
         // Anything the admin tweaked on top of the preset still needs a save.
         if (JSON.stringify(draft) === JSON.stringify(applied.designConfig)) {
@@ -165,7 +178,7 @@ export function GlobalSettingsSheet({
         }
       }
 
-      await commitDraft({ designConfig: draft, expectedRevision: revision });
+      await save(draft, expectedRevision);
       beginDraft();
       toast.success(t("operator.settings.themeSaveSuccess"));
     } catch (error) {
@@ -176,9 +189,10 @@ export function GlobalSettingsSheet({
   }
 
   async function resetTheme() {
+    if (revision === undefined) return;
     setIsSavingTheme(true);
     try {
-      await resetToFactory({ expectedRevision: appearance.revision });
+      await resetToFactory(revision);
       beginDraft();
       setConfirmReset(false);
       toast.success(t("operator.settings.themeResetSuccess"));
@@ -203,9 +217,10 @@ export function GlobalSettingsSheet({
   }
 
   function exportTheme() {
-    const design = draft ?? appearance.designConfig;
     const url = URL.createObjectURL(
-      new Blob([stringifyThemeFile(design)], { type: "application/json" }),
+      new Blob([stringifyThemeFile(draft ?? committed)], {
+        type: "application/json",
+      }),
     );
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -213,8 +228,6 @@ export function GlobalSettingsSheet({
     anchor.click();
     URL.revokeObjectURL(url);
   }
-
-  if (!canOpenGlobalSettings(role)) return null;
 
   const themeActive = activeTab === "theme";
   const pending = themeActive ? isSavingTheme : appState.saving;

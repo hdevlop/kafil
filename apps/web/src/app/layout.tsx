@@ -8,9 +8,7 @@ import { AppProviders } from "@/providers/AppProviders";
 import { normalizeKafilLanguage, normalizeKafilTimeZone, type KafilTheme } from "@/lib/format";
 import { loadServerAppearance } from "@/lib/serverAppearance";
 import { loadServerBranding } from "@/lib/serverBranding";
-import { loadServerBrandingConfig } from "@/lib/serverBrandingConfig";
 import { APP_NAME } from "@/types/branding";
-import type { AdminBrandingConfig } from "@/types/branding";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -44,23 +42,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [session, cookieStore, appearance, branding, brandingConfig] =
-    await Promise.all([
-      getSession().catch(() => null),
-      cookies(),
-      loadServerAppearance(),
-      loadServerBranding(),
-      loadServerBrandingConfig(),
-    ]);
+  const [session, cookieStore, appearance, branding] = await Promise.all([
+    getSession().catch(() => null),
+    cookies(),
+    loadServerAppearance(),
+    loadServerBranding(),
+  ]);
+
   const language = normalizeKafilLanguage(
     cookieStore.get("kafil-ui-language")?.value ??
       (session?.user as { language?: unknown } | undefined)?.language,
   );
+  
   const theme: KafilTheme = cookieStore.get("kafil-ui-theme")?.value === "dark" ? "dark" : "light";
   const timeZone = normalizeKafilTimeZone(cookieStore.get("kafil-ui-timezone")?.value);
-  const role = (session?.user as { role?: string | null } | undefined)?.role;
-  const initialBrandingConfig: AdminBrandingConfig =
-    role === "admin" ? brandingConfig : toPublicBrandingConfig(brandingConfig);
 
   return (
     <html
@@ -72,14 +67,12 @@ export default async function RootLayout({
     >
       <body className="h-screen w-screen">
         <AppProviders
-          initialAppearance={appearance}
-          initialBrandingConfig={initialBrandingConfig}
-          initialBrandingResolved={branding}
+          initialBranding={branding}
+          initialDesign={appearance.designConfig}
           initialLanguage={language}
           initialSession={session}
           initialTheme={theme}
           initialTimeZone={timeZone}
-          role={role}
         >
           {children}
           <NajmClientRoot />
@@ -88,15 +81,4 @@ export default async function RootLayout({
       </body>
     </html>
   );
-}
-
-function toPublicBrandingConfig(config: AdminBrandingConfig): AdminBrandingConfig {
-  return {
-    sidebarLogoExpandedPath: null,
-    sidebarLogoCollapsedPath: null,
-    authLogoPath: null,
-    authHeroImagePath: null,
-    resolved: config.resolved,
-    revision: config.revision,
-  };
 }

@@ -9,15 +9,16 @@ describe("branding consumer integration", () => {
   test("sidebar branding reaches NSidebar through NBrandingProvider, not the shell", () => {
     // The mark is NSidebar's to render: it reads appName and both logo paths
     // off najm-kit's branding context, the only thing that knows its own
-    // resolved collapsed state. NBrandingProvider is mounted by NajmAppProvider
-    // rather than by Kafil, so what this pins is that the resolved paths still
-    // reach it as values.
-    const provider = readSource("../src/providers/KafilUIProvider.tsx");
+    // resolved collapsed state. The kit holds them as state now, so Kafil only
+    // seeds it — what this pins is that the server-resolved paths still get in.
+    const provider = readSource("../src/providers/AppProviders.tsx");
     expect(provider).toContain("NajmAppProvider");
-    expect(provider).toContain("branding={kitBranding}");
-    expect(provider).toContain("appName: APP_NAME");
-    expect(provider).toContain("logoExpanded: branding.resolved.sidebarLogoExpandedPath");
-    expect(provider).toContain("logoCollapsed: branding.resolved.sidebarLogoCollapsedPath");
+    expect(provider).toContain("appName={APP_NAME}");
+    // Handed over whole. The kit reads the sidebar paths off the payload, so a
+    // rename here would be Kafil growing an adapter back.
+    expect(provider).toContain("initialBranding={initialBranding}");
+    expect(provider).not.toContain("sidebarLogoExpandedPath");
+    expect(provider).not.toContain("sidebarLogoCollapsedPath");
 
     // So the shell must not hand-roll the mark back in, nor mirror the
     // collapsed state itself the way it used to.
@@ -86,14 +87,19 @@ describe("branding consumer integration", () => {
     expect(panel).toContain("divide-y divide-border");
   });
 
-  test("useBrandingState tracks orphan candidates and surfaces a single formats summary", () => {
-    const provider = readSource("../src/providers/useBrandingState.ts");
-    const reducer = readSource("../src/providers/brandingReducer.ts");
-    expect(provider).toContain("mark_orphan_candidate");
-    expect(provider).toContain("clear_orphan_candidates");
-    expect(provider).toContain("cancelDraft");
-    expect(provider).toContain("deleteBrandingCandidates");
-    expect(reducer).toContain("revert_slot");
-    expect(reducer).toContain("revert_all");
+  test("the branding editor tracks orphan candidates and pushes committed logos at the kit", () => {
+    const editor = readSource("../src/features/Settings/hooks/BrandingEditor.tsx");
+
+    expect(editor).toContain("orphansIn");
+    expect(editor).toContain("cancelDraft");
+    expect(editor).toContain("deleteBrandingCandidates");
+    expect(editor).toContain("revertSlot");
+    expect(editor).toContain("revertAll");
+    // A commit has to reach the sidebar without a reload, which is the whole
+    // reason the kit's branding is state and not a prop.
+    expect(editor).toContain("useNBrandingEditor");
+    // The save response goes straight back to the kit — `setBranding` takes the
+    // payload shape, so there is no second copy of the logo rename here.
+    expect(editor).toContain("kit?.setBranding(updated)");
   });
 });

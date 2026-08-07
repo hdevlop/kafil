@@ -21,53 +21,16 @@ import {
 import { getFactoryPublicBranding } from "../src/lib/brandingFactory";
 import { loadBrandingWith } from "../src/lib/brandingLoader";
 import {
-  brandingReducer,
-  createInitialBrandingState,
-  initialBrandingDraft,
-  isBrandingDraftDirty,
-  selectResolvedBranding,
-} from "../src/providers/brandingReducer";
+  isBrandingDirty,
+  isManagedUpload,
+  orphansIn,
+  pickSlots,
+} from "../src/features/Settings/hooks/BrandingEditor";
 import {
   BRANDING_SLOT_KEYS,
   type AdminBrandingConfig,
   type PublicBranding,
 } from "../src/types/branding";
-
-const FACTORY_FALLBACK_CONFIG: AdminBrandingConfig = {
-  sidebarLogoExpandedPath: null,
-  sidebarLogoCollapsedPath: null,
-  authLogoPath: null,
-  authHeroImagePath: null,
-  resolved: getFactoryPublicBranding(),
-  revision: 1,
-};
-
-type AdminConfigFetcher = (path: string) => Promise<Response>;
-type PublicFetcher = (path: string) => Promise<Response>;
-type CookieForwardingFetcher = (
-  path: string,
-  init?: RequestInit,
-) => Promise<Response>;
-
-async function loadBrandingConfigWithMock(
-  fetcher: AdminConfigFetcher,
-): Promise<AdminBrandingConfig> {
-  try {
-    const response = await fetcher("/api/branding/config");
-    if (!response.ok) return FACTORY_FALLBACK_CONFIG;
-    const payload = (await response.json()) as { data?: AdminBrandingConfig };
-    if (
-      !payload.data ||
-      typeof payload.data.revision !== "number" ||
-      !payload.data.resolved
-    ) {
-      return FACTORY_FALLBACK_CONFIG;
-    }
-    return payload.data;
-  } catch {
-    return FACTORY_FALLBACK_CONFIG;
-  }
-}
 
 function readSource(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -125,111 +88,57 @@ describe("branding api surface", () => {
   });
 });
 
-describe("branding reducer", () => {
-  test("begins a draft by cloning the customPath values, not the resolved paths", () => {
+describe("branding draft rules", () => {
+  test("a draft starts from the customPath values, not the resolved paths", () => {
     const customExpanded = makeCustomPath("11111111-1111-4111-8111-111111111111");
     const initial = factoryBranding(2, { sidebarLogoExpandedPath: customExpanded });
-    const state = createInitialBrandingState(initial);
 
-    const draftStarted = brandingReducer(state, {
-      type: "begin_draft",
-      initial: initialBrandingDraft(initial),
-    });
-
-    expect(draftStarted.draft).toEqual({
+    expect(pickSlots(initial)).toEqual({
       sidebarLogoExpandedPath: customExpanded,
       sidebarLogoCollapsedPath: null,
       authLogoPath: null,
       authHeroImagePath: null,
     });
-    expect(draftStarted.committed).toBe(state.committed);
   });
 
-  test("tracks orphan candidates when a managed upload is set", () => {
-    const customPath = makeCustomPath("22222222-2222-4222-8222-222222222222");
-    const state = createInitialBrandingState(factoryBranding(1));
-    const started = brandingReducer(state, {
-      type: "begin_draft",
-      initial: initialBrandingDraft(factoryBranding(1)),
-    });
-
-    const updated = brandingReducer(started, {
-      type: "update_slot",
-      slot: "authHeroImagePath",
-      value: customPath,
-    });
-    const tracked = brandingReducer(updated, {
-      type: "mark_orphan_candidate",
-      path: customPath,
-    });
-    expect(tracked.orphanCandidates).toContain(customPath);
+  test("only managed uploads are candidates for cleanup", () => {
+    expect(isManagedUpload(makeCustomPath("22222222-2222-4222-8222-222222222222"))).toBe(true);
+    expect(isManagedUpload("/logoExpanded.png")).toBe(false);
+    expect(isManagedUpload(null)).toBe(false);
   });
 
-  test("revert_slot restores the committed customPath without orphaning the current draft value", () => {
-    const originalPath = makeCustomPath("33333333-3333-4333-8333-333333333333");
+  test("orphans are the uploads a draft points at that the committed config does not", () => {
+    const committedPath = makeCustomPath("33333333-3333-4333-8333-333333333333");
     const newPath = makeCustomPath("44444444-4444-4444-8444-444444444444");
-    const initial = factoryBranding(1, { authLogoPath: originalPath });
-    const state = createInitialBrandingState(initial);
-    const started = brandingReducer(state, {
-      type: "begin_draft",
-      initial: initialBrandingDraft(initial),
-    });
-    const updated = brandingReducer(started, {
-      type: "update_slot",
-      slot: "authLogoPath",
-      value: newPath,
-    });
-    const reverted = brandingReducer(updated, {
-      type: "revert_slot",
-      slot: "authLogoPath",
-    });
-    expect(reverted.draft?.authLogoPath).toBe(originalPath);
+    const config = factoryBranding(1, { authLogoPath: committedPath });
+
+    // Untouched: nothing to clean up.
+    expect(orphansIn(pickSlots(config), config, [])).toEqual([]);
+
+    const draft = { ...pickSlots(config), authLogoPath: newPath };
+    expect(orphansIn(draft, config, [])).toEqual([newPath]);
+    // Already tracked from the upload itself, so it is not listed twice.
+    expect(orphansIn(draft, config, [newPath])).toEqual([newPath]);
   });
 
-  test("replace_committed swaps the admin config and drops any draft", () => {
-    const initial = factoryBranding(1);
-    const state = createInitialBrandingState(initial);
-    const started = brandingReducer(state, {
-      type: "begin_draft",
-      initial: initialBrandingDraft(initial),
-    });
-    const next: AdminBrandingConfig = {
-      ...initial,
-      authHeroImagePath: makeCustomPath("55555555-5555-4555-8555-555555555555"),
-      resolved: { ...initial.resolved, revision: 2 },
-      revision: 2,
-    };
-    const replaced = brandingReducer(started, {
-      type: "replace_committed",
-      config: next,
-    });
-    expect(replaced.committed).toEqual(next);
-    expect(replaced.draft).toBeNull();
-    expect(replaced.orphanCandidates).toEqual([]);
+  test("a factory fallback path is never treated as an orphan", () => {
+    const config = factoryBranding(1);
+    const draft = { ...pickSlots(config), authLogoPath: "/logoExpanded.png" };
+
+    expect(orphansIn(draft, config, [])).toEqual([]);
   });
 
-  test("selectResolvedBranding always returns the committed resolved projection", () => {
-    const initial = factoryBranding(4);
-    const state = createInitialBrandingState(initial);
-    expect(selectResolvedBranding(state)).toEqual(state.committed.resolved);
-  });
-
-  test("isBrandingDraftDirty compares the draft customPath values to the committed customPath values", () => {
+  test("dirtiness compares the draft customPaths to the committed customPaths", () => {
     const originalPath = makeCustomPath("66666666-6666-4666-8666-666666666666");
     const newPath = makeCustomPath("77777777-7777-4777-8777-777777777777");
-    const initial = factoryBranding(1, { authLogoPath: originalPath });
-    const state = createInitialBrandingState(initial);
-    const started = brandingReducer(state, {
-      type: "begin_draft",
-      initial: initialBrandingDraft(initial),
-    });
-    expect(isBrandingDraftDirty(started)).toBe(false);
-    const updated = brandingReducer(started, {
-      type: "update_slot",
-      slot: "authLogoPath",
-      value: newPath,
-    });
-    expect(isBrandingDraftDirty(updated)).toBe(true);
+    const config = factoryBranding(1, { authLogoPath: originalPath });
+
+    expect(isBrandingDirty(pickSlots(config), config)).toBe(false);
+    expect(isBrandingDirty(null, config)).toBe(false);
+    expect(isBrandingDirty(pickSlots(config), undefined)).toBe(false);
+    expect(
+      isBrandingDirty({ ...pickSlots(config), authLogoPath: newPath }, config),
+    ).toBe(true);
   });
 });
 
@@ -266,67 +175,12 @@ describe("branding server loaders", () => {
     expect(warning).toHaveBeenCalled();
   });
 
-  test("admin loader returns customPath and resolved from a successful response", async () => {
-    const config: AdminBrandingConfig = {
-      sidebarLogoExpandedPath: makeCustomPath("88888888-8888-4888-8888-888888888888"),
-      sidebarLogoCollapsedPath: null,
-      authLogoPath: null,
-      authHeroImagePath: null,
-      resolved: { ...getFactoryPublicBranding(), revision: 3 },
-      revision: 3,
-    };
-    const fetcher = async () =>
-      new Response(JSON.stringify({ data: config }), { status: 200 });
-    const result = await loadBrandingConfigWithMock(fetcher);
-    expect(result).toEqual(config);
-  });
-
-  test("admin loader falls back to the factory for an invalid payload", async () => {
-    const fetcher = async () =>
-      new Response(JSON.stringify({ data: null }), { status: 200 });
-    const result = await loadBrandingConfigWithMock(fetcher);
-    expect(result).toMatchObject({
-      sidebarLogoExpandedPath: null,
-      sidebarLogoCollapsedPath: null,
-      authLogoPath: null,
-      authHeroImagePath: null,
-    });
-  });
-
-  test("admin loader forwards the user cookies as request headers", async () => {
-    let capturedHeaders: Record<string, string> | undefined;
-    const config: AdminBrandingConfig = {
-      sidebarLogoExpandedPath: makeCustomPath("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
-      sidebarLogoCollapsedPath: null,
-      authLogoPath: null,
-      authHeroImagePath: null,
-      resolved: { ...getFactoryPublicBranding(), revision: 2 },
-      revision: 2,
-    };
-    const fetcher = async (path: string, init?: RequestInit) => {
-      capturedHeaders = init?.headers as Record<string, string>;
-      return new Response(JSON.stringify({ data: config }), { status: 200 });
-    };
-    const expectedCookie = "kafil-session=abc123; other=value";
-    const result = await loadBrandingConfigWithCookie(fetcher, expectedCookie);
-    expect(result).toEqual(config);
-    expect(capturedHeaders).toBeDefined();
-    expect(capturedHeaders?.cookie).toBe(expectedCookie);
-  });
-
-  test("public loader constructs an admin config with null custom paths", async () => {
-    const publicBranding: PublicBranding = {
-      ...getFactoryPublicBranding(),
-      authHeroImagePath: "/HeroA.webp",
-      revision: 5,
-    };
-    const fetcher = async () =>
-      new Response(JSON.stringify({ data: publicBranding }), { status: 200 });
-    const result = await loadServerBrandingConfigAsPublicMock(fetcher);
-    expect(result.sidebarLogoExpandedPath).toBeNull();
-    expect(result.resolved).toEqual(publicBranding);
-    expect(result.revision).toBe(5);
-  });
+  /**
+   * The admin config used to be loaded server-side and threaded through the
+   * provider tree. Only the settings sheet ever needed it, so it is a client
+   * query now (`useBrandingConfig`) and the server loader is gone — with it the
+   * cookie-forwarding and public-projection cases that lived here.
+   */
 });
 
 describe("branding UI fixes", () => {
@@ -348,165 +202,60 @@ describe("branding UI fixes", () => {
     expect(panel).toMatch(/uploadingCount\s*>\s*0/);
   });
 
-  test("useBrandingState deletes superseded orphans after a successful commit and reset", () => {
-    const provider = readSource("../src/providers/useBrandingState.ts");
-    expect(provider).toContain("supersededOrphans");
-    expect(provider).toContain("deleteBrandingCandidates");
-  });
-
-  test("serverBrandingConfig.ts forwards the session cookie through server.fetch", () => {
-    const loader = readSource(
-      "../src/lib/serverBrandingConfig.ts",
-    );
-    expect(loader).toContain("cookie");
-    expect(loader).toContain("server.fetch");
-    expect(loader).toContain("headers");
+  test("the branding editor deletes superseded orphans after a successful commit", () => {
+    const editor = readSource("../src/features/Settings/hooks/BrandingEditor.tsx");
+    expect(editor).toContain("superseded");
+    expect(editor).toContain("deleteBrandingCandidates");
   });
 });
 
-// Mocks mirroring the production loader contracts.
-async function loadBrandingConfigWithCookie(
-  fetcher: CookieForwardingFetcher,
-  cookieHeader: string,
-): Promise<AdminBrandingConfig> {
-  try {
-    const response = await fetcher("/api/branding/config", {
-      headers: { cookie: cookieHeader },
-    });
-    if (!response.ok) {
-      return {
-        sidebarLogoExpandedPath: null,
-        sidebarLogoCollapsedPath: null,
-        authLogoPath: null,
-        authHeroImagePath: null,
-        resolved: getFactoryPublicBranding(),
-        revision: 1,
-      };
-    }
-    const payload = (await response.json()) as { data?: AdminBrandingConfig };
-    if (!payload.data) {
-      return {
-        sidebarLogoExpandedPath: null,
-        sidebarLogoCollapsedPath: null,
-        authLogoPath: null,
-        authHeroImagePath: null,
-        resolved: getFactoryPublicBranding(),
-        revision: 1,
-      };
-    }
-    return payload.data;
-  } catch {
-    return {
-      sidebarLogoExpandedPath: null,
-      sidebarLogoCollapsedPath: null,
-      authLogoPath: null,
-      authHeroImagePath: null,
-      resolved: getFactoryPublicBranding(),
-      revision: 1,
-    };
-  }
-}
-
-async function loadServerBrandingConfigAsPublicMock(
-  fetcher: PublicFetcher,
-): Promise<AdminBrandingConfig> {
-  try {
-    const response = await fetcher("/api/branding");
-    if (!response.ok) {
-      return {
-        sidebarLogoExpandedPath: null,
-        sidebarLogoCollapsedPath: null,
-        authLogoPath: null,
-        authHeroImagePath: null,
-        resolved: getFactoryPublicBranding(),
-        revision: 1,
-      };
-    }
-    const payload = (await response.json()) as { data?: PublicBranding };
-    if (!payload.data) {
-      return {
-        sidebarLogoExpandedPath: null,
-        sidebarLogoCollapsedPath: null,
-        authLogoPath: null,
-        authHeroImagePath: null,
-        resolved: getFactoryPublicBranding(),
-        revision: 1,
-      };
-    }
-    return {
-      sidebarLogoExpandedPath: null,
-      sidebarLogoCollapsedPath: null,
-      authLogoPath: null,
-      authHeroImagePath: null,
-      resolved: payload.data,
-      revision: payload.data.revision,
-    };
-  } catch {
-    return {
-      sidebarLogoExpandedPath: null,
-      sidebarLogoCollapsedPath: null,
-      authLogoPath: null,
-      authHeroImagePath: null,
-      resolved: getFactoryPublicBranding(),
-      revision: 1,
-    };
-  }
-}
-
 describe("branding provider wiring", () => {
-  test("useBrandingState exists and owns the committed, draft, and commands", () => {
-    const provider = readSource("../src/providers/useBrandingState.ts");
-    expect(provider).toContain('"use client"');
-    expect(provider).toContain("brandingReducer");
-    expect(provider).toContain("beginDraft");
-    expect(provider).toContain("setSlot");
-    expect(provider).toContain("clearSlot");
-    expect(provider).toContain("revertSlot");
-    expect(provider).toContain("revertAll");
-    expect(provider).toContain("cancelDraft");
-    expect(provider).toContain("commitDraft");
-    expect(provider).toContain("resetToFactory");
+  test("the branding editor is scoped to the settings sheet, not the app root", () => {
+    const editor = readSource("../src/features/Settings/hooks/BrandingEditor.tsx");
+    expect(editor).toContain('"use client"');
+    expect(editor).toContain("useBrandingConfig");
+    expect(editor).toContain("beginDraft");
+    expect(editor).toContain("setSlot");
+    expect(editor).toContain("clearSlot");
+    expect(editor).toContain("revertSlot");
+    expect(editor).toContain("revertAll");
+    expect(editor).toContain("cancelDraft");
+    expect(editor).toContain("commitDraft");
 
-    // The consumer hook stays with the provider that publishes the context;
-    // the state hook only builds the value.
-    const uiProvider = readSource("../src/providers/KafilUIProvider.tsx");
-    expect(uiProvider).toContain("export function useKafilBranding");
+    // Mounted by the sheet that uses it. At the root it would be provider glue
+    // again, loading an admin-only config for every visitor.
+    const sheet = readSource(
+      "../src/features/Settings/components/GlobalSettingsSheet.tsx",
+    );
+    expect(sheet).toContain("<BrandingEditorProvider");
+    const appProviders = readSource("../src/providers/AppProviders.tsx");
+    expect(appProviders).not.toContain("BrandingEditor");
   });
 
-  test("branding state and its consumer live in one provider, handed to the kit as values", () => {
-    // Was a nesting-order assertion across three providers. Branding state and
-    // the NBrandingProvider that renders it are now one component, so what is
-    // left to pin is that the resolved paths still reach the kit rather than
-    // being dropped in the collapse.
+  test("AppProviders seeds the kit's branding and holds none of its own", () => {
     const appProviders = readSource("../src/providers/AppProviders.tsx");
-    expect(appProviders).toContain("KafilUIProvider");
-    expect(appProviders).toContain(
-      "initialBrandingConfig={initialBrandingConfig}",
-    );
+    // The server payload goes over whole; the kit resolves the two sidebar
+    // paths off it. A logo rename reappearing here is the adapter growing back.
+    expect(appProviders).toContain("initialBranding={initialBranding}");
+    expect(appProviders).not.toContain("logoExpanded");
+    expect(appProviders).not.toContain("logoCollapsed");
     expect(appProviders).not.toContain("KafilBrandingProvider");
-
-    const provider = readSource("../src/providers/KafilUIProvider.tsx");
-    expect(provider).toContain("branding={kitBranding}");
-    expect(provider).toContain("logoExpanded: branding.resolved.sidebarLogoExpandedPath");
-    expect(provider).toContain("logoCollapsed: branding.resolved.sidebarLogoCollapsedPath");
+    expect(appProviders).not.toContain("KafilUIProvider");
   });
 
   test("root layout loads branding server-side with a factory fallback", () => {
     const layout = readSource("../src/app/layout.tsx");
     const serverHelper = readSource("../src/lib/serverBranding.ts");
     const loader = readSource("../src/lib/brandingLoader.ts");
-    const configLoader = readSource(
-      "../src/lib/serverBrandingConfig.ts",
-    );
 
     expect(layout).toContain("loadServerBranding");
-    expect(layout).toContain("loadServerBrandingConfig");
-    expect(layout).toContain("initialBrandingResolved");
+    expect(layout).toContain("initialBranding={branding}");
+    // The admin config is a client query now; the layout must not fetch it.
+    expect(layout).not.toContain("loadServerBrandingConfig");
     expect(serverHelper).toContain("server.fetch");
     expect(serverHelper).toContain("loadBrandingWith");
     expect(loader).toContain("/api/branding");
     expect(loader).toContain("factory assets");
-    expect(configLoader).toContain("/api/branding/config");
   });
 });
 

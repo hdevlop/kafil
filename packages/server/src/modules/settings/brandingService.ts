@@ -110,8 +110,26 @@ export function isBrandingAssetFileOnDisk(fileName: string) {
   return existsSync(resolve(brandingDirectory(), fileName));
 }
 
-function assertSubmittedPathExists(path: string | null | undefined) {
+/**
+ * Rejects a slot that points at a file managed storage does not have.
+ *
+ * Only when the path is *new*. A path identical to the committed one is not a
+ * new reference — the caller is simply not touching that slot, and a full-slot
+ * PUT resubmits all four every time. Enforcing existence there made a record
+ * whose file had vanished permanently unsaveable: the only way to clear a dead
+ * slot is to save, and one dead slot rejected the whole request, including the
+ * slots the admin was trying to fix.
+ *
+ * The read path already resolves this way — `resolveStoredPath` falls back to
+ * the factory image when the file is missing, which is why such a record still
+ * renders. This keeps the write path to the same rule.
+ */
+function assertSubmittedPathExists(
+  path: string | null | undefined,
+  committedPath: string | null | undefined,
+) {
   if (path === null || path === undefined) return;
+  if (path === committedPath) return;
   const { directory, fileName } = assertBrandingAssetPath(path);
   if (!existsSync(resolve(directory, fileName))) {
     HttpError.create(
@@ -214,10 +232,20 @@ export class BrandingService {
     actorUserId: string,
   ): Promise<PublicBranding> {
     const input = updateBrandingDto.parse(data);
-    assertSubmittedPathExists(input.sidebarLogoExpandedPath);
-    assertSubmittedPathExists(input.sidebarLogoCollapsedPath);
-    assertSubmittedPathExists(input.authLogoPath);
-    assertSubmittedPathExists(input.authHeroImagePath);
+    const committed = await this.branding.readReferences();
+    assertSubmittedPathExists(
+      input.sidebarLogoExpandedPath,
+      committed?.sidebarLogoExpandedPath,
+    );
+    assertSubmittedPathExists(
+      input.sidebarLogoCollapsedPath,
+      committed?.sidebarLogoCollapsedPath,
+    );
+    assertSubmittedPathExists(input.authLogoPath, committed?.authLogoPath);
+    assertSubmittedPathExists(
+      input.authHeroImagePath,
+      committed?.authHeroImagePath,
+    );
 
     const submittedPaths = collectNonNullPaths({
       sidebarLogoExpandedPath: input.sidebarLogoExpandedPath,

@@ -15,7 +15,7 @@ describe("shared web locale adapter", () => {
     // did on the client. What stays Kafil's is the key union, so the provider
     // is gone and the typed hook is not.
     const provider = readFileSync(
-      join(import.meta.dir, "../src/providers/KafilUIProvider.tsx"),
+      join(import.meta.dir, "../src/providers/AppProviders.tsx"),
       "utf8",
     );
     expect(provider).toContain('from "najm-kit/app"');

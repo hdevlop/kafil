@@ -519,6 +519,121 @@ describe("branding service", () => {
     ).rejects.toMatchObject({ status: 422 });
   });
 
+  it("still rejects a changed path whose file is missing, even when another slot is committed", async () => {
+    const { service } = buildService({
+      readReferences: async () => ({
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: null,
+        authLogoPath: null,
+        authHeroImagePath: null,
+      }),
+      lock: async () => ({
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: null,
+        authLogoPath: null,
+        authHeroImagePath: null,
+        brandingRevision: 1,
+      }),
+    });
+
+    await expect(
+      service.save(
+        {
+          sidebarLogoExpandedPath: validLogoPath,
+          sidebarLogoCollapsedPath: validCollapsedPath,
+          authLogoPath: null,
+          authHeroImagePath: null,
+          expectedRevision: 1,
+        },
+        actorUserId,
+      ),
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
+  /**
+   * Storage and the database can drift — a restore, a storage clean, a manual
+   * delete. The read path already degrades to the factory image in that case.
+   * The write path used to reject instead, which made the record impossible to
+   * correct: clearing a dead slot requires a save, and a full-slot PUT always
+   * resubmits the dead one.
+   */
+  it("accepts an unchanged path whose file has vanished, so the record can still be fixed", async () => {
+    await seedFile(VALID_COLLAPSED_NAME, PNG_BYTES);
+    const writes: BrandingWrite[] = [];
+    const { service } = buildService({
+      readReferences: async () => ({
+        // Committed, but never written to disk in this test.
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: null,
+        authLogoPath: null,
+        authHeroImagePath: null,
+      }),
+      lock: async () => ({
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: null,
+        authLogoPath: null,
+        authHeroImagePath: null,
+        brandingRevision: 1,
+      }),
+      write: async (input: BrandingWrite) => {
+        writes.push(input);
+        return input;
+      },
+    });
+
+    const result = await service.save(
+      {
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: validCollapsedPath,
+        authLogoPath: null,
+        authHeroImagePath: null,
+        expectedRevision: 1,
+      },
+      actorUserId,
+    );
+
+    expect(writes).toHaveLength(1);
+    expect(writes[0]?.sidebarLogoCollapsedPath).toBe(validCollapsedPath);
+    // The dead slot is still stored, but projects as the factory image.
+    expect(result.sidebarLogoExpandedPath).not.toBe(validLogoPath);
+  });
+
+  it("lets an admin clear a dead slot outright", async () => {
+    const writes: BrandingWrite[] = [];
+    const { service } = buildService({
+      readReferences: async () => ({
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: null,
+        authLogoPath: null,
+        authHeroImagePath: null,
+      }),
+      lock: async () => ({
+        sidebarLogoExpandedPath: validLogoPath,
+        sidebarLogoCollapsedPath: null,
+        authLogoPath: null,
+        authHeroImagePath: null,
+        brandingRevision: 1,
+      }),
+      write: async (input: BrandingWrite) => {
+        writes.push(input);
+        return input;
+      },
+    });
+
+    await service.save(
+      {
+        sidebarLogoExpandedPath: null,
+        sidebarLogoCollapsedPath: null,
+        authLogoPath: null,
+        authHeroImagePath: null,
+        expectedRevision: 1,
+      },
+      actorUserId,
+    );
+
+    expect(writes[0]?.sidebarLogoExpandedPath).toBeNull();
+  });
+
   it("cleans up new candidate files when the commit fails", async () => {
     await seedFile(VALID_LOGO_NAME, PNG_BYTES);
     const { service } = buildService({

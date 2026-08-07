@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { TranslationKey } from "@/i18n/translations";
-import { useKafilBranding } from "@/providers/KafilUIProvider";
 import {
   brandingExtensionForFile,
   uploadBrandingAsset,
@@ -21,6 +20,8 @@ import {
   BRANDING_LOGO_MAX_BYTES,
 } from "@/types/branding";
 import type { BrandingDraft, BrandingSlot } from "@/types/branding";
+
+import { useBrandingEditor } from "../hooks/BrandingEditor";
 
 const SLOT_DEFINITIONS: Array<{
   key: keyof BrandingDraft;
@@ -104,7 +105,7 @@ export function BrandAssetsPanel({
     clearSlot,
     revertSlot,
     revertAll,
-  } = useKafilBranding();
+  } = useBrandingEditor();
   const [uploading, setUploading] = useState<Record<BrandingSlot, boolean>>({
     sidebarLogoExpanded: false,
     sidebarLogoCollapsed: false,
@@ -128,6 +129,9 @@ export function BrandAssetsPanel({
   }, [isDirty, onStateChange, uploading]);
 
   if (!isAdmin) return null;
+  if (!config || !resolved) {
+    return <NCard title={t("operator.settings.loading")} loading />;
+  }
 
   const valueFor = (key: keyof BrandingDraft): string => {
     if (draft) {
