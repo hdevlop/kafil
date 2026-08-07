@@ -3,7 +3,7 @@
 import { HandCoins, WalletCards } from "lucide-react";
 import { NCard, NGrid, NGridItem } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import { ContributionOverviewCard } from "@/features/Sponsors/components/overview/ContributionOverviewCard";
 import { RecentContributionsCard } from "@/features/Sponsors/components/overview/RecentContributionsCard";

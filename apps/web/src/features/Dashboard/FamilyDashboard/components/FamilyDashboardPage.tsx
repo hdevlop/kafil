@@ -4,7 +4,7 @@ import { Baby, ClipboardCheck, HandHeart, House, ShoppingBag, WalletCards } from
 import { NPageHeader, NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown } from "najm-kit";
 import Link from "next/link";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate, formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
 import { getSponsorPersonImage } from "@/lib/personImages";
 import { getStatusTextColor } from "@/lib/status";

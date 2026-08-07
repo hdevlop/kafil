@@ -3,9 +3,9 @@
 import { NThemePresets, toast, type NThemePreset } from "najm-kit";
 import { useMemo } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useThemePresetCommands, useThemePresets } from "@/hooks/useThemePresets";
-import { useKafilAppearance } from "@/providers/KafilAppearanceProvider";
+import { useKafilAppearance } from "@/providers/KafilUIProvider";
 
 export function ThemePresetsPanel({
   enabled,

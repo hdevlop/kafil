@@ -19,7 +19,7 @@ import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 import { getFamilyAvatarImage } from "@/lib/personImages";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import { useFamilyCardStatus } from "../../hooks/useFamilyCardStatus";
 import type { FamilyRecord, SponsorFamilyView } from "../../types";

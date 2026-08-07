@@ -4,7 +4,7 @@ import { House } from "lucide-react";
 import { FormInput, NFormSectionHeader } from "najm-kit";
 import { useWatch } from "react-hook-form";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { familyHousingItems } from "../../config/housingOptions";
 import type { FamilyStoredHousingSituation } from "../../types";
 

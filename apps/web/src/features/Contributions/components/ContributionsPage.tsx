@@ -14,7 +14,7 @@ import {
 } from "najm-kit";
 
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { useKafilRole } from "@/shared/Authorization";

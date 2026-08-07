@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { NButton, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useFamilyCommands } from "../../hooks/useFamilies";
 
 export function BulkDeleteFamiliesDialogContent({

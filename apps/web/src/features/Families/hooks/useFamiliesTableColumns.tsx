@@ -8,7 +8,7 @@ import { getFamilyAvatarImage } from "@/lib/personImages";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { Operator } from "@/shared/Authorization";
 
 import type { FamilyRecord } from "../types";

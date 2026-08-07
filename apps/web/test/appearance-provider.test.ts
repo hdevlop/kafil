@@ -178,23 +178,22 @@ describe("appearance reducer", () => {
 });
 
 describe("appearance provider wiring", () => {
-  test("KafilUIBridge feeds the resolved appearance design into the kit provider", () => {
-    const provider = readSource("../src/providers/KafilUIBridge.tsx");
+  test("KafilUIProvider feeds the resolved appearance design into the kit provider", () => {
+    const provider = readSource("../src/providers/KafilUIProvider.tsx");
     expect(provider).toContain('"use client"');
     expect(provider).toContain("useKafilAppearance");
-    expect(provider).toContain("NajmNextUIProvider");
+    expect(provider).toContain("NajmAppProvider");
     expect(provider).toContain("design={design}");
-    // The kit reads the live theme from its own preferences context, so the
-    // bridge no longer threads a mode through.
+    // `design` is a local value here rather than a context read, which is what
+    // lets one component own the appearance state and mount its consumer.
+    expect(provider).toContain("selectResolvedDesign");
     expect(provider).toContain("normalizeTimeZone={normalizeKafilTimeZone}");
     expect(provider).not.toContain("parseNajmDesignConfig");
     expect(provider).not.toContain("theme.json");
   });
 
-  test("KafilAppearanceProvider owns the committed design, revision, and draft commands", () => {
-    const provider = readSource(
-      "../src/providers/KafilAppearanceProvider.tsx",
-    );
+  test("KafilUIProvider owns the committed design, revision, and draft commands", () => {
+    const provider = readSource("../src/providers/KafilUIProvider.tsx");
     expect(provider).toContain('"use client"');
     expect(provider).toContain("appearanceReducer");
     expect(provider).toContain("useAppearanceCommands");
@@ -206,13 +205,18 @@ describe("appearance provider wiring", () => {
     expect(provider).toContain("useKafilAppearance");
   });
 
-  test("AppProviders mounts KafilAppearanceProvider above KafilUIBridge", () => {
+  test("AppProviders mounts exactly one Kafil UI provider, with no bridge left to order", () => {
+    // This replaced a nesting-order assertion. The order mattered only while
+    // the design consumer had to sit below the appearance context; now that one
+    // component holds both, an ordering test would assert nothing. What is
+    // worth pinning is that the collapse did not quietly reintroduce a layer.
     const appProviders = readSource("../src/providers/AppProviders.tsx");
-    const appearanceIndex = appProviders.indexOf("KafilAppearanceProvider");
-    const bridgeIndex = appProviders.indexOf("KafilUIBridge");
-    expect(appearanceIndex).toBeGreaterThan(-1);
-    expect(bridgeIndex).toBeGreaterThan(appearanceIndex);
+    expect(appProviders).toContain("KafilUIProvider");
     expect(appProviders).toContain("initialAppearance={initialAppearance}");
+    expect(appProviders).not.toContain("KafilUIBridge");
+    expect(appProviders).not.toContain("KafilAppearanceProvider");
+    expect(appProviders).not.toContain("KafilBrandingProvider");
+    expect(appProviders).not.toContain("KafilLanguageProvider");
   });
 
   test("root layout loads the appearance server-side with a factory fallback", () => {

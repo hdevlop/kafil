@@ -9,7 +9,7 @@ import {
   NCardSection,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 

@@ -3,7 +3,7 @@
 import { CalendarClock, MapPin, Package, Phone, ShoppingBag, Truck } from "lucide-react";
 import { NCard, NCardInfo, NCardSection } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { CreateFamilyDialogContent } from "@/features/Families/components/FamilyForms";
 import { CreateSponsorDialogContent } from "@/features/Sponsors/components/SponsorForms";
 

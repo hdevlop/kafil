@@ -2,7 +2,7 @@
 
 import { BadgeCheck, Check, HandCoins, HandHeart, PackageSearch, ShoppingBasket, Truck, UserPlus, } from "lucide-react";
 import type { DashboardStatusCount, AttentionCardProps } from "../../types";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilNumber } from "@/lib/format";
 import { NCard } from "najm-kit";
 import Link from "next/link";

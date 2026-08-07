@@ -3,7 +3,7 @@
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { OffsetPagination } from "@/lib/pagination";
 import {
   bulkDeleteSponsors,

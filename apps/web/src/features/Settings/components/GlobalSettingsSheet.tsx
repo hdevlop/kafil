@@ -12,10 +12,10 @@ import {
 import { Download, RotateCcw, Save, SlidersHorizontal, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useThemePresetCommands } from "@/hooks/useThemePresets";
-import { useKafilAppearance } from "@/providers/KafilAppearanceProvider";
-import { useKafilBranding } from "@/providers/KafilBrandingProvider";
+import { useKafilAppearance } from "@/providers/KafilUIProvider";
+import { useKafilBranding } from "@/providers/KafilUIProvider";
 
 import { APP_SETTINGS_FORM_ID, AppSettingsPanel } from "./AppSettingsPanel";
 import { ThemePresetsPanel } from "./ThemePresetsPanel";

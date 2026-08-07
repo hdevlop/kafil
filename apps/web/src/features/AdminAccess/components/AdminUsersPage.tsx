@@ -8,7 +8,7 @@ import { createOffsetPagination, getPageIndex } from "@/lib/pagination";
 import { createCardPagination } from "@/lib/tablePagination";
 import { formatKafilDate } from "@/lib/format";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";

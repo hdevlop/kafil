@@ -10,7 +10,7 @@ import {
 } from "najm-kit";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDevFormTools } from "@/lib/devFormFill";
 import { deleteSponsorImage, uploadSponsorImage } from "@/services/sponsorApi";
 

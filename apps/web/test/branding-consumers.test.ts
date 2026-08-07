@@ -10,11 +10,14 @@ describe("branding consumer integration", () => {
     // The mark is NSidebar's to render now: it reads appName and both logo
     // paths off najm-kit's branding context, which is the only thing that knows
     // its own resolved collapsed state.
-    const provider = readSource("../src/providers/KafilBrandingProvider.tsx");
-    expect(provider).toContain("NBrandingProvider");
-    expect(provider).toContain("appName={APP_NAME}");
-    expect(provider).toContain("logoExpanded={resolved.sidebarLogoExpandedPath}");
-    expect(provider).toContain("logoCollapsed={resolved.sidebarLogoCollapsedPath}");
+    // NBrandingProvider is mounted by NajmAppProvider now rather than by Kafil,
+    // so what this pins is that the resolved paths still reach it as values.
+    const provider = readSource("../src/providers/KafilUIProvider.tsx");
+    expect(provider).toContain("NajmAppProvider");
+    expect(provider).toContain("branding={branding}");
+    expect(provider).toContain("appName: APP_NAME");
+    expect(provider).toContain("logoExpanded: resolvedBranding.sidebarLogoExpandedPath");
+    expect(provider).toContain("logoCollapsed: resolvedBranding.sidebarLogoCollapsedPath");
 
     // So the shell must not hand-roll the mark back in, nor mirror the
     // collapsed state itself the way it used to.
@@ -83,9 +86,9 @@ describe("branding consumer integration", () => {
     expect(panel).toContain("divide-y divide-border");
   });
 
-  test("KafilBrandingProvider tracks orphan candidates and surfaces a single formats summary", () => {
+  test("KafilUIProvider tracks orphan candidates and surfaces a single formats summary", () => {
     const provider = readSource(
-      "../src/providers/KafilBrandingProvider.tsx",
+      "../src/providers/KafilUIProvider.tsx",
     );
     const reducer = readSource(
       "../src/providers/brandingReducer.ts",

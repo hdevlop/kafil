@@ -12,7 +12,7 @@ import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import { getPostLoginRoute } from "../lib/getPostLoginRoute";
 import type { LoginFormProps, LoginValues } from "@/app/(auth)/types";
 import { loginWithIdentifier } from "@/services/accessApi";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 function GoogleMark() {
   return (

@@ -13,7 +13,7 @@ import {
 import { formatKafilDate } from "@/lib/format";
 import { getChildAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { ChildRecord } from "../types";
 
 export function ChildCard({

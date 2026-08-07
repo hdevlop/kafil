@@ -13,7 +13,7 @@ import {
 } from "najm-kit";
 
 import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { getFamilyAvatarImage, getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { ProtectedImage } from "@/shared/ProtectedImage";

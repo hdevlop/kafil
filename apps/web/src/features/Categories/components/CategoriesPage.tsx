@@ -12,7 +12,7 @@ import {
 } from "najm-kit";
 import { useRouter } from "next/navigation";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useCategoryCommands } from "@/features/Categories/hooks/useCategories";
 import { useCategoriesWorkspace } from "@/features/Categories/hooks/useCategoriesWorkspace";

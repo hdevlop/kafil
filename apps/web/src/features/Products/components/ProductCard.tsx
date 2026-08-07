@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Package, ShoppingCart, Tag } from "lucide-react";
 import { cn, NButton, NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatMad } from "@/lib/format";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 

@@ -11,9 +11,9 @@ import {
 } from "najm-kit";
 import { useEffect, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDevFormTools } from "@/lib/devFormFill";
-import { useKafilBranding } from "@/providers/KafilBrandingProvider";
+import { useKafilBranding } from "@/providers/KafilUIProvider";
 
 import {
   settingsFormDefault,

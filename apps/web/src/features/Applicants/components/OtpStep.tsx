@@ -3,7 +3,7 @@
 import { FormInput, NButton, NForm, NLoadingState, toast } from "najm-kit";
 import { useEffect, useMemo, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import {
   applicantEmailOtpSchema,

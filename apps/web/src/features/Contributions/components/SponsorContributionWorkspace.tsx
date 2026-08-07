@@ -14,7 +14,7 @@ import {
 } from "najm-kit";
 import { z } from "zod";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatMad } from "@/lib/format";
 import { useKafilRole } from "@/shared/Authorization";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";

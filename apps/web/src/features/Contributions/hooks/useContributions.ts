@@ -5,7 +5,7 @@ import { useUser } from "najm-auth/client/react";
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import {
   bulkDeleteContributions,
   deleteContribution,

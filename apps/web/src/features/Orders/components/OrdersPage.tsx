@@ -19,7 +19,7 @@ import {
 import { NPageHeader, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import {
   useFamilyOrderingCommands,

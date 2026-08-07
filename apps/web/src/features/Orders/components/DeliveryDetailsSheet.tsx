@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { NButton, NCard, NSheet } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatDateTime, formatKafilDate, formatStatusLabel } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

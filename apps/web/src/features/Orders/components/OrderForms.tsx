@@ -10,7 +10,7 @@ import {
   type OrderReasonFormValues,
 } from "../config/orderSchemas";
 import { useOrderCommands } from "../hooks/useOrders";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { OrderRecord } from "../types";
 
 type ConfirmAction = "approve" | "startDelivery" | "deliver";

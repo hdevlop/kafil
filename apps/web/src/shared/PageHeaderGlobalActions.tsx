@@ -13,7 +13,7 @@ import {
 } from "najm-kit";
 import screenfull from "screenfull";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { KafilLanguage } from "@/lib/format";
 
 const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";

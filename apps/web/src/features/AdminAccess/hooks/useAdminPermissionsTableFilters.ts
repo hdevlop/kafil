@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import type { AccessPermissionView } from "../types";
 

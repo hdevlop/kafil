@@ -2,7 +2,7 @@
 
 import { NButton } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export function PendingReview({
   destination,

@@ -11,7 +11,7 @@ import {
 } from "najm-kit";
 import Link from "next/link";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export function PageLoadingState({
   label,

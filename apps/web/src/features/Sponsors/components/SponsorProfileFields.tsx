@@ -2,7 +2,7 @@
 
 import { FormInput } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export const SPONSOR_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
 export const MAX_SPONSOR_IMAGE_SIZE = 5_000_000;

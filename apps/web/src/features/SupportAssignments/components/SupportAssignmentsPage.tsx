@@ -5,7 +5,7 @@ import { Eye, Pencil, Trash2 } from "lucide-react";
 import { NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { createCardPagination } from "@/lib/tablePagination";

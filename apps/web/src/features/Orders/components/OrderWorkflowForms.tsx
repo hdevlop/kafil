@@ -16,7 +16,7 @@ import { ClipboardPlus, PackagePlus, TriangleAlert, Truck, UserRoundCheck } from
 import { useFamilies } from "@/features/Families/hooks/useFamilies";
 import { useProducts } from "@/features/Products/hooks/useProducts";
 import { formatMad } from "@/lib/format";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import {
   deleteOrderEvidenceCandidate,
   uploadOrderEvidence,

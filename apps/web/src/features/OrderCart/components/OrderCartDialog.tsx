@@ -34,7 +34,7 @@ import {
 } from "najm-kit";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useKafilRole } from "@/shared/Authorization";
 import { formatMad } from "@/lib/format";
 import { productKeys } from "@/features/Products/hooks/productKeys";

@@ -4,7 +4,7 @@ import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import { FormInput, NButton, NForm, toast } from "najm-kit";
 import { useEffect, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import {
   cancelFamilyPasswordSetup,
   changeFamilyFirstPassword,

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { KeyRound } from "lucide-react";
 import { NPageHeader, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";

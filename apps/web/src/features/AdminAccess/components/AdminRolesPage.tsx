@@ -3,7 +3,7 @@
 import { ShieldCheck } from "lucide-react";
 import { NPageHeader, NCard, NPageLayout } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 

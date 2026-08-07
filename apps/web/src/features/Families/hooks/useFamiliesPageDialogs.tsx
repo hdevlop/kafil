@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import { FamilyDetails } from "../components/FamilyDetails";
 import {

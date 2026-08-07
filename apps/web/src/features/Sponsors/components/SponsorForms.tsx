@@ -4,7 +4,7 @@ import { UserRoundPlus } from "lucide-react";
 import { AvatarFormInput, FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 import { useRef, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDevFormTools } from "@/lib/devFormFill";
 import {
   deleteSponsorImage,

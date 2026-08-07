@@ -8,15 +8,28 @@ import {
 } from "../src/i18n/translations";
 
 describe("shared web locale adapter", () => {
-  test("uses the reactive Najm React adapter without a router refresh", () => {
+  test("hands the catalog to the kit provider and keeps the typed hook", () => {
+    // Mounting `I18nProvider` and persisting the choice moved into
+    // `NajmAppProvider`, which also owns the "no router refresh on language"
+    // guarantee — a refresh would discard the catalog swap najm-i18n already
+    // did on the client. What stays Kafil's is the key union, so the provider
+    // is gone and the typed hook is not.
     const provider = readFileSync(
-      join(import.meta.dir, "../src/i18n/KafilLanguageProvider.tsx"),
+      join(import.meta.dir, "../src/providers/KafilUIProvider.tsx"),
       "utf8",
     );
-    expect(provider).toContain('from "najm-i18n/react"');
-    expect(provider).toContain("<I18nProvider");
-    expect(provider).toContain("onLanguageChange={persistLanguage}");
+    expect(provider).toContain('from "najm-kit/app"');
+    expect(provider).toContain("translations={uiTranslations}");
+    expect(provider).toContain("initialLanguage={initialLanguage}");
     expect(provider).not.toContain("router.refresh");
+
+    const hook = readFileSync(
+      join(import.meta.dir, "../src/i18n/useKafilLanguage.ts"),
+      "utf8",
+    );
+    expect(hook).toContain('from "najm-i18n/react"');
+    expect(hook).toContain("useTranslation");
+    expect(hook).not.toContain("<I18nProvider");
   });
 
   test("reads the server-owned UI catalog in each visible language", () => {

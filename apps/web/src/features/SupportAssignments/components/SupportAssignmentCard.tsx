@@ -3,7 +3,7 @@
 import { CalendarDays, House } from "lucide-react";
 import { NCard, NCardInfo, NCardMedia, NCardSection, cn } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate, formatStatusLabel } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

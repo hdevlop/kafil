@@ -1,7 +1,7 @@
 "use client";
 
 import type { LatestOrdersCardProps } from "@/features/Dashboard";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

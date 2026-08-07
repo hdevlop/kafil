@@ -4,7 +4,7 @@ import { UserRound } from "lucide-react";
 import { NCard, NSheet } from "najm-kit";
 import { useEffect, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageErrorState } from "@/shared/PageState";
 
 import { useOwnSponsorProfile } from "../../hooks/useSponsorProfile";

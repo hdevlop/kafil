@@ -9,9 +9,9 @@ import {
 import { RotateCcw, Undo2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { TranslationKey } from "@/i18n/translations";
-import { useKafilBranding } from "@/providers/KafilBrandingProvider";
+import { useKafilBranding } from "@/providers/KafilUIProvider";
 import {
   brandingExtensionForFile,
   uploadBrandingAsset,

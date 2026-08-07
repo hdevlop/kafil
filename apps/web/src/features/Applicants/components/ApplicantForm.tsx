@@ -4,7 +4,7 @@ import { NButton, NForm, FormInput, toast } from "najm-kit";
 import { useState } from "react";
 
 import { useDevFormTools } from "@/lib/devFormFill";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import {
   applicantFormSchema,

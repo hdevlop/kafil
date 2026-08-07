@@ -120,13 +120,15 @@ describe("theme preset selector", () => {
     }
   });
 
-  test("KafilAppearanceProvider exposes replaceCommitted for out-of-draft writes", () => {
-    const provider = readSource(
-      "../src/providers/KafilAppearanceProvider.tsx",
-    );
+  test("KafilUIProvider exposes replaceCommitted for out-of-draft writes", () => {
+    const provider = readSource("../src/providers/KafilUIProvider.tsx");
 
     expect(provider).toContain("replaceCommitted");
-    expect(provider).toContain('dispatch({ type: "replace_committed", appearance })');
+    // The dispatcher is named per-reducer since the merge — one component now
+    // holds both the appearance and the branding state.
+    expect(provider).toContain(
+      'appearanceDispatch({ type: "replace_committed", appearance })',
+    );
   });
 });
 

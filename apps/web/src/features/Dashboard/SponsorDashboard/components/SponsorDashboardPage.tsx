@@ -4,7 +4,7 @@ import { HandCoins, WalletCards } from "lucide-react";
 import { NGrid, NGridItem, NPageLayout } from "najm-kit";
 import Link from "next/link";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatMad } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
 import { ContributionOverviewCard } from "@/features/Sponsors/components/overview/ContributionOverviewCard";

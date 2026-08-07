@@ -6,7 +6,7 @@ import { toChartData } from "../../shared/chartData";
 import { AdminDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import { formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import { LatestOrdersCard } from "./LatestOrdersCard";
 import { QuickActionsCard } from "./QuickActionsCard";

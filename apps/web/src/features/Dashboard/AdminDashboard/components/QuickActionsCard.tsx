@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, BadgeCheck, HandCoins, ShoppingBasket, Truck, UserCheck, Zap, } from "lucide-react";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { NButton, NCard } from "najm-kit";
 import Link from "next/link";
 

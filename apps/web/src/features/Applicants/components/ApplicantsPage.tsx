@@ -11,7 +11,7 @@ import {
   useDialog,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { createCardPagination } from "@/lib/tablePagination";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";

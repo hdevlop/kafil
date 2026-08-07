@@ -2,7 +2,7 @@
 
 import { NButton, NForm, FormInput, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useDevFormTools } from "@/lib/devFormFill";
 
 import {

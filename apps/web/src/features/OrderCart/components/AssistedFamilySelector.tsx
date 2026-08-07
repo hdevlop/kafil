@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarRange, Wallet } from "lucide-react";
 import { ComboboxInput, NCard } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatMad } from "@/lib/format";
 import { listFamilies } from "@/services/familyApi";
 import { getBudgetSummary } from "@/services/budgetApi";

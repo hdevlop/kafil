@@ -12,7 +12,7 @@ import {
 import { useUser } from "najm-auth/client/react";
 import { NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";

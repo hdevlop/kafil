@@ -3,7 +3,7 @@
 import { ShoppingCart } from "lucide-react";
 import { NBadge, NButton } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useOrderCartStore } from "../store/orderCartStore";
 
 import { useOrderCart } from "../hooks/useOrderCart";

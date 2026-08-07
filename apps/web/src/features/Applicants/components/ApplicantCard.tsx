@@ -3,7 +3,7 @@
 import { CalendarClock, Mail, Phone } from "lucide-react";
 import { NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

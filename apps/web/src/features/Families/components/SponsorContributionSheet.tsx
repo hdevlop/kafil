@@ -4,7 +4,7 @@ import { Baby, HandCoins, HeartHandshake } from "lucide-react";
 import { NSheet } from "najm-kit";
 
 import { SponsorContributionWorkspace } from "@/features/Contributions/components/SponsorContributionWorkspace";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { ProtectedImage } from "@/shared/ProtectedImage";

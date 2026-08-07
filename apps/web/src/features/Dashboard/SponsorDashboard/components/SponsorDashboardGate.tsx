@@ -2,7 +2,7 @@
 
 import { useOwnSponsorProfile } from "@/features/Sponsors/hooks/useSponsorProfile";
 import { isSponsorProfileMissing } from "@/features/Sponsors/lib/isSponsorProfileMissing";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageErrorState, PageLoadingState } from "@/shared/PageState";
 
 import { SponsorDashboardPage } from "./SponsorDashboardPage";

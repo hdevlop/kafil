@@ -5,10 +5,7 @@ import type { ServerSession } from "najm-auth/client/server";
 
 import { auth } from "@/lib/auth";
 import type { KafilLanguage, KafilTheme, KafilTimeZone } from "@/lib/format";
-import { KafilLanguageProvider } from "@/i18n/KafilLanguageProvider";
-import { KafilAppearanceProvider } from "@/providers/KafilAppearanceProvider";
-import { KafilBrandingProvider } from "@/providers/KafilBrandingProvider";
-import { KafilUIBridge } from "@/providers/KafilUIBridge";
+import { KafilUIProvider } from "@/providers/KafilUIProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import type { PublicAppearance } from "@/types/appearance";
 import type { AdminBrandingConfig, PublicBranding } from "@/types/branding";
@@ -37,22 +34,17 @@ export function AppProviders({
   return (
     <AuthProvider client={auth.client} initialSession={initialSession}>
       <QueryProvider>
-        <KafilLanguageProvider initialLanguage={initialLanguage}>
-          <KafilAppearanceProvider initialAppearance={initialAppearance}>
-            <KafilBrandingProvider
-              initialConfig={initialBrandingConfig}
-              initialResolved={initialBrandingResolved}
-              role={role}
-            >
-              <KafilUIBridge
-                initialTheme={initialTheme}
-                initialTimeZone={initialTimeZone}
-              >
-                {children}
-              </KafilUIBridge>
-            </KafilBrandingProvider>
-          </KafilAppearanceProvider>
-        </KafilLanguageProvider>
+        <KafilUIProvider
+          initialAppearance={initialAppearance}
+          initialBrandingConfig={initialBrandingConfig}
+          initialBrandingResolved={initialBrandingResolved}
+          initialLanguage={initialLanguage}
+          initialTheme={initialTheme}
+          initialTimeZone={initialTimeZone}
+          role={role}
+        >
+          {children}
+        </KafilUIProvider>
       </QueryProvider>
     </AuthProvider>
   );

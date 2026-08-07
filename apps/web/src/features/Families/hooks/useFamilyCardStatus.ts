@@ -1,4 +1,4 @@
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { fundingProgressPercent } from "@/shared/FundingProgressCard";
 
 import type { FamilyRecord, SponsorFamilyView } from "../types";

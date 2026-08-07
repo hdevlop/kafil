@@ -2,7 +2,7 @@
 
 import { NThemeCustomizer, type NajmDesignConfig } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { getFactoryDesignConfig } from "@/lib/factoryDesign";
 
 export function ThemeSettingsPanel({

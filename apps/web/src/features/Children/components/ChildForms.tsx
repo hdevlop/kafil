@@ -13,7 +13,7 @@ import {
 import { useRef, useState } from "react";
 
 import { useDevFormTools } from "@/lib/devFormFill";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { deleteChildImage, uploadChildImage } from "@/services/childApi";
 
 import {

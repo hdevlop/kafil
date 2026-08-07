@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { NButton, NSheet, NTable, type NTableProps } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { createCardPagination } from "@/lib/tablePagination";
 import type { ResolvedListMode } from "@/hooks/useResponsiveOffsetList";
 

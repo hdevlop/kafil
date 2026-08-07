@@ -6,7 +6,7 @@ import { NButton, NajmScroll, NSidebar, NSidebarProvider, useNSidebar } from "na
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useMemo, useState, type ComponentType, type ReactNode } from "react";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { canOpenGlobalSettings, GlobalSettingsSheet, } from "@/features/Settings/components/GlobalSettingsSheet";
 import { OrderCartOverlay } from "@/features/OrderCart";
 import { openSponsorProfileSheet, SponsorProfileSheet, } from "@/features/Sponsors/components/profile/SponsorProfileSheet";

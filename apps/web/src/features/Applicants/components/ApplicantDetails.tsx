@@ -3,7 +3,7 @@
 import { CheckCircle2, Contact, FileKey2, UserRoundSearch, XCircle } from "lucide-react";
 import { NButton, NDetailList, NErrorState, NLoadingState, NSection, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate } from "@/lib/format";
 import { getSponsorPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

@@ -3,7 +3,7 @@
 import { House } from "lucide-react";
 import { NDetailItem, NSection } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate } from "@/lib/format";
 import { OnlySponsor, Operator } from "@/shared/Authorization";
 

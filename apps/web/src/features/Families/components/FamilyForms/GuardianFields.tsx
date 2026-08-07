@@ -3,7 +3,7 @@
 import { UserRoundPlus } from "lucide-react";
 import { FormInput, NFormSectionHeader } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export function FamilyGuardianFields({
   disabled,

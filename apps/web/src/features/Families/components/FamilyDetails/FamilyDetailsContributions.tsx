@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { useContributions } from "@/features/Contributions/hooks/useContributions";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { getStatusTextColor } from "@/lib/status";

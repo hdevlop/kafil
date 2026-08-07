@@ -9,7 +9,7 @@ import {
 import { NCard, NDetailList, NSheet } from "najm-kit";
 
 import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatStatusLabel } from "@/lib/format";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";

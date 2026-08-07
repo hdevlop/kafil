@@ -4,7 +4,7 @@ import { CalendarClock, CreditCard, House, Timer } from "lucide-react";
 import { NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
 
 import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";

@@ -21,7 +21,7 @@ import {
 
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 import { createCardPagination } from "@/lib/tablePagination";
 

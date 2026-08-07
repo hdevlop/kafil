@@ -15,7 +15,7 @@ import { useWatch } from "react-hook-form";
 import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";
 import { useDevFormTools } from "@/lib/devFormFill";
 import { formatMad } from "@/lib/format";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import {
   currentContributionDate,

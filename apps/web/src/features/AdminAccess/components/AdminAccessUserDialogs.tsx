@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { FormInput, NButton, NCard, NDetailList, NForm, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";

@@ -3,7 +3,7 @@
 import { BadgeCheck, CircleDollarSign, ClockAlert } from "lucide-react";
 import { NCard, NProgress } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatDateTime, formatMad } from "@/lib/format";
 import type { FamilyFundingProgress } from "@/types/funding";
 

@@ -5,7 +5,7 @@ import { AlertTriangle } from "lucide-react";
 import { FormInput, NButton, NForm, useDialog } from "najm-kit";
 
 import { useDevFormTools } from "@/lib/devFormFill";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import {
   contributionReasonFormSchema,

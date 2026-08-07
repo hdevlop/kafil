@@ -27,7 +27,7 @@ import {
 import { orderKeys } from "./orderKeys";
 import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export function useOrders(
   query: OrderListQuery,

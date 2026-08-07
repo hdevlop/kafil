@@ -3,7 +3,7 @@
 import { ClipboardCopy } from "lucide-react";
 import { NButton, NCard, NCardSection, toast } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export function AddApplicantDialogContent() {
   const { t } = useKafilLanguage();

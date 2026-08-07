@@ -4,7 +4,7 @@ import { useState } from "react";
 import { NPageHeader, NPageLayout, NTable } from "najm-kit";
 
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useKafilRole } from "@/shared/Authorization";
 
 import { useFamiliesTableProps } from "../../hooks/useFamiliesTableProps";

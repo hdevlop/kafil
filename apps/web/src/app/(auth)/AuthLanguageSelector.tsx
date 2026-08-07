@@ -3,7 +3,7 @@
 import { ChevronDown, Globe2 } from "lucide-react";
 import { toast } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { KafilLanguage } from "@/lib/format";
 
 const languageOptions = [

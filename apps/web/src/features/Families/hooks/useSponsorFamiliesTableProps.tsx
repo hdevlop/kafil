@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { type NTableProps } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import { createCardPagination } from "@/lib/tablePagination";
 

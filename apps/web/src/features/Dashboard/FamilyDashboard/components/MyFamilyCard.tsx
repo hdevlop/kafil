@@ -4,7 +4,7 @@ import { ArrowRight, UsersRound } from "lucide-react";
 import { NButton, NCard, NCardAction } from "najm-kit";
 import Link from "next/link";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilNumber } from "@/lib/format";
 import { getChildAvatarImage, getParentPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

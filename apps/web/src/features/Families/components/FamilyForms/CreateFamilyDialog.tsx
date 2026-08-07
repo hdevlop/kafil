@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { StepConfig } from "najm-kit";
 import { NajmScroll, useDialog, WizardForm } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useFormFillEnabled } from "@/lib/devFormFill";
 import {
   deleteFamilyImage,

@@ -2,7 +2,7 @@
 
 import { FormInput, NButton, NForm, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import {
   applicantRejectReasonSchema,

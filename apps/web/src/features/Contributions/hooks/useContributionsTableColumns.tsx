@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { type NTableProps } from "najm-kit";
 
 import { formatKafilDate, formatMad } from "@/lib/format";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";

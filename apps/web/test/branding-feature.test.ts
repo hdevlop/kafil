@@ -348,9 +348,9 @@ describe("branding UI fixes", () => {
     expect(panel).toMatch(/uploadingCount\s*>\s*0/);
   });
 
-  test("KafilBrandingProvider deletes superseded orphans after a successful commit and reset", () => {
+  test("KafilUIProvider deletes superseded orphans after a successful commit and reset", () => {
     const provider = readSource(
-      "../src/providers/KafilBrandingProvider.tsx",
+      "../src/providers/KafilUIProvider.tsx",
     );
     expect(provider).toContain("supersededOrphans");
     expect(provider).toContain("deleteBrandingCandidates");
@@ -456,9 +456,9 @@ async function loadServerBrandingConfigAsPublicMock(
 }
 
 describe("branding provider wiring", () => {
-  test("KafilBrandingProvider exists and owns the committed, draft, and commands", () => {
+  test("KafilUIProvider exists and owns the committed, draft, and commands", () => {
     const provider = readSource(
-      "../src/providers/KafilBrandingProvider.tsx",
+      "../src/providers/KafilUIProvider.tsx",
     );
     expect(provider).toContain('"use client"');
     expect(provider).toContain("brandingReducer");
@@ -473,15 +473,22 @@ describe("branding provider wiring", () => {
     expect(provider).toContain("useKafilBranding");
   });
 
-  test("AppProviders mounts KafilBrandingProvider between KafilAppearanceProvider and KafilUIBridge", () => {
+  test("branding state and its consumer live in one provider, handed to the kit as values", () => {
+    // Was a nesting-order assertion across three providers. Branding state and
+    // the NBrandingProvider that renders it are now one component, so what is
+    // left to pin is that the resolved paths still reach the kit rather than
+    // being dropped in the collapse.
     const appProviders = readSource("../src/providers/AppProviders.tsx");
-    const appearanceIndex = appProviders.indexOf("KafilAppearanceProvider");
-    const brandingIndex = appProviders.indexOf("KafilBrandingProvider");
-    const bridgeIndex = appProviders.indexOf("KafilUIBridge");
-    expect(appearanceIndex).toBeGreaterThan(-1);
-    expect(brandingIndex).toBeGreaterThan(appearanceIndex);
-    expect(bridgeIndex).toBeGreaterThan(brandingIndex);
-    expect(appProviders).toContain("initialConfig={initialBrandingConfig}");
+    expect(appProviders).toContain("KafilUIProvider");
+    expect(appProviders).toContain(
+      "initialBrandingConfig={initialBrandingConfig}",
+    );
+    expect(appProviders).not.toContain("KafilBrandingProvider");
+
+    const provider = readSource("../src/providers/KafilUIProvider.tsx");
+    expect(provider).toContain("branding={branding}");
+    expect(provider).toContain("logoExpanded: resolvedBranding.sidebarLogoExpandedPath");
+    expect(provider).toContain("logoCollapsed: resolvedBranding.sidebarLogoCollapsedPath");
   });
 
   test("root layout loads branding server-side with a factory fallback", () => {

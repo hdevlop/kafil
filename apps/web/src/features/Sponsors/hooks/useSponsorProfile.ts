@@ -9,7 +9,7 @@ import {
 } from "@/services/sponsorProfileApi";
 
 import { sponsorProfileKeys } from "./sponsorProfileKeys";
-import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export function useOwnSponsorProfile() {
   return useEntityQuery({
