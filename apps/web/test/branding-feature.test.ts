@@ -473,14 +473,14 @@ describe("branding provider wiring", () => {
     expect(provider).toContain("useKafilBranding");
   });
 
-  test("AppProviders mounts KafilBrandingProvider between KafilAppearanceProvider and KafilDesignProvider", () => {
+  test("AppProviders mounts KafilBrandingProvider between KafilAppearanceProvider and KafilUIBridge", () => {
     const appProviders = readSource("../src/providers/AppProviders.tsx");
     const appearanceIndex = appProviders.indexOf("KafilAppearanceProvider");
     const brandingIndex = appProviders.indexOf("KafilBrandingProvider");
-    const designIndex = appProviders.indexOf("KafilDesignProvider");
+    const bridgeIndex = appProviders.indexOf("KafilUIBridge");
     expect(appearanceIndex).toBeGreaterThan(-1);
     expect(brandingIndex).toBeGreaterThan(appearanceIndex);
-    expect(designIndex).toBeGreaterThan(brandingIndex);
+    expect(bridgeIndex).toBeGreaterThan(brandingIndex);
     expect(appProviders).toContain("initialConfig={initialBrandingConfig}");
   });
 

@@ -7,14 +7,13 @@ import {
   NForm,
   toast,
   useNForm,
+  useNajmTimeZone,
 } from "najm-kit";
 import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/KafilLanguageProvider";
 import { useDevFormTools } from "@/lib/devFormFill";
-import type { KafilTimeZone } from "@/lib/format";
 import { useKafilBranding } from "@/providers/KafilBrandingProvider";
-import { useKafilTimeZone } from "@/providers/KafilPreferencesProvider";
 
 import {
   settingsFormDefault,
@@ -38,7 +37,7 @@ export function AppSettingsPanel({
   const branding = useKafilBranding();
   const devTools = useDevFormTools(settingsFormSchema);
   const { t } = useKafilLanguage();
-  const { timeZone, setTimeZone } = useKafilTimeZone();
+  const { timeZone, setTimeZone } = useNajmTimeZone();
   const form = useNForm({ schema: settingsFormSchema });
   const [savingBranding, setSavingBranding] = useState(false);
   const [uploadingCount, setUploadingCount] = useState(0);
@@ -90,7 +89,7 @@ export function AppSettingsPanel({
     if (form.formState.isDirty) {
       const updated = await updateSettings.mutateAsync(toSettingsInput(values));
       if (values.timeZone !== timeZone) {
-        await setTimeZone(values.timeZone as KafilTimeZone);
+        await setTimeZone(values.timeZone);
         toast.success(t("display.timeZone.saved"));
       }
       form.reset(settingsFormDefault(updated, values.timeZone));

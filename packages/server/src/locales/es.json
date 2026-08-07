@@ -565,7 +565,7 @@
       "itemsLoaded": "Se cargaron {{count}} resultados más",
       "pagination": {
         "rowsPerPage": "Filas/página",
-        "label": "Paginación",
+        "pagination": "Paginación",
         "goToPage": "Ir a la página {{page}}",
         "currentPage": "Página {{page}}, página actual",
         "firstPage": "Primera página",
@@ -573,6 +573,7 @@
         "nextPage": "Página siguiente",
         "lastPage": "Última página",
         "pageOf": "Página {{page}} de {{pageCount}}",
+        "pageOfUnknown": "Página {{page}}",
         "rowsSelected": "{{selected}} de {{total}} fila(s) seleccionada(s)."
       },
       "orderCategory": "Categoría del pedido",

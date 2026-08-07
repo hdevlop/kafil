@@ -580,7 +580,7 @@
       "itemsLoaded": "{{count}} more results loaded",
       "pagination": {
         "rowsPerPage": "Rows/page",
-        "label": "Pagination",
+        "pagination": "Pagination",
         "goToPage": "Go to page {{page}}",
         "currentPage": "Page {{page}}, current page",
         "firstPage": "First page",
@@ -588,6 +588,7 @@
         "nextPage": "Next page",
         "lastPage": "Last page",
         "pageOf": "Page {{page}} of {{pageCount}}",
+        "pageOfUnknown": "Page {{page}}",
         "rowsSelected": "{{selected}} of {{total}} row(s) selected."
       },
       "orderCategory": "Order category",

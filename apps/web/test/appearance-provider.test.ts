@@ -178,16 +178,15 @@ describe("appearance reducer", () => {
 });
 
 describe("appearance provider wiring", () => {
-  test("KafilDesignProvider consumes the resolved appearance design and the personal mode", () => {
-    const provider = readSource(
-      "../src/providers/KafilDesignProvider.tsx",
-    );
+  test("KafilUIBridge feeds the resolved appearance design into the kit provider", () => {
+    const provider = readSource("../src/providers/KafilUIBridge.tsx");
     expect(provider).toContain('"use client"');
     expect(provider).toContain("useKafilAppearance");
-    expect(provider).toContain("useThemePreference");
-    expect(provider).toContain("NajmDesignProvider");
-    expect(provider).toContain("config={design}");
-    expect(provider).toContain("mode={activeTheme}");
+    expect(provider).toContain("NajmNextUIProvider");
+    expect(provider).toContain("design={design}");
+    // The kit reads the live theme from its own preferences context, so the
+    // bridge no longer threads a mode through.
+    expect(provider).toContain("normalizeTimeZone={normalizeKafilTimeZone}");
     expect(provider).not.toContain("parseNajmDesignConfig");
     expect(provider).not.toContain("theme.json");
   });
@@ -207,12 +206,12 @@ describe("appearance provider wiring", () => {
     expect(provider).toContain("useKafilAppearance");
   });
 
-  test("AppProviders mounts KafilAppearanceProvider above KafilDesignProvider", () => {
+  test("AppProviders mounts KafilAppearanceProvider above KafilUIBridge", () => {
     const appProviders = readSource("../src/providers/AppProviders.tsx");
     const appearanceIndex = appProviders.indexOf("KafilAppearanceProvider");
-    const designIndex = appProviders.indexOf("KafilDesignProvider");
+    const bridgeIndex = appProviders.indexOf("KafilUIBridge");
     expect(appearanceIndex).toBeGreaterThan(-1);
-    expect(designIndex).toBeGreaterThan(appearanceIndex);
+    expect(bridgeIndex).toBeGreaterThan(appearanceIndex);
     expect(appProviders).toContain("initialAppearance={initialAppearance}");
   });
 

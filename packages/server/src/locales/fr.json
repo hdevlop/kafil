@@ -568,7 +568,7 @@
       "itemsLoaded": "{{count}} résultats supplémentaires chargés",
       "pagination": {
         "rowsPerPage": "Lignes/page",
-        "label": "Pagination",
+        "pagination": "Pagination",
         "goToPage": "Aller à la page {{page}}",
         "currentPage": "Page {{page}}, page actuelle",
         "firstPage": "Première page",
@@ -576,6 +576,7 @@
         "nextPage": "Page suivante",
         "lastPage": "Dernière page",
         "pageOf": "Page {{page}} sur {{pageCount}}",
+        "pageOfUnknown": "Page {{page}}",
         "rowsSelected": "{{selected}} sur {{total}} ligne(s) sélectionnée(s)."
       },
       "orderCategory": "Catégorie de commande",

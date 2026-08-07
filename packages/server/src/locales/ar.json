@@ -566,7 +566,7 @@
       "itemsLoaded": "تم تحميل {{count}} نتائج إضافية",
       "pagination": {
         "rowsPerPage": "صفوف/صفحة",
-        "label": "ترقيم الصفحات",
+        "pagination": "ترقيم الصفحات",
         "goToPage": "الانتقال إلى الصفحة {{page}}",
         "currentPage": "الصفحة {{page}}، الصفحة الحالية",
         "firstPage": "الصفحة الأولى",
@@ -574,6 +574,7 @@
         "nextPage": "الصفحة التالية",
         "lastPage": "الصفحة الأخيرة",
         "pageOf": "الصفحة {{page}} من {{pageCount}}",
+        "pageOfUnknown": "الصفحة {{page}}",
         "rowsSelected": "تم تحديد {{selected}} من {{total}} صف."
       },
       "orderCategory": "فئة الطلب",
