@@ -348,10 +348,8 @@ describe("branding UI fixes", () => {
     expect(panel).toMatch(/uploadingCount\s*>\s*0/);
   });
 
-  test("KafilUIProvider deletes superseded orphans after a successful commit and reset", () => {
-    const provider = readSource(
-      "../src/providers/KafilUIProvider.tsx",
-    );
+  test("useBrandingState deletes superseded orphans after a successful commit and reset", () => {
+    const provider = readSource("../src/providers/useBrandingState.ts");
     expect(provider).toContain("supersededOrphans");
     expect(provider).toContain("deleteBrandingCandidates");
   });
@@ -456,10 +454,8 @@ async function loadServerBrandingConfigAsPublicMock(
 }
 
 describe("branding provider wiring", () => {
-  test("KafilUIProvider exists and owns the committed, draft, and commands", () => {
-    const provider = readSource(
-      "../src/providers/KafilUIProvider.tsx",
-    );
+  test("useBrandingState exists and owns the committed, draft, and commands", () => {
+    const provider = readSource("../src/providers/useBrandingState.ts");
     expect(provider).toContain('"use client"');
     expect(provider).toContain("brandingReducer");
     expect(provider).toContain("beginDraft");
@@ -470,7 +466,11 @@ describe("branding provider wiring", () => {
     expect(provider).toContain("cancelDraft");
     expect(provider).toContain("commitDraft");
     expect(provider).toContain("resetToFactory");
-    expect(provider).toContain("useKafilBranding");
+
+    // The consumer hook stays with the provider that publishes the context;
+    // the state hook only builds the value.
+    const uiProvider = readSource("../src/providers/KafilUIProvider.tsx");
+    expect(uiProvider).toContain("export function useKafilBranding");
   });
 
   test("branding state and its consumer live in one provider, handed to the kit as values", () => {
@@ -486,9 +486,9 @@ describe("branding provider wiring", () => {
     expect(appProviders).not.toContain("KafilBrandingProvider");
 
     const provider = readSource("../src/providers/KafilUIProvider.tsx");
-    expect(provider).toContain("branding={branding}");
-    expect(provider).toContain("logoExpanded: resolvedBranding.sidebarLogoExpandedPath");
-    expect(provider).toContain("logoCollapsed: resolvedBranding.sidebarLogoCollapsedPath");
+    expect(provider).toContain("branding={kitBranding}");
+    expect(provider).toContain("logoExpanded: branding.resolved.sidebarLogoExpandedPath");
+    expect(provider).toContain("logoCollapsed: branding.resolved.sidebarLogoCollapsedPath");
   });
 
   test("root layout loads branding server-side with a factory fallback", () => {

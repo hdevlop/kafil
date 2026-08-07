@@ -183,26 +183,26 @@ describe("appearance provider wiring", () => {
     expect(provider).toContain('"use client"');
     expect(provider).toContain("useKafilAppearance");
     expect(provider).toContain("NajmAppProvider");
-    expect(provider).toContain("design={design}");
-    // `design` is a local value here rather than a context read, which is what
-    // lets one component own the appearance state and mount its consumer.
-    expect(provider).toContain("selectResolvedDesign");
+    // A local value rather than a context read — that is what lets one
+    // component own the appearance state and mount its consumer.
+    expect(provider).toContain("design={appearance.design}");
     expect(provider).toContain("normalizeTimeZone={normalizeKafilTimeZone}");
     expect(provider).not.toContain("parseNajmDesignConfig");
     expect(provider).not.toContain("theme.json");
   });
 
-  test("KafilUIProvider owns the committed design, revision, and draft commands", () => {
-    const provider = readSource("../src/providers/KafilUIProvider.tsx");
-    expect(provider).toContain('"use client"');
-    expect(provider).toContain("appearanceReducer");
-    expect(provider).toContain("useAppearanceCommands");
-    expect(provider).toContain("beginDraft");
-    expect(provider).toContain("setDraft");
-    expect(provider).toContain("cancelDraft");
-    expect(provider).toContain("commitDraft");
-    expect(provider).toContain("resetToFactory");
-    expect(provider).toContain("useKafilAppearance");
+  test("useAppearanceState owns the committed design, revision, and draft commands", () => {
+    // One provider component, but the state machines stay in their own hooks —
+    // collapsing the tree did not require collapsing the code.
+    const hook = readSource("../src/providers/useAppearanceState.ts");
+    expect(hook).toContain("appearanceReducer");
+    expect(hook).toContain("selectResolvedDesign");
+    expect(hook).toContain("useAppearanceCommands");
+    expect(hook).toContain("beginDraft");
+    expect(hook).toContain("setDraft");
+    expect(hook).toContain("cancelDraft");
+    expect(hook).toContain("commitDraft");
+    expect(hook).toContain("resetToFactory");
   });
 
   test("AppProviders mounts exactly one Kafil UI provider, with no bridge left to order", () => {

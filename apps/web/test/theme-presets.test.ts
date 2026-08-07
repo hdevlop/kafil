@@ -121,14 +121,10 @@ describe("theme preset selector", () => {
   });
 
   test("KafilUIProvider exposes replaceCommitted for out-of-draft writes", () => {
-    const provider = readSource("../src/providers/KafilUIProvider.tsx");
+    const hook = readSource("../src/providers/useAppearanceState.ts");
 
-    expect(provider).toContain("replaceCommitted");
-    // The dispatcher is named per-reducer since the merge — one component now
-    // holds both the appearance and the branding state.
-    expect(provider).toContain(
-      'appearanceDispatch({ type: "replace_committed", appearance })',
-    );
+    expect(hook).toContain("replaceCommitted");
+    expect(hook).toContain('dispatch({ type: "replace_committed", appearance })');
   });
 });
 
