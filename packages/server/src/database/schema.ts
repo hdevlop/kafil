@@ -14,7 +14,6 @@ import {
 } from "najm-auth/pg";
 
 import { auditSchema } from "../modules/audit/auditSchema";
-import { legacyAccessSchema } from "./legacyAccessSchema";
 import { applicantSchema } from "../modules/applicants/applicantSchema";
 import { budgetSchema } from "../modules/budgets/budgetSchema";
 import { childSchema } from "../modules/children/childSchema";
@@ -90,7 +89,6 @@ export {
   supportAssignmentStatusEnum,
 };
 export * from "../modules/audit/auditSchema";
-export * from "./legacyAccessSchema";
 export * from "../modules/applicants/applicantSchema";
 export * from "../modules/budgets/budgetSchema";
 export * from "../modules/catalog/catalogSchema";
@@ -108,7 +106,6 @@ export * from "../modules/staff/staffSchema";
 export * from "../modules/supportAssignments/supportAssignmentSchema";
 
 export const kafilSchema = {
-  ...legacyAccessSchema,
   ...applicantSchema,
   ...auditSchema,
   ...budgetSchema,

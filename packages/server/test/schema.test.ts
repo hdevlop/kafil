@@ -12,7 +12,6 @@ import {
   contributions,
   credentialSetupSessionsTable,
   documentObjects,
-  familyPasswordRequirements,
   familyProfiles,
   kafilSchema,
   inventoryBalances,
@@ -188,7 +187,6 @@ describe("Kafil database schema", () => {
         "contributions",
         "documentObjects",
         "emailVerificationTokens",
-        "familyPasswordRequirements",
         "familyProfiles",
         "inventoryBalances",
         "inventoryLedgerEntries",
@@ -210,20 +208,6 @@ describe("Kafil database schema", () => {
         "themePresets",
       ].sort(),
     );
-  });
-
-  it("stores a server-owned family first-login password requirement", () => {
-    const columns = getTableColumns(familyPasswordRequirements);
-
-    expect(Object.keys(columns)).toEqual([
-      "userId",
-      "required",
-      "completedAt",
-      "createdAt",
-      "updatedAt",
-    ]);
-    expect(columns.userId.notNull).toBe(true);
-    expect(columns.required.notNull).toBe(true);
   });
 
   it("composes Najm's hashed, expiring, purpose-bound setup sessions", () => {

@@ -288,6 +288,13 @@
       "when": 1786207927215,
       "tag": "0041_remove_credential_setup_bridge",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1786220386435,
+      "tag": "0042_drop_family_password_requirements",
+      "breakpoints": true
     }
   ]
 }
