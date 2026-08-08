@@ -19,7 +19,7 @@ import {
   uploadBrandingAsset,
 } from "../src/services/brandingApi";
 import { getFactoryBranding } from "@kafil/server/branding";
-import { loadBrandingWith } from "../src/lib/brandingLoader";
+import { loadBrandingWith } from "../src/lib/loader";
 import {
   isBrandingDirty,
   isManagedUpload,
@@ -245,7 +245,7 @@ describe("branding provider wiring", () => {
 
   test("root layout loads branding server-side with a factory fallback", () => {
     const layout = readSource("../src/app/layout.tsx");
-    const loader = readSource("../src/lib/brandingLoader.ts");
+    const loader = readSource("../src/lib/loader.ts");
 
     expect(layout).toContain("loadServerBranding");
     expect(layout).toContain("initialBranding={branding}");

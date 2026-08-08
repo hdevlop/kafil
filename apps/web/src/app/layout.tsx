@@ -6,8 +6,7 @@ import { PwaRegistration } from "@/components/PwaRegistration";
 import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
 import { normalizeKafilLanguage, normalizeKafilTimeZone, type KafilTheme } from "@/lib/format";
-import { loadServerAppearance } from "@/lib/appearanceLoader";
-import { loadServerBranding } from "@/lib/brandingLoader";
+import { loadServerAppearance, loadServerBranding } from "@/lib/loader";
 import { APP_NAME } from "@/types/branding";
 import "./globals.css";
 

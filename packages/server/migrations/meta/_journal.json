@@ -281,6 +281,13 @@
       "when": 1786207927214,
       "tag": "0040_credential_setup_requirements_bridge",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1786207927215,
+      "tag": "0041_remove_credential_setup_bridge",
+      "breakpoints": true
     }
   ]
 }

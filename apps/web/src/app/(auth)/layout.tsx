@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getSession } from "@/lib/session";
 import { BrandingImage } from "@/features/Branding";
-import { loadServerBranding } from "@/lib/brandingLoader";
+import { loadServerBranding } from "@/lib/loader";
 
 export default async function AuthLayout({
   children,

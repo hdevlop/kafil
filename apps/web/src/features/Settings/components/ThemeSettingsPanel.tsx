@@ -5,7 +5,7 @@ import { NThemeCustomizer, type NajmDesignConfig } from "najm-kit";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import themeJson from "../../../../../../theme.json";
 
-// Read straight from theme.json: `@/lib/appearanceLoader` pulls in `@kafil/server`.
+// Read straight from theme.json: `@/lib/loader` pulls in `@kafil/server`.
 const factoryDesign = themeJson as NajmDesignConfig;
 
 export function ThemeSettingsPanel({
