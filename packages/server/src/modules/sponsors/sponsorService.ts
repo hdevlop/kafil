@@ -10,7 +10,7 @@ import { Transaction } from "najm-database";
 import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { DashboardService } from "../dashboard/dashboardService";
-import { generateInitialPassword } from "../access/initialPassword";
+import { generateInitialPassword } from "../../initialPassword";
 import { removeManagedImage } from "../../storage/managedImageController";
 import {
   type CreateOwnSponsorProfileDto,

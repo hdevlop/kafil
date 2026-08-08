@@ -90,10 +90,6 @@ async function ensureAccessToken(
   path: string,
 ) {
   const isPublicAccessPath = [
-    "/access/login",
-    "/access/family-password/setup",
-    "/access/family-password/change",
-    "/access/family-password/cancel",
     "/applicants/email-verification/setup",
     "/applicants/email-verification/status",
     "/applicants/email-verification/resend",

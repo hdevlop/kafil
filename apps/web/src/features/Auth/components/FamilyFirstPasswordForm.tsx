@@ -6,10 +6,10 @@ import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import {
-  cancelFamilyPasswordSetup,
-  changeFamilyFirstPassword,
-  getFamilyPasswordSetup,
-} from "@/services/accessApi";
+  cancelCredentialSetup,
+  getCredentialSetupStatus,
+  replaceCredentialSetupPassword,
+} from "@/services/credentialSetupApi";
 import {
   familyFirstPasswordSchema,
   type FamilyFirstPasswordValues,
@@ -24,7 +24,7 @@ export function FamilyFirstPasswordForm() {
 
   useEffect(() => {
     let active = true;
-    void getFamilyPasswordSetup()
+    void getCredentialSetupStatus()
       .then(({ setupRequired }) => {
         if (!active) return;
         if (setupRequired) setChecking(false);
@@ -40,7 +40,7 @@ export function FamilyFirstPasswordForm() {
   async function handleSubmit(values: FamilyFirstPasswordValues) {
     setIsLoading(true);
     try {
-      await changeFamilyFirstPassword({
+      await replaceCredentialSetupPassword({
         newPassword: values.newPassword,
       });
       toast.success(t("access.firstLogin.changed"));
@@ -56,7 +56,7 @@ export function FamilyFirstPasswordForm() {
 
   async function handleSignOut() {
     setIsSigningOut(true);
-    await cancelFamilyPasswordSetup().catch(() => undefined);
+    await cancelCredentialSetup().catch(() => undefined);
     window.location.replace("/login");
   }
 

@@ -7,7 +7,7 @@ import {
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
-import { generateInitialPassword } from "../access/initialPassword";
+import { generateInitialPassword } from "../../initialPassword";
 import { AuditService } from "../audit/auditService";
 import {
   type BulkDeleteStaffDto,

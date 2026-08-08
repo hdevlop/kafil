@@ -11,8 +11,7 @@ import { loginSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import { getPostLoginRoute } from "../lib/getPostLoginRoute";
 import type { LoginFormProps, LoginValues } from "@/app/(auth)/types";
-import { loginWithIdentifier } from "@/services/accessApi";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { auth } from "@/lib/auth";
 
 function GoogleMark() {
   return (
@@ -31,7 +30,6 @@ export function LoginForm({
   redirectTo,
 }: LoginFormProps) {
   const router = useRouter();
-  const { language } = useKafilLanguage();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -41,7 +39,9 @@ export function LoginForm({
   async function handleSubmit(values: LoginValues) {
     setIsLoading(true);
     try {
-      const result = await loginWithIdentifier({ ...values, locale: language });
+      // Najm normalizes the identifier and the temporary CIN server-side, and
+      // applies tokens only for the authenticated branch.
+      const result = await auth.client.login(values);
       if (result.nextStep === "authenticated") toast.success("Welcome back.");
       window.location.replace(
         getPostLoginRoute(result.nextStep, redirectTo),

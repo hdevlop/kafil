@@ -4,7 +4,7 @@ import { z } from "zod";
 import { positiveMinorAmountDto } from "../budgets/money";
 import { FAMILY_IMAGE_SERVE_PREFIX } from "./familyImageController";
 import { createInitialChildDto } from "../children/childDto";
-import { phoneDto } from "../access/phone";
+import { phoneDto } from "../../phone";
 
 export const FAMILY_HOUSING_SITUATIONS = [
   "owned",
@@ -55,7 +55,15 @@ const updateFamilyHousingSituationDto = familyHousingSituationDto
   });
 
 const familyIdentityFields = z.object({
-  guardianCin: z.string().trim().min(8).max(20).toUpperCase(),
+  // The CIN is the family's first-login credential, so it must satisfy Najm's
+  // `ma-cin` shape here rather than failing inside provisioning.
+  guardianCin: z
+    .string()
+    .trim()
+    .min(8)
+    .max(20)
+    .regex(/^[a-z]{1,3}\d{5,17}$/i, "Enter a valid CIN, such as AB123456.")
+    .toUpperCase(),
   guardianDateOfBirth: z.iso.date(),
   exactAddress: z.string().trim().min(5).max(1_000),
   phone: phoneDto,

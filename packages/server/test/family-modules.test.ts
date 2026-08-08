@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type {
   AuthService,
-  EncryptionService,
   UserRepository,
   UserService,
 } from "najm-auth";
@@ -11,7 +10,6 @@ import { getMcpTools } from "najm-mcp";
 import { getValidationConfig } from "najm-validation";
 
 import { AuditRepository, AuditService } from "../src/modules/audit";
-import { AccessRepository } from "../src/modules/access";
 import {
   BudgetAccountRepository,
   BudgetService,
@@ -358,7 +356,6 @@ describe("Phase 1 family workflow", () => {
     const familyCreates: Record<string, unknown>[] = [];
     const childCreates: Record<string, unknown>[] = [];
     const auditEvents: Record<string, unknown>[] = [];
-    const passwordRequirements: string[] = [];
     const userUpdates: unknown[][] = [];
     const service = new FamilyService(
       {
@@ -408,16 +405,6 @@ describe("Phase 1 family workflow", () => {
           return {};
         },
       } as unknown as UserRepository,
-      {
-        requireFamilyPasswordChange: async (userId: string) => {
-          passwordRequirements.push(userId);
-          return { userId, required: true };
-        },
-      } as unknown as AccessRepository,
-      undefined,
-      {
-        hashPassword: async (password: string) => `hash:${password}`,
-      } as unknown as EncryptionService,
     );
 
     await service.create(
@@ -445,14 +432,19 @@ describe("Phase 1 family workflow", () => {
       "operator-user",
     );
 
+    // Najm hashes the CIN, marks the durable requirement, and issues no
+    // session. Kafil no longer sets a throwaway password or overwrites a hash.
     expect(accountCreates).toEqual([
       expect.objectContaining({
         email: "family@example.test",
         image: "https://images.example.test/families/family.jpg",
         role: "family",
-        password: expect.stringMatching(/^Kafil-[0-9a-f-]+-A1$/),
+        phone: "+212600000001",
+        temporaryCredential: { kind: "ma-cin", value: "AB123456" },
+        requireCredentialSetup: "password",
       }),
     ]);
+    expect(accountCreates[0]).not.toHaveProperty("password");
     expect(familyCreates).toEqual([
       expect.objectContaining({
         createdByUserId: "operator-user",
@@ -481,17 +473,8 @@ describe("Phase 1 family workflow", () => {
         resourceId: familyId,
       }),
     ]);
-    expect(passwordRequirements).toEqual(["family-user"]);
     expect(userUpdates).toEqual([
-      [
-        "family-user",
-        {
-          password: "hash:ab123456",
-          phone: "+212600000001",
-          phoneVerified: false,
-          emailVerified: true,
-        },
-      ],
+      ["family-user", { phoneVerified: false, emailVerified: true }],
     ]);
   });
 

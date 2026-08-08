@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { phoneDto } from "../access/phone";
+import { phoneDto } from "../../phone";
 
 const applicantStatusSchema = z.enum([
   "pending_email_verification",

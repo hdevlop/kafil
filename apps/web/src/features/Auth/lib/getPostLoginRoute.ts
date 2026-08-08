@@ -1,7 +1,7 @@
 export function getPostLoginRoute(
-  nextStep: "authenticated" | "family_password_setup",
+  nextStep: "authenticated" | "credential_setup",
   requestedRoute: string,
 ) {
-  if (nextStep === "family_password_setup") return "/change-password";
+  if (nextStep === "credential_setup") return "/change-password";
   return requestedRoute;
 }

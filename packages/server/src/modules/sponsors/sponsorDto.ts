@@ -3,7 +3,7 @@ import {
   updateUserDto,
 } from "najm-auth";
 import { z } from "zod";
-import { phoneDto } from "../access/phone";
+import { phoneDto } from "../../phone";
 import { SPONSOR_IMAGE_SERVE_PREFIX } from "./sponsorImageController";
 
 const sponsorProfileDto = z.object({

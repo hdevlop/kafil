@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { phoneDto } from "../access/phone";
+import { phoneDto } from "../../phone";
 import {
   STAFF_FUNCTION_KEYS,
   isStaffFunctionKey,

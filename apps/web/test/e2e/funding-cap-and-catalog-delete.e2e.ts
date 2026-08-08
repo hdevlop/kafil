@@ -23,7 +23,7 @@ async function login(page: Page, email: string, password: string) {
   await page.getByPlaceholder("Enter your password").fill(password);
   const loginResponse = page.waitForResponse(
     (response) =>
-      response.url().includes("/api/access/login") &&
+      response.url().includes("/api/auth/login") &&
       response.request().method() === "POST",
   );
   const refresh = page.waitForResponse(

@@ -1,11 +1,13 @@
-import { randomUUID } from "node:crypto";
 import {
   AuthService,
-  EncryptionService,
   TokenService,
   UserRepository,
   UserService,
 } from "najm-auth";
+import {
+  moroccanCinTemporaryCredential,
+  normalizeMoroccanCin,
+} from "najm-auth/identity/ma";
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
@@ -16,8 +18,6 @@ import { BudgetService } from "../budgets/budgetService";
 import { ChildRepository } from "../children/childRepository";
 import { FundingService } from "../settings/fundingService";
 import { SettingRepository } from "../settings/settingRepository";
-import { AccessRepository } from "../access/accessRepository";
-import { generateFamilyInitialPassword } from "../access/initialPassword";
 import {
   type AccountStatusDto,
   accountStatusDto,
@@ -47,9 +47,7 @@ export class FamilyService {
     private readonly funding: FundingService,
     private readonly settings: SettingRepository,
     private readonly userRecords?: UserRepository,
-    private readonly access?: AccessRepository,
     private readonly tokens?: TokenService,
-    private readonly encryption?: EncryptionService,
   ) {}
 
   async list(query: FamilyListQuery) {
@@ -152,26 +150,22 @@ export class FamilyService {
       HttpError.notFound("Default family funding target not found");
     }
 
-    const initialPassword = generateFamilyInitialPassword(guardianCin);
-    const provisioningPassword = this.encryption
-      ? `Kafil-${randomUUID()}-A1`
-      : initialPassword;
+    // Najm hashes the CIN, records the durable `password` requirement, and
+    // issues no session — all in one transaction. The operator still reads the
+    // normalized CIN back so they can hand it to the family.
+    const initialPassword = normalizeMoroccanCin(guardianCin);
     const user = await this.auth.provisionUser({
       ...(userId ? { id: userId } : {}),
       ...account,
-      role: FAMILY_ROLE,
-      password: provisioningPassword,
-    });
-    const password = this.encryption
-      ? await this.encryption.hashPassword(initialPassword)
-      : undefined;
-    await this.userRecords?.update(user.id, {
-      ...(password ? { password } : {}),
       phone,
+      role: FAMILY_ROLE,
+      temporaryCredential: moroccanCinTemporaryCredential(guardianCin),
+      requireCredentialSetup: "password",
+    });
+    await this.userRecords?.update(user.id, {
       phoneVerified: false,
       emailVerified: true,
     });
-    await this.access?.requireFamilyPasswordChange(user.id);
     const family = await this.families.create({
       id,
       userId: user.id,

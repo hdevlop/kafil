@@ -87,7 +87,7 @@ describe("Phase 6A authentication schemas", () => {
   });
 
   test("routes a setup-only login before the dashboard", () => {
-    expect(getPostLoginRoute("family_password_setup", "/orders")).toBe(
+    expect(getPostLoginRoute("credential_setup", "/orders")).toBe(
       "/change-password",
     );
     expect(getPostLoginRoute("authenticated", "/orders")).toBe(
@@ -105,7 +105,7 @@ describe("Phase 6A authentication schemas", () => {
     );
 
     expect(source).toContain("async function handleSignOut()");
-    expect(source).toContain("await cancelFamilyPasswordSetup()");
+    expect(source).toContain("await cancelCredentialSetup()");
     expect(source).toContain('window.location.replace("/login")');
     expect(source).not.toContain("auth.client.logout()");
     expect(source).toContain('t("action.signOut")');

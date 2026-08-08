@@ -108,8 +108,31 @@ export type ApplicantEmailOtpChallenge = typeof applicantEmailOtpChallenges.$inf
 export type NewApplicantEmailOtpChallenge =
   typeof applicantEmailOtpChallenges.$inferInsert;
 
+/**
+ * Owned here since the access module was removed. The SQL table and columns are
+ * unchanged — this move is TypeScript ownership only and must generate no DDL.
+ */
+export const emailVerificationTokens = pgTable(
+  "email_verification_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    ...timestamps(),
+  },
+  (table) => [index("email_verification_tokens_user_idx").on(table.userId)],
+);
+
+export type NewEmailVerificationToken =
+  typeof emailVerificationTokens.$inferInsert;
+
 export const applicantSchema = {
   applicantStatusEnum,
   applicants,
   applicantEmailOtpChallenges,
+  emailVerificationTokens,
 };
