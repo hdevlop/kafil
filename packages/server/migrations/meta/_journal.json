@@ -274,6 +274,13 @@
       "when": 1786104104429,
       "tag": "0039_nosy_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1786207927214,
+      "tag": "0040_credential_setup_requirements_bridge",
+      "breakpoints": true
     }
   ]
 }

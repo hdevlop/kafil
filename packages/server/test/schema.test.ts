@@ -42,6 +42,7 @@ describe("Kafil database schema", () => {
         "oauthAccounts",
         "tokens",
         "credentialSetupSessions",
+        "credentialSetupRequirements",
         "roles",
         "permissions",
         "rolePermissions",
