@@ -8,12 +8,11 @@ import {
   UserRoundCheck,
   UserRoundX,
 } from "lucide-react";
-import { type ContextMenuItem, NButton, type NTableProps } from "najm-kit";
+import { createCardPagination, type ContextMenuItem, NButton, type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import { Operator, useKafilRole } from "@/shared/Authorization";
-import { createCardPagination } from "@/lib/tablePagination";
 
 import { FamiliesPageIcon } from "../components/FamiliesPage/FamiliesPageIcon";
 import { FamilyCard } from "../components/FamilyCard";

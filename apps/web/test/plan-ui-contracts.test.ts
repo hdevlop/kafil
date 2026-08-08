@@ -61,7 +61,6 @@ describe("root PLAN shared UI contracts", () => {
 
   test("sizes contribution pages to the available table height", () => {
     const page = source("../src/features/Contributions/components/ContributionsPage.tsx");
-    const list = source("../src/hooks/useResponsiveOffsetList.ts");
 
     // NTable measures its own container and reports the page size it wants back
     // through onPaginationChange, which is why the page keeps no ref, no
@@ -70,8 +69,9 @@ describe("root PLAN shared UI contracts", () => {
     expect(page).toContain("dynamicHeight: true");
     expect(page).not.toContain("containerRef");
     expect(page).not.toContain("createOffsetPagination");
-    // A measurement correction re-slices the buffer instead of refetching.
-    expect(list).toContain("rows.slice(start, start + pagination.pageSize)");
+    // The other half — that a measurement correction re-slices the buffer
+    // instead of refetching — is najm-kit's invariant now, asserted in that
+    // package's list-buffering tests.
   });
 
   test("keeps one compact role-aware order card with category and delivery context", () => {

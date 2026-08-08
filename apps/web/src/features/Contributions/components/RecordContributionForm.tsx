@@ -13,7 +13,6 @@ import { useState } from "react";
 import { useWatch } from "react-hook-form";
 
 import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";
-import { useDevFormTools } from "@/lib/devFormFill";
 import { formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
@@ -138,9 +137,7 @@ export function RecordContributionDialogContent({
         externalReference: "",
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(recordContributionFormSchema, {
-        supportAssignmentId: assignmentOptions,
-      })}
+      devTools={{ overrides: { supportAssignmentId: assignmentOptions } }}
     >
       <NFormSectionHeader icon={HandCoins} title={t("operator.contributions.offlinePayment")} />
       <FormInput

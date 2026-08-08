@@ -283,7 +283,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
     expect(pageSource).toContain("data.recentSponsorContributions");
     expect(pageSource).toContain("getSponsorPersonImage");
     expect(pageSource).toContain("fallbackSrc={getSponsorPersonImage(contribution.gender)}");
-    expect(pageSource).toContain("getStatusTextColor(contribution.status)");
+    expect(pageSource).toContain("statusTextClass(contribution.status)");
     expect(pageSource).toContain("+{money(contribution.amountMinor)}");
     expect(pageSource).not.toContain('title={contribution.name}');
   });

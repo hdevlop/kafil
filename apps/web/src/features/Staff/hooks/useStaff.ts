@@ -2,9 +2,9 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import { useResponsiveOffsetList } from "najm-kit/query";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import type { OffsetPagination } from "@/lib/pagination";
+import type { OffsetPagination } from "najm-kit/pagination";
 import {
   bulkDeleteStaff,
   createStaff,

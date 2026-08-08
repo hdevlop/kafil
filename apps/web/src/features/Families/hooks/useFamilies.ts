@@ -2,9 +2,8 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
-import type { OffsetPagination } from "@/lib/pagination";
+import { useOffsetInfiniteQuery, useResponsiveOffsetList } from "najm-kit/query";
+import type { OffsetPagination } from "najm-kit/pagination";
 import {
   type ListFamiliesFilters,
   type SponsorFamilyCatalogFilters,

@@ -115,6 +115,10 @@ index.ts
 - Remember that server tests compile into `dist` before running; edit source and
   tests only.
 - Keep MCP discovery expectations and seed authorization tests synchronized.
+- For a full-stack slice, smoke the changed endpoints with the browser MCP
+  configured in `opencode.json` (Playwright MCP default; Chrome DevTools MCP
+  for console/network/perf). Reproduce the request shape from
+  `apps/web/src/services` before declaring the backend slice done.
 
 Run focused validation while iterating:
 

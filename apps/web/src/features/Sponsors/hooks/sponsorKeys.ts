@@ -1,5 +1,5 @@
 import { entityKeys } from "@/hooks/queryKeys";
-import type { OffsetPagination } from "@/lib/pagination";
+import type { OffsetPagination } from "najm-kit/pagination";
 
 export const sponsorKeys = {
   all: entityKeys.all("sponsors"),

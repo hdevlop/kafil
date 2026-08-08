@@ -1,10 +1,10 @@
+import { statusTextClass } from "najm-kit";
 import Link from "next/link";
 
 import { useContributions } from "@/features/Contributions/hooks/useContributions";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getSponsorAvatarImage } from "@/lib/personImages";
-import { getStatusTextColor } from "@/lib/status";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { FamilyRecord } from "../../types";
@@ -66,7 +66,7 @@ export function FamilyDetailsContributions({
               <p
                 className={[
                   "shrink-0 text-sm font-semibold",
-                  getStatusTextColor(contribution.status),
+                  statusTextClass(contribution.status),
                 ].join(" ")}
               >
                 +{formatMad(contribution.amountMinor, language)}

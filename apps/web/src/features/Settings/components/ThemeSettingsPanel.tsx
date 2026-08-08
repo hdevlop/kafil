@@ -3,7 +3,10 @@
 import { NThemeCustomizer, type NajmDesignConfig } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { getFactoryDesignConfig } from "@/lib/factoryDesign";
+import themeJson from "../../../../../../theme.json";
+
+// Read straight from theme.json: `@/lib/appearanceLoader` pulls in `@kafil/server`.
+const factoryDesign = themeJson as NajmDesignConfig;
 
 export function ThemeSettingsPanel({
   value,
@@ -23,7 +26,7 @@ export function ThemeSettingsPanel({
       showFileActions={false}
       showResetAction={false}
       value={value}
-      factoryValue={getFactoryDesignConfig()}
+      factoryValue={structuredClone(factoryDesign)}
       onChange={onChange}
       disabled={disabled}
       labels={{

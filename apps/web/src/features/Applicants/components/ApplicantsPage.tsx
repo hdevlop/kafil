@@ -2,18 +2,9 @@
 
 import { CheckCircle2, ClipboardList, Eye, XCircle } from "lucide-react";
 import { useState } from "react";
-import {
-  NPageHeader,
-  NPageLayout,
-  NTable,
-  type ContextMenuItem,
-  type NTableProps,
-  useDialog,
-} from "najm-kit";
+import { createCardPagination, NPageHeader, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
-import { createCardPagination } from "@/lib/tablePagination";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 

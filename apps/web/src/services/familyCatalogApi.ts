@@ -3,7 +3,7 @@ import type {
   FamilyCatalogProduct,
   FamilyCatalogQuery,
 } from "@/features/Products/familyCatalogTypes";
-import { cleanQuery } from "@/lib/pagination";
+import { cleanQuery } from "najm-kit/pagination";
 import { api } from "@/services/http";
 
 export function listFamilyCatalogCategories(

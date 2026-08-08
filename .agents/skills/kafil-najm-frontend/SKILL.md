@@ -88,6 +88,63 @@ description: Build, refactor, review, or test Kafil frontend work in apps/web us
   the task explicitly excludes localization.
 - Use shared money, date, time-zone, and localized-number formatters.
 
+## Browser MCP Servers
+
+Two browser MCP servers are wired in the project `opencode.json` and the
+`~/.config/opencode/opencode.json` user config. Pick by intent, not by habit:
+
+- **Playwright MCP** (`playwright`, `@playwright/mcp@latest`) — default, enabled.
+  Use for cross-browser flows, form-fill exploration, E2E smoke discovery, and
+  anything that mirrors `apps/web/test/e2e/`. Operates on the accessibility tree
+  (no vision model). Prefers ref-based interactions over coordinates.
+- **Chrome DevTools MCP** (`chrome-devtools`, `chrome-devtools-mcp@latest`) —
+  opt-in via `enabled: true` when needed. Use for perf traces, Lighthouse,
+  console + network introspection, heap snapshots, and screencast. Chrome only.
+
+Rules when driving a browser via MCP:
+
+- Prefer Playwright MCP for the default workflow. It mirrors the in-repo
+  Playwright suite (`apps/web/test/e2e/`) and is what the F8 form-fill shortcut
+  uses.
+- Enable Chrome DevTools MCP only when the task requires real DevTools
+  diagnostics (Lighthouse audit, performance trace, memory diff, screenshots
+  with source-mapped console). Disable it again after the slice to keep the
+  tool surface lean.
+- Never run a real browser MCP against production Kafil infrastructure. Use the
+  dev server on `http://127.0.0.1:3000` (or `3210` for the e2e harness) or
+  against seeded fixtures.
+- Pair MCP-driven exploration with the existing Playwright suites. Promote any
+  repeatable flow into `apps/web/test/e2e/` so future slices run on CI.
+- For long-running tasks, launch the server in standalone mode with `--port`
+  and connect via `url` to avoid spawning a new browser per session.
+- Use `--isolated` (or `--user-data-dir` per workspace) when running concurrent
+  browsers so persistent profiles do not collide.
+- Add `--no-usage-statistics` to Chrome DevTools MCP in CI environments; the
+  committed config already does this.
+
+Standard configs (kept in `opencode.json`):
+
+```json
+{
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["bunx", "--bun", "@playwright/mcp@latest"],
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["bunx", "--bun", "chrome-devtools-mcp@latest", "--no-usage-statistics"],
+      "enabled": false
+    }
+  }
+}
+```
+
+The MCP commands are launched via `bunx --bun` (the project's standard
+toolchain) so they run under Bun and bypass the root `overrides` that `npx`
+would otherwise trip against `najm-core`.
+
 ## Verification
 
 Run focused tests while iterating. Close an implementation slice with:

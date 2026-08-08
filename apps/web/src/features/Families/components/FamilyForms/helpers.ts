@@ -1,6 +1,5 @@
-import { buildDevFormFill } from "@/lib/devFormFill";
-import { localDateInput } from "@/lib/date";
-import { createFamilyFormSchema } from "../../config/familySchemas";
+import { localDateInput } from "najm-kit/format";
+
 import type { CreateFamilyFormValues } from "../../config/familySchemas";
 
 export const MAX_FAMILY_IMAGE_SIZE = 5_000_000;
@@ -27,30 +26,6 @@ export function createFamilyDefaultValues(): CreateFamilyFormValues {
     exactAddress: "",
     initialChildren: [],
   };
-}
-
-export function createFamilyDevFillValues(): CreateFamilyFormValues {
-  const generatedFamily = buildDevFormFill(createFamilyFormSchema);
-  const firstChild = generatedFamily.initialChildren?.[0];
-
-  if (!firstChild) {
-    return createFamilyFormSchema.parse({
-      ...createFamilyDefaultValues(),
-      ...generatedFamily,
-      initialChildren: [],
-    });
-  }
-
-  const childCount = Math.floor(Math.random() * 4) + 1;
-  const initialChildren = Array.from({ length: childCount }, () =>
-    buildDevFormFill(createFamilyFormSchema).initialChildren?.[0] ?? firstChild,
-  );
-
-  return createFamilyFormSchema.parse({
-    ...createFamilyDefaultValues(),
-    ...generatedFamily,
-    initialChildren,
-  });
 }
 
 export function familyImageError(file: File) {

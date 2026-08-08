@@ -1,10 +1,10 @@
 "use client";
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import { useEntityQuery, type EntityQueryOptions } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList, type ListStrategy } from "najm-kit/query";
 import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
-import type { OffsetPagination } from "@/lib/pagination";
+import type { OffsetPagination } from "najm-kit/pagination";
 import {
   type ListProductsFilters,
   activateProduct,
@@ -17,8 +17,6 @@ import {
 } from "@/services/productApi";
 
 import { productKeys } from "./productKeys";
-import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
-import type { ListStrategy } from "@/hooks/useResponsiveOffsetList";
 import type { ProductCategory, ProductRecord } from "../types";
 
 export function useProducts(

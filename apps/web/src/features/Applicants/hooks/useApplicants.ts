@@ -2,7 +2,7 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import { useResponsiveOffsetList } from "najm-kit/query";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { sponsorKeys } from "@/features/Sponsors/hooks/sponsorKeys";
 

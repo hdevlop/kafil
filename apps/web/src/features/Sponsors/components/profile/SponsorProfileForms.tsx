@@ -11,7 +11,6 @@ import {
 import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 import { deleteSponsorImage, uploadSponsorImage } from "@/services/sponsorApi";
 
 import {
@@ -129,7 +128,6 @@ export function CreateOwnSponsorProfileForm({
       schema={createOwnSponsorProfileFormSchema}
       defaultValues={{ phone: "", cin: "", gender: "F", address: "", dateOfBirth: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(createOwnSponsorProfileFormSchema)}
     >
       <NFormSectionHeader icon={Contact} title={t("sponsor.profile.completeTitle")} />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
@@ -207,7 +205,6 @@ export function UpdateOwnSponsorProfileForm({
         dateOfBirth: dateInputValue(profile.dateOfBirth),
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(updateOwnSponsorProfileFormSchema)}
     >
       <NFormSectionHeader icon={Contact} title={t("sponsor.profile.editTitle")} />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">

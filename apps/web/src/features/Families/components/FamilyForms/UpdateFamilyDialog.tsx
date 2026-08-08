@@ -4,7 +4,6 @@ import { useState } from "react";
 import { NButton, NForm, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 import { minorUnitsToMadInput } from "@/features/Budgets/config/budgetSchemas";
 import {
   deleteFamilyImage,
@@ -106,9 +105,11 @@ export function UpdateFamilyDialogContent({
         exactAddress: family.exactAddress,
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(updateFamilyFormSchema, {
-        housingSituation: ["owned", "rented", "hosted", "temporary"],
-      })}
+      devTools={{
+        overrides: {
+          housingSituation: ["owned", "rented", "hosted", "temporary"],
+        },
+      }}
     >
       <FamilyGuardianFields
         disabled={update.isPending || isUploadingImage}

@@ -12,7 +12,6 @@ import {
 import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 
 import { useBrandingEditor } from "../hooks/BrandingEditor";
 import {
@@ -35,7 +34,6 @@ export function AppSettingsPanel({
   const setting = usePlatformSettings();
   const { updateSettings } = useSettingCommands();
   const branding = useBrandingEditor();
-  const devTools = useDevFormTools(settingsFormSchema);
   const { t } = useKafilLanguage();
   const { timeZone, setTimeZone } = useNajmTimeZone();
   const form = useNForm({ schema: settingsFormSchema });
@@ -116,7 +114,6 @@ export function AppSettingsPanel({
         schema={settingsFormSchema}
         form={form}
         onSubmit={handleSubmit}
-        devTools={devTools}
       >
         <FormInput
           name="formFillEnabled"

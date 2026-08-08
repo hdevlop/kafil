@@ -1,24 +1,14 @@
 "use client";
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import { useEntityQuery, type EntityQueryOptions } from "@/hooks/useEntityQuery";
+import { useResponsiveOffsetList, type ListStrategy } from "najm-kit/query";
 import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
-import type { OffsetPagination } from "@/lib/pagination";
-import {
-  activateCategory,
-  createCategory,
-  deactivateCategory,
-  deleteCategory,
-  listCategories,
-  updateCategory,
-} from "@/services/categoryApi";
+import type { OffsetPagination } from "najm-kit/pagination";
+import { activateCategory, createCategory, deactivateCategory, deleteCategory, listCategories, updateCategory, type ListCategoryFilters } from "@/services/categoryApi";
 
 import { categoryKeys } from "./categoryKeys";
-import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
-import type { ListStrategy } from "@/hooks/useResponsiveOffsetList";
 import type { CategoryRecord } from "../types";
-import type { ListCategoryFilters } from "@/services/categoryApi";
 
 export function useCategories(
   pagination: OffsetPagination,

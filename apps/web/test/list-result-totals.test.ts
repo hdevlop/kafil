@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   fetchOffsetPage,
   type OffsetPagination,
-} from "../src/lib/pagination";
+} from "najm-kit/pagination";
 
 interface Row {
   id: number;

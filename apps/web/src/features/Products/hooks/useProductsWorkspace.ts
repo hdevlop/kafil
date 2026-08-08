@@ -8,11 +8,11 @@ import {
   useResponsiveProductCategories,
   useProductCommands,
 } from "@/features/Products/hooks/useProducts";
-import type { OffsetPagination } from "@/lib/pagination";
+import type { OffsetPagination } from "najm-kit/pagination";
 import {
   useResponsiveOffsetList,
   type ListStrategy,
-} from "@/hooks/useResponsiveOffsetList";
+} from "najm-kit/query";
 import { listFamilyCatalogCategories, listFamilyCatalogProducts } from "@/services/familyCatalogApi";
 import { familyCatalogKeys } from "./familyCatalogKeys";
 import type { ProductRecord } from "@/features/Products/types";

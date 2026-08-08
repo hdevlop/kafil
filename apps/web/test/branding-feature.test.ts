@@ -18,7 +18,7 @@ import {
   updateBranding,
   uploadBrandingAsset,
 } from "../src/services/brandingApi";
-import { getFactoryPublicBranding } from "../src/lib/brandingFactory";
+import { getFactoryBranding } from "@kafil/server/branding";
 import { loadBrandingWith } from "../src/lib/brandingLoader";
 import {
   isBrandingDirty,
@@ -40,7 +40,7 @@ function factoryBranding(
   revision: number = 1,
   customPaths: Partial<AdminBrandingConfig> = {},
 ): AdminBrandingConfig {
-  const public_ = getFactoryPublicBranding();
+  const public_ = getFactoryBranding();
   return {
     sidebarLogoExpandedPath: customPaths.sidebarLogoExpandedPath ?? null,
     sidebarLogoCollapsedPath: customPaths.sidebarLogoCollapsedPath ?? null,
@@ -57,8 +57,8 @@ function makeCustomPath(uuid: string, ext = "png") {
 
 describe("branding factory", () => {
   test("returns independent factory projections that match the backend factory", () => {
-    const first = getFactoryPublicBranding();
-    const second = getFactoryPublicBranding();
+    const first = getFactoryBranding();
+    const second = getFactoryBranding();
     expect(first).toEqual(second);
     expect(first).not.toBe(second);
     expect(first.revision).toBe(1);
@@ -155,7 +155,7 @@ describe("branding server loaders", () => {
 
   test("returns the parsed payload from a successful public GET", async () => {
     const branding: PublicBranding = {
-      ...getFactoryPublicBranding(),
+      ...getFactoryBranding(),
       revision: 7,
     };
     const fetcher = async () =>
@@ -170,7 +170,7 @@ describe("branding server loaders", () => {
       new Response(JSON.stringify({ message: "boom" }), { status: 503 });
 
     await expect(loadBrandingWith(fetcher)).resolves.toEqual(
-      getFactoryPublicBranding(),
+      getFactoryBranding(),
     );
     expect(warning).toHaveBeenCalled();
   });
@@ -245,15 +245,14 @@ describe("branding provider wiring", () => {
 
   test("root layout loads branding server-side with a factory fallback", () => {
     const layout = readSource("../src/app/layout.tsx");
-    const serverHelper = readSource("../src/lib/serverBranding.ts");
     const loader = readSource("../src/lib/brandingLoader.ts");
 
     expect(layout).toContain("loadServerBranding");
     expect(layout).toContain("initialBranding={branding}");
     // The admin config is a client query now; the layout must not fetch it.
     expect(layout).not.toContain("loadServerBrandingConfig");
-    expect(serverHelper).toContain("server.fetch");
-    expect(serverHelper).toContain("loadBrandingWith");
+    expect(loader).toContain("server.fetch");
+    expect(loader).toContain("loadBrandingWith");
     expect(loader).toContain("/api/branding");
     expect(loader).toContain("factory assets");
   });

@@ -7,7 +7,7 @@ import {
 } from "../src/features/Auth/config/authSchemas";
 import { getPostLoginRoute } from "../src/features/Auth/lib/getPostLoginRoute";
 import { resolveDashboard } from "../src/features/Dashboard/resolveDashboard";
-import { getSafeRedirectPath } from "../src/lib/safeRedirect";
+import { getSafeRedirectPath } from "najm-auth/client/server";
 
 describe("Phase 6A dashboard selection", () => {
   test.each([

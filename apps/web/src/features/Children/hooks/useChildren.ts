@@ -4,21 +4,11 @@ import { useUser } from "najm-auth/client/react";
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
-import type { OffsetPagination } from "@/lib/pagination";
-import {
-  bulkDeleteChildren,
-  createChild,
-  deactivateChild,
-  deleteChild,
-  listChildren,
-  listChildFamilies,
-  reactivateChild,
-  updateChild,
-} from "@/services/childApi";
+import { useResponsiveOffsetList } from "najm-kit/query";
+import type { OffsetPagination } from "najm-kit/pagination";
+import { bulkDeleteChildren, createChild, deactivateChild, deleteChild, listChildren, listChildFamilies, reactivateChild, updateChild, type ListChildrenFilters } from "@/services/childApi";
 
 import { childKeys } from "./childKeys";
-import type { ListChildrenFilters } from "@/services/childApi";
 
 export function useChildren(pagination: OffsetPagination) {
   const user = useUser();

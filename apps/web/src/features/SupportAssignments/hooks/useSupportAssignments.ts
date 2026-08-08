@@ -2,19 +2,12 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "@/hooks/useResponsiveOffsetList";
+import { useResponsiveOffsetList } from "najm-kit/query";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import type { OffsetPagination } from "@/lib/pagination";
-import {
-  createSupportAssignment,
-  endSupportAssignment,
-  listSupportAssignments,
-  listSupportAssignmentSources,
-  updateSupportAssignmentNotes,
-} from "@/services/supportAssignmentApi";
+import type { OffsetPagination } from "najm-kit/pagination";
+import { createSupportAssignment, endSupportAssignment, listSupportAssignments, listSupportAssignmentSources, updateSupportAssignmentNotes, type ListSupportAssignmentFilters } from "@/services/supportAssignmentApi";
 
 import { supportAssignmentKeys } from "./supportAssignmentKeys";
-import type { ListSupportAssignmentFilters } from "@/services/supportAssignmentApi";
 
 export function useSupportAssignments(pagination: OffsetPagination, enabled = true) {
   return useEntityQuery({

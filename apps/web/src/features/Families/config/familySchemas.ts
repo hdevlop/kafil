@@ -1,7 +1,7 @@
+import { localDateInput } from "najm-kit/format";
 import { z } from "zod";
 
 import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";
-import { localDateInput } from "@/lib/date";
 
 import {
   FAMILY_HOUSING_SITUATIONS,

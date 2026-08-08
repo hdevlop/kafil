@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { createCardPagination, type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
-import { createCardPagination } from "@/lib/tablePagination";
 
 import { FamilyCard } from "../components/FamilyCard";
 import { FamiliesPageIcon } from "../components/FamiliesPage/FamiliesPageIcon";

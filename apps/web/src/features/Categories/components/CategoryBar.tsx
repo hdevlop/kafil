@@ -4,11 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Tags } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
-import { NButton, NSheet, NTable, type NTableProps } from "najm-kit";
+import { createCardPagination, NButton, NSheet, NTable, type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { createCardPagination } from "@/lib/tablePagination";
-import type { ResolvedListMode } from "@/hooks/useResponsiveOffsetList";
+import type { ResolvedListMode } from "najm-kit/query";
 
 import { CategoryCard } from "./CategoryCard";
 

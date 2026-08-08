@@ -1,4 +1,32 @@
+// `najm-kit/format`, not `najm-kit`: this module is reachable from the root
+// layout and from route handlers, and the root barrel pulls in the whole
+// component library — which fails to build under the `react-server` condition.
+// The leaf entry carries no components.
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime as formatKitDateTime,
+  formatNumber,
+  humanizeToken,
+  type NajmFormatConfig,
+} from "najm-kit/format";
+
 import { getUiTranslation, type TranslationKey } from "@/i18n/translations";
+
+/**
+ * Kafil's formatting vocabulary, over `najm-kit`'s formatters.
+ *
+ * What lives here is only what is Kafil's: the four locales, the dirham, the
+ * time zones the picker offers, and the status catalog. The formatting itself —
+ * Intl instance caching, minor-unit scaling, placeholder handling — is the
+ * kit's.
+ *
+ * Call sites keep their existing signatures. The `language` and `timeZone`
+ * defaults are still read off the document, which is what lets a non-component
+ * caller (a column definition, a view-model builder) format without a hook. In
+ * a component prefer `useNajmFormat()` from the kit, which reads the same
+ * preferences from context and re-renders when they change.
+ */
 
 export type KafilLanguage = "ar" | "en" | "es" | "fr";
 
@@ -47,6 +75,8 @@ function selectedKafilTimeZone(): KafilTimeZone {
   return normalizeKafilTimeZone(document.documentElement.dataset.timeZone);
 }
 
+// Language and region are separate choices: `fr` alone formats the French way,
+// which is not how numbers and dates are written in Morocco.
 const localeByLanguage: Record<KafilLanguage, string> = {
   ar: "ar-MA",
   en: "en-MA",
@@ -54,39 +84,26 @@ const localeByLanguage: Record<KafilLanguage, string> = {
   fr: "fr-MA",
 };
 
-function getLocale(language: KafilLanguage) {
-  return localeByLanguage[language];
+function config(
+  language: KafilLanguage,
+  timeZone: KafilTimeZone = KAFIL_DEFAULT_TIME_ZONE,
+): NajmFormatConfig {
+  return { locale: localeByLanguage[language], timeZone, currency: "MAD" };
 }
 
+/** Formats an integer count of centimes as dirhams. */
 export function formatMad(
   minorUnits: number | null | undefined,
   language: KafilLanguage = selectedKafilLanguage(),
 ) {
-  if (
-    minorUnits === null ||
-    minorUnits === undefined ||
-    !Number.isSafeInteger(minorUnits)
-  ) {
-    return "—";
-  }
-
-  return new Intl.NumberFormat(getLocale(language), {
-    style: "currency",
-    currency: "MAD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minorUnits / 100);
+  return formatCurrency(minorUnits, config(language));
 }
 
 export function formatKafilNumber(
   value: number | null | undefined,
   language: KafilLanguage = selectedKafilLanguage(),
 ) {
-  if (value === null || value === undefined || !Number.isFinite(value)) {
-    return "—";
-  }
-
-  return new Intl.NumberFormat(getLocale(language)).format(value);
+  return formatNumber(value, config(language));
 }
 
 export function formatKafilDate(
@@ -94,15 +111,7 @@ export function formatKafilDate(
   language: KafilLanguage = selectedKafilLanguage(),
   timeZone: KafilTimeZone = selectedKafilTimeZone(),
 ) {
-  if (value === null || value === undefined || value === "") return "—";
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return new Intl.DateTimeFormat(getLocale(language), {
-    dateStyle: "medium",
-    timeZone,
-  }).format(date);
+  return formatDate(value, config(language, timeZone));
 }
 
 export function formatDateTime(
@@ -110,16 +119,7 @@ export function formatDateTime(
   language: KafilLanguage = selectedKafilLanguage(),
   timeZone: KafilTimeZone = selectedKafilTimeZone(),
 ) {
-  if (value === null || value === undefined || value === "") return "—";
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-
-  return new Intl.DateTimeFormat(getLocale(language), {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone,
-  }).format(date);
+  return formatKitDateTime(value, config(language, timeZone));
 }
 
 const statusTranslationKeys: Record<string, TranslationKey> = {
@@ -148,8 +148,6 @@ export function formatStatusLabel(
   const translationKey = statusTranslationKeys[status.trim().toLowerCase()];
   if (translationKey) return getUiTranslation(language, translationKey);
 
-  return status
-    .trim()
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  // No catalog entry: the kit's humanizer is the fallback, not a substitute.
+  return humanizeToken(status);
 }

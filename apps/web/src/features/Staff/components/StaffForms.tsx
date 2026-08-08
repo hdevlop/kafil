@@ -11,7 +11,6 @@ import {
 import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 import {
   deleteStaffImage,
   STAFF_IMAGE_SERVE_ROUTE,
@@ -77,7 +76,6 @@ export function CreateStaffDialogContent() {
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { create } = useStaffCommands();
-  const devTools = useDevFormTools(createStaffFormSchema);
   const [staffImage, setStaffImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -129,7 +127,6 @@ export function CreateStaffDialogContent() {
 
   return (
     <NForm
-      devTools={devTools}
       form={form}
       id="create-staff-form"
       schema={createStaffFormSchema}
@@ -338,7 +335,6 @@ export function UpdateStaffDialogContent({
 
   return (
     <NForm
-      devTools={useDevFormTools(updateStaffFormSchema)}
       form={form}
       id={`update-staff-form-${staff.id}`}
       schema={updateStaffFormSchema}
@@ -481,7 +477,6 @@ export function StaffStatusDialogContent({
     <NForm
       className="space-y-5"
       defaultValues={{ reason: "" }}
-      devTools={useDevFormTools(staffStatusFormSchema)}
       id={`staff-status-form-${staff.id}`}
       schema={staffStatusFormSchema}
       onSubmit={handleSubmit}
@@ -591,7 +586,6 @@ export function ProvisionStaffAccessDialogContent({
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { provisionAccess } = useStaffCommands();
-  const devTools = useDevFormTools(provisionStaffAccessSchema);
   const [credentials, setCredentials] = useState<{
     password: string;
     phone: string;
@@ -618,7 +612,6 @@ export function ProvisionStaffAccessDialogContent({
   return (
     <NForm
       defaultValues={{ email: staff.email ?? "" }}
-      devTools={devTools}
       id={`staff-provision-access-${staff.id}`}
       schema={provisionStaffAccessSchema}
       onSubmit={handleSubmit}

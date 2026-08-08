@@ -12,9 +12,8 @@ import {
   createOffsetPagination,
   fetchOffsetPage,
   getPageIndex,
-  hasPossibleNextPage,
-} from "../src/lib/pagination";
-import { getStatusColor } from "../src/lib/status";
+} from "najm-kit/pagination";
+import { resolveStatusColor } from "najm-kit";
 import {
   getApiErrorMessage,
   getApiErrorStatus,
@@ -90,13 +89,21 @@ describe("Phase 6B formatters and status helpers", () => {
     expect(formatKafilDate("not-a-date", "fr")).toBe("—");
   });
 
+  // The map now ships in najm-kit; this guards Kafil's vocabulary against a
+  // kit-side regression.
   test("maps Kafil workflow statuses to Najm badge colors", () => {
-    expect(getStatusColor("validated")).toBe("success");
-    expect(getStatusColor("pending")).toBe("warning");
-    expect(getStatusColor("pending_email_verification")).toBe("warning");
-    expect(getStatusColor("pending_review")).toBe("warning");
-    expect(getStatusColor("rejected")).toBe("destructive");
-    expect(getStatusColor("future_status")).toBe("neutral");
+    expect(resolveStatusColor("validated")).toBe("success");
+    expect(resolveStatusColor("pending")).toBe("warning");
+    expect(resolveStatusColor("pending_email_verification")).toBe("warning");
+    expect(resolveStatusColor("pending_review")).toBe("warning");
+    expect(resolveStatusColor("in_preparation")).toBe("warning");
+    expect(resolveStatusColor("out_for_delivery")).toBe("warning");
+    expect(resolveStatusColor("purchased")).toBe("info");
+    expect(resolveStatusColor("rejected")).toBe("destructive");
+    expect(resolveStatusColor("refunded")).toBe("destructive");
+    expect(resolveStatusColor("expired")).toBe("destructive");
+    expect(resolveStatusColor("stopped")).toBe("neutral");
+    expect(resolveStatusColor("future_status")).toBe("neutral");
     expect(formatStatusLabel("in_preparation")).toBe("Purchasing and preparation");
   });
 });
@@ -111,13 +118,11 @@ describe("Phase 6B pagination helpers", () => {
     expect(getPageIndex({ limit: 25, offset: 75 })).toBe(3);
   });
 
-  test("handles offset-list continuation and filters", () => {
-    expect(
-      hasPossibleNextPage(25, { limit: 25, offset: 0 }),
-    ).toBe(true);
-    expect(
-      hasPossibleNextPage(12, { limit: 25, offset: 0 }),
-    ).toBe(false);
+  // `hasPossibleNextPage` was dropped with the move to najm-kit: it was unused
+  // outside this test, and its "received === limit means there may be more"
+  // rule is what `fetchOffsetPage` applies internally — covered directly by the
+  // kit's own offset-pagination tests, and by the lookahead test below.
+  test("handles offset-list filters", () => {
     expect(
       cleanQuery({
         limit: 25,

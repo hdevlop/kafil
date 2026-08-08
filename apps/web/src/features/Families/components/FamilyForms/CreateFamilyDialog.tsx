@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import type { StepConfig } from "najm-kit";
 import { NajmScroll, useDialog, WizardForm } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useFormFillEnabled } from "@/lib/devFormFill";
 import {
   deleteFamilyImage,
   uploadFamilyImage,
@@ -23,7 +22,7 @@ import { useFamilyCommands } from "../../hooks/useFamilies";
 import { FamilyChildrenFields } from "./ChildrenFields";
 import { FamilyGuardianFields } from "./GuardianFields";
 import { FamilyHouseholdFields } from "./HouseholdFields";
-import { createFamilyDefaultValues, createFamilyDevFillValues, familyImageError } from "./helpers";
+import { createFamilyDefaultValues, familyImageError } from "./helpers";
 
 export function CreateFamilyDialogContent() {
   const { t } = useKafilLanguage();
@@ -32,29 +31,8 @@ export function CreateFamilyDialogContent() {
   const [familyImage, setFamilyImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [wizardKey, setWizardKey] = useState(0);
-  const [wizardDefaultValues, setWizardDefaultValues] = useState(
-    createFamilyDefaultValues,
-  );
-  const formFillEnabled = useFormFillEnabled();
+  const wizardDefaultValues = useMemo(() => createFamilyDefaultValues(), []);
   const isSubmitting = create.isPending || isUploadingImage;
-
-  useEffect(() => {
-    if (!formFillEnabled) return;
-
-    function fillForm(event: KeyboardEvent) {
-      if (event.key !== "F8") return;
-
-      event.preventDefault();
-      setFamilyImage(null);
-      setImageError(null);
-      setWizardDefaultValues(createFamilyDevFillValues());
-      setWizardKey((key) => key + 1);
-    }
-
-    window.addEventListener("keydown", fillForm, true);
-    return () => window.removeEventListener("keydown", fillForm, true);
-  }, [formFillEnabled]);
 
   const steps: StepConfig[] = [
     {
@@ -156,7 +134,6 @@ export function CreateFamilyDialogContent() {
   return (
     <div className="h-full min-h-0" aria-busy={isSubmitting}>
       <WizardForm
-        key={wizardKey}
         steps={steps}
         schema={createFamilyFormSchema}
         defaultValues={wizardDefaultValues}

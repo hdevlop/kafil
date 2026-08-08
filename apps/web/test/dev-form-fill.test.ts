@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildFormFill } from "@kafil/seed/fakers";
+import { buildFormFill } from "najm-kit";
 
 import {
   createChildFormSchema,

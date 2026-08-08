@@ -11,8 +11,8 @@ import {
 import {
   DEFAULT_APPEARANCE_REVISION,
   getFactoryDesignConfig,
-} from "../src/lib/factoryDesign";
-import { loadAppearanceWith } from "../src/lib/appearanceLoader";
+  loadAppearanceWith,
+} from "../src/lib/appearanceLoader";
 import type { PublicAppearance } from "../src/types/appearance";
 
 function readSource(relativePath: string) {
@@ -98,13 +98,12 @@ describe("appearance provider wiring", () => {
 
   test("root layout loads the appearance server-side with a factory fallback", () => {
     const layout = readSource("../src/app/layout.tsx");
-    const serverHelper = readSource("../src/lib/serverAppearance.ts");
     const loader = readSource("../src/lib/appearanceLoader.ts");
 
     expect(layout).toContain("loadServerAppearance");
     expect(layout).toContain("initialDesign={appearance.designConfig}");
-    expect(serverHelper).toContain("server.fetch");
-    expect(serverHelper).toContain("loadAppearanceWith");
+    expect(loader).toContain("server.fetch");
+    expect(loader).toContain("loadAppearanceWith");
     expect(loader).toContain("/api/appearance");
     expect(loader).toContain("getFactoryDesignConfig");
     expect(loader).toContain("factory theme");

@@ -9,6 +9,7 @@ import {
   NTable,
   type NTableProps,
   useDialog,
+  createCardPagination,
 } from "najm-kit";
 import { useRouter } from "next/navigation";
 
@@ -18,10 +19,9 @@ import { useCategoryCommands } from "@/features/Categories/hooks/useCategories";
 import { useCategoriesWorkspace } from "@/features/Categories/hooks/useCategoriesWorkspace";
 import { useCategoriesTableColumns } from "@/features/Categories/hooks/useCategoriesTableColumns";
 import { useCategoriesTableFilters } from "@/features/Categories/hooks/useCategoriesTableFilters";
-import { createOffsetPagination } from "@/lib/pagination";
+import { createOffsetPagination } from "najm-kit/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { createCardPagination } from "@/lib/tablePagination";
 
 import { CategoryCard } from "./CategoryCard";
 import { CategoryDetails } from "./CategoryDetails";

@@ -1,6 +1,6 @@
+import { slugify } from "najm-kit/format";
 import { z } from "zod";
 
-import { slugify } from "@/lib/slugify";
 import { PRODUCT_IMAGE_SERVE_PREFIX } from "@/services/productApi";
 
 import type {

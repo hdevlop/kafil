@@ -560,10 +560,10 @@
     "common": {
       "loadMore": "Cargar más",
       "loadingMore": "Cargando más...",
-      "retryLoadMore": "Reintentar",
-      "loadMoreError": "No se pudieron cargar más resultados.",
-      "itemsLoaded": "Se cargaron {{count}} resultados más",
       "pagination": {
+        "retryLoadMore": "Reintentar",
+        "loadMoreError": "No se pudieron cargar más resultados.",
+        "itemsLoaded": "Se cargaron {{count}} resultados más",
         "rowsPerPage": "Filas/página",
         "pagination": "Paginación",
         "goToPage": "Ir a la página {{page}}",

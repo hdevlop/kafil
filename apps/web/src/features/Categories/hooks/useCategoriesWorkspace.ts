@@ -7,10 +7,10 @@ import { useCategoryCommands, useResponsiveCategories } from "@/features/Categor
 import {
   useResponsiveOffsetList,
   type ListStrategy,
-} from "@/hooks/useResponsiveOffsetList";
+} from "najm-kit/query";
 import { listFamilyCatalogCategories } from "@/services/familyCatalogApi";
 import { familyCatalogKeys } from "@/features/Products/hooks/familyCatalogKeys";
-import type { OffsetPagination } from "@/lib/pagination";
+import type { OffsetPagination } from "najm-kit/pagination";
 import type { CategoryRecord } from "@/features/Categories/types";
 import type { FamilyCatalogCategory } from "@/features/Products/familyCatalogTypes";
 

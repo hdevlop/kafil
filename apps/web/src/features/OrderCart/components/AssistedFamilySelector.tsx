@@ -9,7 +9,7 @@ import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatMad } from "@/lib/format";
 import { listFamilies } from "@/services/familyApi";
 import { getBudgetSummary } from "@/services/budgetApi";
-import { createOffsetPagination } from "@/lib/pagination";
+import { createOffsetPagination } from "najm-kit/pagination";
 
 const FAMILIES_FETCH_LIMIT = 100;
 

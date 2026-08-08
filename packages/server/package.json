@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
-    "najm-auth": "2.0.14",
+    "najm-auth": "3.0.0",
     "najm-core": "2.0.5",
     "najm-database": "2.0.3",
     "najm-email": "2.0.2",

@@ -2,12 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Eye, KeyRound, UserCheck, UserRoundX, Users } from "lucide-react";
-import { NPageHeader, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
-import { createOffsetPagination, getPageIndex } from "@/lib/pagination";
-import { createCardPagination } from "@/lib/tablePagination";
+import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
 import { formatKafilDate } from "@/lib/format";
-import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";

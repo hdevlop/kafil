@@ -1,4 +1,4 @@
-import { getFactoryPublicBranding } from "@/lib/brandingFactory";
+import { getFactoryBranding } from "@kafil/server/branding";
 import type { PublicBranding } from "@/types/branding";
 
 export type ServerBrandingFetcher = (path: string) => Promise<Response>;
@@ -18,7 +18,7 @@ export async function loadBrandingWith(
       console.warn(
         `[branding] server load returned ${response.status}; using factory assets`,
       );
-      return getFactoryPublicBranding();
+      return getFactoryBranding();
     }
     const payload = (await response.json()) as BrandingEnvelope;
     if (
@@ -29,11 +29,20 @@ export async function loadBrandingWith(
       console.warn(
         "[branding] server load returned an invalid payload; using factory assets",
       );
-      return getFactoryPublicBranding();
+      return getFactoryBranding();
     }
     return payload.data;
   } catch (error) {
     console.warn("[branding] server load failed; using factory assets", error);
-    return getFactoryPublicBranding();
+    return getFactoryBranding();
   }
+}
+
+// Imported lazily so the loader half of this file stays usable without booting
+// the server (unit tests, and anything outside a request).
+export async function loadServerBranding(): Promise<PublicBranding> {
+  const { server } = await import("@kafil/server");
+  return loadBrandingWith(async (path) =>
+    server.fetch(new Request(`http://internal${path}`)),
+  );
 }

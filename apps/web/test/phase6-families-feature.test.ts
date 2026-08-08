@@ -9,11 +9,9 @@ import {
   updateFamilyFormSchema,
 } from "../src/features/Families/config/familySchemas";
 import { familyHousingItems } from "../src/features/Families/config/housingOptions";
-import {
-  createFamilyDefaultValues,
-  createFamilyDevFillValues,
-} from "../src/features/Families/components/FamilyForms";
-import { localDateInput } from "../src/lib/date";
+import { createFamilyDefaultValues } from "../src/features/Families/components/FamilyForms";
+import { buildFormFill } from "najm-kit";
+import { localDateInput } from "najm-kit/format";
 import { familyKeys } from "../src/features/Families/hooks/familyKeys";
 
 describe("Phase 6C family invitation form", () => {
@@ -160,7 +158,10 @@ describe("Phase 6C family invitation form", () => {
   });
 
   test("fills all three family steps with create-valid household data", () => {
-    const values = createFamilyDevFillValues();
+    const values = createFamilyFormSchema.parse({
+      ...createFamilyDefaultValues(),
+      ...buildFormFill(createFamilyFormSchema),
+    });
 
     expect(createFamilyFormSchema.safeParse(values).success).toBe(true);
     expect(["owned", "rented", "hosted", "temporary"]).toContain(
@@ -168,8 +169,7 @@ describe("Phase 6C family invitation form", () => {
     );
     expect(values.housingSituation).not.toBe("unknown");
     expect(["normal", "high", "urgent"]).toContain(values.supportPriority);
-    expect(values.initialChildren.length).toBeGreaterThanOrEqual(1);
-    expect(values.initialChildren.length).toBeLessThanOrEqual(4);
+    expect(values.initialChildren).toHaveLength(1);
   });
   test("masks guardian CIN in operator displays", () => {
     expect(maskGuardianCin("AB123456")).toBe("AB****56");

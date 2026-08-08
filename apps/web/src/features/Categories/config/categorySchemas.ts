@@ -1,6 +1,5 @@
+import { slugify } from "najm-kit/format";
 import { z } from "zod";
-
-import { slugify } from "@/lib/slugify";
 
 import type {
   CategoryFields,

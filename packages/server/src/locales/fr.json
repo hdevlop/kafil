@@ -563,10 +563,10 @@
     "common": {
       "loadMore": "Charger plus",
       "loadingMore": "Chargement en cours...",
-      "retryLoadMore": "Réessayer",
-      "loadMoreError": "Impossible de charger plus de résultats.",
-      "itemsLoaded": "{{count}} résultats supplémentaires chargés",
       "pagination": {
+        "retryLoadMore": "Réessayer",
+        "loadMoreError": "Impossible de charger plus de résultats.",
+        "itemsLoaded": "{{count}} résultats supplémentaires chargés",
         "rowsPerPage": "Lignes/page",
         "pagination": "Pagination",
         "goToPage": "Aller à la page {{page}}",

@@ -1,6 +1,6 @@
 import { AuthLanguageSelector } from "@/app/(auth)/AuthLanguageSelector";
 import { BrandingImage } from "@/features/Branding";
-import { loadServerBranding } from "@/lib/serverBranding";
+import { loadServerBranding } from "@/lib/brandingLoader";
 
 export default async function FirstLoginLayout({
   children,

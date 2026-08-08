@@ -17,13 +17,13 @@ import {
   NTable,
   type NTableProps,
   useDialog,
+  createCardPagination,
 } from "najm-kit";
 
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { Operator, useKafilRole } from "@/shared/Authorization";
-import { createCardPagination } from "@/lib/tablePagination";
 
 import { ChildCard } from "./ChildCard";
 import { ChildDetails } from "./ChildDetails";

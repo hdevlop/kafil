@@ -12,7 +12,6 @@ import {
 } from "najm-kit";
 import { useRef, useState } from "react";
 
-import { useDevFormTools } from "@/lib/devFormFill";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { deleteChildImage, uploadChildImage } from "@/services/childApi";
 
@@ -154,9 +153,7 @@ export function CreateChildDialogContent() {
         notes: "",
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(createChildFormSchema, {
-        familyProfileId: familyOptions,
-      })}
+      devTools={{ overrides: { familyProfileId: familyOptions } }}
     >
       <NFormSectionHeader icon={Baby} title={t("operator.children.record")} />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
@@ -296,7 +293,6 @@ export function UpdateChildDialogContent({
         notes: child.notes ?? "",
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(updateChildFormSchema)}
     >
       <NFormSectionHeader icon={Baby} title="Child profile" />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
@@ -360,7 +356,6 @@ export function ChildStatusDialogContent({
       schema={childStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(childStatusFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

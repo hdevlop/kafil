@@ -2,7 +2,7 @@
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useOffsetInfiniteQuery } from "@/hooks/useOffsetInfiniteQuery";
+import { useOffsetInfiniteQuery } from "najm-kit/query";
 import {
   changeSponsorPlan,
   createSponsorPlan,

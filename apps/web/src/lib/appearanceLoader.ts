@@ -1,10 +1,16 @@
-import {
-  DEFAULT_APPEARANCE_REVISION,
-  getFactoryDesignConfig,
-} from "@/lib/factoryDesign";
+import type { NajmDesignConfig } from "najm-kit";
+
+import themeJson from "../../../../theme.json";
 import type { PublicAppearance } from "@/types/appearance";
 
 const APPEARANCE_PATH = "/api/appearance";
+const factoryDesign = themeJson as NajmDesignConfig;
+
+export const DEFAULT_APPEARANCE_REVISION = 1;
+
+export function getFactoryDesignConfig(): NajmDesignConfig {
+  return structuredClone(factoryDesign);
+}
 
 interface AppearanceEnvelope {
   data?: PublicAppearance;
@@ -47,4 +53,13 @@ function factoryAppearance(): PublicAppearance {
     designConfig: getFactoryDesignConfig(),
     revision: DEFAULT_APPEARANCE_REVISION,
   };
+}
+
+// Imported lazily so the factory/loader half of this file stays usable without
+// booting the server (unit tests, and anything outside a request).
+export async function loadServerAppearance(): Promise<PublicAppearance> {
+  const { server } = await import("@kafil/server");
+  return loadAppearanceWith(async (path) =>
+    server.fetch(new Request(`http://internal${path}`)),
+  );
 }

@@ -561,10 +561,10 @@
     "common": {
       "loadMore": "تحميل المزيد",
       "loadingMore": "جارٍ تحميل المزيد...",
-      "retryLoadMore": "إعادة المحاولة",
-      "loadMoreError": "تعذر تحميل المزيد من النتائج.",
-      "itemsLoaded": "تم تحميل {{count}} نتائج إضافية",
       "pagination": {
+        "retryLoadMore": "إعادة المحاولة",
+        "loadMoreError": "تعذر تحميل المزيد من النتائج.",
+        "itemsLoaded": "تم تحميل {{count}} نتائج إضافية",
         "rowsPerPage": "صفوف/صفحة",
         "pagination": "ترقيم الصفحات",
         "goToPage": "الانتقال إلى الصفحة {{page}}",

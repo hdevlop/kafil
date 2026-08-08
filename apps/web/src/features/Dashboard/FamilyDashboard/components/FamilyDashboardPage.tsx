@@ -1,13 +1,12 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandHeart, House, ShoppingBag, WalletCards } from "lucide-react";
-import { NPageHeader, NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown } from "najm-kit";
+import { NPageHeader, NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown, statusTextClass } from "najm-kit";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { formatKafilDate, formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
 import { getSponsorPersonImage } from "@/lib/personImages";
-import { getStatusTextColor } from "@/lib/status";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -142,7 +141,7 @@ export function FamilyDashboardPage() {
                       {formatKafilDate(contribution.paidAt ?? contribution.submittedAt, language)}
                     </span>
                   </span>
-                  <strong className={`shrink-0 text-sm ${getStatusTextColor(contribution.status)}`}>
+                  <strong className={`shrink-0 text-sm ${statusTextClass(contribution.status)}`}>
                     +{money(contribution.amountMinor)}
                   </strong>
                 </div>

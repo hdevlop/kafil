@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["bunx", "--bun", "@playwright/mcp@latest"],
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["bunx", "--bun", "chrome-devtools-mcp@latest", "--no-usage-statistics"],
+      "enabled": false
+    }
+  }
+}

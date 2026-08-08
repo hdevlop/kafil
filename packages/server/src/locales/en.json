@@ -575,10 +575,10 @@
     "common": {
       "loadMore": "Load more",
       "loadingMore": "Loading more...",
-      "retryLoadMore": "Try again",
-      "loadMoreError": "Could not load more results.",
-      "itemsLoaded": "{{count}} more results loaded",
       "pagination": {
+        "retryLoadMore": "Try again",
+        "loadMoreError": "Could not load more results.",
+        "itemsLoaded": "{{count}} more results loaded",
         "rowsPerPage": "Rows/page",
         "pagination": "Pagination",
         "goToPage": "Go to page {{page}}",

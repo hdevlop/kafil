@@ -4,7 +4,6 @@ import { FolderTree, Package, PackagePlus } from "lucide-react";
 import { FormInput, ImageInput, NButton, NForm, NFormSectionHeader, useDebouncedValue, useDialog } from "najm-kit";
 import { useState } from "react";
 
-import { useDevFormTools } from "@/lib/devFormFill";
 import { deleteProductImage, uploadProductImage } from "@/services/productApi";
 
 import {
@@ -168,9 +167,9 @@ export function CreateProductDialogContent() {
       schema={createProductFormSchema}
       defaultValues={{ categoryId: "", name: "", priceMad: "", imageUrl: "", description: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(createProductFormSchema, {
-        categoryId: categoryOptions(categories.data ?? []),
-      })}
+      devTools={{
+        overrides: { categoryId: categoryOptions(categories.data ?? []) },
+      }}
     >
       <NFormSectionHeader icon={PackagePlus} title="Catalog product" />
       <ProductFields
@@ -264,9 +263,11 @@ export function UpdateProductDialogContent({ product }: Readonly<{ product: Prod
         description: product.description ?? "",
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(updateProductFormSchema, {
-        categoryId: categoryOptions(categories.data ?? [], product),
-      })}
+      devTools={{
+        overrides: {
+          categoryId: categoryOptions(categories.data ?? [], product),
+        },
+      }}
     >
       <NFormSectionHeader icon={FolderTree} title="Product details" />
       <ProductFields
@@ -308,7 +309,6 @@ export function ProductStatusDialogContent({
       schema={productStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(productStatusFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

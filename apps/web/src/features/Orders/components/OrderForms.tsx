@@ -3,7 +3,6 @@
 import { AlertTriangle } from "lucide-react";
 import { FormInput, NButton, NForm, useDialog } from "najm-kit";
 
-import { useDevFormTools } from "@/lib/devFormFill";
 import {
   orderReasonFormSchema,
   toOrderReasonInput,
@@ -84,7 +83,6 @@ export function OrderReasonDialogContent({
       schema={orderReasonFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(orderReasonFormSchema)}
     >
       <FormInput
         name="reason"

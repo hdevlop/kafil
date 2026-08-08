@@ -1,4 +1,4 @@
-import type { OffsetPagination } from "@/lib/pagination";
+import type { OffsetPagination } from "najm-kit/pagination";
 
 export interface FamilyCatalogCategory {
   id: string;

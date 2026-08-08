@@ -1,6 +1,6 @@
 import { LoginForm } from "@/features/Auth/components/LoginForm";
 import { getOAuthFlowErrorMessage } from "@/features/Auth/lib/getAuthErrorMessage";
-import { getSafeRedirectPath } from "@/lib/safeRedirect";
+import { getSafeRedirectPath } from "najm-auth/client/server";
 
 export const metadata = { title: "Sign in" };
 

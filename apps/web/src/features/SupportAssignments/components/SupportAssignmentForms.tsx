@@ -5,7 +5,6 @@ import { FormInput, NButton, NForm, NFormSectionHeader, useDebouncedValue, useDi
 import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   createSupportAssignmentFormSchema,
@@ -65,10 +64,12 @@ export function CreateSupportAssignmentDialogContent({
         notes: "",
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(createSupportAssignmentFormSchema, {
-        sponsorProfileId: sponsorOptions,
-        familyProfileId: familyOptions,
-      })}
+      devTools={{
+        overrides: {
+          sponsorProfileId: sponsorOptions,
+          familyProfileId: familyOptions,
+        },
+      }}
     >
       <NFormSectionHeader icon={HeartHandshake} title={t("operator.assignments.relationship")} />
       <div className="grid gap-4 md:grid-cols-2">
@@ -133,7 +134,6 @@ export function EndSupportAssignmentDialogContent({
       schema={endSupportAssignmentFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(endSupportAssignmentFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">
@@ -169,7 +169,6 @@ export function EditSupportAssignmentDialogContent({
       schema={updateSupportAssignmentNotesFormSchema}
       defaultValues={{ notes: assignment.notes ?? "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(updateSupportAssignmentNotesFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

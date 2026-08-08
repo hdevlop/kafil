@@ -16,16 +16,14 @@ import {
   UserRoundCog,
   TriangleAlert,
 } from "lucide-react";
-import { NPageHeader, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDesktopTableMode } from "@/hooks/useDesktopTableMode";
 import {
   useFamilyOrderingCommands,
 } from "@/features/Orders/hooks/useFamilyOrdering";
-import { createOffsetPagination, getPageIndex } from "@/lib/pagination";
-import { createCardPagination } from "@/lib/tablePagination";
+import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
 import { formatKafilDate, formatMad } from "@/lib/format";
 import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";

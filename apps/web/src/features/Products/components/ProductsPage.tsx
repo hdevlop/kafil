@@ -16,6 +16,7 @@ import {
   NTable,
   type NTableProps,
   useDialog,
+  createCardPagination,
 } from "najm-kit";
 import { useSearchParams } from "next/navigation";
 
@@ -23,15 +24,13 @@ import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useOrderCart, useOrderCartStore } from "@/features/OrderCart";
 import { CategoryFilterSheet } from "@/features/Categories/components/CategoryBar";
-import { useProductsWorkspace } from "@/features/Products/hooks/useProductsWorkspace";
-import type { ProductsWorkspaceFilters } from "@/features/Products/hooks/useProductsWorkspace";
+import { useProductsWorkspace, type ProductsWorkspaceFilters } from "@/features/Products/hooks/useProductsWorkspace";
 import { useProductsTableColumns } from "@/features/Products/hooks/useProductsTableColumns";
 import { useProductsTableFilters } from "@/features/Products/hooks/useProductsTableFilters";
 import {
   createOffsetPagination,
-} from "@/lib/pagination";
+} from "najm-kit/pagination";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
-import { createCardPagination } from "@/lib/tablePagination";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { ProductCard, type ProductCardAddInput } from "./ProductCard";

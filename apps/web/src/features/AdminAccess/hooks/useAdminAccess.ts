@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useCardViewport } from "@/hooks/useDesktopTableMode";
+import { useCardViewport } from "najm-kit";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import {
   deactivateAccessUser,

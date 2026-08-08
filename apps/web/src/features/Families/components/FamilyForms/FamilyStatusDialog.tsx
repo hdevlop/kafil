@@ -3,7 +3,6 @@
 import { NButton, NForm, FormInput, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   familyStatusFormSchema,
@@ -35,7 +34,6 @@ export function FamilyStatusDialogContent({
       schema={familyStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(familyStatusFormSchema)}
     >
       <FormInput
         name="reason"

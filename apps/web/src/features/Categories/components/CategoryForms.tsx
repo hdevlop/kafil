@@ -5,7 +5,6 @@ import { FormInput, ImageInput, NButton, NForm, NFormSectionHeader, useDialog } 
 import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 
 import {
   categoryStatusFormSchema,
@@ -141,7 +140,6 @@ export function CreateCategoryDialogContent() {
       schema={createCategoryFormSchema}
       defaultValues={{ name: "", description: "", sortOrder: 0 }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(createCategoryFormSchema)}
     >
       <NFormSectionHeader icon={Tags} title={t("operator.categories.sectionTitle")} />
       <CategoryFields
@@ -237,7 +235,6 @@ export function UpdateCategoryDialogContent({ category }: Readonly<{ category: C
         sortOrder: category.sortOrder,
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(updateCategoryFormSchema)}
     >
       <NFormSectionHeader icon={ListOrdered} title={t("operator.categories.detailsTitle")} />
       <CategoryFields
@@ -283,7 +280,6 @@ export function CategoryStatusDialogContent({
       schema={categoryStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(categoryStatusFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

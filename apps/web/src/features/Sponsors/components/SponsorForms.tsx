@@ -5,7 +5,6 @@ import { AvatarFormInput, FormInput, NButton, NForm, NFormSectionHeader, useDial
 import { useRef, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useDevFormTools } from "@/lib/devFormFill";
 import {
   deleteSponsorImage,
   uploadSponsorImage,
@@ -54,7 +53,6 @@ export function CreateSponsorDialogContent() {
   const { t } = useKafilLanguage();
   const { pop } = useDialog();
   const { create } = useSponsorCommands();
-  const devTools = useDevFormTools(createSponsorFormSchema);
   const [sponsorImage, setSponsorImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -90,7 +88,6 @@ export function CreateSponsorDialogContent() {
       schema={createSponsorFormSchema}
       defaultValues={{ name: "", email: "", phone: "", cin: "", gender: "F", address: "", dateOfBirth: "", notes: "" }}
       onSubmit={handleSubmit}
-      devTools={devTools}
     >
       <NFormSectionHeader icon={UserRoundPlus} title={t("operator.sponsors.account")} />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
@@ -205,7 +202,6 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
         notes: sponsor.notes ?? "",
       }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(updateSponsorFormSchema)}
     >
       <NFormSectionHeader icon={UserRoundPlus} title={t("operator.sponsors.account")} />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
@@ -267,7 +263,6 @@ export function SponsorStatusDialogContent({
       schema={sponsorStatusFormSchema}
       defaultValues={{ reason: "" }}
       onSubmit={handleSubmit}
-      devTools={useDevFormTools(sponsorStatusFormSchema)}
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">

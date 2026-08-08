@@ -2,380 +2,216 @@
 
 Status: **ACTIVE**
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
-This file contains only work that is still incomplete or not fully verified.
-Completed implementation history has been removed. This file is the
-authoritative roadmap; the former `docs/PLAN.md` and `apps/web/PLAN.md` were
-folded into it and deleted.
+This plan replaces the previous root plan. It is the sole roadmap for the
+current worktree: there is no required companion pagination plan. Completed
+history is deliberately omitted; the baseline below records only implementation
+that is already present and still needs acceptance evidence.
 
-`PAGINATION-PLAN.md` is the one deliberate companion file. It holds the
-cross-repository list continuation, container height, and result total work
-owned by Phase 2, which is too detailed to inline here. Do not fold it back in
-and do not start a third plan file.
+## Verified baseline
 
-## Current baseline
+- Root and web manifests, `bun.lock`, and the installed package resolve
+  `najm-kit@2.7.3`. Do not use the superseded `2.1.56` baseline.
+- Branding already uses Najm Kit `ImageInput`; Kafil's old
+  `BrandingAssetPreview` is gone. The server owns managed branding storage,
+  safe fallback projection, MIME validation, and raw-byte asset delivery.
+- Local reusable dashboard chart components are gone. Admin, Family, and
+  Sponsor dashboards consume Najm Kit chart exports and one shared dashboard
+  skeleton composition.
+- The current dirty worktree contains an in-progress move of list surfaces to
+  Najm Kit pagination/query helpers. Preserve all unrelated user changes while
+  completing or reviewing that migration.
+- Evidence recorded on this worktree before this plan was written:
+  - focused web branding/chart/pagination tests: 59 pass, 0 fail;
+  - server unit suite: 397 pass, 48 PostgreSQL-gated skips, 0 fail.
+- These results prove source-level behavior only. They do not replace the
+  browser, PostgreSQL, production-runtime, GitHub, or deployment gates below.
 
-- Najm Kit fixes for responsive card actions, adaptive table skeletons, and
-  card pagination were first published in `najm-kit@2.1.48` and remain present
-  in Kafil's installed `najm-kit@2.1.56`.
-- Kafil's manifests and lockfile now resolve `najm-kit@2.1.56`. Its installed
-  declarations expose the resilient `ImageInput` preview contract and the new
-  shared `NDonutCard` component.
-- Najm theme contracts and Kafil's persisted appearance validator already own
-  `chart-1` through `chart-5`, including per-mode overrides editable through
-  `NThemeCustomizer`.
-- Installed `NCard` supports `loading` and a custom `skeleton` slot. The default
-  `loading` branch renders `NLoadingState`; shaped loaders are available through
-  `NStatCardSkeleton`, `NSkeletonChart`, `NSkeletonDonut`, and widget/list
-  presets, but Kafil dashboards do not yet use them consistently.
-- Fixes 1, 2, 4, and 5 are implemented in source. They remain in the final
-  verification matrix only because their complete test/browser evidence has
-  not yet been recorded at one worktree commit.
-- Contributions now uses the shared `NTable` row menu, and the primary Kafil
-  list pages expose the shared card-pagination contract. That contract is now
-  known to be incomplete for continuation, height, and totals; see
-  `PAGINATION-PLAN.md`.
-- A temporary Kafil Brand assets preview adapter is present in the working tree.
-  Kafil must adopt the installed shared `ImageInput` contract and remove the
-  local workaround.
-- Reusable bar, line, pie, and status-breakdown rendering still lives under
-  `apps/web/src/components/charts`; this must move to Najm Kit rather than become
-  a second Kafil-owned component system.
-- Unrelated working-tree changes must be preserved throughout this plan.
+## Phase 1 — Finish server-backed list pagination
 
-## Phase 1 — Adopt the Najm image contract and verify Brand assets
+Goal: every interactive list must have correct server-owned pagination in both
+table and card modes, with no data ceiling or privacy-scope mixing.
 
-Shared `ImageInput` implementation and publication are complete. This phase is
-limited to adopting and verifying the installed `najm-kit@2.1.56` contract in
-Kafil.
-
-- [ ] Record the configured, fallback, draft, and resolved URL for expanded
-  logo, collapsed logo, login logo, and login hero.
-- [ ] Confirm root/app manifests, `bun.lock`, runtime package metadata, and
-  installed declarations all resolve the exact `najm-kit@2.1.56` release.
-- [ ] Replace the local `BrandingAssetPreview` plus upload-only `ImageInput`
-  split with the published resilient `ImageInput` contract.
-- [ ] Remove Kafil-only preview failure, source sequencing, and image-state code
-  now owned by Najm Kit; retain Kafil localization and branding/storage logic.
-- [ ] Verify every factory asset exists in the production build and decodes as
-  the expected image type and dimensions.
-- [ ] Verify every stored branding route returns raw bytes, the correct MIME
-  type, safe cache headers, and the expected not-found response.
-- [ ] Verify Settings, sidebar, and authentication screens consume the same
-  resolved branding contract.
-- [ ] Verify upload, immediate preview, save, reload, replace, revert, clear to
-  fallback, and application restart without stale images.
-- [ ] Verify a missing or undecodable asset displays the localized recovery
-  state and never exposes a broken native image icon or generic `Preview` text.
-- [ ] Exercise all four slots on desktop, mobile, and Arabic RTL.
-- [ ] Run focused branding frontend/server tests and record exact results.
+- [ ] Inventory Sponsors, Families, Contributions, Orders, Products,
+  Categories, Support Assignments, Staff, Children, Applicants, and Admin
+  Users: endpoint, default page size, filters, sorting, desktop navigation,
+  and card/mobile continuation.
+- [ ] Review the current `useResponsiveOffsetList` migration before treating
+  any uncommitted change as complete. Keep `najm-kit/query` and
+  `najm-kit/pagination` as the shared boundary; do not restore deleted Kafil
+  pagination helpers or add another app-local paginator.
+- [ ] Ensure every server endpoint applies authorization, identity scope,
+  search, filters, and sort before `limit`/`offset`, and returns an accurate
+  total or explicit continuation metadata.
+- [ ] Remove every remaining first-100, all-pages, or inferred-next-page list.
+  Exact page-size boundaries must not fabricate or hide a next page.
+- [ ] Ensure role/identity/filter/sort changes reset accumulated cards, and
+  mutations invalidate affected pages without stale, missing, or duplicate
+  rows.
+- [ ] Replace large list/form lookups with server search unless their small
+  bound is documented and tested.
+- [ ] Confirm card pagination has no permanent empty footer, correctly reports
+  loaded counts, supports retry after append failure, and respects the Kit's
+  current height behavior without Kafil-only CSS workarounds.
+- [ ] Add focused client and server tests for 0, 1, page-size minus 1, exact
+  page size, page-size plus 1, multiple pages, filter changes, and mutation
+  invalidation.
+- [ ] Browser-check each affected role surface on phone, tablet, desktop, and
+  Arabic RTL, including keyboard focus, action menus, loading, append, failure,
+  and retry.
 
 Phase 1 gate:
 
-- [ ] Brand assets remain available after reload and production-style restart.
-- [ ] Missing assets fail safely and recoverably.
-- [ ] Authorization, upload limits, cleanup, localization, and cache behavior
-  remain correct.
+- [ ] Every interactive list is bounded and server-backed.
+- [ ] No privacy projection or authorization boundary changes during paging.
+- [ ] Source, browser, and exact-boundary evidence is recorded at one commit.
 
-## Phase 2 — Finish Kafil table adoption and pagination gaps
+## Phase 2 — Complete branding asset acceptance
 
-Earlier Najm table release work is complete. This phase covers Kafil consumers
-and data behavior.
+Goal: prove the existing branding implementation works from storage through all
+runtime consumers, not merely through source tests.
 
-A 2026-08-05 review of the live list surfaces found three defects that Kafil
-cannot fix on its own — a permanent dead footer strip on card lists, an inert
-`dynamicHeight`, and a fabricated `pageCount`. The resulting cross-repository
-work is tracked in **`PAGINATION-PLAN.md`** at the repository root and must be
-complete before this phase's gate can pass.
-
-### Kafil consumer regression audit
-
-- [ ] Audit Sponsors, Families, Contributions, Orders, Products, Categories,
-  Support Assignments, Staff, Children, Applicants, and Admin Users to confirm
-  permitted card actions use the installed Najm table contract.
-- [ ] Confirm Contributions has no remaining card-injected ellipsis/dropdown or
-  Kafil-only action-visibility workaround.
-- [ ] Remove any obsolete Kafil skeleton count, border, height, or loading
-  workaround that duplicates the installed package behavior.
-- [ ] Browser-check action visibility, focus, menu anchoring, skeleton height,
-  border/radius/shadow parity, and content overlap on phone, tablet, desktop,
-  hybrid touch, and Arabic RTL layouts.
-
-### Server pagination inventory
-
-- [ ] Create an inventory of every unbounded list, its endpoint, default page
-  size, search/filter/sort behavior, desktop navigation, and mobile continuation.
-- [ ] Confirm no interactive list calls `listAllOffsetPages` or automatically
-  downloads every page.
-- [ ] Confirm no unbounded list silently stops at 100 rows.
-- [ ] Convert any remaining first-100 list to server-backed pages with desktop
-  controls and scroll-driven mobile/tablet continuation.
-- [ ] Review 100-row lookups used inside filters/forms. Replace unbounded
-  selectors with server search or document a proven small bound.
-- [ ] Verify `hasNextPage` metadata or one-row lookahead at exact-page-size
-  boundaries so continuation is never inferred incorrectly.
-- [ ] Verify role, identity, search, filter, and sort changes reset accumulated
-  pages without mixing privacy scopes.
-- [ ] Verify mutations invalidate affected pages without stale, missing, or
-  duplicated rows.
-- [ ] Test 0, 1, page-size minus 1, exact page size, page-size plus 1, and
-  multiple-page datasets.
-- [ ] Browser-check every migrated list on desktop, mobile, tablet, and Arabic
-  RTL, including append failure and retry.
+- [ ] Record configured path, resolved path, fallback, and draft state for
+  expanded sidebar logo, collapsed sidebar logo, authentication logo, and
+  authentication hero.
+- [ ] Verify factory assets are included in a production build and decode with
+  the expected image formats and dimensions.
+- [ ] Exercise the public stored-asset route for every supported format:
+  raw bytes, exact MIME, immutable cache header, invalid filename, and missing
+  asset response.
+- [ ] Browser-test upload, immediate preview, save, reload, replace, revert,
+  clear to fallback, and restart for all four slots.
+- [ ] Verify unavailable or undecodable assets show localized recovery UI,
+  never a broken native image icon or generic preview text.
+- [ ] Verify Settings, expanded/collapsed sidebar, auth, and first-login
+  layouts all consume the same server-resolved branding contract.
+- [ ] Run desktop, mobile, and Arabic RTL checks, then the branding PostgreSQL
+  revision-concurrency test against the intended test database.
 
 Phase 2 gate:
 
-- [ ] The `PAGINATION-PLAN.md` gate passes in full.
-- [ ] Search, filters, and sorting are applied before pagination on the server.
-- [ ] Authorization and sponsor/family privacy projections remain intact.
+- [ ] Brand assets survive reload and production-style restart.
+- [ ] Missing assets fail safely and recoverably.
+- [ ] Authorization, upload limits, cleanup, localization, and caching are
+  proven by focused tests and browser evidence.
 
-## Phase 3 — Move charts and dashboard skeletons to Najm Kit
+## Phase 3 — Complete Kit dashboard chart and skeleton acceptance
 
-Najm Kit owns reusable UI primitives. Kafil may keep dashboard query mapping,
-localized month formatting, and value formatters, but it must not keep its own
-SVG, bar, line, pie, legend, or responsive chart implementation after the
-shared package is released.
+Goal: validate the existing Najm Kit adoption visually and behaviorally across
+all dashboard roles.
 
-### Najm Kit chart contract
-
-- [ ] Inventory `MonthlyBarChart`, `MonthlyLineChart`, `PieBreakdown`,
-  `StatusBreakdown`, `chartUtils`, their public props, and every Kafil consumer;
-  separate reusable rendering from Kafil-specific data and localization.
-- [ ] Add typed public Najm Kit exports for `NBarChart`, `NLineChart`,
-  `NPieChart`, and `NStatusBreakdown`, and reuse or extend the installed
-  `NDonutCard` instead of creating overlapping donut implementations.
-- [ ] Add a typed `size` contract to `NPieChart` and `NDonutCard` so consumers
-  can control the rendered chart diameter without custom SVG or CSS overrides;
-  preserve sensible defaults and allow the chart to shrink within its container.
-- [ ] Keep pie/donut sizing independent from card, center-label, and legend
-  layout, and verify compact, default, and custom sizes do not clip, distort,
-  overflow, or reduce accessible content on phone, tablet, or desktop.
-- [ ] Make the shared charts accept caller-formatted labels and values, generic
-  series/items, card title/icon content, empty states, legends, and accessible
-  summaries without importing Kafil types, translations, or dashboard models.
-- [ ] Use the existing `--chart-1` through `--chart-5` theme variables as the
-  default series palette. Make item/series colors optional theme-backed
-  defaults, while retaining an explicit color override for exceptional cases.
-- [ ] Apply the same optional theme-palette behavior to `NDonutCard`; do not
-  require every consumer to copy `var(--chart-N)` into its data model.
-- [ ] Ensure strokes, fills, legend markers, totals, hover/focus states, and
-  empty states remain readable in light and dark modes and do not hard-code a
-  Kafil palette.
-- [ ] Keep the five palette slots deterministic across rerenders and document
-  the behavior when a chart contains more than five series/items.
-- [ ] Verify `NThemeCustomizer` exposes `chart-1` through `chart-5` for the
-  active light/dark mode and that draft edits update rendered charts live via
-  the provider CSS variables, without reload or component remount.
-- [ ] Add Najm Kit unit/type tests, accessibility coverage, responsive and RTL
-  cases, zero/empty/single-point/multi-series cases, README examples, and
-  playground examples for every public chart export.
-- [ ] Run the Najm Kit lint, typecheck, tests, UI build, preview build,
-  declaration/export check, and exact-tarball release audit; publish and record
-  the verified release version and commit before Kafil adoption.
-
-### Shared loading and skeleton contract
-
-- [ ] Audit `NCard`'s `loading`/`skeleton` behavior and the installed
-  `NStatCardSkeleton`, `NSkeletonChart`, `NSkeletonDonut`, `NSkeletonEventList`,
-  `NSkeletonWidget`, and `NSkeletonWidgets` presets before adding new APIs.
-- [ ] Keep `NCard loading` as the generic async-state fallback, but use its
-  `skeleton` slot or a component-owned loading contract whenever the final card
-  has a known shape; do not show the same centered loader for every card type.
-- [ ] Add typed loading states to `NStatCard`, `NBarChart`, `NLineChart`,
-  `NPieChart`, `NDonutCard`, and `NStatusBreakdown` so each component renders a
-  skeleton matching its real header, body geometry, legend, and responsive size.
-- [ ] Extend or replace the generic chart preset with reusable bar, line,
-  pie/donut, and status/progress variants. Reuse the same Najm card surface so a
-  skeleton never creates a nested or visually duplicated border, radius, or
-  shadow.
-- [ ] Provide shared list/activity and quick-action card skeleton patterns for
-  dashboard cards that are not charts or stats; keep row counts configurable
-  without Kafil-specific labels, routes, or data models.
-- [ ] Ensure every preset inherits Najm card, border, radius, background,
-  spacing, and motion tokens and respects reduced-motion preferences.
-- [ ] Mark loading regions accessibly with `aria-busy` and an appropriate
-  localized loading label while keeping decorative skeleton shapes hidden from
-  assistive technology.
-- [ ] Add unit/type tests, visual playground examples, responsive/RTL coverage,
-  and layout-parity checks for every skeleton variant before package release.
-
-### Kafil adoption
-
-- [ ] Install the exact published Najm Kit chart release with Bun and verify the
-  root/app manifests, lockfile, runtime package metadata, and declarations.
-- [ ] Replace dashboard imports of `MonthlyBarChart`, `MonthlyLineChart`,
-  `PieBreakdown`, and `StatusBreakdown` with the public Najm Kit components.
-- [ ] Convert Kafil dashboard data to the generic chart contracts at the feature
-  boundary; keep localized month and money/number formatters in Kafil.
-- [ ] Remove `apps/web/src/components/charts`, obsolete chart prop types, and
-  `DashboardCharts.tsx` re-exports once no consumer needs the local wrappers.
-- [ ] Remove hard-coded series colors from Kafil consumers except documented
-  semantic overrides, so normal chart colors come from the saved appearance.
-- [ ] Create one shared dashboard loading composition that maps stat, bar,
-  line, pie, donut, status, list/activity, attention, and quick-action card kinds
-  to the matching Najm Kit skeleton while preserving each role's real grid spans.
-- [ ] Replace Admin's local `DashboardLoading`, Family's single generic
-  `<NCard loading>`, and Sponsor's height-based `SponsorDashboardSkeleton` cards
-  with the shared composition; remove repeated arrays, arbitrary loading heights,
-  and per-dashboard skeleton markup.
-- [ ] Give every card in the Admin, Family, and Sponsor dashboard layouts a
-  corresponding loader with the same title/header space, responsive footprint,
-  and approximate content height as the loaded card.
-- [ ] Keep generic `PageLoadingState` only for route/session/profile gates where
-  the final dashboard layout is not yet known; use shaped dashboard skeletons
-  for dashboard-data loading.
-- [ ] Verify loading-to-content transitions do not reorder cards, change grid
-  spans, cause cumulative layout shift, overflow at narrow widths, or flash an
-  empty/error state before the query settles.
-- [ ] Verify unsaved Theme Customizer previews, save, reload, reset, import,
-  light/dark mode, and per-mode overrides update every dashboard chart
-  consistently through `chart-1` to `chart-5`.
-- [ ] Browser-check every migrated chart at 320–430 px, tablet, desktop, Arabic
-  RTL, reduced motion, keyboard/focus, loading, empty, and error states; retain
-  all 12 monthly points without horizontal overflow.
-- [ ] Run focused Kafil chart/settings tests and the frontend verification gate,
-  then record exact versions, commands, results, and remaining limitations.
+- [ ] Confirm Kafil contains only domain adapters, localized month labels, and
+  value formatters; reusable bar, line, pie, donut, status, legend, SVG, and
+  responsive chart rendering must remain in `najm-kit`.
+- [ ] Verify Admin, Family, and Sponsor chart cards retain all twelve monthly
+  points without horizontal overflow at 320–430 px, tablet, desktop, and Arabic
+  RTL widths.
+- [ ] Verify `chart-1` through `chart-5` update bar, line, pie, donut, and
+  status charts during unsaved Theme Customizer previews, save, reload, reset,
+  import, light mode, dark mode, and per-mode overrides.
+- [ ] Check zero, empty, single-point, multi-series, more-than-five-series,
+  loading, error, keyboard, focus, and reduced-motion states.
+- [ ] Verify the shared skeleton composition matches each loaded card's header,
+  grid span, approximate height, and responsive footprint without nested card
+  surfaces or cumulative layout shift.
+- [ ] Add or update focused frontend tests for the verified contracts and
+  capture browser evidence for every role.
 
 Phase 3 gate:
 
-- [ ] Reusable chart rendering exists only in the published Najm Kit package;
-  Kafil contains domain adapters and formatters only.
-- [ ] Bar, line, pie, donut, and status-breakdown charts inherit the active
-  Theme Customizer chart palette by default in both light and dark modes.
-- [ ] No dashboard loses data, localization, accessibility, RTL behavior, or
-  responsive layout during the migration.
-- [ ] Every dashboard card has a shape-matched shared skeleton, and no role
-  dashboard keeps a hard-coded generic loading-card grid.
+- [ ] No Kafil-owned reusable chart implementation remains.
+- [ ] Chart colors inherit the active saved appearance by default in both modes.
+- [ ] Every dashboard card has a shape-matched shared loading state.
+- [ ] No accessibility, localization, RTL, or responsive regression remains.
 
-## Phase 4 — Consolidated Fix 1–8 acceptance
+## Phase 4 — Connected four-account acceptance
 
-- [ ] Run all focused frontend, backend, authorization, privacy, storage, and
-  pagination tests for Fixes 1–8.
-- [ ] Verify every affected UI in English, French, Arabic, and Spanish.
-- [ ] Verify representative phone, tablet, desktop, and Arabic RTL layouts.
-- [ ] Confirm sponsor responses never expose guardian CIN, exact address,
-  documents, notes, internal family profile IDs, or other private household data.
-- [ ] Confirm UI visibility changes do not grant backend permissions.
-- [ ] Run the complete local gate at the exact worktree under acceptance:
+The forced first-login password change below is delivered by the six-move
+migration in root `AUTH-COOKIE-PLAN.md`, which moves that flow into `najm-auth`.
+Moves 1–2 are released as `najm-auth@3.0.0`. Move 3 (additive
+`credential_setup_requirements` storage plus a bidirectional bridge to the
+legacy `family_password_requirements` table, old flow still authoritative) is
+implemented in migration
+`packages/server/migrations/0040_credential_setup_requirements_bridge.sql`.
+Moves 4–6 must not be combined with it or with each other.
 
-```bash
-bun run lint
-bun run typecheck
-bun run test
-bun run build
-bun run db:generate
-```
+Use isolated browser contexts for bootstrap admin, one newly created family,
+newly approved Sponsor A, and a managed-demo seeded Sponsor B. Never save
+passwords, OTPs, cookies, mailbox addresses, or other secrets in the repository
+or evidence.
 
-- [ ] Run `bun run test:db` against the intended PostgreSQL test database.
-- [ ] Record exact test counts, build route count, installed Najm versions,
-  migration result, limitations, and the worktree commit.
+- [ ] Prepare the intended PostgreSQL and SMTP target, safe test identities,
+  and a unique run label without printing secrets.
+- [ ] Create and activate the family through the UI, including forced first-login
+  password change and family-only access checks.
+- [ ] Submit Sponsor A through `/apply`, verify only its matching OTP email,
+  approve it, and prove normal sign-in. Sign in as Sponsor B and prove the
+  idempotent seed reuse path does not duplicate or reset identities.
+- [ ] Assign both sponsors to one family; exercise pending, rejection,
+  validation, duplicate validation, refund, plan lifecycle, and exact funding
+  target activation in integer minor units.
+- [ ] Prove each sponsor sees the shared family once, only its own financial
+  history, and no private household data.
+- [ ] Exercise order submission/cancellation, rejection reserve release,
+  purchase receipt variance, delivery Staff A failure, Staff B reassignment,
+  retry, confirmation, idempotency, lifecycle history, and role projections.
+- [ ] Capture desktop, tablet, phone, keyboard, validation, loading, empty,
+  error, and Arabic RTL evidence for critical journeys and server-side forbidden
+  actions.
+- [ ] Record all created test data and remove it only through supported
+  application workflows when required.
 
 Phase 4 gate:
 
-- [ ] Every Fix 1–8 implementation, test, acceptance, and evidence requirement
-  is satisfied at the same worktree commit.
-- [ ] No unresolved critical/high defect, privacy leak, authorization gap,
-  pagination ceiling, or broken branding asset remains.
+- [ ] The four connected accounts complete the journey without unresolved
+  session, email, authorization, privacy, financial, or lifecycle failures.
+- [ ] Evidence contains masked identifiers only and no secrets.
 
-## Phase 5 — Real four-account UI acceptance
+## Phase 5 — Local acceptance, release audit, and deployment
 
-Use four isolated browser contexts: bootstrap admin, one newly created family,
-Sponsor A created with a fresh Gmail alias, and Sponsor B created by the managed
-demo seed. Never persist passwords, OTPs, cookies, mailbox addresses, or other
-secrets in the repository or evidence.
+- [ ] At the exact candidate commit, run and record:
 
-### Environment and identities
+  ```bash
+  bun run lint
+  bun run typecheck
+  bun run test
+  bun run build
+  bun run db:generate
+  bun run test:db
+  bun run --cwd apps/web test:e2e
+  ```
 
-- [ ] Confirm the local/demo target, PostgreSQL database, SMTP provider,
-  protected admin credentials, primary Gmail connection, and Sponsor B
-  one-time credential handoff without printing secrets.
-- [ ] Generate a unique run label and fresh Moroccan-friendly test identities.
-- [ ] Create the family through the admin UI, complete its forced first-login
-  password change, and verify family-only navigation and data.
-- [ ] Submit Sponsor A through `/apply`, retrieve only its matching OTP email,
-  verify it reaches `pending_review` without a sponsor session, approve it in
-  the admin UI, verify the decision email, and sign in normally.
-- [ ] Sign in as seeded Sponsor B and rerun the supported non-destructive seed
-  path to prove identity reuse without duplicate profiles or password changes.
-
-### Contributions, privacy, and funding
-
-- [ ] Assign both sponsors to the same family through the admin UI and verify
-  distinct assignments aggregate into one sponsor-safe family summary.
-- [ ] Exercise pending, rejection, validation, stale duplicate validation,
-  refund, plan pause/resume/stop, and exact funding-target activation.
-- [ ] Verify every ledger and balance transition in integer minor units and
-  prove duplicate commands do not duplicate credits, refunds, audit records,
-  notifications, or outbox effects.
-- [ ] Verify each sponsor sees the shared family once and only their own
-  contribution/plan history, with no cross-sponsor or household-private data.
-
-### Orders, purchase, and delivery
-
-- [ ] Exercise family order submission and cancellation with exact reserve
-  release and idempotency evidence.
-- [ ] Exercise admin rejection of a pending order with exact reserve release.
-- [ ] Exercise a complete order: submit, approve, purchase with real test
-  receipt and controlled variance, assign delivery Staff A, fail the attempt,
-  reassign Staff B, retry, and confirm delivery.
-- [ ] Verify immutable lifecycle history, one active delivery attempt, exact
-  available/reserved/spent balances, and no duplicate transition effects.
-- [ ] Recheck the final order from all four accounts and verify each role sees
-  only its authorized projection.
-
-### Responsive and negative acceptance
-
-- [ ] Capture desktop, tablet, phone, keyboard, focus, validation, loading,
-  empty, error, and Arabic RTL evidence for the critical journeys.
-- [ ] Verify forbidden routes and actions fail server-side, direct/stale actions
-  fail safely, and isolated sessions never leak state across accounts.
-- [ ] Inventory all created test data and record whether it is retained for the
-  demo or removed through supported application workflows.
+- [ ] Investigate any migration generated by `db:generate`; do not accept
+  unexplained schema drift or altered deployed migrations.
+- [ ] Production-smoke `/`, `/dashboard`, `/api/system/health`, and
+  `/api/mcp/tools` with the intended runtime configuration.
+- [ ] Inspect every modified, deleted, and untracked file; preserve unrelated
+  user changes and scan the intended release for secrets, private data, OTPs,
+  cookies, dumps, certificates, and generated artifacts.
+- [ ] Fetch `origin`, record local and remote SHAs, integrate upstream changes
+  non-destructively, stage only the audited release, and run
+  `git diff --cached --check` before committing on `main`.
+- [ ] Push normally to `origin/main`, verify local `HEAD`, `origin/main`, and
+  GitHub SHA match, then monitor the workflow to a terminal result.
+- [ ] Report local acceptance, GitHub workflow, and deployment as separate
+  pass/fail outcomes.
 
 Phase 5 gate:
 
-- [ ] All four accounts complete the connected journey without unresolved UI,
-  email, session, authorization, privacy, financial, or lifecycle failures.
-- [ ] Evidence contains masked identifiers only and no secrets.
-
-## Phase 6 — Audit and publish GitHub `main`
-
-- [ ] Inspect every modified, deleted, and untracked file and review the entire
-  diff, preserving unrelated user changes.
-- [ ] Scan the intended commit for `.env` data, credentials, tokens, private
-  household data, OTPs, cookies, dumps, certificates, and generated artifacts.
-- [ ] Confirm migrations are additive and intentional and no deployed migration
-  was edited.
-- [ ] Fetch `origin`, record local and remote SHAs, and integrate remote changes
-  non-destructively if `origin/main` advanced.
-- [ ] Rerun `bun run check`, `bun run test:db`, `bun run db:generate`, the
-  complete browser matrix, and production runtime smoke after synchronization.
-- [ ] Verify `/`, `/dashboard`, `/api/system/health`, and `/api/mcp/tools` in the
-  production-style runtime.
-- [ ] Stage only the audited release, run `git diff --cached --check`, review the
-  complete staged diff/stat, and create the release commit on `main`.
-- [ ] Push normally to `origin/main`; never force-push.
-- [ ] Verify local `HEAD`, fetched `origin/main`, and GitHub remote SHA match.
-- [ ] Monitor the GitHub workflow to a terminal result and report deployment
-  status separately from local acceptance.
-
-Phase 6 gate:
-
-- [ ] The intended work is present on GitHub `main` at the recorded SHA.
-- [ ] The worktree is clean or every intentional remaining file is documented.
-- [ ] Local, database, browser, production-smoke, workflow, and deployment
-  results are recorded with clear pass/fail boundaries.
+- [ ] All required gates pass at one recorded commit.
+- [ ] GitHub `main` contains the audited release at the recorded SHA.
+- [ ] The worktree is clean, or every intentional remaining file is documented.
+- [ ] Deployment status is explicitly verified rather than inferred from a push.
 
 ## Execution order
 
-- [ ] Phase 1 — Najm image-contract adoption and Brand assets verification
-- [ ] Phase 2 — Kafil table adoption and pagination gaps
-- [ ] Phase 3 — Najm Kit charts, themed colors, and shared dashboard skeletons
-- [ ] Phase 4 — Consolidated Fix 1–8 acceptance
-- [ ] Phase 5 — Real four-account UI acceptance
-- [ ] Phase 6 — Audit and publish GitHub `main`
+- [ ] Phase 1 — Finish server-backed list pagination
+- [ ] Phase 2 — Complete branding asset acceptance
+- [ ] Phase 3 — Complete Kit dashboard chart and skeleton acceptance
+- [ ] Phase 4 — Connected four-account acceptance
+- [ ] Phase 5 — Local acceptance, release audit, and deployment
 
-Do not mark a phase complete without implementation, focused tests, acceptance,
-and exact recorded evidence. Local completion does not count as successful
-deployment.
+Do not mark a phase complete from source inspection alone. A phase closes only
+when its implementation, focused tests, acceptance evidence, and recorded
+commit all satisfy its gate.
