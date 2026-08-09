@@ -2,7 +2,7 @@
 
 Status: **ACTIVE**
 
-Last updated: 2026-08-08
+Last updated: 2026-08-09
 
 This plan replaces the previous root plan. It is the sole roadmap for the
 current worktree: there is no required companion pagination plan. Completed
@@ -12,21 +12,76 @@ that is already present and still needs acceptance evidence.
 ## Verified baseline
 
 - Root and web manifests, `bun.lock`, and the installed package resolve
-  `najm-kit@2.7.3`. Do not use the superseded `2.1.56` baseline.
+  `najm-kit@2.9.0`. Do not use the superseded `2.1.56` or `2.7.3` baselines.
 - Branding already uses Najm Kit `ImageInput`; Kafil's old
   `BrandingAssetPreview` is gone. The server owns managed branding storage,
   safe fallback projection, MIME validation, and raw-byte asset delivery.
 - Local reusable dashboard chart components are gone. Admin, Family, and
   Sponsor dashboards consume Najm Kit chart exports and one shared dashboard
   skeleton composition.
-- The current dirty worktree contains an in-progress move of list surfaces to
-  Najm Kit pagination/query helpers. Preserve all unrelated user changes while
-  completing or reviewing that migration.
+- The current source contains an in-progress move of list surfaces to Najm Kit
+  pagination/query helpers. Preserve unrelated changes while completing or
+  reviewing that migration.
 - Evidence recorded on this worktree before this plan was written:
   - focused web branding/chart/pagination tests: 59 pass, 0 fail;
   - server unit suite: 397 pass, 48 PostgreSQL-gated skips, 0 fail.
 - These results prove source-level behavior only. They do not replace the
   browser, PostgreSQL, production-runtime, GitHub, or deployment gates below.
+
+## Scheduled companion work
+
+Three bounded plans are owned outside this file. None renumbers a phase here,
+and none may absorb another plan's moves.
+
+- `AUTH-COOKIE-PLAN.md` owns the credential-setup and cookie migration. Its
+  status is recorded in Phase 4 below; nothing in this section changes it.
+- `AUTH-SESSION-PLAN.md` owns the shared React Server Component session
+  adapter across Najm, Kafil, and School.
+- `UI-BOOTSTRAP-PLAN.md` owns the shared Najm Kit server appearance and
+  branding bootstrap, its publication, Kafil adoption, and adoption by the
+  second consumer. Kafil's adoption must finish before Phase 2 acceptance.
+
+Kafil's share of the session plan is its Move 3, scheduled here and executed
+against the published `najm-auth@3.1.0`:
+
+- [x] Pin `najm-auth@3.1.0` in the root override and the web, server, and seed
+  manifests, resolving to one version in `bun.lock`.
+- [x] Replace `apps/web/src/lib/session.ts` with one `createReactServerAuth(auth)`
+  singleton, keeping `server-only` and the `getSession` / `requireSession` /
+  `requireRole` exports the routes already import.
+- [x] Drop the local `React.cache`, redirect, role-fallback, and error-handling
+  logic that `najm-auth` now owns, restoring its strict guard semantics: a
+  configuration or recovery failure is a visible error, not a login redirect.
+- [x] Keep `apps/web/src/lib/auth.ts` proxy-safe and `apps/web/src/proxy.ts`
+  reaching only the core auth object.
+- [x] Cover the package-owned boundary in `apps/web/test/server-session.test.ts`.
+- [ ] Browser acceptance for the flows listed in `AUTH-SESSION-PLAN.md` §6.
+
+Kafil's share of the UI bootstrap plan is its Move 4, scheduled here and
+executed against the published `najm-kit@2.9.0`. It must close before the
+Phase 2 gate below:
+
+- [x] Pin `najm-kit@2.9.0` in the root override, the root dependency, and the
+  web manifest, resolving to one version in `bun.lock`.
+- [x] Replace `apps/web/src/lib/loader.ts` with one module-level
+  `createReactServerUiBootstrap()` instance in `serverLoader.ts`, keeping
+  `server-only` and the `loadServerUiBootstrap` / `loadServerAppearance` /
+  `loadServerBranding` exports the layouts already import.
+- [x] Keep the lazy internal `server.fetch()` binding, the endpoint paths, the
+  factory theme and assets, the strict appearance validator, and the full
+  public branding parser application-owned in `apps/web/src/lib/uiResources.ts`.
+- [x] Move the generic loading, envelope, fallback, and parallel-composition
+  tests to Najm Kit; keep focused Kafil tests for configuration, the four
+  branding slots, factory assets, diagnostics, and layout integration.
+- [x] Generate no database migration.
+- [ ] Browser acceptance for the flows listed in `UI-BOOTSTRAP-PLAN.md` §7,
+  folded into the Phase 2 browser pass below.
+
+School's Moves 4–5 of both companion plans are executed from that repository's
+own `NAJM-UPGRADE-PLAN.md` and are not tracked here. The UI bootstrap plan's
+Move 5 additionally requires a public appearance and branding backend that
+School does not have; building it is an app-owned move there, not a reason to
+widen Najm Kit.
 
 ## Phase 1 — Finish server-backed list pagination
 
