@@ -19,7 +19,7 @@ import {
   uploadBrandingAsset,
 } from "../src/services/brandingApi";
 import { getFactoryBranding } from "@kafil/server/branding";
-import { loadBrandingWith } from "../src/lib/loader";
+import { brandingResource, reportUiBootstrapDiagnostic } from "../src/lib/uiResources";
 import {
   isBrandingDirty,
   isManagedUpload,
@@ -142,7 +142,7 @@ describe("branding draft rules", () => {
   });
 });
 
-describe("branding server loaders", () => {
+describe("branding resource", () => {
   let warning: ReturnType<typeof spyOn<typeof console, "warn">>;
 
   beforeEach(() => {
@@ -153,26 +153,64 @@ describe("branding server loaders", () => {
     warning.mockRestore();
   });
 
-  test("returns the parsed payload from a successful public GET", async () => {
-    const branding: PublicBranding = {
-      ...getFactoryBranding(),
-      revision: 7,
-    };
-    const fetcher = async () =>
-      new Response(JSON.stringify({ data: branding }), { status: 200 });
+  test("is served from the public branding endpoint and falls back to the factory assets", () => {
+    expect(brandingResource.path).toBe("/api/branding");
+    expect(brandingResource.fallback()).toEqual(getFactoryBranding());
+  });
 
-    await expect(loadBrandingWith(fetcher)).resolves.toEqual(branding);
+  test("accepts a persisted branding payload", () => {
+    const branding: PublicBranding = { ...getFactoryBranding(), revision: 7 };
+
+    expect(brandingResource.parse(branding)).toEqual(branding);
     expect(warning).not.toHaveBeenCalled();
   });
 
-  test("falls back to the factory for a non-ok response", async () => {
-    const fetcher = async () =>
-      new Response(JSON.stringify({ message: "boom" }), { status: 503 });
+  test("rejects a payload missing any of the four slots", () => {
+    for (const slot of [
+      "sidebarLogoExpandedPath",
+      "sidebarLogoCollapsedPath",
+      "authLogoPath",
+      "authHeroImagePath",
+    ] as const) {
+      const incomplete = { ...getFactoryBranding(), revision: 4, [slot]: undefined };
+      expect(brandingResource.parse(incomplete), `${slot} was accepted`).toBeUndefined();
+    }
+  });
 
-    await expect(loadBrandingWith(fetcher)).resolves.toEqual(
-      getFactoryBranding(),
-    );
+  test("rejects a payload without a positive revision", () => {
+    expect(brandingResource.parse({ ...getFactoryBranding(), revision: 0 })).toBeUndefined();
+    expect(
+      brandingResource.parse({ ...getFactoryBranding(), revision: undefined }),
+    ).toBeUndefined();
+  });
+
+  test("drops everything but the four resolved paths and the revision", () => {
+    const parsed = brandingResource.parse({
+      ...getFactoryBranding(),
+      revision: 9,
+      // A wider admin response must not reach the public snapshot.
+      draft: { authLogoPath: "/storage/secret.png" },
+      expectedRevision: 8,
+    });
+
+    expect(Object.keys(parsed!).sort()).toEqual([
+      "authHeroImagePath",
+      "authLogoPath",
+      "revision",
+      "sidebarLogoCollapsedPath",
+      "sidebarLogoExpandedPath",
+    ]);
+  });
+
+  test("reports a fallback as a branding asset failure", () => {
+    reportUiBootstrapDiagnostic({
+      resource: "branding",
+      reason: "invalid-payload",
+      path: "/api/branding",
+    });
+
     expect(warning).toHaveBeenCalled();
+    expect(warning.mock.calls[0]![0]).toContain("factory assets");
   });
 
   /**
@@ -245,16 +283,17 @@ describe("branding provider wiring", () => {
 
   test("root layout loads branding server-side with a factory fallback", () => {
     const layout = readSource("../src/app/layout.tsx");
-    const loader = readSource("../src/lib/loader.ts");
+    const resources = readSource("../src/lib/uiResources.ts");
+    const serverLoader = readSource("../src/lib/serverLoader.ts");
 
     expect(layout).toContain("loadServerBranding");
     expect(layout).toContain("initialBranding={branding}");
+    expect(layout).toContain('from "@/lib/serverLoader"');
     // The admin config is a client query now; the layout must not fetch it.
     expect(layout).not.toContain("loadServerBrandingConfig");
-    expect(loader).toContain("server.fetch");
-    expect(loader).toContain("loadBrandingWith");
-    expect(loader).toContain("/api/branding");
-    expect(loader).toContain("factory assets");
+    expect(serverLoader).toContain("server.fetch");
+    expect(resources).toContain("/api/branding");
+    expect(resources).toContain("factory assets");
   });
 });
 

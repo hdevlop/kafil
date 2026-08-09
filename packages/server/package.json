@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./appearance": "./src/appearance.ts",
     "./branding": "./src/branding.ts",
     "./branding-constants": "./src/modules/settings/brandingConstants.ts",
     "./config": "./src/config/index.ts",
@@ -25,7 +26,7 @@
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
-    "najm-auth": "3.0.0",
+    "najm-auth": "3.1.0",
     "najm-core": "2.0.5",
     "najm-database": "2.0.3",
     "najm-email": "2.0.2",

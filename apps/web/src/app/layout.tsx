@@ -5,8 +5,13 @@ import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { PwaRegistration } from "@/components/PwaRegistration";
 import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
-import { normalizeKafilLanguage, normalizeKafilTimeZone, type KafilTheme } from "@/lib/format";
-import { loadServerAppearance, loadServerBranding } from "@/lib/loader";
+import { loadServerAppearance, loadServerBranding } from "@/lib/serverLoader";
+import {
+  isKafilTheme,
+  normalizeKafilLanguage,
+  normalizeKafilTimeZone,
+  type KafilTheme,
+} from "@/preferences";
 import { APP_NAME } from "@/types/branding";
 import "./globals.css";
 
@@ -52,8 +57,9 @@ export default async function RootLayout({
     cookieStore.get("kafil-ui-language")?.value ??
       (session?.user as { language?: unknown } | undefined)?.language,
   );
-  
-  const theme: KafilTheme = cookieStore.get("kafil-ui-theme")?.value === "dark" ? "dark" : "light";
+
+  const themeCookie = cookieStore.get("kafil-ui-theme")?.value;
+  const theme: KafilTheme = isKafilTheme(themeCookie) ? themeCookie : "light";
   const timeZone = normalizeKafilTimeZone(cookieStore.get("kafil-ui-timezone")?.value);
 
   return (

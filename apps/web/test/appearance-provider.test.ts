@@ -8,11 +8,15 @@ import {
   resetAppearance,
   updateAppearance,
 } from "../src/services/appearanceApi";
+import { createUiBootstrapLoader } from "najm-kit/server";
 import {
   DEFAULT_APPEARANCE_REVISION,
+  appearanceResource,
   getFactoryDesignConfig,
-  loadAppearanceWith,
-} from "../src/lib/loader";
+  reportUiBootstrapDiagnostic,
+  uiResources,
+} from "../src/lib/uiResources";
+import { getFactoryBranding } from "@kafil/server/branding";
 import type { PublicAppearance } from "../src/types/appearance";
 
 function readSource(relativePath: string) {
@@ -98,19 +102,20 @@ describe("appearance provider wiring", () => {
 
   test("root layout loads the appearance server-side with a factory fallback", () => {
     const layout = readSource("../src/app/layout.tsx");
-    const loader = readSource("../src/lib/loader.ts");
+    const resources = readSource("../src/lib/uiResources.ts");
+    const serverLoader = readSource("../src/lib/serverLoader.ts");
 
     expect(layout).toContain("loadServerAppearance");
     expect(layout).toContain("initialDesign={appearance.designConfig}");
-    expect(loader).toContain("server.fetch");
-    expect(loader).toContain("loadAppearanceWith");
-    expect(loader).toContain("/api/appearance");
-    expect(loader).toContain("getFactoryDesignConfig");
-    expect(loader).toContain("factory theme");
+    expect(layout).toContain('from "@/lib/serverLoader"');
+    expect(serverLoader).toContain("server.fetch");
+    expect(resources).toContain("/api/appearance");
+    expect(resources).toContain("getFactoryDesignConfig");
+    expect(resources).toContain("factory theme");
   });
 });
 
-describe("server appearance loader", () => {
+describe("appearance resource", () => {
   let warning: ReturnType<typeof spyOn<typeof console, "warn">>;
 
   beforeEach(() => {
@@ -121,47 +126,78 @@ describe("server appearance loader", () => {
     warning.mockRestore();
   });
 
-  test("returns the parsed payload from a successful public GET", async () => {
-    const factory = getFactoryDesignConfig();
-    const appearance: PublicAppearance = { designConfig: factory, revision: 5 };
-    const fetcher = async () =>
-      new Response(JSON.stringify({ data: appearance }), { status: 200 });
-
-    await expect(loadAppearanceWith(fetcher)).resolves.toEqual(appearance);
-    expect(warning).not.toHaveBeenCalled();
+  test("is served from the public appearance endpoint", () => {
+    expect(appearanceResource.path).toBe("/api/appearance");
   });
 
-  test("falls back to the factory design for a non-ok response", async () => {
-    const fetcher = async () =>
-      new Response(JSON.stringify({ message: "boom" }), { status: 503 });
-
-    await expect(loadAppearanceWith(fetcher)).resolves.toEqual({
-      designConfig: getFactoryDesignConfig(),
-      revision: DEFAULT_APPEARANCE_REVISION,
-    });
-    expect(warning).toHaveBeenCalled();
-  });
-
-  test("falls back to the factory design for a malformed payload", async () => {
-    const fetcher = async () =>
-      new Response(JSON.stringify({ data: { designConfig: null } }), {
-        status: 200,
-      });
-
-    await expect(loadAppearanceWith(fetcher)).resolves.toEqual({
+  test("falls back to the version-controlled theme at the default revision", () => {
+    expect(appearanceResource.fallback()).toEqual({
       designConfig: getFactoryDesignConfig(),
       revision: DEFAULT_APPEARANCE_REVISION,
     });
   });
 
-  test("falls back to the factory design when the fetcher throws", async () => {
-    const fetcher = async () => {
-      throw new Error("database unavailable");
+  test("accepts a persisted appearance", () => {
+    const appearance: PublicAppearance = {
+      designConfig: getFactoryDesignConfig(),
+      revision: 5,
     };
 
-    await expect(loadAppearanceWith(fetcher)).resolves.toEqual({
-      designConfig: getFactoryDesignConfig(),
-      revision: DEFAULT_APPEARANCE_REVISION,
+    expect(appearanceResource.parse(appearance)).toEqual(appearance);
+  });
+
+  test("rejects a payload without a positive revision", () => {
+    const designConfig = getFactoryDesignConfig();
+
+    expect(appearanceResource.parse({ designConfig })).toBeUndefined();
+    expect(appearanceResource.parse({ designConfig, revision: 0 })).toBeUndefined();
+    expect(appearanceResource.parse({ designConfig, revision: 1.5 })).toBeUndefined();
+  });
+
+  test("rejects an invalid design behind a positive revision", () => {
+    // Kafil's validator is stricter than the kit's general design parser, and
+    // it throws rather than returning undefined. The loader treats both the
+    // same way, so a persisted row that no longer parses still renders.
+    expect(() => appearanceResource.parse({ designConfig: null, revision: 4 })).toThrow();
+  });
+
+  test("reports a fallback without leaking the response", () => {
+    reportUiBootstrapDiagnostic({
+      resource: "appearance",
+      reason: "response-not-ok",
+      path: "/api/appearance",
+      status: 503,
     });
+
+    expect(warning).toHaveBeenCalled();
+    const [message] = warning.mock.calls[0]!;
+    expect(message).toContain("appearance");
+    expect(message).toContain("503");
+    expect(message).toContain("factory theme");
+  });
+});
+
+describe("public UI bootstrap", () => {
+  test("loads appearance and branding through one shared fetch boundary", async () => {
+    const requested: string[] = [];
+    const appearance: PublicAppearance = {
+      designConfig: getFactoryDesignConfig(),
+      revision: 3,
+    };
+    const branding = { ...getFactoryBranding(), revision: 6 };
+
+    const result = await createUiBootstrapLoader({
+      fetcher: async (path) => {
+        requested.push(path);
+        const data = path === "/api/appearance" ? appearance : branding;
+        return new Response(JSON.stringify({ data }), { status: 200 });
+      },
+      resources: uiResources,
+    }).load();
+
+    expect(new Set(requested)).toEqual(
+      new Set(["/api/appearance", "/api/branding"]),
+    );
+    expect(result).toEqual({ appearance, branding });
   });
 });
