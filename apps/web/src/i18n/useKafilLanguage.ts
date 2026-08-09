@@ -3,7 +3,7 @@
 import { useTranslation } from "najm-i18n/react";
 import { useCallback, useMemo } from "react";
 
-import type { KafilLanguage } from "@/lib/format";
+import type { KafilLanguage } from "@/preferences";
 import type { TranslationKey } from "./translations";
 
 type TranslationValues = Record<string, string | number>;

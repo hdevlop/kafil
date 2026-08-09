@@ -4,7 +4,7 @@ import {
   KAFIL_SUPPORTED_TIME_ZONES,
   normalizeKafilTimeZone,
   type KafilTimeZone,
-} from "@/lib/format";
+} from "@/preferences";
 
 const timeZoneCookieName = "kafil-ui-timezone";
 

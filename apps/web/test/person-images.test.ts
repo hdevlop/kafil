@@ -1,70 +1,79 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  getChildAvatarImage,
-  getChildPersonImage,
-  getFamilyAvatarImage,
-  getFamilyPersonImage,
-  getSponsorAvatarImage,
-} from "../src/lib/personImages";
+import { getPersonImage } from "najm-kit/person-images";
 
-describe("person image fallbacks", () => {
-  test("uses gender illustrations for children", () => {
-    expect(getChildPersonImage("F")).toBe("/images/people/child-female.webp");
-    expect(getChildPersonImage("M")).toBe("/images/people/child-male.webp");
+import { parentGenderFromRelationship } from "../src/features/Dashboard/FamilyDashboard/lib/parentGenderFromRelationship";
+
+const managedChildImage =
+  "/api/child-images/files/serve/00000000-0000-4000-8000-000000000050.png";
+const managedAdultImage =
+  "/api/people/files/serve/00000000-0000-4000-8000-000000000051.png";
+
+describe("Kafil person-image mapping", () => {
+  test("female and male children map to the gender-specific child fallback", () => {
+    const female = getPersonImage({ image: null, role: "child", gender: "F" });
+    const male = getPersonImage({ image: null, role: "child", gender: "M" });
+    expect(female.startsWith("data:image/webp;base64,")).toBe(true);
+    expect(male.startsWith("data:image/webp;base64,")).toBe(true);
+    expect(female).not.toBe(male);
   });
 
-  test("uses the neutral family illustration as a household fallback", () => {
-    expect(getFamilyPersonImage()).toBe("/images/people/family.webp");
+  test("the neutral family role never swings to a personal variant", () => {
+    const neutral = getPersonImage({ image: null, role: "family" });
+    expect(neutral.startsWith("data:image/webp;base64,")).toBe(true);
+    expect(getPersonImage({ image: null, role: "family", gender: "F" })).toBe(neutral);
+    expect(getPersonImage({ image: null, role: "family", gender: "M" })).toBe(neutral);
   });
 
-  test("replaces Najm no-avatar sentinels but preserves real images", () => {
-    expect(getFamilyAvatarImage("noavatar.png")).toBe(
-      "/images/people/family.webp",
-    );
-    expect(getFamilyAvatarImage("/noavatar.png?v=1")).toBe(
-      "/images/people/family.webp",
-    );
-    expect(getFamilyAvatarImage("https://example.com/photo.png")).toBe(
-      "https://example.com/photo.png",
-    );
+  test("sponsor, staff, applicant, and delivery all map to the adult role", () => {
+    const female = getPersonImage({ image: null, role: "adult", gender: "F" });
+    const male = getPersonImage({ image: null, role: "adult", gender: "M" });
+    expect(female.startsWith("data:image/webp;base64,")).toBe(true);
+    expect(male.startsWith("data:image/webp;base64,")).toBe(true);
+    expect(female).not.toBe(male);
   });
 
-  test("prefers persisted child images and falls back to gender", () => {
-    expect(
-      getChildAvatarImage(
-        "/api/child-images/files/serve/00000000-0000-4000-8000-000000000050.png",
-        "F",
-      ),
-    ).toBe(
-      "/api/child-images/files/serve/00000000-0000-4000-8000-000000000050.png",
+  test("a managed image wins over every package fallback", () => {
+    expect(getPersonImage({ image: managedChildImage, role: "child", gender: "F" })).toBe(
+      managedChildImage,
     );
-    expect(getChildAvatarImage("noavatar.png", "F")).toBe(
-      "/images/people/child-female.webp",
+    expect(getPersonImage({ image: managedAdultImage, role: "adult", gender: "M" })).toBe(
+      managedAdultImage,
     );
-    expect(getChildAvatarImage("/noavatar.png?v=1", "M")).toBe(
-      "/images/people/child-male.webp",
-    );
-    expect(getChildAvatarImage(null, "F")).toBe(
-      "/images/people/child-female.webp",
-    );
-    expect(getChildAvatarImage(undefined, "M")).toBe(
-      "/images/people/child-male.webp",
+    expect(getPersonImage({ image: managedAdultImage, role: "family" })).toBe(
+      managedAdultImage,
     );
   });
 
-  test("uses gender-matched sponsor fallbacks", () => {
-    expect(getSponsorAvatarImage(null, "F")).toBe(
-      "/images/people/sponsor_female.webp",
+  test("noavatar.png reaches the package fallback", () => {
+    const fallback = getPersonImage({ image: null, role: "family" });
+    expect(getPersonImage({ image: "noavatar.png", role: "family" })).toBe(fallback);
+    expect(getPersonImage({ image: "/noavatar.png?v=1", role: "family" })).toBe(fallback);
+    expect(getPersonImage({ image: "noavatar.png", role: "child", gender: "F" })).toBe(
+      getPersonImage({ image: null, role: "child", gender: "F" }),
     );
-    expect(getSponsorAvatarImage(null, "M")).toBe(
-      "/images/people/sponsor_male.webp",
-    );
-    expect(getSponsorAvatarImage("noavatar.png", "F")).toBe(
-      "/images/people/sponsor_female.webp",
-    );
-    expect(
-      getSponsorAvatarImage("https://example.com/sponsor.png", "F"),
-    ).toBe("https://example.com/sponsor.png");
+  });
+
+  test("parent relationship-to-gender mapping (Family Dashboard feature boundary)", () => {
+    const cases: Array<[string | null, "F" | "M" | null]> = [
+      ["mother", "F"],
+      ["Mother", "F"],
+      ["mom", "F"],
+      ["mère", "F"],
+      ["Mère", "F"],
+      ["madre", "F"],
+      ["أم", "F"],
+      ["father", "M"],
+      ["Dad", "M"],
+      ["père", "M"],
+      ["padre", "M"],
+      ["أب", "M"],
+      ["guardian", null],
+      ["", null],
+      [null, null],
+    ];
+    for (const [relationship, expected] of cases) {
+      expect(parentGenderFromRelationship(relationship)).toBe(expected);
+    }
   });
 });

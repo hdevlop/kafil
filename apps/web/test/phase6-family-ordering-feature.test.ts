@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { normalizeKafilLanguage } from "../src/lib/format";
+import { normalizeKafilLanguage } from "../src/preferences";
 import { familyOrderingKeys } from "../src/features/Orders/hooks/familyOrderingKeys";
 
 describe("Phase 6E family ordering contracts", () => {

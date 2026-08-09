@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
 
-import { formatKafilDate, formatMad } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ProductRecord } from "../types";
@@ -18,8 +17,9 @@ export const PRODUCT_TABLE_COLUMN_IDS = {
 } as const;
 
 export function useProductsTableColumns() {
-  return useMemo<NTableProps<ProductRecord>["columns"]>(
-    () => [
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<ProductRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: PRODUCT_TABLE_COLUMN_IDS.name,
         header: "Product",
@@ -38,7 +38,7 @@ export function useProductsTableColumns() {
       {
         accessorKey: PRODUCT_TABLE_COLUMN_IDS.priceMinor,
         header: "Price",
-        cell: ({ getValue }) => formatMad(getValue<number>()),
+        cell: ({ getValue }) => fmt.money(getValue<number>()),
       },
       {
         accessorKey: PRODUCT_TABLE_COLUMN_IDS.status,
@@ -48,9 +48,8 @@ export function useProductsTableColumns() {
       {
         accessorKey: PRODUCT_TABLE_COLUMN_IDS.updatedAt,
         header: "Updated",
-        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [],
-  );
+    ];
+  }, [fmt]);
 }

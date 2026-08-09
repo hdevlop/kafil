@@ -1,16 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
 
-import { formatKafilDate } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { CategoryRecord } from "../types";
 
 export function useCategoriesTableColumns() {
-  return useMemo<NTableProps<CategoryRecord>["columns"]>(
-    () => [
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<CategoryRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: "name",
         header: "Category",
@@ -34,9 +34,8 @@ export function useCategoriesTableColumns() {
       {
         accessorKey: "updatedAt",
         header: "Updated",
-        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [],
-  );
+    ];
+  }, [fmt]);
 }

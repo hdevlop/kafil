@@ -10,11 +10,10 @@ import {
   Phone,
   ShieldCheck,
 } from "lucide-react";
-import { NCard, NCardSection, NDetailList } from "najm-kit";
+import { NCard, NCardSection, NDetailList, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -23,7 +22,8 @@ import type { StaffRecord } from "../types";
 export function StaffDetails({
   staff,
 }: Readonly<{ staff: StaffRecord }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   const labels = {
     delivery: t("operator.staff.functionDelivery"),
@@ -51,7 +51,7 @@ export function StaffDetails({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-4">
             <ManagedAvatar
-              src={getSponsorAvatarImage(staff.image, staff.gender)}
+              src={getPersonImage({ image: staff.image, role: "adult", gender: staff.gender })}
               alt={staff.name}
               size="xl"
             />
@@ -150,7 +150,7 @@ export function StaffDetails({
               {
                 icon: Calendar,
                 label: t("operator.staff.dateOfBirth"),
-                value: formatKafilDate(staff.dateOfBirth, language),
+                value: fmt.date(staff.dateOfBirth),
               },
             ]}
           />
@@ -164,12 +164,12 @@ export function StaffDetails({
               {
                 icon: Calendar,
                 label: t("operator.staff.created"),
-                value: formatKafilDate(staff.createdAt, language),
+                value: fmt.date(staff.createdAt),
               },
               {
                 icon: Calendar,
                 label: t("operator.staff.created"),
-                value: formatKafilDate(staff.updatedAt, language),
+                value: fmt.date(staff.updatedAt),
               },
             ]}
           />

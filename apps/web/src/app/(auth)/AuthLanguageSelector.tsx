@@ -1,10 +1,17 @@
 "use client";
 
-import { ChevronDown, Globe2 } from "lucide-react";
-import { toast } from "najm-kit";
+import { Globe2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  toast,
+} from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import type { KafilLanguage } from "@/lib/format";
+import type { KafilLanguage } from "@/preferences";
 
 const languageOptions = [
   { country: "us", label: "English", value: "en" },
@@ -27,22 +34,24 @@ export function AuthLanguageSelector() {
   }
 
   return (
-    <label className="relative flex h-12 items-center rounded-2xl border border-border bg-card/90 pl-4 pr-10 text-sm font-medium text-foreground shadow-sm shadow-foreground/5">
-      <Globe2 aria-hidden="true" className="mr-3 size-5 text-primary" />
-      <span className="sr-only">Select language</span>
-      <select
+    <Select
+      onValueChange={(value) => void handleLanguageChange(value as KafilLanguage)}
+      value={language}
+    >
+      <SelectTrigger
         aria-label="Select language"
-        className="h-full cursor-pointer appearance-none bg-transparent pr-1 text-base outline-none"
-        onChange={(event) => void handleLanguageChange(event.target.value as KafilLanguage)}
-        value={language}
+        className="h-12 w-auto min-w-36 rounded-2xl border-border bg-card/90 px-4 text-base font-medium text-foreground shadow-sm shadow-foreground/5 [&>svg]:text-primary"
       >
+        <Globe2 aria-hidden="true" className="size-5 text-primary" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent align="end">
         {languageOptions.map((option) => (
-          <option key={option.value} value={option.value}>
+          <SelectItem key={option.value} value={option.value}>
             {option.label}
-          </option>
+          </SelectItem>
         ))}
-      </select>
-      <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 size-5 text-primary" />
-    </label>
+      </SelectContent>
+    </Select>
   );
 }

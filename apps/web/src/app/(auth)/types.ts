@@ -6,7 +6,7 @@ import type {
   loginSchema,
   resetPasswordSchema,
 } from "@/features/Auth/config/authSchemas";
-import type { KafilLanguage } from "@/lib/format";
+import type { KafilLanguage } from "@/preferences";
 
 export type AuthCardProps = Readonly<{
   children: ReactNode;

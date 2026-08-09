@@ -1,15 +1,15 @@
 "use client";
 
 import { AlignJustify, CalendarDays, ListOrdered, Tags } from "lucide-react";
-import { NDetailList, NSection } from "najm-kit";
+import { NDetailList, NSection, useNajmFormat } from "najm-kit";
 
-import { formatKafilDate } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import type { CategoryRecord } from "../types";
 
 export function CategoryDetails({ category }: Readonly<{ category: CategoryRecord }>) {
+  const fmt = useNajmFormat();
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
@@ -46,8 +46,8 @@ export function CategoryDetails({ category }: Readonly<{ category: CategoryRecor
       <NSection icon={CalendarDays} title="History">
         <NDetailList
           items={[
-            { label: "Created", value: formatKafilDate(category.createdAt) },
-            { label: "Last updated", value: formatKafilDate(category.updatedAt) },
+            { label: "Created", value: fmt.date(category.createdAt) },
+            { label: "Last updated", value: fmt.date(category.updatedAt) },
           ]}
         />
       </NSection>

@@ -2,18 +2,20 @@ import { describe, expect, test } from "bun:test";
 
 import { entityKeys } from "../src/hooks/queryKeys";
 import {
-  formatKafilDate,
-  formatKafilNumber,
-  formatMad,
-  formatStatusLabel,
-} from "../src/lib/format";
-import {
   cleanQuery,
   createOffsetPagination,
   fetchOffsetPage,
   getPageIndex,
 } from "najm-kit/pagination";
+import { formatCurrency, formatDate, formatNumber } from "najm-kit/format";
 import { resolveStatusColor } from "najm-kit";
+import { formatStatusLabel } from "../src/features/StatusLabels";
+import {
+  KAFIL_CURRENCY,
+  KAFIL_DEFAULT_TIME_ZONE,
+  localeForKafilLanguage,
+  type KafilLanguage,
+} from "../src/preferences";
 import {
   getApiErrorMessage,
   getApiErrorStatus,
@@ -74,19 +76,30 @@ describe("Phase 6B API infrastructure", () => {
   });
 });
 
+// Mirrors what NajmAppProvider builds from KAFIL_LOCALES + KAFIL_CURRENCY.
+const configFor = (language: KafilLanguage) => ({
+  locale: localeForKafilLanguage(language),
+  timeZone: KAFIL_DEFAULT_TIME_ZONE,
+  currency: KAFIL_CURRENCY,
+});
+
 describe("Phase 6B formatters and status helpers", () => {
   test("formats integer minor units as MAD", () => {
-    const result = formatMad(12_345, "fr");
+    const frConfig = configFor("fr");
+    const enConfig = configFor("en");
+    const result = formatCurrency(12_345, frConfig);
     expect(result).toContain("123");
     expect(result).toContain("45");
     expect(result).toContain("MAD");
-    expect(formatMad(12.5)).toBe("—");
+    expect(formatCurrency(12.5, enConfig)).toBe("—");
   });
 
   test("formats dates and numbers by Kafil language", () => {
-    expect(formatKafilNumber(12_345, "en")).not.toBe("—");
-    expect(formatKafilDate("2026-07-16T12:00:00Z", "en")).toContain("2026");
-    expect(formatKafilDate("not-a-date", "fr")).toBe("—");
+    const enConfig = configFor("en");
+    const frConfig = configFor("fr");
+    expect(formatNumber(12_345, enConfig)).not.toBe("—");
+    expect(formatDate("2026-07-16T12:00:00Z", enConfig)).toContain("2026");
+    expect(formatDate("not-a-date", frConfig)).toBe("—");
   });
 
   // The map now ships in najm-kit; this guards Kafil's vocabulary against a
@@ -104,7 +117,7 @@ describe("Phase 6B formatters and status helpers", () => {
     expect(resolveStatusColor("expired")).toBe("destructive");
     expect(resolveStatusColor("stopped")).toBe("neutral");
     expect(resolveStatusColor("future_status")).toBe("neutral");
-    expect(formatStatusLabel("in_preparation")).toBe("Purchasing and preparation");
+    expect(formatStatusLabel("in_preparation", "en")).toBe("Purchasing and preparation");
   });
 });
 

@@ -1,18 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import { SimpleTooltip, type NTableProps } from "najm-kit";
+import { SimpleTooltip, useNajmFormat, type NTableProps } from "najm-kit";
 
-import { formatKafilDate } from "@/lib/format";
-import { getChildAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
+import { getPersonImage } from "najm-kit/person-images";
 
 import type { ChildRecord } from "../types";
 
 export function useChildrenTableColumns() {
-  return useMemo<NTableProps<ChildRecord>["columns"]>(
-    () => [
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<ChildRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: "legalName",
         header: "Child",
@@ -23,7 +23,7 @@ export function useChildrenTableColumns() {
               row.original.familyStatus !== "active");
           const avatar = (
             <ManagedAvatar
-            src={getChildAvatarImage(row.original.image, row.original.gender)}
+            src={getPersonImage({ image: row.original.image, role: "child", gender: row.original.gender })}
             title={row.original.legalName}
             subtitle={row.original.gender === "F" ? "Female" : "Male"}
             classNames={{
@@ -55,7 +55,7 @@ export function useChildrenTableColumns() {
       {
         accessorKey: "dateOfBirth",
         header: "Date of birth",
-        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
       {
         accessorKey: "gender",
@@ -76,9 +76,8 @@ export function useChildrenTableColumns() {
       {
         accessorKey: "createdAt",
         header: "Created",
-        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [],
-  );
+    ];
+  }, [fmt]);
 }

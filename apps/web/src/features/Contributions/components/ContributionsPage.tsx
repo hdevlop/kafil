@@ -175,6 +175,7 @@ export function ContributionsPage() {
     error: contributions.error,
     getRowId: (contribution) => contribution.id,
     onCreate: audience === "management" ? openRecord : undefined,
+    onRowClick: openView,
     renderCard: ContributionCard,
     renderEmpty: () => (
       <PageEmptyState

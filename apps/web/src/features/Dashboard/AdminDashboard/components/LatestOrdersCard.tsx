@@ -2,17 +2,17 @@
 
 import type { LatestOrdersCardProps } from "@/features/Dashboard";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate, formatMad } from "@/lib/format";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { ArrowRight, ClipboardList } from "lucide-react";
-import { NButton, NCard, NCardAction } from "najm-kit";
+import { NButton, NCard, NCardAction, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 export function LatestOrdersCard({ recentOrders }: Readonly<LatestOrdersCardProps>) {
 
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   return (
     <NCard className="h-full" icon={ClipboardList} title={t("dashboard.operator.latestOrders")}>
@@ -39,18 +39,18 @@ export function LatestOrdersCard({ recentOrders }: Readonly<LatestOrdersCardProp
                     alt={order.familyName}
                     className="shrink-0"
                     size="lg"
-                    src={getFamilyAvatarImage(order.familyImage)}
+                    src={getPersonImage({ image: order.familyImage, role: "family" })}
                   />
                 )}
                 <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-2">
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{order.orderNumber}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {order.familyName} · {formatKafilDate(order.placedAt, language)}
+                      {order.familyName} · {fmt.date(order.placedAt)}
                     </span>
                   </span>
                   <span className="flex min-w-0 flex-col items-end gap-1">
-                    <span className="text-xs font-semibold tabular-nums">{formatMad(order.totalMinor, language)}</span>
+                    <span className="text-xs font-semibold tabular-nums">{fmt.money(order.totalMinor)}</span>
                     <StatusBadge size="sm" status={order.status} />
                   </span>
                 </span>

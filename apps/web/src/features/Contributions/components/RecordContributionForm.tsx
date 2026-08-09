@@ -8,12 +8,12 @@ import {
   NFormSectionHeader,
   useDebouncedValue,
   useDialog,
+  useNajmFormat,
 } from "najm-kit";
 import { useState } from "react";
 import { useWatch } from "react-hook-form";
 
 import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";
-import { formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import {
@@ -35,6 +35,7 @@ function ContributionCapacityNotice({
   options,
 }: Readonly<{ options: RecordingOptionView[] }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const assignmentId = useWatch({ name: "supportAssignmentId" });
   const selected = options.find((option) => option.value === assignmentId);
   const hasOpen = options.some((option) => !option.disabled);
@@ -43,7 +44,7 @@ function ContributionCapacityNotice({
     return (
       <p className="text-sm text-muted-foreground">
         {t("operator.contributions.availableAmount", {
-          amount: formatMad(selected.maxAmountMinor),
+          amount: fmt.money(selected.maxAmountMinor),
         })}
       </p>
     );
@@ -63,6 +64,7 @@ function ContributionSubmitButton({
   pending,
 }: Readonly<{ options: RecordingOptionView[]; pending: boolean }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const assignmentId = useWatch({ name: "supportAssignmentId" });
   const amountMad = useWatch({ name: "amountMad" });
   const selected = options.find((option) => option.value === assignmentId);
@@ -78,7 +80,7 @@ function ContributionSubmitButton({
       {exceedsCapacity && selected ? (
         <p className="text-sm font-medium text-destructive">
           {t("sponsor.contributions.amountTooHigh", {
-            amount: formatMad(selected.maxAmountMinor),
+            amount: fmt.money(selected.maxAmountMinor),
           })}
         </p>
       ) : null}

@@ -1,11 +1,8 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NDonutCard } from "najm-kit";
+import { NDonutCard, useNajmFormat } from "najm-kit";
 import type { ReactNode } from "react";
-
-import type { KafilLanguage } from "@/lib/format";
-import { formatKafilNumber, formatMad } from "@/lib/format";
 
 import type { BudgetSegment } from "../../types";
 
@@ -14,7 +11,6 @@ export function SupportBudgetCard({
   segments,
   title,
   totalLabel,
-  language,
   emptyLabel,
   footer,
   compact = true,
@@ -25,12 +21,12 @@ export function SupportBudgetCard({
   title: string;
   totalLabel: string;
   emptyLabel: string;
-  language: KafilLanguage;
   footer?: ReactNode;
   compact?: boolean;
 }>) {
-  const money = (value: number) => formatMad(value, language);
-  const number = (value: number) => formatKafilNumber(value / 100, language);
+  const fmt = useNajmFormat();
+  const money = (value: number) => fmt.money(value);
+  const number = (value: number) => fmt.number(value / 100);
 
   return (
     <NDonutCard

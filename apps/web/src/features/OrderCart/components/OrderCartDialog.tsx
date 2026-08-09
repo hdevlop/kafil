@@ -15,8 +15,8 @@ import {
   ShoppingBag,
   ShoppingBasket,
   ShoppingCart,
-  Truck,
   Trash2,
+  Truck,
   UserRoundCog,
   UsersRound,
   Wallet,
@@ -31,18 +31,18 @@ import {
   NEmptyState,
   NSheet,
   SimpleTooltip,
+  useNajmFormat,
 } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useKafilRole } from "@/shared/Authorization";
-import { formatMad } from "@/lib/format";
 import { productKeys } from "@/features/Products/hooks/productKeys";
 import { getProduct } from "@/services/productApi";
 import { getFamilyCatalogProduct } from "@/services/familyCatalogApi";
 import { useOwnFamilyBudgetSummary } from "@/features/Budgets/hooks/useFamilyBudget";
 import { useOwnFamilyProfile } from "@/features/Dashboard/FamilyDashboard";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 import {
   useDeliveryStaffOptions,
@@ -84,6 +84,7 @@ function OrderCartLine({
   familyMode: boolean;
   editable?: boolean;
 }>) {
+  const fmt = useNajmFormat();
   const productImage = useQuery<string | null>({
     queryKey: familyMode
       ? ["order-cart", "family-product-image", item.productId]
@@ -125,7 +126,7 @@ function OrderCartLine({
       <div className="min-w-28 flex-1">
         <p className="truncate text-sm font-semibold">{item.productName}</p>
         <p className="text-xs text-muted-foreground">
-          {formatMad(item.estimatedUnitPriceMinor)} × {item.quantity}
+          {fmt.money(item.estimatedUnitPriceMinor)} × {item.quantity}
         </p>
         {!item.available ? (
           <p className="mt-1 text-xs text-destructive">{unavailableLabel}</p>
@@ -181,7 +182,7 @@ function OrderCartLine({
             × {item.quantity}
           </NBadge>
           <p className="text-xs font-semibold text-foreground">
-            {formatMad(item.estimatedUnitPriceMinor * item.quantity)}
+            {fmt.money(item.estimatedUnitPriceMinor * item.quantity)}
           </p>
         </div>
       )}
@@ -316,6 +317,7 @@ export function OrderConfirmationStep({
   children?: ReactNode;
 }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   return (
     <div className="flex flex-col gap-5">
@@ -339,7 +341,7 @@ export function OrderConfirmationStep({
               className="object-cover"
               fill
               sizes="96px"
-              src={getFamilyAvatarImage(family.image)}
+              src={getPersonImage({ image: family.image, role: "family" })}
             />
           </div>
           <div className="min-w-0 flex-1">
@@ -383,7 +385,7 @@ export function OrderConfirmationStep({
           {totalMinor !== undefined ? (
             <div className="flex items-center justify-between px-3 pb-3 pt-1 text-sm">
               <span className="text-muted-foreground">{t("family.cart.total")}</span>
-              <span className="font-semibold text-foreground">{formatMad(totalMinor)}</span>
+              <span className="font-semibold text-foreground">{fmt.money(totalMinor)}</span>
             </div>
           ) : null}
         </div>
@@ -397,7 +399,7 @@ export function OrderConfirmationStep({
               {t("operator.budgets.available")}
             </span>
             <span className="font-medium text-foreground">
-              {formatMad(family.availableMinor)}
+              {fmt.money(family.availableMinor)}
             </span>
           </div>
         </section>
@@ -423,6 +425,7 @@ export function OrderCartSheet({
   onOpenChange: (open: boolean) => void;
 }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const { isExactFamily } = useKafilRole();
   const queryClient = useQueryClient();
   const orderCart = useOrderCart();
@@ -659,7 +662,7 @@ export function OrderCartSheet({
               <span className="flex min-w-0 items-center gap-1.5">
                 <span>{confirmLabel}</span>
                 <span className="font-bold">
-                  {formatMad(orderCart.estimatedTotalMinor)}
+                  {fmt.money(orderCart.estimatedTotalMinor)}
                 </span>
               </span>
             </NButton>
@@ -669,7 +672,7 @@ export function OrderCartSheet({
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="text-muted-foreground">{unitsLabel}</span>
               <span className="font-semibold text-foreground">
-                {totalsLabel}: {formatMad(orderCart.estimatedTotalMinor)}
+                {totalsLabel}: {fmt.money(orderCart.estimatedTotalMinor)}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -753,13 +756,13 @@ export function OrderCartSheet({
                 embedded
                 icon={Wallet}
                 title={t("operator.budgets.available")}
-                description={formatMad(familyBudget.data.availableMinor)}
+                description={fmt.money(familyBudget.data.availableMinor)}
               />
               <NCard
                 embedded
                 icon={Wallet}
                 title={t("operator.budgets.reserved")}
-                description={formatMad(familyBudget.data.reservedMinor)}
+                description={fmt.money(familyBudget.data.reservedMinor)}
               />
             </div>
           ) : null}

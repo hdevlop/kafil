@@ -1686,7 +1686,8 @@
         "retargetSuccess": "L'enfant ciblé a été mis à jour.",
         "retargetError": "Impossible de mettre à jour l'enfant ciblé.",
         "endSuccess": "L'attribution de soutien est terminée.",
-        "endError": "Impossible de terminer l'attribution de soutien."
+        "endError": "Impossible de terminer l'attribution de soutien.",
+        "notEnded": "Toujours active"
       },
       "budgets": {
         "title": "Budgets",

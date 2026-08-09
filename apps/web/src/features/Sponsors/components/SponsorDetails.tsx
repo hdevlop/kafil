@@ -1,23 +1,23 @@
 "use client";
 
 import { Contact, FileKey2, MapPin, NotebookPen } from "lucide-react";
-import { NDetailList, NSection } from "najm-kit";
+import { NDetailList, NSection, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SponsorRecord } from "../types";
 
 export function SponsorDetails({ sponsor }: Readonly<{ sponsor: SponsorRecord }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         <ManagedAvatar
-          src={getSponsorAvatarImage(sponsor.image, sponsor.gender)}
+          src={getPersonImage({ image: sponsor.image, role: "adult", gender: sponsor.gender })}
           title={sponsor.name}
           size="xl"
           classNames={{ avatar: "bg-muted" }}
@@ -37,8 +37,8 @@ export function SponsorDetails({ sponsor }: Readonly<{ sponsor: SponsorRecord }>
               label: t("operator.sponsors.gender"),
               value: sponsor.gender === "F" ? t("operator.sponsors.female") : sponsor.gender === "M" ? t("operator.sponsors.male") : t("operator.sponsors.notProvided"),
             },
-            { label: t("operator.sponsors.dateOfBirth"), value: formatKafilDate(sponsor.dateOfBirth, language) },
-            { label: t("operator.sponsors.created"), value: formatKafilDate(sponsor.createdAt, language) },
+            { label: t("operator.sponsors.dateOfBirth"), value: fmt.date(sponsor.dateOfBirth) },
+            { label: t("operator.sponsors.created"), value: fmt.date(sponsor.createdAt) },
           ]}
         />
       </NSection>

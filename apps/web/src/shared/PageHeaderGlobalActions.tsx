@@ -14,7 +14,7 @@ import {
 import screenfull from "screenfull";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import type { KafilLanguage } from "@/lib/format";
+import type { KafilLanguage } from "@/preferences";
 
 const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";
 

@@ -1,15 +1,15 @@
 "use client";
 
 import { ArrowRight, UsersRound } from "lucide-react";
-import { NButton, NCard, NCardAction } from "najm-kit";
+import { NButton, NCard, NCardAction, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilNumber } from "@/lib/format";
-import { getChildAvatarImage, getParentPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
+import { parentGenderFromRelationship } from "../lib/parentGenderFromRelationship";
 import type { FamilyChildRecord, FamilyDashboardProfile } from "../types";
 
 function ageFromDateOfBirth(dateOfBirth: string) {
@@ -31,7 +31,8 @@ export function MyFamilyCard({
   familyChildren: FamilyChildRecord[];
   profile: FamilyDashboardProfile;
 }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   return (
     <NCard className="h-full" icon={UsersRound} title={t("dashboard.family.myFamily")}>
@@ -44,7 +45,11 @@ export function MyFamilyCard({
       <div className="space-y-2">
         <article className="flex items-center gap-3 rounded-xl bg-muted/40 p-3">
           <ManagedAvatar
-            src={getParentPersonImage(profile.relationshipToChildren)}
+            src={getPersonImage({
+              image: null,
+              role: "parent",
+              gender: parentGenderFromRelationship(profile.relationshipToChildren),
+            })}
             title={profile.name}
             subtitle={profile.relationshipToChildren
               ? `${t("dashboard.family.guardian")} · ${profile.relationshipToChildren}`
@@ -60,10 +65,10 @@ export function MyFamilyCard({
           return (
             <article className="flex items-center gap-3 rounded-xl bg-muted/40 p-3" key={child.id}>
               <ManagedAvatar
-                src={getChildAvatarImage(child.image, child.gender)}
+                src={getPersonImage({ image: child.image, role: "child", gender: child.gender })}
                 title={child.legalName}
                 subtitle={t(age === 1 ? "dashboard.family.yearOld" : "dashboard.family.yearsOld", {
-                  count: formatKafilNumber(age, language),
+                  count: fmt.number(age),
                 })}
                 size="lg"
                 className="min-w-0 flex-1"

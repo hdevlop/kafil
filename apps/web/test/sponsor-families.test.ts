@@ -62,7 +62,7 @@ describe("sponsor Families projection", () => {
     expect(cardSource).not.toContain("<Operator>");
     expect(cardSource).not.toContain("<OnlySponsor>");
     expect(cardSource).not.toContain("@/shared/Authorization");
-    expect(cardSource).toContain("src={getFamilyAvatarImage(data.image)}");
+    expect(cardSource).toContain('src={getPersonImage({ image: data.image, role: "family" })}');
     expect(cardSource).toContain("{data.name}");
     expect(cardSource).toContain("value={data.activeSponsorCount}");
     expect(cardSource).toContain("<SponsorFamilyAction");

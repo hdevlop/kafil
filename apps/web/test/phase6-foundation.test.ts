@@ -133,8 +133,11 @@ describe("Phase 6A authentication schemas", () => {
     expect(dashboardLayoutSource).not.toContain(
       "FamilyPasswordRequirementGuard",
     );
-    expect(changePasswordPageSource).toContain(
-      'cookieStore.has("kafil.family-setup")',
+    expect(changePasswordPageSource).toContain("<FamilyFirstPasswordForm />");
+    expect(changePasswordPageSource).not.toContain("next/headers");
+    expect(changePasswordPageSource).not.toContain("next/navigation");
+    expect(changePasswordPageSource).not.toContain(
+      '"kafil.family-setup"',
     );
   });
 
@@ -176,5 +179,18 @@ describe("Phase 6A authentication schemas", () => {
     expect(dashboardShellSource).toContain(
       'window.location.replace("/login")',
     );
+  });
+
+  test("uses the themed Najm select for the auth language menu", () => {
+    const source = readFileSync(
+      new URL("../src/app/(auth)/AuthLanguageSelector.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain("<SelectTrigger");
+    expect(source).toContain("<SelectContent");
+    expect(source).toContain("<SelectItem");
+    expect(source).not.toContain("<select");
+    expect(source).not.toContain("<option");
   });
 });

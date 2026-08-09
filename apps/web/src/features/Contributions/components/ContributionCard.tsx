@@ -1,11 +1,10 @@
 "use client";
 
 import { CalendarClock, CreditCard, House, Timer } from "lucide-react";
-import { NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
+import { NCard, NCardInfo, NCardMedia, NCardSection, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
-import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { useKafilRole } from "@/shared/Authorization";
@@ -29,17 +28,18 @@ export function ContributionCard({
   data,
 }: Readonly<{ data: ContributionCardData }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const { isExactSponsor } = useKafilRole();
   const isPending = data.status === "pending";
   return (
     <NCard
       embedded
       title={isExactSponsor ? t("common.you") : data.sponsorName}
-      description={formatMad(data.amountMinor)}
+      description={fmt.money(data.amountMinor)}
     >
       <NCardMedia variant="avatar" placement="header" size="sm">
         <ManagedAvatar
-          src={getSponsorAvatarImage(data.sponsorImage ?? null, data.sponsorGender ?? null)}
+          src={getPersonImage({ image: data.sponsorImage ?? null, role: "adult", gender: data.sponsorGender ?? null })}
           alt={data.sponsorName ?? t("common.you")}
           size="xl"
           classNames={{ avatar: "bg-muted" }}
@@ -64,14 +64,14 @@ export function ContributionCard({
           <NCardInfo
             icon={Timer}
             label={t("operator.contributions.pendingDeadline")}
-            value={formatDateTime(data.expiresAt)}
+            value={fmt.dateTime(data.expiresAt)}
           />
         ) : null}
         {data.status === "expired" && data.expiredAt ? (
           <NCardInfo
             icon={Timer}
             label={t("operator.contributions.expiredAt")}
-            value={formatDateTime(data.expiredAt)}
+            value={fmt.dateTime(data.expiredAt)}
           />
         ) : null}
         <div className="flex min-w-0 items-center justify-between gap-3">
@@ -79,7 +79,7 @@ export function ContributionCard({
             className="min-w-0 flex-1"
             icon={CalendarClock}
             label={t("operator.contributions.submitted")}
-            value={formatKafilDate(data.submittedAt)}
+            value={fmt.date(data.submittedAt)}
           />
           <StatusBadge status={data.status} />
         </div>

@@ -1,30 +1,27 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SupportAssignmentView } from "../types";
 
 export function useSupportAssignmentsTableColumns() {
-  const { language, t } = useKafilLanguage();
-  return useMemo<NTableProps<SupportAssignmentView>["columns"]>(
-    () => [
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<SupportAssignmentView>["columns"]>(() => {
+    return [
       {
         accessorKey: "sponsorLabel",
         header: t("operator.assignments.sponsor"),
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
             <ManagedAvatar
-              src={getSponsorAvatarImage(
-                row.original.sponsorImage,
-                row.original.sponsorGender,
-              )}
+              src={getPersonImage({ image: row.original.sponsorImage, role: "adult", gender: row.original.sponsorGender, })}
               classNames={{ avatar: "bg-muted" }}
             />
             <span>{row.original.sponsorLabel}</span>
@@ -46,9 +43,8 @@ export function useSupportAssignmentsTableColumns() {
       {
         accessorKey: "startedAt",
         header: t("operator.assignments.started"),
-        cell: ({ getValue }) => formatKafilDate(getValue<string>(), language),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [language, t],
-  );
+    ];
+  }, [fmt, t]);
 }

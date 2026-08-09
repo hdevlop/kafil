@@ -16,7 +16,8 @@ import {
   UserRoundCog,
   TriangleAlert,
 } from "lucide-react";
-import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
@@ -24,8 +25,6 @@ import {
   useFamilyOrderingCommands,
 } from "@/features/Orders/hooks/useFamilyOrdering";
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
-import { formatKafilDate, formatMad } from "@/lib/format";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -91,6 +90,7 @@ export interface OrdersPageProps {
 export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps>) {
   const dialog = useDialog();
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const { isExactAdmin, isExactFamily, isExactSponsor } = useKafilRole();
   const tableMode = useDesktopTableMode();
   const [listFilters, setListFilters] = useState<Omit<OrderListQuery, "limit" | "offset">>({});
@@ -304,7 +304,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
             cell: ({ row }: { row: { original: SharedOrderRecord } }) => (
               <ManagedAvatar
                 classNames={{ avatar: "bg-muted" }}
-                src={getFamilyAvatarImage(row.original.familyImage ?? null)}
+                src={getPersonImage({ image: row.original.familyImage ?? null, role: "family" })}
                 title={row.original.guardianLegalNameSnapshot ?? "—"}
               />
             ),
@@ -314,7 +314,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
         accessorKey: "totalMinor",
         header: "Total",
         cell: ({ row }) =>
-          formatMad(row.original.actualTotalMinor ?? row.original.totalMinor),
+          fmt.money(row.original.actualTotalMinor ?? row.original.totalMinor),
       },
       {
         accessorKey: "articleCount",
@@ -341,7 +341,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
       {
         accessorKey: "placedAt",
         header: "Placed",
-        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
     ],
     loading: workspace.loading,

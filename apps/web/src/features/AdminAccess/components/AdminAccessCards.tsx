@@ -1,16 +1,16 @@
 "use client";
 
 import { BadgeCheck, CalendarDays, KeyRound, Shield, Users } from "lucide-react";
-import { NBadge, NCard, NCardAction, NCardInfo, NCardSection } from "najm-kit";
+import { NBadge, NCard, NCardAction, NCardInfo, NCardSection, useNajmFormat } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { AccessPermissionView, AccessUser } from "../types";
 
 export function AdminUserCard({ data, onClick }: Readonly<{ data: AccessUser; onClick?: () => void }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   return (
     <NCard
@@ -24,7 +24,7 @@ export function AdminUserCard({ data, onClick }: Readonly<{ data: AccessUser; on
       <NCardSection density="responsive" surface="responsive">
         <NCardInfo icon={Shield} label={t("adminAccess.users.role")} value={data.role || t("adminAccess.common.noRole")} />
         <NCardInfo icon={BadgeCheck} label={t("adminAccess.users.verified")} value={data.emailVerified ? t("adminAccess.common.yes") : t("adminAccess.common.no")} />
-        <NCardInfo icon={CalendarDays} label={t("adminAccess.users.lastLogin")} value={formatKafilDate(data.lastLogin)} />
+        <NCardInfo icon={CalendarDays} label={t("adminAccess.users.lastLogin")} value={fmt.date(data.lastLogin)} />
       </NCardSection>
     </NCard>
   );

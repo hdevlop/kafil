@@ -1,10 +1,10 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandCoins, HeartHandshake, LayoutDashboard, UsersRound, WalletCards } from "lucide-react";
-import { NPageHeader, NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown } from "najm-kit";
+import { NPageHeader, NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown, useNajmFormat } from "najm-kit";
 import { toChartData } from "../../shared/chartData";
 import { AdminDashboardSkeleton } from "../../shared/DashboardSkeletons";
-import { formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
+import { formatStatusLabel } from "@/features/StatusLabels";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
@@ -17,6 +17,7 @@ export function AdminDashboardPage() {
 
   const dashboard = useAdminDashboard();
   const { language, t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   if (dashboard.isError) {
     return <PageErrorState error={dashboard.error} title={t("dashboard.operator.error")} onRetry={() => void dashboard.refetch()} />;
@@ -27,8 +28,8 @@ export function AdminDashboardPage() {
   }
 
   const data = dashboard.data;
-  const number = (value: number) => formatKafilNumber(value, language);
-  const money = (value: number) => formatMad(value, language);
+  const number = (value: number) => fmt.number(value);
+  const money = (value: number) => fmt.money(value);
 
   return (
     <NPageLayout className="flex min-h-full flex-col gap-4">
@@ -88,7 +89,7 @@ export function AdminDashboardPage() {
         <NGridItem span={1} xlSpan={6}>
           <NLineChart
             className="h-full"
-            data={toChartData(data.contributionTrend, ["validatedMinor", "refundedMinor"], language)}
+            data={toChartData(data.contributionTrend, ["validatedMinor", "refundedMinor"], fmt)}
             icon={HandCoins}
             series={[
               { id: "validatedMinor", label: t("dashboard.common.validated") },

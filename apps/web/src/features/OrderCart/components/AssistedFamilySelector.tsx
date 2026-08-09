@@ -3,10 +3,9 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarRange, Wallet } from "lucide-react";
-import { ComboboxInput, NCard } from "najm-kit";
+import { ComboboxInput, NCard, useNajmFormat } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatMad } from "@/lib/format";
 import { listFamilies } from "@/services/familyApi";
 import { getBudgetSummary } from "@/services/budgetApi";
 import { createOffsetPagination } from "najm-kit/pagination";
@@ -38,6 +37,7 @@ export function AssistedFamilySelector({
   disabled = false,
 }: Readonly<AssistedFamilySelectorProps>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const families = useQuery({
     queryKey: ["assisted-family-selector", "families", { status: "active" }] as const,
     queryFn: async () =>
@@ -126,7 +126,7 @@ export function AssistedFamilySelector({
                 {t("operator.budgets.available")}:
               </span>
               <span className="font-semibold text-foreground">
-                {formatMad(availableMinor)}
+                {fmt.money(availableMinor)}
               </span>
             </span>
             <span className="flex items-center gap-1.5 justify-self-end">
@@ -140,7 +140,7 @@ export function AssistedFamilySelector({
               <span className="font-semibold text-foreground">
                 {monthlyLimitMinor === null
                   ? "—"
-                  : formatMad(monthlyLimitMinor)}
+                  : fmt.money(monthlyLimitMinor)}
               </span>
             </span>
           </div>

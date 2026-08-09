@@ -7,11 +7,12 @@ import {
   History,
   Truck,
 } from "lucide-react";
-import { NButton, NCard, NSheet } from "najm-kit";
+import { NButton, NCard, NSheet, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
+import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatDateTime, formatKafilDate, formatStatusLabel } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
+import type { KafilLanguage } from "@/preferences";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
@@ -71,7 +72,7 @@ export function DeliveryDetailsSheet({
                 variant={action.danger ? "destructive" : "outline"}
                 onClick={() => onAction(action.command, order)}
               >
-                {deliveryActionLabel(action.command, t)}
+                {deliveryActionLabel(action.command, language, t)}
               </NButton>
             ))}
           </div>
@@ -130,7 +131,7 @@ export function DeliveryPersonCard({
   emptyTitle: string;
   emptyDescription: string;
 }>) {
-  const { language } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   return (
     <NCard
@@ -139,13 +140,13 @@ export function DeliveryPersonCard({
     >
       {delivery ? (
         <div className="flex items-center justify-between gap-3">
-          <ManagedAvatar
-            className="min-w-0"
-            fallback={delivery.deliveryNameSnapshot}
-            meta={<span className="flex items-center gap-1.5"><Clock3 aria-hidden className="size-3.5" />{formatDateTime(delivery.assignedAt, language)}</span>}
+        <ManagedAvatar
+          className="min-w-0"
+          fallback={delivery.deliveryNameSnapshot}
+          meta={<span className="flex items-center gap-1.5"><Clock3 aria-hidden className="size-3.5" />{fmt.dateTime(delivery.assignedAt)}</span>}
             shape="rounded"
             size="lg"
-            src={getSponsorAvatarImage(delivery.image, delivery.gender)}
+            src={getPersonImage({ image: delivery.image, role: "adult", gender: delivery.gender })}
             subtitle={delivery.deliveryPhoneSnapshot}
             title={delivery.deliveryNameSnapshot}
           />
@@ -187,6 +188,7 @@ function DeliveryDetailsBody({
   order,
 }: Readonly<{ order: NonNullable<ReturnType<typeof useOrder>["data"]> }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const featured = getFeaturedDeliveryAttempt(order);
   const history = order.deliveryAttempts.filter((attempt) => attempt.id !== featured?.id);
   const milestones = [
@@ -216,7 +218,7 @@ function DeliveryDetailsBody({
               <div>
                 <p className="text-sm font-medium">{milestone.label}</p>
                 <p className="text-xs text-muted-foreground">
-                  {milestone.at ? formatKafilDate(milestone.at) : t("operator.orders.delivery.pending")}
+                  {milestone.at ? fmt.date(milestone.at) : t("operator.orders.delivery.pending")}
                 </p>
               </div>
             </li>
@@ -246,7 +248,7 @@ function DeliveryDetailsBody({
 }
 
 function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>) {
-  const { language } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const endedAt =
     attempt.completedAt ?? attempt.failedAt ?? attempt.cancelledAt ?? attempt.startedAt ?? attempt.assignedAt;
 
@@ -256,10 +258,10 @@ function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>
         <ManagedAvatar
           className="min-w-0"
           fallback={attempt.deliveryNameSnapshot}
-          meta={formatDateTime(endedAt, language)}
+          meta={fmt.dateTime(endedAt)}
           shape="rounded"
           size="md"
-          src={getSponsorAvatarImage(attempt.image, attempt.gender)}
+          src={getPersonImage({ image: attempt.image, role: "adult", gender: attempt.gender })}
           subtitle={attempt.deliveryPhoneSnapshot}
           title={attempt.deliveryNameSnapshot}
         />
@@ -271,6 +273,7 @@ function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>
 
 function deliveryActionLabel(
   command: OrderCommand,
+  language: KafilLanguage,
   t: ReturnType<typeof useKafilLanguage>["t"],
 ) {
   switch (command) {
@@ -285,6 +288,6 @@ function deliveryActionLabel(
     case "confirmDelivery":
       return t("operator.orders.delivery.confirm");
     default:
-      return formatStatusLabel(command);
+      return formatStatusLabel(command, language);
   }
 }

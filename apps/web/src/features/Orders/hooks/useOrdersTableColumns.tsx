@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
-import { formatKafilDate, formatMad } from "@/lib/format";
-import { getFamilyAvatarImage } from "@/lib/personImages";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import type { OrderRecord } from "../types";
 
@@ -15,8 +14,9 @@ export function useOrdersTableColumns(
   onDelivery?: (order: OrderRecord) => void,
 ) {
   const { t } = useKafilLanguage();
-  return useMemo<NTableProps<OrderRecord>["columns"]>(
-    () => [
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<OrderRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: "orderNumber",
         header: "Order number",
@@ -29,7 +29,7 @@ export function useOrdersTableColumns(
         header: "Family",
         cell: ({ row }) => (
           <ManagedAvatar
-            src={getFamilyAvatarImage(row.original.familyImage ?? null)}
+            src={getPersonImage({ image: row.original.familyImage ?? null, role: "family" })}
             title={row.original.guardianLegalNameSnapshot}
             classNames={{ avatar: "bg-muted" }}
           />
@@ -56,7 +56,7 @@ export function useOrdersTableColumns(
       {
         accessorKey: "totalMinor",
         header: "Total",
-        cell: ({ getValue }) => formatMad(getValue<number>()),
+        cell: ({ getValue }) => fmt.money(getValue<number>()),
       },
       {
         accessorKey: "status",
@@ -96,9 +96,8 @@ export function useOrdersTableColumns(
       {
         accessorKey: "createdAt",
         header: "Placed",
-        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [onDelivery, t],
-  );
+    ];
+  }, [fmt, onDelivery, t]);
 }

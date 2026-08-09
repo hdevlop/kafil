@@ -10,11 +10,11 @@ import {
   NCardSection,
   NDetailList,
   NSheet,
+  useNajmFormat,
 } from "najm-kit";
 
-import { formatDateTime, formatKafilDate, formatMad } from "@/lib/format";
+import { getPersonImage } from "najm-kit/person-images";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { getFamilyAvatarImage, getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 import { StatusBadge } from "@/shared/StatusBadge";
@@ -71,6 +71,7 @@ export function ContributionDetailsSheet({
 
 export function ContributionDetails({ contribution }: Readonly<{ contribution: ContributionListRecord }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const { isExactSponsor } = useKafilRole();
   const [nowMs, setNowMs] = useState<number | null>(null);
 
@@ -103,23 +104,23 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
     }] : []),
     {
       label: t("operator.contributions.submitted"),
-      value: formatKafilDate(contribution.submittedAt),
+      value: fmt.date(contribution.submittedAt),
     },
     ...(contribution.paidAt ? [{
       label: t("operator.contributions.paid"),
-      value: formatKafilDate(contribution.paidAt),
+      value: fmt.date(contribution.paidAt),
     }] : []),
     ...(contribution.validatedAt ? [{
       label: t("operator.contributions.validated"),
-      value: formatKafilDate(contribution.validatedAt),
+      value: fmt.date(contribution.validatedAt),
     }] : []),
     ...(contribution.rejectedAt ? [{
       label: t("operator.contributions.rejected"),
-      value: formatKafilDate(contribution.rejectedAt),
+      value: fmt.date(contribution.rejectedAt),
     }] : []),
     ...(contribution.expiredAt ? [{
       label: t("operator.contributions.expiredAt"),
-      value: formatKafilDate(contribution.expiredAt),
+      value: fmt.date(contribution.expiredAt),
     }] : []),
     ...(management && "rejectionReason" in contribution && contribution.rejectionReason ? [{
       label: t("operator.contributions.rejectionReason"),
@@ -128,8 +129,8 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
     ...(isPending && contribution.expiresAt ? [{
       label: t("operator.contributions.pendingDeadline"),
       value: isExpired
-        ? `${formatDateTime(contribution.expiresAt)} (${t("operator.contributions.expired")})`
-        : formatDateTime(contribution.expiresAt),
+        ? `${fmt.dateTime(contribution.expiresAt)} (${t("operator.contributions.expired")})`
+        : fmt.dateTime(contribution.expiresAt),
     }] : []),
   ];
 
@@ -145,7 +146,7 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
       >
         <NCardMedia variant="avatar" placement="header" size="sm">
           <ManagedAvatar
-            src={getSponsorAvatarImage(sponsorImage, sponsorGender)}
+            src={getPersonImage({ image: sponsorImage, role: "adult", gender: sponsorGender })}
             alt={sponsorName}
             size="xl"
             classNames={{ avatar: "bg-muted" }}
@@ -158,7 +159,7 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
           <NCardInfo
             icon={CreditCard}
             label={t("operator.contributions.amount")}
-            value={formatMad(contribution.amountMinor)}
+            value={fmt.money(contribution.amountMinor)}
             valueClassName="text-lg font-semibold text-foreground"
           />
         </NCardSection>
@@ -172,8 +173,8 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
         >
           <NCardMedia variant="hero" placement="top" aspect="16/9">
             <ProtectedImage
-              src={getFamilyAvatarImage(contribution.familyImage)}
-              fallbackSrc={getFamilyAvatarImage(null)}
+              src={getPersonImage({ image: contribution.familyImage, role: "family" })}
+              fallbackSrc={getPersonImage({ image: null, role: "family" })}
               alt={contribution.familyName}
               fill
               sizes="(max-width: 640px) 100vw, 480px"

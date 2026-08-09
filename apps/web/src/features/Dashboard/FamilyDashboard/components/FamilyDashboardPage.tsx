@@ -1,12 +1,12 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandHeart, House, ShoppingBag, WalletCards } from "lucide-react";
-import { NPageHeader, NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown, statusTextClass } from "najm-kit";
+import { NPageHeader, NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown, statusTextClass, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
+import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate, formatKafilNumber, formatMad, formatStatusLabel } from "@/lib/format";
-import { getSponsorPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -23,6 +23,7 @@ export function FamilyDashboardPage() {
   const children = useOwnFamilyChildren();
   const profile = useOwnFamilyProfile();
   const { language, t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   if (dashboard.isError) {
     return <PageErrorState error={dashboard.error} title={t("dashboard.family.error")} onRetry={() => void dashboard.refetch()} />;
@@ -32,8 +33,8 @@ export function FamilyDashboardPage() {
   }
 
   const data = dashboard.data;
-  const number = (value: number) => formatKafilNumber(value, language);
-  const money = (value: number) => formatMad(value, language);
+  const number = (value: number) => fmt.number(value);
+  const money = (value: number) => fmt.money(value);
 
   return (
     <NPageLayout className="flex min-h-full flex-col gap-4">
@@ -83,7 +84,7 @@ export function FamilyDashboardPage() {
         <NGridItem span={1} xlSpan={6}>
           <NBarChart
             className="h-full"
-            data={toChartData(data.orderTrend, ["spentMinor"], language)}
+            data={toChartData(data.orderTrend, ["spentMinor"], fmt)}
             icon={ShoppingBag}
             series={[{ id: "spentMinor", label: t("dashboard.family.orderValue") }]}
             title={t("dashboard.family.spendingTrend")}
@@ -131,14 +132,14 @@ export function FamilyDashboardPage() {
                   <ManagedAvatar
                     alt={contribution.name}
                     classNames={{ avatar: "shrink-0 bg-muted" }}
-                    fallbackSrc={getSponsorPersonImage(contribution.gender)}
+                    fallbackSrc={getPersonImage({ image: null, role: "adult", gender: contribution.gender })}
                     size="lg"
                     src={contribution.image}
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{contribution.name}</span>
                     <span className="block text-xs text-muted-foreground">
-                      {formatKafilDate(contribution.paidAt ?? contribution.submittedAt, language)}
+                      {fmt.date(contribution.paidAt ?? contribution.submittedAt)}
                     </span>
                   </span>
                   <strong className={`shrink-0 text-sm ${statusTextClass(contribution.status)}`}>
@@ -169,7 +170,7 @@ export function FamilyDashboardPage() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{order.orderNumber}</span>
-                    <span className="block text-xs text-muted-foreground">{formatKafilDate(order.placedAt, language)}</span>
+                    <span className="block text-xs text-muted-foreground">{fmt.date(order.placedAt)}</span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     <strong className="text-sm">{money(order.totalMinor)}</strong>

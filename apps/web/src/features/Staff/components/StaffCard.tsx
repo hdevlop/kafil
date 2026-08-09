@@ -9,8 +9,8 @@ import {
   NCardSection,
 } from "najm-kit";
 
+import { getPersonImage } from "najm-kit/person-images";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { StaffRecord } from "../types";
@@ -46,7 +46,7 @@ export function StaffCard({ data }: Readonly<{ data: StaffRecord }>) {
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
         <ManagedAvatar
-          src={getSponsorAvatarImage(data.image, data.gender)}
+          src={getPersonImage({ image: data.image, role: "adult", gender: data.gender })}
           alt={data.name}
           size="xl"
           classNames={{ avatar: "size-20 bg-muted sm:size-16" }}

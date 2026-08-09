@@ -27,7 +27,7 @@ describe("Sponsor overview shared-card reuse contracts", () => {
       new URL("../src/features/Sponsors/components/overview/ContributionOverviewCard.tsx", import.meta.url),
     ).text();
 
-    expect(source).toContain('import { NLineChart } from "najm-kit"');
+    expect(source).toMatch(/import \{[^}]*\bNLineChart\b[^}]*\} from "najm-kit"/);
     expect(source).toContain("<NLineChart");
     expect(source).toContain("toChartData");
     expect(source).not.toContain("<svg");

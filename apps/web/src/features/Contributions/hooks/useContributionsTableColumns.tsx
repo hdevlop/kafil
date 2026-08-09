@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
-import { formatKafilDate, formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -17,6 +16,7 @@ export function useContributionsTableColumns(
   audience: ContributionAudience,
 ) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   return useMemo<NTableProps<ContributionListRecord>["columns"]>(() => {
     const columns: Column[] = [];
 
@@ -39,7 +39,7 @@ export function useContributionsTableColumns(
           return (
             <div className="flex items-center gap-3">
               <ManagedAvatar
-                src={getSponsorAvatarImage(sponsorImage, sponsorGender)}
+                src={getPersonImage({ image: sponsorImage, role: "adult", gender: sponsorGender })}
                 alt={sponsorName}
                 classNames={{ avatar: "bg-muted" }}
               />
@@ -65,11 +65,12 @@ export function useContributionsTableColumns(
       accessorKey: "externalReference",
       header: t("operator.contributions.reference"),
       cell: ({ getValue }) => getValue<string | null>() || "—",
+      meta: { hiddenBelow: "2xl" },
     });
     columns.push({
       accessorKey: "amountMinor",
       header: t("operator.contributions.amount"),
-      cell: ({ row }) => formatMad(row.original.amountMinor),
+      cell: ({ row }) => fmt.money(row.original.amountMinor),
     });
     columns.push({
       accessorKey: "status",
@@ -79,8 +80,8 @@ export function useContributionsTableColumns(
     columns.push({
       accessorKey: "submittedAt",
       header: t("operator.contributions.submitted"),
-      cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+      cell: ({ getValue }) => fmt.date(getValue<string>()),
     });
     return columns;
-  }, [audience, t]);
+  }, [audience, fmt, t]);
 }

@@ -1,29 +1,26 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SponsorRecord } from "../types";
 
 export function useSponsorsTableColumns() {
-  const { language, t } = useKafilLanguage();
-  return useMemo<NTableProps<SponsorRecord>["columns"]>(
-    () => [
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<SponsorRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: "name",
         header: t("operator.sponsors.account"),
         cell: ({ row }) => (
           <ManagedAvatar
-            src={getSponsorAvatarImage(
-              row.original.image,
-              row.original.gender,
-            )}
+            src={getPersonImage({ image: row.original.image, role: "adult", gender: row.original.gender, })}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
           />
@@ -54,9 +51,8 @@ export function useSponsorsTableColumns() {
       {
         accessorKey: "createdAt",
         header: t("operator.sponsors.created"),
-        cell: ({ getValue }) => formatKafilDate(getValue<string>(), language),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [language, t],
-  );
+    ];
+  }, [fmt, t]);
 }

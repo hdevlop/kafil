@@ -178,10 +178,10 @@ describe("Phase 6D order command contracts", () => {
     expect(sheet).toContain('order.status !== "delivered"');
     expect(sheet).toContain('attempt.status === "delivered"');
     expect(sheet).toContain(
-      "getSponsorAvatarImage(delivery.image, delivery.gender)",
+      'getPersonImage({ image: delivery.image, role: "adult", gender: delivery.gender })',
     );
     expect(sheet).toContain("deliveryPhoneSnapshot");
-    expect(sheet).toContain("formatDateTime");
+    expect(sheet).toContain("fmt.dateTime");
     expect(sheet).toContain("DeliveryAttemptCard");
     expect(sheet).toContain("attempt.id !== featured?.id");
     expect(sheet).toContain("delivery-history-title");
@@ -272,7 +272,7 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(dialog).toContain("<CheckCircle2");
     expect(dialog).toContain("<MapPin");
     expect(dialog).toContain("<ShoppingBag");
-    expect(dialog).toContain("getFamilyAvatarImage(family.image)");
+    expect(dialog).toContain('getPersonImage({ image: family.image, role: "family" })');
     expect(dialog).toContain('className="flex flex-col gap-5"');
     expect(dialog).toContain('separateSections ? "border-b border-border pb-5"');
     expect(dialog).not.toContain("<NCard bordered noPadding");

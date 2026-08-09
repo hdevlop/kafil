@@ -1,8 +1,7 @@
 "use client";
 
 import { Package, Tags } from "lucide-react";
-import { cn, NCard, NCardMedia, NCardSection } from "najm-kit";
-import { formatKafilNumber } from "@/lib/format";
+import { cn, NCard, NCardMedia, NCardSection, useNajmFormat } from "najm-kit";
 import type { CategoryRecord } from "../types";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 
@@ -20,6 +19,7 @@ export function CategoryCard({
   data: CategoryCardData | CategoryRecord;
   compact?: boolean;
 }>) {
+  const fmt = useNajmFormat();
   const isInactive = (data.status ?? "active") !== "active";
   const itemCount = Number(data.itemCount ?? 0);
 
@@ -107,7 +107,7 @@ export function CategoryCard({
         <div className="flex shrink-0 items-center gap-1 text-primary">
           <Package aria-hidden="true" className="size-3 shrink-0" />
           <p className="text-xs font-semibold leading-5">
-            {formatKafilNumber(itemCount)} items
+            {fmt.number(itemCount)} items
           </p>
         </div>
       </NCardSection>

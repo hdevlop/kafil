@@ -10,12 +10,12 @@ import {
   NFormSectionHeader,
   useDebouncedValue,
   useDialog,
+  useNajmFormat,
 } from "najm-kit";
 import { ClipboardPlus, PackagePlus, TriangleAlert, Truck, UserRoundCheck } from "lucide-react";
 
 import { useFamilies } from "@/features/Families/hooks/useFamilies";
 import { useProducts } from "@/features/Products/hooks/useProducts";
-import { formatMad } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import {
   deleteOrderEvidenceCandidate,
@@ -112,6 +112,7 @@ function AssistedOrderItemFields({
 
 export function CreateAssistedOrderDialogContent() {
   const { pop } = useDialog();
+  const fmt = useNajmFormat();
   const [familySearch, setFamilySearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const families = useFamilies(
@@ -135,7 +136,7 @@ export function CreateAssistedOrderDialogContent() {
       ?.filter((product) => product.status === "active")
       .map((product) => ({
         value: product.id,
-        label: `${product.name} — ${formatMad(product.priceMinor)}`,
+        label: `${product.name} — ${fmt.money(product.priceMinor)}`,
       })) ?? [];
 
   async function submit(values: z.infer<typeof assistedOrderSchema>) {
@@ -235,6 +236,7 @@ export function PurchaseOrderDialogContent({
   replace = false,
 }: Readonly<{ order: OrderDetail; replace?: boolean }>) {
   const { pop } = useDialog();
+  const fmt = useNajmFormat();
   const commands = useOrderCommands();
   const command = replace ? commands.replacePurchase : commands.purchase;
   const [receipt, setReceipt] = useState<File | null>(null);
@@ -325,7 +327,7 @@ export function PurchaseOrderDialogContent({
         ) : null}
       </div>
       <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-        Requested: {formatMad(order.totalMinor)}. A higher actual amount is
+        Requested: {fmt.money(order.totalMinor)}. A higher actual amount is
         explicitly confirmed by this submission and still requires available
         family capacity.
       </p>

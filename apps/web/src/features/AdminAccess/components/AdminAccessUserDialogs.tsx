@@ -1,10 +1,9 @@
 "use client";
 
 import { z } from "zod";
-import { FormInput, NButton, NCard, NDetailList, NForm, useDialog } from "najm-kit";
+import { FormInput, NButton, NCard, NDetailList, NForm, useDialog, useNajmFormat } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -22,6 +21,7 @@ export function AdminAccessUserDetails({
   userId,
 }: Readonly<{ userId: string }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const user = useAccessUser(userId);
   if (user.isPending) return <NCard title={t("adminAccess.dialogs.loadingAccount")} loading />;
   if (user.isError) return <PageErrorState error={user.error} />;
@@ -40,7 +40,7 @@ export function AdminAccessUserDetails({
         items={[
           { label: t("adminAccess.users.role"), value: data.role || t("adminAccess.common.noRole") },
           { label: t("adminAccess.dialogs.emailVerified"), value: data.emailVerified ? t("adminAccess.common.yes") : t("adminAccess.common.no") },
-          { label: t("adminAccess.users.lastLogin"), value: formatKafilDate(data.lastLogin) },
+          { label: t("adminAccess.users.lastLogin"), value: fmt.date(data.lastLogin) },
           {
             label: t("adminAccess.dialogs.linkedProfile"),
             value:

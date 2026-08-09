@@ -164,7 +164,7 @@ test("role-scoped data reuses the shared catalog, order, and contribution compon
     expect(product).toContain('className="size-full object-contain"');
     expect(product).not.toContain("entityCardImageColor");
     expect(product).toContain("{data.name}");
-    expect(product).toContain("formatMad(data.priceMinor)");
+    expect(product).toContain("fmt.money(data.priceMinor)");
     expect(product).toContain('title: "text-sm font-semibold leading-tight text-foreground"');
     expect(product).toContain('"mt-1 text-base font-bold leading-none');
     expect(product).toContain("text-emerald-600");
@@ -183,7 +183,7 @@ test("role-scoped data reuses the shared catalog, order, and contribution compon
     expect(product).toContain("<NCardSection");
     expect(product).toContain("embedded");
     expect(product).toContain("title={data.name}");
-    expect(product).toContain("description={formatMad(data.priceMinor)}");
+    expect(product).toContain("description={fmt.money(data.priceMinor)}");
     expect(product).not.toContain("mix-blend-multiply");
 
     const child = readSource("../src/features/Children/components/ChildCard.tsx");

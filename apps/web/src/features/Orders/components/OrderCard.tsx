@@ -1,11 +1,10 @@
 "use client";
 
 import { CalendarClock, MapPin, Package, Phone, ShoppingBag, Truck } from "lucide-react";
-import { NCard, NCardInfo, NCardSection } from "najm-kit";
+import { NCard, NCardInfo, NCardSection, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate, formatMad } from "@/lib/format";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 import { StatusBadge } from "@/shared/StatusBadge";
@@ -39,6 +38,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
   actions?: React.ReactNode;
 }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const { isExactFamily, isExactSponsor } = useKafilRole();
   const placedAt = data.createdAt ?? data.placedAt;
   const isManagement = !isExactFamily && !isExactSponsor;
@@ -66,7 +66,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
           </span>
           <span className="min-w-0">
             <span className="block truncate font-semibold">{data.orderNumber}</span>
-            <span className="block text-sm font-medium text-muted-foreground">{formatMad(total)}</span>
+            <span className="block text-sm font-medium text-muted-foreground">{fmt.money(total)}</span>
           </span>
         </div>
       }
@@ -77,7 +77,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
             <div className="flex min-w-0 items-center gap-2">
               <ManagedAvatar
                 alt={data.guardianLegalNameSnapshot}
-                src={getFamilyAvatarImage(data.familyImage ?? null)}
+                src={getPersonImage({ image: data.familyImage ?? null, role: "family" })}
                 title={data.guardianLegalNameSnapshot}
                 size="sm"
                 className="shrink-0"
@@ -94,7 +94,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
         <NCardInfo icon={Truck} label={t("operator.orders.delivery.column")} value={deliveryValue} />
         {data.articleCount !== undefined ? <NCardInfo icon={Package} label={t("common.orderArticles")} value={data.articleCount} /> : null}
         <div className="flex items-center justify-between gap-3">
-          {placedAt ? <NCardInfo icon={CalendarClock} label={t("common.orderPlaced")} value={formatKafilDate(placedAt)} /> : <span />}
+          {placedAt ? <NCardInfo icon={CalendarClock} label={t("common.orderPlaced")} value={fmt.date(placedAt)} /> : <span />}
           <StatusBadge status={data.status} />
         </div>
       </NCardSection>

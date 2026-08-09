@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
-import { formatKafilDate } from "@/lib/format";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
@@ -15,14 +14,15 @@ import type { FamilyRecord } from "../types";
 
 export function useFamiliesTableColumns() {
   const { t } = useKafilLanguage();
-  return useMemo<NTableProps<FamilyRecord>["columns"]>(
-    () => [
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<FamilyRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: "name",
         header: t("operator.families.account"),
         cell: ({ row }) => (
           <ManagedAvatar
-            src={getFamilyAvatarImage(row.original.image)}
+            src={getPersonImage({ image: row.original.image, role: "family" })}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
           />
@@ -81,12 +81,11 @@ export function useFamiliesTableColumns() {
       {
         accessorKey: "createdAt",
         header: t("operator.families.created"),
-        cell: ({ getValue }) => formatKafilDate(getValue<string>()),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
         meta: {
           hiddenBelow: "lg",
         },
       },
-    ],
-    [t],
-  );
+    ];
+  }, [fmt, t]);
 }

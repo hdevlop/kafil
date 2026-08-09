@@ -1,11 +1,29 @@
 "use client";
 
-import { CheckCircle2, Contact, FileKey2, UserRoundSearch, XCircle } from "lucide-react";
-import { NButton, NDetailList, NErrorState, NLoadingState, NSection, useDialog } from "najm-kit";
+import {
+  CalendarClock,
+  CheckCircle2,
+  Clock,
+  Contact,
+  IdCard,
+  Mail,
+  Phone,
+  UserRound,
+  XCircle,
+} from "lucide-react";
+import {
+  NButton,
+  NDetailList,
+  type NDetailListItem,
+  NErrorState,
+  NLoadingState,
+  NSheet,
+  useDialog,
+  useNajmFormat,
+} from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -16,8 +34,39 @@ import {
 import type { ApplicantRecord } from "../types";
 import { useApplicant } from "../hooks/useApplicants";
 
-export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplicant: ApplicantRecord }>) {
+export function ApplicantDetailsSheet({
+  applicant,
+  open,
+  onOpenChange,
+}: Readonly<{
+  applicant: ApplicantRecord | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}>) {
   const { language, t } = useKafilLanguage();
+  return (
+    <NSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      icon={Contact}
+      title={t("operator.applicants.viewTitle")}
+      description={t("operator.applicants.viewDescription")}
+      width={480}
+      side={language === "ar" ? "left" : "right"}
+      classNames={{
+        content: "max-w-full bg-background",
+        header: "bg-background",
+        body: "bg-background",
+      }}
+    >
+      {applicant ? <ApplicantDetails initialApplicant={applicant} /> : null}
+    </NSheet>
+  );
+}
+
+export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplicant: ApplicantRecord }>) {
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const dialog = useDialog();
   const applicantQuery = useApplicant(initialApplicant.id, initialApplicant);
   const applicant = applicantQuery.data ?? initialApplicant;
@@ -57,63 +106,59 @@ export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplica
     });
   }
 
+  const genderLabel =
+    applicant.gender === "F"
+      ? t("operator.applicants.female")
+      : t("operator.applicants.male");
+
+  const detailItems: NDetailListItem[] = [
+    { icon: Phone, label: t("operator.applicants.phone"), value: applicant.phone },
+    { icon: UserRound, label: t("operator.applicants.gender"), value: genderLabel },
+    { icon: IdCard, label: t("operator.applicants.cin"), value: applicant.cin },
+    {
+      icon: CalendarClock,
+      label: t("operator.applicants.submitted"),
+      value: fmt.date(applicant.submittedAt),
+    },
+    {
+      icon: Clock,
+      label: t("operator.applicants.reviewed"),
+      value: applicant.reviewedAt
+        ? fmt.date(applicant.reviewedAt)
+        : t("operator.applicants.notReviewed"),
+    },
+    ...(applicant.rejectionReason
+      ? [{
+          icon: XCircle,
+          label: t("operator.applicants.rejectionReason"),
+          value: applicant.rejectionReason,
+        }]
+      : []),
+  ];
+
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
+      <div className="flex flex-col items-center gap-2 text-center">
         <ManagedAvatar
-          src={getSponsorPersonImage(applicant.gender)}
-          title={applicant.name}
+          src={getPersonImage({ image: null, role: "adult", gender: applicant.gender })}
+          alt={applicant.name}
           size="xl"
-          classNames={{ avatar: "bg-muted" }}
+          classNames={{ avatar: "size-20 bg-primary/10 text-primary" }}
         />
-        <div className="min-w-0">
-          <p className="truncate text-lg font-semibold">{applicant.name}</p>
-          <p className="truncate text-sm text-muted-foreground">{applicant.email}</p>
-          <StatusBadge className="mt-2" status={applicant.status} />
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">{applicant.name}</h2>
+        <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+          <Mail className="size-3.5 shrink-0" aria-hidden="true" />
+          <span className="truncate">{applicant.email}</span>
+        </p>
+        <StatusBadge
+          label={t(`operator.applicants.statusLabel.${applicant.status}`)}
+          status={applicant.status}
+        />
       </div>
 
-      <NSection icon={Contact} title={t("operator.applicants.contact")}>
-        <NDetailList
-          items={[
-            { label: t("operator.applicants.email"), value: applicant.email },
-            { label: t("operator.applicants.phone"), value: applicant.phone },
-            {
-              label: t("operator.applicants.gender"),
-              value: applicant.gender === "F"
-                ? t("operator.applicants.female")
-                : t("operator.applicants.male"),
-            },
-          ]}
-        />
-      </NSection>
+      <div className="border-t border-border" />
 
-      <NSection icon={FileKey2} title={t("operator.applicants.privateVerification")}>
-        <NDetailList items={[{ label: t("operator.applicants.cin"), value: applicant.cin }]} />
-      </NSection>
-
-      <NSection icon={UserRoundSearch} title={t("operator.applicants.review")}>
-        <NDetailList
-          items={[
-            {
-              label: t("operator.applicants.submitted"),
-              value: formatKafilDate(applicant.submittedAt, language),
-            },
-            {
-              label: t("operator.applicants.reviewed"),
-              value: applicant.reviewedAt
-                ? formatKafilDate(applicant.reviewedAt, language)
-                : t("operator.applicants.notReviewed"),
-            },
-            ...(applicant.rejectionReason
-              ? [{
-                  label: t("operator.applicants.rejectionReason"),
-                  value: applicant.rejectionReason,
-                }]
-              : []),
-          ]}
-        />
-      </NSection>
+      <NDetailList items={detailItems} />
 
       {canApprove ? (
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">

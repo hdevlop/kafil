@@ -1,8 +1,8 @@
 "use client";
 
 import { BadgeCheck } from "lucide-react";
+import { getPersonImage } from "najm-kit/person-images";
 
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { ProtectedImage } from "@/shared/ProtectedImage";
@@ -20,7 +20,7 @@ export function FamilyDetailsHero({
       <section className="space-y-2">
         <div className="relative h-52 overflow-hidden rounded-2xl bg-muted sm:h-60">
           <ProtectedImage
-            src={getFamilyAvatarImage(family.image)}
+            src={getPersonImage({ image: family.image, role: "family" })}
             alt={family.name}
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"

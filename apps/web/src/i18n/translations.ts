@@ -3,7 +3,7 @@ import {
   type UiTranslationKey,
 } from "@kafil/server/locales";
 
-import type { KafilLanguage } from "@/lib/format";
+import type { KafilLanguage } from "@/preferences";
 
 export type TranslationKey = UiTranslationKey;
 export { uiTranslations };

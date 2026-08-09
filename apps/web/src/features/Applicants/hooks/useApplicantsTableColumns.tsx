@@ -1,27 +1,27 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorPersonImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ApplicantRecord } from "../types";
 
 export function useApplicantsTableColumns() {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
-  return useMemo<NTableProps<ApplicantRecord>["columns"]>(
-    () => [
+  return useMemo<NTableProps<ApplicantRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: "name",
         header: t("operator.applicants.name"),
         cell: ({ row }) => (
           <ManagedAvatar
-            src={getSponsorPersonImage(row.original.gender)}
+            src={getPersonImage({ image: null, role: "adult", gender: row.original.gender })}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
           />
@@ -43,10 +43,8 @@ export function useApplicantsTableColumns() {
       {
         accessorKey: "submittedAt",
         header: t("operator.applicants.submitted"),
-        cell: ({ getValue }) =>
-          formatKafilDate(getValue<string>(), language),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [language, t],
-  );
+    ];
+  }, [fmt, t]);
 }

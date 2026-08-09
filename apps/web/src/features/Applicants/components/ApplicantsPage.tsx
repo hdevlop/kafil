@@ -9,7 +9,7 @@ import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 
 import { ApplicantCard } from "./ApplicantCard";
-import { ApplicantDetails } from "./ApplicantDetails";
+import { ApplicantDetailsSheet } from "./ApplicantDetails";
 import {
   ApproveApplicantDialogContent,
   RejectApplicantDialogContent,
@@ -27,20 +27,14 @@ export function ApplicantsPage() {
   const dialog = useDialog();
   const tableMode = useDesktopTableMode();
   const [query, setQuery] = useState<Omit<ListApplicantsParams, "limit" | "offset">>({});
+  const [viewingApplicant, setViewingApplicant] = useState<ApplicantRecord | null>(null);
   const applicants = useResponsiveApplicants(query);
   const columns = useApplicantsTableColumns();
   const filters = useApplicantsTableFilters(query, setQuery);
   const rows = applicants.data;
 
   function openView(applicant: ApplicantRecord) {
-    void dialog.openDialog({
-      title: t("operator.applicants.viewTitle"),
-      description: t("operator.applicants.viewDescription"),
-      children: <ApplicantDetails initialApplicant={applicant} />,
-      showButtons: false,
-      size: "lg",
-      height: "auto",
-    });
+    setViewingApplicant(applicant);
   }
 
   function openApprove(applicant: ApplicantRecord) {
@@ -117,6 +111,7 @@ export function ApplicantsPage() {
     menuButton: true,
     noDataText: t("operator.applicants.noData"),
     onView: openView,
+    onRowClick: openView,
     renderCard: ApplicantCard,
     renderEmpty: () => (
       <PageEmptyState
@@ -151,6 +146,13 @@ export function ApplicantsPage() {
       <div className="min-h-0 flex-1">
         <NTable {...tableProps} />
       </div>
+      <ApplicantDetailsSheet
+        applicant={viewingApplicant}
+        open={Boolean(viewingApplicant)}
+        onOpenChange={(open) => {
+          if (!open) setViewingApplicant(null);
+        }}
+      />
     </NPageLayout>
   );
 }

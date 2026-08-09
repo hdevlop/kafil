@@ -7,16 +7,17 @@ import {
   NCardInfo,
   NCardMedia,
   NCardSection,
+  useNajmFormat,
 } from "najm-kit";
 
+import { getPersonImage } from "najm-kit/person-images";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import type { SponsorRecord } from "../types";
 
 export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const isInactive = data.status === "inactive";
 
   return (
@@ -46,7 +47,7 @@ export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
         <ManagedAvatar
-          src={getSponsorAvatarImage(data.image, data.gender)}
+          src={getPersonImage({ image: data.image, role: "adult", gender: data.gender })}
           alt={data.name}
           size="xl"
           classNames={{ avatar: "size-20 bg-muted sm:size-16" }}
@@ -68,7 +69,7 @@ export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
         <NCardInfo
           icon={CalendarDays}
           label={t("operator.sponsors.dateOfBirth")}
-          value={formatKafilDate(data.dateOfBirth, language)}
+          value={fmt.date(data.dateOfBirth)}
         />
       </NCardSection>
     </NCard>

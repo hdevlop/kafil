@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { type NTableProps } from "najm-kit";
+import { useNajmFormat, type NTableProps } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -27,18 +26,16 @@ export function matchesStaffFunction(
 }
 
 export function useStaffTableColumns() {
-  const { language, t } = useKafilLanguage();
-  return useMemo<NTableProps<StaffRecord>["columns"]>(
-    () => [
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
+  return useMemo<NTableProps<StaffRecord>["columns"]>(() => {
+    return [
       {
         accessorKey: "name",
         header: t("operator.staff.name"),
         cell: ({ row }) => (
           <ManagedAvatar
-            src={getSponsorAvatarImage(
-              row.original.image,
-              row.original.gender,
-            )}
+            src={getPersonImage({ image: row.original.image, role: "adult", gender: row.original.gender, })}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
           />
@@ -89,9 +86,8 @@ export function useStaffTableColumns() {
       {
         accessorKey: "createdAt",
         header: t("operator.staff.created"),
-        cell: ({ getValue }) => formatKafilDate(getValue<string>(), language),
+        cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
-    ],
-    [language, t],
-  );
+    ];
+  }, [fmt, t]);
 }

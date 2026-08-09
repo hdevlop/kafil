@@ -2,10 +2,10 @@
 
 import { Baby, HandCoins, HeartHandshake } from "lucide-react";
 import { NSheet } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { SponsorContributionWorkspace } from "@/features/Contributions/components/SponsorContributionWorkspace";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 
@@ -40,7 +40,7 @@ export function SponsorContributionSheet({
           <div className="flex items-center gap-3 border-b border-border pb-4">
             <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-muted">
               <ProtectedImage
-                src={getFamilyAvatarImage(family.image)}
+                src={getPersonImage({ image: family.image, role: "family" })}
                 alt={family.name}
                 fill
                 sizes="64px"

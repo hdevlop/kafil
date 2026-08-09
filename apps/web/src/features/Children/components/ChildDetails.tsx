@@ -1,25 +1,25 @@
 "use client";
 
 import { Baby, House, NotebookPen } from "lucide-react";
-import { NDetailList, NSection } from "najm-kit";
+import { NDetailList, NSection, useNajmFormat } from "najm-kit";
 
-import { formatKafilDate } from "@/lib/format";
-import { getChildAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { Operator, useKafilRole } from "@/shared/Authorization";
+import { getPersonImage } from "najm-kit/person-images";
 
 import type { ChildRecord } from "../types";
 
 export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const { isExactFamily } = useKafilRole();
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         <ManagedAvatar
-          src={getChildAvatarImage(child.image, child.gender)}
+          src={getPersonImage({ image: child.image, role: "child", gender: child.gender })}
           title={child.legalName}
           subtitle={child.gender === "F" ? t("operator.families.female") : t("operator.families.male")}
           classNames={{ avatar: "bg-muted" }}
@@ -36,7 +36,7 @@ export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
       <NSection icon={Baby} title={t("operator.families.child")}>
         <NDetailList
           items={[
-            { label: t("operator.families.dateOfBirth"), value: formatKafilDate(child.dateOfBirth) },
+            { label: t("operator.families.dateOfBirth"), value: fmt.date(child.dateOfBirth) },
             { label: t("operator.families.gender"), value: child.gender === "F" ? t("operator.families.female") : t("operator.families.male") },
             { label: t("operator.families.schoolLevel"), value: child.schoolLevel || t("operator.families.notProvided") },
             { label: t("operator.families.clothingSize"), value: child.clothingSize || t("operator.families.notProvided") },
@@ -54,7 +54,7 @@ export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
             <NDetailList
               items={[
                 { label: t("operator.families.notes"), value: child.notes || t("operator.families.noNotes") },
-                { label: t("operator.families.created"), value: formatKafilDate(child.createdAt) },
+                { label: t("operator.families.created"), value: fmt.date(child.createdAt) },
               ]}
             />
           </NSection>

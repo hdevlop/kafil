@@ -1,11 +1,10 @@
 "use client";
 
 import { HandCoins, WalletCards } from "lucide-react";
-import { NGrid, NGridItem, NPageLayout } from "najm-kit";
+import { NGrid, NGridItem, NPageLayout, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatMad } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
 import { ContributionOverviewCard } from "@/features/Sponsors/components/overview/ContributionOverviewCard";
 import { RecentContributionsCard } from "@/features/Sponsors/components/overview/RecentContributionsCard";
@@ -23,7 +22,8 @@ import { UpcomingContributionsCard } from "./UpcomingContributionsCard";
 
 export function SponsorDashboardPage() {
   const dashboard = useSponsorDashboard();
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   if (dashboard.isError) {
     return (
@@ -45,9 +45,9 @@ export function SponsorDashboardPage() {
   }
 
   const data = dashboard.data;
-  const money = (value: number) => formatMad(value, language);
+  const money = (value: number) => fmt.money(value);
   const tString = (key: string, params?: Record<string, string>) => t(key as Parameters<typeof t>[0], params);
-  const vm = buildSponsorDashboardViewModel(data, language, tString);
+  const vm = buildSponsorDashboardViewModel(data, fmt, tString);
 
   return (
     <NPageLayout className="flex min-h-full flex-col gap-4 xl:h-full xl:min-h-0">
@@ -68,7 +68,6 @@ export function SponsorDashboardPage() {
           <SupportedFamiliesCard
             families={vm.supportedFamilies}
             hasMore={vm.hasMoreFamilies}
-            language={language}
             t={tString}
           />
         </NGridItem>
@@ -77,7 +76,6 @@ export function SponsorDashboardPage() {
             data={vm.contributionTrend}
             emptyLabel={tString("dashboard.sponsor.noContributions")}
             icon={HandCoins}
-            language={language}
             series={[
               { key: "validatedMinor", label: tString("dashboard.common.validated") },
               { key: "pendingMinor", label: tString("dashboard.common.pending") },
@@ -95,7 +93,6 @@ export function SponsorDashboardPage() {
             title={tString("dashboard.sponsor.supportBudgetUse")}
             totalLabel={tString("dashboard.sponsor.totalBudget")}
             emptyLabel={tString("dashboard.sponsor.noSupportedBudget")}
-            language={language}
           />
         </NGridItem>
         <NGridItem span={1} xlSpan={3}>
@@ -104,7 +101,6 @@ export function SponsorDashboardPage() {
             icon={HandCoins}
             title={tString("dashboard.sponsor.recentContributions")}
             emptyLabel={tString("dashboard.sponsor.noContributions")}
-            language={language}
             rowHref="/contribution"
             footer={
               <Link
@@ -122,7 +118,6 @@ export function SponsorDashboardPage() {
             icon={WalletCards}
             title={tString("dashboard.sponsor.recentSupportedOrders")}
             emptyLabel={tString("dashboard.sponsor.noSupportedOrders")}
-            language={language}
             itemsLabel={tString("dashboard.sponsor.items")}
             rowHref="/orders"
             footer={
@@ -138,7 +133,6 @@ export function SponsorDashboardPage() {
         <NGridItem span={1} xlSpan={3}>
           <UpcomingContributionsCard
             contributions={vm.upcomingContributions}
-            language={language}
             t={tString}
           />
         </NGridItem>

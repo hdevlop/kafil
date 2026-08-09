@@ -1,10 +1,9 @@
 "use client";
 
 import { House } from "lucide-react";
-import { NDetailItem, NSection } from "najm-kit";
+import { NDetailItem, NSection, useNajmFormat } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
 import { OnlySponsor, Operator } from "@/shared/Authorization";
 
 import type { FamilyRecord } from "../../types";
@@ -17,7 +16,8 @@ import {
 export function FamilyDetailsProfile({
   family,
 }: Readonly<{ family: FamilyRecord }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const notProvided = t("operator.families.notProvided");
 
   return (
@@ -67,7 +67,7 @@ export function FamilyDetailsProfile({
           <NDetailItem
             label={t("operator.families.registrationDate")}
             maxChars={DETAIL_MAX_CHARS}
-            value={formatKafilDate(family.registrationDate, language)}
+            value={fmt.date(family.registrationDate)}
           />
           <NDetailItem
             label={t("operator.families.supportPriority")}
@@ -87,7 +87,7 @@ export function FamilyDetailsProfile({
           <NDetailItem
             label={t("operator.families.created")}
             maxChars={DETAIL_MAX_CHARS}
-            value={formatKafilDate(family.createdAt, language)}
+            value={fmt.date(family.createdAt)}
           />
         </NSection>
       </Operator>

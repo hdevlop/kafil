@@ -1,10 +1,9 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NLineChart } from "najm-kit";
+import { NLineChart, useNajmFormat } from "najm-kit";
 
 import { toChartData } from "@/features/Dashboard/shared/chartData";
-import type { KafilLanguage } from "@/lib/format";
 
 import type { ChartSeries, ContributionTrendPoint } from "../../types";
 
@@ -12,7 +11,6 @@ export function ContributionOverviewCard({
   data,
   emptyLabel,
   icon,
-  language,
   series,
   title,
   valueFormatter,
@@ -20,15 +18,15 @@ export function ContributionOverviewCard({
   data: ContributionTrendPoint[];
   emptyLabel?: string;
   icon: LucideIcon;
-  language: KafilLanguage;
   series: ChartSeries[];
   title: string;
   valueFormatter: (value: number) => string;
 }>) {
+  const fmt = useNajmFormat();
   return (
     <NLineChart
       className="h-full"
-      data={toChartData(data, series.map((item) => item.key), language)}
+      data={toChartData(data, series.map((item) => item.key), fmt)}
       emptyLabel={emptyLabel}
       icon={icon}
       series={series.map((item) => ({

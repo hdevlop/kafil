@@ -1,11 +1,10 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NCard } from "najm-kit";
+import { NCard, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { formatKafilDate, formatMad, type KafilLanguage } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ContributionEntry } from "../../types";
@@ -15,7 +14,6 @@ export function RecentContributionsCard({
   icon,
   title,
   emptyLabel,
-  language,
   footer,
   rowHref,
 }: Readonly<{
@@ -23,11 +21,11 @@ export function RecentContributionsCard({
   icon: LucideIcon;
   title: string;
   emptyLabel: string;
-  language: KafilLanguage;
   footer?: ReactNode;
   rowHref?: string;
 }>) {
-  const money = (value: number) => formatMad(value, language);
+  const fmt = useNajmFormat();
+  const money = (value: number) => fmt.money(value);
 
   return (
     <NCard
@@ -52,7 +50,7 @@ export function RecentContributionsCard({
                       {money(contribution.amountMinor)}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {formatKafilDate(contribution.submittedAt, language)}
+                      {fmt.date(contribution.submittedAt)}
                     </span>
                   </span>
                   <StatusBadge status={contribution.status} />
@@ -67,7 +65,7 @@ export function RecentContributionsCard({
                       {money(contribution.amountMinor)}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {formatKafilDate(contribution.submittedAt, language)}
+                      {fmt.date(contribution.submittedAt)}
                     </span>
                   </span>
                   <StatusBadge status={contribution.status} />

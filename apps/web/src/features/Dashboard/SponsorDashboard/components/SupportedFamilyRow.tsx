@@ -1,9 +1,9 @@
 "use client";
 
+import { useNajmFormat } from "najm-kit";
 import Link from "next/link";
+import { getPersonImage } from "najm-kit/person-images";
 
-import { formatKafilDate, type KafilLanguage } from "@/lib/format";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
@@ -11,13 +11,12 @@ import type { SupportedFamilyEntry } from "../types";
 
 export function SupportedFamilyRow({
   family,
-  language,
   t,
 }: Readonly<{
   family: SupportedFamilyEntry;
-  language: KafilLanguage;
   t: (key: string) => string;
 }>) {
+  const fmt = useNajmFormat();
   return (
     <Link
       className="flex items-center gap-4 rounded-xl border border-border/70 p-4 hover:bg-muted/60"
@@ -27,7 +26,7 @@ export function SupportedFamilyRow({
         alt={family.familyName}
         className="shrink-0"
         size="xl"
-        src={getFamilyAvatarImage(family.image)}
+        src={getPersonImage({ image: family.image, role: "family" })}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{family.familyName}</p>
@@ -35,7 +34,7 @@ export function SupportedFamilyRow({
           <span>
             {t("dashboard.sponsor.activeChildren")}: {family.activeChildCount}
           </span>
-          <span>{formatKafilDate(family.startedAt, language)}</span>
+          <span>{fmt.date(family.startedAt)}</span>
         </div>
         {family.funding && (
           <div className="mt-2">

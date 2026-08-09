@@ -2,10 +2,9 @@
 
 import { useRef, useState } from "react";
 import { Package, ShoppingCart, Tag } from "lucide-react";
-import { cn, NButton, NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
+import { cn, NButton, NCard, NCardInfo, NCardMedia, NCardSection, useNajmFormat } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatMad } from "@/lib/format";
 import { ProtectedImage } from "@/shared/ProtectedImage";
 
 import type { ProductRecord } from "../types";
@@ -35,6 +34,7 @@ export function ProductCard({
   adding = false,
 }: Readonly<ProductCardProps>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const isInactive = data.status !== "active";
   const busy = adding;
   const [submitting, setSubmitting] = useState(false);
@@ -91,7 +91,7 @@ export function ProductCard({
       embedded
       noPadding
       title={data.name}
-      description={formatMad(data.priceMinor)}
+      description={fmt.money(data.priceMinor)}
       classNames={{
         header: "items-start px-2.5 pb-0 pt-2 sm:px-3 sm:pt-2.5",
         title: "text-sm font-semibold leading-tight text-foreground",

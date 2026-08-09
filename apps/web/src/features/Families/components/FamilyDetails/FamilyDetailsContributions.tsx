@@ -1,10 +1,9 @@
-import { statusTextClass } from "najm-kit";
+import { statusTextClass, useNajmFormat } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { useContributions } from "@/features/Contributions/hooks/useContributions";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate, formatMad } from "@/lib/format";
-import { getSponsorAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { FamilyRecord } from "../../types";
@@ -12,7 +11,8 @@ import type { FamilyRecord } from "../../types";
 export function FamilyDetailsContributions({
   family,
 }: Readonly<{ family: FamilyRecord }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const contributions = useContributions({
     familyProfileId: family.id,
     limit: 3,
@@ -47,20 +47,14 @@ export function FamilyDetailsContributions({
                 alt={contribution.sponsorName}
                 classNames={{ avatar: "bg-muted" }}
                 size="sm"
-                src={getSponsorAvatarImage(
-                  contribution.sponsorImage,
-                  contribution.sponsorGender,
-                )}
+                src={getPersonImage({ image: contribution.sponsorImage, role: "adult", gender: contribution.sponsorGender, })}
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
                   {contribution.sponsorName}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatKafilDate(
-                    contribution.paidAt ?? contribution.submittedAt,
-                    language,
-                  )}
+                  {fmt.date(contribution.paidAt ?? contribution.submittedAt)}
                 </p>
               </div>
               <p
@@ -69,7 +63,7 @@ export function FamilyDetailsContributions({
                   statusTextClass(contribution.status),
                 ].join(" ")}
               >
-                +{formatMad(contribution.amountMinor, language)}
+                +{fmt.money(contribution.amountMinor)}
               </p>
             </div>
           ))}

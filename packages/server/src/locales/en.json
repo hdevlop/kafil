@@ -1709,7 +1709,8 @@
         "retargetSuccess": "Support assignment child target updated.",
         "retargetError": "Could not update the child target.",
         "endSuccess": "Support assignment ended.",
-        "endError": "Could not end the support assignment."
+        "endError": "Could not end the support assignment.",
+        "notEnded": "Still active"
       },
       "budgets": {
         "title": "Budgets",

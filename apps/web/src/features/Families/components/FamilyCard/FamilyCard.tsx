@@ -13,12 +13,12 @@ import {
   useDialog,
 } from "najm-kit";
 
+import { getPersonImage } from "najm-kit/person-images";
 import { CreateSupportAssignmentDialogContent } from "@/features/SupportAssignments/components/SupportAssignmentForms";
 import { useSponsorFamilySupportCommand } from "@/features/SupportAssignments/hooks/useSponsorSupport";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { StatusBadge } from "@/shared/StatusBadge";
 import { ProtectedImage } from "@/shared/ProtectedImage";
-import { getFamilyAvatarImage } from "@/lib/personImages";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import { useFamilyCardStatus } from "../../hooks/useFamilyCardStatus";
@@ -152,7 +152,7 @@ export function FamilyCard({
       >
         <NCardMedia variant="image" size={104}>
           <ProtectedImage
-            src={getFamilyAvatarImage(data.image)}
+            src={getPersonImage({ image: data.image, role: "family" })}
             alt={data.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 20vw"

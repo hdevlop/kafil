@@ -6,12 +6,11 @@ import {
   Truck,
   UserRoundCog,
 } from "lucide-react";
-import { NCard, NDetailList, NSheet } from "najm-kit";
+import { NCard, NDetailList, NSheet, useNajmFormat } from "najm-kit";
 
 import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
+import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatStatusLabel } from "@/lib/format";
-import { formatKafilDate, formatMad } from "@/lib/format";
 import { PageErrorState } from "@/shared/PageState";
 import { StatusBadge } from "@/shared/StatusBadge";
 
@@ -52,7 +51,8 @@ export function OrderDetailsSheet({ open, order, sponsor = false, onOpenChange }
 }
 
 function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
-  const { t } = useKafilLanguage();
+  const { language, t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const order = useSponsorOrder(orderId);
 
   if (order.isPending) return <NCard title={t("common.loadingOrders")} loading />;
@@ -74,11 +74,11 @@ function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
         <NDetailList
           items={[
             { label: "Status", value: <StatusBadge status={data.status} /> },
-            { label: "Total", value: formatMad(data.actualTotalMinor ?? data.totalMinor) },
-            { label: "Placed", value: formatKafilDate(data.placedAt) },
+            { label: "Total", value: fmt.money(data.actualTotalMinor ?? data.totalMinor) },
+            { label: "Placed", value: fmt.date(data.placedAt) },
             {
               label: t("operator.orders.delivery.column"),
-              value: data.deliveryName ?? formatStatusLabel(data.deliveryStatus ?? "not_assigned"),
+              value: data.deliveryName ?? formatStatusLabel(data.deliveryStatus ?? "not_assigned", language),
             },
           ]}
         />
@@ -91,7 +91,7 @@ function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
                 <p className="truncate text-sm font-medium">{item.productName}</p>
                 <p className="text-xs text-muted-foreground">{item.sku} · {item.quantity}</p>
               </div>
-              <span className="shrink-0 text-sm font-medium">{formatMad(item.lineTotalMinor)}</span>
+              <span className="shrink-0 text-sm font-medium">{fmt.money(item.lineTotalMinor)}</span>
             </div>
           ))}
         </div>
@@ -183,7 +183,7 @@ function FamilyOrderDetails({ data }: Readonly<{ data: FamilyOrderDetail }>) {
 }
 
 export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
-  const { t } = useKafilLanguage();
+  const { language, t } = useKafilLanguage();
   const order = useOrder(orderId);
 
   if (order.isPending) return <NCard title="Loading order details" loading />;
@@ -264,7 +264,7 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
           <div className="flex items-center gap-2">
             <MessageSquareText aria-hidden className="size-4 text-primary" />
             <h3 id="order-status-reason-title" className="text-sm font-semibold">
-              {formatStatusLabel(data.status)} reason
+              {formatStatusLabel(data.status, language)} reason
             </h3>
           </div>
           <NCard>

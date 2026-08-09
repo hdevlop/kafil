@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { dashboardKeys } from "../src/features/Dashboard/shared/dashboardKeys";
 import { sponsorDashboardKeys } from "../src/features/Dashboard/SponsorDashboard/hooks/sponsorDashboardKeys";
 import { getUiTranslation } from "../src/i18n/translations";
-import { formatStatusLabel } from "../src/lib/format";
+import { formatStatusLabel } from "../src/features/StatusLabels";
 import {
   getDashboardNavigation,
   isDashboardNavigationActive,
@@ -281,8 +281,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
 
     expect(pageSource).toContain('title={t("dashboard.family.recentSponsors")}');
     expect(pageSource).toContain("data.recentSponsorContributions");
-    expect(pageSource).toContain("getSponsorPersonImage");
-    expect(pageSource).toContain("fallbackSrc={getSponsorPersonImage(contribution.gender)}");
+    expect(pageSource).toContain('fallbackSrc={getPersonImage({ image: null, role: "adult", gender: contribution.gender })}');
     expect(pageSource).toContain("statusTextClass(contribution.status)");
     expect(pageSource).toContain("+{money(contribution.amountMinor)}");
     expect(pageSource).not.toContain('title={contribution.name}');

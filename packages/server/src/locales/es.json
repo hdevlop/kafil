@@ -1637,7 +1637,8 @@
         "retargetSuccess": "Niño objetivo actualizado.",
         "retargetError": "No se pudo actualizar el niño objetivo.",
         "endSuccess": "Asignación de apoyo finalizada.",
-        "endError": "No se pudo finalizar la asignación de apoyo."
+        "endError": "No se pudo finalizar la asignación de apoyo.",
+        "notEnded": "Aún activa"
       },
       "staff": {
         "title": "Personal",

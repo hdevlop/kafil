@@ -4,20 +4,16 @@ import { HeartHandshake } from "lucide-react";
 import { NCard } from "najm-kit";
 import Link from "next/link";
 
-import type { KafilLanguage } from "@/lib/format";
-
 import type { SupportedFamilyEntry } from "../types";
 import { SupportedFamilyRow } from "./SupportedFamilyRow";
 
 export function SupportedFamiliesCard({
   families,
   hasMore,
-  language,
   t,
 }: Readonly<{
   families: SupportedFamilyEntry[];
   hasMore: boolean;
-  language: KafilLanguage;
   t: (key: string) => string;
 }>) {
   return (
@@ -33,7 +29,6 @@ export function SupportedFamiliesCard({
               <SupportedFamilyRow
                 family={family}
                 key={family.familyReference}
-                language={language}
                 t={t}
               />
             ))}

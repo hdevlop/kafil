@@ -1,7 +1,6 @@
 import { Calendar, ClipboardCheck, HandCoins, HeartHandshake, UserRound } from "lucide-react";
+import type { NajmFormatContextValue } from "najm-kit";
 
-import type { KafilLanguage } from "@/lib/format";
-import { formatKafilDate, formatKafilNumber, formatMad } from "@/lib/format";
 import type { SponsorKpiItem } from "@/features/Sponsors/types";
 
 import type { SponsorDashboardData } from "../types";
@@ -21,11 +20,11 @@ export interface SponsorDashboardViewModel {
 
 export function buildSponsorDashboardViewModel(
   data: SponsorDashboardData,
-  language: KafilLanguage,
+  fmt: NajmFormatContextValue,
   t: (key: string, params?: Record<string, string>) => string,
 ): SponsorDashboardViewModel {
-  const money = (value: number) => formatMad(value, language);
-  const number = (value: number) => formatKafilNumber(value, language);
+  const money = (value: number) => fmt.money(value);
+  const number = (value: number) => fmt.number(value);
 
   const kpis: SponsorKpiItem[] = [
     {
@@ -52,7 +51,7 @@ export function buildSponsorDashboardViewModel(
         ? money(data.nextPlannedContribution.amountMinor)
         : t("dashboard.sponsor.noActivePlan"),
       subtext: data.nextPlannedContribution
-        ? formatKafilDate(data.nextPlannedContribution.dueAt, language)
+        ? fmt.date(data.nextPlannedContribution.dueAt)
         : undefined,
       link: "/sponsor/contributions",
     },
@@ -67,7 +66,7 @@ export function buildSponsorDashboardViewModel(
       key: "memberSince",
       icon: UserRound,
       label: t("dashboard.sponsor.memberSince"),
-      value: formatKafilDate(data.memberSince, language),
+      value: fmt.date(data.memberSince),
     },
   ];
 

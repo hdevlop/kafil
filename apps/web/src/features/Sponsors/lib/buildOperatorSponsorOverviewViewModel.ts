@@ -1,7 +1,6 @@
 import { HandCoins, HeartHandshake, UserRound } from "lucide-react";
+import type { NajmFormatContextValue } from "najm-kit";
 
-import type { KafilLanguage } from "@/lib/format";
-import { formatKafilDate, formatKafilNumber, formatMad } from "@/lib/format";
 import type { SponsorKpiItem, ChartSeries } from "@/features/Sponsors/types";
 import type { OperatorSponsorOverviewData } from "../types";
 import type { SponsorInfoViewModel } from "../components/SponsorInformationCard";
@@ -20,11 +19,11 @@ export interface OperatorSponsorOverviewViewModel {
 
 export function buildOperatorSponsorOverviewViewModel(
   data: OperatorSponsorOverviewData,
-  language: KafilLanguage,
+  fmt: NajmFormatContextValue,
   t: (key: string, params?: Record<string, string>) => string,
 ): OperatorSponsorOverviewViewModel {
-  const money = (value: number) => formatMad(value, language);
-  const number = (value: number) => formatKafilNumber(value, language);
+  const money = (value: number) => fmt.money(value);
+  const number = (value: number) => fmt.number(value);
 
   const kpis: SponsorKpiItem[] = [
     {
@@ -52,7 +51,7 @@ export function buildOperatorSponsorOverviewViewModel(
       key: "memberSince",
       icon: UserRound,
       label: t("dashboard.sponsor.memberSince"),
-      value: formatKafilDate(data.sponsor.createdAt, language),
+      value: fmt.date(data.sponsor.createdAt),
     },
   ];
 
@@ -78,7 +77,7 @@ export function buildOperatorSponsorOverviewViewModel(
       gender: data.sponsor.gender,
       address: data.sponsor.address,
       dateOfBirth: data.sponsor.dateOfBirth
-        ? formatKafilDate(data.sponsor.dateOfBirth, language)
+        ? fmt.date(data.sponsor.dateOfBirth)
         : null,
       notes: data.sponsor.notes,
       createdAt: data.sponsor.createdAt,

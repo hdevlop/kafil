@@ -10,12 +10,12 @@ import {
   NFormSectionHeader,
   useDialog,
   useDebouncedValue,
+  useNajmFormat,
   useNForm,
 } from "najm-kit";
 import { z } from "zod";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatMad } from "@/lib/format";
 import { useKafilRole } from "@/shared/Authorization";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { StatusBadge } from "@/shared/StatusBadge";
@@ -113,6 +113,7 @@ export function SponsorContributionWorkspace({
   showPlans?: boolean;
 }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const dialog = useDialog();
   const { isExactSponsor } = useKafilRole();
   const [supportSearch, setSupportSearch] = useState("");
@@ -234,12 +235,12 @@ export function SponsorContributionWorkspace({
                     )
                   : amountTooHigh
                     ? t("sponsor.contributions.amountTooHigh", {
-                        amount: formatMad(
+                        amount: fmt.money(
                           selectedFunding.availableToContributeMinor,
                         ),
                       })
                     : t("sponsor.contributions.availableAmount", {
-                        amount: formatMad(selectedFunding.availableToContributeMinor),
+                        amount: fmt.money(selectedFunding.availableToContributeMinor),
                       })}
               </p>
             </div>
@@ -339,12 +340,12 @@ export function SponsorContributionWorkspace({
                     )
                   : amountTooHigh
                     ? t("sponsor.contributions.amountTooHigh", {
-                        amount: formatMad(
+                        amount: fmt.money(
                           selectedFunding.availableToContributeMinor,
                         ),
                       })
                     : t("sponsor.contributions.availableAmount", {
-                        amount: formatMad(selectedFunding.availableToContributeMinor),
+                        amount: fmt.money(selectedFunding.availableToContributeMinor),
                       })}
               </p>
             </div>
@@ -390,7 +391,7 @@ export function SponsorContributionWorkspace({
                         : "sponsor.contributions.oneTime",
                     )}
                     {" · "}
-                    {formatMad(plan.amountMinor)}
+                    {fmt.money(plan.amountMinor)}
                   </span>
                   <StatusBadge status={plan.status} />
                 </div>

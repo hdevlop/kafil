@@ -1,7 +1,7 @@
 "use client";
 
 import { HandCoins, WalletCards } from "lucide-react";
-import { NCard, NGrid, NGridItem } from "najm-kit";
+import { NCard, NGrid, NGridItem, useNajmFormat } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
@@ -22,7 +22,8 @@ export function SponsorOverviewDialogContent({
   sponsorId: string;
 }>) {
   const overview = useSponsorOverview(sponsorId);
-  const { language, t: originalT } = useKafilLanguage();
+  const { t: originalT } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const t = (key: string, params?: Record<string, string>) => originalT(key as Parameters<typeof originalT>[0], params);
 
   if (overview.isError) {
@@ -40,7 +41,7 @@ export function SponsorOverviewDialogContent({
     return <SponsorOverviewSkeleton />;
   }
 
-  const vm = buildOperatorSponsorOverviewViewModel(overview.data, language, t);
+  const vm = buildOperatorSponsorOverviewViewModel(overview.data, fmt, t);
 
   return (
     <div className="space-y-4">
@@ -57,14 +58,12 @@ export function SponsorOverviewDialogContent({
             title={t("dashboard.sponsor.supportBudgetUse")}
             totalLabel={t("dashboard.sponsor.totalBudget")}
             emptyLabel={t("dashboard.sponsor.noSupportedBudget")}
-            language={language}
           />
         </NGridItem>
         <NGridItem span={1} lgSpan={7}>
           <ContributionOverviewCard
             data={vm.contributionTrend}
             icon={HandCoins}
-            language={language}
             series={vm.chartSeries}
             title={t("dashboard.sponsor.contributionOverview")}
             valueFormatter={vm.contributionValueFormatter}
@@ -79,7 +78,6 @@ export function SponsorOverviewDialogContent({
             icon={HandCoins}
             title={t("dashboard.sponsor.recentContributions")}
             emptyLabel={t("dashboard.sponsor.noContributions")}
-            language={language}
           />
         </NGridItem>
         <NGridItem span={1}>
@@ -88,7 +86,6 @@ export function SponsorOverviewDialogContent({
             icon={WalletCards}
             title={t("dashboard.sponsor.recentSupportedOrders")}
             emptyLabel={t("dashboard.sponsor.noSupportedOrders")}
-            language={language}
             itemsLabel={t("dashboard.sponsor.items")}
           />
         </NGridItem>

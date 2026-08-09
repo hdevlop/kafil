@@ -9,7 +9,7 @@ import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { SupportAssignmentCard } from "./SupportAssignmentCard";
-import { SupportAssignmentDetails } from "./SupportAssignmentDetails";
+import { SupportAssignmentDetailsSheet } from "./SupportAssignmentDetails";
 import {
   CreateSupportAssignmentDialogContent,
   EditSupportAssignmentDialogContent,
@@ -42,6 +42,7 @@ export function SupportAssignmentsPage() {
   const dialog = useDialog();
   const tableMode = useDesktopTableMode();
   const [listFilters, setListFilters] = useState<ListSupportAssignmentFilters>({});
+  const [viewingAssignment, setViewingAssignment] = useState<SupportAssignmentView | null>(null);
   const assignments = useResponsiveSupportAssignments(listFilters);
   const columns = useSupportAssignmentsTableColumns();
   const filters = useSupportAssignmentsTableFilters(listFilters, setListFilters);
@@ -60,14 +61,7 @@ export function SupportAssignmentsPage() {
   }
 
   function openView(assignment: SupportAssignmentView) {
-    void dialog.openDialog({
-      title: t("operator.assignments.viewTitle"),
-      description: t("operator.assignments.viewDescription"),
-      children: <SupportAssignmentDetails assignment={assignment} />,
-      showButtons: false,
-      size: "lg",
-      height: "xl",
-    });
+    setViewingAssignment(assignment);
   }
 
   function openEnd(assignment: SupportAssignmentView) {
@@ -165,6 +159,13 @@ export function SupportAssignmentsPage() {
       <div className="min-h-0 flex-1">
         <NTable {...tableProps} />
       </div>
+      <SupportAssignmentDetailsSheet
+        assignment={viewingAssignment}
+        open={Boolean(viewingAssignment)}
+        onOpenChange={(open) => {
+          if (!open) setViewingAssignment(null);
+        }}
+      />
     </NPageLayout>
   );
 }

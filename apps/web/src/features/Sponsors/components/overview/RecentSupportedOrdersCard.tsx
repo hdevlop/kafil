@@ -1,11 +1,10 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NCard } from "najm-kit";
+import { NCard, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { formatKafilDate, formatKafilNumber, formatMad, type KafilLanguage } from "@/lib/format";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { OrderEntry } from "../../types";
@@ -15,7 +14,6 @@ export function RecentSupportedOrdersCard({
   icon,
   title,
   emptyLabel,
-  language,
   itemsLabel,
   footer,
   rowHref,
@@ -24,19 +22,18 @@ export function RecentSupportedOrdersCard({
   icon: LucideIcon;
   title: string;
   emptyLabel: string;
-  language: KafilLanguage;
   itemsLabel: string;
   footer?: ReactNode;
   rowHref?: string;
 }>) {
-  const money = (value: number) => formatMad(value, language);
-  const number = (value: number) => formatKafilNumber(value, language);
+  const fmt = useNajmFormat();
+  const money = (value: number) => fmt.money(value);
 
   const orderRow = (order: OrderEntry) => (
     <span className="min-w-0">
       <span className="block truncate text-sm font-semibold">{order.orderNumber}</span>
       <span className="block text-xs text-muted-foreground">
-        {number(order.itemCount)} {itemsLabel} · {formatKafilDate(order.placedAt, language)}
+        {fmt.number(order.itemCount)} {itemsLabel} · {fmt.date(order.placedAt)}
       </span>
     </span>
   );

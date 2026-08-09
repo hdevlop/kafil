@@ -8,12 +8,12 @@ import {
   NCardMedia,
   NCardSection,
   SimpleTooltip,
+  useNajmFormat,
 } from "najm-kit";
 
-import { formatKafilDate } from "@/lib/format";
-import { getChildAvatarImage } from "@/lib/personImages";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { getPersonImage } from "najm-kit/person-images";
 import type { ChildRecord } from "../types";
 
 export function ChildCard({
@@ -21,6 +21,7 @@ export function ChildCard({
   embedded = true,
 }: Readonly<{ data: ChildRecord; embedded?: boolean }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const isInactive = data.status === "inactive";
   const isFamilyUnavailable = data.familyStatus !== undefined && data.familyStatus !== "active";
   const isDisabled = isInactive || isFamilyUnavailable;
@@ -52,7 +53,7 @@ export function ChildCard({
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
         <ManagedAvatar
-          src={getChildAvatarImage(data.image, data.gender)}
+          src={getPersonImage({ image: data.image, role: "child", gender: data.gender })}
           alt={data.legalName}
           size="xl"
           classNames={{ avatar: "size-20 bg-muted sm:size-16" }}
@@ -62,7 +63,7 @@ export function ChildCard({
         <NCardInfo
           icon={CalendarDays}
           label={t("operator.families.dateOfBirth")}
-          value={formatKafilDate(data.dateOfBirth)}
+          value={fmt.date(data.dateOfBirth)}
         />
         <NCardInfo
           icon={GraduationCap}

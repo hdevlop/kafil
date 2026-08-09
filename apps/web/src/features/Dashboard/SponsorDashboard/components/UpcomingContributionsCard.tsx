@@ -1,23 +1,20 @@
 "use client";
 
 import { Calendar } from "lucide-react";
-import { NCard } from "najm-kit";
+import { NCard, useNajmFormat } from "najm-kit";
 import Link from "next/link";
-
-import { formatKafilDate, formatMad, type KafilLanguage } from "@/lib/format";
 
 import type { UpcomingContributionEntry } from "../types";
 
 export function UpcomingContributionsCard({
   contributions,
-  language,
   t,
 }: Readonly<{
   contributions: UpcomingContributionEntry[];
-  language: KafilLanguage;
   t: (key: string) => string;
 }>) {
-  const money = (value: number) => formatMad(value, language);
+  const fmt = useNajmFormat();
+  const money = (value: number) => fmt.money(value);
 
   return (
     <NCard
@@ -41,7 +38,7 @@ export function UpcomingContributionsCard({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold tabular-nums">
-                    {formatKafilDate(plan.dueAt, language)}
+                    {fmt.date(plan.dueAt)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {money(plan.amountMinor)} · {plan.supportReference}

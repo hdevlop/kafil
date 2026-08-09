@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Eye, KeyRound, UserCheck, UserRoundX, Users } from "lucide-react";
-import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode, useNajmFormat } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
-import { formatKafilDate } from "@/lib/format";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
@@ -25,6 +24,7 @@ import { AdminUserCard } from "./AdminAccessCards";
 export function AdminUsersPage() {
   const dialog = useDialog();
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const tableMode = useDesktopTableMode();
   const [query, setQuery] = useState<AccessUserListQuery>(() => ({
     ...createOffsetPagination(0, 25),
@@ -44,9 +44,9 @@ export function AdminUsersPage() {
       { accessorKey: "role", header: t("adminAccess.users.role"), cell: ({ getValue }) => getValue<string | null>() || t("adminAccess.common.noRole") },
       { accessorKey: "status", header: t("adminAccess.users.status"), cell: ({ getValue }) => <StatusBadge status={getValue<string>()} /> },
       { accessorKey: "emailVerified", header: t("adminAccess.users.verified"), cell: ({ getValue }) => getValue<boolean>() ? t("adminAccess.common.yes") : t("adminAccess.common.no") },
-      { accessorKey: "lastLogin", header: t("adminAccess.users.lastLogin"), cell: ({ getValue }) => formatKafilDate(getValue<string | null>()) },
+      { accessorKey: "lastLogin", header: t("adminAccess.users.lastLogin"), cell: ({ getValue }) => fmt.date(getValue<string | null>()) },
     ],
-    [t],
+    [fmt, t],
   );
 
   function view(user: AccessUser) {

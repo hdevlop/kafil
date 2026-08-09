@@ -2,17 +2,18 @@
 
 import { CalendarClock, Mail, Phone } from "lucide-react";
 import { NCard, NCardInfo, NCardMedia, NCardSection } from "najm-kit";
+import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatKafilDate } from "@/lib/format";
-import { getSponsorPersonImage } from "@/lib/personImages";
+import { useNajmFormat } from "najm-kit";
 import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ApplicantRecord } from "../types";
 
 export function ApplicantCard({ data }: Readonly<{ data: ApplicantRecord }>) {
-  const { language, t } = useKafilLanguage();
+  const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
 
   return (
     <NCard
@@ -37,7 +38,7 @@ export function ApplicantCard({ data }: Readonly<{ data: ApplicantRecord }>) {
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
         <ManagedAvatar
-          src={getSponsorPersonImage(data.gender)}
+          src={getPersonImage({ image: null, role: "adult", gender: data.gender })}
           alt={data.name}
           size="xl"
           classNames={{ avatar: "size-20 bg-muted sm:size-16" }}
@@ -59,7 +60,7 @@ export function ApplicantCard({ data }: Readonly<{ data: ApplicantRecord }>) {
         <NCardInfo
           icon={CalendarClock}
           label={t("operator.applicants.submitted")}
-          value={formatKafilDate(data.submittedAt, language)}
+          value={fmt.date(data.submittedAt)}
         />
       </NCardSection>
     </NCard>

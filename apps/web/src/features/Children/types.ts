@@ -3,7 +3,7 @@ export interface ChildRecord {
   familyProfileId: string;
   legalName: string;
   dateOfBirth: string;
-  gender: "F" | "M" | string;
+  gender: "F" | "M";
   image: string | null;
   schoolLevel: string | null;
   clothingSize: string | null;

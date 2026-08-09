@@ -1,10 +1,9 @@
 "use client";
 
 import { BadgeCheck, CircleDollarSign, ClockAlert } from "lucide-react";
-import { NCard, NProgress } from "najm-kit";
+import { NCard, NProgress, useNajmFormat } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { formatDateTime, formatMad } from "@/lib/format";
 import type { FamilyFundingProgress } from "@/types/funding";
 
 import { StatusBadge } from "./StatusBadge";
@@ -55,6 +54,7 @@ export function FundingProgressBar({
   inline?: boolean;
 }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const percent = fundingProgressPercent(progress);
   const hasReachedTarget = percent >= 100;
   const progressTone = fundingProgressTone(percent);
@@ -92,7 +92,7 @@ export function FundingProgressBar({
               : "text-foreground"
           }`}
         >
-          {formatMad(progress.fundedMinor)} / {formatMad(progress.targetMinor)}
+          {fmt.money(progress.fundedMinor)} / {fmt.money(progress.targetMinor)}
         </span>
       </div>
     );
@@ -102,7 +102,7 @@ export function FundingProgressBar({
     return (
       <div className="w-36 space-y-1" title={percentLabel}>
         <p className="whitespace-nowrap text-xs font-medium leading-none">
-          {formatMad(progress.fundedMinor)} / {formatMad(progress.targetMinor)}
+          {fmt.money(progress.fundedMinor)} / {fmt.money(progress.targetMinor)}
         </p>
         <div
           aria-label={ariaLabel}
@@ -125,7 +125,7 @@ export function FundingProgressBar({
     <div className="space-y-2 text-sm">
       <div className="flex items-center justify-between gap-3 text-muted-foreground">
         <span className="font-medium text-foreground">{t("funding.progress")}</span>
-        <span>{t("funding.target", { amount: formatMad(progress.targetMinor) })}</span>
+        <span>{t("funding.target", { amount: fmt.money(progress.targetMinor) })}</span>
       </div>
       <div
         aria-label={ariaLabel}
@@ -142,7 +142,7 @@ export function FundingProgressBar({
       </div>
       <div className="flex items-center justify-between gap-3 font-medium">
         <span>
-          {formatMad(progress.fundedMinor)} / {formatMad(progress.targetMinor)}
+          {fmt.money(progress.fundedMinor)} / {fmt.money(progress.targetMinor)}
         </span>
         <span className={progressTone.text}>{percent}%</span>
       </div>
@@ -158,6 +158,7 @@ export function FundingProgressCard({
   title?: string;
 }>) {
   const { t } = useKafilLanguage();
+  const fmt = useNajmFormat();
   const percent = fundingProgressPercent(progress);
   const isFunded = progress.capacityStatus === "funded";
   const isReserved = progress.capacityStatus === "reserved";
@@ -166,7 +167,7 @@ export function FundingProgressCard({
     : isReserved
       ? t("funding.reservedDescription")
       : t("funding.openDescription", {
-          amount: formatMad(progress.remainingMinor),
+          amount: fmt.money(progress.remainingMinor),
         });
   const icon = isFunded ? BadgeCheck : isReserved ? ClockAlert : CircleDollarSign;
 
@@ -180,8 +181,8 @@ export function FundingProgressCard({
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
           <span>
             {t("funding.fundedOfTarget", {
-              funded: formatMad(progress.fundedMinor),
-              target: formatMad(progress.targetMinor),
+              funded: fmt.money(progress.fundedMinor),
+              target: fmt.money(progress.targetMinor),
             })}
           </span>
           <StatusBadge status={progress.status} />
@@ -199,7 +200,7 @@ export function FundingProgressCard({
               {t("funding.pendingReservation")}
             </p>
             <p className="font-semibold text-foreground">
-              {formatMad(progress.pendingMinor)}
+              {fmt.money(progress.pendingMinor)}
             </p>
           </div>
           <div className="rounded-md bg-muted/40 px-2 py-1">
@@ -207,7 +208,7 @@ export function FundingProgressCard({
               {t("funding.availableToContribute")}
             </p>
             <p className="font-semibold text-foreground">
-              {formatMad(progress.availableToContributeMinor)}
+              {fmt.money(progress.availableToContributeMinor)}
             </p>
           </div>
         </div>
@@ -216,7 +217,7 @@ export function FundingProgressCard({
             {t(`funding.${progress.capacityStatus}`)}
             {progress.nextPendingExpiryAt
               ? ` · ${t("funding.earliestExpiry", {
-                  date: formatDateTime(progress.nextPendingExpiryAt),
+                  date: fmt.dateTime(progress.nextPendingExpiryAt),
                 })}`
               : ""}
           </p>
