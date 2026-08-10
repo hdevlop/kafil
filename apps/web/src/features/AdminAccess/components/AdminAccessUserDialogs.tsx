@@ -1,16 +1,21 @@
 "use client";
 
 import { z } from "zod";
-import { FormInput, NButton, NCard, NDetailList, NForm, useDialog, useNajmFormat } from "najm-kit";
+import {
+  NBadge,
+  FormInput,
+  NButton,
+  NCard,
+  NDetailList,
+  NForm,
+  useDialog,
+  useNajmFormat,
+} from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageErrorState } from "@/shared/PageState";
-import { StatusBadge } from "@/shared/StatusBadge";
 
-import {
-  useAccessUser,
-  useAccessUserCommands,
-} from "../hooks/useAdminAccess";
+import { useAccessUser, useAccessUserCommands } from "../hooks/useAdminAccess";
 import type { AccessUser } from "../types";
 
 const reasonSchema = z.object({
@@ -34,7 +39,7 @@ export function AdminAccessUserDetails({
           <p className="font-semibold">{data.name || data.email}</p>
           <p className="text-sm text-muted-foreground">{data.email}</p>
         </div>
-        <StatusBadge status={data.status} />
+        <NBadge status={data.status} />
       </div>
       <NDetailList
         items={[

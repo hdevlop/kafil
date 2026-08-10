@@ -1,11 +1,11 @@
 "use client";
 
+import { NBadge } from "najm-kit";
 import { BadgeCheck } from "lucide-react";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
-import { StatusBadge } from "@/shared/StatusBadge";
-import { ProtectedImage } from "@/shared/ProtectedImage";
+import { NNextImage } from "najm-kit/next";
 
 import type { FamilyRecord } from "../../types";
 
@@ -19,7 +19,7 @@ export function FamilyDetailsHero({
     <div className="space-y-3">
       <section className="space-y-2">
         <div className="relative h-52 overflow-hidden rounded-2xl bg-muted sm:h-60">
-          <ProtectedImage
+          <NNextImage unoptimized
             src={getPersonImage({ image: family.image, role: "family" })}
             alt={family.name}
             fill
@@ -39,7 +39,7 @@ export function FamilyDetailsHero({
               />
             ) : null}
           </div>
-          <StatusBadge className="shrink-0" status={fundingStatus} />
+          <NBadge className="shrink-0" status={fundingStatus} />
         </div>
       </section>
 

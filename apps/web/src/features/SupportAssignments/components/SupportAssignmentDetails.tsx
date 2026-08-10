@@ -12,6 +12,8 @@ import {
   Users,
 } from "lucide-react";
 import {
+  NAvatar,
+  NBadge,
   NDetailList,
   type NDetailListItem,
   NSheet,
@@ -20,8 +22,6 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SupportAssignmentView } from "../types";
 
@@ -109,7 +109,7 @@ export function SupportAssignmentDetails({
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({
             image: assignment.sponsorImage,
             role: "adult",
@@ -126,7 +126,7 @@ export function SupportAssignmentDetails({
           <p className="truncate text-sm text-muted-foreground">
             {assignment.familyLabel}
           </p>
-          <StatusBadge className="mt-2" status={assignment.status} />
+          <NBadge className="mt-2" status={assignment.status} />
         </div>
       </div>
 

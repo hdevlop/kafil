@@ -1,11 +1,10 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NCard, useNajmFormat } from "najm-kit";
+import { NBadge, NCard, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ContributionEntry } from "../../types";
 
@@ -53,7 +52,7 @@ export function RecentContributionsCard({
                       {fmt.date(contribution.submittedAt)}
                     </span>
                   </span>
-                  <StatusBadge status={contribution.status} />
+                  <NBadge status={contribution.status} />
                 </Link>
               ) : (
                 <div
@@ -68,7 +67,7 @@ export function RecentContributionsCard({
                       {fmt.date(contribution.submittedAt)}
                     </span>
                   </span>
-                  <StatusBadge status={contribution.status} />
+                  <NBadge status={contribution.status} />
                 </div>
               )
             ))}

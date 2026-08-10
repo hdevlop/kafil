@@ -1,17 +1,37 @@
 "use client";
 
-import { Baby, ClipboardCheck, HandHeart, House, ShoppingBag, WalletCards } from "lucide-react";
-import { NPageHeader, NBarChart, NCard, NDonutCard, NGrid, NGridItem, NPageHeaderActions, NPageLayout, NStatCard, NStatusBreakdown, statusTextClass, useNajmFormat } from "najm-kit";
+import {
+  Baby,
+  ClipboardCheck,
+  HandHeart,
+  House,
+  ShoppingBag,
+  WalletCards,
+} from "lucide-react";
+import {
+  NAvatar,
+  NBadge,
+  NPageHeader,
+  NBarChart,
+  NCard,
+  NDonutCard,
+  NGrid,
+  NGridItem,
+  NPageHeaderActions,
+  NPageLayout,
+  NStatCard,
+  NStatusBreakdown,
+  statusTextClass,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { ProtectedImage } from "@/shared/ProtectedImage";
-import { StatusBadge } from "@/shared/StatusBadge";
+import { NNextImage } from "najm-kit/next";
 
 import { toChartData } from "../../shared/chartData";
 import { FamilyDashboardSkeleton } from "../../shared/DashboardSkeletons";
@@ -129,7 +149,7 @@ export function FamilyDashboardPage() {
             <div className="space-y-2">
               {data.recentSponsorContributions.length ? data.recentSponsorContributions.map((contribution) => (
                 <div className="flex items-center gap-3 rounded-xl border border-border/70 p-3" key={contribution.id}>
-                  <ManagedAvatar
+                  <NAvatar
                     alt={contribution.name}
                     classNames={{ avatar: "shrink-0 bg-muted" }}
                     fallbackSrc={getPersonImage({ image: null, role: "adult", gender: contribution.gender })}
@@ -157,7 +177,7 @@ export function FamilyDashboardPage() {
                 <Link className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 hover:bg-muted/60" href="/orders" key={order.id}>
                   <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-muted-foreground">
                     {order.dominantCategoryImage ? (
-                      <ProtectedImage
+                      <NNextImage unoptimized
                         alt={order.dominantCategoryName ?? "Order category"}
                         className="object-cover"
                         fill
@@ -174,7 +194,7 @@ export function FamilyDashboardPage() {
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     <strong className="text-sm">{money(order.totalMinor)}</strong>
-                    <StatusBadge status={order.status} />
+                    <NBadge status={order.status} />
                   </span>
                 </Link>
               )) : <p className="py-10 text-center text-sm text-muted-foreground">{t("dashboard.family.noOrders")}</p>}

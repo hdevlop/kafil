@@ -1,9 +1,15 @@
 "use client";
 
 import { Package, Tags } from "lucide-react";
-import { cn, NCard, NCardMedia, NCardSection, useNajmFormat } from "najm-kit";
+import {
+  cn,
+  NCard,
+  NCardMedia,
+  NCardSection,
+  useNajmFormat,
+} from "najm-kit";
 import type { CategoryRecord } from "../types";
-import { ProtectedImage } from "@/shared/ProtectedImage";
+import { NNextImage } from "najm-kit/next";
 
 interface CategoryCardData {
   name: string;
@@ -40,7 +46,7 @@ export function CategoryCard({
           variant="hero"
         >
           {data.image ? (
-            <ProtectedImage
+            <NNextImage unoptimized
               alt={`Cover image for ${data.name}`}
               className="size-full object-cover"
               fill
@@ -79,7 +85,7 @@ export function CategoryCard({
         className="mx-3 mt-3 w-[calc(100%-1.5rem)] rounded-xl bg-muted sm:mx-4 sm:mt-4 sm:w-[calc(100%-2rem)]"
       >
         {data.image ? (
-          <ProtectedImage
+          <NNextImage unoptimized
             alt={`Cover image for ${data.name}`}
             className="size-full object-contain"
             fill

@@ -1,11 +1,10 @@
 "use client";
 
-import { useNajmFormat } from "najm-kit";
+import { NAvatar, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { SupportedFamilyEntry } from "../types";
 
@@ -22,7 +21,7 @@ export function SupportedFamilyRow({
       className="flex items-center gap-4 rounded-xl border border-border/70 p-4 hover:bg-muted/60"
       href="/family"
     >
-      <ManagedAvatar
+      <NAvatar
         alt={family.familyName}
         className="shrink-0"
         size="xl"

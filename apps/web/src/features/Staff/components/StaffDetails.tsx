@@ -10,12 +10,17 @@ import {
   Phone,
   ShieldCheck,
 } from "lucide-react";
-import { NCard, NCardSection, NDetailList, useNajmFormat } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  NCard,
+  NCardSection,
+  NDetailList,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { StaffRecord } from "../types";
 
@@ -50,7 +55,7 @@ export function StaffDetails({
       <NCard embedded>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-4">
-            <ManagedAvatar
+            <NAvatar
               src={getPersonImage({ image: staff.image, role: "adult", gender: staff.gender })}
               alt={staff.name}
               size="xl"
@@ -65,7 +70,7 @@ export function StaffDetails({
               </p>
             </div>
           </div>
-          <StatusBadge status={staff.status} />
+          <NBadge status={staff.status} />
         </div>
       </NCard>
 

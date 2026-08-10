@@ -2,10 +2,18 @@
 
 import { useRef, useState } from "react";
 import { Package, ShoppingCart, Tag } from "lucide-react";
-import { cn, NButton, NCard, NCardInfo, NCardMedia, NCardSection, useNajmFormat } from "najm-kit";
+import {
+  cn,
+  NButton,
+  NCard,
+  NCardInfo,
+  NCardMedia,
+  NCardSection,
+  useNajmFormat,
+} from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ProtectedImage } from "@/shared/ProtectedImage";
+import { NNextImage } from "najm-kit/next";
 
 import type { ProductRecord } from "../types";
 
@@ -112,7 +120,7 @@ export function ProductCard({
         style={{ aspectRatio: "1 / 1" }}
       >
         {data.imageUrl ? (
-          <ProtectedImage
+          <NNextImage unoptimized
             alt={data.name}
             className="size-full object-contain"
             fill

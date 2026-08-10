@@ -7,15 +7,20 @@ import {
   History,
   Truck,
 } from "lucide-react";
-import { NButton, NCard, NSheet, useNajmFormat } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  NButton,
+  NCard,
+  NSheet,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { KafilLanguage } from "@/preferences";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageErrorState } from "@/shared/PageState";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import { getOrderActions, type OrderCommand } from "../config/orderActions";
 import { useOrder } from "../hooks/useOrders";
@@ -140,7 +145,7 @@ export function DeliveryPersonCard({
     >
       {delivery ? (
         <div className="flex items-center justify-between gap-3">
-        <ManagedAvatar
+        <NAvatar
           className="min-w-0"
           fallback={delivery.deliveryNameSnapshot}
           meta={<span className="flex items-center gap-1.5"><Clock3 aria-hidden className="size-3.5" />{fmt.dateTime(delivery.assignedAt)}</span>}
@@ -150,7 +155,7 @@ export function DeliveryPersonCard({
             subtitle={delivery.deliveryPhoneSnapshot}
             title={delivery.deliveryNameSnapshot}
           />
-          <StatusBadge className="shrink-0" status={delivery.status} />
+          <NBadge className="shrink-0" status={delivery.status} />
         </div>
       ) : null}
     </NCard>
@@ -255,7 +260,7 @@ function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>
   return (
     <NCard>
       <div className="flex items-center justify-between gap-3">
-        <ManagedAvatar
+        <NAvatar
           className="min-w-0"
           fallback={attempt.deliveryNameSnapshot}
           meta={fmt.dateTime(endedAt)}
@@ -265,7 +270,7 @@ function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>
           subtitle={attempt.deliveryPhoneSnapshot}
           title={attempt.deliveryNameSnapshot}
         />
-        <StatusBadge className="shrink-0" status={attempt.status} />
+        <NBadge className="shrink-0" status={attempt.status} />
       </div>
     </NCard>
   );

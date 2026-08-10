@@ -1,12 +1,21 @@
 "use client";
 
-import { Contact, FileKey2, MapPin, NotebookPen } from "lucide-react";
-import { NDetailList, NSection, useNajmFormat } from "najm-kit";
+import {
+  Contact,
+  FileKey2,
+  MapPin,
+  NotebookPen,
+} from "lucide-react";
+import {
+  NAvatar,
+  NBadge,
+  NDetailList,
+  NSection,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SponsorRecord } from "../types";
 
@@ -16,7 +25,7 @@ export function SponsorDetails({ sponsor }: Readonly<{ sponsor: SponsorRecord }>
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({ image: sponsor.image, role: "adult", gender: sponsor.gender })}
           title={sponsor.name}
           size="xl"
@@ -25,7 +34,7 @@ export function SponsorDetails({ sponsor }: Readonly<{ sponsor: SponsorRecord }>
         <div className="min-w-0">
           <p className="truncate text-lg font-semibold">{sponsor.name}</p>
           <p className="truncate text-sm text-muted-foreground">{sponsor.email}</p>
-          <StatusBadge className="mt-2" status={sponsor.status} />
+          <NBadge className="mt-2" status={sponsor.status} />
         </div>
       </div>
 

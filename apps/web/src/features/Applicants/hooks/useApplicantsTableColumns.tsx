@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNajmFormat, type NTableProps } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  useNajmFormat,
+  type NTableProps,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ApplicantRecord } from "../types";
 
@@ -20,7 +23,7 @@ export function useApplicantsTableColumns() {
         accessorKey: "name",
         header: t("operator.applicants.name"),
         cell: ({ row }) => (
-          <ManagedAvatar
+          <NAvatar
             src={getPersonImage({ image: null, role: "adult", gender: row.original.gender })}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
@@ -38,7 +41,7 @@ export function useApplicantsTableColumns() {
       {
         accessorKey: "status",
         header: t("operator.applicants.status"),
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: "submittedAt",

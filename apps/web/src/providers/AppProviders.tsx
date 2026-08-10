@@ -7,6 +7,7 @@ import { AuthProvider } from "najm-auth/client/react";
 import { NajmAppProvider } from "najm-kit/app";
 import type { NajmDesignConfig } from "najm-kit";
 import { uiTranslations } from "@/i18n/translations";
+import { KAFIL_BADGE_DEFAULTS } from "@/features/StatusLabels";
 import { auth } from "@/lib/auth";
 import { APP_NAME } from "@/types/branding";
 import {
@@ -45,6 +46,7 @@ function NajmProviders({
   return (
     <NajmAppProvider
       appName={APP_NAME}
+      badgeDefaults={KAFIL_BADGE_DEFAULTS}
       currency={KAFIL_CURRENCY}
       formDevTools={formFillSetting.data?.enabled === true}
       initialBranding={initialBranding}

@@ -1,10 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { SimpleTooltip, useNajmFormat, type NTableProps } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  SimpleTooltip,
+  useNajmFormat,
+  type NTableProps,
+} from "najm-kit";
 
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 import { getPersonImage } from "najm-kit/person-images";
 
 import type { ChildRecord } from "../types";
@@ -22,7 +26,7 @@ export function useChildrenTableColumns() {
             (row.original.familyStatus !== undefined &&
               row.original.familyStatus !== "active");
           const avatar = (
-            <ManagedAvatar
+            <NAvatar
             src={getPersonImage({ image: row.original.image, role: "child", gender: row.original.gender })}
             title={row.original.legalName}
             subtitle={row.original.gender === "F" ? "Female" : "Male"}
@@ -71,7 +75,7 @@ export function useChildrenTableColumns() {
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: "createdAt",

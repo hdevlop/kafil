@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNajmFormat, type NTableProps } from "najm-kit";
+import { NBadge, useNajmFormat, type NTableProps } from "najm-kit";
 
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ProductRecord } from "../types";
 
@@ -43,7 +42,7 @@ export function useProductsTableColumns() {
       {
         accessorKey: PRODUCT_TABLE_COLUMN_IDS.status,
         header: "Status",
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: PRODUCT_TABLE_COLUMN_IDS.updatedAt,

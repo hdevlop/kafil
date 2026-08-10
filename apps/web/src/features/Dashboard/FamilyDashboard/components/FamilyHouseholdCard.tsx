@@ -1,10 +1,14 @@
 "use client";
 
 import { HeartHandshake, House } from "lucide-react";
-import { NCard, NDetailList, NSection } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  NCard,
+  NDetailList,
+  NSection,
+} from "najm-kit";
 
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { FamilyDashboardProfile } from "../types";
 
@@ -14,11 +18,11 @@ export function FamilyHouseholdCard({
   return (
     <NCard icon={House} title="Your family profile" description="Your protected family information.">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
-        <ManagedAvatar src={profile.image ?? undefined} title={profile.name} size="lg" />
+        <NAvatar src={profile.image ?? undefined} title={profile.name} size="lg" />
         <div className="min-w-0">
           <p className="truncate text-lg font-semibold">{profile.name}</p>
           <p className="truncate text-sm text-muted-foreground">{profile.email}</p>
-          <StatusBadge className="mt-2" status={profile.status} />
+          <NBadge className="mt-2" status={profile.status} />
         </div>
       </div>
 

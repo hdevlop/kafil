@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -43,21 +48,15 @@ import { getProduct } from "@/services/productApi";
 import { getFamilyCatalogProduct } from "@/services/familyCatalogApi";
 import { useOwnFamilyBudgetSummary } from "@/features/Budgets/hooks/useFamilyBudget";
 import { useOwnFamilyProfile } from "@/features/Dashboard/FamilyDashboard";
-import { ProtectedImage } from "@/shared/ProtectedImage";
-import {
-  useDeliveryStaffOptions,
-  useOperatorStaffOptions,
-} from "@/features/Orders/hooks/useOrders";
+import { NNextImage } from "najm-kit/next";
+import { useDeliveryStaffOptions, useOperatorStaffOptions } from "@/features/Orders/hooks/useOrders";
 import type { StaffAssignmentOption } from "@/features/Staff/types";
 
 import { useOrderCart } from "../hooks/useOrderCart";
 import { useOrderCartStore } from "../store/orderCartStore";
 import type { OrderCartDraftItem } from "../types";
 import { ORDER_CART_MAX_QUANTITY } from "../types";
-import {
-  AssistedFamilySelector,
-  type AssistedFamilySelection,
-} from "./AssistedFamilySelector";
+import { AssistedFamilySelector, type AssistedFamilySelection } from "./AssistedFamilySelector";
 
 function OrderCartLine({
   item,
@@ -110,7 +109,7 @@ function OrderCartLine({
     >
       <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
         {imageUrl ? (
-          <ProtectedImage
+          <NNextImage unoptimized
             alt={item.productName}
             className="size-full object-contain"
             fill
@@ -336,7 +335,7 @@ export function OrderConfirmationStep({
         </div>
         <div className="flex items-center gap-3">
           <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-muted">
-            <ProtectedImage
+            <NNextImage unoptimized
               alt={family.name}
               className="object-cover"
               fill

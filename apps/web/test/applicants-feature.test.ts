@@ -230,7 +230,7 @@ describe("admin applicant queue", () => {
     const card = source(
       "../src/features/Applicants/components/ApplicantCard.tsx",
     );
-    expect(card).toContain("<StatusBadge");
+    expect(card).toContain("<NBadge");
     expect(card).toContain("status={data.status}");
   });
 

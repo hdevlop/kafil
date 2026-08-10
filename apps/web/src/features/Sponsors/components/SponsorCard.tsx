@@ -2,6 +2,7 @@
 
 import { CalendarDays, Mail, Phone } from "lucide-react";
 import {
+  NAvatar,
   cn,
   NCard,
   NCardInfo,
@@ -12,7 +13,6 @@ import {
 
 import { getPersonImage } from "najm-kit/person-images";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import type { SponsorRecord } from "../types";
 
 export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
@@ -46,7 +46,7 @@ export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
         size="sm"
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({ image: data.image, role: "adult", gender: data.gender })}
           alt={data.name}
           size="xl"

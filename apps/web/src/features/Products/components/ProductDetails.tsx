@@ -1,10 +1,21 @@
 "use client";
 
-import { Barcode, CalendarDays, FolderTree, Image as ImageIcon, Package, ReceiptText } from "lucide-react";
-import { NDetailList, NSection, useNajmFormat } from "najm-kit";
+import {
+  Barcode,
+  CalendarDays,
+  FolderTree,
+  Image as ImageIcon,
+  Package,
+  ReceiptText,
+} from "lucide-react";
+import {
+  NBadge,
+  NDetailList,
+  NSection,
+  useNajmFormat,
+} from "najm-kit";
 
-import { StatusBadge } from "@/shared/StatusBadge";
-import { ProtectedImage } from "@/shared/ProtectedImage";
+import { NNextImage } from "najm-kit/next";
 
 import type { ProductRecord } from "../types";
 
@@ -14,7 +25,7 @@ export function ProductDetails({ product }: Readonly<{ product: ProductRecord }>
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         {product.imageUrl ? (
-          <ProtectedImage
+          <NNextImage unoptimized
             alt={product.name}
             className="size-12 shrink-0 rounded-xl object-cover"
             height={48}
@@ -29,7 +40,7 @@ export function ProductDetails({ product }: Readonly<{ product: ProductRecord }>
         <div className="min-w-0">
           <p className="truncate text-lg font-semibold">{product.name}</p>
           <p className="truncate text-sm text-muted-foreground">{fmt.money(product.priceMinor)}</p>
-          <StatusBadge className="mt-2" status={product.status} />
+          <NBadge className="mt-2" status={product.status} />
         </div>
       </div>
 

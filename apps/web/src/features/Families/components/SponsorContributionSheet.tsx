@@ -7,7 +7,7 @@ import { getPersonImage } from "najm-kit/person-images";
 import { SponsorContributionWorkspace } from "@/features/Contributions/components/SponsorContributionWorkspace";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
-import { ProtectedImage } from "@/shared/ProtectedImage";
+import { NNextImage } from "najm-kit/next";
 
 import type { SponsorFamilyView } from "../types";
 
@@ -39,7 +39,7 @@ export function SponsorContributionSheet({
         <div className="space-y-4">
           <div className="flex items-center gap-3 border-b border-border pb-4">
             <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-muted">
-              <ProtectedImage
+              <NNextImage unoptimized
                 src={getPersonImage({ image: family.image, role: "family" })}
                 alt={family.name}
                 fill

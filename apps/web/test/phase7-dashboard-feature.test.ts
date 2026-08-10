@@ -267,7 +267,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
 
     expect(pageSource).toContain("order.dominantCategoryImage");
     expect(pageSource).toContain("order.dominantCategoryName");
-    expect(pageSource).toContain('<ProtectedImage');
+    expect(pageSource).toContain('<NNextImage');
     expect(pageSource).toContain('sizes="48px"');
     expect(pageSource).toContain(
       '<NCard className="h-full" icon={ClipboardCheck} title={t("dashboard.family.recentOrders")}>',

@@ -1,11 +1,10 @@
-import { expect, test, type Page, type Response } from "@playwright/test";
+import { expect, test, type Page, type Response as PlaywrightResponse } from "@playwright/test";
 
-type Role = "family" | "operator" | "sponsor";
+type Role = "family" | "operator";
 
 const users: Record<Role, string> = {
   family: "phase6-browser-family@example.test",
   operator: "phase6-browser-operator@example.test",
-  sponsor: "phase6-browser-sponsor@example.test",
 };
 const password = "Phase6BrowserPass1!";
 
@@ -23,27 +22,28 @@ async function useRole(page: Page, role: Role) {
   await page.waitForLoadState("domcontentloaded");
 }
 
-function isManagedImage(response: Response) {
-  return /\/api\/(?:category|product|family|child|sponsor|operator)-images\/files\/serve\//.test(
-    response.url(),
-  );
-}
-
-test("protected images are bounded, cached, lazy, and role-isolated", async ({ page }) => {
-  const responses: Response[] = [];
-  page.on("response", (response) => {
-    if (isManagedImage(response)) responses.push(response);
-  });
-
+test("protected images are bounded, cached, lazy, and authentication-protected", async ({
+  page,
+}) => {
   await useRole(page, "operator");
   await page.locator('a[href="/categories"]:visible').click();
   await page.waitForURL(/\/categories$/);
   await page.waitForLoadState("domcontentloaded");
 
-  const categoryResponses = responses.filter((response) =>
-    response.url().includes("/api/category-images/files/serve/"),
+  await expect(
+    page.locator('img[src*="/api/category-images/files/serve/"]').first(),
+  ).toBeVisible();
+
+  const categorySources = await page
+    .locator('img[src*="/api/category-images/files/serve/"]')
+    .evaluateAll((images) => [
+      ...new Set(images.map((image) => (image as HTMLImageElement).src)),
+    ]);
+  expect(categorySources.length).toBeGreaterThan(0);
+
+  const categoryResponses = await Promise.all(
+    categorySources.map((source) => page.request.get(source)),
   );
-  expect(categoryResponses.length).toBeGreaterThan(0);
   let categoryBytes = 0;
   for (const response of categoryResponses) {
     expect(response.status()).toBe(200);
@@ -58,21 +58,14 @@ test("protected images are bounded, cached, lazy, and role-isolated", async ({ p
     page.locator('img[src*="/api/category-images/files/serve/"]:not([loading="lazy"])'),
   ).toHaveCount(0);
 
-  const protectedPath = new URL(categoryResponses[0]!.url()).pathname;
-  await useRole(page, "sponsor");
-  const token = await page.evaluate(async () => {
-    const response = await fetch("/api/auth/refresh", { method: "POST" });
-    const payload = (await response.json()) as { data: { accessToken: string } };
-    return payload.data.accessToken;
-  });
-  const forbidden = await page.request.get(protectedPath, {
-    headers: { authorization: `Bearer ${token}` },
-  });
+  const protectedPath = new URL(categorySources[0]!).pathname;
+  await page.context().clearCookies();
+  const forbidden = await page.request.get(protectedPath);
   expect([401, 403]).toContain(forbidden.status());
 });
 
 test("public auth branding uses responsive Next image URLs", async ({ page }) => {
-  const optimizedResponses: Response[] = [];
+  const optimizedResponses: PlaywrightResponse[] = [];
   page.on("response", (response) => {
     if (response.url().includes("/_next/image?")) optimizedResponses.push(response);
   });

@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNajmFormat, type NTableProps } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  useNajmFormat,
+  type NTableProps,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { SupportAssignmentView } from "../types";
 
@@ -20,7 +23,7 @@ export function useSupportAssignmentsTableColumns() {
         header: t("operator.assignments.sponsor"),
         cell: ({ row }) => (
           <div className="flex items-center gap-3">
-            <ManagedAvatar
+            <NAvatar
               src={getPersonImage({ image: row.original.sponsorImage, role: "adult", gender: row.original.sponsorGender, })}
               classNames={{ avatar: "bg-muted" }}
             />
@@ -38,7 +41,7 @@ export function useSupportAssignmentsTableColumns() {
       {
         accessorKey: "status",
         header: t("operator.assignments.status"),
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: "startedAt",

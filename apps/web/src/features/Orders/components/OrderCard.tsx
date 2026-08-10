@@ -1,13 +1,25 @@
 "use client";
 
-import { CalendarClock, MapPin, Package, Phone, ShoppingBag, Truck } from "lucide-react";
-import { NCard, NCardInfo, NCardSection, useNajmFormat } from "najm-kit";
+import {
+  CalendarClock,
+  MapPin,
+  Package,
+  Phone,
+  ShoppingBag,
+  Truck,
+} from "lucide-react";
+import {
+  NAvatar,
+  NBadge,
+  NCard,
+  NCardInfo,
+  NCardSection,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { ProtectedImage } from "@/shared/ProtectedImage";
-import { StatusBadge } from "@/shared/StatusBadge";
+import { NNextImage } from "najm-kit/next";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 
 export interface OrderCardData {
@@ -61,7 +73,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
             {data.dominantCategoryImage ? (
-              <ProtectedImage src={data.dominantCategoryImage} alt={data.dominantCategoryName ?? t("common.orderCategory")} width={48} height={48} className="size-full object-contain" />
+              <NNextImage unoptimized src={data.dominantCategoryImage} alt={data.dominantCategoryName ?? t("common.orderCategory")} width={48} height={48} className="size-full object-contain" />
             ) : <ShoppingBag aria-hidden="true" className="size-5" />}
           </span>
           <span className="min-w-0">
@@ -75,7 +87,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
         <Operator>
           {data.guardianLegalNameSnapshot ? (
             <div className="flex min-w-0 items-center gap-2">
-              <ManagedAvatar
+              <NAvatar
                 alt={data.guardianLegalNameSnapshot}
                 src={getPersonImage({ image: data.familyImage ?? null, role: "family" })}
                 title={data.guardianLegalNameSnapshot}
@@ -95,7 +107,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
         {data.articleCount !== undefined ? <NCardInfo icon={Package} label={t("common.orderArticles")} value={data.articleCount} /> : null}
         <div className="flex items-center justify-between gap-3">
           {placedAt ? <NCardInfo icon={CalendarClock} label={t("common.orderPlaced")} value={fmt.date(placedAt)} /> : <span />}
-          <StatusBadge status={data.status} />
+          <NBadge status={data.status} />
         </div>
       </NCardSection>
       {actions ? <NCardSection className="flex-row flex-wrap justify-end gap-2">{actions}</NCardSection> : null}

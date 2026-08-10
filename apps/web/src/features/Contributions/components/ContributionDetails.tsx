@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { CreditCard, ReceiptText } from "lucide-react";
 import {
+  NAvatar,
+  NBadge,
   NCard,
   NCardAction,
   NCardInfo,
@@ -15,9 +17,7 @@ import {
 
 import { getPersonImage } from "najm-kit/person-images";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { ProtectedImage } from "@/shared/ProtectedImage";
-import { StatusBadge } from "@/shared/StatusBadge";
+import { NNextImage } from "najm-kit/next";
 import { useKafilRole } from "@/shared/Authorization";
 
 import type { ContributionListRecord, ContributionRecord } from "../types";
@@ -145,7 +145,7 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
         }
       >
         <NCardMedia variant="avatar" placement="header" size="sm">
-          <ManagedAvatar
+          <NAvatar
             src={getPersonImage({ image: sponsorImage, role: "adult", gender: sponsorGender })}
             alt={sponsorName}
             size="xl"
@@ -153,7 +153,7 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
           />
         </NCardMedia>
         <NCardAction>
-          <StatusBadge status={visibleStatus} />
+          <NBadge status={visibleStatus} />
         </NCardAction>
         <NCardSection density="responsive" surface="responsive">
           <NCardInfo
@@ -172,7 +172,7 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
           classNames={{ media: "w-full" }}
         >
           <NCardMedia variant="hero" placement="top" aspect="16/9">
-            <ProtectedImage
+            <NNextImage unoptimized
               src={getPersonImage({ image: contribution.familyImage, role: "family" })}
               fallbackSrc={getPersonImage({ image: null, role: "family" })}
               alt={contribution.familyName}

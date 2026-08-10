@@ -1,10 +1,19 @@
 "use client";
 
-import { AlignJustify, CalendarDays, ListOrdered, Tags } from "lucide-react";
-import { NDetailList, NSection, useNajmFormat } from "najm-kit";
+import {
+  AlignJustify,
+  CalendarDays,
+  ListOrdered,
+  Tags,
+} from "lucide-react";
+import {
+  NBadge,
+  NDetailList,
+  NSection,
+  useNajmFormat,
+} from "najm-kit";
 
-import { StatusBadge } from "@/shared/StatusBadge";
-import { ProtectedImage } from "@/shared/ProtectedImage";
+import { NNextImage } from "najm-kit/next";
 
 import type { CategoryRecord } from "../types";
 
@@ -14,7 +23,7 @@ export function CategoryDetails({ category }: Readonly<{ category: CategoryRecor
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         {category.image ? (
-          <ProtectedImage
+          <NNextImage unoptimized
             alt={category.name}
             className="size-12 shrink-0 rounded-xl object-cover"
             height={48}
@@ -29,7 +38,7 @@ export function CategoryDetails({ category }: Readonly<{ category: CategoryRecor
         <div className="min-w-0">
           <p className="truncate text-lg font-semibold">{category.name}</p>
           <p className="truncate text-sm text-muted-foreground">{category.slug}</p>
-          <StatusBadge className="mt-2" status={category.status} />
+          <NBadge className="mt-2" status={category.status} />
         </div>
       </div>
 

@@ -12,6 +12,8 @@ import {
   XCircle,
 } from "lucide-react";
 import {
+  NAvatar,
+  NBadge,
   NButton,
   NDetailList,
   type NDetailListItem,
@@ -24,13 +26,8 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
-import {
-  ApproveApplicantDialogContent,
-  RejectApplicantDialogContent,
-} from "./ApplicantDecisionDialogs";
+import { ApproveApplicantDialogContent, RejectApplicantDialogContent } from "./ApplicantDecisionDialogs";
 import type { ApplicantRecord } from "../types";
 import { useApplicant } from "../hooks/useApplicants";
 
@@ -139,7 +136,7 @@ export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplica
   return (
     <div className="space-y-5">
       <div className="flex flex-col items-center gap-2 text-center">
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({ image: null, role: "adult", gender: applicant.gender })}
           alt={applicant.name}
           size="xl"
@@ -150,7 +147,7 @@ export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplica
           <Mail className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">{applicant.email}</span>
         </p>
-        <StatusBadge
+        <NBadge
           label={t(`operator.applicants.statusLabel.${applicant.status}`)}
           status={applicant.status}
         />

@@ -1,23 +1,34 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, KeyRound, UserCheck, UserRoundX, Users } from "lucide-react";
-import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode, useNajmFormat } from "najm-kit";
+import {
+  Eye,
+  KeyRound,
+  UserCheck,
+  UserRoundX,
+  Users,
+} from "lucide-react";
+import {
+  NBadge,
+  createCardPagination,
+  NPageHeader,
+  NPageLayout,
+  NTable,
+  type NTableProps,
+  useDialog,
+  useDesktopTableMode,
+  useNajmFormat,
+} from "najm-kit";
 
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import { useResponsiveAccessUsers } from "../hooks/useAdminAccess";
 import { useAdminUsersTableFilters } from "../hooks/useAdminUsersTableFilters";
 import type { AccessUser, AccessUserListQuery } from "../types";
-import {
-  AdminAccessReasonDialog,
-  AdminAccessUserDetails,
-  RevokeSessionsDialog,
-} from "./AdminAccessUserDialogs";
+import { AdminAccessReasonDialog, AdminAccessUserDetails, RevokeSessionsDialog } from "./AdminAccessUserDialogs";
 import { CreateAccessUserDialogContent } from "./AdminAccessCreateDialogs";
 import { AdminUserCard } from "./AdminAccessCards";
 
@@ -42,7 +53,7 @@ export function AdminUsersPage() {
       { accessorKey: "name", header: t("adminAccess.users.user"), cell: ({ row }) => row.original.name || t("adminAccess.users.unnamed") },
       { accessorKey: "email", header: t("adminAccess.users.email") },
       { accessorKey: "role", header: t("adminAccess.users.role"), cell: ({ getValue }) => getValue<string | null>() || t("adminAccess.common.noRole") },
-      { accessorKey: "status", header: t("adminAccess.users.status"), cell: ({ getValue }) => <StatusBadge status={getValue<string>()} /> },
+      { accessorKey: "status", header: t("adminAccess.users.status"), cell: ({ getValue }) => <NBadge status={getValue<string>()} /> },
       { accessorKey: "emailVerified", header: t("adminAccess.users.verified"), cell: ({ getValue }) => getValue<boolean>() ? t("adminAccess.common.yes") : t("adminAccess.common.no") },
       { accessorKey: "lastLogin", header: t("adminAccess.users.lastLogin"), cell: ({ getValue }) => fmt.date(getValue<string | null>()) },
     ],

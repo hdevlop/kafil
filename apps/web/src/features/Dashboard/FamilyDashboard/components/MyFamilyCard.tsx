@@ -1,13 +1,18 @@
 "use client";
 
 import { ArrowRight, UsersRound } from "lucide-react";
-import { NButton, NCard, NCardAction, useNajmFormat } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  NButton,
+  NCard,
+  NCardAction,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import { parentGenderFromRelationship } from "../lib/parentGenderFromRelationship";
 import type { FamilyChildRecord, FamilyDashboardProfile } from "../types";
@@ -44,7 +49,7 @@ export function MyFamilyCard({
 
       <div className="space-y-2">
         <article className="flex items-center gap-3 rounded-xl bg-muted/40 p-3">
-          <ManagedAvatar
+          <NAvatar
             src={getPersonImage({
               image: null,
               role: "parent",
@@ -57,14 +62,14 @@ export function MyFamilyCard({
             size="lg"
             className="min-w-0 flex-1"
           />
-          <StatusBadge status={profile.status} />
+          <NBadge status={profile.status} />
         </article>
 
         {familyChildren.slice(0, 2).map((child) => {
           const age = ageFromDateOfBirth(child.dateOfBirth);
           return (
             <article className="flex items-center gap-3 rounded-xl bg-muted/40 p-3" key={child.id}>
-              <ManagedAvatar
+              <NAvatar
                 src={getPersonImage({ image: child.image, role: "child", gender: child.gender })}
                 title={child.legalName}
                 subtitle={t(age === 1 ? "dashboard.family.yearOld" : "dashboard.family.yearsOld", {
@@ -73,7 +78,7 @@ export function MyFamilyCard({
                 size="lg"
                 className="min-w-0 flex-1"
               />
-              <StatusBadge status={child.status} />
+              <NBadge status={child.status} />
             </article>
           );
         })}

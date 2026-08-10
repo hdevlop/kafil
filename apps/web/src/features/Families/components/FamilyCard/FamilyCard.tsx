@@ -1,6 +1,11 @@
 "use client";
 
-import { Baby, BadgeCheck, Flag, HeartHandshake } from "lucide-react";
+import {
+  Baby,
+  BadgeCheck,
+  Flag,
+  HeartHandshake,
+} from "lucide-react";
 import type { SVGProps } from "react";
 import {
   NButton,
@@ -17,8 +22,7 @@ import { getPersonImage } from "najm-kit/person-images";
 import { CreateSupportAssignmentDialogContent } from "@/features/SupportAssignments/components/SupportAssignmentForms";
 import { useSponsorFamilySupportCommand } from "@/features/SupportAssignments/hooks/useSponsorSupport";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
-import { StatusBadge } from "@/shared/StatusBadge";
-import { ProtectedImage } from "@/shared/ProtectedImage";
+import { NNextImage } from "najm-kit/next";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 import { useFamilyCardStatus } from "../../hooks/useFamilyCardStatus";
@@ -151,7 +155,7 @@ export function FamilyCard({
         }
       >
         <NCardMedia variant="image" size={104}>
-          <ProtectedImage
+          <NNextImage unoptimized
             src={getPersonImage({ image: data.image, role: "family" })}
             alt={data.name}
             fill
@@ -165,7 +169,7 @@ export function FamilyCard({
               sponsorFamily ? "translate-y-16 sm:translate-y-0" : undefined
             }
           >
-            <StatusBadge status={fundingStatus} />
+            <NBadge status={fundingStatus} />
           </div>
         </NCardAction>
         <NCardSection>

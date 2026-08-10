@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNajmFormat, type NTableProps } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  useNajmFormat,
+  type NTableProps,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { ContributionAudience, ContributionListRecord } from "../types";
 
@@ -38,7 +41,7 @@ export function useContributionsTableColumns(
             "sponsorGender" in record ? record.sponsorGender ?? null : null;
           return (
             <div className="flex items-center gap-3">
-              <ManagedAvatar
+              <NAvatar
                 src={getPersonImage({ image: sponsorImage, role: "adult", gender: sponsorGender })}
                 alt={sponsorName}
                 classNames={{ avatar: "bg-muted" }}
@@ -75,7 +78,7 @@ export function useContributionsTableColumns(
     columns.push({
       accessorKey: "status",
       header: t("operator.contributions.status"),
-      cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+      cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
     });
     columns.push({
       accessorKey: "submittedAt",

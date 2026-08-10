@@ -1,87 +1,64 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const sourceRoot = join(import.meta.dir, "..", "src");
 
-describe("image delivery source gates", () => {
-  test("centralizes protected direct loading in ProtectedImage", () => {
-    const files = [...new Bun.Glob("**/*.tsx").scanSync({ cwd: sourceRoot })];
-    const unmanaged = files.filter((file) => {
-      if (file.replaceAll("\\", "/") === "shared/ProtectedImage.tsx") return false;
-      return readFileSync(join(sourceRoot, file), "utf8").includes("unoptimized");
-    });
-    expect(unmanaged).toEqual([]);
+function source(relativePath: string) {
+  return readFileSync(join(sourceRoot, relativePath), "utf8");
+}
 
-    const wrapper = readFileSync(
-      join(sourceRoot, "shared", "ProtectedImage.tsx"),
-      "utf8",
-    );
-    expect(wrapper).toContain("PROTECTED_IMAGE_PREFIXES");
-    expect(wrapper).toContain("loading = \"lazy\"");
-    expect(wrapper).toContain("unoptimized={isProtectedImageSource(resolved)}");
-  });
+describe("published media contract integration", () => {
+  test("removes the three local media and status wrappers", () => {
+    const retiredNames = [
+      ["Managed", "Avatar.tsx"],
+      ["Protected", "Image.tsx"],
+      ["Status", "Badge.tsx"],
+    ].map((parts) => parts.join(""));
 
-  test("uses the wrapper for protected feature images", () => {
-    const consumers = [
-      "features/Categories/components/CategoryCard.tsx",
-      "features/Categories/components/CategoryDetails.tsx",
-      "features/Families/components/FamilyCard/FamilyCard.tsx",
-      "features/Families/components/FamilyDetails/FamilyDetailsHero.tsx",
-      "features/OrderCart/components/OrderCartDialog.tsx",
-      "features/Products/components/ProductCard.tsx",
-      "features/Products/components/ProductDetails.tsx",
-    ];
-    for (const consumer of consumers) {
-      const source = readFileSync(join(sourceRoot, consumer), "utf8");
-      expect(source).toContain("<ProtectedImage");
-      expect(source).not.toContain('from "next/image"');
+    for (const name of retiredNames) {
+      const wrapper = join("shared", name);
+      expect(existsSync(join(sourceRoot, wrapper))).toBe(false);
+    }
+
+    const files = [...new Bun.Glob("**/*.{ts,tsx}").scanSync({ cwd: sourceRoot })];
+    for (const file of files) {
+      const content = source(file);
+      for (const name of retiredNames) {
+        expect(content).not.toContain(`@/shared/${name.replace(".tsx", "")}`);
+      }
     }
   });
 
-  test("routes every feature avatar through lazy managed image delivery", () => {
-    const files = [...new Bun.Glob("features/**/*.tsx").scanSync({ cwd: sourceRoot })];
-    const directNajmAvatars = files.filter((file) =>
-      readFileSync(join(sourceRoot, file), "utf8").includes("<NAvatar"),
-    );
-    expect(directNajmAvatars).toEqual([]);
+  test("uses the Next-only adapter with explicit direct delivery", () => {
+    const files = [...new Bun.Glob("**/*.tsx").scanSync({ cwd: sourceRoot })];
+    const consumers = files.filter((file) => source(file).includes("<NNextImage"));
 
-    const avatar = readFileSync(
-      join(sourceRoot, "shared", "ManagedAvatar.tsx"),
-      "utf8",
-    );
-    expect(avatar).toContain("<ProtectedImage");
-    expect(avatar).toContain('loading="lazy"');
-    expect(avatar).toContain("sizes={IMAGE_SIZES[size]}");
+    expect(consumers.length).toBeGreaterThan(0);
+    for (const consumer of consumers) {
+      const content = source(consumer);
+      expect(content).toContain('from "najm-kit/next"');
+      expect(content).toContain("<NNextImage unoptimized");
+      expect(content).not.toContain('from "next/image"');
+    }
   });
 
-  test("removes avatar initials after a managed image loads", () => {
-    const avatar = readFileSync(
-      join(sourceRoot, "shared", "ManagedAvatar.tsx"),
-      "utf8",
+  test("wires representative avatars directly to the package contract", () => {
+    const contribution = source(
+      "features/Contributions/components/ContributionDetails.tsx",
+    );
+    const familyDashboard = source(
+      "features/Dashboard/FamilyDashboard/components/FamilyDashboardPage.tsx",
     );
 
-    expect(avatar).toContain("loadedSource !== resolved");
-    expect(avatar).toContain("onLoad={() => setLoadedSource(resolved)}");
-    expect(avatar).toContain("{showFallback ? (");
-  });
-
-  test("tries the configured avatar fallback after the primary image fails", () => {
-    const avatar = readFileSync(
-      join(sourceRoot, "shared", "ManagedAvatar.tsx"),
-      "utf8",
-    );
-
-    expect(avatar).toContain("[primarySource, fallbackSource].find");
-    expect(avatar).toContain("!failedSources.includes(source)");
-    expect(avatar).toContain("[...current, resolved]");
+    expect(contribution).toContain("<NAvatar");
+    expect(contribution).toContain("fallbackSrc={getPersonImage");
+    expect(familyDashboard).toContain("<NAvatar");
+    expect(familyDashboard).toContain("fallbackSrc={getPersonImage");
   });
 
   test("leaves public branding eligible for the Next optimizer", () => {
-    const branding = readFileSync(
-      join(sourceRoot, "features", "Branding", "BrandingImage.tsx"),
-      "utf8",
-    );
+    const branding = source("features/Branding/BrandingImage.tsx");
     expect(branding).not.toContain("unoptimized");
     expect(branding).toContain("preload");
     expect(branding).not.toContain("priority");
@@ -97,11 +74,11 @@ describe("image delivery source gates", () => {
       "services/sponsorApi.ts",
       "services/staffApi.ts",
     ]) {
-      const source = readFileSync(join(sourceRoot, service), "utf8");
-      expect(source).toContain("api.upload<");
-      expect(source).not.toContain("return `/api${");
+      const content = source(service);
+      expect(content).toContain("api.upload<");
+      expect(content).not.toContain("return `/api${");
       if (!service.endsWith("brandingApi.ts")) {
-        expect(source).toContain("return uploaded.path");
+        expect(content).toContain("return uploaded.path");
       }
     }
   });

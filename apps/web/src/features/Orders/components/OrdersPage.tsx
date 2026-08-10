@@ -16,19 +16,26 @@ import {
   UserRoundCog,
   TriangleAlert,
 } from "lucide-react";
-import { createCardPagination, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode, useNajmFormat } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  createCardPagination,
+  NPageHeader,
+  NPageLayout,
+  NTable,
+  type NTableProps,
+  useDialog,
+  useDesktopTableMode,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import {
-  useFamilyOrderingCommands,
-} from "@/features/Orders/hooks/useFamilyOrdering";
+import { useFamilyOrderingCommands } from "@/features/Orders/hooks/useFamilyOrdering";
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { PageEmptyState, PageErrorState } from "@/shared/PageState";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import { getOrderActions, type OrderAction, type OrderCommand } from "../config/orderActions";
 import { OrderCard } from "./OrderCard";
@@ -302,7 +309,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
             accessorKey: "guardianLegalNameSnapshot",
             header: "Family",
             cell: ({ row }: { row: { original: SharedOrderRecord } }) => (
-              <ManagedAvatar
+              <NAvatar
                 classNames={{ avatar: "bg-muted" }}
                 src={getPersonImage({ image: row.original.familyImage ?? null, role: "family" })}
                 title={row.original.guardianLegalNameSnapshot ?? "—"}
@@ -323,7 +330,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         id: "delivery",

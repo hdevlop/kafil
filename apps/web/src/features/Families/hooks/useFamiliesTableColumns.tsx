@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNajmFormat, type NTableProps } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  useNajmFormat,
+  type NTableProps,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { StatusBadge } from "@/shared/StatusBadge";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { Operator } from "@/shared/Authorization";
 
@@ -21,7 +24,7 @@ export function useFamiliesTableColumns() {
         accessorKey: "name",
         header: t("operator.families.account"),
         cell: ({ row }) => (
-          <ManagedAvatar
+          <NAvatar
             src={getPersonImage({ image: row.original.image, role: "family" })}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
@@ -76,7 +79,7 @@ export function useFamiliesTableColumns() {
       {
         accessorKey: "status",
         header: t("operator.families.status"),
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: "createdAt",

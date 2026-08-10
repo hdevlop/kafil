@@ -1,12 +1,23 @@
 "use client";
 
-import { CalendarClock, CreditCard, House, Timer } from "lucide-react";
-import { NCard, NCardInfo, NCardMedia, NCardSection, useNajmFormat } from "najm-kit";
+import {
+  CalendarClock,
+  CreditCard,
+  House,
+  Timer,
+} from "lucide-react";
+import {
+  NAvatar,
+  NBadge,
+  NCard,
+  NCardInfo,
+  NCardMedia,
+  NCardSection,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 import { useKafilRole } from "@/shared/Authorization";
 
 export interface ContributionCardData {
@@ -38,7 +49,7 @@ export function ContributionCard({
       description={fmt.money(data.amountMinor)}
     >
       <NCardMedia variant="avatar" placement="header" size="sm">
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({ image: data.sponsorImage ?? null, role: "adult", gender: data.sponsorGender ?? null })}
           alt={data.sponsorName ?? t("common.you")}
           size="xl"
@@ -81,7 +92,7 @@ export function ContributionCard({
             label={t("operator.contributions.submitted")}
             value={fmt.date(data.submittedAt)}
           />
-          <StatusBadge status={data.status} />
+          <NBadge status={data.status} />
         </div>
       </NCardSection>
     </NCard>

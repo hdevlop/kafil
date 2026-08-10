@@ -28,12 +28,12 @@ describe("Phase 6D order command contracts", () => {
     expect(columns).toContain('header: "Order number"');
     expect(columns).toContain('accessorKey: "guardianLegalNameSnapshot"');
     expect(columns).toContain('header: "Family"');
-    expect(columns).toContain("<ManagedAvatar");
+    expect(columns).toContain("<NAvatar");
     expect(columns).toContain("row.original.familyImage");
     expect(columns).toContain('accessorKey: "deliveryPhoneSnapshot"');
     expect(columns).not.toContain('accessorKey: "deliveryAddressSnapshot"');
     expect(columns).toContain('accessorKey: "articleCount"');
-    expect(card).toContain("<ManagedAvatar");
+    expect(card).toContain("<NAvatar");
     expect(card).toContain("data.familyImage");
     expect(card).toContain("data.deliveryPhoneSnapshot");
     expect(card).toContain("data.deliveryAddressSnapshot");
@@ -171,7 +171,7 @@ describe("Phase 6D order command contracts", () => {
     expect(sheet).toContain('width={440}');
     expect(sheet).toContain('content: "max-w-full bg-background"');
     expect(sheet).toContain('footer: "bg-background"');
-    expect(sheet).toContain("<ManagedAvatar");
+    expect(sheet).toContain("<NAvatar");
     expect(sheet).toContain("getFeaturedDeliveryAttempt(order)");
     expect(sheet).toContain('order.status === "cancelled" || order.status === "rejected"');
     expect(sheet).toContain("attempt.id === latestAttemptId");
@@ -277,7 +277,7 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(dialog).toContain('separateSections ? "border-b border-border pb-5"');
     expect(dialog).not.toContain("<NCard bordered noPadding");
     expect(dialog).toContain("getFamilyCatalogProduct");
-    expect(dialog).toContain("<ProtectedImage");
+    expect(dialog).toContain("<NNextImage");
     expect(dialog).toContain("<NEmptyState");
     expect(dialog).not.toContain("SelectInput");
     expect(dialog).not.toContain("TextAreaInput");

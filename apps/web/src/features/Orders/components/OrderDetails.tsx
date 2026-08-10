@@ -6,23 +6,25 @@ import {
   Truck,
   UserRoundCog,
 } from "lucide-react";
-import { NCard, NDetailList, NSheet, useNajmFormat } from "najm-kit";
+import {
+  NBadge,
+  NCard,
+  NDetailList,
+  NSheet,
+  useNajmFormat,
+} from "najm-kit";
 
 import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PageErrorState } from "@/shared/PageState";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import { useOrder } from "../hooks/useOrders";
 import { useFamilyOrder } from "../hooks/useFamilyOrdering";
 import { useSponsorOrder } from "../hooks/useSponsorOrders";
 import type { SharedOrderRecord } from "../sharedTypes";
 import type { FamilyOrderDetail } from "../familyTypes";
-import {
-  DeliveryAssignmentCard,
-  DeliveryPersonCard,
-} from "./DeliveryDetailsSheet";
+import { DeliveryAssignmentCard, DeliveryPersonCard } from "./DeliveryDetailsSheet";
 
 export function OrderDetailsSheet({ open, order, sponsor = false, onOpenChange }: Readonly<{
   open: boolean;
@@ -73,7 +75,7 @@ function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
       <NCard title={data.orderNumber}>
         <NDetailList
           items={[
-            { label: "Status", value: <StatusBadge status={data.status} /> },
+            { label: "Status", value: <NBadge status={data.status} /> },
             { label: "Total", value: fmt.money(data.actualTotalMinor ?? data.totalMinor) },
             { label: "Placed", value: fmt.date(data.placedAt) },
             {
@@ -151,7 +153,7 @@ function FamilyOrderDetails({ data }: Readonly<{ data: FamilyOrderDetail }>) {
         availableMinor: null,
       }}
       familyMode
-      familyStatus={<StatusBadge status={data.status} />}
+      familyStatus={<NBadge status={data.status} />}
       separateSections
       showNotice={false}
       totalMinor={data.requestedTotalMinor}
@@ -212,7 +214,7 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
           availableMinor: null,
         }}
         familyMode={false}
-        familyStatus={<StatusBadge status={data.status} />}
+        familyStatus={<NBadge status={data.status} />}
         separateSections
         showNotice={false}
         totalMinor={data.requestedTotalMinor}

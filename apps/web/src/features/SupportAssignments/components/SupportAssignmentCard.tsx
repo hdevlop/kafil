@@ -1,12 +1,19 @@
 "use client";
 
 import { CalendarDays, House } from "lucide-react";
-import { NCard, NCardInfo, NCardMedia, NCardSection, cn, useNajmFormat } from "najm-kit";
+import {
+  NAvatar,
+  NCard,
+  NCardInfo,
+  NCardMedia,
+  NCardSection,
+  cn,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { SupportAssignmentView } from "../types";
 
@@ -23,7 +30,7 @@ export function SupportAssignmentCard({ data }: Readonly<{ data: SupportAssignme
       )}
     >
       <NCardMedia variant="avatar" size="sm">
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({ image: data.sponsorImage, role: "adult", gender: data.sponsorGender })}
           alt={data.sponsorLabel}
           size="xl"

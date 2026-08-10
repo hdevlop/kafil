@@ -1,11 +1,10 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NCard, useNajmFormat } from "najm-kit";
+import { NBadge, NCard, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { OrderEntry } from "../../types";
 
@@ -59,7 +58,7 @@ export function RecentSupportedOrdersCard({
                   {orderRow(order)}
                   <span className="flex shrink-0 items-center gap-2">
                     <span className="text-sm font-semibold tabular-nums">{money(order.totalMinor)}</span>
-                    <StatusBadge status={order.status} />
+                    <NBadge status={order.status} />
                   </span>
                 </Link>
               ) : (
@@ -70,7 +69,7 @@ export function RecentSupportedOrdersCard({
                   {orderRow(order)}
                   <span className="flex shrink-0 items-center gap-2">
                     <span className="text-sm font-semibold tabular-nums">{money(order.totalMinor)}</span>
-                    <StatusBadge status={order.status} />
+                    <NBadge status={order.status} />
                   </span>
                 </div>
               )

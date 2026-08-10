@@ -2,6 +2,7 @@
 
 import { CalendarDays, GraduationCap, UsersRound } from "lucide-react";
 import {
+  NAvatar,
   cn,
   NCard,
   NCardInfo,
@@ -11,7 +12,6 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { getPersonImage } from "najm-kit/person-images";
 import type { ChildRecord } from "../types";
@@ -52,7 +52,7 @@ export function ChildCard({
         size="sm"
         className="w-20 sm:w-[var(--n-card-media-size)]"
       >
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({ image: data.image, role: "child", gender: data.gender })}
           alt={data.legalName}
           size="xl"

@@ -1,12 +1,16 @@
 "use client";
 
 import { BadgeCheck, CircleDollarSign, ClockAlert } from "lucide-react";
-import { NCard, NProgress, useNajmFormat } from "najm-kit";
+import {
+  NBadge,
+  NCard,
+  NProgress,
+  useNajmFormat,
+} from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { FamilyFundingProgress } from "@/types/funding";
 
-import { StatusBadge } from "./StatusBadge";
 
 export function fundingProgressPercent(progress: FamilyFundingProgress) {
   if (progress.targetMinor <= 0) return 100;
@@ -185,7 +189,7 @@ export function FundingProgressCard({
               target: fmt.money(progress.targetMinor),
             })}
           </span>
-          <StatusBadge status={progress.status} />
+          <NBadge status={progress.status} />
         </div>
         <NProgress
           aria-label={t("funding.aria")}

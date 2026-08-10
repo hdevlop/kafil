@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNajmFormat, type NTableProps } from "najm-kit";
+import { NBadge, useNajmFormat, type NTableProps } from "najm-kit";
 
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { CategoryRecord } from "../types";
 
@@ -29,7 +28,7 @@ export function useCategoriesTableColumns() {
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: "updatedAt",

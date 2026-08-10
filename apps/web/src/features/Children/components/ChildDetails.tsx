@@ -1,10 +1,14 @@
 "use client";
 
 import { Baby, House, NotebookPen } from "lucide-react";
-import { NDetailList, NSection, useNajmFormat } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  NDetailList,
+  NSection,
+  useNajmFormat,
+} from "najm-kit";
 
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 import { getPersonImage } from "najm-kit/person-images";
@@ -18,7 +22,7 @@ export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
-        <ManagedAvatar
+        <NAvatar
           src={getPersonImage({ image: child.image, role: "child", gender: child.gender })}
           title={child.legalName}
           subtitle={child.gender === "F" ? t("operator.families.female") : t("operator.families.male")}
@@ -29,7 +33,7 @@ export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
           <p className="text-sm text-muted-foreground">
             {child.gender === "F" ? t("operator.families.female") : t("operator.families.male")}
           </p>
-          <StatusBadge className="mt-2" status={child.status} />
+          <NBadge className="mt-2" status={child.status} />
         </div>
       </div>
 

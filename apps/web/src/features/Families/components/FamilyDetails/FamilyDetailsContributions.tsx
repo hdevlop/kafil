@@ -1,10 +1,9 @@
-import { statusTextClass, useNajmFormat } from "najm-kit";
+import { NAvatar, statusTextClass, useNajmFormat } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { useContributions } from "@/features/Contributions/hooks/useContributions";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
 
 import type { FamilyRecord } from "../../types";
 
@@ -43,7 +42,7 @@ export function FamilyDetailsContributions({
               className="flex items-center gap-3 py-2"
               key={contribution.id}
             >
-              <ManagedAvatar
+              <NAvatar
                 alt={contribution.sponsorName}
                 classNames={{ avatar: "bg-muted" }}
                 size="sm"

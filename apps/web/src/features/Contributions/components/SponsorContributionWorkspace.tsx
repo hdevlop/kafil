@@ -3,6 +3,7 @@
 import { HandCoins, MessageSquareText } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import {
+  NBadge,
   FormInput,
   NButton,
   NCard,
@@ -18,7 +19,6 @@ import { z } from "zod";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useKafilRole } from "@/shared/Authorization";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import { useSponsorContributionWorkspace } from "../hooks/useSponsorContributionWorkspace";
 import type { SponsorContributionPlan } from "../lib/sponsorTypes";
@@ -393,7 +393,7 @@ export function SponsorContributionWorkspace({
                     {" · "}
                     {fmt.money(plan.amountMinor)}
                   </span>
-                  <StatusBadge status={plan.status} />
+                  <NBadge status={plan.status} />
                 </div>
                 {plan.status !== "stopped" && isExactSponsor ? (
                   <div className="flex flex-wrap gap-2">

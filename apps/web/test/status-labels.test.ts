@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { formatStatusLabel, getStatusTranslationKey } from "@/features/StatusLabels";
+import {
+  formatStatusLabel,
+  getStatusTranslationKey,
+  KAFIL_BADGE_DEFAULTS,
+} from "@/features/StatusLabels";
 
 const KNOWN_STATUSES = [
   "active",
@@ -35,6 +39,8 @@ describe("formatStatusLabel", () => {
   test("normalizes case and surrounding whitespace before lookup", () => {
     expect(formatStatusLabel("  PENDING  ")).toBe(formatStatusLabel("pending"));
     expect(formatStatusLabel("Out_For_Delivery")).toBe(formatStatusLabel("out_for_delivery"));
+    expect(formatStatusLabel("out-for-delivery")).toBe(formatStatusLabel("out_for_delivery"));
+    expect(formatStatusLabel("out for delivery")).toBe(formatStatusLabel("out_for_delivery"));
   });
 
   test("falls back to the kit's humanizer for unknown status values", () => {
@@ -50,5 +56,11 @@ describe("formatStatusLabel", () => {
 
   test("getStatusTranslationKey returns null for unknown statuses", () => {
     expect(getStatusTranslationKey("totally_made_up")).toBeNull();
+  });
+
+  test("exports the provider policy used by direct NBadge consumers", () => {
+    expect(KAFIL_BADGE_DEFAULTS.look).toBe("soft");
+    expect(KAFIL_BADGE_DEFAULTS.shape).toBe("pill");
+    expect(KAFIL_BADGE_DEFAULTS.statusLabelKeys?.pending).toBe("status.pending");
   });
 });

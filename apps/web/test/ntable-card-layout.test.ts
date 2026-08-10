@@ -154,7 +154,7 @@ test("role-scoped data reuses the shared catalog, order, and contribution compon
     expect(category).not.toContain("{data.slug}");
     expect(category).not.toContain("entityCardImageColor");
     expect(category).toContain("data.itemCount");
-    expect(category).not.toContain("<StatusBadge");
+    expect(category).not.toContain("<NBadge");
 
     const product = readSource("../src/features/Products/components/ProductCard.tsx");
     expect(product).toContain('variant="hero"');
@@ -168,7 +168,7 @@ test("role-scoped data reuses the shared catalog, order, and contribution compon
     expect(product).toContain('title: "text-sm font-semibold leading-tight text-foreground"');
     expect(product).toContain('"mt-1 text-base font-bold leading-none');
     expect(product).toContain("text-emerald-600");
-    expect(product).not.toContain("<StatusBadge");
+    expect(product).not.toContain("<NBadge");
     expect(product).toContain("data.categoryName");
     expect(product).not.toContain("data.onHandQuantity");
     expect(product).not.toContain("<NCardFooter>");
@@ -192,7 +192,7 @@ test("role-scoped data reuses the shared catalog, order, and contribution compon
     expect(child).toContain('size="sm"');
     expect(child).toContain("title={data.legalName}");
     expect(child).not.toContain("<NCardAction>");
-    expect(child).not.toContain("<StatusBadge");
+    expect(child).not.toContain("<NBadge");
     expect(child).toContain('density="responsive" surface="responsive"');
     expect(child).toContain('description: "hidden sm:block"');
     expect(child).toContain('header: "[&>div:last-child]:hidden sm:[&>div:last-child]:flex"');
@@ -204,7 +204,7 @@ test("role-scoped data reuses the shared catalog, order, and contribution compon
     expect(sponsor).toContain('size="sm"');
     expect(sponsor).toContain("title={data.name}");
     expect(sponsor).not.toContain("<NCardAction>");
-    expect(sponsor).not.toContain("<StatusBadge");
+    expect(sponsor).not.toContain("<NBadge");
     expect(sponsor).toContain('density="responsive" surface="responsive"');
     expect(sponsor).toContain('description: "hidden sm:block"');
     expect(sponsor).toContain('header: "[&>div:last-child]:hidden sm:[&>div:last-child]:flex"');

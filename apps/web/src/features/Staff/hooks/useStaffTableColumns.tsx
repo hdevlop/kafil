@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { useNajmFormat, type NTableProps } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  useNajmFormat,
+  type NTableProps,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 
 import type { StaffRecord } from "../types";
 
@@ -34,7 +37,7 @@ export function useStaffTableColumns() {
         accessorKey: "name",
         header: t("operator.staff.name"),
         cell: ({ row }) => (
-          <ManagedAvatar
+          <NAvatar
             src={getPersonImage({ image: row.original.image, role: "adult", gender: row.original.gender, })}
             title={row.original.name}
             classNames={{ avatar: "bg-muted" }}
@@ -81,7 +84,7 @@ export function useStaffTableColumns() {
       {
         accessorKey: "status",
         header: t("operator.staff.status"),
-        cell: ({ getValue }) => <StatusBadge status={getValue<string>()} />,
+        cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: "createdAt",

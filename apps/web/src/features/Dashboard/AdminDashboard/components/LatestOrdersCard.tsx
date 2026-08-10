@@ -2,10 +2,15 @@
 
 import type { LatestOrdersCardProps } from "@/features/Dashboard";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { ManagedAvatar } from "@/shared/ManagedAvatar";
-import { StatusBadge } from "@/shared/StatusBadge";
 import { ArrowRight, ClipboardList } from "lucide-react";
-import { NButton, NCard, NCardAction, useNajmFormat } from "najm-kit";
+import {
+  NAvatar,
+  NBadge,
+  NButton,
+  NCard,
+  NCardAction,
+  useNajmFormat,
+} from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
@@ -35,7 +40,7 @@ export function LatestOrdersCard({ recentOrders }: Readonly<LatestOrdersCardProp
                 {isRepeatedFamily ? (
                   <span aria-hidden className="size-12 shrink-0" />
                 ) : (
-                  <ManagedAvatar
+                  <NAvatar
                     alt={order.familyName}
                     className="shrink-0"
                     size="lg"
@@ -51,7 +56,7 @@ export function LatestOrdersCard({ recentOrders }: Readonly<LatestOrdersCardProp
                   </span>
                   <span className="flex min-w-0 flex-col items-end gap-1">
                     <span className="text-xs font-semibold tabular-nums">{fmt.money(order.totalMinor)}</span>
-                    <StatusBadge size="sm" status={order.status} />
+                    <NBadge size="sm" status={order.status} />
                   </span>
                 </span>
               </Link>
