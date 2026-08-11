@@ -91,6 +91,13 @@ describe("najm-theme adoption — Kafil boundary", () => {
     expect(sheet).toContain("<NThemeBrandingSettings");
     expect(sheet).toContain("<NThemePresetSettings");
     expect(sheet).toContain("<NThemeSettingsActions");
+    expect(sheet).toContain("showApplyAction={false}");
+    expect(sheet).toContain("showFileActions={false}");
+    expect(sheet).toContain("showResetAction={false}");
+    expect(sheet).toContain('display="compact"');
+    expect(sheet).toContain("showStatus={false}");
+    expect(sheet).toContain("showFileActions");
+    expect(sheet).toContain("showDiscard={false}");
 
     // Kafil mounts the plugin at its server base, so the client's base URL is
     // `/api`, not `/api/theme`.

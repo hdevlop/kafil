@@ -144,12 +144,18 @@ function GlobalSettings({
         content:
           tab === "theme" ? (
             <div className="flex flex-col gap-4">
-              <NThemePresetSettings />
+              <NThemePresetSettings showApplyAction={false} />
               {/* Kafil edits the theme group only, as it always has. The
                   customizer's Typography tab is a wider editable surface than
                   this product has ever exposed, and widening it is a product
                   decision rather than a consequence of adopting the package. */}
-              <NThemeAppearanceSettings tabs={["theme"]} showTabs={false} customizerLabels={themeCustomizerLabels} />
+              <NThemeAppearanceSettings
+                tabs={["theme"]}
+                showTabs={false}
+                showFileActions={false}
+                showResetAction={false}
+                customizerLabels={themeCustomizerLabels}
+              />
               <NThemeBrandingSettings />
             </div>
           ) : (
@@ -195,7 +201,13 @@ function GlobalSettings({
         width={500}
         footer={
           themeActive ? (
-            <NThemeSettingsActions className="w-full" />
+            <NThemeSettingsActions
+              className="najm-theme-actions--sheet-footer"
+              display="compact"
+              showStatus={false}
+              showFileActions
+              showDiscard={false}
+            />
           ) : (
             <div className="flex w-full items-center justify-end gap-3">
               <NButton
