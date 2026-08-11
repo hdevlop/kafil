@@ -1,8 +1,14 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+
+const workspaceRoot = path.resolve(process.cwd(), "../..");
 
 const nextConfig: NextConfig = {
   distDir: process.env.KAFIL_NEXT_DIST_DIR ?? ".next",
   serverExternalPackages: ["reflect-metadata"],
+  turbopack: {
+    root: workspaceRoot,
+  },
   images: {
     minimumCacheTTL: 2_678_400,
   },
