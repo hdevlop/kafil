@@ -9,9 +9,24 @@ type ControllerConstructor = {
   prototype: object;
 };
 
+/**
+ * The two `najm-theme` cutover redirects are excluded.
+ *
+ * They answer 308/307 with a `location` header and no body, so there is no
+ * response to name — and they are temporary by construction (root `PLAN.md`
+ * Phase 5). Their own coverage is in `theme-adoption.test.ts`.
+ */
+const COMPAT_CONTROLLERS = new Set([
+  "ThemePresetCompatController",
+  "BrandingAssetCompatController",
+]);
+
 const controllers = Object.values(modules)
   .filter(
-    (value) => typeof value === "function" && value.name.endsWith("Controller"),
+    (value) =>
+      typeof value === "function" &&
+      value.name.endsWith("Controller") &&
+      !COMPAT_CONTROLLERS.has(value.name),
   )
   .map((value) => value as unknown as ControllerConstructor);
 
@@ -32,17 +47,18 @@ function controller(name: string) {
 
 describe("server response message contract", () => {
 it("assigns a direct, domain-specific response key to every controller endpoint", () => {
-    // 26 since AUTH-COOKIE-PLAN.md Move 4 retired AccessController; login and
-    // credential setup are najm-auth's own endpoints now.
-    expect(controllers).toHaveLength(26);
+    // 23 since najm-theme.md Move 8 retired the Appearance, Branding, and
+    // ThemePreset controllers. Their routes are the package's now, and its
+    // response keys ship in its own catalogs.
+    expect(controllers).toHaveLength(23);
 
     const routes = controllers.flatMap((current) =>
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    // 195 = 199 less the four retired /access routes: login plus the three
-    // family-password endpoints.
-    expect(routes).toHaveLength(195);
+    // 180 = 195 less the fifteen theme routes: three appearance, eight
+    // branding, and four preset endpoints.
+    expect(routes).toHaveLength(180);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

@@ -5,3 +5,5 @@ export * from "./envConfig";
 export * from "./emailConfig";
 export * from "./i18nConfig";
 export * from "./mcpConfig";
+export * from "./storageConfig";
+export * from "./themeConfig";

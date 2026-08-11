@@ -12,6 +12,12 @@ import {
   userStatusEnum,
   usersTable,
 } from "najm-auth/pg";
+import {
+  najmThemeAppearance,
+  najmThemeBranding,
+  najmThemePresets,
+  themeSchema as najmThemeSchema,
+} from "najm-theme/pg";
 
 import { auditSchema } from "../modules/audit/auditSchema";
 import { applicantSchema } from "../modules/applicants/applicantSchema";
@@ -66,6 +72,12 @@ export {
   usersTable,
   credentialSetupRequirementsTable,
   credentialSetupSessionsTable,
+  // `najm-theme` owns these three. They are re-exported because drizzle-kit
+  // only sees tables reachable from this entry point, and a table it cannot see
+  // is a table it generates a `DROP` for.
+  najmThemeAppearance,
+  najmThemeBranding,
+  najmThemePresets,
   budgetLedgerEntryTypeEnum,
   categoryStatusEnum,
   childStatusEnum,
@@ -124,7 +136,16 @@ export const kafilSchema = {
   ...documentSchema,
 };
 
+/**
+ * Kafil's legacy `platform_settings` theme columns and `theme_presets` table
+ * are deliberately still in `kafilSchema` above. Nothing reads or writes them
+ * after this adoption, but dropping them in the same release would make
+ * rollback a destructive reverse migration instead of reverting code. They
+ * leave in a separate migration once the rollback window closes — see root
+ * `PLAN.md` Phase 5.
+ */
 export const schema = {
   ...authSchema,
   ...kafilSchema,
+  ...najmThemeSchema,
 };

@@ -1,11 +1,12 @@
 import { db } from "@kafil/server/database";
+import { kafilTheme } from "@kafil/server/theme";
 import {
-  getFactoryDesignConfig,
-  parseAppearanceDesignConfig,
-  themePresets,
+  DEFAULT_THEME_SCOPE_ID,
+  parseSafeDesignConfig,
   themePresetSlug,
-} from "@kafil/server/modules";
-import { eq } from "drizzle-orm";
+} from "najm-theme";
+import { najmThemePresets } from "najm-theme/pg";
+import { and, eq } from "drizzle-orm";
 
 import ardoise from "./themes/ardoise.json";
 import ciel from "./themes/ciel.json";
@@ -20,10 +21,14 @@ export interface BuiltInThemePreset {
 /**
  * Themes shipped with the platform. "Emerald" mirrors the version-controlled
  * factory design so an admin can always get back to it from the library.
+ *
+ * These rows live in `najm_theme_presets` now. The slug, the validation, and
+ * the scope key are the package's; only the names and the four design files
+ * are Kafil's.
  */
 export function builtInThemePresets(): BuiltInThemePreset[] {
   return [
-    { name: "Emerald", design: getFactoryDesignConfig() },
+    { name: "Emerald", design: kafilTheme.appearance() },
     { name: "Sable", design: sable },
     { name: "Nuit", design: nuit },
     { name: "Ardoise", design: ardoise },
@@ -47,37 +52,43 @@ export async function seedThemePresets(): Promise<ThemePresetSeedResult> {
   let updated = 0;
 
   for (const definition of definitions) {
-    // Fail loudly during seeding rather than storing a design the appearance
-    // validator would later reject at read time.
-    const designConfig = parseAppearanceDesignConfig(definition.design);
+    // Fail loudly during seeding rather than storing a design the package's
+    // appearance policy would later reject at read time.
+    const designConfig = parseSafeDesignConfig(definition.design);
     const slug = themePresetSlug(definition.name);
 
     const [existing] = await db
-      .select({ id: themePresets.id })
-      .from(themePresets)
-      .where(eq(themePresets.slug, slug))
+      .select({ id: najmThemePresets.id })
+      .from(najmThemePresets)
+      .where(
+        and(
+          eq(najmThemePresets.scopeId, DEFAULT_THEME_SCOPE_ID),
+          eq(najmThemePresets.slug, slug),
+        ),
+      )
       .limit(1);
 
     if (existing) {
       await db
-        .update(themePresets)
+        .update(najmThemePresets)
         .set({
           name: definition.name,
           designConfig,
           isBuiltIn: true,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
-        .where(eq(themePresets.id, existing.id));
+        .where(eq(najmThemePresets.id, existing.id));
       updated += 1;
       continue;
     }
 
-    await db.insert(themePresets).values({
+    await db.insert(najmThemePresets).values({
+      scopeId: DEFAULT_THEME_SCOPE_ID,
       slug,
       name: definition.name,
       designConfig,
       isBuiltIn: true,
-      createdByUserId: null,
+      createdByActorId: null,
     });
     inserted += 1;
   }
@@ -97,8 +108,9 @@ export interface ThemePresetVerification {
 
 export async function verifyThemePresets(): Promise<ThemePresetVerification> {
   const rows = await db
-    .select({ slug: themePresets.slug, isBuiltIn: themePresets.isBuiltIn })
-    .from(themePresets);
+    .select({ slug: najmThemePresets.slug, isBuiltIn: najmThemePresets.isBuiltIn })
+    .from(najmThemePresets)
+    .where(eq(najmThemePresets.scopeId, DEFAULT_THEME_SCOPE_ID));
 
   const bySlug = new Set(rows.map((row) => row.slug));
   const missing = builtInThemePresets()

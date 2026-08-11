@@ -4,10 +4,12 @@ import {
   AvatarFormInput,
   FormInput,
   NButton,
+  NCredentialsCard,
   NForm,
   useDialog,
   useNForm,
 } from "najm-kit";
+import { KeyRound, Phone } from "lucide-react";
 import { useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
@@ -16,7 +18,6 @@ import {
   STAFF_IMAGE_SERVE_ROUTE,
   uploadStaffImage,
 } from "@/services/staffApi";
-import { InitialCredentialsCard } from "@/shared/InitialCredentialsCard";
 
 import {
   createStaffFormSchema,
@@ -601,10 +602,21 @@ export function ProvisionStaffAccessDialogContent({
 
   if (credentials) {
     return (
-      <InitialCredentialsCard
-        password={credentials.password}
-        phone={credentials.phone}
-        onDone={() => void pop()}
+      <NCredentialsCard
+        title={t("operator.staff.accessCreated")}
+        description={t("operator.staff.accessOneTimeHint")}
+        fields={[
+          { label: t("common.phone"), value: credentials.phone, icon: Phone },
+          {
+            label: t("operator.staff.accessInitialPassword"),
+            value: credentials.password,
+            icon: KeyRound,
+          },
+        ]}
+        copyLabel={t("common.copyDetails")}
+        copiedLabel={t("common.copied")}
+        copyErrorLabel={t("common.copyError")}
+        actions={<NButton onClick={() => void pop()}>{t("common.done")}</NButton>}
       />
     );
   }

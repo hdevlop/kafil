@@ -32,7 +32,7 @@ which skill validation or convention was intentionally skipped.
 - **`.env`** is loaded explicitly via `--env-file=.env` in root workspace scripts. Next.js does not auto-load it. The file is in `.gitignore` and there is **no root `.env.example`** — the committed templates are `deploy/env/app.env.example` and `deploy/env/infrastructure.env.example`.
 - **Runtime:** single Next.js process. There is no second API server.
 - **Next.js 16 quirks:** `next.config.ts` (not `.mjs`), `serverExternalPackages: ["reflect-metadata"]`, `distDir` is `KAFIL_NEXT_DIST_DIR ?? ".next"`.
-- **UI library:** `najm-kit`. Najm packages are pinned by root `overrides` (`najm-core`, `najm-auth`, `najm-database`, `diject`). Read installed declarations for contracts — `docs/plans/NAJM-STACK.md` lists older versions and is not authoritative for version numbers.
+- **UI library:** `najm-kit`. Najm packages are pinned by root `overrides` (`najm-core`, `najm-auth`, `najm-database`, `najm-mcp`, `najm-storage`, `najm-theme`, `diject`). Read installed declarations for contracts — `docs/plans/NAJM-STACK.md` lists older versions and is not authoritative for version numbers.
 
 ## Workspace layout
 
@@ -92,6 +92,7 @@ Operational scripts:
 ```bash
 bun run contributions:expire   # batch-expire contributions (also a systemd timer)
 bun run images:backfill        # normalize/backfill existing managed images
+bun run theme:backfill         # dry-run the najm-theme data move; --apply writes
 ```
 
 ## Database and migrations
@@ -235,11 +236,72 @@ suite fails. Arabic means RTL must be verified for any layout change.
 
 ### Managed images and storage
 
-Uploaded images (branding, product, category, child, family, sponsor, staff,
-order evidence) are normalized through `packages/server/src/storage/managedImages.ts`
+Uploaded images (product, category, child, family, sponsor, staff, order
+evidence) are normalized through `packages/server/src/storage/managedImages.ts`
 and written under the gitignored root `/storage/` directory. Delivery is
 protected — routes return raw bytes with explicit MIME and cache headers, never
 a public static path. Use `bun run images:backfill` after changing normalization.
+
+**Branding assets are not in that list.** They belong to `najm-theme`, which
+writes them through `najm-storage` into the `theme-branding-platform`
+namespace under the same `/storage/` root. Do not point `images:backfill`,
+`managedImages`, or any Kafil cleanup job at them — the package records each
+asset's MIME type and byte count and serves it under an immutable cache, so
+re-encoding a file behind it leaves the slot record describing something else.
+`POST /api/branding/assets/reconcile` is the branding equivalent.
+
+### Platform theming
+
+Appearance, theme presets, and branding assets are `najm-theme@0.2.0`.
+
+The factory theme is one directory, `packages/server/theme/`:
+
+```
+theme/index.ts                    defineTheme(import.meta.url)
+theme/theme.json                  the design the build ships with
+theme/sidebar-logo-expanded.webp  the four fixed names, PNG or WebP
+theme/sidebar-logo-collapsed.webp
+theme/auth-logo.webp
+theme/auth-hero.webp
+```
+
+The file names are the package's contract — do not rename them, and do not add
+a fifth. Both `packages/server` and `apps/web` import the definition as
+`@kafil/server/theme`; **never by a relative path**. `defineTheme` resolves the
+directory from `import.meta.url`, and `packages/server`'s test runner compiles
+to `dist/`, so a relative import would emit a copy next to no assets and fail
+at boot. The bare specifier survives compilation and resolves to the source.
+
+The three logo files are byte-identical on purpose: 0.2.0 requires a file per
+slot, replacing the `inheritFrom` graph that used to give the collapsed rail
+and the sign-in page the expanded mark for free.
+
+Kafil owns only configuration: `packages/server/src/config/themeConfig.ts`
+(guards, ceilings, storage, audit, MCP, `basePath`),
+`packages/server/theme/index.ts` (the directory above),
+`apps/web/src/lib/serverTheme.ts` (one module-scope RSC bootstrap), and the
+composition inside `GlobalSettingsSheet`.
+
+Branding marks render with `<NThemeImage slot="..." />` from `najm-theme/react`,
+under the single `NThemeBrandingProvider` mounted in `AppProviders`. There is no
+Kafil branding-image component and no public factory path: factory bytes are
+served from `/api/branding/factory/<slot>-<hash>.<ext>` by the definition
+itself, under an immutable cache. Do not reintroduce a `BrandingImage` wrapper,
+a `FACTORY_*_PATH` constant, or a `public/` brand file.
+
+Do not reintroduce an appearance/branding/preset controller, service,
+repository, DTO, validator, API client, query key, hook, or editor context.
+`apps/web/test/theme-adoption.test.ts` and
+`packages/server/test/theme-adoption.test.ts` pin that boundary.
+
+Routes are `/api/appearance`, `/api/branding`, and `/api/presets` — the plugin
+is mounted with an empty `basePath` so the first two keep the paths Kafil
+already published. `/api/theme-presets` and `/api/branding/assets/serve/:f`
+redirect for the rollback window and are removed with the legacy column drop.
+
+The seven legacy `platform_settings` theme columns and the `theme_presets`
+table are still in the schema on purpose and are read by nothing. Run
+`bun run theme:backfill` (dry) then `--apply` to move the data.
 
 ## Security notes
 

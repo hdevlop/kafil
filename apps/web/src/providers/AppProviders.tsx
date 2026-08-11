@@ -2,7 +2,8 @@
 
 import type { ServerSession } from "najm-auth/client/server";
 import { QueryProvider } from "@/providers/QueryProvider";
-import type { PublicBranding } from "@/types/branding";
+import type { PublicBranding } from "najm-theme";
+import { NThemeBrandingProvider } from "najm-theme/react";
 import { AuthProvider } from "najm-auth/client/react";
 import { NajmAppProvider } from "najm-kit/app";
 import type { NajmDesignConfig } from "najm-kit";
@@ -49,7 +50,10 @@ function NajmProviders({
       badgeDefaults={KAFIL_BADGE_DEFAULTS}
       currency={KAFIL_CURRENCY}
       formDevTools={formFillSetting.data?.enabled === true}
-      initialBranding={initialBranding}
+      initialBranding={{
+        sidebarLogoExpandedPath: initialBranding.slots.sidebarLogoExpanded,
+        sidebarLogoCollapsedPath: initialBranding.slots.sidebarLogoCollapsed,
+      }}
       initialDesign={initialDesign}
       initialLanguage={initialLanguage}
       initialTheme={initialTheme}
@@ -57,7 +61,16 @@ function NajmProviders({
       locales={KAFIL_LOCALES}
       translations={uiTranslations}
     >
-      {children}
+      {/*
+        Carries the resolved slots *and* the factory paths into the client, so
+        `NThemeImage` can fall back without Kafil hard-coding a public path. It
+        sits inside `NajmAppProvider` rather than outside because the sidebar
+        marks above still come from the kit's own branding prop; both read the
+        same server snapshot, so they cannot disagree.
+      */}
+      <NThemeBrandingProvider branding={initialBranding}>
+        {children}
+      </NThemeBrandingProvider>
     </NajmAppProvider>
   );
 }

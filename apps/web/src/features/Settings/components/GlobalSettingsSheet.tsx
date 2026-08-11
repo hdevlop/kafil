@@ -1,28 +1,36 @@
 "use client";
 
+import { NButton, NConfirmDialog, NSheet, NTabs } from "najm-kit";
+import { Save, SlidersHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import {
-  NButton,
-  NConfirmDialog,
-  NSheet,
-  NTabs,
-  parseThemeFile,
-  stringifyThemeFile,
-  toast,
-} from "najm-kit";
-import { Download, RotateCcw, Save, SlidersHorizontal, Upload } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+  NThemeAppearanceSettings,
+  NThemeBrandingSettings,
+  NThemePresetSettings,
+  NThemeSettingsActions,
+  NThemeSettingsProvider,
+  useNThemeSettingsOptional,
+} from "najm-theme/react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useThemePresetCommands } from "@/hooks/useThemePresets";
+import { authorizationHeaders } from "@/services/http";
 
-import {
-  BrandingEditorProvider,
-  useBrandingEditor,
-} from "../hooks/BrandingEditor";
-import { useAppearanceEditor } from "../hooks/useAppearanceEditor";
 import { APP_SETTINGS_FORM_ID, AppSettingsPanel } from "./AppSettingsPanel";
-import { ThemePresetsPanel } from "./ThemePresetsPanel";
-import { ThemeSettingsPanel } from "./ThemeSettingsPanel";
+
+/**
+ * Kafil mounts the plugin at its server base, so the routes are `/api/appearance`
+ * and `/api/branding` rather than `/api/theme/…`.
+ *
+ * `headers` is the one thing the package cannot infer: Kafil authenticates with
+ * a bearer token from `auth.client`, not with a cookie, so a client sending
+ * credentials alone would be anonymous on every administrative route.
+ */
+const THEME_CLIENT = {
+  baseUrl: "/api",
+  credentials: "include" as const,
+  headers: authorizationHeaders,
+};
 
 export type GlobalSettingsTab = "theme" | "app";
 
@@ -36,6 +44,20 @@ export function getGlobalSettingsTabs(role: string | null | undefined): GlobalSe
   return [];
 }
 
+/**
+ * Kafil's settings surface, composed from `najm-theme` components.
+ *
+ * `NThemeSettingsProvider` owns the whole theme state machine — queries, query
+ * keys, drafts, dirty tracking, candidate uploads, revision conflicts, and the
+ * live hand-off to `NajmAppProvider`'s design and branding runtimes. What is
+ * left in this file is Kafil composition: which tabs exist for which role, and
+ * that the app tab is Kafil's own settings form rather than a package section.
+ *
+ * The provider is mounted here rather than at the app root deliberately. Its
+ * queries hit administrative endpoints, and mounting it globally would fire
+ * them on first paint of every family and sponsor session for a sheet those
+ * roles can never open.
+ */
 export function GlobalSettingsSheet(
   props: Readonly<{
     open: boolean;
@@ -43,12 +65,30 @@ export function GlobalSettingsSheet(
     role: string | null | undefined;
   }>,
 ) {
+  const { language } = useKafilLanguage();
+  const router = useRouter();
+
   if (!canOpenGlobalSettings(props.role)) return null;
 
+  // Operators have no theme tab, so they get no provider and no administrative
+  // request. Not rendering the tab is presentation; the guard on
+  // `/api/appearance/config` is the authorization boundary.
+  if (props.role !== "admin") return <GlobalSettings {...props} />;
+
   return (
-    <BrandingEditorProvider enabled={props.open} role={props.role}>
+    <NThemeSettingsProvider
+      client={THEME_CLIENT}
+      language={language}
+      /**
+       * The client providers already show the change. This is for the
+       * server-rendered half: the sign-in and first-login layouts read the
+       * request snapshot, and without a refresh they would keep the previous
+       * marks until the next full navigation.
+       */
+      onPersisted={() => router.refresh()}
+    >
       <GlobalSettings {...props} />
-    </BrandingEditorProvider>
+    </NThemeSettingsProvider>
   );
 }
 
@@ -62,77 +102,67 @@ function GlobalSettings({
   role: string | null | undefined;
 }>) {
   const { t } = useKafilLanguage();
-  const { design, revision, adopt, save, resetToFactory } =
-    useAppearanceEditor(open);
-  const { draft, committed, beginDraft, setDraft } = design;
-  const { applyPreset } = useThemePresetCommands();
-  const branding = useBrandingEditor();
+  const theme = useNThemeSettingsOptional();
   const tabs = useMemo(() => getGlobalSettingsTabs(role), [role]);
   const [activeTab, setActiveTab] = useState<GlobalSettingsTab>(
     getGlobalSettingsTabs(role)[0] ?? "app",
   );
-  const themeFileInputRef = useRef<HTMLInputElement>(null);
   const [appState, setAppState] = useState({ dirty: false, saving: false });
-  const [isSavingTheme, setIsSavingTheme] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
 
-  const themeDirty = Boolean(
-    draft && JSON.stringify(draft) !== JSON.stringify(committed),
-  );
   /**
-   * A previewed theme is deliberately kept when the sheet closes so the admin
-   * can browse the app before deciding. Only the panels that cannot survive a
-   * close still block it.
+   * A previewed appearance is deliberately kept when the sheet closes so the
+   * admin can browse the app before deciding — it lives in the kit's design
+   * runtime and survives the unmount. Unsaved *branding* cannot: its previews
+   * are object URLs over uploads nobody has committed. So branding, and
+   * Kafil's own app form, are what block a close.
    */
-  const dirty = appState.dirty || branding.isDirty;
+  const dirty = appState.dirty || (theme?.dirty.branding ?? false);
 
-  useEffect(() => {
-    if (open && role === "admin") {
-      beginDraft();
-      branding.beginDraft();
-    }
-  }, [beginDraft, branding, open, role]);
+  const themeCustomizerLabels = useMemo(
+    () => ({
+      themeTab: t("operator.settings.themeTab"),
+      resetField: t("operator.settings.resetField"),
+      resetSection: t("operator.settings.resetSection"),
+      themeSection: t("operator.settings.themeSection"),
+      layoutSubsection: t("operator.settings.layoutSection"),
+      pageHeaderSubsection: t("operator.settings.pageHeaderSection"),
+      sidebarSubsection: t("operator.settings.sidebarSection"),
+      tableSubsection: t("operator.settings.tableSection"),
+      inputSubsection: t("operator.settings.inputSection"),
+    }),
+    [t],
+  );
 
   const tabItems = useMemo(
-    () => tabs.map((tab) => ({
-      value: tab,
-      label: t(tab === "theme" ? "operator.settings.themeTab" : "operator.settings.appTab"),
-      content: tab === "theme" && draft ? (
-        <div className="flex flex-col gap-4">
-          <ThemePresetsPanel
-            enabled={open && activeTab === "theme"}
-            disabled={isSavingTheme}
-            selectedPresetId={selectedPresetId}
-            onSelectedPresetChange={setSelectedPresetId}
-          />
-          <ThemeSettingsPanel
-            value={draft}
-            onChange={setDraft}
-            disabled={isSavingTheme}
-          />
-        </div>
-      ) : (
-        <AppSettingsPanel onStateChange={setAppState} role={role} />
-      ),
-    })),
-    [
-      activeTab,
-      draft,
-      isSavingTheme,
-      open,
-      selectedPresetId,
-      setDraft,
-      t,
-      tabs,
-      role,
-    ],
+    () =>
+      tabs.map((tab) => ({
+        value: tab,
+        label: t(
+          tab === "theme" ? "operator.settings.themeTab" : "operator.settings.appTab",
+        ),
+        content:
+          tab === "theme" ? (
+            <div className="flex flex-col gap-4">
+              <NThemePresetSettings />
+              {/* Kafil edits the theme group only, as it always has. The
+                  customizer's Typography tab is a wider editable surface than
+                  this product has ever exposed, and widening it is a product
+                  decision rather than a consequence of adopting the package. */}
+              <NThemeAppearanceSettings tabs={["theme"]} showTabs={false} customizerLabels={themeCustomizerLabels} />
+              <NThemeBrandingSettings />
+            </div>
+          ) : (
+            <AppSettingsPanel onStateChange={setAppState} role={role} />
+          ),
+      })),
+    [role, t, tabs, themeCustomizerLabels],
   );
 
   function closeNow() {
-    // The theme draft intentionally survives: it is the live preview.
-    void branding.cancelDraft();
+    // The appearance draft intentionally survives: it is the live preview.
+    // Branding candidates do not, and `discardDrafts` deletes their uploads.
+    if (theme?.dirty.branding) void theme.discardDrafts();
     setActiveTab(tabs[0] ?? "app");
     setAppState({ dirty: false, saving: false });
     setConfirmClose(false);
@@ -151,86 +181,7 @@ function GlobalSettings({
     closeNow();
   }
 
-  async function saveTheme() {
-    if (!draft || !themeDirty || revision === undefined) return;
-    setIsSavingTheme(true);
-    try {
-      let expectedRevision = revision;
-
-      if (selectedPresetId) {
-        /**
-         * Applying writes the preset's complete design. The ordinary edit path
-         * merges only editable fields, which would drop the theme's typography
-         * and sidebar widths.
-         */
-        const applied = await applyPreset.mutateAsync({
-          id: selectedPresetId,
-          expectedRevision,
-        });
-        adopt(applied);
-        expectedRevision = applied.revision;
-
-        // Anything the admin tweaked on top of the preset still needs a save.
-        if (JSON.stringify(draft) === JSON.stringify(applied.designConfig)) {
-          beginDraft();
-          toast.success(t("operator.settings.themeSaveSuccess"));
-          return;
-        }
-      }
-
-      await save(draft, expectedRevision);
-      beginDraft();
-      toast.success(t("operator.settings.themeSaveSuccess"));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("operator.settings.themeSaveError"));
-    } finally {
-      setIsSavingTheme(false);
-    }
-  }
-
-  async function resetTheme() {
-    if (revision === undefined) return;
-    setIsSavingTheme(true);
-    try {
-      await resetToFactory(revision);
-      beginDraft();
-      setConfirmReset(false);
-      toast.success(t("operator.settings.themeResetSuccess"));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("operator.settings.themeResetError"));
-    } finally {
-      setIsSavingTheme(false);
-    }
-  }
-
-  async function importTheme(event: React.ChangeEvent<HTMLInputElement>) {
-    const input = event.currentTarget;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-
-    try {
-      setDraft(parseThemeFile(await file.text()));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Invalid theme file");
-    }
-  }
-
-  function exportTheme() {
-    const url = URL.createObjectURL(
-      new Blob([stringifyThemeFile(draft ?? committed)], {
-        type: "application/json",
-      }),
-    );
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "kafil-theme.json";
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
-
   const themeActive = activeTab === "theme";
-  const pending = themeActive ? isSavingTheme : appState.saving;
 
   return (
     <>
@@ -243,78 +194,22 @@ function GlobalSettings({
         description={t("operator.settings.sheetDescription")}
         width={500}
         footer={
-          <div className="flex w-full items-center justify-between gap-3">
-            {themeActive ? (
-              <div className="flex items-center gap-2">
-                <input
-                  ref={themeFileInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  className="sr-only"
-                  disabled={pending}
-                  onChange={(event) => void importTheme(event)}
-                />
-                <NButton
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label="Import theme"
-                  title="Import theme"
-                  disabled={pending}
-                  onClick={() => themeFileInputRef.current?.click()}
-                >
-                  <Upload />
-                </NButton>
-                <NButton
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label="Export theme"
-                  title="Export theme"
-                  disabled={pending}
-                  onClick={exportTheme}
-                >
-                  <Download />
-                </NButton>
-                <NButton
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label={t("operator.settings.resetTheme")}
-                  title={t("operator.settings.resetTheme")}
-                  disabled={pending}
-                  onClick={() => setConfirmReset(true)}
-                >
-                  <RotateCcw />
-                </NButton>
-              </div>
-            ) : (
-              <span />
-            )}
-            {themeActive ? (
-              <NButton
-                type="button"
-                size="icon-sm"
-                aria-label={t("operator.settings.saveTheme")}
-                title={t("operator.settings.saveTheme")}
-                disabled={!themeDirty || pending}
-                onClick={() => void saveTheme()}
-              >
-                <Save />
-              </NButton>
-            ) : (
+          themeActive ? (
+            <NThemeSettingsActions className="w-full" />
+          ) : (
+            <div className="flex w-full items-center justify-end gap-3">
               <NButton
                 type="submit"
                 form={APP_SETTINGS_FORM_ID}
                 size="icon-sm"
                 aria-label={t("operator.settings.save")}
                 title={t("operator.settings.save")}
-                disabled={pending}
+                disabled={appState.saving}
               >
                 <Save />
               </NButton>
-            )}
-          </div>
+            </div>
+          )
         }
       >
         <NTabs
@@ -334,17 +229,6 @@ function GlobalSettings({
         cancelLabel={t("operator.settings.cancel")}
         variant="destructive"
         onConfirm={closeNow}
-      />
-      <NConfirmDialog
-        open={confirmReset}
-        onOpenChange={setConfirmReset}
-        title={t("operator.settings.resetThemeTitle")}
-        description={t("operator.settings.resetThemeDescription")}
-        confirmLabel={t("operator.settings.resetTheme")}
-        cancelLabel={t("operator.settings.cancel")}
-        variant="destructive"
-        loading={isSavingTheme}
-        onConfirm={() => void resetTheme()}
       />
     </>
   );

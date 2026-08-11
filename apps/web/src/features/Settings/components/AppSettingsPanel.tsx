@@ -9,11 +9,10 @@ import {
   useNForm,
   useNajmTimeZone,
 } from "najm-kit";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
-import { useBrandingEditor } from "../hooks/BrandingEditor";
 import {
   settingsFormDefault,
   settingsFormSchema,
@@ -21,10 +20,18 @@ import {
   type SettingsFormValues,
 } from "../config/settingSchemas";
 import { usePlatformSettings, useSettingCommands } from "../hooks/useSettings";
-import { BrandAssetsPanel } from "./BrandAssetsPanel";
 
 export const APP_SETTINGS_FORM_ID = "platform-settings-form";
 
+/**
+ * Kafil's own platform settings: the funding target, the contribution expiry
+ * window, the form-fill shortcut, and the display time zone.
+ *
+ * Branding used to be saved from here, which coupled a Kafil product form to
+ * an asset lifecycle. It is `najm-theme`'s Branding section now, under the
+ * theme tab, with its own save. One failure no longer reports the other as
+ * rolled back when it committed.
+ */
 export function AppSettingsPanel({
   onStateChange,
 }: Readonly<{
@@ -33,65 +40,30 @@ export function AppSettingsPanel({
 }>) {
   const setting = usePlatformSettings();
   const { updateSettings } = useSettingCommands();
-  const branding = useBrandingEditor();
   const { t } = useKafilLanguage();
   const { timeZone, setTimeZone } = useNajmTimeZone();
   const form = useNForm({ schema: settingsFormSchema });
-  const [savingBranding, setSavingBranding] = useState(false);
-  const [uploadingCount, setUploadingCount] = useState(0);
 
   useEffect(() => {
     if (setting.data) form.reset(settingsFormDefault(setting.data, timeZone));
   }, [form, setting.data, timeZone]);
 
   useEffect(() => {
-    const combinedDirty = form.formState.isDirty || branding.isDirty;
-    const pending =
-      updateSettings.isPending || savingBranding || uploadingCount > 0;
     onStateChange?.({
-      dirty: combinedDirty,
-      saving: pending,
+      dirty: form.formState.isDirty,
+      saving: updateSettings.isPending,
     });
-  }, [
-    branding.isDirty,
-    form.formState.isDirty,
-    onStateChange,
-    savingBranding,
-    updateSettings.isPending,
-    uploadingCount,
-  ]);
+  }, [form.formState.isDirty, onStateChange, updateSettings.isPending]);
 
   async function handleSubmit(values: SettingsFormValues) {
-    let brandingError: unknown = null;
-    if (branding.isAdmin && branding.isDirty) {
-      setSavingBranding(true);
-      try {
-        await branding.commitDraft();
-        toast.success(t("operator.settings.branding.saveSuccess"));
-      } catch (error) {
-        brandingError = error;
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t("operator.settings.branding.saveError"),
-        );
-      } finally {
-        setSavingBranding(false);
-      }
-    }
+    if (!form.formState.isDirty) return;
 
-    if (!form.formState.isDirty && brandingError) {
-      return;
+    const updated = await updateSettings.mutateAsync(toSettingsInput(values));
+    if (values.timeZone !== timeZone) {
+      await setTimeZone(values.timeZone);
+      toast.success(t("display.timeZone.saved"));
     }
-
-    if (form.formState.isDirty) {
-      const updated = await updateSettings.mutateAsync(toSettingsInput(values));
-      if (values.timeZone !== timeZone) {
-        await setTimeZone(values.timeZone);
-        toast.success(t("display.timeZone.saved"));
-      }
-      form.reset(settingsFormDefault(updated, values.timeZone));
-    }
+    form.reset(settingsFormDefault(updated, values.timeZone));
   }
 
   if (setting.isPending) {
@@ -144,18 +116,6 @@ export function AppSettingsPanel({
           formLabel={t("display.timeZone.label")}
         />
       </NForm>
-      {branding.isAdmin ? (
-        <BrandAssetsPanel
-          onStateChange={(state) => setUploadingCount(state.uploading)}
-        />
-      ) : null}
-      {uploadingCount > 0 ? (
-        <p className="text-center text-xs text-muted-foreground">
-          {t("operator.settings.branding.uploadingCount", {
-            count: uploadingCount,
-          })}
-        </p>
-      ) : null}
     </div>
   );
 }

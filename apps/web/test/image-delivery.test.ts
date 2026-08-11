@@ -57,16 +57,23 @@ describe("published media contract integration", () => {
     expect(familyDashboard).toContain("fallbackSrc={getPersonImage");
   });
 
-  test("leaves public branding eligible for the Next optimizer", () => {
-    const branding = source("features/Branding/BrandingImage.tsx");
-    expect(branding).not.toContain("unoptimized");
-    expect(branding).toContain("preload");
-    expect(branding).not.toContain("priority");
+  test("delegates branding delivery to najm-theme", () => {
+    // Kafil no longer owns a branding image component. `NThemeImage` renders
+    // the slot, and the factory bytes are served by the definition under a
+    // content-hashed, immutable name — which is a better cache story than the
+    // Next optimizer gave the old public file, and one this app cannot get
+    // wrong by forgetting a prop.
+    for (const path of ["app/(auth)/layout.tsx", "app/(first-login)/layout.tsx"]) {
+      const layout = source(path);
+      expect(layout).toContain("<NThemeImage");
+      expect(layout).not.toContain("unoptimized");
+    }
   });
 
   test("uses the authoritative normalized path returned by every upload", () => {
+    // Branding is absent: `najm-theme` owns its upload client, and its own
+    // tests pin that the committed file name comes from the server.
     for (const service of [
-      "services/brandingApi.ts",
       "services/categoryApi.ts",
       "services/childApi.ts",
       "services/familyApi.ts",
@@ -77,9 +84,7 @@ describe("published media contract integration", () => {
       const content = source(service);
       expect(content).toContain("api.upload<");
       expect(content).not.toContain("return `/api${");
-      if (!service.endsWith("brandingApi.ts")) {
-        expect(content).toContain("return uploaded.path");
-      }
+      expect(content).toContain("return uploaded.path");
     }
   });
 });

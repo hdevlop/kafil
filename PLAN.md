@@ -2,7 +2,7 @@
 
 Status: **ACTIVE**
 
-Last updated: 2026-08-09
+Last updated: 2026-08-11
 
 This plan replaces the previous root plan. It is the sole roadmap for the
 current worktree: there is no required companion pagination plan. Completed
@@ -11,8 +11,13 @@ that is already present and still needs acceptance evidence.
 
 ## Verified baseline
 
-- Root and web manifests, `bun.lock`, and the installed package resolve
-  `najm-kit@2.9.0`. Do not use the superseded `2.1.56` or `2.7.3` baselines.
+- Root and web manifests, `bun.lock`, and the installed packages resolve
+  `najm-kit@2.11.0` and `najm-theme@0.2.0`. Do not use the superseded
+  `2.1.56`, `2.7.3`, `2.9.0`, or `2.10.0` baselines, or any `najm-theme@0.1.x`.
+- Both versions are published on npm and pinned by registry version. Kafil was
+  validated first against the exact candidate tarballs; the registry downloads
+  were then verified byte-for-byte against those candidates before the local
+  `file:` pins were removed.
 - Branding already uses Najm Kit `ImageInput`; Kafil's old
   `BrandingAssetPreview` is gone. The server owns managed branding storage,
   safe fallback projection, MIME validation, and raw-byte asset delivery.
@@ -30,7 +35,7 @@ that is already present and still needs acceptance evidence.
 
 ## Scheduled companion work
 
-Three bounded plans are owned outside this file. None renumbers a phase here,
+Four bounded plans are owned outside this file. None renumbers a phase here,
 and none may absorb another plan's moves.
 
 - `AUTH-COOKIE-PLAN.md` owns the credential-setup and cookie migration. Its
@@ -40,6 +45,76 @@ and none may absorb another plan's moves.
 - `UI-BOOTSTRAP-PLAN.md` owns the shared Najm Kit server appearance and
   branding bootstrap, its publication, Kafil adoption, and adoption by the
   second consumer. Kafil's adoption must finish before Phase 2 acceptance.
+- Najm `NAJM-THEME-RELEASE-ACCEPTANCE-PLAN.md` owns the `najm-theme` release and
+  Kafil adoption. Najm `CREDENTIAL-CARD.md` owns the shared one-time credential
+  handover component.
+
+Kafil's `najm-theme@0.2.0` / `najm-kit@2.11.0` adoption must close before the
+Phase 2 gate below. Theme behavior is package-owned; Kafil owns only its factory
+directory, policy, application composition, compatibility redirects, and
+consumer acceptance.
+
+### Published Najm packages
+
+Published and registry-pinned on 2026-08-11:
+
+| Package | Candidate and registry SHA-256 | Packing commit |
+| --- | --- | --- |
+| `najm-kit@2.11.0` | `c13b02fdf014c8c1c52db8c1d7b32d385ed64d36a47f414c0b170e626cfb618d` | `f7c9d0b4f61a2a3a3446538d401a0ecdded00618` |
+| `najm-theme@0.2.0` | `9289f09359c297fbad460be9f2391fbdc2ed70bc5c4316285b09d33bd8a5013e` | `d5deb0ccfabf998abfa84c83fdafd8f1bb3c034c` |
+
+- [x] Publish both exact tarballs, verify registry downloads match the
+  candidate SHA-256 values, replace every temporary `file:` spec with registry
+  versions, refresh `bun.lock`, and verify `bun install --frozen-lockfile`.
+- [x] Spread `najm-theme/pg` into `packages/server/src/database/schema.ts` and
+  generate one new migration. Never edit a deployed appearance, branding, or
+  preset migration.
+- [x] Backfill `platform_settings` appearance and branding and `theme_presets`
+  into the package tables, preserving revisions, built-in markers, creator
+  attribution, and timestamps, and leaving every Kafil-only column untouched.
+- [x] Register `theme(kafilTheme, policy)` from the canonical
+  `packages/server/theme/` directory, preserving Kafil's 2 MB / 5 MB ceilings,
+  admin management guard, public reads, `theme-branding` storage namespace,
+  audit sink, diagnostics, and MCP. Both server and web import the definition
+  through `@kafil/server/theme`; no consumer resolves it from `process.cwd()`.
+- [x] Keep `basePath: ""` so `/api/appearance` and `/api/branding` survive.
+  `/api/theme-presets` becomes `/api/presets` and
+  `/api/branding/assets/serve/:f` becomes `/api/branding/assets/:f`; both old
+  paths keep a temporary redirect through the rollback window, recorded for
+  removal in Phase 5.
+- [x] Delete Kafil's appearance, branding, and theme-preset controllers,
+  services, repositories, DTOs, validators, storage helpers, API clients, query
+  keys, hooks, branding editor context, and preset orchestration.
+- [x] Delete `apps/web/src/lib/uiResources.ts` and keep one module-scope
+  `kafilTheme.react(...)` bootstrap in `serverTheme.ts`; no factory callback,
+  branding-path map, client base URL, or second resources wrapper survives.
+- [x] Compose the package components inside the existing global settings sheet
+  and `/operator/settings` without changing Kafil's own app-setting tabs.
+- [ ] Manual authenticated browser acceptance remains open by explicit user
+  decision. Anonymous production checks covered factory auth marks, mobile,
+  Arabic RTL, immutable WebP delivery, and broken-image removal. Sidebar state,
+  settings upload/save/reload/reset, and the Kafil credential-handover flow were
+  not accepted because the available database had no usable admin identity.
+- [ ] Drop the seven legacy `platform_settings` columns and `theme_presets`
+  only in a later migration, after data verification and rollback-window
+  approval. Scheduled in Phase 5, never in the cutover release.
+
+The rollback window is one-way, so keep it short. Migration `0043` only adds
+tables, so reverting the code restores the legacy state exactly as the cutover
+left it. It does not carry back anything an administrator changed afterwards —
+those writes land in the package tables and nothing mirrors them into the
+legacy columns. Reverting therefore costs whatever theming happened during the
+window.
+
+Two prerequisites carried from `najm-theme-api-freeze.md` §5 are **not**
+satisfied by source work and stay open here:
+
+- [ ] Re-run the branding asset format audit against the **production**
+  database and storage before cutover. Development data cannot prove what
+  production holds.
+- [ ] Search email templates, cached documents, automation, saved prompts, and
+  bookmarks for `/theme-presets`, `/branding/assets/serve`, and the retired
+  `appearance_*` / `branding_*` / `theme-presets_*` MCP tool names.
 
 Kafil's share of the session plan is its Move 3, scheduled here and executed
 against the published `najm-auth@3.1.0`:
@@ -57,25 +132,9 @@ against the published `najm-auth@3.1.0`:
 - [x] Cover the package-owned boundary in `apps/web/test/server-session.test.ts`.
 - [ ] Browser acceptance for the flows listed in `AUTH-SESSION-PLAN.md` §6.
 
-Kafil's share of the UI bootstrap plan is its Move 4, scheduled here and
-executed against the published `najm-kit@2.9.0`. It must close before the
-Phase 2 gate below:
-
-- [x] Pin `najm-kit@2.9.0` in the root override, the root dependency, and the
-  web manifest, resolving to one version in `bun.lock`.
-- [x] Replace `apps/web/src/lib/loader.ts` with one module-level
-  `createReactServerUiBootstrap()` instance in `serverLoader.ts`, keeping
-  `server-only` and the `loadServerUiBootstrap` / `loadServerAppearance` /
-  `loadServerBranding` exports the layouts already import.
-- [x] Keep the lazy internal `server.fetch()` binding, the endpoint paths, the
-  factory theme and assets, the strict appearance validator, and the full
-  public branding parser application-owned in `apps/web/src/lib/uiResources.ts`.
-- [x] Move the generic loading, envelope, fallback, and parallel-composition
-  tests to Najm Kit; keep focused Kafil tests for configuration, the four
-  branding slots, factory assets, diagnostics, and layout integration.
-- [x] Generate no database migration.
-- [ ] Browser acceptance for the flows listed in `UI-BOOTSTRAP-PLAN.md` §7,
-  folded into the Phase 2 browser pass below.
+The older `najm-kit@2.9.0` UI-bootstrap adoption is superseded by the definition
+bootstrap above. Do not restore `createReactServerUiBootstrap`, `uiResources`,
+or app-owned factory parsing.
 
 School's Moves 4–5 of both companion plans are executed from that repository's
 own `NAJM-UPGRADE-PLAN.md` and are not tracked here. The UI bootstrap plan's
@@ -124,8 +183,17 @@ Phase 1 gate:
 
 ## Phase 2 — Complete branding asset acceptance
 
-Goal: prove the existing branding implementation works from storage through all
-runtime consumers, not merely through source tests.
+Goal: prove the branding implementation works from storage through all runtime
+consumers, not merely through source tests.
+
+The implementation under test is `najm-theme@0.2.0`, adopted by the block
+block above. Kafil owns the configuration, the factory assets, the layouts that
+render a slot, and this acceptance evidence; it no longer owns the upload,
+validation, revision, cleanup, or fallback code these checks exercise. Two
+behaviors changed with the package and must be checked as new, not as
+regressions: a committed asset whose bytes are missing now answers 404 and the
+UI must show localized recovery rather than a broken image, and AVIF is no
+longer an accepted upload format.
 
 - [ ] Record configured path, resolved path, fallback, and draft state for
   expanded sidebar logo, collapsed sidebar logo, authentication logo, and
@@ -239,6 +307,11 @@ Phase 4 gate:
 
 - [ ] Investigate any migration generated by `db:generate`; do not accept
   unexplained schema drift or altered deployed migrations.
+- [ ] Close the two deferred `najm-theme` cutover items once the rollback
+  window has been approved: remove the `/api/theme-presets` and
+  `/api/branding/assets/serve/:f` compatibility redirects, then drop the seven
+  legacy `platform_settings` theme columns and the `theme_presets` table in one
+  separate migration. Neither belongs in the adoption release.
 - [ ] Production-smoke `/`, `/dashboard`, `/api/system/health`, and
   `/api/mcp/tools` with the intended runtime configuration.
 - [ ] Inspect every modified, deleted, and untracked file; preserve unrelated

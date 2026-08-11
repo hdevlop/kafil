@@ -1,5 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import { getTableColumns } from "drizzle-orm";
+import {
+  najmThemeAppearance,
+  najmThemeBranding,
+  najmThemePresets,
+  themeSchema as najmThemeSchema,
+} from "najm-theme/pg";
 
 import {
   applicants,
@@ -46,6 +52,7 @@ describe("Kafil database schema", () => {
         "permissions",
         "rolePermissions",
         ...Object.keys(kafilSchema),
+        ...Object.keys(najmThemeSchema),
       ].sort(),
     );
   });
@@ -392,7 +399,14 @@ describe("Kafil database schema", () => {
     );
   });
 
-  it("stores the configurable family funding target as a singleton setting", () => {
+  /**
+   * The theme columns below are legacy after `najm-theme.md` Move 8 and
+   * nothing reads or writes them. They are pinned here on purpose: dropping
+   * them in the adoption release would turn rollback into a destructive
+   * reverse migration. They leave in a separate migration once the rollback
+   * window closes — root `PLAN.md` Phase 5.
+   */
+  it("keeps the funding target singleton and the un-read legacy theme columns", () => {
     const columns = getTableColumns(platformSettings);
 
     expect(Object.keys(columns)).toEqual(
@@ -413,7 +427,7 @@ describe("Kafil database schema", () => {
     expect(columns.appearanceRevision.hasDefault).toBe(true);
   });
 
-  it("stores reusable theme presets keyed by a unique slug", () => {
+  it("keeps the legacy theme_presets table intact for the rollback window", () => {
     const columns = getTableColumns(themePresets);
 
     expect(Object.keys(columns)).toEqual([
@@ -434,6 +448,43 @@ describe("Kafil database schema", () => {
     expect(columns.isBuiltIn.hasDefault).toBe(true);
     // A deleted admin must not take their saved themes with them.
     expect(columns.createdByUserId.notNull).toBe(false);
+  });
+
+  /**
+   * The package's own tests cover these columns' behavior. What Kafil owns is
+   * that they are *composed* — a table drizzle-kit cannot reach from this entry
+   * point is a table it writes a `DROP` for.
+   */
+  it("composes the three najm-theme tables so migrations see them", () => {
+    expect(Object.keys(najmThemeSchema).sort()).toEqual([
+      "najmThemeAppearance",
+      "najmThemeBranding",
+      "najmThemePresets",
+    ]);
+
+    for (const key of Object.keys(najmThemeSchema)) {
+      expect(schema[key as keyof typeof schema]).toBeDefined();
+    }
+
+    expect(Object.keys(getTableColumns(najmThemeAppearance))).toEqual([
+      "scopeId",
+      "designConfig",
+      "revision",
+      "updatedByActorId",
+      "createdAt",
+      "updatedAt",
+    ]);
+    expect(Object.keys(getTableColumns(najmThemeBranding))).toEqual([
+      "scopeId",
+      "slotConfig",
+      "revision",
+      "updatedByActorId",
+      "createdAt",
+      "updatedAt",
+    ]);
+    // Text, not a foreign key: attribution has to outlive the user row, and an
+    // `ON DELETE SET NULL` would rewrite the answer to "who changed the theme".
+    expect(getTableColumns(najmThemePresets).createdByActorId.notNull).toBe(false);
   });
 
   it("composes support assignments with lifecycle and privacy boundaries", () => {

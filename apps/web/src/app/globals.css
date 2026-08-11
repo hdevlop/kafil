@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "najm-kit/theme.css";
+@import "najm-theme/styles.css";
 @import "flag-icons/css/flag-icons.min.css";
 
 :root {

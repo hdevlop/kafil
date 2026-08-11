@@ -1,8 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import {
-  parseAppearanceDesignConfig,
-  themePresetSlug,
-} from "@kafil/server/modules";
+import { parseSafeDesignConfig, themePresetSlug } from "najm-theme";
 
 import { builtInThemePresets } from "../src/theme-preset-seed";
 
@@ -17,11 +14,11 @@ describe("built-in theme presets", () => {
     ]);
   });
 
-  it("keeps every shipped design acceptable to the appearance validator", () => {
+  it("keeps every shipped design acceptable to the package appearance policy", () => {
     for (const preset of builtInThemePresets()) {
       expect(
-        () => parseAppearanceDesignConfig(preset.design),
-        `${preset.name} must satisfy the appearance validator`,
+        () => parseSafeDesignConfig(preset.design),
+        `${preset.name} must satisfy the package appearance policy`,
       ).not.toThrow();
     }
   });
@@ -35,7 +32,7 @@ describe("built-in theme presets", () => {
 
   it("defines a light mode and a dark override for every shipped theme", () => {
     for (const preset of builtInThemePresets()) {
-      const design = parseAppearanceDesignConfig(preset.design);
+      const design = parseSafeDesignConfig(preset.design);
 
       expect(design.theme.mode, `${preset.name} mode`).toBe("light");
       expect(

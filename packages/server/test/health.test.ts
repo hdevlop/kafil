@@ -79,14 +79,11 @@ describe("Kafil server", () => {
       "admin-access_list_users",
       "admin-access_reactivate",
       "admin-access_revoke_sessions",
-      "appearance_get_appearance",
-      "appearance_update_appearance",
-      "appearance_reset_appearance",
-      "branding_get_branding",
-      "branding_get_branding_config",
-      "branding_update_branding",
-      "branding_reset_branding",
-      "branding_delete_asset",
+      // `najm-theme` registers five tools under its own frozen names
+      // (`najm-theme-api-freeze.md` §2.3), replacing Kafil's thirteen
+      // controller-derived ones. There is deliberately no appearance-save and
+      // no upload tool: uploads stay REST/binary rather than sending image
+      // bytes as base64 through a transcript that is frequently logged.
       "budgets_get_own_summary",
       "budgets_list_own_ledger",
       "budgets_get_summary",
@@ -222,10 +219,11 @@ describe("Kafil server", () => {
       "support-assignments_create",
       "support-assignments_update_notes",
       "support-assignments_end",
-      "theme-presets_list_presets",
-      "theme-presets_create_preset",
-      "theme-presets_apply_preset",
-      "theme-presets_delete_preset",
+      "theme_appearance_get",
+      "theme_appearance_reset",
+      "theme_branding_get",
+      "theme_preset_apply",
+      "theme_presets_list",
     ].sort());
   });
 

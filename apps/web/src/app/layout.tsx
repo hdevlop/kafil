@@ -5,7 +5,7 @@ import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { PwaRegistration } from "@/components/PwaRegistration";
 import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
-import { loadServerAppearance, loadServerBranding } from "@/lib/serverLoader";
+import { loadServerAppearance, loadServerBranding } from "@/lib/serverTheme";
 import {
   isKafilTheme,
   normalizeKafilLanguage,

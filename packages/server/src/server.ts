@@ -6,6 +6,8 @@ import {
   emailConfig,
   i18nConfig,
   mcpConfig,
+  storageConfig,
+  themeConfig,
 } from "./config";
 import * as modules from "./modules";
 
@@ -22,6 +24,10 @@ function createServer() {
     .use(emailConfig())
     .use(authConfig())
     .use(mcpConfig())
+    // `theme()` resolves the storage service and the MCP registry from the
+    // container, so both must be registered before it.
+    .use(storageConfig())
+    .use(themeConfig())
     .base("/api")
     .load(modules);
 }

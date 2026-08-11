@@ -10,11 +10,12 @@ export const MANAGED_IMAGE_MAX_AXIS = 8_192;
 export const MANAGED_IMAGE_MAX_PIXELS = 24_000_000;
 export const MANAGED_IMAGE_OUTPUT_MIME = "image/webp";
 
-export type ManagedImageProfileName =
-  | "person"
-  | "catalog"
-  | "brandingLogo"
-  | "brandingHero";
+/**
+ * Branding profiles are gone: `najm-theme` owns branding normalization, its
+ * ceilings, and its output format. Two profiles nothing calls would be a second
+ * branding policy waiting to disagree with the one that runs.
+ */
+export type ManagedImageProfileName = "person" | "catalog";
 
 export interface ManagedImageProfile {
   maxBytes: number;
@@ -39,20 +40,6 @@ export const MANAGED_IMAGE_PROFILES: Record<
     maxBytes: 200_000,
     maxHeight: 1_280,
     maxWidth: 1_280,
-    minQuality: 62,
-    quality: 82,
-  },
-  brandingLogo: {
-    maxBytes: 150_000,
-    maxHeight: 512,
-    maxWidth: 1_024,
-    minQuality: 65,
-    quality: 85,
-  },
-  brandingHero: {
-    maxBytes: 350_000,
-    maxHeight: 1_280,
-    maxWidth: 1_920,
     minQuality: 62,
     quality: 82,
   },

@@ -1,17 +1,21 @@
 # Shared Server UI Bootstrap Plan
 
-Status: **IN PROGRESS**
+Status: **SUPERSEDED BY `najm-theme@0.2.0`**
 
-Last updated: 2026-08-09
+Last updated: 2026-08-11
 
 Current status:
 
-- [x] The pure and React-server bootstrap adapters are published in
-  `najm-kit@2.9.0`.
-- [x] Kafil consumes the adapters and passes its local lint, typecheck, unit,
-  production-build, and no-DDL gates.
-- [ ] Complete Kafil Phase 2 browser and PostgreSQL acceptance.
-- [ ] Adopt the same published adapters in the second application.
+- [x] The original pure and React-server adapters shipped in `najm-kit@2.9.0`.
+- [x] Their Kafil-specific factory/parser wiring was removed by the
+  `najm-theme@0.2.0` definition bootstrap.
+- [ ] Complete the manual Kafil Phase 2 browser and PostgreSQL acceptance in
+  root `PLAN.md`.
+
+This file is retained as design history. Do not execute its old
+`createReactServerUiBootstrap` or app-owned factory-parser moves. The active
+contract is `packages/server/theme/` plus `kafilTheme.react(...)`, documented in
+root `PLAN.md` and `AGENTS.md`.
 
 This plan moves the reusable appearance and branding bootstrap mechanics into
 a published `najm-kit` server adapter, then adopts that contract in Kafil and a
@@ -46,7 +50,7 @@ errors, caching, or release gates.
 - `apps/web/src/lib/loader.ts` currently owns the public appearance and
   branding endpoint paths, response parsing, diagnostics, factory fallbacks,
   and parallel bootstrap composition.
-- `apps/web/src/lib/serverLoader.ts` adds `server-only`, one module-level
+- `apps/web/src/lib/serverTheme.ts` adds `server-only`, one module-level
   `React.cache()` instance, and Kafil's lazy internal `server.fetch()` binding.
 - `apps/web/src/app/layout.tsx`, the auth layout, and the first-login layout
   consume the server-resolved appearance or branding snapshot.
@@ -80,7 +84,7 @@ najm-kit/server/react  React Server Component request memoization
 Each application retains one stable module singleton:
 
 ```text
-src/lib/serverLoader.ts  application fetcher + factory fallbacks + adapter instance
+src/lib/serverTheme.ts   application fetcher + factory fallbacks + adapter instance
 ```
 
 The intended consumer shape is:
@@ -290,7 +294,7 @@ Repo: `C:\Users\hdevlop\Desktop\kafil`.
 - [ ] Align root overrides, manifests, and `bun.lock` to the exact published
   Najm Kit version.
 - [ ] Replace Kafil's reusable loader implementation with one module-level
-  `createReactServerUiBootstrap()` instance in `serverLoader.ts`.
+  `createReactServerUiBootstrap()` instance in `serverTheme.ts`.
 - [ ] Keep Kafil's lazy internal `server.fetch()` binding, endpoint choices,
   factory theme, factory branding, strict appearance validator, and full public
   branding parser application-owned through adapter options.
@@ -345,7 +349,7 @@ test before marking Kafil adoption accepted.
 - [ ] Implement compatible public appearance and branding endpoints in that
   application's backend only if they do not already exist. Storage, validation,
   authorization, audit, uploads, and revision locking remain app-owned.
-- [ ] Create one local `serverLoader.ts` singleton with that application's
+- [ ] Create one local `serverTheme.ts` singleton with that application's
   fetcher, factory theme, factory assets, parsers, paths, and diagnostics.
 - [ ] Seed `NajmAppProvider` from the server snapshot without adding a second
   client-side source of truth.
@@ -372,7 +376,7 @@ a branding or settings backend to avoid that work.
   factory failure, request isolation, mutation refresh, and client-bundle
   isolation.
 
-The app-level `serverLoader.ts` file is intentional. React consumers must reach
+The app-level `serverTheme.ts` file is intentional. React consumers must reach
 the same memoized instance to share one render snapshot, while the application
 must still provide its own backend and factory configuration.
 

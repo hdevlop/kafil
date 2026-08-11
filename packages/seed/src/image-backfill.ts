@@ -11,28 +11,29 @@ import {
   type ManagedImageProfileName,
 } from "@kafil/server/managed-images";
 
+/**
+ * Branding is deliberately absent from this job.
+ *
+ * `najm-theme` owns branding assets after the Move 8 adoption: it probes,
+ * normalizes, names, and sweeps them, and its `slot_config` records the MIME
+ * type and byte count of the bytes it actually wrote. Re-encoding those files
+ * behind its back would leave every slot record describing a file that no
+ * longer matches it. `POST /api/branding/assets/reconcile` is the branding
+ * equivalent of this command.
+ */
 type ImageKind =
   | "family"
   | "sponsor"
   | "operator"
   | "child"
   | "category"
-  | "product"
-  | "brandingLogo"
-  | "brandingHero";
+  | "product";
 
 interface ImageReference {
   kind: ImageKind;
   ownerId: string;
   path: string;
-  brandingColumn?: BrandingColumn;
 }
-
-type BrandingColumn =
-  | "sidebar_logo_expanded_path"
-  | "sidebar_logo_collapsed_path"
-  | "auth_logo_path"
-  | "auth_hero_image_path";
 
 export interface ImageBackfillManifestEntry {
   kind: ImageKind;
@@ -43,7 +44,6 @@ export interface ImageBackfillManifestEntry {
   newChecksum: string;
   oldBytes: number;
   newBytes: number;
-  brandingColumn?: BrandingColumn;
 }
 
 export interface ImageBackfillManifest {
@@ -72,8 +72,6 @@ const PROFILE_BY_KIND: Record<ImageKind, ManagedImageProfileName> = {
   child: "person",
   category: "catalog",
   product: "catalog",
-  brandingLogo: "brandingLogo",
-  brandingHero: "brandingHero",
 };
 
 const STORAGE_BY_KIND: Record<ImageKind, string> = {
@@ -83,8 +81,6 @@ const STORAGE_BY_KIND: Record<ImageKind, string> = {
   child: "child-images",
   category: "category-images",
   product: "product-images",
-  brandingLogo: "branding",
-  brandingHero: "branding",
 };
 
 const PREFIX_BY_KIND: Record<ImageKind, string> = {
@@ -94,31 +90,21 @@ const PREFIX_BY_KIND: Record<ImageKind, string> = {
   child: "/api/child-images/files/serve/",
   category: "/api/category-images/files/serve/",
   product: "/api/product-images/files/serve/",
-  brandingLogo: "/api/branding/assets/serve/",
-  brandingHero: "/api/branding/assets/serve/",
 };
 
 const REFERENCE_SQL = `
-SELECT 'family' AS kind, fp.id::text AS owner_id, u.image AS path, NULL::text AS branding_column
+SELECT 'family' AS kind, fp.id::text AS owner_id, u.image AS path
 FROM family_profiles fp JOIN users u ON u.id = fp.user_id WHERE u.image IS NOT NULL
 UNION ALL
-SELECT 'sponsor', sp.id::text, u.image, NULL FROM sponsor_profiles sp JOIN users u ON u.id = sp.user_id WHERE u.image IS NOT NULL
+SELECT 'sponsor', sp.id::text, u.image FROM sponsor_profiles sp JOIN users u ON u.id = sp.user_id WHERE u.image IS NOT NULL
 UNION ALL
-SELECT 'operator', sp.id::text, u.image, NULL FROM staff_profiles sp JOIN staff_functions sf ON sf.staff_profile_id = sp.id AND sf.function_key = 'operator' JOIN users u ON u.id = sp.user_id WHERE u.image IS NOT NULL
+SELECT 'operator', sp.id::text, u.image FROM staff_profiles sp JOIN staff_functions sf ON sf.staff_profile_id = sp.id AND sf.function_key = 'operator' JOIN users u ON u.id = sp.user_id WHERE u.image IS NOT NULL
 UNION ALL
-SELECT 'child', c.id::text, c.image, NULL FROM children c WHERE c.image IS NOT NULL
+SELECT 'child', c.id::text, c.image FROM children c WHERE c.image IS NOT NULL
 UNION ALL
-SELECT 'category', c.id::text, c.image, NULL FROM categories c WHERE c.image IS NOT NULL
+SELECT 'category', c.id::text, c.image FROM categories c WHERE c.image IS NOT NULL
 UNION ALL
-SELECT 'product', p.id::text, p.image_url, NULL FROM products p WHERE p.image_url IS NOT NULL
-UNION ALL
-SELECT 'brandingLogo', ps.id::text, ps.sidebar_logo_expanded_path, 'sidebar_logo_expanded_path' FROM platform_settings ps WHERE ps.sidebar_logo_expanded_path IS NOT NULL
-UNION ALL
-SELECT 'brandingLogo', ps.id::text, ps.sidebar_logo_collapsed_path, 'sidebar_logo_collapsed_path' FROM platform_settings ps WHERE ps.sidebar_logo_collapsed_path IS NOT NULL
-UNION ALL
-SELECT 'brandingLogo', ps.id::text, ps.auth_logo_path, 'auth_logo_path' FROM platform_settings ps WHERE ps.auth_logo_path IS NOT NULL
-UNION ALL
-SELECT 'brandingHero', ps.id::text, ps.auth_hero_image_path, 'auth_hero_image_path' FROM platform_settings ps WHERE ps.auth_hero_image_path IS NOT NULL
+SELECT 'product', p.id::text, p.image_url FROM products p WHERE p.image_url IS NOT NULL
 ORDER BY 1, 2, 3`;
 
 function checksum(bytes: Uint8Array) {
@@ -127,7 +113,7 @@ function checksum(bytes: Uint8Array) {
 
 function contentUuid(reference: ImageReference, bytes: Uint8Array) {
   const digest = createHash("sha256")
-    .update(`${reference.kind}:${reference.ownerId}:${reference.brandingColumn ?? "image"}`)
+    .update(`${reference.kind}:${reference.ownerId}:image`)
     .update(bytes)
     .digest("hex");
   const variant = ((Number.parseInt(digest[16]!, 16) & 0x3) | 0x8).toString(16);
@@ -158,13 +144,11 @@ async function listReferences(): Promise<ImageReference[]> {
     kind: ImageKind;
     owner_id: string;
     path: string;
-    branding_column: BrandingColumn | null;
   }>(REFERENCE_SQL);
   return result.rows.map((row) => ({
     kind: row.kind,
     ownerId: row.owner_id,
     path: row.path,
-    ...(row.branding_column ? { brandingColumn: row.branding_column } : {}),
   }));
 }
 
@@ -178,23 +162,7 @@ async function updateReference(
   expectedPath: string,
   nextPath: string,
 ) {
-  if (reference.brandingColumn) {
-    const allowed = new Set<BrandingColumn>([
-      "sidebar_logo_expanded_path",
-      "sidebar_logo_collapsed_path",
-      "auth_logo_path",
-      "auth_hero_image_path",
-    ]);
-    if (!allowed.has(reference.brandingColumn)) throw new Error("Invalid branding column");
-    const result = await pool.query(
-      `UPDATE platform_settings SET ${reference.brandingColumn} = $1, branding_revision = branding_revision + 1, updated_at = NOW() WHERE id = $2 AND ${reference.brandingColumn} = $3 RETURNING id`,
-      [nextPath, reference.ownerId, expectedPath],
-    );
-    if (result.rowCount !== 1) throw new Error("Branding reference changed during image backfill");
-    return;
-  }
-
-  const statements: Record<Exclude<ImageKind, "brandingLogo" | "brandingHero">, string> = {
+  const statements: Record<ImageKind, string> = {
     family: "UPDATE users u SET image = $1 FROM family_profiles fp WHERE fp.user_id = u.id AND fp.id = $2 AND u.image = $3 RETURNING u.id",
     sponsor: "UPDATE users u SET image = $1 FROM sponsor_profiles sp WHERE sp.user_id = u.id AND sp.id = $2 AND u.image = $3 RETURNING u.id",
     operator: "UPDATE users u SET image = $1 FROM staff_profiles sp INNER JOIN staff_functions sf ON sf.staff_profile_id = sp.id AND sf.function_key = 'operator' WHERE sp.user_id = u.id AND sp.id = $2 AND u.image = $3 RETURNING u.id",
@@ -202,9 +170,6 @@ async function updateReference(
     category: "UPDATE categories SET image = $1, updated_at = NOW() WHERE id = $2 AND image = $3 RETURNING id",
     product: "UPDATE products SET image_url = $1, updated_at = NOW() WHERE id = $2 AND image_url = $3 RETURNING id",
   };
-  if (reference.kind === "brandingLogo" || reference.kind === "brandingHero") {
-    throw new Error("Branding backfill reference is missing its slot column");
-  }
   const result = await pool.query(statements[reference.kind], [
     nextPath,
     reference.ownerId,
@@ -295,7 +260,6 @@ export async function runImageBackfill(options: {
       newChecksum: checksum(new Uint8Array(await readFile(written.absolutePath))),
       oldBytes: bytes.byteLength,
       newBytes: (await stat(written.absolutePath)).size,
-      ...(reference.brandingColumn ? { brandingColumn: reference.brandingColumn } : {}),
     });
   }
 
@@ -327,7 +291,6 @@ export async function rollbackImageBackfill(manifestPath: string) {
       kind: entry.kind,
       ownerId: entry.ownerId,
       path: entry.newPath,
-      ...(entry.brandingColumn ? { brandingColumn: entry.brandingColumn } : {}),
     };
     const oldFile = referenceFile({ ...reference, path: entry.oldPath }, manifest.storageBasePath);
     if (!oldFile) throw new Error(`Invalid rollback path for ${entry.kind}`);

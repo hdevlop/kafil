@@ -5,9 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./appearance": "./src/appearance.ts",
-    "./branding": "./src/branding.ts",
-    "./branding-constants": "./src/modules/settings/brandingConstants.ts",
+    "./theme": "./theme/index.ts",
     "./config": "./src/config/index.ts",
     "./database": "./src/database/index.ts",
     "./database/schema": "./src/database/schema.ts",
@@ -22,7 +20,7 @@
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test",
-    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/order-delivery-database-concurrency.test.js ./dist/test/order-delete-integration.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/appearance-database-concurrency.test.js ./dist/test/branding-database-concurrency.test.js ./dist/test/family-recreate-integration.test.js ./dist/test/family-password-setup-integration.test.js ./dist/test/legacy-table-drop-integration.test.js ./dist/test/applicant-database-concurrency.test.js ./dist/test/applicant-decision-database.test.js"
+    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/order-delivery-database-concurrency.test.js ./dist/test/order-delete-integration.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/theme-adoption-database.test.js ./dist/test/family-recreate-integration.test.js ./dist/test/family-password-setup-integration.test.js ./dist/test/legacy-table-drop-integration.test.js ./dist/test/applicant-database-concurrency.test.js ./dist/test/applicant-decision-database.test.js"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
@@ -32,8 +30,10 @@
     "najm-email": "2.0.2",
     "najm-guard": "2.0.2",
     "najm-i18n": "2.0.3",
-    "najm-mcp": "2.0.2",
+    "najm-mcp": "2.1.0",
     "najm-rate": "2.0.2",
+    "najm-storage": "2.2.0",
+    "najm-theme": "0.2.0",
     "najm-validation": "2.0.2",
     "nanoid": "^6.0.0",
     "pg": "8.22.0",

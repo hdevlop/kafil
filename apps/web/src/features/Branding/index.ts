@@ -1,1 +1,0 @@
-export { BrandingImage } from "./BrandingImage";

@@ -20,6 +20,7 @@
     "seed:verify": "bun src/cli.ts verify",
     "seed:images": "bun src/cli.ts images",
     "images:backfill": "bun src/scripts/backfill-images.ts",
+    "theme:backfill": "bun src/scripts/backfill-theme.ts",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
@@ -29,7 +30,8 @@
     "@faker-js/faker": "10.1.0",
     "@kafil/server": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "najm-auth": "3.1.0"
+    "najm-auth": "3.1.0",
+    "najm-theme": "0.2.0"
   },
   "devDependencies": {
     "zod": "4.4.3"

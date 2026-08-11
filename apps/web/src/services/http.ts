@@ -179,6 +179,24 @@ async function pageRequest<T>(path: string): Promise<ApiPage<T>> {
   };
 }
 
+/**
+ * Kafil's `Authorization` header, for a package client that does its own
+ * fetching.
+ *
+ * `najm-theme` ships the transport for its own routes and takes a `headers`
+ * provider precisely so a host can attach its credential. Kafil's is a bearer
+ * token held in `auth.client` state, not a cookie, so without this every
+ * administrative theme request answers 401.
+ *
+ * A function, not a value: the token rotates, and one captured when the
+ * settings sheet mounted would be stale by the time somebody saves.
+ */
+export async function authorizationHeaders(): Promise<Record<string, string>> {
+  await ensureAccessToken("get", "/theme");
+  const token = auth.client.getState().accessToken;
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
 export const api = {
   get<T>(path: string, options?: RequestOptions) {
     return request<T>("get", buildApiPath(path, options?.query));
