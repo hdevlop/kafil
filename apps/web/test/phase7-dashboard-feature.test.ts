@@ -2,6 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import { dashboardKeys } from "../src/features/Dashboard/shared/dashboardKeys";
 import { sponsorDashboardKeys } from "../src/features/Dashboard/SponsorDashboard/hooks/sponsorDashboardKeys";
+import {
+  ACTIVE_ORDER_PIPELINE_STAGES,
+  retainOrderPipelineStages,
+} from "../src/features/Dashboard/shared/orderPipeline";
 import { getUiTranslation } from "../src/i18n/translations";
 import { formatStatusLabel } from "../src/features/StatusLabels";
 import {
@@ -10,6 +14,23 @@ import {
 } from "../src/shared/DashboardShell";
 
 describe("Phase 7 dashboard presentation contracts", () => {
+  test("retains every active order pipeline stage when counts are zero", () => {
+    const result = retainOrderPipelineStages([
+      { status: "pending", count: 2 },
+      { status: "rejected", count: 1 },
+    ]);
+
+    expect(result.slice(0, ACTIVE_ORDER_PIPELINE_STAGES.length)).toEqual([
+      { status: "pending", count: 2 },
+      { status: "approved", count: 0 },
+      { status: "in_preparation", count: 0 },
+      { status: "purchased", count: 0 },
+      { status: "out_for_delivery", count: 0 },
+      { status: "delivered", count: 0 },
+    ]);
+    expect(result.at(-1)).toEqual({ status: "rejected", count: 1 });
+  });
+
   test("keeps dashboard pages inside the shared Najm smart scroll viewport", async () => {
     const shellSource = await Bun.file(
       new URL("../src/shared/DashboardShell/index.tsx", import.meta.url),
@@ -28,15 +49,23 @@ describe("Phase 7 dashboard presentation contracts", () => {
     // are derived rather than hand-written. Admin and sponsor are the two ends
     // of that derivation: the longest list, and the one that merges every
     // destination into a single section.
-    expect(getDashboardNavigation("admin").map((item) => item.href)).toEqual([
+    expect(
+      getDashboardNavigation("admin").flatMap((item) =>
+        item.href
+          ? [item.href]
+          : (item.children ?? []).flatMap((child) =>
+              child.href ? [child.href] : [],
+            ),
+      ),
+    ).toEqual([
       "/dashboard",
       "/family",
       "/children",
       "/sponsors",
       "/staff",
-      "/assignments",
       "/applicants",
       "/contribution",
+      "/assignments",
       "/categories",
       "/products",
       "/orders",
@@ -52,7 +81,19 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "nav.supportOperations",
       "nav.finance",
       "nav.catalogOperations",
+      "nav.settings",
+    ]);
+
+    const adminGroups = getDashboardNavigation("admin").filter(
+      (item) => item.children,
+    );
+    expect(adminGroups.map((item) => item.label)).toEqual([
       "nav.accessManagement",
+      "nav.theme",
+    ]);
+    expect(adminGroups.map((item) => item.children?.map((child) => child.id))).toEqual([
+      ["/users", "/roles", "/permissions"],
+      ["settings:theme", "settings:branding"],
     ]);
 
     expect(getDashboardNavigation("sponsor").map((item) => item.href)).toEqual([
@@ -78,8 +119,8 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "/family",
       "/children",
       "/sponsors",
-      "/assignments",
       "/contribution",
+      "/assignments",
       "/categories",
       "/products",
       "/orders",
@@ -285,6 +326,24 @@ describe("Phase 7 dashboard presentation contracts", () => {
     expect(pageSource).toContain("statusTextClass(contribution.status)");
     expect(pageSource).toContain("+{money(contribution.amountMinor)}");
     expect(pageSource).not.toContain('title={contribution.name}');
+    expect(pageSource).toContain('icon={HandHeart}');
+    expect(pageSource).toContain('icon={ShoppingBag}');
+    expect(pageSource).not.toContain('<p className="py-10 text-center text-sm text-muted-foreground">');
+  });
+
+  test("uses icon-backed feedback states for empty dashboard and overview cards", async () => {
+    const sources = await Promise.all([
+      "../src/features/Dashboard/AdminDashboard/components/LatestOrdersCard.tsx",
+      "../src/features/Dashboard/SponsorDashboard/components/UpcomingContributionsCard.tsx",
+      "../src/features/Sponsors/components/overview/RecentSupportedOrdersCard.tsx",
+      "../src/features/Sponsors/components/overview/RecentContributionsCard.tsx",
+    ].map((path) => Bun.file(new URL(path, import.meta.url)).text()));
+
+    for (const source of sources) {
+      expect(source).toContain("<NEmptyState");
+      expect(source).toContain("icon={");
+      expect(source).not.toContain("emptyText=");
+    }
   });
 
   test("renders one exact-role dashboard at the canonical route without redirecting", async () => {

@@ -31,9 +31,11 @@ export const resetPasswordSchema = z
 const easyFamilyPassword = z
   .string()
   .min(8, "Use at least 8 characters")
-  .max(72, "Use at most 72 characters")
-  .regex(/^[a-z0-9]+$/, "Use lowercase letters and numbers only")
-  .regex(/[a-z]/, "Include at least one letter")
+  .refine(
+    (value) => new TextEncoder().encode(value).length <= 72,
+    "Use at most 72 bytes",
+  )
+  .regex(/[a-zA-Z]/, "Include at least one letter")
   .regex(/\d/, "Include at least one number")
   .refine(
     (value) =>

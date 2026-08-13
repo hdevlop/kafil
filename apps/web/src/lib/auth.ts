@@ -5,8 +5,6 @@ export const auth = defineAuth({
   authPrefix: "/auth",
   afterLoginRoute: "/dashboard",
   loginRoute: "/login",
-  // Explicit because `requireRole()` now redirects here from the package rather
-  // than from a literal in session.ts.
   forbiddenRoute: "/forbidden",
   publicRoutes: [
     "/",
@@ -17,7 +15,7 @@ export const auth = defineAuth({
     "/forgot-password",
     "/reset-password",
   ],
-protectedRoutes: [
+  protectedRoutes: [
     "/dashboard",
     "/forbidden",
     "/operator/:path*",

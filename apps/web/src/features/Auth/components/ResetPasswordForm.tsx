@@ -64,19 +64,18 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
               icon="KeyRound"
               required
             />
+            <NButton
+              className="mt-1"
+              fullWidth
+              loading={isLoading}
+              loadingText="Saving..."
+              rounded="lg"
+              size="lg"
+              type="submit"
+            >
+              Save password
+            </NButton>
           </NForm>
-          <NButton
-            className="mt-5"
-            form="reset-password-form"
-            fullWidth
-            loading={isLoading}
-            loadingText="Saving..."
-            rounded="lg"
-            size="lg"
-            type="submit"
-          >
-            Save password
-          </NButton>
         </>
       )}
     </AuthCard>

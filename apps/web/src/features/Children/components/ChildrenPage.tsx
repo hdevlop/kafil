@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import {
   NPageHeader,
+  NEmptyState,
+  NErrorState,
   type ContextMenuItem,
   NButton,
   NPageLayout,
@@ -20,7 +22,7 @@ import {
   createCardPagination,
 } from "najm-kit";
 
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { Operator, useKafilRole } from "@/shared/Authorization";
@@ -147,7 +149,8 @@ export function ChildrenPage() {
     renderCard: ChildCard,
     getRowClassName,
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         action={
           <Operator>
             <NButton onClick={openCreate}>
@@ -161,7 +164,11 @@ export function ChildrenPage() {
       />
     ),
     renderError: (error) => (
-      <PageErrorState error={error} onRetry={() => void children.refetch()} />
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={() => void children.refetch()}
+        surface="panel"
+      />
     ),
     menu: {
       row: (child) => {

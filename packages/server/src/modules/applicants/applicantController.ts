@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Params, Post, Query, ResMsg, User } from "najm-core";
+import { Body, Controller, Delete, Get, Params, Post, Query, ResMsg, User } from "najm-core";
 import { authIdentityRateLimitKey } from "najm-auth";
 import {
+  CanDelete,
   CanList,
   CanRead,
   CanUpdate,
@@ -118,6 +119,18 @@ export class ApplicantController {
     @User("id") actorUserId: string,
   ) {
     return this.applicants.reject(id, body, actorUserId);
+  }
+
+  @Delete("/:id")
+  @CanDelete("applicants")
+  @isAdmin()
+  @Validate({ params: applicantIdParams })
+  @ResMsg("applicants.success.deleted")
+  delete(
+    @Params("id") id: ApplicantIdParams["id"],
+    @User("id") actorUserId: string,
+  ) {
+    return this.applicants.delete(id, actorUserId);
   }
 
   @Get("/:id")

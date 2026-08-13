@@ -715,6 +715,7 @@ export function OrderCartSheet({
         <NEmptyState
           className="py-8"
           description={cartEmptyHint}
+          surface="panel"
           icon={ShoppingCart}
         />
       ) : showReview && confirmationFamily ? (

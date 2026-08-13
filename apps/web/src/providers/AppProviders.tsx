@@ -4,9 +4,10 @@ import type { ServerSession } from "najm-auth/client/server";
 import { QueryProvider } from "@/providers/QueryProvider";
 import type { PublicBranding } from "najm-theme";
 import { NThemeBrandingProvider } from "najm-theme/react";
-import { AuthProvider } from "najm-auth/client/react";
+import { AuthProvider, useAuth } from "najm-auth/client/react";
 import { NajmAppProvider } from "najm-kit/app";
 import type { NajmDesignConfig } from "najm-kit";
+import { KAFIL_FEEDBACK_DEFAULTS } from "@/i18n/feedbackDefaults";
 import { uiTranslations } from "@/i18n/translations";
 import { KAFIL_BADGE_DEFAULTS } from "@/features/StatusLabels";
 import { auth } from "@/lib/auth";
@@ -36,9 +37,11 @@ function NajmProviders({
   initialTheme: KafilTheme;
   initialTimeZone: KafilTimeZone;
 }>) {
+  const { isAuthenticated } = useAuth();
   const formFillSetting = useEntityQuery({
     queryKey: ["settings", "form-fill"] as const,
     queryFn: getFormFillSetting,
+    enabled: isAuthenticated,
     refetchInterval: 15_000,
     refetchOnWindowFocus: true,
     staleTime: 0,
@@ -49,6 +52,7 @@ function NajmProviders({
       appName={APP_NAME}
       badgeDefaults={KAFIL_BADGE_DEFAULTS}
       currency={KAFIL_CURRENCY}
+      feedbackDefaults={KAFIL_FEEDBACK_DEFAULTS}
       formDevTools={formFillSetting.data?.enabled === true}
       initialBranding={{
         sidebarLogoExpandedPath: initialBranding.slots.sidebarLogoExpanded,

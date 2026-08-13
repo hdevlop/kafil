@@ -9,6 +9,7 @@ import {
   NButton,
   NCard,
   NCardAction,
+  NEmptyState,
   useNajmFormat,
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
@@ -64,9 +65,11 @@ export function LatestOrdersCard({ recentOrders }: Readonly<LatestOrdersCardProp
           })}
         </div>
       ) : (
-        <p className="py-10 text-center text-sm text-muted-foreground">
-          {t("dashboard.operator.noRecentOrders")}
-        </p>
+        <NEmptyState
+          className="min-h-40 py-8"
+          icon={ClipboardList}
+          title={t("dashboard.operator.noRecentOrders")}
+        />
       )}
     </NCard>
   );

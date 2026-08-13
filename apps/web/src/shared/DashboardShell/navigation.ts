@@ -4,8 +4,11 @@ import {  Baby,  ClipboardCheck,  ClipboardList,  HandCoins,
    KeyRound,
    LayoutDashboard,
    PackageSearch,
+   Palette,
+   ImageIcon,
    ShieldCheck,
    ShoppingBag,
+   Settings2,
    Tags,
    UserRound,
    UsersRound,
@@ -28,10 +31,17 @@ const NAV_SECTIONS = {
    finance: { labelKey: "nav.finance", icon: HandCoins },
    catalog: { labelKey: "nav.catalogOperations", icon: PackageSearch },
    access: { labelKey: "nav.accessManagement", icon: ShieldCheck },
+   theme: { labelKey: "nav.theme", icon: Palette },
+   settings: { labelKey: "nav.settings", icon: Settings2 },
    sponsorAll: { labelKey: "nav.supportAndFinance", icon: HeartHandshake },
 } satisfies Record<string, { labelKey: TranslationKey; icon: NavIcon }>;
 
 type SectionId = keyof typeof NAV_SECTIONS;
+
+export const THEME_SETTINGS_NAV_ID = "settings:theme";
+export const BRANDING_SETTINGS_NAV_ID = "settings:branding";
+export const ACCESS_NAV_GROUP_ID = "navigation:access";
+export const THEME_NAV_GROUP_ID = "navigation:theme";
 
 interface DashboardNavRow {
    href: string;
@@ -76,12 +86,6 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       roles: ["admin"],
    },
    {
-      href: "/assignments",
-      labelKey: "nav.assignments",
-      icon: HeartHandshake,
-      roles: ["admin", "operator"],
-   },
-   {
       href: "/applicants",
       labelKey: "nav.applicants",
       icon: ClipboardList,
@@ -95,6 +99,13 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       // Sponsor is absent on purpose: contributions stay inside the sponsor's
       // single "Support" group instead of opening a Finance heading.
       section: { admin: "finance", operator: "finance", family: "finance" },
+   },
+   {
+      href: "/assignments",
+      labelKey: "nav.assignments",
+      icon: HeartHandshake,
+      roles: ["admin", "operator"],
+      section: "finance",
    },
    {
       href: "/categories",
@@ -177,6 +188,43 @@ export function getDashboardNavigation(
       });
    }
 
+   if (role === "admin") {
+      const accessStart = items.findIndex((item) => item.href === "/users");
+      const accessChildren = items.splice(accessStart).map((item) => ({
+         ...item,
+         sectionLabel: undefined,
+         sectionIcon: undefined,
+      }));
+
+      items.push(
+         {
+            id: ACCESS_NAV_GROUP_ID,
+            icon: NAV_SECTIONS.access.icon,
+            label: NAV_SECTIONS.access.labelKey,
+            sectionLabel: NAV_SECTIONS.settings.labelKey,
+            sectionIcon: NAV_SECTIONS.settings.icon,
+            children: accessChildren,
+         },
+         {
+            id: THEME_NAV_GROUP_ID,
+            icon: NAV_SECTIONS.theme.icon,
+            label: NAV_SECTIONS.theme.labelKey,
+            children: [
+               {
+                  id: THEME_SETTINGS_NAV_ID,
+                  icon: Palette,
+                  label: "nav.theme",
+               },
+               {
+                  id: BRANDING_SETTINGS_NAV_ID,
+                  icon: ImageIcon,
+                  label: "nav.branding",
+               },
+            ],
+         },
+      );
+   }
+
    return items;
 }
 
@@ -188,6 +236,9 @@ export function translateDashboardNavigation(
    return items.map((item) => ({
       ...item,
       label: t(item.label as TranslationKey),
+      ...(item.children
+         ? { children: translateDashboardNavigation(item.children, t) }
+         : {}),
       ...(item.sectionLabel
          ? { sectionLabel: t(item.sectionLabel as TranslationKey) }
          : {}),

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import {
   createFamilyFormSchema,
@@ -13,6 +14,10 @@ import { createFamilyDefaultValues } from "../src/features/Families/components/F
 import { buildFormFill } from "najm-kit";
 import { localDateInput } from "najm-kit/format";
 import { familyKeys } from "../src/features/Families/hooks/familyKeys";
+
+function readSource(relativePath: string) {
+  return readFileSync(new URL(relativePath, import.meta.url), "utf8");
+}
 
 describe("Phase 6C family invitation form", () => {
   test("creates a family invitation with its own activation target", () => {
@@ -232,6 +237,16 @@ describe("family housing select options", () => {
 });
 
 describe("Phase 6C family lifecycle contracts", () => {
+  test("waits for a hydrated user and access token before protected family lists", () => {
+    const hooks = readSource("../src/features/Families/hooks/useFamilies.ts");
+
+    expect(hooks).toContain('import { useAuth } from "najm-auth/client/react";');
+    expect(hooks.match(/const \{ accessToken, user \} = useAuth\(\);/g)).toHaveLength(5);
+    expect(hooks.match(/enabled: Boolean\(user && accessToken\) && enabled,/g)).toHaveLength(5);
+    expect(hooks.match(/user\?\.role/g)).toHaveLength(5);
+    expect(hooks.match(/user\?\.id/g)).toHaveLength(5);
+  });
+
   test("uses the complete profile form without create-only child rows when updating a family", () => {
     const values = updateFamilyFormSchema.parse({
       name: "Amina Guardian",

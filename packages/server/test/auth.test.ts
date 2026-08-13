@@ -146,12 +146,12 @@ describe("Kafil auth definitions", () => {
     const guardName = (controller: object, method: string) =>
       getGuardMetadata(controller as never, method)[0]?.guardClass.name;
 
-    expect(guardName(CategoryImageController, "serve")).toBe(
-      "CatalogImageViewerRoleGuard",
-    );
-    expect(guardName(ProductImageController, "serve")).toBe(
-      "CatalogImageViewerRoleGuard",
-    );
+    expect(getGuardMetadata(CategoryImageController, "serve")).toEqual([]);
+    expect(getGuardMetadata(ProductImageController, "serve")).toEqual([]);
+    expect(guardName(CategoryImageController, "upload")).toBe("OperatorRoleGuard");
+    expect(guardName(CategoryImageController, "remove")).toBe("OperatorRoleGuard");
+    expect(guardName(ProductImageController, "upload")).toBe("OperatorRoleGuard");
+    expect(guardName(ProductImageController, "remove")).toBe("OperatorRoleGuard");
     expect(guardName(SponsorImageController, "serve")).toBe(
       "SponsorImageViewerRoleGuard",
     );

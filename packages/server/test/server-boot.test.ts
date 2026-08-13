@@ -16,4 +16,17 @@ describe("Kafil server boot", () => {
     const fundingService = server.container.get(FundingService);
     expect(fundingService).toBeInstanceOf(FundingService);
   });
+
+  it("registers exact managed-image routes before the generic storage wildcard", async () => {
+    await server.init();
+    const routes = server.app.routes.map((route) => `${route.method} ${route.path}`);
+    const productRoute = routes.indexOf(
+      "GET /api/product-images/files/serve/:fileName",
+    );
+    const storageWildcard = routes.indexOf("GET /api/:namespace/files/serve/*");
+
+    expect(productRoute).toBeGreaterThanOrEqual(0);
+    expect(storageWildcard).toBeGreaterThanOrEqual(0);
+    expect(productRoute).toBeLessThan(storageWildcard);
+  });
 });

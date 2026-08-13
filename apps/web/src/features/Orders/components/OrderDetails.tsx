@@ -10,6 +10,7 @@ import {
   NBadge,
   NCard,
   NDetailList,
+  NErrorState,
   NSheet,
   useNajmFormat,
 } from "najm-kit";
@@ -17,7 +18,7 @@ import {
 import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useOrder } from "../hooks/useOrders";
 import { useFamilyOrder } from "../hooks/useFamilyOrdering";
@@ -60,10 +61,11 @@ function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
   if (order.isPending) return <NCard title={t("common.loadingOrders")} loading />;
   if (order.isError) {
     return (
-      <PageErrorState
-        error={order.error}
+      <NErrorState
+        message={getPublicApiErrorMessage(order.error, t("state.retry"))}
         title={t("common.orderNoOrdersTitle")}
         onRetry={() => void order.refetch()}
+        surface="panel"
       />
     );
   }
@@ -129,10 +131,11 @@ export function FamilyOrderDetailsSheet({
     >
       {order.isPending ? <NCard title={t("common.loadingOrders")} loading /> : null}
       {order.isError ? (
-        <PageErrorState
-          error={order.error}
+        <NErrorState
+          message={getPublicApiErrorMessage(order.error, t("state.retry"))}
           title={t("common.orderNoOrdersTitle")}
           onRetry={() => void order.refetch()}
+          surface="panel"
         />
       ) : null}
       {order.data ? <FamilyOrderDetails data={order.data} /> : null}
@@ -190,7 +193,14 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
 
   if (order.isPending) return <NCard title="Loading order details" loading />;
   if (order.isError) {
-    return <PageErrorState error={order.error} title="We could not load this order" onRetry={() => void order.refetch()} />;
+    return (
+      <NErrorState
+        message={getPublicApiErrorMessage(order.error, t("state.retry"))}
+        title="We could not load this order"
+        onRetry={() => void order.refetch()}
+        surface="panel"
+      />
+    );
   }
   if (!order.data) return null;
   const data = order.data;

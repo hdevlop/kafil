@@ -9,6 +9,7 @@ import { sponsorKeys } from "@/features/Sponsors/hooks/sponsorKeys";
 import {
   approveApplicant,
   countApplicants,
+  deleteApplicant,
   getApplicant,
   listApplicants,
   rejectApplicant,
@@ -69,5 +70,12 @@ export function useApplicantDecisionCommands() {
     errorMessage: t("operator.applicants.rejectError"),
   });
 
-  return { approve, reject };
+  const remove = useEntityCommand({
+    mutationFn: deleteApplicant,
+    invalidate,
+    successMessage: t("operator.applicants.deleteSuccess"),
+    errorMessage: t("operator.applicants.deleteError"),
+  });
+
+  return { approve, reject, remove };
 }

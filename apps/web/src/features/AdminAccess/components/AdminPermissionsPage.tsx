@@ -2,11 +2,11 @@
 
 import { useMemo } from "react";
 import { KeyRound } from "lucide-react";
-import { NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { NEmptyState, NErrorState, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useAccessPermissions } from "../hooks/useAdminAccess";
 import { useAdminPermissionsTableFilters } from "../hooks/useAdminPermissionsTableFilters";
@@ -82,16 +82,18 @@ export function AdminPermissionsPage() {
           getRowId={(permission) => permission.id}
           renderCard={AdminPermissionCard}
           renderEmpty={() => (
-            <PageEmptyState
+            <NEmptyState
+              surface="panel"
               icon={KeyRound}
               title={t("adminAccess.permissions.emptyTitle")}
               description={t("adminAccess.permissions.emptyDescription")}
             />
           )}
           renderError={(error) => (
-            <PageErrorState
-              error={error}
+            <NErrorState
+              message={getPublicApiErrorMessage(error, t("state.retry"))}
               onRetry={() => void permissions.refetch()}
+              surface="panel"
             />
           )}
           availableModes={["cards", "table"]}

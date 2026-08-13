@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NBadge, NCard, useNajmFormat } from "najm-kit";
+import { NBadge, NCard, NEmptyState, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -40,8 +40,6 @@ export function RecentSupportedOrdersCard({
   return (
     <NCard
       className="h-full"
-      empty={orders.length === 0}
-      emptyText={emptyLabel}
       icon={icon}
       title={title}
     >
@@ -77,7 +75,13 @@ export function RecentSupportedOrdersCard({
           </div>
           {footer}
         </>
-      ) : null}
+      ) : (
+        <NEmptyState
+          className="min-h-40 py-8"
+          icon={icon}
+          title={emptyLabel}
+        />
+      )}
     </NCard>
   );
 }

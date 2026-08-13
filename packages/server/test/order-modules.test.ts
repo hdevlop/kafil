@@ -35,6 +35,32 @@ const deliveryStaffId = "00000000-0000-4000-8000-000000000085";
 const purchasingStaffId = "00000000-0000-4000-8000-000000000087";
 
 describe("Phase 5 cart and route contracts", () => {
+  it("selects only cart columns when loading a family cart", async () => {
+    let selectedKeys: string[] = [];
+    const repository = new CartRepository();
+    (repository as unknown as { db: unknown }).db = {
+      select(selection: Record<string, unknown>) {
+        selectedKeys = Object.keys(selection).sort();
+        return {
+          from: () => ({
+            where: () => ({
+              limit: async () => [],
+            }),
+          }),
+        };
+      },
+    };
+
+    await repository.findByFamilyId(householdId);
+
+    expect(selectedKeys).toEqual([
+      "createdAt",
+      "familyProfileId",
+      "id",
+      "updatedAt",
+    ]);
+  });
+
   it("ranks dominant categories by quantity with deterministic tie breakers", () => {
     const query = new PgDialect().sqlToQuery(dominantOrderCategoryField("name"));
     expect(query.sql).toContain("SUM(dominant_order_items.\"quantity\") DESC");

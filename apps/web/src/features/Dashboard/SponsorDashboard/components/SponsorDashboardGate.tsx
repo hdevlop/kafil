@@ -1,9 +1,11 @@
 "use client";
 
+import { NErrorState, NLoadingState } from "najm-kit";
+
 import { useOwnSponsorProfile } from "@/features/Sponsors/hooks/useSponsorProfile";
 import { isSponsorProfileMissing } from "@/features/Sponsors/lib/isSponsorProfileMissing";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageErrorState, PageLoadingState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { SponsorDashboardPage } from "./SponsorDashboardPage";
 
@@ -13,11 +15,23 @@ export function SponsorDashboardGate() {
   const profileMissing = profile.isError && isSponsorProfileMissing(profile.error);
 
   if (profile.isPending || profileMissing) {
-    return <PageLoadingState label={t(profileMissing ? "sponsor.profile.completeDescription" : "sponsor.profile.loading")} />;
+    return (
+      <NLoadingState
+        label={t(profileMissing ? "sponsor.profile.completeDescription" : "sponsor.profile.loading")}
+        surface="panel"
+      />
+    );
   }
 
   if (profile.isError) {
-    return <PageErrorState error={profile.error} title="We could not load your sponsor workspace" onRetry={() => void profile.refetch()} />;
+    return (
+      <NErrorState
+        message={getPublicApiErrorMessage(profile.error, t("state.retry"))}
+        title="We could not load your sponsor workspace"
+        onRetry={() => void profile.refetch()}
+        surface="panel"
+      />
+    );
   }
 
   return <SponsorDashboardPage />;

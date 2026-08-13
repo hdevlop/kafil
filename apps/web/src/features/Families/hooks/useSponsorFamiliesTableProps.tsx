@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { createCardPagination, type NTableProps } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { FamilyCard } from "../components/FamilyCard";
 import { FamiliesPageIcon } from "../components/FamiliesPage/FamiliesPageIcon";
@@ -74,20 +74,28 @@ export function useSponsorFamiliesTableProps(
       <FamilyCard data={data} onContribute={onContribute} />
     ),
     renderEmpty: () => (
-      <PageEmptyState
-        icon={FamiliesPageIcon}
+      <NEmptyState
+        surface="panel"
+        icon={<FamiliesPageIcon className="size-8" />}
         title={t("sponsor.directory.emptyTitle")}
         description={t("sponsor.directory.emptyDescription")}
       />
     ),
     renderFilteredEmpty: () => (
-      <PageEmptyState
-        icon={FamiliesPageIcon}
+      <NEmptyState
+        surface="panel"
+        icon={<FamiliesPageIcon className="size-8" />}
         title={t("sponsor.directory.filteredEmptyTitle")}
         description={t("sponsor.directory.filteredEmptyDescription")}
       />
     ),
-    renderError: (error) => <PageErrorState error={error} onRetry={refetch} />,
+    renderError: (error) => (
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={refetch}
+        surface="panel"
+      />
+    ),
     responsiveCards: true,
     availableModes: ["cards"],
     defaultMode: "cards",

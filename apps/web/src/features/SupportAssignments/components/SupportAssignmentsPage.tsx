@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import { createCardPagination, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { SupportAssignmentCard } from "./SupportAssignmentCard";
@@ -94,13 +94,14 @@ export function SupportAssignmentsPage() {
     onCreate: openCreate,
     onView: openView,
     renderCard: SupportAssignmentCard,
-    renderEmpty: () => <PageEmptyState icon={SupportAssignmentsIcon} action={<NButton onClick={openCreate}>{t("operator.assignments.create")}</NButton>} title={t("operator.assignments.emptyTitle")} description={t("operator.assignments.emptyDescription")} />,
+    renderEmpty: () => <NEmptyState surface="panel" icon={<SupportAssignmentsIcon className="size-8" />} action={<NButton onClick={openCreate}>{t("operator.assignments.create")}</NButton>} title={t("operator.assignments.emptyTitle")} description={t("operator.assignments.emptyDescription")} />,
     renderError: (currentError) => (
-      <PageErrorState
-        error={currentError}
+      <NErrorState
+        message={getPublicApiErrorMessage(currentError, t("state.retry"))}
         onRetry={() => {
           void assignments.refetch();
         }}
+        surface="panel"
       />
     ),
     menu: {
@@ -145,7 +146,9 @@ export function SupportAssignmentsPage() {
     showColumnVisibility: false,
     showViewToggle: false,
     classNames: {
+      header: "relative z-20",
       cards: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4",
+      tableHeader: "[&_th:nth-child(2)]:w-[20%] [&_th:nth-child(5)]:w-[20%] [&_th:last-child]:w-12",
     },
     addButtonText: t("operator.assignments.create"),
     noDataText: t("operator.assignments.noData"),

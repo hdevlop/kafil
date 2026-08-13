@@ -7,13 +7,14 @@ import {
   NButton,
   NCard,
   NDetailList,
+  NErrorState,
   NForm,
   useDialog,
   useNajmFormat,
 } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useAccessUser, useAccessUserCommands } from "../hooks/useAdminAccess";
 import type { AccessUser } from "../types";
@@ -29,7 +30,14 @@ export function AdminAccessUserDetails({
   const fmt = useNajmFormat();
   const user = useAccessUser(userId);
   if (user.isPending) return <NCard title={t("adminAccess.dialogs.loadingAccount")} loading />;
-  if (user.isError) return <PageErrorState error={user.error} />;
+  if (user.isError) {
+    return (
+      <NErrorState
+        message={getPublicApiErrorMessage(user.error, t("state.retry"))}
+        surface="panel"
+      />
+    );
+  }
   if (!user.data) return null;
   const data = user.data;
   return (

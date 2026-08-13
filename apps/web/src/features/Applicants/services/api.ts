@@ -47,6 +47,10 @@ export function rejectApplicant(id: string, reason: string) {
   });
 }
 
+export function deleteApplicant(id: string) {
+  return api.delete<ApplicantRecord>(`/applicants/${id}`);
+}
+
 function normalizePhone(phone: string) {
   const compact = phone.replace(/[\s().-]+/g, "");
   if (compact.startsWith("0")) return `+212${compact.slice(1)}`;

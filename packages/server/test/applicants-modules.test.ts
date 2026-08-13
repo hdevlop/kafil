@@ -234,6 +234,9 @@ describe("applicant controller contracts", () => {
     expect(
       getValidationConfig(ApplicantController.prototype, "get"),
     ).toMatchObject({ params: applicantIdParams });
+    expect(
+      getValidationConfig(ApplicantController.prototype, "delete"),
+    ).toMatchObject({ params: applicantIdParams });
   });
 });
 
@@ -959,6 +962,113 @@ describe("applicant decision service", () => {
     const service = applicantService();
     const count = await service.countByStatus("pending_review");
     expect(count).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("applicant permanent deletion", () => {
+  it("deletes a non-approved applicant with its linked auth identity and audits it", async () => {
+    const applicant = baseApplicant({ status: "rejected" });
+    const deletedUserIds: string[] = [];
+    const audits: Record<string, unknown>[] = [];
+    const service = applicantService({
+      repository: applicantRepository({
+        findByIdForUpdate: async () => applicant,
+        findAuthUserByIdForUpdate: async () => ({
+          id: applicant.authUserId,
+          status: "inactive",
+        }),
+      }),
+      users: {
+        delete: async (id: string) => {
+          deletedUserIds.push(id);
+          return applicantUser();
+        },
+      },
+      audits: {
+        record: async (input: Record<string, unknown>) => {
+          audits.push(input);
+          return input;
+        },
+      },
+    });
+
+    const deleted = await service.delete(applicant.id, "admin-actor");
+    expect(deleted.id).toBe(applicant.id);
+    expect(deleted.status).toBe("rejected");
+    expect(deletedUserIds).toEqual([applicant.authUserId]);
+    expect(audits).toEqual([
+      expect.objectContaining({
+        action: "applicant.deleted",
+        actorUserId: "admin-actor",
+        metadata: {
+          authUserId: applicant.authUserId,
+          permanent: true,
+          previousStatus: "rejected",
+        },
+        resource: "applicants",
+        resourceId: applicant.id,
+      }),
+    ]);
+  });
+
+  it("deletes an approved applicant through the same protected sponsor workflow", async () => {
+    const applicant = baseApplicant({ status: "approved" });
+    const deletedUsers: string[] = [];
+    const deletedSponsors: string[] = [];
+    const service = applicantService({
+      repository: applicantRepository({
+        findByIdForUpdate: async () => applicant,
+      }),
+      users: {
+        delete: async (id: string) => {
+          deletedUsers.push(id);
+          return applicantUser();
+        },
+      },
+      sponsors: {
+        findByUserId: async () => ({
+          id: "sponsor-approved",
+          userId: applicant.authUserId,
+        }),
+        hasLinkedHistory: async () => false,
+        delete: async (id: string) => {
+          deletedSponsors.push(id);
+          return undefined;
+        },
+      },
+    });
+
+    await expect(service.delete(applicant.id, "admin-actor")).resolves.toBeDefined();
+    expect(deletedSponsors).toEqual(["sponsor-approved"]);
+    expect(deletedUsers).toEqual([applicant.authUserId]);
+  });
+
+  it("refuses to delete an approved applicant with support history", async () => {
+    const applicant = baseApplicant({ status: "approved" });
+    let deleteCalls = 0;
+    const service = applicantService({
+      repository: applicantRepository({
+        findByIdForUpdate: async () => applicant,
+      }),
+      users: {
+        delete: async () => {
+          deleteCalls += 1;
+          return applicantUser();
+        },
+      },
+      sponsors: {
+        findByUserId: async () => ({
+          id: "sponsor-with-history",
+          userId: applicant.authUserId,
+        }),
+        hasLinkedHistory: async () => true,
+      },
+    });
+
+    await expect(service.delete(applicant.id, "admin-actor")).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(deleteCalls).toBe(0);
   });
 });
 

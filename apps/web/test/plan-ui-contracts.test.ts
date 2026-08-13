@@ -104,10 +104,19 @@ describe("root PLAN shared UI contracts", () => {
     );
 
     expect(families).toContain("onCreate: openCreate");
+    expect(families).toContain('header: "relative z-20"');
     expect(sponsorFamilies).not.toContain("onCreate");
     expect(sponsorFamilies).not.toContain("onEdit");
     expect(children).toContain("onCreate: isExactFamily ? undefined : openCreate");
     expect(children).toContain("onEdit: isExactFamily ? undefined : openEdit");
+  });
+
+  test("keeps table create actions above their positioned content layers", () => {
+    const assignments = source(
+      "../src/features/SupportAssignments/components/SupportAssignmentsPage.tsx",
+    );
+
+    expect(assignments).toContain('header: "relative z-20"');
   });
 
   test("orders exact family-directory authorization before its wildcard", () => {

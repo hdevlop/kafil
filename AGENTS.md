@@ -20,7 +20,12 @@ These repository-local skills are mandatory implementation instructions:
   before changing or reviewing controllers, DTOs, guards, services,
   repositories, schemas, migrations, auth/permissions, MCP, audit/outbox,
   storage, seed definitions, or backend/database tests.
-- **Full stack:** read both skills before a slice touches frontend and backend.
+- **Browser acceptance:** read
+  `.agents/skills/kafil-playwright-testing/SKILL.md` completely before changing
+  or reviewing Playwright specs, E2E runners, browser diagnostics, connected
+  acceptance journeys, or responsive/RTL/keyboard browser evidence.
+- **Full stack:** read the frontend and backend skills before a slice touches
+  both layers; add the browser-acceptance skill when that slice includes E2E.
 
 Follow the relevant skill throughout the task, not only during planning. If a
 skill conflicts with an explicit user instruction, follow the user and report

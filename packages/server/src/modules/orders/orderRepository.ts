@@ -65,6 +65,8 @@ const cartItemSelection = {
   categoryStatus: categories.status,
 };
 
+const cartSelection = getTableColumns(carts);
+
 const orderArticleCount = sql<number>`coalesce((
     select sum(${orderItems.quantity})
     from ${orderItems}
@@ -108,7 +110,7 @@ export class CartRepository {
 
   async findByFamilyId(familyProfileId: string) {
     const [cart] = await this.db
-      .select(familyOrderSelection)
+      .select(cartSelection)
       .from(carts)
       .where(eq(carts.familyProfileId, familyProfileId))
       .limit(1);

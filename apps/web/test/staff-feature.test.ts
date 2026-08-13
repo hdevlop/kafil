@@ -20,7 +20,7 @@ describe("Staff admin-only navigation", () => {
     expect(navigation.map((item) => item.id)).not.toContain("/staff");
   });
 
-  test("exposes the Staff management route only to admins inside the people group", () => {
+  test("exposes the Staff management route only to admins after Sponsors", () => {
     const navigation = getDashboardNavigation("admin");
     const staffItem = navigation.find((item) => item.id === "/staff");
     const staffIndex = navigation.findIndex(
@@ -29,13 +29,9 @@ describe("Staff admin-only navigation", () => {
     const sponsorsIndex = navigation.findIndex(
       (item) => item.id === "/sponsors",
     );
-    const assignmentsIndex = navigation.findIndex(
-      (item) => item.id === "/assignments",
-    );
 
     expect(staffItem).toBeDefined();
     expect(staffIndex).toBe(sponsorsIndex + 1);
-    expect(assignmentsIndex).toBe(staffIndex + 1);
   });
 });
 

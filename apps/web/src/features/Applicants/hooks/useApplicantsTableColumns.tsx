@@ -39,6 +39,24 @@ export function useApplicantsTableColumns() {
         header: t("operator.applicants.phone"),
       },
       {
+        accessorKey: "gender",
+        header: t("operator.applicants.gender"),
+        cell: ({ getValue }) =>
+          getValue<ApplicantRecord["gender"]>() === "F"
+            ? t("operator.applicants.female")
+            : t("operator.applicants.male"),
+        meta: {
+          hiddenBelow: "xl",
+        },
+      },
+      {
+        accessorKey: "cin",
+        header: t("operator.applicants.cin"),
+        meta: {
+          hiddenBelow: "xl",
+        },
+      },
+      {
         accessorKey: "status",
         header: t("operator.applicants.status"),
         cell: ({ getValue }) => <NBadge status={getValue<string>()} />,

@@ -1,16 +1,17 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandCoins, HeartHandshake, LayoutDashboard, UsersRound, WalletCards } from "lucide-react";
-import { NPageHeader, NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown, useNajmFormat } from "najm-kit";
+import { NErrorState, NPageHeader, NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown, useNajmFormat } from "najm-kit";
 import { toChartData } from "../../shared/chartData";
 import { AdminDashboardSkeleton } from "../../shared/DashboardSkeletons";
+import { retainOrderPipelineStages } from "../../shared/orderPipeline";
 import { formatStatusLabel } from "@/features/StatusLabels";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import { LatestOrdersCard } from "./LatestOrdersCard";
 import { QuickActionsCard } from "./QuickActionsCard";
-import { PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import { AttentionCard } from "./AttentionCard";
 
 export function AdminDashboardPage() {
@@ -20,7 +21,14 @@ export function AdminDashboardPage() {
   const fmt = useNajmFormat();
 
   if (dashboard.isError) {
-    return <PageErrorState error={dashboard.error} title={t("dashboard.operator.error")} onRetry={() => void dashboard.refetch()} />;
+    return (
+      <NErrorState
+        message={getPublicApiErrorMessage(dashboard.error, t("state.retry"))}
+        title={t("dashboard.operator.error")}
+        onRetry={() => void dashboard.refetch()}
+        surface="panel"
+      />
+    );
   }
 
   if (dashboard.isPending || !dashboard.data) {
@@ -123,7 +131,7 @@ export function AdminDashboardPage() {
             className="h-full"
             emptyLabel={t("state.empty")}
             icon={ClipboardCheck}
-            items={data.orderStatuses
+            items={retainOrderPipelineStages(data.orderStatuses)
               .filter(({ status }) => status !== "purchased")
               .map(({ status, count }) => ({
                 id: status,

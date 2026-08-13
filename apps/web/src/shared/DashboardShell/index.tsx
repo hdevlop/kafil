@@ -7,12 +7,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { canOpenGlobalSettings, GlobalSettingsSheet, } from "@/features/Settings/components/GlobalSettingsSheet";
+import {
+   AdminThemeSettingsSheets,
+   AppSettingsSheet,
+   canOpenAppSettings,
+   type SettingsSheetKind,
+} from "@/features/Settings/components/SettingsSheets";
 import { OrderCartOverlay } from "@/features/OrderCart";
 import { openSponsorProfileSheet, SponsorProfileSheet, } from "@/features/Sponsors/components/profile/SponsorProfileSheet";
 import { KafilRoleProvider } from "@/shared/Authorization";
-import { getDashboardNavigation, isDashboardNavigationActive, translateDashboardNavigation, } from "./navigation";
-export { getDashboardNavigation, isDashboardNavigationActive, translateDashboardNavigation, } from "./navigation";
+import {
+   BRANDING_SETTINGS_NAV_ID,
+   getDashboardNavigation,
+   isDashboardNavigationActive,
+   THEME_SETTINGS_NAV_ID,
+   translateDashboardNavigation,
+} from "./navigation";
+export {
+   BRANDING_SETTINGS_NAV_ID,
+   getDashboardNavigation,
+   isDashboardNavigationActive,
+   THEME_SETTINGS_NAV_ID,
+   translateDashboardNavigation,
+} from "./navigation";
 export type { DashboardRole } from "./navigation";
 
 interface DashboardUser {
@@ -37,8 +54,13 @@ function DashboardShellBody({ children, user }: Readonly<{ children: React.React
    const { t } = useKafilLanguage();
    const sidebar = useNSidebar();
    const navItems = useMemo(() => translateDashboardNavigation(getDashboardNavigation(user.role), t), [t, user.role],);
-   const [settingsOpen, setSettingsOpen] = useState(false);
+   const [activeSettingsSheet, setActiveSettingsSheet] = useState<SettingsSheetKind | null>(null);
    const closeMobile = () => sidebar?.closeMobile();
+
+   function openSettingsSheet(sheet: SettingsSheetKind) {
+      closeMobile();
+      setActiveSettingsSheet(sheet);
+   }
 
    const footerActions = [
       {
@@ -55,10 +77,9 @@ function DashboardShellBody({ children, user }: Readonly<{ children: React.React
          id: "settings",
          icon: Settings2,
          label: t("nav.settings"),
-         show: canOpenGlobalSettings(user.role),
+         show: canOpenAppSettings(user.role),
          onClick: () => {
-            closeMobile();
-            setSettingsOpen(true);
+            openSettingsSheet("app");
          },
       },
       {
@@ -85,6 +106,10 @@ function DashboardShellBody({ children, user }: Readonly<{ children: React.React
                navItems={navItems}
                activePath={pathname}
                isActive={isDashboardNavigationActive}
+               onNavigate={(target) => {
+                  if (target === THEME_SETTINGS_NAV_ID) openSettingsSheet("theme");
+                  if (target === BRANDING_SETTINGS_NAV_ID) openSettingsSheet("branding");
+               }}
                linkComponent={Link}
                autoCollapseAt="lg"
                showHamburgerButton={false}
@@ -111,12 +136,17 @@ function DashboardShellBody({ children, user }: Readonly<{ children: React.React
             </div>
          </div>
          {pathname !== "/settings" ? (
-            <GlobalSettingsSheet
-               open={settingsOpen}
-               onOpenChange={setSettingsOpen}
+            <AppSettingsSheet
+               open={activeSettingsSheet === "app"}
+               onOpenChange={(open) => setActiveSettingsSheet(open ? "app" : null)}
                role={user.role}
             />
          ) : null}
+         <AdminThemeSettingsSheets
+            activeSheet={activeSettingsSheet}
+            onActiveSheetChange={setActiveSettingsSheet}
+            role={user.role}
+         />
          {user.role === "sponsor" ? <SponsorProfileSheet /> : null}
          <OrderCartOverlay />
       </>

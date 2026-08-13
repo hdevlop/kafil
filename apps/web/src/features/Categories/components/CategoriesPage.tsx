@@ -5,6 +5,8 @@ import { CircleCheck, CircleOff, Eye, Pencil, Tags, Trash2 } from "lucide-react"
 import {
   NPageHeader,
   NButton,
+  NEmptyState,
+  NErrorState,
   NPageLayout,
   NTable,
   type NTableProps,
@@ -20,7 +22,7 @@ import { useCategoriesWorkspace } from "@/features/Categories/hooks/useCategorie
 import { useCategoriesTableColumns } from "@/features/Categories/hooks/useCategoriesTableColumns";
 import { useCategoriesTableFilters } from "@/features/Categories/hooks/useCategoriesTableFilters";
 import { createOffsetPagination } from "najm-kit/pagination";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { CategoryCard } from "./CategoryCard";
@@ -139,7 +141,8 @@ export function CategoriesPage() {
     },
     renderCard: CategoryCard,
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         icon={Tags}
         action={
           workspace.mode === "management" ? (
@@ -153,7 +156,11 @@ export function CategoriesPage() {
       />
     ),
     renderError: (error) => (
-      <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={() => void workspace.refetch()}
+        surface="panel"
+      />
     ),
     menu: {
       row: (category) => {

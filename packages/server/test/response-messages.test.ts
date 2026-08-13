@@ -56,9 +56,9 @@ it("assigns a direct, domain-specific response key to every controller endpoint"
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    // 180 = 195 less the fifteen theme routes: three appearance, eight
-    // branding, and four preset endpoints.
-    expect(routes).toHaveLength(180);
+    // 181 = the previous 180 routes plus the admin-only applicant cleanup
+    // command.
+    expect(routes).toHaveLength(181);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

@@ -9,17 +9,18 @@ describe("admin access management feature", () => {
     const admin = getDashboardNavigation("admin");
     const accessIds = ["/users", "/roles", "/permissions"];
 
-    expect(operator.map((item) => item.id)).not.toEqual(
+    const operatorIds = operator.flatMap((item) => [
+      item.id,
+      ...(item.children ?? []).map((child) => child.id),
+    ]);
+    const accessGroup = admin.find((item) => item.id === "navigation:access");
+
+    expect(operatorIds).not.toEqual(
       expect.arrayContaining(accessIds),
     );
-    expect(admin.map((item) => item.id)).toEqual(
-      expect.arrayContaining(accessIds),
-    );
-    expect(
-      admin
-        .filter((item) => accessIds.includes(item.id))
-        .map((item) => item.sectionLabel),
-    ).toEqual(["nav.accessManagement", undefined, undefined]);
+    expect(accessGroup?.label).toBe("nav.accessManagement");
+    expect(accessGroup?.sectionLabel).toBe("nav.settings");
+    expect(accessGroup?.children?.map((item) => item.id)).toEqual(accessIds);
   });
 
   test("protects direct routes and keeps fixed roles read-only", async () => {

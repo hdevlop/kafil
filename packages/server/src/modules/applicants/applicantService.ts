@@ -255,6 +255,46 @@ export class ApplicantService {
     return this.validator.ensureExists(id);
   }
 
+  @Transaction({ retries: 2 })
+  async delete(applicantId: string, actorUserId: string) {
+    const applicant = await this.applicants.findByIdForUpdate(applicantId);
+    if (!applicant) HttpError.notFound("Application not found");
+    const user = await this.applicants.findAuthUserByIdForUpdate(
+      applicant.authUserId,
+    );
+    if (!user) HttpError.conflict("Application identity is unavailable");
+
+    let sponsorProfileId: string | undefined;
+    if (applicant.status === "approved") {
+      const sponsor = await this.sponsors.findByUserId(applicant.authUserId);
+      if (!sponsor) {
+        HttpError.conflict("Approved application sponsor profile is unavailable");
+      }
+      if (await this.sponsors.hasLinkedHistory(sponsor.id)) {
+        HttpError.conflict(
+          "An approved applicant with support or contribution history cannot be permanently deleted",
+        );
+      }
+      sponsorProfileId = sponsor.id;
+      await this.sponsors.delete(sponsor.id);
+    }
+
+    await this.users.delete(applicant.authUserId);
+    await this.audits.record({
+      action: "applicant.deleted",
+      actorUserId,
+      metadata: {
+        authUserId: applicant.authUserId,
+        permanent: true,
+        previousStatus: applicant.status,
+        ...(sponsorProfileId ? { sponsorProfileId } : {}),
+      },
+      resource: "applicants",
+      resourceId: applicant.id,
+    });
+    return applicant;
+  }
+
   async approve(applicantId: string, actorUserId: string) {
     const result = await this.approveInTransaction(applicantId, actorUserId);
     await this.deliverDecisionNotification(result.notification);

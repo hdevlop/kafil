@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar } from "lucide-react";
-import { NCard, useNajmFormat } from "najm-kit";
+import { NCard, NEmptyState, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 
 import type { UpcomingContributionEntry } from "../types";
@@ -19,8 +19,6 @@ export function UpcomingContributionsCard({
   return (
     <NCard
       className="h-full"
-      empty={contributions.length === 0}
-      emptyText={t("dashboard.sponsor.noUpcomingContributions")}
       icon={Calendar}
       title={t("dashboard.sponsor.upcomingContributions")}
     >
@@ -54,7 +52,13 @@ export function UpcomingContributionsCard({
             {t("dashboard.sponsor.viewAllPlans")}
           </Link>
         </>
-      ) : null}
+      ) : (
+        <NEmptyState
+          className="min-h-40 py-8"
+          icon={Calendar}
+          title={t("dashboard.sponsor.noUpcomingContributions")}
+        />
+      )}
     </NCard>
   );
 }

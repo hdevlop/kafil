@@ -1,5 +1,7 @@
-import { PageNotFoundState } from "@/shared/PageState";
+import { NNotFoundState } from "najm-kit/app";
+
+import { DashboardReturnAction } from "@/shared/DashboardReturnAction";
 
 export default function NotFound() {
-  return <PageNotFoundState />;
+  return <NNotFoundState action={<DashboardReturnAction />} />;
 }

@@ -3,6 +3,7 @@ export {
   listApplicants,
   approveApplicant,
   rejectApplicant,
+  deleteApplicant,
   submitApplicant,
   getApplicantEmailOtpSetup,
   resendApplicantEmailOtp,

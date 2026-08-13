@@ -103,7 +103,7 @@ export function OtpStep({
   }
 
   if (checking) {
-    return <NLoadingState label={t("applicants.otp.checking")} />;
+    return <NLoadingState label={t("applicants.otp.checking")} surface="panel" />;
   }
 
   return (

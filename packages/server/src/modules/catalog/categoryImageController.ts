@@ -8,7 +8,7 @@ import {
   Post,
   ResMsg,
 } from "najm-core";
-import { isCatalogImageViewer, isOperator } from "../../config/authConfig";
+import { isOperator } from "../../config/authConfig";
 import {
   removeManagedImage,
   serveManagedImage,
@@ -39,7 +39,6 @@ export class CategoryImageController {
   }
 
   @Get("/files/serve/:fileName")
-  @isCatalogImageViewer()
   @ResMsg("catalog.success.retrieved")
   async serve(@Params("fileName") rawFileName: string) {
     return serveManagedImage("category-images", rawFileName, "Category image not found");

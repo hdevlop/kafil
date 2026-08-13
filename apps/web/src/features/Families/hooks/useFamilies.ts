@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "najm-auth/client/react";
+
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useOffsetInfiniteQuery, useResponsiveOffsetList } from "najm-kit/query";
@@ -24,10 +26,15 @@ export function useFamilies(
   filters: ListFamiliesFilters = {},
   enabled = true,
 ) {
+  const { accessToken, user } = useAuth();
   return useEntityQuery({
-    queryKey: familyKeys.list({ ...pagination, ...filters }),
+    queryKey: [
+      ...familyKeys.list({ ...pagination, ...filters }),
+      user?.role,
+      user?.id,
+    ],
     queryFn: async () => (await listFamilies(pagination, filters)).rows,
-    enabled,
+    enabled: Boolean(user && accessToken) && enabled,
   });
 }
 
@@ -35,9 +42,16 @@ export function useResponsiveFamilies(
   filters: ListFamiliesFilters = {},
   enabled = true,
 ) {
+  const { accessToken, user } = useAuth();
   return useResponsiveOffsetList({
-    enabled,
-    queryKey: [...familyKeys.all, "responsive", filters],
+    enabled: Boolean(user && accessToken) && enabled,
+    queryKey: [
+      ...familyKeys.all,
+      "responsive",
+      user?.role,
+      user?.id,
+      filters,
+    ],
     fetchPage: (pagination) => listFamilies(pagination, filters),
   });
 }
@@ -47,10 +61,16 @@ export function useSponsorFamilyCatalog(
   filters: SponsorFamilyCatalogFilters = {},
   enabled = true,
 ) {
+  const { accessToken, user } = useAuth();
   return useEntityQuery({
-    queryKey: [...familyKeys.sponsorCatalog(filters), pagination],
+    queryKey: [
+      ...familyKeys.sponsorCatalog(filters),
+      pagination,
+      user?.role,
+      user?.id,
+    ],
     queryFn: async () => (await listSponsorFamilyCatalog(pagination, filters)).rows,
-    enabled,
+    enabled: Boolean(user && accessToken) && enabled,
   });
 }
 
@@ -58,9 +78,14 @@ export function useInfiniteSponsorFamilyCatalog(
   filters: SponsorFamilyCatalogFilters = {},
   enabled = true,
 ) {
+  const { accessToken, user } = useAuth();
   return useOffsetInfiniteQuery({
-    enabled,
-    queryKey: familyKeys.sponsorCatalog(filters),
+    enabled: Boolean(user && accessToken) && enabled,
+    queryKey: [
+      ...familyKeys.sponsorCatalog(filters),
+      user?.role,
+      user?.id,
+    ],
     fetchPage: (pagination) => listSponsorFamilyCatalog(pagination, filters),
   });
 }
@@ -69,9 +94,15 @@ export function useResponsiveSponsorFamilyCatalog(
   filters: SponsorFamilyCatalogFilters = {},
   enabled = true,
 ) {
+  const { accessToken, user } = useAuth();
   return useResponsiveOffsetList({
-    enabled,
-    queryKey: [...familyKeys.sponsorCatalog(filters), "responsive"],
+    enabled: Boolean(user && accessToken) && enabled,
+    queryKey: [
+      ...familyKeys.sponsorCatalog(filters),
+      "responsive",
+      user?.role,
+      user?.id,
+    ],
     fetchPage: (pagination) => listSponsorFamilyCatalog(pagination, filters),
   });
 }

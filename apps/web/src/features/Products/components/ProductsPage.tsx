@@ -12,6 +12,8 @@ import {
 import {
   NPageHeader,
   NButton,
+  NEmptyState,
+  NErrorState,
   NPageLayout,
   NTable,
   type NTableProps,
@@ -30,7 +32,7 @@ import { useProductsTableFilters } from "@/features/Products/hooks/useProductsTa
 import {
   createOffsetPagination,
 } from "najm-kit/pagination";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { ProductCard, type ProductCardAddInput } from "./ProductCard";
@@ -173,7 +175,8 @@ export function ProductsPage() {
       />
     ),
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         icon={Package}
         action={
           workspace.mode === "management" ? (
@@ -185,7 +188,11 @@ export function ProductsPage() {
       />
     ),
     renderError: (error) => (
-      <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={() => void workspace.refetch()}
+        surface="panel"
+      />
     ),
     menu: {
       row: (product) => {

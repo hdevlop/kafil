@@ -88,6 +88,7 @@ export function FamilyFirstPasswordForm() {
         schema={familyFirstPasswordSchema}
       >
         <FormInput
+          formDescription={t("access.firstLogin.passwordHelp")}
           formLabel={t("access.firstLogin.newPassword")}
           icon="KeyRound"
           name="newPassword"

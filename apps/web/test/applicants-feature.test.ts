@@ -223,6 +223,9 @@ describe("admin applicant queue", () => {
     expect(page).toContain("dialog.openDialog");
     expect(page).toContain('"pending_review"');
     expect(page).toContain('applicant.status === "rejected"');
+    expect(page).toContain("if (isAdmin)");
+    expect(page).toContain("DeleteApplicantDialogContent");
+    expect(page).toContain("icon: Trash2");
     expect(page).toContain("useApplicantsTableFilters(query, setQuery)");
     expect(page).not.toContain("<NativeSelect");
     expect(page).not.toContain("useApplicantPendingReviewCount");
@@ -277,6 +280,11 @@ describe("admin applicant queue", () => {
         "operator.applicants.rejectionReasonTooLong",
         "operator.applicants.allStatuses",
         "operator.applicants.loadDetailError",
+        "operator.applicants.delete",
+        "operator.applicants.deleteTitle",
+        "operator.applicants.deleteWarning",
+        "operator.applicants.deleteSuccess",
+        "operator.applicants.deleteError",
       ] as const) {
         expect(getUiTranslation(language, key)).not.toBe(key);
       }

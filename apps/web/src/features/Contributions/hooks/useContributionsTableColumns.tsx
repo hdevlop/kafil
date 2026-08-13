@@ -40,13 +40,13 @@ export function useContributionsTableColumns(
           const sponsorGender =
             "sponsorGender" in record ? record.sponsorGender ?? null : null;
           return (
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <NAvatar
                 src={getPersonImage({ image: sponsorImage, role: "adult", gender: sponsorGender })}
                 alt={sponsorName}
                 classNames={{ avatar: "bg-muted" }}
               />
-              <span>{sponsorName}</span>
+              <span className="truncate">{sponsorName}</span>
             </div>
           );
         },

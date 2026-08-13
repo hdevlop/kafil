@@ -1,17 +1,19 @@
 "use client";
 
-import { CheckCircle2, ClipboardList, Eye, XCircle } from "lucide-react";
+import { CheckCircle2, ClipboardList, Eye, Trash2, XCircle } from "lucide-react";
+import { useUser } from "najm-auth/client/react";
 import { useState } from "react";
-import { createCardPagination, NPageHeader, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { ApplicantCard } from "./ApplicantCard";
 import { ApplicantDetailsSheet } from "./ApplicantDetails";
 import {
   ApproveApplicantDialogContent,
+  DeleteApplicantDialogContent,
   RejectApplicantDialogContent,
 } from "./ApplicantDecisionDialogs";
 import {
@@ -25,6 +27,7 @@ import type { ListApplicantsParams } from "../services/api";
 export function ApplicantsPage() {
   const { t } = useKafilLanguage();
   const dialog = useDialog();
+  const user = useUser();
   const tableMode = useDesktopTableMode();
   const [query, setQuery] = useState<Omit<ListApplicantsParams, "limit" | "offset">>({});
   const [viewingApplicant, setViewingApplicant] = useState<ApplicantRecord | null>(null);
@@ -32,6 +35,7 @@ export function ApplicantsPage() {
   const columns = useApplicantsTableColumns();
   const filters = useApplicantsTableFilters(query, setQuery);
   const rows = applicants.data;
+  const isAdmin = user?.role === "admin";
 
   function openView(applicant: ApplicantRecord) {
     setViewingApplicant(applicant);
@@ -52,6 +56,16 @@ export function ApplicantsPage() {
       title: t("operator.applicants.rejectTitle", { name: applicant.name }),
       description: t("operator.applicants.rejectDescription", { name: applicant.name }),
       children: <RejectApplicantDialogContent applicant={applicant} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function openDelete(applicant: ApplicantRecord) {
+    void dialog.openDialog({
+      title: t("operator.applicants.deleteTitle", { name: applicant.name }),
+      description: t("operator.applicants.deleteDescription"),
+      children: <DeleteApplicantDialogContent applicant={applicant} />,
       showButtons: false,
       size: "sm",
     });
@@ -88,6 +102,15 @@ export function ApplicantsPage() {
         onSelect: () => openApprove(applicant),
       });
     }
+    if (isAdmin) {
+      actions.push({
+        icon: Trash2,
+        label: t("operator.applicants.delete"),
+        danger: true,
+        separatorBefore: true,
+        onSelect: () => openDelete(applicant),
+      });
+    }
     return actions;
   }
 
@@ -114,14 +137,19 @@ export function ApplicantsPage() {
     onRowClick: openView,
     renderCard: ApplicantCard,
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         description={t("operator.applicants.emptyDescription")}
         icon={ClipboardList}
         title={t("operator.applicants.emptyTitle")}
       />
     ),
     renderError: (error) => (
-      <PageErrorState error={error} onRetry={() => void applicants.refetch()} />
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={() => void applicants.refetch()}
+        surface="panel"
+      />
     ),
     responsiveCards: true,
     showPagination: true,

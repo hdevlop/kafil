@@ -22,16 +22,20 @@ export function useSupportAssignmentsTableColumns() {
         accessorKey: "sponsorLabel",
         header: t("operator.assignments.sponsor"),
         cell: ({ row }) => (
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <NAvatar
               src={getPersonImage({ image: row.original.sponsorImage, role: "adult", gender: row.original.sponsorGender, })}
               classNames={{ avatar: "bg-muted" }}
             />
-            <span>{row.original.sponsorLabel}</span>
+            <span className="truncate">{row.original.sponsorLabel}</span>
           </div>
         ),
       },
-      { accessorKey: "sponsorEmail", header: t("operator.sponsors.email") },
+      {
+        accessorKey: "sponsorEmail",
+        header: t("operator.sponsors.email"),
+        meta: { hiddenBelow: "2xl" },
+      },
       {
         accessorKey: "sponsorPhone",
         header: t("operator.sponsors.phone"),

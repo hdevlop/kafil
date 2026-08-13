@@ -1,11 +1,11 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
-import { NPageHeader, NCard, NPageLayout } from "najm-kit";
+import { NEmptyState, NErrorState, NPageHeader, NCard, NPageLayout } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useAccessRoles } from "../hooks/useAdminAccess";
 
@@ -23,7 +23,11 @@ export function AdminRolesPage() {
       {roles.isPending ? (
         <NCard title={t("adminAccess.roles.loading")} loading />
       ) : roles.isError ? (
-        <PageErrorState error={roles.error} onRetry={() => void roles.refetch()} />
+        <NErrorState
+          message={getPublicApiErrorMessage(roles.error, t("state.retry"))}
+          onRetry={() => void roles.refetch()}
+          surface="panel"
+        />
       ) : roles.data?.length ? (
         <div className="grid gap-4 xl:grid-cols-2">
           {roles.data.map((role) => (
@@ -66,7 +70,8 @@ export function AdminRolesPage() {
           ))}
         </div>
       ) : (
-        <PageEmptyState
+        <NEmptyState
+          surface="panel"
           icon={ShieldCheck}
           title={t("adminAccess.roles.emptyTitle")}
           description={t("adminAccess.roles.emptyDescription")}

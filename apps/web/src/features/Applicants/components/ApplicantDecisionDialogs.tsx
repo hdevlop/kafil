@@ -99,3 +99,44 @@ export function RejectApplicantDialogContent({
     </NForm>
   );
 }
+
+export function DeleteApplicantDialogContent({
+  applicant,
+}: Readonly<{ applicant: ApplicantRecord }>) {
+  const { t } = useKafilLanguage();
+  const { pop } = useDialog();
+  const { remove } = useApplicantDecisionCommands();
+
+  async function handleDelete() {
+    await remove.mutateAsync(applicant.id);
+    await pop();
+  }
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm leading-6 text-muted-foreground">
+        {t("operator.applicants.deleteWarning")}
+      </p>
+      <div className="flex justify-end gap-3 pt-5">
+        <NButton
+          type="button"
+          variant="outline"
+          disabled={remove.isPending}
+          onClick={() => void pop()}
+        >
+          {t("common.cancel")}
+        </NButton>
+        <NButton
+          type="button"
+          variant="destructive"
+          disabled={remove.isPending}
+          onClick={() => void handleDelete()}
+        >
+          {remove.isPending
+            ? t("operator.applicants.deleting")
+            : t("operator.applicants.deleteAccount")}
+        </NButton>
+      </div>
+    </div>
+  );
+}

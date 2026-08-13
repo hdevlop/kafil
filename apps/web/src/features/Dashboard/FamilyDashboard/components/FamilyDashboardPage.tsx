@@ -15,6 +15,8 @@ import {
   NBarChart,
   NCard,
   NDonutCard,
+  NEmptyState,
+  NErrorState,
   NGrid,
   NGridItem,
   NPageHeaderActions,
@@ -29,12 +31,13 @@ import Link from "next/link";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { NNextImage } from "najm-kit/next";
 
 import { toChartData } from "../../shared/chartData";
 import { FamilyDashboardSkeleton } from "../../shared/DashboardSkeletons";
+import { retainOrderPipelineStages } from "../../shared/orderPipeline";
 import { useFamilyDashboard, useOwnFamilyChildren, useOwnFamilyProfile } from "../hooks/useFamilyDashboard";
 import { MyFamilyCard } from "./MyFamilyCard";
 
@@ -46,7 +49,14 @@ export function FamilyDashboardPage() {
   const fmt = useNajmFormat();
 
   if (dashboard.isError) {
-    return <PageErrorState error={dashboard.error} title={t("dashboard.family.error")} onRetry={() => void dashboard.refetch()} />;
+    return (
+      <NErrorState
+        message={getPublicApiErrorMessage(dashboard.error, t("state.retry"))}
+        title={t("dashboard.family.error")}
+        onRetry={() => void dashboard.refetch()}
+        surface="panel"
+      />
+    );
   }
   if (dashboard.isPending || !dashboard.data) {
     return <FamilyDashboardSkeleton loadingLabel={t("dashboard.family.loading")} />;
@@ -133,9 +143,7 @@ export function FamilyDashboardPage() {
             className="h-full"
             emptyLabel={t("state.empty")}
             icon={ClipboardCheck}
-            items={(data.orderStatuses.some(({ status }) => status === "purchased")
-              ? data.orderStatuses
-              : [...data.orderStatuses, { status: "purchased", count: 0 }])
+            items={retainOrderPipelineStages(data.orderStatuses)
               .map(({ status, count }) => ({
                 id: status,
                 label: formatStatusLabel(status, language),
@@ -166,7 +174,13 @@ export function FamilyDashboardPage() {
                     +{money(contribution.amountMinor)}
                   </strong>
                 </div>
-              )) : <p className="py-10 text-center text-sm text-muted-foreground">{t("dashboard.family.noSponsors")}</p>}
+              )) : (
+                <NEmptyState
+                  className="min-h-40 py-8"
+                  icon={HandHeart}
+                  title={t("dashboard.family.noSponsors")}
+                />
+              )}
             </div>
           </NCard>
         </NGridItem>
@@ -197,7 +211,13 @@ export function FamilyDashboardPage() {
                     <NBadge status={order.status} />
                   </span>
                 </Link>
-              )) : <p className="py-10 text-center text-sm text-muted-foreground">{t("dashboard.family.noOrders")}</p>}
+              )) : (
+                <NEmptyState
+                  className="min-h-40 py-8"
+                  icon={ShoppingBag}
+                  title={t("dashboard.family.noOrders")}
+                />
+              )}
             </div>
           </NCard>
         </NGridItem>

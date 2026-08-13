@@ -1,8 +1,15 @@
 "use client";
 
+import { KeyRound, Mail } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { StepConfig } from "najm-kit";
-import { NajmScroll, useDialog, WizardForm } from "najm-kit";
+import {
+  NButton,
+  NCredentialsCard,
+  NajmScroll,
+  useDialog,
+  WizardForm,
+} from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import {
@@ -31,6 +38,10 @@ export function CreateFamilyDialogContent() {
   const [familyImage, setFamilyImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [credentials, setCredentials] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const wizardDefaultValues = useMemo(() => createFamilyDefaultValues(), []);
   const isSubmitting = create.isPending || isUploadingImage;
 
@@ -116,11 +127,11 @@ export function CreateFamilyDialogContent() {
       uploadedImagePath = familyImage
         ? await uploadFamilyImage(familyImage)
         : null;
-      await create.mutateAsync({
+      const result = await create.mutateAsync({
         ...toCreateFamilyInput(values),
         image: uploadedImagePath,
       });
-      await pop();
+      setCredentials({ email: values.email.trim(), password: result.initialPassword });
     } catch (error) {
       if (uploadedImagePath) {
         await deleteFamilyImage(uploadedImagePath).catch(() => undefined);
@@ -129,6 +140,27 @@ export function CreateFamilyDialogContent() {
     } finally {
       setIsUploadingImage(false);
     }
+  }
+
+  if (credentials) {
+    return (
+      <NCredentialsCard
+        title={t("operator.staff.accessCreated")}
+        description={t("operator.staff.accessOneTimeHint")}
+        fields={[
+          { label: t("operator.families.email"), value: credentials.email, icon: Mail },
+          {
+            label: t("operator.staff.accessInitialPassword"),
+            value: credentials.password,
+            icon: KeyRound,
+          },
+        ]}
+        copyLabel={t("common.copyDetails")}
+        copiedLabel={t("common.copied")}
+        copyErrorLabel={t("common.copyError")}
+        actions={<NButton onClick={() => void pop()}>{t("common.done")}</NButton>}
+      />
+    );
   }
 
   return (

@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 
-import { GlobalSettingsSheet } from "./GlobalSettingsSheet";
+import { AppSettingsSheet } from "./SettingsSheets";
 
 export function SettingsPage({ role }: Readonly<{ role: string | null | undefined }>) {
   const router = useRouter();
 
   return (
-    <GlobalSettingsSheet
+    <AppSettingsSheet
       open
       role={role}
       onOpenChange={(open) => {

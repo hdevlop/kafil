@@ -1,11 +1,11 @@
 "use client";
 
 import { UserRound } from "lucide-react";
-import { NCard, NSheet } from "najm-kit";
+import { NCard, NErrorState, NSheet } from "najm-kit";
 import { useEffect, useState } from "react";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useOwnSponsorProfile } from "../../hooks/useSponsorProfile";
 import { isSponsorProfileMissing } from "../../lib/isSponsorProfileMissing";
@@ -51,10 +51,11 @@ export function SponsorProfileSheet() {
           description={t("sponsor.profile.sheetDescription")}
         />
       ) : profile.isError && !required ? (
-        <PageErrorState
-          error={profile.error}
+        <NErrorState
+          message={getPublicApiErrorMessage(profile.error, t("state.retry"))}
           title={t("sponsor.profile.loadError")}
           onRetry={() => void profile.refetch()}
+          surface="panel"
         />
       ) : required ? (
         <CreateOwnSponsorProfileForm onSuccess={() => setOpen(false)} />

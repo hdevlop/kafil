@@ -86,3 +86,12 @@ export function toApiError(
 export function getApiErrorMessage(error: unknown, fallback?: string) {
   return toApiError(error, fallback).message;
 }
+
+/**
+ * Returns only an API response message that the server intentionally exposed.
+ * Arbitrary Error.message values can contain configuration or internal detail
+ * and must not be rendered by generic query/page feedback.
+ */
+export function getPublicApiErrorMessage(error: unknown, fallback: string) {
+  return readMessage(getApiErrorBody(error)) ?? fallback;
+}

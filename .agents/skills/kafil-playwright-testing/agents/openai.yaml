@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kafil Playwright Testing"
+  short_description: "Run reliable, efficient Kafil browser tests"
+  default_prompt: "Use $kafil-playwright-testing to design, optimize, run, diagnose, and report a Kafil Playwright test correctly."

@@ -11,6 +11,8 @@ import {
 import {
   NBadge,
   createCardPagination,
+  NEmptyState,
+  NErrorState,
   NPageHeader,
   NPageLayout,
   NTable,
@@ -23,7 +25,7 @@ import {
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useResponsiveAccessUsers } from "../hooks/useAdminAccess";
 import { useAdminUsersTableFilters } from "../hooks/useAdminUsersTableFilters";
@@ -125,16 +127,18 @@ export function AdminUsersPage() {
           onView={view}
           renderCard={AdminUserCard}
           renderEmpty={() => (
-            <PageEmptyState
+            <NEmptyState
+              surface="panel"
               icon={Users}
               title={t("adminAccess.users.emptyTitle")}
               description={t("adminAccess.users.emptyDescription")}
             />
           )}
           renderError={(error) => (
-            <PageErrorState
-              error={error}
+            <NErrorState
+              message={getPublicApiErrorMessage(error, t("state.retry"))}
               onRetry={() => void users.refetch()}
+              surface="panel"
             />
           )}
           menu={{

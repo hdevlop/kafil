@@ -28,9 +28,8 @@ export const APP_SETTINGS_FORM_ID = "platform-settings-form";
  * window, the form-fill shortcut, and the display time zone.
  *
  * Branding used to be saved from here, which coupled a Kafil product form to
- * an asset lifecycle. It is `najm-theme`'s Branding section now, under the
- * theme tab, with its own save. One failure no longer reports the other as
- * rolled back when it committed.
+ * an asset lifecycle. It now has its own `najm-theme` sheet and save action.
+ * One failure no longer reports the other as rolled back when it committed.
  */
 export function AppSettingsPanel({
   onStateChange,

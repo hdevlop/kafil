@@ -69,13 +69,14 @@ export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplica
   const applicant = applicantQuery.data ?? initialApplicant;
 
   if (applicantQuery.isPending) {
-    return <NLoadingState label={t("operator.applicants.loading")} />;
+    return <NLoadingState label={t("operator.applicants.loading")} surface="panel" />;
   }
   if (applicantQuery.isError) {
     return (
       <NErrorState
         title={t("operator.applicants.loadDetailError")}
         onRetry={() => void applicantQuery.refetch()}
+        surface="panel"
       />
     );
   }

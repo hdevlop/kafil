@@ -20,6 +20,8 @@ import {
   NAvatar,
   NBadge,
   createCardPagination,
+  NEmptyState,
+  NErrorState,
   NPageHeader,
   NPageLayout,
   NTable,
@@ -34,7 +36,7 @@ import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useFamilyOrderingCommands } from "@/features/Orders/hooks/useFamilyOrdering";
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { getOrderActions, type OrderAction, type OrderCommand } from "../config/orderActions";
@@ -364,7 +366,8 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
       />
     ),
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         icon={ClipboardCheck}
         title={
           isExactFamily
@@ -383,7 +386,11 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
       />
     ),
     renderError: (error) => (
-      <PageErrorState error={error} onRetry={() => void workspace.refetch()} />
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={() => void workspace.refetch()}
+        surface="panel"
+      />
     ),
     menu: {
       row: (order) => {
@@ -460,7 +467,12 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     defaultMode: "table",
     showColumnVisibility: false,
     showViewToggle: false,
-    classNames: { pagination: "hidden lg:flex" },
+    classNames: {
+      pagination: "hidden lg:flex",
+      tableHeader: showFamilyIdentity
+        ? "[&_th:nth-child(3)]:w-[24%] [&_th:last-child]:w-12"
+        : "[&_th:last-child]:w-12",
+    },
     noDataText: isExactFamily
       ? t("common.orderNoOrdersTitle")
       : isExactSponsor

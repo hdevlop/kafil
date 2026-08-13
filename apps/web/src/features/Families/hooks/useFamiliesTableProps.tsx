@@ -8,10 +8,10 @@ import {
   UserRoundCheck,
   UserRoundX,
 } from "lucide-react";
-import { createCardPagination, type ContextMenuItem, NButton, type NTableProps } from "najm-kit";
+import { createCardPagination, type ContextMenuItem, NButton, NEmptyState, NErrorState, type NTableProps } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 
 import { FamiliesPageIcon } from "../components/FamiliesPage/FamiliesPageIcon";
@@ -61,7 +61,8 @@ export function useFamiliesTableProps() {
     onRowClick: openView,
     renderCard: FamilyCard,
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         action={
           <Operator>
             <NButton onClick={openCreate}>
@@ -69,12 +70,18 @@ export function useFamiliesTableProps() {
             </NButton>
           </Operator>
         }
-        icon={FamiliesPageIcon}
+        icon={<FamiliesPageIcon className="size-8" />}
         title={t("operator.families.emptyTitle")}
         description={t("operator.families.emptyDescription")}
       />
     ),
-    renderError: (error) => <PageErrorState error={error} onRetry={refetch} />,
+    renderError: (error) => (
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={refetch}
+        surface="panel"
+      />
+    ),
     menu: {
       row: (family) => {
         const isActive = family.status === "active";
@@ -132,6 +139,7 @@ export function useFamiliesTableProps() {
     responsiveCards: true,
     defaultMode: "cards",
     classNames: {
+      header: "relative z-20",
       cards:
         "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
     },

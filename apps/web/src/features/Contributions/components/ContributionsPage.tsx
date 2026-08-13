@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 import { BadgeCheck, CircleX, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
-import { createCardPagination, NPageHeader, NButton, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { useKafilRole } from "@/shared/Authorization";
 
@@ -178,9 +178,10 @@ export function ContributionsPage() {
     onRowClick: openView,
     renderCard: ContributionCard,
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         action={audience === "management" ? <NButton onClick={openRecord}>{t("operator.contributions.record")}</NButton> : undefined}
-        icon={ContributionsIcon}
+        icon={<ContributionsIcon className="size-8" />}
         title={t(
           audience === "family"
             ? "family.contributions.emptyTitle"
@@ -197,7 +198,13 @@ export function ContributionsPage() {
         )}
       />
     ),
-    renderError: (error) => <PageErrorState error={error} onRetry={() => void contributions.refetch()} />,
+    renderError: (error) => (
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
+        onRetry={() => void contributions.refetch()}
+        surface="panel"
+      />
+    ),
     menu: { row: rowActions },
     menuButton: true,
     showCheckbox: audience === "management" && isAdmin,
@@ -219,6 +226,14 @@ export function ContributionsPage() {
     responsiveCards: false,
     showColumnVisibility: false,
     showViewToggle: false,
+    classNames: {
+      tableHeader:
+        audience === "management" && isAdmin
+          ? "[&_th:nth-child(2)]:w-[20%] [&_th:nth-child(3)]:w-[20%] [&_th:last-child]:w-12"
+          : audience === "management" || audience === "sponsor"
+            ? "[&_th:nth-child(1)]:w-[20%] [&_th:nth-child(2)]:w-[20%] [&_th:last-child]:w-12"
+            : "[&_th:nth-child(1)]:w-[20%] [&_th:last-child]:w-12",
+    },
     noDataText: t(
       audience === "family"
         ? "family.contributions.noData"

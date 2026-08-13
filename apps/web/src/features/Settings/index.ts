@@ -1,7 +1,9 @@
 export { AppSettingsPanel } from "./components/AppSettingsPanel";
 export {
-  canOpenGlobalSettings,
-  getGlobalSettingsTabs,
-  GlobalSettingsSheet,
-} from "./components/GlobalSettingsSheet";
+  AdminThemeSettingsSheets,
+  AppSettingsSheet,
+  canOpenAppSettings,
+  canOpenThemeSettings,
+  type SettingsSheetKind,
+} from "./components/SettingsSheets";
 export { SettingsPage } from "./components/SettingsPage";

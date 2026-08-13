@@ -4,9 +4,15 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  canOpenGlobalSettings,
-  getGlobalSettingsTabs,
-} from "../src/features/Settings/components/GlobalSettingsSheet";
+  canOpenAppSettings,
+  canOpenThemeSettings,
+} from "../src/features/Settings/components/SettingsSheets";
+import {
+  BRANDING_SETTINGS_NAV_ID,
+  getDashboardNavigation,
+  THEME_SETTINGS_NAV_ID,
+} from "../src/shared/DashboardShell";
+import { getUiTranslation } from "../src/i18n/translations";
 
 function readSource(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -80,9 +86,9 @@ describe("najm-theme adoption — Kafil boundary", () => {
     expect(offenders).toEqual([]);
   });
 
-  test("the settings sheet composes package sections and the package action bar", () => {
+  test("the separate settings sheets compose package sections and scoped actions", () => {
     const sheet = readSource(
-      "../src/features/Settings/components/GlobalSettingsSheet.tsx",
+      "../src/features/Settings/components/SettingsSheets.tsx",
     );
 
     expect(sheet).toContain('from "najm-theme/react"');
@@ -98,6 +104,9 @@ describe("najm-theme adoption — Kafil boundary", () => {
     expect(sheet).toContain("showStatus={false}");
     expect(sheet).toContain("showFileActions");
     expect(sheet).toContain("showDiscard={false}");
+    expect(sheet).toContain('resources={["appearance"]}');
+    expect(sheet).toContain('resources={["branding"]}');
+    expect(sheet.split("<NThemeSettingsProvider")).toHaveLength(2);
 
     // Kafil mounts the plugin at its server base, so the client's base URL is
     // `/api`, not `/api/theme`.
@@ -107,24 +116,59 @@ describe("najm-theme adoption — Kafil boundary", () => {
     // it must stay a function so a rotated token is read at call time.
     expect(sheet).toContain("headers: authorizationHeaders");
 
-    // Kafil's own app tab keeps its own form and its own submit.
+    // Kafil's own app sheet keeps its own form and submit outside the package.
     expect(sheet).toContain("APP_SETTINGS_FORM_ID");
     expect(sheet).toContain("<AppSettingsPanel");
   });
 
-  test("only an administrator mounts the provider, and the tab set is unchanged", () => {
-    expect(canOpenGlobalSettings("admin")).toBe(true);
-    expect(canOpenGlobalSettings("operator")).toBe(true);
-    expect(canOpenGlobalSettings("family")).toBe(false);
-    expect(canOpenGlobalSettings("sponsor")).toBe(false);
-    expect(getGlobalSettingsTabs("admin")).toEqual(["theme", "app"]);
-    expect(getGlobalSettingsTabs("operator")).toEqual(["app"]);
-    expect(getGlobalSettingsTabs("family")).toEqual([]);
+  test("keeps app settings shared and theme settings admin-only", () => {
+    expect(canOpenAppSettings("admin")).toBe(true);
+    expect(canOpenAppSettings("operator")).toBe(true);
+    expect(canOpenAppSettings("family")).toBe(false);
+    expect(canOpenAppSettings("sponsor")).toBe(false);
+    expect(canOpenThemeSettings("admin")).toBe(true);
+    expect(canOpenThemeSettings("operator")).toBe(false);
+    expect(canOpenThemeSettings("family")).toBe(false);
 
     const sheet = readSource(
-      "../src/features/Settings/components/GlobalSettingsSheet.tsx",
+      "../src/features/Settings/components/SettingsSheets.tsx",
     );
-    expect(sheet).toContain('if (props.role !== "admin") return <GlobalSettings {...props} />;');
+    expect(sheet).toContain("if (!canOpenThemeSettings(role)) return null;");
+  });
+
+  test("adds admin-only Theme and Branding sidebar actions without routes", () => {
+    const admin = getDashboardNavigation("admin");
+    const themeGroup = admin.find((item) => item.label === "nav.theme");
+    const theme = themeGroup?.children?.find((item) => item.id === THEME_SETTINGS_NAV_ID);
+    const branding = themeGroup?.children?.find((item) => item.id === BRANDING_SETTINGS_NAV_ID);
+
+    expect(theme?.href).toBeUndefined();
+    expect(branding?.href).toBeUndefined();
+    for (const role of ["operator", "family", "sponsor"] as const) {
+      expect(getDashboardNavigation(role).flatMap((item) => [item.id, ...(item.children?.map((child) => child.id) ?? [])])).not.toEqual(
+        expect.arrayContaining([THEME_SETTINGS_NAV_ID, BRANDING_SETTINGS_NAV_ID]),
+      );
+    }
+
+    const shell = readSource("../src/shared/DashboardShell/index.tsx");
+    expect(shell).toContain("onNavigate={(target) =>");
+    expect(shell).toContain('openSettingsSheet("theme")');
+    expect(shell).toContain('openSettingsSheet("branding")');
+    expect(shell).toContain('openSettingsSheet("app")');
+  });
+
+  test("localizes the new settings surfaces in every supported language", () => {
+    for (const language of ["en", "fr", "ar", "es"] as const) {
+      for (const key of [
+        "nav.theme",
+        "nav.branding",
+        "operator.settings.appSheetDescription",
+        "operator.settings.themeSheetDescription",
+        "operator.settings.brandingSheetDescription",
+      ] as const) {
+        expect(getUiTranslation(language, key)).not.toBe(key);
+      }
+    }
   });
 
   test("the app settings panel no longer saves branding", () => {

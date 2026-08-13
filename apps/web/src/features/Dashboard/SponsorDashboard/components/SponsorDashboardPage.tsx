@@ -1,11 +1,11 @@
 "use client";
 
 import { HandCoins, WalletCards } from "lucide-react";
-import { NGrid, NGridItem, NPageLayout, useNajmFormat } from "najm-kit";
+import { NErrorState, NGrid, NGridItem, NPageLayout, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import { ContributionOverviewCard } from "@/features/Sponsors/components/overview/ContributionOverviewCard";
 import { RecentContributionsCard } from "@/features/Sponsors/components/overview/RecentContributionsCard";
 import { RecentSupportedOrdersCard } from "@/features/Sponsors/components/overview/RecentSupportedOrdersCard";
@@ -27,10 +27,11 @@ export function SponsorDashboardPage() {
 
   if (dashboard.isError) {
     return (
-      <PageErrorState
-        error={dashboard.error}
+      <NErrorState
+        message={getPublicApiErrorMessage(dashboard.error, t("state.retry"))}
         title={t("dashboard.sponsor.error")}
         onRetry={() => void dashboard.refetch()}
+        surface="panel"
       />
     );
   }

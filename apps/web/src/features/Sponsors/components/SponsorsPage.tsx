@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 import { Eye, Pencil, Trash2, UserRoundCheck, UserRoundX } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
-import { createCardPagination, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { SponsorCard } from "./SponsorCard";
@@ -132,8 +132,8 @@ export function SponsorsPage() {
     onRowClick: openView,
     onEdit: openEdit,
     renderCard: SponsorCard,
-    renderEmpty: () => <PageEmptyState icon={SponsorsIcon} action={<NButton onClick={openCreate}>{t("operator.sponsors.create")}</NButton>} title={t("operator.sponsors.emptyTitle")} description={t("operator.sponsors.emptyDescription")} />,
-    renderError: (error) => <PageErrorState error={error} onRetry={() => void sponsors.refetch()} />,
+    renderEmpty: () => <NEmptyState surface="panel" icon={<SponsorsIcon className="size-8" />} action={<NButton onClick={openCreate}>{t("operator.sponsors.create")}</NButton>} title={t("operator.sponsors.emptyTitle")} description={t("operator.sponsors.emptyDescription")} />,
+    renderError: (error) => <NErrorState message={getPublicApiErrorMessage(error, t("state.retry"))} onRetry={() => void sponsors.refetch()} surface="panel" />,
     menu: {
       row: (sponsor) => {
         const isActive = sponsor.status === "active";

@@ -10,10 +10,10 @@ import {
   UserRoundX,
 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
-import { createCardPagination, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { PageEmptyState, PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";
 
@@ -214,19 +214,21 @@ export function StaffPage() {
     onView: openView,
     renderCard: StaffCard,
     renderEmpty: () => (
-      <PageEmptyState
+      <NEmptyState
+        surface="panel"
         action={
           <NButton onClick={openCreate}>{t("operator.staff.create")}</NButton>
         }
         description={t("operator.staff.emptyDescription")}
-        icon={UserShieldIcon}
+        icon={<UserShieldIcon className="size-8" />}
         title={t("operator.staff.emptyTitle")}
       />
     ),
     renderError: (error) => (
-      <PageErrorState
-        error={error}
+      <NErrorState
+        message={getPublicApiErrorMessage(error, t("state.retry"))}
         onRetry={() => void staff.refetch()}
+        surface="panel"
       />
     ),
     responsiveCards: true,

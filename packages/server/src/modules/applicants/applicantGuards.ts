@@ -1,7 +1,8 @@
 import {
+  CanDelete,
   CanList,
   CanRead,
   CanUpdate,
 } from "../../config/authConfig";
 
-export { CanList, CanRead, CanUpdate };
+export { CanDelete, CanList, CanRead, CanUpdate };

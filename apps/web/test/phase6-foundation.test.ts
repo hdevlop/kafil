@@ -62,20 +62,29 @@ describe("Phase 6A authentication schemas", () => {
     ).toBe(true);
   });
 
-  test("accepts a simple lowercase family password with matching confirmation", () => {
-    expect(
-      familyFirstPasswordSchema.safeParse({
-        newPassword: "fatima2026",
-        confirmPassword: "fatima2026",
-      }).success,
-    ).toBe(true);
-    expect(
-      familyFirstPasswordSchema.safeParse({
-        newPassword: "Fatima2026",
-        confirmPassword: "Fatima2026",
-      }).success,
-    ).toBe(false);
-  });
+  test.each(["fatima2026", "Fatima2026", "Kafil2026@#$%"])(
+    "accepts the family password character set: %s",
+    (password) => {
+      expect(
+        familyFirstPasswordSchema.safeParse({
+          newPassword: password,
+          confirmPassword: password,
+        }).success,
+      ).toBe(true);
+    },
+  );
+
+  test.each(["password", "20260811"])(
+    "requires both a letter and a number: %s",
+    (password) => {
+      expect(
+        familyFirstPasswordSchema.safeParse({
+          newPassword: password,
+          confirmPassword: password,
+        }).success,
+      ).toBe(false);
+    },
+  );
 
   test("does not allow a CIN-shaped permanent family password", () => {
     expect(

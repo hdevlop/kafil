@@ -5,7 +5,8 @@ import {
   SponsorDashboardGate,
 } from "@/features/Dashboard";
 import { requireSession } from "@/lib/session";
-import { PageForbiddenState } from "@/shared/PageState";
+import { DashboardReturnAction } from "@/shared/DashboardReturnAction";
+import { NForbiddenState } from "najm-kit/app";
 
 export const metadata = { title: "Dashboard" };
 
@@ -20,6 +21,6 @@ export default async function DashboardPage() {
     case "sponsor":
       return <SponsorDashboardGate />;
     default:
-      return <PageForbiddenState />;
+      return <NForbiddenState action={<DashboardReturnAction />} />;
   }
 }

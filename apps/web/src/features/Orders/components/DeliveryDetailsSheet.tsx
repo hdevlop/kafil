@@ -12,6 +12,7 @@ import {
   NBadge,
   NButton,
   NCard,
+  NErrorState,
   NSheet,
   useNajmFormat,
 } from "najm-kit";
@@ -20,7 +21,7 @@ import { getPersonImage } from "najm-kit/person-images";
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { KafilLanguage } from "@/preferences";
-import { PageErrorState } from "@/shared/PageState";
+import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { getOrderActions, type OrderCommand } from "../config/orderActions";
 import { useOrder } from "../hooks/useOrders";
@@ -87,10 +88,11 @@ export function DeliveryDetailsSheet({
       {detail.isPending ? (
         <NCard title={t("operator.orders.delivery.loading")} loading />
       ) : detail.isError ? (
-        <PageErrorState
-          error={detail.error}
+        <NErrorState
+          message={getPublicApiErrorMessage(detail.error, t("state.retry"))}
           title="We could not load delivery details"
           onRetry={() => void detail.refetch()}
+          surface="panel"
         />
       ) : detail.data ? (
         <DeliveryDetailsBody order={detail.data} />
