@@ -109,6 +109,15 @@ const sponsorBPhone = buildRunPhone(runLabel, "sponsorB");
 const sponsorBCin = buildRunCin(runLabel, "sponsorB");
 const sponsorBName = `Connected Sponsor B ${runLabel}`;
 const sponsorBPassword = `Kt${crypto.randomUUID().replaceAll("-", "").slice(0, 20)}8`;
+const deliveryStaffFixtures = (["a", "b"] as const).map((alias, index) => {
+  const fixtureLabel = `${runLabel}-delivery-${alias}`;
+  return {
+    cin: buildRunCin(fixtureLabel, "family"),
+    email: buildRunEmail(fixtureLabel, "family"),
+    name: `Connected Delivery ${index === 0 ? "A" : "B"} ${runLabel}`,
+    phone: buildRunPhone(fixtureLabel, "family"),
+  };
+});
 const state: RemoteState = {
   familyProfileId: "",
   familyUserId: "",
@@ -473,6 +482,77 @@ function responseId(value: unknown): string {
   if (typeof data !== "object" || data === null || !("id" in data)) return "";
   const id = (data as { id?: unknown }).id;
   return typeof id === "string" ? id : "";
+}
+
+async function openStaffDirectory(page: Page): Promise<void> {
+  const listResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === "GET" &&
+      new URL(response.url()).pathname === "/api/staff" &&
+      response.ok(),
+  );
+  await page.goto("/staff", { waitUntil: "commit" });
+  await listResponse;
+  await expect(page.getByText("Loading staff records...", { exact: true })).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Staff", exact: true })).toBeVisible();
+}
+
+async function createDeliveryStaffThroughUi(
+  page: Page,
+  fixture: (typeof deliveryStaffFixtures)[number],
+): Promise<Record<string, unknown>> {
+  const addStaff = await onlyVisible(
+    page.getByRole("button", { name: "Add staff", exact: true }),
+  );
+  await addStaff.click({ trial: true, timeout: 5_000 });
+  await addStaff.click();
+
+  const dialog = page.getByRole("dialog", { name: "Add staff record", exact: true });
+  await expect(dialog).toBeVisible();
+  const form = dialog.locator("#create-staff-form");
+  await form.locator('input[name="name"]').fill(fixture.name);
+  await form.locator('input[name="dateOfBirth"]').fill("1990-01-01");
+  await form.locator('input[name="cin"]').fill(fixture.cin);
+  await form.locator('input[name="phone"]').fill(fixture.phone);
+  await form.locator('input[name="contactEmail"]').fill(fixture.email);
+  await form.locator('input[name="jobTitle"]').fill("Acceptance delivery agent");
+  await form.locator('textarea[name="address"]').fill("Acceptance delivery office");
+  await form.locator('textarea[name="notes"]').fill("Guarded Unit G delivery profile");
+
+  const capabilities = form.getByRole("combobox", { name: /^Capabilities\s*\*?$/ });
+  await capabilities.click();
+  const capabilitiesPopover = page.locator(
+    '[data-slot="popover-content"][data-state="open"]',
+  );
+  await expect(capabilitiesPopover).toBeVisible();
+  await capabilitiesPopover.getByText("Operator", { exact: true }).click();
+  await capabilitiesPopover.getByText("Delivery", { exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(capabilities).toContainText("Delivery");
+  await expect(capabilities).not.toContainText("Operator");
+
+  const submit = form.getByRole("button", {
+    name: "Create staff record",
+    exact: true,
+  });
+  await submit.click({ trial: true, timeout: 5_000 });
+  const createResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/staff",
+  );
+  await submit.click();
+  const response = await createResponse;
+  expect(response.status()).toBeLessThan(400);
+  const created = responseRecord(await response.json());
+  expect(created.name).toBe(fixture.name);
+  expect(created.status).toBe("active");
+  expect(created.functions).toEqual(["delivery"]);
+  expect(created.userId).toBeNull();
+  expect(created.hasOperatorAccess).toBe(false);
+  expect(created.initialPassword).toBeNull();
+  await expect(dialog).toBeHidden();
+  return created;
 }
 
 async function readFamilyFundingFromSponsorCatalog(
@@ -2434,6 +2514,15 @@ test.describe.serial("connected VPS acceptance", () => {
     const productId = String(product.id);
     const productName = String(product.name);
 
+    await openStaffDirectory(adminPage);
+    const createdDeliveryStaff = [];
+    for (const fixture of deliveryStaffFixtures) {
+      createdDeliveryStaff.push(await createDeliveryStaffThroughUi(adminPage, fixture));
+    }
+    const createdDeliveryStaffIds = createdDeliveryStaff.map((profile) => profile.id);
+    expect(createdDeliveryStaffIds.every((id) => typeof id === "string")).toBe(true);
+    expect(new Set(createdDeliveryStaffIds).size).toBe(2);
+
     const deliveryOptions = await browserJsonRequest(
       adminPage,
       "GET",
@@ -2441,16 +2530,22 @@ test.describe.serial("connected VPS acceptance", () => {
     );
     expect(deliveryOptions.status).toBe(200);
     const deliveryStaff = responseRows(deliveryOptions.body).filter(
-      (profile) => typeof profile.id === "string" && typeof profile.name === "string",
+      (profile) =>
+        typeof profile.id === "string" &&
+        deliveryStaffFixtures.some((fixture) => profile.name === fixture.name),
     );
-    if (deliveryStaff.length < 2) {
-      throw new Error(
-        "ENVIRONMENT BLOCKED: the deployed application exposes fewer than two active Delivery profiles",
-      );
-    }
-    const staffA = deliveryStaff[0]!;
-    const staffB = deliveryStaff.find((profile) => profile.id !== staffA.id)!;
+    expect(deliveryStaff).toHaveLength(2);
+    const deliveryStaffByName = new Map(
+      deliveryStaff.map((profile) => [profile.name, profile]),
+    );
+    const staffA = deliveryStaffByName.get(deliveryStaffFixtures[0]!.name)!;
+    const staffB = deliveryStaffByName.get(deliveryStaffFixtures[1]!.name)!;
+    expect(staffA).toBeDefined();
     expect(staffB).toBeDefined();
+    expect(staffA.id).toBe(createdDeliveryStaff[0]!.id);
+    expect(staffB.id).toBe(createdDeliveryStaff[1]!.id);
+    expect(staffA.functionKeys).toEqual(["delivery"]);
+    expect(staffB.functionKeys).toEqual(["delivery"]);
 
     async function submitFamilyOrder(label: string) {
       const add = await browserJsonRequest(

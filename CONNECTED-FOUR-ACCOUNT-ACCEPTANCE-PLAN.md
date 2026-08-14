@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G NOT IMPLEMENTED**
+Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G STAFF-CREATION CORRECTION NOT RUN**
 
 Target: exactly `https://kafala360.ma`
 
@@ -29,10 +29,11 @@ Prove one connected journey involving four isolated authenticated identities:
 | Sponsor A | Public `/apply` flow | Confirms OTP, is approved, supports the Family, and contributes |
 | Sponsor B | Independent public `/apply` flow | Proves two-sponsor isolation and contributes separately |
 
-Delivery Staff A and Delivery Staff B are profiles, not login accounts. Reuse
-two active demo delivery profiles only when the admin UI/API proves they exist.
-If two do not exist, create run-labelled delivery profiles through the deployed
-admin UI. Do not use a seed or direct database command.
+Delivery Staff A and Delivery Staff B are profiles, not login accounts. Unit G
+creates both as fresh run-labelled active Delivery profiles through the
+deployed Admin UI, verifies their authenticated assignment-option projections,
+and then uses those exact profiles for failure and reassignment. Do not seed
+Staff or use a direct database command.
 
 The final remote result must prove:
 
@@ -415,9 +416,27 @@ supplied sanitized report did not reproduce the raw native-exit line, so this
 checkpoint records the seven terminal test verdicts without inventing it. The
 final source contract passes `14 pass / 0 fail / 194 expect()`, targeted lint
 and web typecheck are clean, the root check passes, and `db:generate` reports
-no schema drift. Units A-F are accepted together. Remote Unit G is the next
-coder implementation boundary; no Unit G browser command is authorized before
-its source and static gates are delivered.
+no schema drift. Units A-F are accepted together.
+
+Remote Unit G was then implemented and one combined A-G plus diagnostics
+attempt selected all eight intended tests. Units A-F passed; Unit G stopped in
+`6.9s` at its old precondition because
+`GET /api/staff/options/delivery -> 200` exposed fewer than two active Delivery
+profiles. Passive diagnostics did not run, the native exit was `1`, the managed
+SSH tunnel closed, and no sensitive value was printed. The attempt was
+classified `ENVIRONMENT` under that version of the contract, and no rerun was
+made.
+
+Delivery Staff are now journey-owned fixtures instead of deployed-data
+preconditions. Unit G creates two fresh run-labelled Delivery-only profiles
+through the real Admin Staff dialog, proves each exact `POST /api/staff`
+returns an active profile with no application account, binds their distinct
+creation IDs to the exact authenticated delivery-option projections, and uses
+those profiles for failure and reassignment. The corrected source contract
+passes `15 pass / 0 fail / 230 expect()`, web typecheck and targeted ESLint are
+clean, the root check passes, and `db:generate` reports no schema drift. One
+fresh combined A-G plus diagnostics attempt is authorized only after this exact
+commit is published and the intended deployment is healthy.
 
 Historical local connected-work-unit results are not remote passes and are not
 part of this replacement plan's completion status.
@@ -540,14 +559,23 @@ or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
 the smallest implemented prerequisite range. The combined A-F range passes
-with passive diagnostics. Remote Unit G is the next coder implementation
-boundary; after it is implemented and its source/static gates pass, promote one
-combined A-G range plus diagnostics using the exact declared titles.
+with passive diagnostics. Unit G and its Staff-creation correction are
+implemented with passing source/static gates. The next authorized browser
+promotion is one combined A-G range plus diagnostics using the exact declared
+titles after the published revision is healthy.
 
 The accepted A-F selection was:
 
 ```powershell
 $env:KAFIL_E2E_REMOTE_GREP='remote unit [A-F]|remote diagnostics'
+bun run --cwd apps/web test:e2e:connected:remote
+Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
+```
+
+The next A-G selection is:
+
+```powershell
+$env:KAFIL_E2E_REMOTE_GREP='remote unit [A-G]|remote diagnostics'
 bun run --cwd apps/web test:e2e:connected:remote
 Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
 ```
@@ -821,11 +849,23 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
-Status: **IMPLEMENTED - REMOTE RANGE NOT RUN**
+Status: **IMPLEMENTED - STAFF-CREATION CORRECTION REMOTE RANGE NOT RUN**
 
 Precondition: the deployed Family catalog exposes at least one active product
-with usable inventory, and two active delivery profiles are available. If not,
-stop as `ENVIRONMENT BLOCKED`; do not seed or modify deployment infrastructure.
+with usable inventory. If not, stop as `ENVIRONMENT BLOCKED`; do not seed or
+modify deployment infrastructure. Delivery profiles are journey-owned data,
+not an environment precondition.
+
+### Delivery Staff A and B
+
+- [ ] Admin opens the deployed Staff directory and awaits its exact list
+  response and ready UI.
+- [ ] Admin creates two fresh run-labelled Staff profiles through the real
+  dialog, each with only the Delivery capability and no application account.
+- [ ] Each exact `POST /api/staff` succeeds and returns an active profile whose
+  function list is exactly `delivery`.
+- [ ] `GET /api/staff/options/delivery` exposes both exact run-labelled profiles
+  once with distinct IDs before either is assigned to an order.
 
 ### Order 1 - Family cancellation
 

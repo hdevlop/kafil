@@ -385,7 +385,18 @@ describe("connected four-account remote runner", () => {
     ]) {
       expect(unitG).toContain(contract);
     }
+    expect(specSource).toContain('page.goto("/staff", { waitUntil: "commit" })');
+    expect(specSource).toContain('new URL(response.url()).pathname === "/api/staff"');
+    expect(specSource).toContain('expect(created.functions).toEqual(["delivery"])');
+    expect(specSource).toContain("expect(created.userId).toBeNull()");
+    expect(specSource).toContain("expect(created.hasOperatorAccess).toBe(false)");
+    expect(specSource).toContain("expect(created.initialPassword).toBeNull()");
     expect(unitG).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
+    expect(unitG).toContain("createDeliveryStaffThroughUi(adminPage, fixture)");
+    expect(unitG).toContain("expect(deliveryStaff).toHaveLength(2)");
+    expect(unitG).toContain("expect(staffA.id).toBe(createdDeliveryStaff[0]!.id)");
+    expect(unitG).toContain("expect(staffB.id).toBe(createdDeliveryStaff[1]!.id)");
+    expect(unitG).not.toContain("fewer than two active Delivery profiles");
     expect(unitG).toContain('uploadGeneratedPdfEvidence(\n      adminPage,\n      "deliveries"');
     expect(unitG).toContain("actualTotalMinor - order3TotalMinor");
     expect(unitG).toContain("purchaseIdempotencyKey");
