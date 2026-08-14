@@ -2263,7 +2263,7 @@ test.describe.serial("connected VPS acceptance", () => {
       if ((await fundedFamilyRow.count()) !== 0) break;
 
       const nextPage = catalogPagination.getByRole("button", {
-        name: "Next",
+        name: "Next page",
         exact: true,
       });
       await expect(nextPage).toBeVisible();

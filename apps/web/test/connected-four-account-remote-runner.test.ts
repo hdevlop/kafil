@@ -347,6 +347,9 @@ describe("connected four-account remote runner", () => {
       'getByRole("navigation", {\n      name: "Pagination",\n      exact: true,',
     );
     expect(unitF).toContain(
+      'getByRole("button", {\n        name: "Next page",\n        exact: true,',
+    );
+    expect(unitF).not.toContain(
       'getByRole("button", {\n        name: "Next",\n        exact: true,',
     );
     expect(unitF).toContain('locator(\'[aria-current="page"]\')');
