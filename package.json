@@ -9,11 +9,12 @@
   ],
   "overrides": {
     "najm-core": "2.0.5",
-    "najm-auth": "3.1.3",
+    "najm-auth": "3.1.4",
     "najm-database": "2.0.3",
     "najm-i18n": "2.0.3",
     "najm-kit": "2.11.5",
     "najm-mcp": "2.1.0",
+    "najm-rate": "2.0.3",
     "najm-storage": "2.2.0",
     "najm-theme": "0.2.1",
     "diject": "0.1.8"
