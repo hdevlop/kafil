@@ -132,7 +132,7 @@ export function buildRunEmail(label: string, alias: RunRoleAlias): string {
     sponsorA: CONNECTED_RUN_FIXTURE.sponsorEmailDomain,
     sponsorB: CONNECTED_RUN_FIXTURE.sponsorEmailDomain,
   };
-  return `${sanitized}-${alias}@${domains[alias]}`;
+  return `${sanitized}-${alias.toLowerCase()}@${domains[alias]}`;
 }
 
 /**

@@ -66,6 +66,11 @@ interface RemoteState {
   sponsorAApplicantId: string;
   sponsorAProfileId: string;
   sponsorAUserId: string;
+  sponsorBApplicantId: string;
+  sponsorBProfileId: string;
+  sponsorBUserId: string;
+  assignmentAId: string;
+  assignmentBId: string;
 }
 
 interface MailpitMessageSummary {
@@ -93,6 +98,11 @@ const sponsorAPhone = buildRunPhone(runLabel, "sponsorA");
 const sponsorACin = buildRunCin(runLabel, "sponsorA");
 const sponsorAName = `Connected Sponsor A ${runLabel}`;
 const sponsorAPassword = `Ks${crypto.randomUUID().replaceAll("-", "").slice(0, 20)}7`;
+const sponsorBEmail = buildRunEmail(runLabel, "sponsorB");
+const sponsorBPhone = buildRunPhone(runLabel, "sponsorB");
+const sponsorBCin = buildRunCin(runLabel, "sponsorB");
+const sponsorBName = `Connected Sponsor B ${runLabel}`;
+const sponsorBPassword = `Kt${crypto.randomUUID().replaceAll("-", "").slice(0, 20)}8`;
 const state: RemoteState = {
   familyProfileId: "",
   familyUserId: "",
@@ -100,6 +110,11 @@ const state: RemoteState = {
   sponsorAApplicantId: "",
   sponsorAProfileId: "",
   sponsorAUserId: "",
+  sponsorBApplicantId: "",
+  sponsorBProfileId: "",
+  sponsorBUserId: "",
+  assignmentAId: "",
+  assignmentBId: "",
 };
 
 const monthNames = [
@@ -313,19 +328,22 @@ async function browserJsonRequest(
   page: Page,
   method: "GET" | "POST",
   path: string,
+  body?: Record<string, unknown>,
 ): Promise<BrowserJsonResult> {
   return page.evaluate(
-    async ({ requestMethod, requestPath, rootUrl }) => {
+    async ({ requestBody, requestMethod, requestPath, rootUrl }) => {
       const response = await fetch(`${rootUrl}${requestPath}`, {
         method: requestMethod,
         credentials: "include",
+        headers: requestBody ? { "content-type": "application/json" } : undefined,
+        body: requestBody ? JSON.stringify(requestBody) : undefined,
       });
       return {
         status: response.status,
         body: await response.json().catch(() => null),
       };
     },
-    { requestMethod: method, requestPath: path, rootUrl: baseUrl },
+    { requestBody: body, requestMethod: method, requestPath: path, rootUrl: baseUrl },
   );
 }
 
@@ -367,6 +385,161 @@ function responseRecord(value: unknown): Record<string, unknown> {
   return typeof data === "object" && data !== null && !Array.isArray(data)
     ? (data as Record<string, unknown>)
     : {};
+}
+
+function responseMessage(value: unknown): string {
+  if (typeof value !== "object" || value === null || !("message" in value)) return "";
+  const message = (value as { message?: unknown }).message;
+  return typeof message === "string" ? message : "";
+}
+
+function responseId(value: unknown): string {
+  const data = responseData(value);
+  if (typeof data !== "object" || data === null || !("id" in data)) return "";
+  const id = (data as { id?: unknown }).id;
+  return typeof id === "string" ? id : "";
+}
+
+async function readFamilyFundingFromSponsorCatalog(
+  page: Page,
+  familyProfileId: string,
+): Promise<Record<string, unknown>> {
+  const catalog = await browserJsonRequest(
+    page,
+    "GET",
+    "/api/support-assignments/catalog?relationship=supported&limit=100&offset=0",
+  );
+  expect(catalog.status).toBe(200);
+  const matches = responseRows(catalog.body).filter(
+    (row) => row.id === familyProfileId,
+  );
+  expect(matches).toHaveLength(1);
+  const funding = responseRecord(matches[0]!.funding);
+  for (const field of [
+    "targetMinor",
+    "fundedMinor",
+    "pendingMinor",
+    "remainingMinor",
+    "availableToContributeMinor",
+  ]) {
+    expect(
+      Number.isSafeInteger(funding[field]),
+      `${field} must be a safe integer minor-unit value`,
+    ).toBe(true);
+  }
+  return funding;
+}
+
+function containsSensitiveValue(value: unknown, sensitiveValues: string[]): boolean {
+  const serialized = JSON.stringify(value ?? {});
+  return sensitiveValues.some(
+    (sensitiveValue) => sensitiveValue.length > 0 && serialized.includes(sensitiveValue),
+  );
+}
+
+function containsForbiddenProjectionKey(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(containsForbiddenProjectionKey);
+  if (typeof value !== "object" || value === null) return false;
+  const forbidden = new Set([
+    "address",
+    "cin",
+    "document",
+    "documents",
+    "email",
+    "exactaddress",
+    "guardiancin",
+    "notes",
+    "phone",
+    "privatenotes",
+  ]);
+  return Object.entries(value as Record<string, unknown>).some(([key, nested]) => {
+    const normalized = key.toLowerCase().replaceAll(/[^a-z0-9]/g, "");
+    return forbidden.has(normalized) || containsForbiddenProjectionKey(nested);
+  });
+}
+
+async function openComboboxSearch(
+  page: Page,
+  combobox: Locator,
+  placeholder: string,
+): Promise<Locator> {
+  await combobox.click();
+  await expect(combobox).toHaveAttribute("aria-expanded", "true");
+  const popoverId = await combobox.getAttribute("aria-controls");
+  expect(popoverId, "open Najm combobox must identify its portal").toBeTruthy();
+  const popover = page.locator(
+    `[data-slot="popover-content"][id=${JSON.stringify(popoverId)}]`,
+  );
+  await expect(popover).toHaveAttribute("data-state", "open");
+  await expect(popover).toBeVisible();
+  const search = popover.getByPlaceholder(placeholder, { exact: true });
+  await expect(search).toHaveCount(1);
+  await expect(search).toBeVisible();
+  return search;
+}
+
+async function createAssignmentThroughUi(
+  page: Page,
+  sponsorEmail: string,
+): Promise<void> {
+  const assignmentsResponse = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      response.request().method() === "GET" &&
+      url.pathname === "/api/support-assignments" &&
+      url.searchParams.has("limit") &&
+      url.searchParams.has("offset")
+    );
+  });
+  await page.goto("/assignments", { waitUntil: "commit" });
+  expect((await assignmentsResponse).status()).toBeLessThan(400);
+  await expectNoneVisible(
+    page.getByText("Loading support assignments...", { exact: true }),
+  );
+
+  const createAssignmentButton = await onlyVisible(
+    page.getByRole("button", { name: "Create assignment", exact: true }),
+  );
+  await createAssignmentButton.click({ trial: true, timeout: 5_000 });
+  await createAssignmentButton.click();
+
+  const dialog = page.getByRole("dialog", {
+    name: "Create support assignment",
+    exact: true,
+  });
+  await expect(dialog).toBeVisible();
+  const sponsorCombobox = dialog.getByRole("combobox").nth(0);
+  const familyCombobox = dialog.getByRole("combobox").nth(1);
+  await expect(sponsorCombobox).toContainText("Choose a sponsor");
+  const sponsorSearch = await openComboboxSearch(
+    page,
+    sponsorCombobox,
+    "Search sponsors...",
+  );
+  await sponsorSearch.fill(sponsorEmail);
+  await page.getByRole("option").filter({ hasText: sponsorEmail }).click();
+  await expect(sponsorCombobox).toHaveAttribute("aria-expanded", "false");
+
+  await expect(familyCombobox).toContainText("Choose a family");
+  const familySearch = await openComboboxSearch(
+    page,
+    familyCombobox,
+    "Search families...",
+  );
+  await familySearch.fill(familyName);
+  await page.getByRole("option").filter({ hasText: familyName }).click();
+  await expect(familyCombobox).toHaveAttribute("aria-expanded", "false");
+
+  const createResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/support-assignments",
+  );
+  await dialog
+    .getByRole("button", { name: "Create support assignment", exact: true })
+    .click();
+  expect((await createResponse).status()).toBeLessThan(400);
+  await expect(dialog).toBeHidden();
 }
 
 function mailboxFetch(path: string, init: RequestInit = {}): Promise<globalThis.Response> {
@@ -491,15 +664,18 @@ test.describe.serial("connected VPS acceptance", () => {
   let adminContext: BrowserContext;
   let familyContext: BrowserContext;
   let sponsorAContext: BrowserContext;
+  let sponsorBContext: BrowserContext;
   const adminDiagnostics = makeDiagnostics();
   const familyDiagnostics = makeDiagnostics();
   const sponsorADiagnostics = makeDiagnostics();
+  const sponsorBDiagnostics = makeDiagnostics();
 
   test.beforeAll(async ({ browser }) => {
     expect(adminEmail && adminPassword, "remote admin credentials must be present").toBeTruthy();
     adminContext = await newIsolatedContext(browser);
     familyContext = await newIsolatedContext(browser);
     sponsorAContext = await newIsolatedContext(browser);
+    sponsorBContext = await newIsolatedContext(browser);
   });
 
   test.afterAll(async () => {
@@ -507,6 +683,7 @@ test.describe.serial("connected VPS acceptance", () => {
       adminContext?.close(),
       familyContext?.close(),
       sponsorAContext?.close(),
+      sponsorBContext?.close(),
     ]);
   });
 
@@ -947,9 +1124,10 @@ test.describe.serial("connected VPS acceptance", () => {
         url.searchParams.get("search") === sponsorAName
       );
     });
-    await adminPage
-      .getByPlaceholder("Search applicant name...", { exact: true })
-      .fill(sponsorAName);
+    const applicantSearch = await onlyVisible(
+      adminPage.getByPlaceholder("Search applicant name...", { exact: true }),
+    );
+    await applicantSearch.fill(sponsorAName);
     expect((await filteredApplicantsResponse).status()).toBeLessThan(400);
     await expectNoneVisible(adminPage.getByText("Loading applicants...", { exact: true }));
 
@@ -1074,9 +1252,1024 @@ test.describe.serial("connected VPS acceptance", () => {
     await sponsorPage.close();
   });
 
+  test("remote unit D - Sponsor B application and approval", async () => {
+    const expectedPhoneE164 = sponsorBPhone;
+    const phoneLocal = expectedPhoneE164.replace(/^\+212/, "");
+    const sponsorPage = await sponsorBContext.newPage();
+    attachDiagnostics(sponsorPage, sponsorBDiagnostics);
+
+    const adminPage = await adminContext.newPage();
+    attachDiagnostics(adminPage, adminDiagnostics);
+    await prepareLogin(adminPage, adminEmail, adminPassword);
+    const operatorDashboardResponse = adminPage.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === "/api/dashboard/operator",
+    );
+    await submitPreparedLogin(adminPage);
+    await expect(adminPage).toHaveURL(/\/dashboard$/);
+    expect((await operatorDashboardResponse).status()).toBeLessThan(400);
+    await expectNoneVisible(adminPage.getByText("Loading…", { exact: true }));
+    await expect(
+      adminPage.getByRole("heading", { name: "Operator dashboard", exact: true }),
+    ).toBeVisible();
+
+    const adminIdentity = await browserJsonRequest(adminPage, "GET", "/api/auth/me");
+    expect(adminIdentity.status).toBe(200);
+    expect(responseRecord(adminIdentity.body).role).toBe("admin");
+    const applicantsCapability = await browserJsonRequest(
+      adminPage,
+      "GET",
+      "/api/applicants?limit=1&offset=0",
+    );
+    expect(applicantsCapability.status).toBe(200);
+
+    await sponsorPage.goto("/apply", { waitUntil: "commit" });
+    expect(new URL(sponsorPage.url()).pathname).toBe("/apply");
+    const applicationForm = sponsorPage.locator("#applicant-application-form");
+    const submitApplication = sponsorPage.getByRole("button", {
+      name: "Submit application",
+      exact: true,
+    });
+    await expect(applicationForm).toBeVisible();
+    await expect(submitApplication).toBeVisible();
+    await expect.poll(
+      () => applicationForm.evaluate((form) => {
+        const propsKey = Object.keys(form).find((key) => key.startsWith("__reactProps$"));
+        if (!propsKey) return false;
+        const props = (form as unknown as Record<string, { onSubmit?: unknown }>)[propsKey];
+        return typeof props?.onSubmit === "function";
+      }),
+    ).toBe(true);
+
+    let applicationRequestCount = 0;
+    const countApplicationRequest = (request: Request): void => {
+      if (
+        request.method() === "POST" &&
+        new URL(request.url()).pathname === "/api/applicants"
+      ) {
+        applicationRequestCount += 1;
+      }
+    };
+    sponsorPage.on("request", countApplicationRequest);
+    await submitApplication.click();
+    await expect(sponsorPage.getByText("Enter your full name", { exact: true })).toBeVisible();
+    expect(applicationRequestCount).toBe(0);
+
+    await sponsorPage.getByRole("textbox", { name: "Full name *" }).fill(sponsorBName);
+    await sponsorPage.getByRole("textbox", { name: "Email address *" }).fill(sponsorBEmail);
+    const phoneTextbox = sponsorPage.getByPlaceholder(
+      "For example: +212 6 12 34 56 78",
+      { exact: true },
+    );
+    await phoneTextbox.click();
+    await phoneTextbox.press("End");
+    await sponsorPage.keyboard.type(phoneLocal);
+    expect(
+      (await phoneTextbox.inputValue()).replace(/[\s().-]+/g, "") ===
+        expectedPhoneE164,
+    ).toBe(true);
+    await sponsorPage
+      .getByPlaceholder("For example: AB123456", { exact: true })
+      .fill(sponsorBCin);
+    await sponsorPage.getByRole("textbox", { name: "Password *" }).fill(sponsorBPassword);
+
+    const submitStartedAt = Date.now();
+    const otpSubjectKeyword = "Verify your Kafil sponsor application";
+    const otpPolling = new AbortController();
+    const otpMessagePromise = pollExactlyOneOtpMessage({
+      recipient: sponsorBEmail,
+      since: submitStartedAt,
+      subjectKeyword: otpSubjectKeyword,
+      signal: otpPolling.signal,
+    });
+    let otpMessage: MailpitMessage;
+    try {
+      const submitResponse = sponsorPage.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          new URL(response.url()).pathname === "/api/applicants",
+      );
+      await submitApplication.click();
+      expect((await submitResponse).status()).toBeLessThan(400);
+      expect(applicationRequestCount).toBe(1);
+      sponsorPage.off("request", countApplicationRequest);
+      otpMessage = await otpMessagePromise;
+    } catch (error) {
+      otpPolling.abort();
+      await otpMessagePromise.catch(() => undefined);
+      throw error;
+    }
+
+    expect(
+      otpMessage.To.some(
+        (destination) => destination.Address.toLowerCase() === sponsorBEmail.toLowerCase(),
+      ),
+    ).toBe(true);
+    const otp = extractOtp(otpMessage);
+    const otpGroup = sponsorPage.getByRole("group", { name: "One-time code" });
+    await expect(otpGroup).toBeVisible();
+    await otpGroup.locator("input").first().click();
+    await sponsorPage.keyboard.type(otp);
+    const confirmResponse = sponsorPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === "/api/applicants/email-verification/confirm",
+    );
+    await sponsorPage.getByRole("button", { name: "Verify email", exact: true }).click();
+    expect((await confirmResponse).status()).toBeLessThan(400);
+    const confirmedOtpMessages = await findOtpMailboxMessages({
+      recipient: sponsorBEmail,
+      since: submitStartedAt,
+      subjectKeyword: otpSubjectKeyword,
+    });
+    expect(confirmedOtpMessages).toHaveLength(1);
+    expect(confirmedOtpMessages[0]?.ID === otpMessage.ID).toBe(true);
+    await deleteMailboxMessage(otpMessage.ID);
+    expect(
+      await findOtpMailboxMessages({
+        recipient: sponsorBEmail,
+        since: submitStartedAt,
+        subjectKeyword: otpSubjectKeyword,
+      }),
+    ).toHaveLength(0);
+    await expect(
+      sponsorPage.getByRole("heading", { name: "Application pending review", exact: true }),
+    ).toBeVisible();
+
+    await prepareLogin(sponsorPage, sponsorBEmail, sponsorBPassword);
+    const pendingLogin = await submitPreparedLogin(sponsorPage, sponsorBDiagnostics, 403);
+    const pendingLoginBody = responseRecord(await pendingLogin.json().catch(() => null));
+    expect(/inactive/i.test(typeof pendingLoginBody.message === "string" ? pendingLoginBody.message : ""))
+      .toBe(true);
+    await expect.poll(() => new URL(sponsorPage.url()).pathname).toBe("/login");
+    await assertNoAuthCookies(sponsorBContext);
+
+    registerExpectedResponse(
+      adminDiagnostics,
+      { method: "GET", path: "/api/applicants", status: 401 },
+      false,
+    );
+    const applicantsResponse = adminPage.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        response.request().method() === "GET" &&
+        url.pathname === "/api/applicants" &&
+        url.searchParams.has("limit") &&
+        url.searchParams.has("offset") &&
+        response.status() < 400
+      );
+    });
+    await adminPage.goto("/applicants", { waitUntil: "commit" });
+    expect((await applicantsResponse).status()).toBeLessThan(400);
+    await expectNoneVisible(adminPage.getByText("Loading applicants...", { exact: true }));
+    const filteredApplicantsResponse = adminPage.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        response.request().method() === "GET" &&
+        url.pathname === "/api/applicants" &&
+        url.searchParams.get("search") === sponsorBName
+      );
+    });
+    const applicantSearch = await onlyVisible(
+      adminPage.getByPlaceholder("Search applicant name...", { exact: true }),
+    );
+    await applicantSearch.fill(sponsorBName);
+    expect((await filteredApplicantsResponse).status()).toBeLessThan(400);
+    await expectNoneVisible(adminPage.getByText("Loading applicants...", { exact: true }));
+
+    const applicantList = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/applicants?search=${encodeURIComponent(sponsorBName)}&limit=10&offset=0`,
+    );
+    expect(applicantList.status).toBe(200);
+    const applicantMatches = responseRows(applicantList.body).filter(
+      (row) => row.email === sponsorBEmail,
+    );
+    expect(applicantMatches).toHaveLength(1);
+    const applicant = applicantMatches[0]!;
+    state.sponsorBApplicantId = typeof applicant.id === "string" ? applicant.id : "";
+    expect(Boolean(state.sponsorBApplicantId)).toBe(true);
+    expect(applicant.status).toBe("pending_review");
+
+    const applicantRows = adminPage.locator('tr[data-row="true"]');
+    await expect(applicantRows).toHaveCount(1);
+    const applicantRow = applicantRows.nth(0);
+    await applicantRow.getByRole("button", { name: "Row actions", exact: true }).click();
+    await adminPage.getByRole("menuitem", { name: "View", exact: true }).click();
+    const detailsSheet = adminPage.getByRole("dialog", {
+      name: "Applicant details",
+      exact: true,
+    });
+    await expect(detailsSheet).toBeVisible();
+    expect(
+      await detailsSheet.evaluate(
+        (sheet, expectedValues) =>
+          expectedValues.every((value) => sheet.textContent?.includes(value) === true),
+        [sponsorBName, sponsorBEmail, expectedPhoneE164],
+      ),
+    ).toBe(true);
+    await adminPage.keyboard.press("Escape");
+    await expect(detailsSheet).toBeHidden();
+
+    await applicantRow.getByRole("button", { name: "Row actions", exact: true }).click();
+    await adminPage.getByRole("menuitem", { name: "Approve", exact: true }).click();
+    const approveDialog = adminPage.getByRole("dialog", { name: /^Approve / });
+    await expect(approveDialog).toBeVisible();
+    const approvalResponse = adminPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname ===
+          `/api/applicants/${state.sponsorBApplicantId}/approve`,
+    );
+    await approveDialog.getByRole("button", { name: "Approve", exact: true }).click();
+    const approval = await approvalResponse;
+    expect(approval.status()).toBe(200);
+    const approvedApplicant = responseRecord(await approval.json().catch(() => null));
+    state.sponsorBUserId =
+      typeof approvedApplicant.authUserId === "string" ? approvedApplicant.authUserId : "";
+    state.sponsorBProfileId =
+      typeof approvedApplicant.sponsorProfileId === "string"
+        ? approvedApplicant.sponsorProfileId
+        : "";
+    expect(Boolean(state.sponsorBUserId && state.sponsorBProfileId)).toBe(true);
+    expect(approvedApplicant.status).toBe("approved");
+    expect(approvedApplicant.phone === expectedPhoneE164).toBe(true);
+    await expect(approveDialog).toBeHidden();
+
+    await expectExactNegativeResponse(
+      adminPage,
+      adminDiagnostics,
+      {
+        method: "POST",
+        path: `/api/applicants/${state.sponsorBApplicantId}/approve`,
+        status: 409,
+      },
+      () =>
+        browserJsonRequest(
+          adminPage,
+          "POST",
+          `/api/applicants/${state.sponsorBApplicantId}/approve`,
+        ),
+    );
+    await signOut(adminPage);
+    await adminPage.close();
+
+    await prepareLogin(sponsorPage, sponsorBEmail, sponsorBPassword);
+    const sponsorDashboardResponse = sponsorPage.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === "/api/dashboard/sponsor",
+    );
+    await submitPreparedLogin(sponsorPage);
+    await expect(sponsorPage).toHaveURL(/\/dashboard$/);
+    expect((await sponsorDashboardResponse).status()).toBeLessThan(400);
+    await expectNoneVisible(
+      sponsorPage.getByText("Loading your sponsor dashboard", { exact: true }),
+    );
+    await expect(sponsorPage.getByRole("heading", { name: /^Welcome,/i })).toBeVisible();
+    const sponsorNavigation = sponsorPage.getByRole("navigation");
+    await onlyVisible(sponsorNavigation.locator('a[href="/family"]'));
+    await onlyVisible(sponsorNavigation.locator('a[href="/contribution"]'));
+    await onlyVisible(sponsorNavigation.locator('a[href="/orders"]'));
+    await expect(sponsorNavigation.locator('a[href="/applicants"]')).toHaveCount(0);
+    await expect(
+      sponsorPage.getByText("Find a family to support", { exact: true }).first(),
+    ).toBeVisible();
+
+    await signOut(sponsorPage);
+    await expectExactNegativeResponse(
+      sponsorPage,
+      sponsorBDiagnostics,
+      { method: "GET", path: "/api/sponsors/me/profile", status: 401 },
+      () => browserJsonRequest(sponsorPage, "GET", "/api/sponsors/me/profile"),
+    );
+    await sponsorPage.close();
+  });
+
+  test("remote unit E - assignments and sponsor privacy", async () => {
+    expect(
+      Boolean(
+        state.familyProfileId &&
+          state.sponsorAProfileId &&
+          state.sponsorBProfileId,
+      ),
+      "remote Unit E requires the in-process identifiers produced by Units B-D",
+    ).toBe(true);
+
+    const adminPage = await adminContext.newPage();
+    attachDiagnostics(adminPage, adminDiagnostics);
+    await prepareLogin(adminPage, adminEmail, adminPassword);
+    const operatorDashboardResponse = adminPage.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === "/api/dashboard/operator",
+    );
+    await submitPreparedLogin(adminPage);
+    await expect(adminPage).toHaveURL(/\/dashboard$/);
+    expect((await operatorDashboardResponse).status()).toBeLessThan(400);
+    await expectNoneVisible(adminPage.getByText("Loading…", { exact: true }));
+    await expect(
+      adminPage.getByRole("heading", { name: "Operator dashboard", exact: true }),
+    ).toBeVisible();
+
+    await createAssignmentThroughUi(adminPage, sponsorAEmail);
+    await createAssignmentThroughUi(adminPage, sponsorBEmail);
+
+    const duplicatePath = "/api/support-assignments";
+    const duplicate = await expectExactNegativeResponse(
+      adminPage,
+      adminDiagnostics,
+      { method: "POST", path: duplicatePath, status: 409 },
+      () =>
+        browserJsonRequest(adminPage, "POST", duplicatePath, {
+          sponsorProfileId: state.sponsorAProfileId,
+          familyProfileId: state.familyProfileId,
+        }),
+    );
+    expect(responseMessage(duplicate.body)).toMatch(
+      /active support assignment already exists/i,
+    );
+
+    const assignmentList = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/support-assignments?familyProfileId=${encodeURIComponent(state.familyProfileId)}` +
+        "&status=active&limit=100&offset=0",
+    );
+    expect(assignmentList.status).toBe(200);
+    const activeAssignments = responseRows(assignmentList.body).filter(
+      (row) =>
+        row.familyProfileId === state.familyProfileId && row.status === "active",
+    );
+    expect(activeAssignments).toHaveLength(2);
+    expect(
+      activeAssignments.filter(
+        (row) => row.sponsorProfileId === state.sponsorAProfileId,
+      ),
+    ).toHaveLength(1);
+    expect(
+      activeAssignments.filter(
+        (row) => row.sponsorProfileId === state.sponsorBProfileId,
+      ),
+    ).toHaveLength(1);
+    state.assignmentAId = String(
+      activeAssignments.find(
+        (row) => row.sponsorProfileId === state.sponsorAProfileId,
+      )?.id ?? "",
+    );
+    state.assignmentBId = String(
+      activeAssignments.find(
+        (row) => row.sponsorProfileId === state.sponsorBProfileId,
+      )?.id ?? "",
+    );
+    expect(Boolean(state.assignmentAId && state.assignmentBId)).toBe(true);
+
+    const sponsorSessions = [
+      {
+        alias: "sponsor-a",
+        context: sponsorAContext,
+        diagnostics: sponsorADiagnostics,
+        email: sponsorAEmail,
+        password: sponsorAPassword,
+        ownAssignmentId: state.assignmentAId,
+        otherAssignmentId: state.assignmentBId,
+        otherSensitiveValues: [
+          sponsorBName,
+          sponsorBEmail,
+          sponsorBPhone,
+          sponsorBPassword,
+          state.sponsorBApplicantId,
+          state.sponsorBProfileId,
+          state.sponsorBUserId,
+        ],
+        page: undefined as Page | undefined,
+        planId: "",
+        contributionId: "",
+      },
+      {
+        alias: "sponsor-b",
+        context: sponsorBContext,
+        diagnostics: sponsorBDiagnostics,
+        email: sponsorBEmail,
+        password: sponsorBPassword,
+        ownAssignmentId: state.assignmentBId,
+        otherAssignmentId: state.assignmentAId,
+        otherSensitiveValues: [
+          sponsorAName,
+          sponsorAEmail,
+          sponsorAPhone,
+          sponsorAPassword,
+          state.sponsorAApplicantId,
+          state.sponsorAProfileId,
+          state.sponsorAUserId,
+        ],
+        page: undefined as Page | undefined,
+        planId: "",
+        contributionId: "",
+      },
+    ];
+
+    for (const session of sponsorSessions) {
+      const page = await session.context.newPage();
+      session.page = page;
+      attachDiagnostics(page, session.diagnostics);
+      await prepareLogin(page, session.email, session.password);
+      const sponsorDashboardResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === "GET" &&
+          new URL(response.url()).pathname === "/api/dashboard/sponsor",
+      );
+      await submitPreparedLogin(page);
+      await expect(page).toHaveURL(/\/dashboard$/);
+      expect((await sponsorDashboardResponse).status()).toBeLessThan(400);
+
+      const catalogReadiness = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return (
+          response.request().method() === "GET" &&
+          url.pathname === "/api/support-assignments/catalog" &&
+          url.searchParams.has("limit") &&
+          url.searchParams.has("offset")
+        );
+      });
+      await page.goto("/sponsor/support", { waitUntil: "commit" });
+      expect((await catalogReadiness).status()).toBeLessThan(400);
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/family");
+      await expectNoneVisible(page.getByText("Loading families", { exact: true }));
+      await expect(page.getByRole("heading", { name: "Families", exact: true })).toBeVisible();
+
+      const catalog = await browserJsonRequest(
+        page,
+        "GET",
+        "/api/support-assignments/catalog?relationship=supported&limit=100&offset=0",
+      );
+      expect(catalog.status).toBe(200);
+      const familyRows = responseRows(catalog.body).filter(
+        (row) => row.id === state.familyProfileId,
+      );
+      expect(familyRows).toHaveLength(1);
+      expect(Object.keys(familyRows[0]!).sort()).toEqual([
+        "activeChildCount",
+        "activeSponsorCount",
+        "assignmentId",
+        "funding",
+        "id",
+        "image",
+        "name",
+        "reference",
+        "supportPriority",
+      ]);
+      expect(familyRows[0]!.assignmentId).toBe(session.ownAssignmentId);
+
+      const summary = await browserJsonRequest(
+        page,
+        "GET",
+        `/api/support-assignments/me/${session.ownAssignmentId}/family`,
+      );
+      expect(summary.status).toBe(200);
+      const summaryData = responseRecord(summary.body);
+      expect(Object.keys(summaryData).sort()).toEqual(["assignment", "family"]);
+      const summaryAssignment = responseRecord(summaryData.assignment);
+      const summaryFamily = responseRecord(summaryData.family);
+      expect(Object.keys(summaryAssignment).sort()).toEqual(["id", "startedAt"]);
+      expect(Object.keys(summaryFamily).sort()).toEqual([
+        "activeChildCount",
+        "reference",
+      ]);
+      expect(summaryAssignment.id).toBe(session.ownAssignmentId);
+
+      const sponsorProjection = { catalog: familyRows[0], summary: summaryData };
+      expect(containsForbiddenProjectionKey(sponsorProjection)).toBe(false);
+      expect(
+        containsSensitiveValue(sponsorProjection, [
+          familyCin,
+          familyAddress,
+          familyEmail,
+          familyPhone,
+          familyRuntimePassword,
+          state.familyTemporaryCredential,
+          ...session.otherSensitiveValues,
+        ]),
+        `${session.alias} sponsor projection included a private runtime value`,
+      ).toBe(false);
+
+      const plan = await browserJsonRequest(
+        page,
+        "POST",
+        "/api/contributions/me/plans",
+        {
+          supportAssignmentId: session.ownAssignmentId,
+          kind: "one_time",
+          amountMinor: 1,
+        },
+      );
+      expect(plan.status).toBeLessThan(400);
+      session.planId = responseId(plan.body);
+      expect(session.planId).not.toBe("");
+
+      const contribution = await browserJsonRequest(
+        page,
+        "POST",
+        "/api/contributions/me",
+        {
+          supportAssignmentId: session.ownAssignmentId,
+          amountMinor: 1,
+          paymentMethod: "acceptance-canary",
+        },
+      );
+      expect(contribution.status).toBeLessThan(400);
+      session.contributionId = responseId(contribution.body);
+      expect(session.contributionId).not.toBe("");
+    }
+
+    for (const session of sponsorSessions) {
+      const page = session.page!;
+      const other = sponsorSessions.find(
+        (candidate) => candidate.alias !== session.alias,
+      )!;
+      await expectExactNegativeResponse(
+        page,
+        session.diagnostics,
+        {
+          method: "GET",
+          path: `/api/support-assignments/me/${session.otherAssignmentId}`,
+          status: 404,
+        },
+        () =>
+          browserJsonRequest(
+            page,
+            "GET",
+            `/api/support-assignments/me/${session.otherAssignmentId}`,
+          ),
+      );
+      await expectExactNegativeResponse(
+        page,
+        session.diagnostics,
+        {
+          method: "GET",
+          path: `/api/contributions/me/${other.contributionId}`,
+          status: 404,
+        },
+        () =>
+          browserJsonRequest(
+            page,
+            "GET",
+            `/api/contributions/me/${other.contributionId}`,
+          ),
+      );
+      await expectExactNegativeResponse(
+        page,
+        session.diagnostics,
+        {
+          method: "GET",
+          path: `/api/contributions/me/plans/${other.planId}`,
+          status: 404,
+        },
+        () =>
+          browserJsonRequest(
+            page,
+            "GET",
+            `/api/contributions/me/plans/${other.planId}`,
+          ),
+      );
+
+      const stopPlan = await browserJsonRequest(
+        page,
+        "POST",
+        `/api/contributions/me/plans/${session.planId}/stop`,
+        { reason: "Acceptance privacy canary complete" },
+      );
+      expect(stopPlan.status).toBeLessThan(400);
+      expect(responseRecord(stopPlan.body).status).toBe("stopped");
+      await signOut(page);
+      await page.close();
+    }
+
+    for (const session of sponsorSessions) {
+      const rejection = await browserJsonRequest(
+        adminPage,
+        "POST",
+        `/api/contributions/${session.contributionId}/reject`,
+        { reason: "Acceptance privacy canary complete" },
+      );
+      expect(rejection.status).toBeLessThan(400);
+      expect(responseRecord(rejection.body).status).toBe("rejected");
+    }
+
+    // Preserve the authenticated Admin context for dependent Unit F. The
+    // combined journey otherwise consumes one login-rate-limit slot per unit
+    // and the sixth short-window login is correctly rejected with 429.
+    await adminPage.close();
+  });
+
+  test("remote unit F - contributions and exact funding", async () => {
+    expect(
+      Boolean(
+        state.familyProfileId &&
+          state.assignmentAId &&
+          state.assignmentBId,
+      ),
+      "remote Unit F requires the in-process Family and assignment identifiers from Units B-E",
+    ).toBe(true);
+
+    const adminPage = await adminContext.newPage();
+    const sponsorAPage = await sponsorAContext.newPage();
+    const sponsorBPage = await sponsorBContext.newPage();
+    attachDiagnostics(adminPage, adminDiagnostics);
+    attachDiagnostics(sponsorAPage, sponsorADiagnostics);
+    attachDiagnostics(sponsorBPage, sponsorBDiagnostics);
+
+    const operatorDashboardResponse = adminPage.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === "/api/dashboard/operator",
+    );
+    await adminPage.goto("/dashboard", { waitUntil: "commit" });
+    await expect.poll(() => new URL(adminPage.url()).pathname).toBe("/dashboard");
+    expect((await operatorDashboardResponse).status()).toBeLessThan(400);
+    await expect(
+      adminPage.getByRole("heading", { name: "Operator dashboard", exact: true }),
+    ).toBeVisible();
+
+    for (const sponsor of [
+      {
+        page: sponsorAPage,
+        email: sponsorAEmail,
+        password: sponsorAPassword,
+      },
+      {
+        page: sponsorBPage,
+        email: sponsorBEmail,
+        password: sponsorBPassword,
+      },
+    ]) {
+      await prepareLogin(sponsor.page, sponsor.email, sponsor.password);
+      const dashboardResponse = sponsor.page.waitForResponse(
+        (response) =>
+          response.request().method() === "GET" &&
+          new URL(response.url()).pathname === "/api/dashboard/sponsor",
+      );
+      await submitPreparedLogin(sponsor.page);
+      await expect(sponsor.page).toHaveURL(/\/dashboard$/);
+      expect((await dashboardResponse).status()).toBeLessThan(400);
+    }
+
+    const initialFunding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    const fundingTargetMinor = Number(initialFunding.targetMinor);
+    expect(Number.isSafeInteger(fundingTargetMinor)).toBe(true);
+    expect(fundingTargetMinor).toBeGreaterThan(1);
+    expect(initialFunding.fundedMinor).toBe(0);
+    expect(initialFunding.pendingMinor).toBe(0);
+    expect(initialFunding.status).toBe("pending_funding");
+
+    const monthlyPlan = await browserJsonRequest(
+      sponsorAPage,
+      "POST",
+      "/api/contributions/me/plans",
+      {
+        supportAssignmentId: state.assignmentAId,
+        kind: "monthly",
+        amountMinor: 1,
+      },
+    );
+    expect(monthlyPlan.status).toBeLessThan(400);
+    const monthlyPlanId = responseId(monthlyPlan.body);
+    expect(monthlyPlanId).not.toBe("");
+    expect(responseRecord(monthlyPlan.body).status).toBe("active");
+
+    const pausePlan = await browserJsonRequest(
+      sponsorAPage,
+      "POST",
+      `/api/contributions/me/plans/${monthlyPlanId}/pause`,
+      { reason: "Acceptance lifecycle pause" },
+    );
+    expect(pausePlan.status).toBeLessThan(400);
+    expect(responseRecord(pausePlan.body).status).toBe("paused");
+
+    const resumePlan = await browserJsonRequest(
+      sponsorAPage,
+      "POST",
+      `/api/contributions/me/plans/${monthlyPlanId}/resume`,
+      { reason: "Acceptance lifecycle resume" },
+    );
+    expect(resumePlan.status).toBeLessThan(400);
+    expect(responseRecord(resumePlan.body).status).toBe("active");
+
+    await expectExactNegativeResponse(
+      sponsorBPage,
+      sponsorBDiagnostics,
+      {
+        method: "GET",
+        path: `/api/contributions/me/plans/${monthlyPlanId}`,
+        status: 404,
+      },
+      () =>
+        browserJsonRequest(
+          sponsorBPage,
+          "GET",
+          `/api/contributions/me/plans/${monthlyPlanId}`,
+        ),
+    );
+    await expectExactNegativeResponse(
+      sponsorBPage,
+      sponsorBDiagnostics,
+      {
+        method: "POST",
+        path: `/api/contributions/me/plans/${monthlyPlanId}/pause`,
+        status: 404,
+      },
+      () =>
+        browserJsonRequest(
+          sponsorBPage,
+          "POST",
+          `/api/contributions/me/plans/${monthlyPlanId}/pause`,
+          { reason: "Acceptance cross-sponsor denial" },
+        ),
+    );
+
+    const stopPlan = await browserJsonRequest(
+      sponsorAPage,
+      "POST",
+      `/api/contributions/me/plans/${monthlyPlanId}/stop`,
+      { reason: "Acceptance lifecycle complete" },
+    );
+    expect(stopPlan.status).toBeLessThan(400);
+    expect(responseRecord(stopPlan.body).status).toBe("stopped");
+    await expectExactNegativeResponse(
+      sponsorAPage,
+      sponsorADiagnostics,
+      {
+        method: "POST",
+        path: `/api/contributions/me/plans/${monthlyPlanId}/resume`,
+        status: 409,
+      },
+      () =>
+        browserJsonRequest(
+          sponsorAPage,
+          "POST",
+          `/api/contributions/me/plans/${monthlyPlanId}/resume`,
+          { reason: "Acceptance resume-after-stop proof" },
+        ),
+    );
+
+    const rejectedPending = await browserJsonRequest(
+      sponsorAPage,
+      "POST",
+      "/api/contributions/me",
+      {
+        supportAssignmentId: state.assignmentAId,
+        amountMinor: 1,
+        paymentMethod: "acceptance-funding-reject",
+      },
+    );
+    expect(rejectedPending.status).toBeLessThan(400);
+    const rejectedPendingId = responseId(rejectedPending.body);
+    expect(rejectedPendingId).not.toBe("");
+    let funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(0);
+    expect(funding.pendingMinor).toBe(1);
+
+    const rejection = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/contributions/${rejectedPendingId}/reject`,
+      { reason: "Acceptance funding rejection" },
+    );
+    expect(rejection.status).toBeLessThan(400);
+    expect(responseRecord(rejection.body).status).toBe("rejected");
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(0);
+    expect(funding.pendingMinor).toBe(0);
+
+    const refundablePending = await browserJsonRequest(
+      sponsorAPage,
+      "POST",
+      "/api/contributions/me",
+      {
+        supportAssignmentId: state.assignmentAId,
+        amountMinor: 1,
+        paymentMethod: "acceptance-funding-refund",
+      },
+    );
+    expect(refundablePending.status).toBeLessThan(400);
+    const refundableContributionId = responseId(refundablePending.body);
+    expect(refundableContributionId).not.toBe("");
+
+    const validationPath = `/api/contributions/${refundableContributionId}/validate`;
+    const validation = await browserJsonRequest(adminPage, "POST", validationPath);
+    expect(validation.status).toBeLessThan(400);
+    expect(responseRecord(responseRecord(validation.body).contribution).status).toBe(
+      "validated",
+    );
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(1);
+    expect(funding.pendingMinor).toBe(0);
+
+    const validationReplay = await browserJsonRequest(
+      adminPage,
+      "POST",
+      validationPath,
+    );
+    expect(validationReplay.status).toBeLessThan(400);
+    expect(responseRecord(validationReplay.body).status).toBe("validated");
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(1);
+
+    const refundPath = `/api/contributions/${refundableContributionId}/refund`;
+    const refund = await browserJsonRequest(adminPage, "POST", refundPath, {
+      reason: "Acceptance funding refund",
+    });
+    expect(refund.status).toBeLessThan(400);
+    expect(responseRecord(responseRecord(refund.body).contribution).status).toBe(
+      "refunded",
+    );
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(0);
+
+    const refundReplay = await browserJsonRequest(adminPage, "POST", refundPath, {
+      reason: "Acceptance funding refund replay",
+    });
+    expect(refundReplay.status).toBeLessThan(400);
+    expect(responseRecord(refundReplay.body).status).toBe("refunded");
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(0);
+
+    const sponsorATargetMinor = Math.trunc(fundingTargetMinor / 2);
+    const sponsorBTargetMinor = fundingTargetMinor - sponsorATargetMinor;
+    expect(Number.isSafeInteger(sponsorATargetMinor)).toBe(true);
+    expect(Number.isSafeInteger(sponsorBTargetMinor)).toBe(true);
+    expect(sponsorATargetMinor).toBeGreaterThan(0);
+    expect(sponsorBTargetMinor).toBeGreaterThan(0);
+    expect(sponsorATargetMinor + sponsorBTargetMinor).toBe(fundingTargetMinor);
+
+    const targetContributionA = await browserJsonRequest(
+      sponsorAPage,
+      "POST",
+      "/api/contributions/me",
+      {
+        supportAssignmentId: state.assignmentAId,
+        amountMinor: sponsorATargetMinor,
+        paymentMethod: "acceptance-exact-target-a",
+      },
+    );
+    expect(targetContributionA.status).toBeLessThan(400);
+    const targetContributionAId = responseId(targetContributionA.body);
+    expect(targetContributionAId).not.toBe("");
+
+    const targetContributionB = await browserJsonRequest(
+      sponsorBPage,
+      "POST",
+      "/api/contributions/me",
+      {
+        supportAssignmentId: state.assignmentBId,
+        amountMinor: sponsorBTargetMinor,
+        paymentMethod: "acceptance-exact-target-b",
+      },
+    );
+    expect(targetContributionB.status).toBeLessThan(400);
+    const targetContributionBId = responseId(targetContributionB.body);
+    expect(targetContributionBId).not.toBe("");
+
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(0);
+    expect(funding.pendingMinor).toBe(fundingTargetMinor);
+    expect(funding.status).toBe("pending_funding");
+
+    const validateTargetA = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/contributions/${targetContributionAId}/validate`,
+    );
+    expect(validateTargetA.status).toBeLessThan(400);
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(sponsorATargetMinor);
+    expect(Number(funding.fundedMinor)).toBeLessThan(fundingTargetMinor);
+    expect(funding.status).toBe("pending_funding");
+
+    const validateTargetB = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/contributions/${targetContributionBId}/validate`,
+    );
+    expect(validateTargetB.status).toBeLessThan(400);
+    funding = await readFamilyFundingFromSponsorCatalog(
+      sponsorAPage,
+      state.familyProfileId,
+    );
+    expect(funding.fundedMinor).toBe(fundingTargetMinor);
+    expect(Number(funding.fundedMinor)).toBeLessThanOrEqual(Number(funding.targetMinor));
+    expect(funding.pendingMinor).toBe(0);
+    expect(funding.status).toBe("active");
+    expect(funding.capacityStatus).toBe("funded");
+
+    const sponsorAHistory = await browserJsonRequest(
+      sponsorAPage,
+      "GET",
+      "/api/contributions/me?limit=100&offset=0",
+    );
+    const sponsorBHistory = await browserJsonRequest(
+      sponsorBPage,
+      "GET",
+      "/api/contributions/me?limit=100&offset=0",
+    );
+    expect(sponsorAHistory.status).toBe(200);
+    expect(sponsorBHistory.status).toBe(200);
+    const sponsorATargetRows = responseRows(sponsorAHistory.body).filter(
+      (row) =>
+        row.id === targetContributionAId || row.id === targetContributionBId,
+    );
+    const sponsorBTargetRows = responseRows(sponsorBHistory.body).filter(
+      (row) =>
+        row.id === targetContributionAId || row.id === targetContributionBId,
+    );
+    expect(sponsorATargetRows).toHaveLength(1);
+    expect(sponsorATargetRows[0]!.id).toBe(targetContributionAId);
+    expect(sponsorBTargetRows).toHaveLength(1);
+    expect(sponsorBTargetRows[0]!.id).toBe(targetContributionBId);
+
+    const adminHistory = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/contributions?familyProfileId=${encodeURIComponent(state.familyProfileId)}` +
+        "&limit=100&offset=0",
+    );
+    expect(adminHistory.status).toBe(200);
+    const adminTargetRows = responseRows(adminHistory.body).filter(
+      (row) =>
+        row.id === targetContributionAId || row.id === targetContributionBId,
+    );
+    expect(adminTargetRows).toHaveLength(2);
+    expect(
+      adminTargetRows.reduce((sum, row) => sum + Number(row.amountMinor), 0),
+    ).toBe(fundingTargetMinor);
+    expect(adminTargetRows.every((row) => row.status === "validated")).toBe(true);
+
+    const fundedCatalogResponse = sponsorAPage.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        response.request().method() === "GET" &&
+        url.pathname === "/api/support-assignments/catalog" &&
+        url.searchParams.has("limit") &&
+        url.searchParams.has("offset")
+      );
+    });
+    await sponsorAPage.goto("/sponsor/support", { waitUntil: "commit" });
+    expect((await fundedCatalogResponse).status()).toBeLessThan(400);
+    await expect.poll(() => new URL(sponsorAPage.url()).pathname).toBe("/family");
+    await expectNoneVisible(
+      sponsorAPage.getByText("Loading families", { exact: true }),
+    );
+    const fundedProgress = await onlyVisible(
+      sponsorAPage.getByRole("progressbar"),
+    );
+    await expect(fundedProgress).toHaveAttribute(
+      "aria-valuenow",
+      "100",
+    );
+
+    await signOut(sponsorAPage);
+    await signOut(sponsorBPage);
+    await signOut(adminPage);
+    await Promise.all([
+      sponsorAPage.close(),
+      sponsorBPage.close(),
+      adminPage.close(),
+    ]);
+  });
+
   test("remote diagnostics - final context assertions", async () => {
     assertDiagnosticsClean("admin", adminDiagnostics);
     assertDiagnosticsClean("family", familyDiagnostics);
     assertDiagnosticsClean("sponsor-a", sponsorADiagnostics);
+    assertDiagnosticsClean("sponsor-b", sponsorBDiagnostics);
   });
 });

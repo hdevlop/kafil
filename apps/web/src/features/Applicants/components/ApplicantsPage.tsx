@@ -140,7 +140,7 @@ export function ApplicantsPage() {
       <NEmptyState
         surface="panel"
         description={t("operator.applicants.emptyDescription")}
-        icon={ClipboardList}
+        icon={<ClipboardList className="size-12" />}
         title={t("operator.applicants.emptyTitle")}
       />
     ),

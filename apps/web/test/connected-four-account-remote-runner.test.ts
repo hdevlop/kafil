@@ -9,6 +9,7 @@ import {
   readRemoteGrep,
   remoteAcceptanceChecks,
 } from "../scripts/connected-four-account-remote-runtime";
+import { buildRunEmail } from "../scripts/connected-four-account-fixtures";
 
 const validEnvironment: Record<string, string> = {
   KAFIL_E2E_REMOTE_URL: "https://kafala360.ma",
@@ -85,6 +86,16 @@ describe("connected four-account remote runner", () => {
     })).toThrow();
   });
 
+  test("generates lowercase remote email identities before submission normalization", () => {
+    const sponsorAEmail = buildRunEmail("VPS-Mixed-Case", "sponsorA");
+    const sponsorBEmail = buildRunEmail("VPS-Mixed-Case", "sponsorB");
+
+    expect(sponsorAEmail).toBe(sponsorAEmail.toLowerCase());
+    expect(sponsorBEmail).toBe(sponsorBEmail.toLowerCase());
+    expect(sponsorAEmail).toContain("-sponsora@");
+    expect(sponsorBEmail).toContain("-sponsorb@");
+  });
+
   test("keeps preflight ahead of filtered Playwright and never starts Next.js", () => {
     expect(runnerSource).not.toContain("next dev");
     expect(runnerSource).not.toContain("next start");
@@ -100,7 +111,7 @@ describe("connected four-account remote runner", () => {
     expect(configSource).toContain('trace: "off"');
   });
 
-  test("defines serial remote units A-C with isolated contexts and passive diagnostics", () => {
+  test("defines serial remote units A-F with isolated contexts and passive diagnostics", () => {
     const unitA = specSource.slice(
       specSource.indexOf('test("remote unit A - guarded admin smoke"'),
       specSource.indexOf('test("remote unit B - Family creation and first login"'),
@@ -109,6 +120,9 @@ describe("connected four-account remote runner", () => {
     expect(specSource).toContain('test("remote unit A - guarded admin smoke"');
     expect(specSource).toContain('test("remote unit B - Family creation and first login"');
     expect(specSource).toContain('test("remote unit C - Sponsor A application and approval"');
+    expect(specSource).toContain('test("remote unit D - Sponsor B application and approval"');
+    expect(specSource).toContain('test("remote unit E - assignments and sponsor privacy"');
+    expect(specSource).toContain('test("remote unit F - contributions and exact funding"');
     expect(specSource).toContain('test("remote diagnostics - final context assertions"');
     expect(specSource).toContain("browser.newContext()");
     expect(unitA).toContain('"/api/dashboard/operator"');
@@ -152,7 +166,7 @@ describe("connected four-account remote runner", () => {
   test("pins Sponsor A OTP, approval replay, identifiers, and logout boundaries", () => {
     const unitC = specSource.slice(
       specSource.indexOf('test("remote unit C - Sponsor A application and approval"'),
-      specSource.indexOf('test("remote diagnostics - final context assertions"'),
+      specSource.indexOf('test("remote unit D - Sponsor B application and approval"'),
     );
     for (const contract of [
       '"/api/applicants"',
@@ -184,6 +198,13 @@ describe("connected four-account remote runner", () => {
       "await submitPreparedLogin(sponsorPage, sponsorADiagnostics, 403)",
     );
     expect(unitC).toContain("expect(applicantMatches).toHaveLength(1)");
+    expect(unitC).toContain(
+      'const applicantSearch = await onlyVisible(\n      adminPage.getByPlaceholder("Search applicant name...", { exact: true }),\n    )',
+    );
+    expect(unitC).toContain("await applicantSearch.fill(sponsorAName)");
+    expect(unitC).not.toContain(
+      'adminPage\n      .getByPlaceholder("Search applicant name...", { exact: true })\n      .fill(sponsorAName)',
+    );
     expect(unitC).toContain("expect(approval.status()).toBe(200)");
     expect(unitC).toContain("status: 409");
     expect(unitC).toContain("prepareLogin(sponsorPage, expectedPhoneE164, sponsorAPassword)");
@@ -192,6 +213,117 @@ describe("connected four-account remote runner", () => {
     expect(specSource).not.toContain("@kafil/server/database");
     expect(specSource).not.toContain("dbQuery(");
     expect(specSource).not.toContain("console.log");
+  });
+
+  test("pins independent Sponsor B OTP, approval replay, and logout boundaries", () => {
+    const unitD = specSource.slice(
+      specSource.indexOf('test("remote unit D - Sponsor B application and approval"'),
+      specSource.indexOf('test("remote unit E - assignments and sponsor privacy"'),
+    );
+    for (const contract of [
+      "sponsorBContext.newPage()",
+      "recipient: sponsorBEmail",
+      "expect(applicationRequestCount).toBe(0)",
+      "expect(applicationRequestCount).toBe(1)",
+      "expect(confirmedOtpMessages).toHaveLength(1)",
+      "submitPreparedLogin(sponsorPage, sponsorBDiagnostics, 403)",
+      "expect(applicantMatches).toHaveLength(1)",
+      "expect(approval.status()).toBe(200)",
+      "status: 409",
+      '"/api/dashboard/sponsor"',
+      '"/api/sponsors/me/profile"',
+    ]) {
+      expect(unitD).toContain(contract);
+    }
+    expect(specSource).toContain("sponsorBContext = await newIsolatedContext(browser)");
+    expect(specSource).toContain('assertDiagnosticsClean("sponsor-b", sponsorBDiagnostics)');
+    expect(unitD).toContain("await deleteMailboxMessage(otpMessage.ID)");
+    expect(unitD).toContain("await signOut(sponsorPage)");
+    expect(unitD).not.toContain("sponsorAEmail");
+    expect(unitD).not.toContain("sponsorAPassword");
+    expect(unitD).not.toContain("sponsorAApplicantId");
+  });
+
+  test("pins Unit E assignment, privacy, canary, and cleanup contracts", () => {
+    const assignmentHelper = specSource.slice(
+      specSource.indexOf("async function openComboboxSearch("),
+      specSource.indexOf('test.describe.serial("connected VPS acceptance"'),
+    );
+    const unitE = specSource.slice(
+      specSource.indexOf('test("remote unit E - assignments and sponsor privacy"'),
+      specSource.indexOf('test("remote unit F - contributions and exact funding"'),
+    );
+    expect(unitE).toContain("await createAssignmentThroughUi(adminPage, sponsorAEmail)");
+    expect(unitE).toContain("await createAssignmentThroughUi(adminPage, sponsorBEmail)");
+    expect(unitE).toContain('{ method: "POST", path: duplicatePath, status: 409 }');
+    expect(unitE).toContain("expect(activeAssignments).toHaveLength(2)");
+    expect(unitE).toContain('"&status=active&limit=100&offset=0"');
+    expect(unitE).toContain('await page.goto("/sponsor/support", { waitUntil: "commit" })');
+    expect(unitE).toContain('toBe("/family")');
+    expect(unitE).toContain(
+      '"/api/support-assignments/catalog?relationship=supported&limit=100&offset=0"',
+    );
+    expect(unitE).toContain("expect(familyRows).toHaveLength(1)");
+    expect(unitE).toContain("containsForbiddenProjectionKey(sponsorProjection)");
+    expect(unitE).toContain("containsSensitiveValue(sponsorProjection");
+    expect(unitE).toContain('"/api/contributions/me/plans"');
+    expect(unitE).toContain('"/api/contributions/me"');
+    expect(unitE.match(/status: 404/g)).toHaveLength(3);
+    expect(unitE).toContain("Acceptance privacy canary complete");
+    expect(unitE).toContain('toBe("stopped")');
+    expect(unitE).toContain('toBe("rejected")');
+    expect(unitE).not.toContain("dbQuery(");
+    expect(unitE).not.toContain("console.log");
+    expect(assignmentHelper).toContain('toHaveAttribute("aria-expanded", "true")');
+    expect(assignmentHelper).toContain('getAttribute("aria-controls")');
+    expect(assignmentHelper).toContain('[data-slot="popover-content"]');
+    expect(assignmentHelper).toContain('toHaveAttribute("data-state", "open")');
+    expect(assignmentHelper).toContain(
+      'openComboboxSearch(\n    page,\n    sponsorCombobox,\n    "Search sponsors...",',
+    );
+    expect(assignmentHelper).toContain(
+      'openComboboxSearch(\n    page,\n    familyCombobox,\n    "Search families...",',
+    );
+    expect(assignmentHelper).not.toContain(
+      'onlyVisible(\n    page.getByPlaceholder("Search sponsors..."',
+    );
+    expect(assignmentHelper).not.toContain(
+      'onlyVisible(\n    page.getByPlaceholder("Search families..."',
+    );
+  });
+
+  test("pins Unit F plan ownership, idempotent commands, and exact funding", () => {
+    const unitF = specSource.slice(
+      specSource.indexOf('test("remote unit F - contributions and exact funding"'),
+      specSource.indexOf('test("remote diagnostics - final context assertions"'),
+    );
+    expect(unitF).toContain("readFamilyFundingFromSponsorCatalog(");
+    expect(unitF).toContain('await adminPage.goto("/dashboard", { waitUntil: "commit" })');
+    expect(unitF).not.toContain("prepareLogin(adminPage");
+    expect(unitF).not.toContain("submitPreparedLogin(adminPage");
+    expect(unitF).toContain('kind: "monthly"');
+    expect(unitF).toContain('/pause`');
+    expect(unitF).toContain('/resume`');
+    expect(unitF).toContain('/stop`');
+    expect(unitF).toContain("Acceptance resume-after-stop proof");
+    expect(unitF).toContain("sponsorBDiagnostics");
+    expect(unitF.match(/status: 404/g)).toHaveLength(2);
+    expect(unitF.match(/status: 409/g)).toHaveLength(1);
+    expect(unitF).toContain("acceptance-funding-reject");
+    expect(unitF).toContain("acceptance-funding-refund");
+    expect(unitF).toContain("validationReplay.status");
+    expect(unitF).toContain("refundReplay.status");
+    expect(unitF).toContain("sponsorATargetMinor + sponsorBTargetMinor");
+    expect(unitF).toContain('expect(funding.status).toBe("pending_funding")');
+    expect(unitF).toContain('expect(funding.status).toBe("active")');
+    expect(unitF).toContain('expect(funding.capacityStatus).toBe("funded")');
+    expect(unitF).toContain('const fundedProgress = await onlyVisible(');
+    expect(unitF).toContain('expect(fundedProgress).toHaveAttribute(\n      "aria-valuenow",');
+    expect(unitF).toContain("expect(sponsorATargetRows).toHaveLength(1)");
+    expect(unitF).toContain("expect(sponsorBTargetRows).toHaveLength(1)");
+    expect(unitF).toContain("expect(adminTargetRows).toHaveLength(2)");
+    expect(unitF).not.toContain("dbQuery(");
+    expect(unitF).not.toContain("console.log");
   });
 
   test("matches required Najm form labels without exact-name timeouts", () => {

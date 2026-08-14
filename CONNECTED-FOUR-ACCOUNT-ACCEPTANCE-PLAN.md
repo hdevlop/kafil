@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-B RANGE PASS; UNIT C BLOCKED BY VPS AUTH GRANT DRIFT**
+Status: **IN PROGRESS - REMOTE A-E RANGE PASS; UNIT F IMPLEMENTED AND A-F RANGE PENDING**
 
 Target: exactly `https://kafala360.ma`
 
@@ -206,6 +206,183 @@ Sponsor applicant was retained by this attempt. Unit C is blocked until the
 VPS runs the narrow idempotent `seed:admin` reconciliation and `seed:verify`
 passes. Only then is one new focused Unit C plus diagnostics attempt authorized.
 
+The VPS grant reconciliation is now verified. The next focused Unit C attempt
+passed the exact admin identity and applicants-capability gates, completed the
+public application, OTP confirmation and deletion, pending-login `403`, admin
+dashboard readiness, and the initial applicants-list response. It then failed
+as `TEST` because the exact applicant-search placeholder resolved to responsive
+desktop and mobile copies. The test now resolves exactly one visible search
+input with `onlyVisible()` before filling it; it does not use `.first()`, a
+forced action, or a product change. This attempt retained one additional masked
+pending Sponsor applicant, bringing the reported minimum to two. Approval was
+not reached, diagnostics did not run, the tunnel closed, and no sensitive value
+was printed. The corrected source gate passes: `9 pass / 0 fail / 102
+expect()`, web typecheck, targeted ESLint, and scoped `git diff --check`. One
+corrected focused Unit C plus diagnostics attempt is authorized.
+
+That focused attempt verified the visible-search selector correction and the
+filtered applicants request returned `200`. The subsequent exact-row assertion
+failed because the shared fixture generated the camel-case local-part suffix
+`sponsorA`, while the public submission contract lowercases email before
+persistence. The name search was therefore not proven empty: the test discarded
+any returned row through a case-sensitive comparison with its pre-normalized
+fixture value. This is `TEST`, not `PRODUCT`. The shared fixture now lowercases
+role aliases before constructing email identities, aligning Mailpit matching,
+login, list verification, and detail verification with the persisted value.
+The failed attempt retained one additional masked pending Sponsor applicant,
+bringing the reported minimum to three. Approval was not reached, diagnostics
+did not run, the tunnel closed, and no sensitive value was printed. One new
+focused Unit C plus diagnostics attempt is authorized after the corrected
+source gate passed: `10 pass / 0 fail / 106 expect()`, web typecheck, targeted
+ESLint, and scoped `git diff --check`.
+
+The corrected focused Unit C plus diagnostics command passed on 2026-08-14
+with native exit `0`: `2 passed (27.1s)`. Unit C passed in `25.3s` and passive
+diagnostics passed in `16ms`. The run proved the admin capability gate, public
+validation and one submission, exact OTP match and deletion, pending-login
+`403`, exact applicant match and private details, approval plus replay `409`,
+email and E.164 phone login, sponsor dashboard/navigation, real logout, cookie
+removal, and protected profile `401`. The managed tunnel closed and no
+sensitive value was printed. The disposable demo retains at least two masked
+pending applicants from failed attempts plus one approved Sponsor account and
+profile from this pass. Unit C is accepted as a focused work unit. The A-C
+combined range is not yet accepted. Remote Unit D is the next independently
+runnable coder boundary. Unit D now has its fourth isolated context and complete
+independent Sponsor B application, OTP, pending denial, admin review, approval
+replay, sponsor dashboard, logout, protected denial, and passive diagnostics
+assertions. Its source gate passes: `11 pass / 0 fail / 125 expect()`, web
+typecheck, targeted ESLint, and scoped `git diff --check`. One focused Unit D
+plus diagnostics attempt is authorized.
+
+The focused Unit D plus diagnostics command passed on 2026-08-14 with native
+exit `0`: `2 passed (25.7s)`. Unit D passed in `23.2s` and passive diagnostics
+passed in `32ms`. The independent Sponsor B context proved public validation,
+one submission, exact OTP match and deletion, pending-login `403`, exact
+applicant match and private details, approval plus replay `409`, sponsor
+dashboard/navigation, real logout, cookie removal, and protected profile
+`401`. The managed tunnel closed and no sensitive value was printed. The
+disposable demo retains at least two masked pending applicants and two approved
+Sponsor accounts/profiles across the known runs. Unit D is accepted as a
+focused work unit. Units A-D must now pass together in one shared serial run
+before Unit E can consume their process-memory Family and Sponsor identifiers.
+
+The combined A-D prerequisite range then passed on 2026-08-14 with native exit
+`0`: `5 passed (1.4m)`. Units A, B, C, and D passed in four isolated contexts
+and the shared diagnostics test passed. All 11 boolean guards and 6 preflight
+checks passed; both exact OTP messages were deleted; every role completed its
+logout, cookie-removal, and protected-request-denial assertions; the managed
+SSH tunnel closed; and no sensitive value was printed. The disposable demo's
+reported cumulative minimum is five Families, five Children, two pending
+Sponsor applicants retained by older stopped attempts, and four approved
+Sponsor applications/accounts/profiles. Database-only totals remain `NOT
+VERIFIED`. The current source already names the fourth test `remote unit D -
+Sponsor B application and approval`; the tester's displayed Unit B label is
+not present in the current source and requires no product change.
+
+Remote Unit E is now implemented as the dependent A-E black-box range. It
+creates both sponsor-to-Family assignments through the real admin dialog after
+exact route readiness, proves the duplicate `409`, derives exactly two active
+assignments from the authenticated admin API, verifies the documented safe
+catalog and assignment-family projection keys in both sponsor contexts, scans
+those projections for forbidden keys and runtime private values, creates one
+minimal plan and pending contribution per sponsor, proves exact cross-sponsor
+assignment/contribution/plan `404` responses, stops both plans, rejects both
+pending canaries, and logs the contexts out. It uses no PostgreSQL, direct
+state mutation, mock, forced click, raw-response logging, or VPS operation.
+The source gate passes: `12 pass / 0 fail / 145 expect()`, web typecheck,
+targeted ESLint, and scoped `git diff --check`. One combined Remote A-E plus
+diagnostics attempt is authorized; Unit E remains unchecked until that browser
+command passes.
+
+The first combined A-E attempt stopped at the second assignment dialog with
+native exit `1`: Units A-D passed, Unit E failed, and passive diagnostics did
+not run (`4 passed / 1 failed / 1 did not run`). The first Sponsor A -> Family
+assignment was created successfully. When the second dialog opened, the global
+`Search sponsors...` locator found two visible portalled inputs and the
+`onlyVisible()` assertion timed out before selecting Sponsor B; no second
+assignment, duplicate replay, sponsor projection, privacy canary, or canary
+cleanup assertion ran. This is `TEST`, not product or environment evidence.
+The tunnel closed and no sensitive value was printed. Based on the previously
+recorded minimum plus this attempt's A-D prerequisites, the corrected cumulative
+minimum is six Families, six Children, two older pending Sponsor applicants,
+six approved Sponsor applications/accounts/profiles, and one retained active
+assignment from this stopped attempt. Exact database totals remain `NOT
+VERIFIED`.
+
+Installed Najm Kit proves every open combobox trigger identifies its own Radix
+portal through `aria-controls`, while the portal exposes
+`data-slot="popover-content"` and `data-state="open"`. The test now resolves
+the search input inside that exact active portal and proves each combobox
+returns to `aria-expanded="false"` after selection. It does not choose an
+arbitrary first/last match, force an action, raise a timeout, or change the
+product. Source regression coverage pins this selector contract. The corrected
+gate passes: `12 pass / 0 fail / 153 expect()`, web typecheck, targeted ESLint,
+and scoped `git diff --check`. Because Unit E consumes process-memory IDs from
+Units B-D, the combined A-E range is its smallest executable prerequisite
+range. One corrected A-E plus diagnostics attempt is authorized.
+
+The corrected combined A-E range passed on 2026-08-14 with native exit `0`:
+`6 passed (1.4m)`. Units A-E and the shared diagnostics test all passed. All
+11 boolean guards and 8 preflight checks passed. Unit E created both assignments
+through the deployed UI, proved the exact duplicate `409`, found exactly two
+active assignments for the runtime Family, verified both sponsors' exact safe
+projections and six cross-sponsor `404` boundaries, stopped both canary plans,
+and rejected both pending canary contributions. Diagnostics for all four
+contexts were clean, the managed SSH tunnel closed, and no sensitive value was
+printed. The corrected cumulative disposable-demo minimum is seven Families,
+seven Children, two older pending Sponsor applicants, eight approved Sponsor
+applications/accounts/profiles, at least three active support assignments,
+two stopped canary plans, and two rejected canary contributions. Exact totals
+and all database-only guarantees remain `NOT VERIFIED`. Unit E is accepted.
+
+Remote Unit F is now implemented as the dependent A-F black-box range. It
+reads the new Family's funding target from the authenticated sponsor catalog,
+uses safe integer minor units throughout, proves Sponsor A's monthly-plan
+create/pause/resume/stop lifecycle, exact resume-after-stop `409`, and Sponsor
+B's exact cross-owner read and mutation `404` responses. It then proves that a
+rejected pending contribution does not increase validated funding, validation
+credits once, refund reverses once, and the documented idempotent validation
+and refund replays do not change the aggregate again. Finally, two positive
+sponsor-owned contributions sum exactly to the deployed target; the Family
+remains pending after the first validation, becomes active only after the
+second, both role-scoped histories stay isolated, Admin sees both, and the
+deployed sponsor UI exposes a 100% progress bar. No PostgreSQL, seed, Docker,
+deployment, mock, forced action, or secret output is used.
+
+The local source gate passes: the remote-runner regression is `13 pass / 0
+fail / 178 expect()`, targeted ESLint and web typecheck are clean, and the full
+repository lint, typecheck, tests, production build, and schema-drift check all
+pass. `db:generate` reports no schema changes. One combined Remote A-F plus
+diagnostics browser attempt is authorized; Unit F remains unchecked until that
+deployed command passes.
+
+The first combined A-F attempt ended with native exit `1`: Units A-E passed,
+Unit F failed in `1.2s` before any Unit F financial command, and passive
+diagnostics did not run (`5 passed / 1 failed / 1 did not run`). The sixth
+short-window `POST /api/auth/login` for the same Admin returned exact `429`.
+The deployed rate limiter behaved correctly; the serial test unnecessarily
+logged the Admin out after Unit E and immediately authenticated it again in
+Unit F. This is `TEST`, not product or environment evidence. The managed SSH
+tunnel closed and no sensitive value was printed. Because the stopped attempt
+completed A-E again, the corrected cumulative minimum is eight Families, eight
+Children, two older pending Sponsor applicants, ten approved Sponsor
+applications/accounts/profiles, at least five active support assignments, four
+stopped canary plans, and four rejected canary contributions. Unit F retained
+no financial records because it failed before its first authenticated read.
+Exact totals and database-only guarantees remain `NOT VERIFIED`.
+
+The corrected serial journey preserves Unit E's authenticated Admin context,
+opens a fresh page in that same isolated context for Unit F, proves dashboard
+readiness without another login request, and performs the real Admin logout at
+the end of Unit F. Sponsor contexts remain isolated and continue using their
+own real logins. Source coverage forbids an Admin login call inside Unit F and
+pins the authenticated dashboard navigation. The corrected source gate passes:
+`13 pass / 0 fail / 181 expect()`, web typecheck, and targeted ESLint. The full
+repository lint, typecheck, tests, production build, and schema-drift check also
+pass, and `db:generate` reports no schema changes. One corrected combined
+Remote A-F plus diagnostics attempt is authorized; waiting alone or changing
+deployment credentials is not the owning-layer correction.
+
 Historical local connected-work-unit results are not remote passes and are not
 part of this replacement plan's completion status.
 
@@ -326,12 +503,12 @@ preflight, the child environment allowlist, TLS verification, tunnel ownership,
 or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
-the smallest implemented prerequisite range. The combined A-B range and
-passive diagnostics pass. Unit C is independently runnable and now has an
-implemented, statically validated correction boundary, so its first proof is:
+the smallest implemented prerequisite range. The combined A-E range passes
+with passive diagnostics. The next promotion is one combined A-F range plus
+diagnostics:
 
 ```powershell
-$env:KAFIL_E2E_REMOTE_GREP='remote unit C|remote diagnostics'
+$env:KAFIL_E2E_REMOTE_GREP='remote unit [A-F]|remote diagnostics'
 bun run --cwd apps/web test:e2e:connected:remote
 Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
 ```
@@ -445,7 +622,7 @@ email, phone, CIN, address, temporary credential, password, or IDs.
 
 ## 8. Remote Unit C - Sponsor A application and approval
 
-Status: **BLOCKED - VPS ADMIN APPLICANTS GRANT RECONCILIATION REQUIRED**
+Status: **PASS - FOCUSED UNIT C AND DIAGNOSTICS**
 
 Before the public submission, Unit C must prove that the configured Bootstrap
 Admin resolves from `GET /api/auth/me` with role `admin` and can successfully
@@ -459,36 +636,36 @@ successful retry remains a failure.
 
 In `sponsorAContext`:
 
-- [ ] Open `/apply` and await its ready form.
-- [ ] Use a unique `.test` email, Moroccan-format phone, non-real identity data,
+- [x] Open `/apply` and await its ready form.
+- [x] Use a unique `.test` email, Moroccan-format phone, non-real identity data,
   and a runtime password.
-- [ ] Exercise one client validation error before submission.
-- [ ] Start exact Mailpit polling before the action that sends OTP mail.
-- [ ] Match by exact recipient, run start time, and verification purpose.
-- [ ] Assert exactly one matching OTP message exists.
-- [ ] Keep the OTP in memory, type it through the real OTP control, and assert
+- [x] Exercise one client validation error before submission.
+- [x] Start exact Mailpit polling before the action that sends OTP mail.
+- [x] Match by exact recipient, run start time, and verification purpose.
+- [x] Assert exactly one matching OTP message exists.
+- [x] Keep the OTP in memory, type it through the real OTP control, and assert
   confirmation succeeds.
-- [ ] Delete the exact Mailpit message only after successful confirmation using
+- [x] Delete the exact Mailpit message only after successful confirmation using
   Mailpit's authenticated v1 batch-delete contract.
-- [ ] Assert the application is pending and no normal sponsor session exists.
-- [ ] Attempt normal login once and assert exact `POST /api/auth/login -> 403`
+- [x] Assert the application is pending and no normal sponsor session exists.
+- [x] Attempt normal login once and assert exact `POST /api/auth/login -> 403`
   with the documented inactive/pending message and no auth cookies.
 
 In `adminContext`:
 
-- [ ] Open the applicants list after its exact list response.
-- [ ] Find Sponsor A exactly once by the runtime label.
-- [ ] Open details and compare the runtime name/email/E.164 phone in memory.
-- [ ] Approve once and assert the exact approval request succeeds.
-- [ ] Replay the same approval request once and assert exact `409`.
+- [x] Open the applicants list after its exact list response.
+- [x] Find Sponsor A exactly once by the runtime label.
+- [x] Open details and compare the runtime name/email/E.164 phone in memory.
+- [x] Approve once and assert the exact approval request succeeds.
+- [x] Replay the same approval request once and assert exact `409`.
 
 Back in `sponsorAContext`:
 
-- [ ] Sign in with email and await `GET /api/dashboard/sponsor`.
-- [ ] Assert sponsor navigation and the empty supported-family state.
-- [ ] Log out through the UI, assert cookies are absent, and assert
+- [x] Sign in with email and await `GET /api/dashboard/sponsor`.
+- [x] Assert sponsor navigation and the empty supported-family state.
+- [x] Log out through the UI, assert cookies are absent, and assert
   `GET /api/sponsors/me/profile -> 401`.
-- [ ] Sign in again with the same E.164 phone identifier, then log out.
+- [x] Sign in again with the same E.164 phone identifier, then log out.
 
 Do not report or preserve the OTP, applicant password, mailbox body, email,
 phone, or applicant/user/profile IDs.
@@ -497,16 +674,18 @@ phone, or applicant/user/profile IDs.
 
 ## 9. Remote Unit D - Sponsor B application and approval
 
+Status: **PASS - FOCUSED UNIT D AND DIAGNOSTICS**
+
 Repeat Remote Unit C with a completely independent runtime identity,
 `sponsorBContext`, mailbox match, password, and application.
 
-- [ ] Sponsor B has exactly one matching OTP message.
-- [ ] Sponsor B's OTP confirms and its exact message is deleted.
-- [ ] Pending login is denied exactly once with no auth cookies.
-- [ ] Admin sees exactly one Sponsor B applicant for the runtime label.
-- [ ] First approval succeeds and replayed approval returns exact `409`.
-- [ ] Sponsor B signs in by email and reaches the sponsor dashboard.
-- [ ] Sponsor B logs out with cookies absent and protected profile `401`.
+- [x] Sponsor B has exactly one matching OTP message.
+- [x] Sponsor B's OTP confirms and its exact message is deleted.
+- [x] Pending login is denied exactly once with no auth cookies.
+- [x] Admin sees exactly one Sponsor B applicant for the runtime label.
+- [x] First approval succeeds and replayed approval returns exact `409`.
+- [x] Sponsor B signs in by email and reaches the sponsor dashboard.
+- [x] Sponsor B logs out with cookies absent and protected profile `401`.
 
 Sponsor B is created through the real public deployment flow. This remote plan
 does not seed Sponsor B and does not claim seed reuse, stable database IDs, or
@@ -516,32 +695,34 @@ password-hash preservation.
 
 ## 10. Remote Unit E - assignments and sponsor privacy
 
+Status: **PASS - DEPENDENT A-E RANGE AND DIAGNOSTICS**
+
 In `adminContext`:
 
-- [ ] Await exact assignment-page list readiness before each creation.
-- [ ] Create Sponsor A -> Family through the real dialog and assert
+- [x] Await exact assignment-page list readiness before each creation.
+- [x] Create Sponsor A -> Family through the real dialog and assert
   `POST /api/support-assignments` succeeds.
-- [ ] Create Sponsor B -> Family the same way.
-- [ ] Replay Sponsor A -> Family once and assert exact duplicate `409`.
-- [ ] Query the authenticated admin list and assert the API-visible result has
+- [x] Create Sponsor B -> Family the same way.
+- [x] Replay Sponsor A -> Family once and assert exact duplicate `409`.
+- [x] Query the authenticated admin list and assert the API-visible result has
   exactly two active assignments for the Family, one per runtime sponsor.
 
 In each sponsor context independently:
 
-- [ ] Sign in and open `/sponsor/support`.
-- [ ] Assert the supported-family catalog contains the Family exactly once.
-- [ ] Assert the catalog row uses only the documented sponsor-safe keys.
-- [ ] Read the sponsor's own assignment-family summary and assert only the
+- [x] Sign in and open `/sponsor/support`.
+- [x] Assert the supported-family catalog contains the Family exactly once.
+- [x] Assert the catalog row uses only the documented sponsor-safe keys.
+- [x] Read the sponsor's own assignment-family summary and assert only the
   documented safe assignment/family keys are present.
-- [ ] Search the returned JSON in memory and prove it contains none of the
+- [x] Search the returned JSON in memory and prove it contains none of the
   Family CIN, exact address, Family email/phone, documents, private notes, or
   the other sponsor's runtime identity values.
-- [ ] Create one minimal one-time plan and one pending contribution as privacy
+- [x] Create one minimal one-time plan and one pending contribution as privacy
   canaries through that sponsor's own API.
-- [ ] Read the other sponsor's assignment by ID and assert exact `404`.
-- [ ] Read the other sponsor's contribution by ID and assert exact `404`.
-- [ ] Read the other sponsor's plan by ID and assert exact `404`.
-- [ ] Stop the canary plan through the owner context.
+- [x] Read the other sponsor's assignment by ID and assert exact `404`.
+- [x] Read the other sponsor's contribution by ID and assert exact `404`.
+- [x] Read the other sponsor's plan by ID and assert exact `404`.
+- [x] Stop the canary plan through the owner context.
 
 In `adminContext`, reject both pending canary contributions with a non-sensitive
 reason so they cannot affect later funding totals.
@@ -552,6 +733,8 @@ audit metadata, outbox payloads, and physical row counts remain `NOT VERIFIED`.
 ---
 
 ## 11. Remote Unit F - contributions and exact funding
+
+Status: **IMPLEMENTED - DEPENDENT A-F RANGE PROOF PENDING**
 
 Read the Family funding target from an authenticated deployed response. Keep
 all calculations in safe integer minor units. Convert to MAD display text from
@@ -573,11 +756,11 @@ integer quotient and two-digit remainder; never use floating-point money.
   increase.
 - [ ] Sponsor A submits a second pending contribution.
 - [ ] Admin validates it and the API-visible funding aggregate increases once.
-- [ ] Replayed validation returns the documented conflict and the aggregate
-  does not increase again.
+- [ ] Replayed validation returns the documented idempotent success and the
+  aggregate does not increase again.
 - [ ] Admin refunds it and the aggregate decreases once.
-- [ ] Replayed refund returns the documented denial/conflict and the aggregate
-  does not decrease again.
+- [ ] Replayed refund returns the documented idempotent success and the
+  aggregate does not decrease again.
 
 ### Exact target
 
