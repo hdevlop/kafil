@@ -367,6 +367,10 @@ describe("connected four-account remote runner", () => {
   });
 
   test("pins Unit G order money, delivery retry, privacy, and denial contracts", () => {
+    const deliveryStaffHelper = specSource.slice(
+      specSource.indexOf("async function createDeliveryStaffThroughUi"),
+      specSource.indexOf("async function readFamilyFundingFromSponsorCatalog"),
+    );
     const unitG = specSource.slice(
       specSource.indexOf('test("remote unit G - ordering and delivery"'),
       specSource.indexOf('test("remote diagnostics - final context assertions"'),
@@ -391,6 +395,24 @@ describe("connected four-account remote runner", () => {
     expect(specSource).toContain("expect(created.userId).toBeNull()");
     expect(specSource).toContain("expect(created.hasOperatorAccess).toBe(false)");
     expect(specSource).toContain("expect(created.initialPassword).toBeNull()");
+    expect(deliveryStaffHelper).toContain(
+      "await expect(form).toBeVisible({ timeout: 5_000 })",
+    );
+    for (const accessibleLabel of [
+      "/^Full name\\s*\\*?$/",
+      "/^Date of birth\\s*\\*?$/",
+      "/^CIN\\s*\\*?$/",
+      "/^Phone\\s*\\*?$/",
+      "/^Email\\s*\\*?$/",
+      "/^Job title\\s*\\*?$/",
+      "/^Address\\s*\\*?$/",
+      "/^Internal notes\\s*\\*?$/",
+    ]) {
+      expect(deliveryStaffHelper).toContain(accessibleLabel);
+    }
+    expect(deliveryStaffHelper).not.toMatch(
+      /locator\(['"](?:input|textarea)\[name=/,
+    );
     expect(unitG).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
     expect(unitG).toContain("createDeliveryStaffThroughUi(adminPage, fixture)");
     expect(unitG).toContain("expect(deliveryStaff).toHaveLength(2)");

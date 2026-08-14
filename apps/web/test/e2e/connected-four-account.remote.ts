@@ -510,14 +510,21 @@ async function createDeliveryStaffThroughUi(
   const dialog = page.getByRole("dialog", { name: "Add staff record", exact: true });
   await expect(dialog).toBeVisible();
   const form = dialog.locator("#create-staff-form");
-  await form.locator('input[name="name"]').fill(fixture.name);
-  await form.locator('input[name="dateOfBirth"]').fill("1990-01-01");
-  await form.locator('input[name="cin"]').fill(fixture.cin);
-  await form.locator('input[name="phone"]').fill(fixture.phone);
-  await form.locator('input[name="contactEmail"]').fill(fixture.email);
-  await form.locator('input[name="jobTitle"]').fill("Acceptance delivery agent");
-  await form.locator('textarea[name="address"]').fill("Acceptance delivery office");
-  await form.locator('textarea[name="notes"]').fill("Guarded Unit G delivery profile");
+  await expect(form).toBeVisible({ timeout: 5_000 });
+  const fields: Array<[Locator, string]> = [
+    [form.getByLabel(/^Full name\s*\*?$/), fixture.name],
+    [form.getByLabel(/^Date of birth\s*\*?$/), "1990-01-01"],
+    [form.getByLabel(/^CIN\s*\*?$/), fixture.cin],
+    [form.getByLabel(/^Phone\s*\*?$/), fixture.phone],
+    [form.getByLabel(/^Email\s*\*?$/), fixture.email],
+    [form.getByLabel(/^Job title\s*\*?$/), "Acceptance delivery agent"],
+    [form.getByLabel(/^Address\s*\*?$/), "Acceptance delivery office"],
+    [form.getByLabel(/^Internal notes\s*\*?$/), "Guarded Unit G delivery profile"],
+  ];
+  for (const [field, value] of fields) {
+    await expect(field).toBeVisible({ timeout: 5_000 });
+    await field.fill(value);
+  }
 
   const capabilities = form.getByRole("combobox", { name: /^Capabilities\s*\*?$/ });
   await capabilities.click();

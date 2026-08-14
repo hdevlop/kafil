@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G STAFF-CREATION CORRECTION NOT RUN**
+Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G ACCESSIBLE-FIELD CORRECTION NOT RUN**
 
 Target: exactly `https://kafala360.ma`
 
@@ -438,6 +438,27 @@ clean, the root check passes, and `db:generate` reports no schema drift. One
 fresh combined A-G plus diagnostics attempt is authorized only after this exact
 commit is published and the intended deployment is healthy.
 
+That A-G attempt ran once against revision `e2714c3d2469da73c2849a191b6624497ed4bf07`.
+All eight intended tests were selected; Units A-F passed, Unit G timed out in
+`3.0m`, and passive diagnostics did not run (`6 passed / 1 failed / 1 did not
+run`, native exit `1`). The Staff directory, Add action, and `Add staff record`
+dialog were visible, but the first raw
+`#create-staff-form input[name="name"]` fill never resolved. No
+`POST /api/staff`, Staff profile, order, or delivery mutation occurred. The
+managed SSH tunnel closed and no sensitive value was printed.
+
+Installed Najm Kit proves `NForm` forwards the form `id`, while `FormInput`
+binds its field through React Hook Form and does not emit that field name as an
+HTML `name` attribute. The timeout is therefore `TEST`, not `PRODUCT` or
+`ENVIRONMENT`. The helper now resolves every Staff value through the deployed
+English accessible label, accepts Najm's required marker, asserts each control
+is visible within five seconds, and contains no raw input/textarea name
+selector. The narrow regression passes `15 pass / 0 fail / 240 expect()`.
+Web typecheck, targeted ESLint, the root check, and `db:generate` also pass;
+there is no schema drift. One fresh combined A-G plus diagnostics attempt is
+authorized only after this exact correction is published and the intended
+deployment is healthy.
+
 Historical local connected-work-unit results are not remote passes and are not
 part of this replacement plan's completion status.
 
@@ -849,7 +870,7 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
-Status: **IMPLEMENTED - STAFF-CREATION CORRECTION REMOTE RANGE NOT RUN**
+Status: **IMPLEMENTED - ACCESSIBLE-FIELD CORRECTION REMOTE RANGE NOT RUN**
 
 Precondition: the deployed Family catalog exposes at least one active product
 with usable inventory. If not, stop as `ENVIRONMENT BLOCKED`; do not seed or
