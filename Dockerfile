@@ -50,6 +50,10 @@ COPY --from=build --chown=bun:bun /app/apps/web/node_modules ./apps/web/node_mod
 COPY --from=build --chown=bun:bun /app/packages/server ./packages/server
 COPY --from=build --chown=bun:bun /app/packages/seed ./packages/seed
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash \
+    && rm -rf /var/lib/apt/lists/*
+
 USER bun
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=4 \
