@@ -2248,14 +2248,38 @@ test.describe.serial("connected VPS acceptance", () => {
     await expectNoneVisible(
       sponsorAPage.getByText("Loading families", { exact: true }),
     );
-    const fundedFamilyCard = sponsorAPage
-      .locator('[data-slot="card"]')
+    const fundedFamilyRows = sponsorAPage.locator(
+      '[data-ntable-cards-grid] > [data-row="true"]',
+    );
+    const fundedFamilyRow = fundedFamilyRows
       .filter({
         has: sponsorAPage.getByText(familyName, { exact: true }),
       });
-    await expect(fundedFamilyCard).toHaveCount(1);
+    const catalogPagination = sponsorAPage.getByRole("navigation", {
+      name: "Pagination",
+      exact: true,
+    });
+    for (let pageStep = 0; pageStep < 100; pageStep += 1) {
+      if ((await fundedFamilyRow.count()) !== 0) break;
+
+      const nextPage = catalogPagination.getByRole("button", {
+        name: "Next",
+        exact: true,
+      });
+      await expect(nextPage).toBeVisible();
+      if (await nextPage.isDisabled()) break;
+
+      const currentPage = catalogPagination.locator('[aria-current="page"]');
+      const currentPageLabel = await currentPage.getAttribute("aria-label");
+      expect(currentPageLabel).not.toBeNull();
+      await nextPage.click();
+      await expect.poll(
+        () => currentPage.getAttribute("aria-label"),
+      ).not.toBe(currentPageLabel);
+    }
+    await expect(fundedFamilyRow).toHaveCount(1);
     const fundedProgress = await onlyVisible(
-      fundedFamilyCard.locator("..").getByRole("progressbar", {
+      fundedFamilyRow.getByRole("progressbar", {
         name: "Family funding progress",
         exact: true,
       }),

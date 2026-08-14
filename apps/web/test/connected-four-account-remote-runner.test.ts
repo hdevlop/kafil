@@ -339,12 +339,20 @@ describe("connected four-account remote runner", () => {
     expect(unitF).toContain('expect(funding.status).toBe("pending_funding")');
     expect(unitF).toContain('expect(funding.status).toBe("active")');
     expect(unitF).toContain('expect(funding.capacityStatus).toBe("funded")');
-    expect(unitF).toContain("const fundedFamilyCard = sponsorAPage");
+    expect(unitF).toContain("const fundedFamilyRows = sponsorAPage.locator(");
     expect(unitF).toContain(
       "has: sponsorAPage.getByText(familyName, { exact: true })",
     );
+    expect(unitF).toContain(
+      'getByRole("navigation", {\n      name: "Pagination",\n      exact: true,',
+    );
+    expect(unitF).toContain(
+      'getByRole("button", {\n        name: "Next",\n        exact: true,',
+    );
+    expect(unitF).toContain('locator(\'[aria-current="page"]\')');
     expect(unitF).toContain('const fundedProgress = await onlyVisible(');
-    expect(unitF).toContain("fundedFamilyCard.locator(\"..\").getByRole(\"progressbar\"");
+    expect(unitF).toContain('fundedFamilyRow.getByRole("progressbar"');
+    expect(unitF).not.toContain('locator(\'[data-slot="card"]\')');
     expect(unitF).not.toContain('sponsorAPage.getByRole("progressbar")');
     expect(unitF).toContain('expect(fundedProgress).toHaveAttribute(\n      "aria-valuenow",');
     expect(unitF).toContain("expect(sponsorATargetRows).toHaveLength(1)");
