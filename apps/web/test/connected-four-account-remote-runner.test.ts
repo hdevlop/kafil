@@ -339,7 +339,13 @@ describe("connected four-account remote runner", () => {
     expect(unitF).toContain('expect(funding.status).toBe("pending_funding")');
     expect(unitF).toContain('expect(funding.status).toBe("active")');
     expect(unitF).toContain('expect(funding.capacityStatus).toBe("funded")');
+    expect(unitF).toContain("const fundedFamilyCard = sponsorAPage");
+    expect(unitF).toContain(
+      "has: sponsorAPage.getByText(familyName, { exact: true })",
+    );
     expect(unitF).toContain('const fundedProgress = await onlyVisible(');
+    expect(unitF).toContain("fundedFamilyCard.locator(\"..\").getByRole(\"progressbar\"");
+    expect(unitF).not.toContain('sponsorAPage.getByRole("progressbar")');
     expect(unitF).toContain('expect(fundedProgress).toHaveAttribute(\n      "aria-valuenow",');
     expect(unitF).toContain("expect(sponsorATargetRows).toHaveLength(1)");
     expect(unitF).toContain("expect(sponsorBTargetRows).toHaveLength(1)");

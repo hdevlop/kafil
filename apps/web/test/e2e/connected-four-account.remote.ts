@@ -2248,8 +2248,17 @@ test.describe.serial("connected VPS acceptance", () => {
     await expectNoneVisible(
       sponsorAPage.getByText("Loading families", { exact: true }),
     );
+    const fundedFamilyCard = sponsorAPage
+      .locator('[data-slot="card"]')
+      .filter({
+        has: sponsorAPage.getByText(familyName, { exact: true }),
+      });
+    await expect(fundedFamilyCard).toHaveCount(1);
     const fundedProgress = await onlyVisible(
-      sponsorAPage.getByRole("progressbar"),
+      fundedFamilyCard.locator("..").getByRole("progressbar", {
+        name: "Family funding progress",
+        exact: true,
+      }),
     );
     await expect(fundedProgress).toHaveAttribute(
       "aria-valuenow",
