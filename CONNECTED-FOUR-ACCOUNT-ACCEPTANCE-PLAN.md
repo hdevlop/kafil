@@ -44,7 +44,7 @@ The final remote result must prove:
 - sponsor-safe projections and exact cross-sponsor denials;
 - contribution, funding, order, purchase, and delivery behavior visible through
   the deployed UI and public application APIs;
-- logout, cookie removal, protected-request denial, responsive layout, RTL,
+- logout, cookie removal, protected-request denial, responsive layout,
   keyboard access, and clean browser diagnostics;
 - runner-owned SSH tunnel cleanup and secret-safe reporting.
 
@@ -529,7 +529,7 @@ remote unit D - Sponsor B application and approval
 remote unit E - assignments and sponsor privacy
 remote unit F - contributions and exact funding
 remote unit G - ordering and delivery
-remote unit H - responsive RTL keyboard and cleanup
+remote unit H - responsive keyboard and cleanup
 remote diagnostics - final context assertions
 ```
 
@@ -821,6 +821,8 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
+Status: **IMPLEMENTED - REMOTE RANGE NOT RUN**
+
 Precondition: the deployed Family catalog exposes at least one active product
 with usable inventory, and two active delivery profiles are available. If not,
 stop as `ENVIRONMENT BLOCKED`; do not seed or modify deployment infrastructure.
@@ -876,7 +878,7 @@ storage remain `NOT VERIFIED` even when UI/API state is correct.
 
 ---
 
-## 13. Remote Unit H - responsive, RTL, keyboard, and cleanup
+## 13. Remote Unit H - responsive, keyboard, and cleanup
 
 Reuse the graph created earlier in the same command. Do not repeat financial
 mutations at each viewport and do not create screenshots.
@@ -893,8 +895,7 @@ Required surfaces:
 
 - Family dashboard, cart, and order history;
 - Sponsor A and Sponsor B supported-family and contribution history;
-- Admin assignments, contribution detail, order detail, and delivery history;
-- Arabic RTL on phone and desktop.
+- Admin assignments, contribution detail, order detail, and delivery history.
 
 For each applicable surface:
 
@@ -902,8 +903,6 @@ For each applicable surface:
 - [ ] primary controls and dialog/sheet actions are visible and not clipped;
 - [ ] keyboard focus reaches the primary action and returns after close;
 - [ ] loading, empty, validation, and exact server-error states are readable;
-- [ ] Arabic sets `dir="rtl"` without reversing money, identifiers, or status
-  meaning;
 - [ ] protected images load, complete, and decode with `naturalWidth > 0`;
 - [ ] there are no uncaught page errors, unexplained console errors, failed
   requests, or unregistered `4xx`/`5xx` responses.
@@ -1036,7 +1035,7 @@ Report this VPS black-box plan complete only when every item is true:
   without a visible duplicate effect.
 - [ ] Cancellation, rejection, purchase replay, delivery failure, reassignment,
   confirmation, and confirmation replay show the documented deployed behavior.
-- [ ] Desktop, tablet, phone, keyboard, and Arabic RTL assertions pass.
+- [ ] Desktop, tablet, phone, and keyboard assertions pass.
 - [ ] Browser diagnostics are clean after exact one-shot negative allowances.
 - [ ] Every context logs out, auth cookies are absent, mailbox messages are
   deleted, and the SSH tunnel closes.
@@ -1079,7 +1078,7 @@ Remote units:
 - E assignments/privacy: PASS | FAIL | NOT RUN
 - F contributions/funding: PASS | FAIL | NOT RUN
 - G ordering/delivery: PASS | FAIL | NOT RUN
-- H responsive/RTL/keyboard/cleanup: PASS | FAIL | NOT RUN
+- H responsive/keyboard/cleanup: PASS | FAIL | NOT RUN
 - Diagnostics: PASS | FAIL | NOT RUN
 
 Evidence boundary:
@@ -1102,3 +1101,27 @@ Verdicts:
 - VPS black-box plan: COMPLETE | IN PROGRESS | BLOCKED
 - Root roadmap: NOT PRESENT | IN PROGRESS | COMPLETE
 ```
+
+---
+
+## 18. Optional final sub-step - Arabic RTL
+
+Status: **OPTIONAL - DEFERRED UNTIL RTL IS TESTED IN DEVELOPMENT**
+
+This is the final optional sub-step after Units A-H, diagnostics, cleanup, and
+the required local gates are complete. It does not block
+**VPS BLACK-BOX ACCEPTANCE COMPLETE** while Arabic RTL remains untested in the
+development environment.
+
+When development RTL testing is ready, verify the required Family, Sponsor,
+and Admin surfaces on phone and desktop:
+
+- [ ] Arabic sets `dir="rtl"`;
+- [ ] layout direction changes without clipping or horizontal overflow;
+- [ ] money, identifiers, phone numbers, and status meaning remain correctly
+  ordered and readable;
+- [ ] browser diagnostics remain clean under the existing exact-error rules.
+
+Report this separately as `OPTIONAL RTL: PASS | FAIL | NOT RUN`; do not change
+the required Unit H or whole-plan verdict solely because this optional step is
+`NOT RUN`.

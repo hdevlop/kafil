@@ -59,6 +59,12 @@ interface BrowserJsonResult {
   body: unknown;
 }
 
+interface BudgetSnapshot {
+  availableMinor: number;
+  reservedMinor: number;
+  spentMinor: number;
+}
+
 interface RemoteState {
   familyProfileId: string;
   familyUserId: string;
@@ -345,6 +351,75 @@ async function browserJsonRequest(
     },
     { requestBody: body, requestMethod: method, requestPath: path, rootUrl: baseUrl },
   );
+}
+
+async function uploadGeneratedPdfEvidence(
+  page: Page,
+  kind: "deliveries" | "receipts",
+): Promise<BrowserJsonResult> {
+  return page.evaluate(
+    async ({ evidenceKind, rootUrl }) => {
+      const fileName = `${crypto.randomUUID()}.pdf`;
+      const bytes = new TextEncoder().encode("%PDF-1.4\n%%EOF\n");
+      const response = await fetch(
+        `${rootUrl}/api/order-evidence/${evidenceKind}/${fileName}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/pdf" },
+          body: bytes,
+        },
+      );
+      return {
+        status: response.status,
+        body: await response.json().catch(() => null),
+      };
+    },
+    { evidenceKind: kind, rootUrl: baseUrl },
+  );
+}
+
+async function readBudgetSnapshot(
+  page: Page,
+  path: "/api/budgets/me" | `/api/budgets/${string}`,
+): Promise<BudgetSnapshot> {
+  const result = await browserJsonRequest(page, "GET", path);
+  expect(result.status).toBe(200);
+  const record = responseRecord(result.body);
+  const snapshot = {
+    availableMinor: Number(record.availableMinor),
+    reservedMinor: Number(record.reservedMinor),
+    spentMinor: Number(record.spentMinor),
+  };
+  for (const [field, value] of Object.entries(snapshot)) {
+    expect(
+      Number.isSafeInteger(value),
+      `${field} must be a safe integer minor-unit value`,
+    ).toBe(true);
+    expect(value, `${field} must remain non-negative`).toBeGreaterThanOrEqual(0);
+  }
+  return snapshot;
+}
+
+function expectBudgetSnapshot(
+  actual: BudgetSnapshot,
+  expected: BudgetSnapshot,
+): void {
+  expect(actual).toEqual(expected);
+}
+
+function containsProjectionKey(value: unknown, forbiddenKeys: string[]): boolean {
+  if (Array.isArray(value)) {
+    return value.some((entry) => containsProjectionKey(entry, forbiddenKeys));
+  }
+  if (typeof value !== "object" || value === null) return false;
+  const normalizedForbidden = new Set(
+    forbiddenKeys.map((key) => key.toLowerCase().replaceAll(/[^a-z0-9]/g, "")),
+  );
+  return Object.entries(value as Record<string, unknown>).some(([key, nested]) => {
+    const normalized = key.toLowerCase().replaceAll(/[^a-z0-9]/g, "");
+    return normalizedForbidden.has(normalized) || containsProjectionKey(nested, forbiddenKeys);
+  });
 }
 
 async function expectExactNegativeResponse(
@@ -2293,6 +2368,677 @@ test.describe.serial("connected VPS acceptance", () => {
     await signOut(sponsorBPage);
     await signOut(adminPage);
     await Promise.all([
+      sponsorAPage.close(),
+      sponsorBPage.close(),
+      adminPage.close(),
+    ]);
+  });
+
+  test("remote unit G - ordering and delivery", async () => {
+    expect(
+      Boolean(
+        state.familyProfileId &&
+          state.assignmentAId &&
+          state.assignmentBId,
+      ),
+      "remote Unit G requires the in-process Family and support graph from Units B-F",
+    ).toBe(true);
+
+    const adminPage = await adminContext.newPage();
+    const familyPage = await familyContext.newPage();
+    const sponsorAPage = await sponsorAContext.newPage();
+    const sponsorBPage = await sponsorBContext.newPage();
+    attachDiagnostics(adminPage, adminDiagnostics);
+    attachDiagnostics(familyPage, familyDiagnostics);
+    attachDiagnostics(sponsorAPage, sponsorADiagnostics);
+    attachDiagnostics(sponsorBPage, sponsorBDiagnostics);
+
+    for (const principal of [
+      { page: adminPage, identifier: adminEmail, password: adminPassword },
+      { page: familyPage, identifier: familyEmail, password: familyRuntimePassword },
+      { page: sponsorAPage, identifier: sponsorAEmail, password: sponsorAPassword },
+      { page: sponsorBPage, identifier: sponsorBEmail, password: sponsorBPassword },
+    ]) {
+      await prepareLogin(principal.page, principal.identifier, principal.password);
+      await submitPreparedLogin(principal.page);
+      await expect(principal.page).toHaveURL(/\/dashboard$/);
+    }
+
+    const initialBudget = await readBudgetSnapshot(familyPage, "/api/budgets/me");
+    const catalog = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/catalog/browse/products?limit=100&offset=0",
+    );
+    expect(catalog.status).toBe(200);
+    const eligibleProducts = responseRows(catalog.body)
+      .filter((product) => {
+        const priceMinor = Number(product.priceMinor);
+        return (
+          typeof product.id === "string" &&
+          typeof product.name === "string" &&
+          Number.isSafeInteger(priceMinor) &&
+          priceMinor > 0 &&
+          (priceMinor > 1
+            ? priceMinor <= initialBudget.availableMinor
+            : initialBudget.availableMinor >= 2)
+        );
+      })
+      .sort((left, right) => Number(left.priceMinor) - Number(right.priceMinor));
+    if (eligibleProducts.length === 0) {
+      throw new Error(
+        "ENVIRONMENT BLOCKED: the deployed Family catalog has no affordable active product for purchase-variance acceptance",
+      );
+    }
+    const product = eligibleProducts[0]!;
+    const productId = String(product.id);
+    const productName = String(product.name);
+
+    const deliveryOptions = await browserJsonRequest(
+      adminPage,
+      "GET",
+      "/api/staff/options/delivery",
+    );
+    expect(deliveryOptions.status).toBe(200);
+    const deliveryStaff = responseRows(deliveryOptions.body).filter(
+      (profile) => typeof profile.id === "string" && typeof profile.name === "string",
+    );
+    if (deliveryStaff.length < 2) {
+      throw new Error(
+        "ENVIRONMENT BLOCKED: the deployed application exposes fewer than two active Delivery profiles",
+      );
+    }
+    const staffA = deliveryStaff[0]!;
+    const staffB = deliveryStaff.find((profile) => profile.id !== staffA.id)!;
+    expect(staffB).toBeDefined();
+
+    async function submitFamilyOrder(label: string) {
+      const add = await browserJsonRequest(
+        familyPage,
+        "POST",
+        "/api/orders/cart/items",
+        { productId, quantity: 1 },
+      );
+      expect(add.status).toBeLessThan(400);
+      const cart = responseRecord(add.body);
+      expect(Number(cart.totalMinor)).toBe(Number(product.priceMinor));
+
+      const idempotencyKey = `${label}-${crypto.randomUUID()}`;
+      const submitted = await browserJsonRequest(
+        familyPage,
+        "POST",
+        "/api/orders/submit",
+        { idempotencyKey },
+      );
+      expect(submitted.status).toBeLessThan(400);
+      const order = responseRecord(submitted.body);
+      expect(order.status).toBe("pending");
+      expect(responseId(submitted.body)).not.toBe("");
+      expect(Number(order.requestedTotalMinor)).toBe(Number(product.priceMinor));
+      return { idempotencyKey, order };
+    }
+
+    // Order 1: self-service creation, exact visible reserve, UI cancellation,
+    // and idempotent creation/cancellation replays with no second aggregate effect.
+    const order1Submission = await submitFamilyOrder("unit-g-order-1");
+    const order1 = order1Submission.order;
+    const order1Id = String(order1.id);
+    const order1Number = String(order1.orderNumber);
+    const order1TotalMinor = Number(order1.requestedTotalMinor);
+    const afterOrder1Submit = await readBudgetSnapshot(familyPage, "/api/budgets/me");
+    expectBudgetSnapshot(afterOrder1Submit, {
+      availableMinor: initialBudget.availableMinor - order1TotalMinor,
+      reservedMinor: initialBudget.reservedMinor + order1TotalMinor,
+      spentMinor: initialBudget.spentMinor,
+    });
+
+    const order1Replay = await browserJsonRequest(
+      familyPage,
+      "POST",
+      "/api/orders/submit",
+      { idempotencyKey: order1Submission.idempotencyKey },
+    );
+    expect(order1Replay.status).toBeLessThan(400);
+    expect(responseId(order1Replay.body)).toBe(order1Id);
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      afterOrder1Submit,
+    );
+
+    const familyOrdersResponse = familyPage.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        response.request().method() === "GET" &&
+        url.pathname === "/api/orders/me" &&
+        url.searchParams.has("limit") &&
+        url.searchParams.has("offset")
+      );
+    });
+    await familyPage.goto("/orders", { waitUntil: "commit" });
+    expect((await familyOrdersResponse).status()).toBe(200);
+    const order1Cell = await onlyVisible(
+      familyPage.getByText(order1Number, { exact: true }),
+    );
+    const order1DetailResponse = familyPage.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === `/api/orders/me/${order1Id}` &&
+        response.status() === 200,
+    );
+    await order1Cell.click();
+    await order1DetailResponse;
+    const order1Sheet = familyPage.getByRole("dialog", {
+      name: `View ${order1Number}`,
+      exact: true,
+    });
+    await expect(order1Sheet).toBeVisible();
+    await expect(order1Sheet.getByText("Total", { exact: true })).toBeVisible();
+    await expect(order1Sheet.getByText(productName, { exact: true })).toBeVisible();
+    await familyPage.keyboard.press("Escape");
+    await expect(order1Sheet).toBeHidden();
+
+    const order1Row = familyPage
+      .locator("tbody tr")
+      .filter({ has: familyPage.getByText(order1Number, { exact: true }) });
+    await expect(order1Row).toHaveCount(1);
+    await (await onlyVisible(
+      order1Row.getByRole("button", { name: "Row actions", exact: true }),
+    )).click();
+    await familyPage.getByRole("menuitem", { name: "Cancel", exact: true }).click();
+    const familyCancelDialog = familyPage.getByRole("dialog", {
+      name: "Cancel order",
+      exact: true,
+    });
+    await expect(familyCancelDialog).toBeVisible();
+    await familyCancelDialog.locator("textarea").fill("Acceptance family cancellation");
+    const cancelResponse = familyPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === `/api/orders/me/${order1Id}/cancel`,
+    );
+    await familyCancelDialog
+      .getByRole("button", { name: "Cancel", exact: true })
+      .click();
+    expect((await cancelResponse).status()).toBeLessThan(400);
+    await expect(order1Row.getByText("Cancelled", { exact: true })).toBeVisible();
+    const afterOrder1Cancel = await readBudgetSnapshot(familyPage, "/api/budgets/me");
+    expectBudgetSnapshot(afterOrder1Cancel, initialBudget);
+    const cancelledOrder1 = await browserJsonRequest(
+      familyPage,
+      "GET",
+      `/api/orders/me/${order1Id}`,
+    );
+    expect(cancelledOrder1.status).toBe(200);
+    const cancelledOrder1Record = responseRecord(cancelledOrder1.body);
+    expect(cancelledOrder1Record.status).toBe("cancelled");
+    expect(cancelledOrder1Record.cancellationReason).toBe(
+      "Acceptance family cancellation",
+    );
+    const order1EventCount = responseRows(cancelledOrder1Record.statusEvents).length;
+    const cancellationReplay = await browserJsonRequest(
+      familyPage,
+      "POST",
+      `/api/orders/me/${order1Id}/cancel`,
+      { reason: "Acceptance cancellation replay" },
+    );
+    expect(cancellationReplay.status).toBeLessThan(400);
+    expect(responseRecord(cancellationReplay.body).status).toBe("cancelled");
+    expect(responseRows(responseRecord(cancellationReplay.body).statusEvents)).toHaveLength(
+      order1EventCount,
+    );
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      initialBudget,
+    );
+
+    // Order 2: Admin rejection releases the reserve exactly once and both
+    // operational and owner projections retain only the permitted reason.
+    const order2 = (await submitFamilyOrder("unit-g-order-2")).order;
+    const order2Id = String(order2.id);
+    const order2TotalMinor = Number(order2.requestedTotalMinor);
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      {
+        availableMinor: initialBudget.availableMinor - order2TotalMinor,
+        reservedMinor: initialBudget.reservedMinor + order2TotalMinor,
+        spentMinor: initialBudget.spentMinor,
+      },
+    );
+    const order2RejectionReason = "Acceptance order rejection";
+    const rejectedOrder2 = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order2Id}/reject`,
+      { reason: order2RejectionReason },
+    );
+    expect(rejectedOrder2.status).toBeLessThan(400);
+    expect(responseRecord(rejectedOrder2.body).status).toBe("rejected");
+    expect(responseRecord(rejectedOrder2.body).rejectionReason).toBe(
+      order2RejectionReason,
+    );
+    const familyOrder2 = await browserJsonRequest(
+      familyPage,
+      "GET",
+      `/api/orders/me/${order2Id}`,
+    );
+    expect(familyOrder2.status).toBe(200);
+    expect(responseRecord(familyOrder2.body).status).toBe("rejected");
+    expect(responseRecord(familyOrder2.body).rejectionReason).toBe(
+      order2RejectionReason,
+    );
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      initialBudget,
+    );
+
+    // Order 3: purchase variance, replay safety, failed delivery history,
+    // semantic reassignment to Staff B, retry, and terminal confirmation.
+    const order3 = (await submitFamilyOrder("unit-g-order-3")).order;
+    const order3Id = String(order3.id);
+    const order3TotalMinor = Number(order3.requestedTotalMinor);
+    const approval = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/approve`,
+    );
+    expect(approval.status).toBeLessThan(400);
+    expect(responseRecord(approval.body).status).toBe("approved");
+
+    const receiptUpload = await uploadGeneratedPdfEvidence(adminPage, "receipts");
+    expect(receiptUpload.status).toBeLessThan(400);
+    const receipt = responseRecord(receiptUpload.body);
+    expect(receipt.mediaType).toBe("application/pdf");
+    expect(Number(receipt.byteSize)).toBeGreaterThan(0);
+    const actualTotalMinor =
+      order3TotalMinor > 1 ? order3TotalMinor - 1 : order3TotalMinor + 1;
+    expect(actualTotalMinor).not.toBe(order3TotalMinor);
+    const purchaseIdempotencyKey = `unit-g-purchase-${crypto.randomUUID()}`;
+    const purchase = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/purchase`,
+      {
+        merchantName: "Acceptance merchant",
+        purchasedAt: new Date().toISOString(),
+        actualTotalMinor,
+        receiptStoragePath: receipt.path,
+        receiptMediaType: receipt.mediaType,
+        receiptByteSize: receipt.byteSize,
+        confirmHigherAmount: actualTotalMinor > order3TotalMinor,
+        idempotencyKey: purchaseIdempotencyKey,
+      },
+    );
+    expect(purchase.status).toBeLessThan(400);
+    const purchasedOrder3 = responseRecord(purchase.body);
+    expect(purchasedOrder3.status).toBe("purchased");
+    expect(Number(purchasedOrder3.actualTotalMinor)).toBe(actualTotalMinor);
+    expect(Number(purchasedOrder3.differenceMinor)).toBe(
+      actualTotalMinor - order3TotalMinor,
+    );
+    const budgetAfterPurchase = await readBudgetSnapshot(
+      familyPage,
+      "/api/budgets/me",
+    );
+    expectBudgetSnapshot(budgetAfterPurchase, {
+      availableMinor: initialBudget.availableMinor - actualTotalMinor,
+      reservedMinor: initialBudget.reservedMinor,
+      spentMinor: initialBudget.spentMinor + actualTotalMinor,
+    });
+    const purchasesBeforeReplay = responseRows(purchasedOrder3.purchases).length;
+    const eventsBeforePurchaseReplay = responseRows(
+      purchasedOrder3.statusEvents,
+    ).length;
+    const purchaseReplay = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/purchase`,
+      {
+        merchantName: "Acceptance merchant",
+        purchasedAt: new Date().toISOString(),
+        actualTotalMinor,
+        receiptStoragePath: receipt.path,
+        receiptMediaType: receipt.mediaType,
+        receiptByteSize: receipt.byteSize,
+        confirmHigherAmount: actualTotalMinor > order3TotalMinor,
+        idempotencyKey: purchaseIdempotencyKey,
+      },
+    );
+    expect(purchaseReplay.status).toBeLessThan(400);
+    const purchaseReplayRecord = responseRecord(purchaseReplay.body);
+    expect(purchaseReplayRecord.status).toBe("purchased");
+    expect(responseRows(purchaseReplayRecord.purchases)).toHaveLength(
+      purchasesBeforeReplay,
+    );
+    expect(responseRows(purchaseReplayRecord.statusEvents)).toHaveLength(
+      eventsBeforePurchaseReplay,
+    );
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      budgetAfterPurchase,
+    );
+
+    const assignmentA = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/delivery/assign`,
+      {
+        staffProfileId: staffA.id,
+        idempotencyKey: `unit-g-assign-a-${crypto.randomUUID()}`,
+      },
+    );
+    expect(assignmentA.status).toBeLessThan(400);
+    expect(responseRecord(responseRecord(assignmentA.body).currentDelivery).staffProfileId)
+      .toBe(staffA.id);
+    const firstStart = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/delivery/start`,
+      { idempotencyKey: `unit-g-start-a-${crypto.randomUUID()}` },
+    );
+    expect(firstStart.status).toBeLessThan(400);
+    expect(responseRecord(firstStart.body).status).toBe("out_for_delivery");
+    const failedDelivery = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/delivery/fail`,
+      {
+        reason: "Acceptance recipient unavailable",
+        idempotencyKey: `unit-g-fail-a-${crypto.randomUUID()}`,
+      },
+    );
+    expect(failedDelivery.status).toBeLessThan(400);
+    const failedOrder3 = responseRecord(failedDelivery.body);
+    expect(failedOrder3.status).toBe("purchased");
+    expect(failedOrder3.currentDelivery).toBeNull();
+    const failedAttempts = responseRows(failedOrder3.deliveryAttempts);
+    expect(failedAttempts).toHaveLength(1);
+    expect(failedAttempts[0]!.status).toBe("failed");
+    expect(failedAttempts[0]!.failureReason).toBe(
+      "Acceptance recipient unavailable",
+    );
+
+    const assignmentB = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/delivery/assign`,
+      {
+        staffProfileId: staffB.id,
+        idempotencyKey: `unit-g-assign-b-${crypto.randomUUID()}`,
+      },
+    );
+    expect(assignmentB.status).toBeLessThan(400);
+    const reassignedOrder3 = responseRecord(assignmentB.body);
+    const reassignedAttempts = responseRows(reassignedOrder3.deliveryAttempts);
+    expect(reassignedAttempts).toHaveLength(2);
+    expect(reassignedAttempts[0]!.status).toBe("failed");
+    expect(reassignedAttempts[1]!.status).toBe("assigned");
+    expect(reassignedAttempts[1]!.staffProfileId).toBe(staffB.id);
+    const retryStart = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/delivery/start`,
+      { idempotencyKey: `unit-g-start-b-${crypto.randomUUID()}` },
+    );
+    expect(retryStart.status).toBeLessThan(400);
+    expect(responseRecord(retryStart.body).status).toBe("out_for_delivery");
+
+    const deliveryProofUpload = await uploadGeneratedPdfEvidence(
+      adminPage,
+      "deliveries",
+    );
+    expect(deliveryProofUpload.status).toBeLessThan(400);
+    const deliveryProof = responseRecord(deliveryProofUpload.body);
+    const confirmationIdempotencyKey = `unit-g-confirm-${crypto.randomUUID()}`;
+    const confirmationPayload = {
+      confirmationMethod: "recipient_signature",
+      deliveryNote: "Acceptance delivery confirmed",
+      proofStoragePath: deliveryProof.path,
+      proofMediaType: deliveryProof.mediaType,
+      proofByteSize: deliveryProof.byteSize,
+      idempotencyKey: confirmationIdempotencyKey,
+    };
+    const confirmedDelivery = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/delivery/confirm`,
+      confirmationPayload,
+    );
+    expect(confirmedDelivery.status).toBeLessThan(400);
+    const deliveredOrder3 = responseRecord(confirmedDelivery.body);
+    expect(deliveredOrder3.status).toBe("delivered");
+    const deliveredAttempts = responseRows(deliveredOrder3.deliveryAttempts);
+    expect(deliveredAttempts).toHaveLength(2);
+    expect(deliveredAttempts.map((attempt) => attempt.status)).toEqual([
+      "failed",
+      "delivered",
+    ]);
+    const deliveredEventCount = responseRows(deliveredOrder3.statusEvents).length;
+    const confirmationReplay = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${order3Id}/delivery/confirm`,
+      confirmationPayload,
+    );
+    expect(confirmationReplay.status).toBeLessThan(400);
+    const confirmationReplayRecord = responseRecord(confirmationReplay.body);
+    expect(confirmationReplayRecord.status).toBe("delivered");
+    expect(responseRows(confirmationReplayRecord.deliveryAttempts)).toHaveLength(2);
+    expect(responseRows(confirmationReplayRecord.statusEvents)).toHaveLength(
+      deliveredEventCount,
+    );
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      budgetAfterPurchase,
+    );
+
+    // Family, Sponsor, and Admin projections are asserted independently. The
+    // sponsor shape is an exact allowlist and is searched in memory for every
+    // runtime household, evidence, staff-private, and other-sponsor value.
+    const familyOrder3 = await browserJsonRequest(
+      familyPage,
+      "GET",
+      `/api/orders/me/${order3Id}`,
+    );
+    expect(familyOrder3.status).toBe(200);
+    const familyOrder3Record = responseRecord(familyOrder3.body);
+    expect(familyOrder3Record.status).toBe("delivered");
+    expect(
+      containsProjectionKey(familyOrder3Record, [
+        "submissionIdempotencyKey",
+        "placedByUserId",
+        "approvedByUserId",
+        "rejectedByUserId",
+        "cancelledByUserId",
+        "deliveryStartedByUserId",
+        "deliveredByUserId",
+        "deliveryConfirmationIdempotencyKey",
+        "deliveryNote",
+        "deliveryProofStoragePath",
+        "deliveryProofMediaType",
+        "deliveryProofByteSize",
+        "actorUserId",
+        "purchases",
+        "deliveryAttempts",
+      ]),
+    ).toBe(false);
+
+    const sponsorAllowedOrderKeys = [
+      "actualTotalMinor",
+      "approvedAt",
+      "currency",
+      "deliveredAt",
+      "deliveryName",
+      "deliveryProofRecorded",
+      "deliveryStartedAt",
+      "deliveryStatus",
+      "dominantCategoryImage",
+      "dominantCategoryName",
+      "id",
+      "items",
+      "merchantName",
+      "orderNumber",
+      "placedAt",
+      "preparationStartedAt",
+      "purchasedAt",
+      "receiptRecorded",
+      "status",
+      "subtotalMinor",
+      "totalMinor",
+    ].sort();
+    const sponsorForbiddenKeys = [
+      "deliveryAddressSnapshot",
+      "deliveryPhoneSnapshot",
+      "receiptStoragePath",
+      "receiptMediaType",
+      "receiptByteSize",
+      "deliveryNote",
+      "deliveryProofStoragePath",
+      "deliveryProofMediaType",
+      "deliveryProofByteSize",
+      "staffProfileId",
+      "affiliationSnapshot",
+      "companyNameSnapshot",
+      "assignedByUserId",
+      "statusEvents",
+      "purchases",
+      "contributions",
+      "sponsorProfileId",
+    ];
+    const sponsorSensitiveValues = [
+      familyAddress,
+      familyCin,
+      familyEmail,
+      familyPhone,
+      String(receipt.path),
+      String(deliveryProof.path),
+      String(staffA.id),
+      String(staffB.id),
+      state.assignmentAId,
+      state.assignmentBId,
+      state.sponsorAProfileId,
+      state.sponsorBProfileId,
+      sponsorAEmail,
+      sponsorBEmail,
+      sponsorAPhone,
+      sponsorBPhone,
+    ];
+    for (const sponsorPage of [sponsorAPage, sponsorBPage]) {
+      const supportedOrders = await browserJsonRequest(
+        sponsorPage,
+        "GET",
+        "/api/orders/supported?limit=100&offset=0",
+      );
+      expect(supportedOrders.status).toBe(200);
+      const orderMatches = responseRows(supportedOrders.body).filter(
+        (order) => order.id === order3Id,
+      );
+      expect(orderMatches).toHaveLength(1);
+      expect(Object.keys(orderMatches[0]!).sort()).toEqual(sponsorAllowedOrderKeys);
+      expect(containsProjectionKey(orderMatches[0], sponsorForbiddenKeys)).toBe(false);
+      expect(containsSensitiveValue(orderMatches[0], sponsorSensitiveValues)).toBe(false);
+
+      const supportedDetail = await browserJsonRequest(
+        sponsorPage,
+        "GET",
+        `/api/orders/${order3Id}`,
+      );
+      expect(supportedDetail.status).toBe(200);
+      const supportedDetailRecord = responseRecord(supportedDetail.body);
+      expect(Object.keys(supportedDetailRecord).sort()).toEqual(
+        sponsorAllowedOrderKeys,
+      );
+      expect(containsProjectionKey(supportedDetailRecord, sponsorForbiddenKeys)).toBe(
+        false,
+      );
+      expect(containsSensitiveValue(supportedDetailRecord, sponsorSensitiveValues)).toBe(
+        false,
+      );
+    }
+
+    const adminOrder3 = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/orders/${order3Id}`,
+    );
+    expect(adminOrder3.status).toBe(200);
+    const adminOrder3Record = responseRecord(adminOrder3.body);
+    expect(adminOrder3Record.deliveryAddressSnapshot).toBe(familyAddress);
+    expect(adminOrder3Record.deliveryPhoneSnapshot).toBe(familyPhone);
+    expect(responseRecord(adminOrder3Record.activePurchase).receiptStoragePath).toBe(
+      receipt.path,
+    );
+    expect(adminOrder3Record.deliveryNote).toBe("Acceptance delivery confirmed");
+    expect(adminOrder3Record.deliveryProofStoragePath).toBe(deliveryProof.path);
+    expect(responseRows(adminOrder3Record.deliveryAttempts)).toHaveLength(2);
+    expect(
+      responseRows(adminOrder3Record.deliveryAttempts).every(
+        (attempt) =>
+          typeof attempt.staffProfileId === "string" &&
+          Object.hasOwn(attempt, "deliveryPhoneSnapshot") &&
+          Object.hasOwn(attempt, "affiliationSnapshot"),
+      ),
+    ).toBe(true);
+
+    await expectExactNegativeResponse(
+      familyPage,
+      familyDiagnostics,
+      {
+        method: "POST",
+        path: `/api/orders/${order3Id}/delivery/assign`,
+        status: 403,
+      },
+      () =>
+        browserJsonRequest(
+          familyPage,
+          "POST",
+          `/api/orders/${order3Id}/delivery/assign`,
+          {
+            staffProfileId: staffA.id,
+            idempotencyKey: `unit-g-family-denial-${crypto.randomUUID()}`,
+          },
+        ),
+    );
+    await expectExactNegativeResponse(
+      sponsorAPage,
+      sponsorADiagnostics,
+      {
+        method: "POST",
+        path: `/api/orders/${order3Id}/approve`,
+        status: 403,
+      },
+      () =>
+        browserJsonRequest(
+          sponsorAPage,
+          "POST",
+          `/api/orders/${order3Id}/approve`,
+        ),
+    );
+    await expectExactNegativeResponse(
+      sponsorBPage,
+      sponsorBDiagnostics,
+      {
+        method: "POST",
+        path: `/api/orders/${order3Id}/delivery/confirm`,
+        status: 403,
+      },
+      () =>
+        browserJsonRequest(
+          sponsorBPage,
+          "POST",
+          `/api/orders/${order3Id}/delivery/confirm`,
+          {
+            confirmationMethod: "operator_confirmation",
+            idempotencyKey: `unit-g-sponsor-denial-${crypto.randomUUID()}`,
+          },
+        ),
+    );
+
+    await signOut(familyPage);
+    await signOut(sponsorAPage);
+    await signOut(sponsorBPage);
+    await signOut(adminPage);
+    await Promise.all([
+      familyPage.close(),
       sponsorAPage.close(),
       sponsorBPage.close(),
       adminPage.close(),

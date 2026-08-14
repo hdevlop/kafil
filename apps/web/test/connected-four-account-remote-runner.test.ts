@@ -133,7 +133,7 @@ describe("connected four-account remote runner", () => {
     expect(configSource).toContain('trace: "off"');
   });
 
-  test("defines serial remote units A-F with isolated contexts and passive diagnostics", () => {
+  test("defines serial remote units A-G with isolated contexts and passive diagnostics", () => {
     const unitA = specSource.slice(
       specSource.indexOf('test("remote unit A - guarded admin smoke"'),
       specSource.indexOf('test("remote unit B - Family creation and first login"'),
@@ -145,6 +145,7 @@ describe("connected four-account remote runner", () => {
     expect(specSource).toContain('test("remote unit D - Sponsor B application and approval"');
     expect(specSource).toContain('test("remote unit E - assignments and sponsor privacy"');
     expect(specSource).toContain('test("remote unit F - contributions and exact funding"');
+    expect(specSource).toContain('test("remote unit G - ordering and delivery"');
     expect(specSource).toContain('test("remote diagnostics - final context assertions"');
     expect(specSource).toContain("browser.newContext()");
     expect(unitA).toContain('"/api/dashboard/operator"');
@@ -317,7 +318,7 @@ describe("connected four-account remote runner", () => {
   test("pins Unit F plan ownership, idempotent commands, and exact funding", () => {
     const unitF = specSource.slice(
       specSource.indexOf('test("remote unit F - contributions and exact funding"'),
-      specSource.indexOf('test("remote diagnostics - final context assertions"'),
+      specSource.indexOf('test("remote unit G - ordering and delivery"'),
     );
     expect(unitF).toContain("readFamilyFundingFromSponsorCatalog(");
     expect(unitF).toContain('await adminPage.goto("/dashboard", { waitUntil: "commit" })');
@@ -363,6 +364,41 @@ describe("connected four-account remote runner", () => {
     expect(unitF).toContain("expect(adminTargetRows).toHaveLength(2)");
     expect(unitF).not.toContain("dbQuery(");
     expect(unitF).not.toContain("console.log");
+  });
+
+  test("pins Unit G order money, delivery retry, privacy, and denial contracts", () => {
+    const unitG = specSource.slice(
+      specSource.indexOf('test("remote unit G - ordering and delivery"'),
+      specSource.indexOf('test("remote diagnostics - final context assertions"'),
+    );
+    for (const contract of [
+      '"/api/catalog/browse/products?limit=100&offset=0"',
+      '"/api/staff/options/delivery"',
+      '"/api/orders/cart/items"',
+      '"/api/orders/submit"',
+      "/purchase`",
+      "/delivery/assign`",
+      "/delivery/start`",
+      "/delivery/fail`",
+      "/delivery/confirm`",
+      '"/api/orders/supported?limit=100&offset=0"',
+    ]) {
+      expect(unitG).toContain(contract);
+    }
+    expect(unitG).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
+    expect(unitG).toContain('uploadGeneratedPdfEvidence(\n      adminPage,\n      "deliveries"');
+    expect(unitG).toContain("actualTotalMinor - order3TotalMinor");
+    expect(unitG).toContain("purchaseIdempotencyKey");
+    expect(unitG).toContain("confirmationIdempotencyKey");
+    expect(unitG).toContain('expect(failedAttempts[0]!.status).toBe("failed")');
+    expect(unitG).toContain("expect(reassignedAttempts).toHaveLength(2)");
+    expect(unitG).toContain('expect(reassignedAttempts[1]!.staffProfileId).toBe(staffB.id)');
+    expect(unitG).toContain("sponsorAllowedOrderKeys");
+    expect(unitG).toContain("sponsorForbiddenKeys");
+    expect(unitG).toContain("containsSensitiveValue(orderMatches[0], sponsorSensitiveValues)");
+    expect(unitG.match(/status: 403/g)).toHaveLength(3);
+    expect(unitG).not.toContain("dbQuery(");
+    expect(unitG).not.toContain("console.log");
   });
 
   test("matches required Najm form labels without exact-name timeouts", () => {

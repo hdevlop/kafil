@@ -9,6 +9,7 @@ import {
   type OrderReasonFormValues,
 } from "../config/orderSchemas";
 import { useOrderCommands } from "../hooks/useOrders";
+import { useFamilyOrderingCommands } from "../hooks/useFamilyOrdering";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { OrderRecord } from "../types";
 
@@ -95,6 +96,42 @@ export function OrderReasonDialogContent({
       <div className="flex justify-end pt-5">
         <NButton type="submit" variant="destructive" disabled={command.isPending}>
           {command.isPending ? "Saving..." : isCancellation ? "Cancel order" : "Reject order"}
+        </NButton>
+      </div>
+    </NForm>
+  );
+}
+
+export function FamilyCancelOrderDialogContent({
+  orderId,
+}: Readonly<{ orderId: string }>) {
+  const { pop } = useDialog();
+  const { t } = useKafilLanguage();
+  const { cancel } = useFamilyOrderingCommands();
+
+  async function handleSubmit(values: OrderReasonFormValues) {
+    await cancel.mutateAsync({ id: orderId, reason: values.reason });
+    await pop();
+  }
+
+  return (
+    <NForm
+      id="family-cancel-order-form"
+      schema={orderReasonFormSchema}
+      defaultValues={{ reason: "" }}
+      onSubmit={handleSubmit}
+    >
+      <FormInput
+        name="reason"
+        type="textarea"
+        formLabel={t("operator.contributions.reason")}
+        placeholder={t("common.cancelOrderDescription")}
+        icon="MessageSquareText"
+        required
+      />
+      <div className="flex justify-end pt-5">
+        <NButton type="submit" variant="destructive" disabled={cancel.isPending}>
+          {cancel.isPending ? t("action.saving") : t("common.orderCancel")}
         </NButton>
       </div>
     </NForm>

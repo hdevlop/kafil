@@ -34,7 +34,6 @@ import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useKafilLanguage } from "@/i18n/useKafilLanguage";
-import { useFamilyOrderingCommands } from "@/features/Orders/hooks/useFamilyOrdering";
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -46,6 +45,7 @@ import { FamilyOrderDetailsSheet, OrderDetailsSheet } from "./OrderDetails";
 import {
   ConfirmOrderCommandDialogContent,
   DeleteOrderDialogContent,
+  FamilyCancelOrderDialogContent,
   OrderReasonDialogContent,
 } from "./OrderForms";
 import {
@@ -108,7 +108,6 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
   const filters = useOrdersTableFilters(showFamilyIdentity, listFilters, setListFilters);
   const { setPagination } = workspace;
   const orderCommands = useOrderCommands();
-  const familyCommands = useFamilyOrderingCommands();
   const [deliveryOrder, setDeliveryOrder] = useState<SharedOrderRecord | null>(null);
   const [viewOrderId, setViewOrderId] = useState<string | null>(null);
   const [familySelectedId, setFamilySelectedId] = useState<string>("");
@@ -199,6 +198,16 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
         ? t("common.cancelOrderDescription")
         : t("common.rejectOrderDescription"),
       children: <OrderReasonDialogContent action={action} order={order as unknown as OrderRecord} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
+  function openFamilyCancel(order: SharedOrderRecord) {
+    void dialog.openDialog({
+      title: t("operator.orders.cancelTitle"),
+      description: t("common.cancelOrderDescription"),
+      children: <FamilyCancelOrderDialogContent orderId={order.id} />,
       showButtons: false,
       size: "sm",
     });
@@ -410,9 +419,7 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
                   label: t("common.orderCancel"),
                   icon: Ban,
                   danger: true,
-                  disabled: familyCommands.cancel.isPending,
-                  onSelect: () =>
-                    void familyCommands.cancel.mutateAsync({ id: order.id }),
+                  onSelect: () => openFamilyCancel(order),
                 }]
               : []),
           ];

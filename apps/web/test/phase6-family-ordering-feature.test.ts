@@ -34,4 +34,21 @@ describe("Phase 6E family ordering contracts", () => {
     expect(details).toContain("delivery={data.delivery}");
     expect(hooks).toContain("staleTime: 0");
   });
+
+  test("collects an audited family cancellation reason through the supported UI", () => {
+    const page = readFileSync(
+      new URL("../src/features/Orders/components/OrdersPage.tsx", import.meta.url),
+      "utf8",
+    );
+    const forms = readFileSync(
+      new URL("../src/features/Orders/components/OrderForms.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(page).toContain("<FamilyCancelOrderDialogContent orderId={order.id} />");
+    expect(page).not.toContain("familyCommands.cancel.mutateAsync({ id: order.id })");
+    expect(forms).toContain("await cancel.mutateAsync({ id: orderId, reason: values.reason })");
+    expect(forms).toContain('id="family-cancel-order-form"');
+    expect(forms).toContain("schema={orderReasonFormSchema}");
+  });
 });
