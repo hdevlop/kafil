@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 /**
  * Connected four-account acceptance fixtures.
  *
@@ -141,10 +143,16 @@ export function buildRunEmail(label: string, alias: RunRoleAlias): string {
  */
 export function buildRunPhone(label: string, alias: Exclude<RunRoleAlias, "bootstrapAdmin">): string {
   const sanitized = label.replace(/[^a-z0-9-]/gi, "").toLowerCase();
-  // The plan's section 4 forbids a real phone. The "+212" prefix and the
-  // synthetic eight-digit suffix below keep the value within Morocco's
-  // international format while still being unique to this run.
-  return `+21260000${(Math.abs(hashLabel(sanitized + alias)) % 9000 + 1000).toString().padStart(4, "0")}`;
+  // Use the full eight-digit subscriber namespace. The previous four-digit
+  // suffix offered only 9,000 values, so retained remote demo identities could
+  // collide even when every run label was fresh.
+  const digest = createHash("sha256")
+    .update(`${sanitized}:${alias}`)
+    .digest();
+  const subscriber = (digest.readUInt32BE(0) % 100_000_000)
+    .toString()
+    .padStart(8, "0");
+  return `+2126${subscriber}`;
 }
 
 function hashLabel(value: string): number {

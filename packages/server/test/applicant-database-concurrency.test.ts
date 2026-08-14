@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { Pool } from "pg";
 
 import { server } from "../src";
+import { ApplicantService } from "../src/modules/applicants";
 
 const databaseDescribe =
   process.env.KAFIL_RUN_DB_INTEGRATION === "1" ? describe : describe.skip;
@@ -12,9 +13,22 @@ const sharedEmail = `applicant-race-${suffix}@example.test`;
 const sharedPhone = `+2126${suffix.slice(0, 8).padEnd(8, "0")}`;
 const sharedCin = `AR${suffix.slice(0, 6).toUpperCase()}`;
 const idempotencyKey = `applicant-race-${suffix}`;
+const occupiedPhone = `+2127${suffix
+  .split("")
+  .map((character) => String(character.charCodeAt(0) % 10))
+  .join("")
+  .slice(0, 8)}`;
+const occupiedUserId = `applicant-phone-owner-${suffix}`;
+const occupiedEmail = `applicant-phone-owner-${suffix}@example.test`;
+const collisionEmail = `applicant-phone-collision-${suffix}@example.test`;
+const collisionCin = `PC${suffix.slice(0, 8).toUpperCase()}`;
 
 let insertedUserIds: string[] = [];
 let insertedApplicantIds: string[] = [];
+
+function inRequestScope<T>(operation: () => Promise<T>) {
+  return server.container.run({}, operation);
+}
 
 async function cleanup() {
   if (insertedApplicantIds.length > 0) {
@@ -30,6 +44,9 @@ async function cleanup() {
   for (const id of insertedUserIds) {
     await pool.query(`DELETE FROM users WHERE id = $1`, [id]).catch(() => undefined);
   }
+  await pool
+    .query(`DELETE FROM users WHERE id = $1`, [occupiedUserId])
+    .catch(() => undefined);
   insertedApplicantIds = [];
   insertedUserIds = [];
 }
@@ -124,6 +141,57 @@ databaseDescribe("applicant duplicate-submission PostgreSQL integration", () => 
       );
       expect(challenges.rows.length).toBeLessThanOrEqual(1);
     }
+  });
+
+  it("returns conflict for an auth-user phone collision without orphan state", async () => {
+    await cleanup();
+    await pool.query(
+      `INSERT INTO users
+         (id, email, password, status, email_verified, phone, phone_verified, role_id)
+       VALUES ($1, $2, 'hashed:placeholder', 'active', true, $3, true, NULL)`,
+      [occupiedUserId, occupiedEmail, occupiedPhone],
+    );
+
+    const service = server.container.get(ApplicantService);
+    await expect(
+      inRequestScope(() =>
+        service.submit({
+          name: "Phone Collision Applicant",
+          email: collisionEmail,
+          phone: occupiedPhone,
+          cin: collisionCin,
+          gender: "F",
+          password: "Applicant-test-42",
+        }),
+      ),
+    ).rejects.toMatchObject({
+      status: 409,
+      message: "Phone number already belongs to another account",
+    });
+
+    const orphanCounts = await pool.query<{
+      users: string;
+      applicants: string;
+      setup_sessions: string;
+      challenges: string;
+    }>(
+      `SELECT
+         (SELECT count(*)::text FROM users WHERE lower(email) = lower($1)) AS users,
+         (SELECT count(*)::text FROM applicants WHERE lower(email) = lower($1)) AS applicants,
+         (SELECT count(*)::text
+            FROM credential_setup_sessions
+           WHERE user_id IN (SELECT id FROM users WHERE lower(email) = lower($1))) AS setup_sessions,
+         (SELECT count(*)::text
+            FROM applicant_email_otp_challenges
+           WHERE auth_user_id IN (SELECT id FROM users WHERE lower(email) = lower($1))) AS challenges`,
+      [collisionEmail],
+    );
+    expect(orphanCounts.rows[0]).toEqual({
+      users: "0",
+      applicants: "0",
+      setup_sessions: "0",
+      challenges: "0",
+    });
   });
 
   it("rejects a rejected applicant via CHECK constraints", async () => {

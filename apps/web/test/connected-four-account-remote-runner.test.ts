@@ -9,7 +9,10 @@ import {
   readRemoteGrep,
   remoteAcceptanceChecks,
 } from "../scripts/connected-four-account-remote-runtime";
-import { buildRunEmail } from "../scripts/connected-four-account-fixtures";
+import {
+  buildRunEmail,
+  buildRunPhone,
+} from "../scripts/connected-four-account-fixtures";
 
 const validEnvironment: Record<string, string> = {
   KAFIL_E2E_REMOTE_URL: "https://kafala360.ma",
@@ -94,6 +97,25 @@ describe("connected four-account remote runner", () => {
     expect(sponsorBEmail).toBe(sponsorBEmail.toLowerCase());
     expect(sponsorAEmail).toContain("-sponsora@");
     expect(sponsorBEmail).toContain("-sponsorb@");
+  });
+
+  test("generates deterministic Moroccan phones from a broad run namespace", () => {
+    const phones = new Set(
+      Array.from({ length: 10_000 }, (_, index) =>
+        buildRunPhone(`vps-fixture-${index}`, "sponsorB"),
+      ),
+    );
+
+    expect(buildRunPhone("vps-repeatable", "sponsorA")).toBe(
+      buildRunPhone("vps-repeatable", "sponsorA"),
+    );
+    expect(buildRunPhone("vps-repeatable", "sponsorA")).not.toBe(
+      buildRunPhone("vps-repeatable", "sponsorB"),
+    );
+    expect([...phones].every((phone) => /^\+212[67]\d{8}$/.test(phone))).toBe(
+      true,
+    );
+    expect(phones.size).toBeGreaterThan(9_500);
   });
 
   test("keeps preflight ahead of filtered Playwright and never starts Next.js", () => {

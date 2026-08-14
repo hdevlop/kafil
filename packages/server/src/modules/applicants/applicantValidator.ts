@@ -1,3 +1,4 @@
+import { UserRepository } from "najm-auth";
 import { HttpError, Service } from "najm-core";
 
 import { ApplicantRepository, type ApplicantRecord } from "./applicantRepository";
@@ -17,7 +18,10 @@ export interface ApplicantDuplicateCheckInput {
 
 @Service()
 export class ApplicantValidator {
-  constructor(private readonly applicants: ApplicantRepository) {}
+  constructor(
+    private readonly applicants: ApplicantRepository,
+    private readonly userRecords: UserRepository,
+  ) {}
 
   async ensureExists(id: string): Promise<ApplicantRecord> {
     const applicant = await this.applicants.findById(id);
@@ -32,7 +36,15 @@ export class ApplicantValidator {
     }
   }
 
-  async ensurePhoneAvailable(phone: string, excludeApplicantId?: string) {
+  async ensurePhoneAvailable(
+    phone: string,
+    excludeApplicantId?: string,
+    excludeUserId?: string,
+  ) {
+    const user = await this.userRecords.findByPhone(phone);
+    if (user && user.id !== excludeUserId) {
+      HttpError.conflict("Phone number already belongs to another account");
+    }
     const existing = await this.applicants.findByPhone(phone);
     if (existing && existing.id !== excludeApplicantId) {
       HttpError.conflict("An application with this phone number already exists");
@@ -63,7 +75,11 @@ export class ApplicantValidator {
       await this.ensureEmailAvailable(input.email, existing.id);
     }
     if (existing.phone !== input.phone) {
-      await this.ensurePhoneAvailable(input.phone, existing.id);
+      await this.ensurePhoneAvailable(
+        input.phone,
+        existing.id,
+        existing.authUserId,
+      );
     }
     if (existing.cin.toUpperCase() !== input.cin.toUpperCase()) {
       await this.ensureCinAvailable(input.cin, existing.id);

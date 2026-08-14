@@ -170,6 +170,29 @@ function maskEmail(email: string) {
   return `${localHint}@${domainHint}${suffix.length ? `.${suffix.join(".")}` : ""}`;
 }
 
+function isUsersPhoneUniqueViolation(error: unknown): boolean {
+  const visited = new Set<unknown>();
+  let current = error;
+
+  while (typeof current === "object" && current !== null && !visited.has(current)) {
+    visited.add(current);
+    const candidate = current as {
+      code?: unknown;
+      constraint?: unknown;
+      cause?: unknown;
+    };
+    if (
+      String(candidate.code ?? "") === "23505" &&
+      candidate.constraint === "users_phone_unique"
+    ) {
+      return true;
+    }
+    current = candidate.cause;
+  }
+
+  return false;
+}
+
 export type SubmitApplicantResult =
   | {
       nextStep: "applicant_email_otp";
@@ -645,7 +668,7 @@ export class ApplicantService {
         email: data.email,
         password: data.password,
       });
-      await this.userRecords.update(user.id, {
+      await this.updateApplicantAuthPhone(user.id, {
         phone: data.phone,
         phoneVerified: false,
         emailVerified: false,
@@ -671,13 +694,27 @@ export class ApplicantService {
       status: "pending",
       emailVerified: false,
     });
-    await this.userRecords.update(legacy.id, {
+    await this.updateApplicantAuthPhone(legacy.id, {
       phone: data.phone,
       phoneVerified: false,
       emailVerified: false,
       roleId: null,
     });
     return { user: await this.users.getById(legacy.id), reused: true };
+  }
+
+  private async updateApplicantAuthPhone(
+    userId: string,
+    input: Parameters<UserRepository["update"]>[1],
+  ) {
+    try {
+      return await this.userRecords.update(userId, input);
+    } catch (error) {
+      if (isUsersPhoneUniqueViolation(error)) {
+        HttpError.conflict("Phone number already belongs to another account");
+      }
+      throw error;
+    }
   }
 
   async setupSession(): Promise<ApplicantSetupResult> {

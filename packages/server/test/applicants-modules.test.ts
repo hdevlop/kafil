@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import type { AuthService, SanitizedUser } from "najm-auth";
+import type { AuthService, SanitizedUser, UserRepository } from "najm-auth";
 import { EmailService } from "najm-email";
 import { getMcpAnnotations, getMcpToolGroup, getMcpTools } from "najm-mcp";
 import { getRateLimitOptions } from "najm-rate";
@@ -240,6 +240,44 @@ describe("applicant controller contracts", () => {
   });
 });
 
+describe("applicant validator", () => {
+  it("rejects a phone already owned by an auth user", async () => {
+    const validator = new ApplicantValidator(
+      applicantRepository(),
+      {
+        findByPhone: async () => ({ id: "existing-auth-user" }),
+      } as unknown as UserRepository,
+    );
+
+    await expect(
+      validator.ensurePhoneAvailable(validSubmission.phone),
+    ).rejects.toMatchObject({
+      status: 409,
+      message: "Phone number already belongs to another account",
+    });
+  });
+
+  it("allows an existing applicant to retain its own auth-user phone", async () => {
+    const existing = baseApplicant();
+    const validator = new ApplicantValidator(
+      applicantRepository({
+        findByPhone: async () => existing,
+      }),
+      {
+        findByPhone: async () => ({ id: existing.authUserId }),
+      } as unknown as UserRepository,
+    );
+
+    await expect(
+      validator.ensurePhoneAvailable(
+        existing.phone,
+        existing.id,
+        existing.authUserId,
+      ),
+    ).resolves.toBeUndefined();
+  });
+});
+
 describe("applicant service", () => {
   it("lists the admin queue and reads one applicant", async () => {
     const applicant = baseApplicant({ status: "pending_review" }) as Awaited<
@@ -282,6 +320,35 @@ describe("applicant service", () => {
     expect(emailSentHtml).not.toMatch(/verify-email\?token=/);
     expect(Object.keys(storedUsers)).toHaveLength(1);
     expect(Object.keys(storedApplicants)).toHaveLength(1);
+  });
+
+  it("maps a concurrent auth-user phone constraint collision to conflict", async () => {
+    let setupStarted = false;
+    const service = applicantService({
+      userRecords: {
+        update: async () => {
+          const constraint = Object.assign(
+            new Error("duplicate key value violates unique constraint"),
+            { code: "23505", constraint: "users_phone_unique" },
+          );
+          throw Object.assign(new Error("Failed query"), { cause: constraint });
+        },
+      },
+      setup: {
+        begin: async () => {
+          setupStarted = true;
+          return { expiresAt: new Date().toISOString() };
+        },
+      },
+    });
+
+    await expect(service.submit(validSubmission)).rejects.toMatchObject({
+      status: 409,
+      message: "Phone number already belongs to another account",
+    });
+    expect(Object.keys(storedApplicants)).toHaveLength(0);
+    expect(setupStarted).toBe(false);
+    expect(emailSendCount).toBe(0);
   });
 
   it("reclaims a legacy pending registration without granting sponsor capabilities", async () => {
@@ -1259,7 +1326,11 @@ function applicantRepository(overrides: Partial<{
 function applicantValidator(overrides: Partial<{
   ensureExists: (id: string) => Promise<ReturnType<typeof baseApplicant>>;
   ensureEmailAvailable: (email: string, exclude?: string) => Promise<void>;
-  ensurePhoneAvailable: (phone: string, exclude?: string) => Promise<void>;
+  ensurePhoneAvailable: (
+    phone: string,
+    excludeApplicantId?: string,
+    excludeUserId?: string,
+  ) => Promise<void>;
   ensureCinAvailable: (cin: string, exclude?: string) => Promise<void>;
   ensureReusedIdentityAllowed: (
     existing: ReturnType<typeof baseApplicant>,
