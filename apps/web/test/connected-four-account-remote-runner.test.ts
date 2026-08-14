@@ -1,0 +1,245 @@
+import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+
+import {
+  REMOTE_GREP_MAX_LENGTH,
+  buildRemotePlaywrightArgs,
+  buildSshTunnelArgs,
+  readRemoteAcceptanceConfig,
+  readRemoteGrep,
+  remoteAcceptanceChecks,
+} from "../scripts/connected-four-account-remote-runtime";
+
+const validEnvironment: Record<string, string> = {
+  KAFIL_E2E_REMOTE_URL: "https://kafala360.ma",
+  KAFIL_E2E_ALLOW_REMOTE_DESTRUCTIVE: "true",
+  KAFIL_ADMIN_EMAIL: "admin@example.test",
+  KAFIL_ADMIN_PASSWORD: "not-a-runtime-secret",
+  KAFIL_E2E_SSH_HOST: "demo.example.test",
+  KAFIL_E2E_SSH_USER: "tester",
+  KAFIL_E2E_SSH_PORT: "22",
+  KAFIL_E2E_MAILBOX_LOCAL_PORT: "58025",
+  KAFIL_E2E_MAILBOX_REMOTE_PORT: "58025",
+  KAFIL_E2E_MAILBOX_API_URL: "http://127.0.0.1:58025",
+  KAFIL_E2E_MAILBOX_USER: "acceptance",
+  KAFIL_E2E_MAILBOX_PASSWORD: "not-a-runtime-secret",
+};
+
+const runnerSource = readFileSync(
+  new URL("../scripts/run-connected-four-account-remote-e2e.ts", import.meta.url),
+  "utf8",
+);
+const configSource = readFileSync(
+  new URL("../playwright.remote.config.ts", import.meta.url),
+  "utf8",
+);
+const specSource = readFileSync(
+  new URL("e2e/connected-four-account.remote.ts", import.meta.url),
+  "utf8",
+);
+
+describe("connected four-account remote runner", () => {
+  test("accepts only the exact authorized HTTPS origin and loopback mailbox", () => {
+    expect(remoteAcceptanceChecks(validEnvironment).every((check) => check.ok)).toBe(true);
+    expect(() =>
+      readRemoteAcceptanceConfig({
+        ...validEnvironment,
+        KAFIL_E2E_REMOTE_URL: "https://example.test",
+      }),
+    ).toThrow();
+    expect(() =>
+      readRemoteAcceptanceConfig({
+        ...validEnvironment,
+        KAFIL_E2E_MAILBOX_API_URL: "http://203.0.113.10:58025",
+      }),
+    ).toThrow();
+    expect(() =>
+      readRemoteAcceptanceConfig({
+        ...validEnvironment,
+        KAFIL_E2E_SSH_PASSWORD: "forbidden",
+      }),
+    ).toThrow();
+  });
+
+  test("builds a fail-closed owned SSH forward without a password", () => {
+    const args = buildSshTunnelArgs(readRemoteAcceptanceConfig(validEnvironment));
+    expect(args).toContain("BatchMode=yes");
+    expect(args).toContain("ExitOnForwardFailure=yes");
+    expect(args).toContain("StrictHostKeyChecking=yes");
+    expect(args).toContain("58025:127.0.0.1:58025");
+    expect(args.join(" ")).not.toContain("not-a-runtime-secret");
+  });
+
+  test("validates and forwards one optional remote grep argument", () => {
+    const grep = "remote unit [AB]|remote diagnostics";
+    expect(readRemoteGrep({ KAFIL_E2E_REMOTE_GREP: `  ${grep}  ` })).toBe(grep);
+    expect(readRemoteAcceptanceConfig({
+      ...validEnvironment,
+      KAFIL_E2E_REMOTE_GREP: grep,
+    }).grep).toBe(grep);
+    expect(buildRemotePlaywrightArgs(grep).slice(-2)).toEqual(["--grep", grep]);
+    expect(buildRemotePlaywrightArgs()).not.toContain("--grep");
+    expect(() => readRemoteGrep({ KAFIL_E2E_REMOTE_GREP: "unit A\n--help" })).toThrow();
+    expect(() => readRemoteGrep({
+      KAFIL_E2E_REMOTE_GREP: "a".repeat(REMOTE_GREP_MAX_LENGTH + 1),
+    })).toThrow();
+  });
+
+  test("keeps preflight ahead of filtered Playwright and never starts Next.js", () => {
+    expect(runnerSource).not.toContain("next dev");
+    expect(runnerSource).not.toContain("next start");
+    expect(runnerSource).toContain('"--preflight-only"');
+    expect(runnerSource).toContain("buildRemotePlaywrightArgs(config.grep)");
+    expect(runnerSource.indexOf("await waitForMailbox")).toBeLessThan(
+      runnerSource.indexOf("buildRemotePlaywrightArgs(config.grep)"),
+    );
+    expect(configSource).toContain('baseURL !== "https://kafala360.ma"');
+    expect(configSource).toContain("timeout: 180_000");
+    expect(configSource).toContain("ignoreHTTPSErrors: false");
+    expect(configSource).toContain('preserveOutput: "never"');
+    expect(configSource).toContain('trace: "off"');
+  });
+
+  test("defines serial remote units A-C with isolated contexts and passive diagnostics", () => {
+    const unitA = specSource.slice(
+      specSource.indexOf('test("remote unit A - guarded admin smoke"'),
+      specSource.indexOf('test("remote unit B - Family creation and first login"'),
+    );
+    expect(specSource).toContain('test.describe.serial("connected VPS acceptance"');
+    expect(specSource).toContain('test("remote unit A - guarded admin smoke"');
+    expect(specSource).toContain('test("remote unit B - Family creation and first login"');
+    expect(specSource).toContain('test("remote unit C - Sponsor A application and approval"');
+    expect(specSource).toContain('test("remote diagnostics - final context assertions"');
+    expect(specSource).toContain("browser.newContext()");
+    expect(unitA).toContain('"/api/dashboard/operator"');
+    expect(unitA).toContain('"Operator dashboard"');
+    expect(unitA).not.toContain("/^Welcome,/i");
+  });
+
+  test("pins Family creation, credential setup, replay denial, and role boundaries", () => {
+    const unitB = specSource.slice(
+      specSource.indexOf('test("remote unit B - Family creation and first login"'),
+      specSource.indexOf('test("remote unit C - Sponsor A application and approval"'),
+    );
+    for (const contract of [
+      '"/api/families"',
+      '"/api/auth/credential-setup/change"',
+      '"/api/dashboard/family"',
+      '"/api/families/me"',
+      '"/api/admin/access/users"',
+    ]) {
+      expect(specSource).toContain(contract);
+    }
+    expect(specSource).toContain("await createFamilyButton.click({ trial: true, timeout: 5_000 })");
+    expect(unitB).toContain('adminPage.getByText("Loading…", { exact: true })');
+    expect(unitB).toContain('name: "Operator dashboard", exact: true');
+    expect(unitB).toContain("expect(createFamilyRequestCount).toBe(0)");
+    expect(unitB).toContain("expect(createFamilyRequestCount).toBe(1)");
+    expect(specSource).toContain(
+      'poll(() => new URL(familyPage.url()).pathname, { timeout: 5_000 })',
+    );
+    expect(specSource).toContain('.toBe("/change-password")');
+    expect(specSource).toContain(
+      'familyPage.locator("#family-first-password-form")).toBeVisible({',
+    );
+    expect(specSource).not.toContain("responseNextStep");
+    expect(specSource).not.toContain("setupLogin.json()");
+    expect(specSource).not.toContain("page.route(");
+    expect(specSource).not.toContain("clearCookies(");
+    expect(specSource).not.toContain("force: true");
+  });
+
+  test("pins Sponsor A OTP, approval replay, identifiers, and logout boundaries", () => {
+    const unitC = specSource.slice(
+      specSource.indexOf('test("remote unit C - Sponsor A application and approval"'),
+      specSource.indexOf('test("remote diagnostics - final context assertions"'),
+    );
+    for (const contract of [
+      '"/api/applicants"',
+      '"/api/applicants/email-verification/confirm"',
+      '"/api/dashboard/sponsor"',
+      '"/api/sponsors/me/profile"',
+      '"Application pending review"',
+      '"Find a family to support"',
+    ]) {
+      expect(unitC).toContain(contract);
+    }
+    expect(unitC).toContain("expect(applicationRequestCount).toBe(0)");
+    expect(unitC).toContain("expect(applicationRequestCount).toBe(1)");
+    expect(unitC).toContain('browserJsonRequest(adminPage, "GET", "/api/auth/me")');
+    expect(unitC).toContain('expect(responseRecord(adminIdentity.body).role).toBe("admin")');
+    expect(unitC).toContain('"/api/applicants?limit=1&offset=0"');
+    expect(unitC.indexOf("const applicantsCapability")).toBeLessThan(
+      unitC.indexOf("let applicationRequestCount"),
+    );
+    expect(unitC).toContain('{ method: "GET", path: "/api/applicants", status: 401 }');
+    expect(unitC).toContain("response.status() < 400");
+    expect(unitC).toContain("pollExactlyOneOtpMessage({");
+    expect(unitC).toContain("subjectKeyword: otpSubjectKeyword");
+    expect(unitC).toContain("expect(confirmedOtpMessages).toHaveLength(1)");
+    expect(unitC.indexOf("const confirmResponse")).toBeLessThan(
+      unitC.indexOf("await deleteMailboxMessage(otpMessage.ID)"),
+    );
+    expect(unitC).toContain(
+      "await submitPreparedLogin(sponsorPage, sponsorADiagnostics, 403)",
+    );
+    expect(unitC).toContain("expect(applicantMatches).toHaveLength(1)");
+    expect(unitC).toContain("expect(approval.status()).toBe(200)");
+    expect(unitC).toContain("status: 409");
+    expect(unitC).toContain("prepareLogin(sponsorPage, expectedPhoneE164, sponsorAPassword)");
+    expect(specSource).toContain("sponsorAContext = await newIsolatedContext(browser)");
+    expect(specSource).toContain('assertDiagnosticsClean("sponsor-a", sponsorADiagnostics)');
+    expect(specSource).not.toContain("@kafil/server/database");
+    expect(specSource).not.toContain("dbQuery(");
+    expect(specSource).not.toContain("console.log");
+  });
+
+  test("matches required Najm form labels without exact-name timeouts", () => {
+    for (const requiredLabelMatcher of [
+      "/^Guardian name\\s*\\*?$/",
+      "/^Email\\s*\\*?$/",
+      "/^Household phone\\s*\\*?$/",
+      "/^Activation target \\(MAD\\)\\s*\\*?$/",
+    ]) {
+      expect(specSource).toContain(requiredLabelMatcher);
+    }
+
+    for (const staleExactSelector of [
+      'getByLabel("Guardian name", { exact: true })',
+      'getByLabel("Email", { exact: true })',
+      'getByLabel("Household phone", { exact: true })',
+      'getByLabel("Housing situation", { exact: true })',
+      'getByLabel("Activation target (MAD)", { exact: true })',
+    ]) {
+      expect(specSource).not.toContain(staleExactSelector);
+    }
+
+    expect(specSource).toContain(
+      'getByRole("combobox", { name: "Choose a housing situation", exact: true })',
+    );
+    expect(specSource).not.toContain('name: "Choose housing situation"');
+    expect(specSource).not.toContain("getByLabel(/^Housing situation");
+    expect(specSource).toContain(
+      'expect(dialog.locator("#step-household")).toBeVisible({ timeout: 5_000 })',
+    );
+    expect(specSource).toContain(
+      'expect(dialog.locator("#step-initial-children")).toBeVisible({ timeout: 5_000 })',
+    );
+    expect(specSource).toContain(
+      'getByRole("button", { name: /^Add initial child\\b/ })',
+    );
+    expect(specSource).not.toContain(
+      'getByRole("button", { name: "Add initial child", exact: true })',
+    );
+    expect(specSource).toContain(
+      "await expect(childLegalName).toBeVisible({ timeout: 5_000 })",
+    );
+  });
+
+  test("accepts the guarded login pathname after logout even with a redirect query", () => {
+    expect(specSource).toContain(
+      'await expect.poll(() => new URL(page.url()).pathname).toBe("/login")',
+    );
+    expect(specSource).not.toContain("toHaveURL(/\\/login$/)");
+  });
+});

@@ -63,6 +63,7 @@ export function useFamiliesTableProps() {
     renderEmpty: () => (
       <NEmptyState
         surface="panel"
+        className="flex flex-col items-center justify-center gap-3"
         action={
           <Operator>
             <NButton onClick={openCreate}>
@@ -70,7 +71,7 @@ export function useFamiliesTableProps() {
             </NButton>
           </Operator>
         }
-        icon={<FamiliesPageIcon className="size-8" />}
+        icon={<FamiliesPageIcon className="size-12" />}
         title={t("operator.families.emptyTitle")}
         description={t("operator.families.emptyDescription")}
       />

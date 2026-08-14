@@ -38,6 +38,8 @@ import {
 
 const baseUrl = process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210";
 const mailboxApiUrl = process.env.KAFIL_E2E_MAILBOX_API_URL ?? "http://127.0.0.1:8025";
+const mailboxApiUser = process.env.KAFIL_E2E_MAILBOX_USER?.trim() ?? "";
+const mailboxApiPassword = process.env.KAFIL_E2E_MAILBOX_PASSWORD?.trim() ?? "";
 const adminEmail = process.env.KAFIL_ADMIN_EMAIL ?? "";
 const adminPassword = process.env.KAFIL_ADMIN_PASSWORD ?? "";
 const familyIdentifier = process.env.KAFIL_E2E_FAMILY_IDENTIFIER ?? "";
@@ -47,6 +49,23 @@ const sponsorBRuntimePassword = process.env.KAFIL_E2E_SPONSOR_B_PASSWORD ?? "";
 const sponsorAEmail = process.env.KAFIL_E2E_SPONSOR_A_EMAIL ?? "";
 const sponsorAPhone = process.env.KAFIL_E2E_SPONSOR_A_PHONE ?? "";
 const runLabel = process.env.KAFIL_E2E_RUN_LABEL ?? CONNECTED_RUN_FIXTURE.maskedLabel;
+
+if (Boolean(mailboxApiUser) !== Boolean(mailboxApiPassword)) {
+  throw new Error(
+    "KAFIL_E2E_MAILBOX_USER and KAFIL_E2E_MAILBOX_PASSWORD must be configured together.",
+  );
+}
+
+function mailboxFetch(path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  if (mailboxApiUser && mailboxApiPassword) {
+    headers.set(
+      "Authorization",
+      `Basic ${Buffer.from(`${mailboxApiUser}:${mailboxApiPassword}`).toString("base64")}`,
+    );
+  }
+  return fetch(`${mailboxApiUrl}${path}`, { ...init, headers });
+}
 
 interface RunState {
   label: string;
@@ -551,13 +570,15 @@ async function selectDate(
 
 async function pollMailbox(recipient: string, since: number, maxAttempts = 30): Promise<MailpitMessage> {
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const response = await fetch(`${mailboxApiUrl}/api/v1/search?query=${encodeURIComponent(`to:${recipient}`)}`);
+    const response = await mailboxFetch(
+      `/api/v1/search?query=${encodeURIComponent(`to:${recipient}`)}`,
+    );
     if (response.ok) {
       const payload = await response.json() as { messages: Array<{ ID: string; Created: string }> };
       for (const message of payload.messages ?? []) {
         const created = new Date(message.Created).getTime();
         if (created >= since - 1_000) {
-          const detail = await fetch(`${mailboxApiUrl}/api/v1/message/${message.ID}`);
+          const detail = await mailboxFetch(`/api/v1/message/${message.ID}`);
           if (detail.ok) {
             const body = await detail.json() as MailpitMessage;
             return body;
@@ -583,7 +604,9 @@ async function pollMailboxBySubject({
 }): Promise<MailpitMessage> {
   const query = `to:${recipient} subject:"${subjectKeyword}"`;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const response = await fetch(`${mailboxApiUrl}/api/v1/search?query=${encodeURIComponent(query)}`);
+    const response = await mailboxFetch(
+      `/api/v1/search?query=${encodeURIComponent(query)}`,
+    );
     if (response.ok) {
       const payload = await response.json() as {
         total?: number;
@@ -593,7 +616,7 @@ async function pollMailboxBySubject({
       for (const message of payload.messages ?? []) {
         const created = new Date(message.Created).getTime();
         if (created < since - 1_000) continue;
-        const detail = await fetch(`${mailboxApiUrl}/api/v1/message/${message.ID}`);
+        const detail = await mailboxFetch(`/api/v1/message/${message.ID}`);
         if (!detail.ok) continue;
         const body = (await detail.json()) as MailpitMessage;
         if (body.Subject && body.Subject.includes(subjectKeyword)) {
@@ -691,7 +714,12 @@ async function smtpProbe(recipient: string): Promise<void> {
 }
 
 async function deleteMailboxMessage(messageId: string) {
-  await fetch(`${mailboxApiUrl}/api/v1/message/${messageId}`, { method: "DELETE" });
+  const response = await mailboxFetch("/api/v1/messages", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ IDs: [messageId] }),
+  });
+  expect(response.ok, "Mailpit batch delete should succeed").toBe(true);
 }
 
 interface MailpitMessage {
@@ -792,7 +820,7 @@ test.describe.serial("connected four-account acceptance", () => {
   test("work unit A — authorized target, mailbox probe, and health routes", async () => {
     console.log("C4A STEP A START");
     const probeRecipient = `probe-${state.label}@${CONNECTED_RUN_FIXTURE.familyEmailDomain}`;
-    const probeMail = await fetch(`${mailboxApiUrl}/api/v1/info`);
+    const probeMail = await mailboxFetch("/api/v1/info");
     expect(probeMail.status).toBeLessThan(400);
 
     const probeStart = Date.now();

@@ -12,6 +12,8 @@
     "test:e2e": "bun --env-file=../../.env scripts/run-phase6-e2e.ts",
     "test:e2e:form-fill": "bun --env-file=../../.env scripts/run-form-fill-e2e.ts",
     "test:e2e:connected": "bun --env-file=../../.env --env-file=../../.env.acceptance scripts/run-connected-four-account-e2e.ts",
+    "test:e2e:connected:remote": "bun --env-file=../../.env scripts/run-connected-four-account-remote-e2e.ts",
+    "test:e2e:connected:remote:preflight": "bun --env-file=../../.env scripts/run-connected-four-account-remote-e2e.ts --preflight-only",
     "smoke:phase6": "bun --env-file=../../.env scripts/smoke-phase6.ts"
   },
   "dependencies": {

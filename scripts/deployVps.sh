@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
 
 readonly git_sha="${1:-}"
 readonly release_dir="${2:-/opt/kafil/releases/${git_sha}}"
@@ -71,6 +72,18 @@ if ! "${compose[@]}" --profile tools run --rm migrate 2>&1 | tee "${migration_lo
   exit 5
 fi
 
+# Permissions are code-managed data, not schema. Reconcile them from the same
+# candidate image after migrations and before replacing the running app. Keep
+# the seed's value-bearing output in a protected log rather than deployment
+# stdout; seed:admin performs its own exact role/permission verification.
+auth_seed_log="${state_dir}/auth-seed-${git_sha}.log"
+if ! "${compose[@]}" --profile tools run --rm --no-deps app \
+  bun run seed:admin >"${auth_seed_log}" 2>&1; then
+  echo "Auth seed reconciliation failed; the running application was not replaced." >&2
+  exit 7
+fi
+echo "Auth seed reconciliation passed."
+
 ln -sfn "${release_dir}" /opt/kafil/current
 "${compose[@]}" up -d --no-deps app
 
@@ -110,6 +123,7 @@ record="${state_dir}/deployment-${git_sha}.txt"
   printf 'image=%s\n' "${running_image}"
   printf 'image_digest=%s\n' "${running_digest}"
   printf 'migration_log_sha256=%s\n' "$(sha256sum "${migration_log}" | cut -d' ' -f1)"
+  printf 'auth_seed_log_sha256=%s\n' "$(sha256sum "${auth_seed_log}" | cut -d' ' -f1)"
   printf 'health=passed\n'
   printf 'rollback_image=%s\n' "${previous_image:-none}"
   printf 'rollback_release=%s\n' "${previous_release:-none}"

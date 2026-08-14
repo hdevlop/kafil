@@ -1,784 +1,882 @@
-# Connected Four-Account Acceptance Plan
+# Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS — LIVE HARNESS EXECUTION**
+Status: **IN PROGRESS - REMOTE A-B RANGE PASS; UNIT C BLOCKED BY VPS AUTH GRANT DRIFT**
 
-Owner: connected acceptance work; report into root `PLAN.md` Phase 4 when that
-roadmap is present and its execution order permits completion
+Target: exactly `https://kafala360.ma`
 
-This is the executable plan for the connected acceptance journey. Root
-`PLAN.md`, when present in the candidate, remains authoritative for phase order
-and completion status. A missing or intentionally deferred roadmap does not
-weaken this file's acceptance gates and must be reported rather than silently
-recreated. This file gives a medium-capability coder one explicit sequence with
-hard stop conditions, narrow edit boundaries, and exact evidence requirements.
+Owner: the guarded remote Playwright journey. The root `PLAN.md` is currently
+absent. Do not recreate it, infer its phase status, or claim root-roadmap
+completion from this companion.
 
-Current contract baseline, verified on 2026-08-11:
+This plan replaces the old local PostgreSQL connected-acceptance flow. It tests
+the deployed disposable Kafil demo from the tester's machine as a real user
+would: through HTTPS, browser UI, authenticated application APIs, and the
+deployment's loopback-only Mailpit reached through a runner-owned SSH tunnel.
 
-- authentication is post-Move-6: `najm-auth@3.1.3` owns credential setup and
-  includes the atomic logout/refresh race correction;
-- `credential_setup_requirements` is authoritative;
-- the temporary bidirectional bridge has been removed;
-- `family_password_requirements` has been dropped;
-- manifests and installed packages resolve `najm-kit@2.11.2` and
-  `najm-theme@0.2.1`;
-- the user explicitly authorized this run against the existing local `kafil`
-  demo database instead of a dedicated disposable database;
-- `.env.acceptance` preserves the normal Gmail configuration while overriding
-  the acceptance runtime to local Mailpit SMTP `127.0.0.1:1025` and its local
-  HTTP API. The runner must load this ignored overlay after `.env`.
-
-Live checkpoint on 2026-08-12:
-
-- Work unit A passed in the connected run.
-- Work unit B passed in isolation: `1 passed (6.1m)`.
-- Work unit C passed completely in the current focused browser test: `1 passed
-  (8.1m)`, then passed again with diagnostics: `2 passed (8.0m)`. Family creation and active-row uniqueness, required-field
-  validation, credential setup, setup-credential replay rejection, family-only
-  navigation, exact admin-endpoint denial, product-image delivery/decoding,
-  cart loading, and post-logout new-password login all passed.
-- Work unit D passed in isolation on 2026-08-12: `2 passed (5.8m)` against
-  `KAFIL_E2E_GREP='work unit D|diagnostics'`. Applicant form with run-labelled
-  identity, client validation error, OTP polling by exact recipient + run
-  start + subject keyword (exactly one match), OTP confirmation and message
-  delete only after confirmation, pending-review state, pending-account login
-  denial (403 with "inactive" message), exactly one applicant row, details
-  sheet showing run-labelled name/email/E.164 phone, first approval 200,
-  second replayed approval 409 with "Only pending review or rejected
-  applications can be approved", exactly one user + one sponsor profile with
-  the expected E.164 phone, sponsor sign-in via email + dashboard + visible
-  "Find a family to support" empty state, real sign-out UI with cleared
-  cookies and 401 from `/api/sponsors/me/profile`, and second identifier
-  sign-in via the E.164 phone. Diagnostics test ran in the same focused run
-  and passed with no unexplained console errors, failed requests, or bad
-  responses.
-- Work units E–H and the final diagnostics/gates have not passed yet.
-
-The journey uses four authenticated accounts:
-
-| Alias | How it is created | Responsibility |
-| --- | --- | --- |
-| Bootstrap Admin | Existing environment-backed account | Creates/approves/manages all operator-side records |
-| Family | Created by Bootstrap Admin through the UI | Completes forced first-login setup and submits orders |
-| Sponsor A | Self-applies through `/apply` | Verifies OTP, is approved, contributes, and reads only its own history |
-| Sponsor B | Created from the managed demo fixture | Proves seed reuse, contributes, and reads only its own history |
-
-Delivery Staff A and Staff B are staff profiles, not login accounts. They do
-not create a fifth or sixth browser identity.
+The plan never starts Kafil locally, never opens PostgreSQL, and never runs a
+seed, migration, reset, deploy, Docker, or volume command.
 
 ---
 
 ## 1. Outcome
 
-At one recorded candidate commit, prove with real PostgreSQL, a disposable SMTP
-capture service, and unmocked browser requests that:
+Prove one connected journey involving four isolated authenticated identities:
 
-- the four accounts form one connected data graph;
-- the family completes Najm-owned first-login password setup;
-- Sponsor A completes real application, email OTP, approval, and sign-in;
-- Sponsor B survives a repeated managed-demo seed without identity duplication
-  or password reset;
-- both sponsors support the same family but see only their own financial data;
-- integer-minor-unit contributions activate the family at the exact target;
-- family, admin, sponsor, and staff projections remain authorized and private;
-- the order lifecycle survives cancellation, rejection, purchase variance,
-  delivery failure, reassignment, retry, confirmation, and command replay;
-- desktop, tablet, phone, keyboard, error, loading, and Arabic RTL behavior is
-  evidenced without exposing secrets or private household data.
+| Alias | Creation path | Responsibility |
+| --- | --- | --- |
+| Bootstrap Admin | Existing environment-backed account | Creates and approves deployed demo records |
+| Family | Admin creates it through the deployed UI | Completes first-login password setup and ordering |
+| Sponsor A | Public `/apply` flow | Confirms OTP, is approved, supports the Family, and contributes |
+| Sponsor B | Independent public `/apply` flow | Proves two-sponsor isolation and contributes separately |
 
-This is not complete from source tests, mocked E2E tests, or screenshots alone.
+Delivery Staff A and Delivery Staff B are profiles, not login accounts. Reuse
+two active demo delivery profiles only when the admin UI/API proves they exist.
+If two do not exist, create run-labelled delivery profiles through the deployed
+admin UI. Do not use a seed or direct database command.
 
----
+The final remote result must prove:
 
-## 2. Hard prerequisites
+- real admin, Family, Sponsor A, and Sponsor B authentication;
+- Family creation and forced first-login password setup;
+- two independent sponsor applications, Mailpit OTP confirmations, and admin
+  approvals;
+- two support assignments to the same Family and exact duplicate rejection;
+- sponsor-safe projections and exact cross-sponsor denials;
+- contribution, funding, order, purchase, and delivery behavior visible through
+  the deployed UI and public application APIs;
+- logout, cookie removal, protected-request denial, responsive layout, RTL,
+  keyboard access, and clean browser diagnostics;
+- runner-owned SSH tunnel cleanup and secret-safe reporting.
 
-Check every item before adding code. If any item fails, report `BLOCKED` and do
-not improvise around it. Phase sequencing may be explicitly authorized for an
-independent acceptance run, but such a run cannot mark an earlier roadmap phase
-complete.
+### Remote evidence boundary
 
-- [x] The candidate uses `najm-auth@3.1.3` and its post-Move-6 credential-setup
-  contract; no application code still reads the retired family requirement.
-- [x] `credential_setup_requirements` is active and authoritative.
-- [x] `family_password_requirements` is absent and both temporary bridge
-  triggers are absent. Do not recreate them.
-- [x] Manifests, lockfile, and installed declarations agree on the current
-  registry-pinned Najm versions; do not patch `node_modules` or rely on stale
-  version numbers from a deleted or older roadmap.
-- [x] A dedicated disposable PostgreSQL database is selected, or the user has
-  explicitly authorized a non-production local demo database and the report
-  records that override.
-- [x] A local or otherwise disposable SMTP capture service with an HTTP query
-  API is selected. It must accept `.test` recipients without forwarding mail.
-- [x] The Bootstrap Admin identity works, but its credentials exist only in the
-  process environment.
-- [ ] Catalog categories, products, and inventory needed by the order journey
-  exist in the authorized acceptance target.
-
-Never run this plan against production, the VPS, an unapproved shared database,
-a personal inbox, Gmail, or another delivery provider that can send real mail.
-When an existing local demo database is explicitly authorized, do not run
-`seed:full`, `setup`, `seed:remove`, database drops, broad truncation, or ad hoc
-cleanup. Apply migrations and the exact narrow demo command only after the host,
-database mode, and authorization have been checked without printing the URL or
-any credential.
+This is black-box deployment evidence. Without PostgreSQL access it cannot
+independently prove database row uniqueness, password-hash stability, seed
+idempotency, physical ledger-row counts, transaction locks, audit metadata,
+outbox payloads, or migration state. Report each of those as `NOT VERIFIED`.
+Never infer a database guarantee from a visible row, successful response, or
+aggregate total.
 
 ---
 
-## 3. Mandatory instructions and source map
+## 2. Current checkpoint
 
-Read completely before editing:
+The predecessor one-test smoke was verified on 2026-08-13 against the exact
+deployed demo origin:
 
-1. `AGENTS.md`
-2. `.agents/skills/kafil-najm-frontend/SKILL.md`
-3. `.agents/skills/kafil-najm-backend/SKILL.md`
-4. Root `PLAN.md` when it exists in the candidate; otherwise record its absence
-5. This file
-6. `AUTH-COOKIE-PLAN.md` final outcome, Moves 4–6, and acceptance section
-7. Root/web/server/seed manifests, `bun.lock`, and installed declarations for
-   the exact dependency versions under test
+- [x] Guarded remote preflight passed.
+- [x] Admin login returned a successful `POST /api/auth/login`.
+- [x] `GET /api/dashboard/operator` completed successfully.
+- [x] The admin dashboard loading state cleared and `Operator dashboard` was
+  visible.
+- [x] `GET /api/support-assignments` completed successfully.
+- [x] The assignments loading state cleared.
+- [x] The one visible `Create assignment` control accepted a trial click.
+- [x] Real logout returned successfully, the pathname became `/login` while
+  allowing its redirect-back query, auth cookies were absent, and a protected
+  `GET /api/auth/me` returned `401`.
+- [x] Browser diagnostics were clean.
+- [x] The managed SSH tunnel closed.
+- [x] Native result: `1 passed (13.7s)`, exit code `0`.
 
-Inspect these current implementations instead of guessing selectors or API
-contracts:
+The first serial A-B browser attempt completed on 2026-08-13:
 
-- `apps/web/playwright.config.ts`
-- `apps/web/scripts/run-phase6-e2e.ts`
-- `apps/web/test/e2e/applicant-decision.e2e.ts`
-- `apps/web/test/e2e/family-create-wizard.e2e.ts`
-- `apps/web/test/e2e/staff-delivery-assignment.e2e.ts`
-- `apps/web/src/features/Applicants/`
-- `apps/web/src/features/Families/`
-- `apps/web/src/features/SupportAssignments/`
-- `apps/web/src/features/Contributions/`
-- `apps/web/src/features/OrderCart/`
-- `apps/web/src/features/Orders/`
-- `apps/web/src/services/credentialSetupApi.ts`
-- `apps/web/src/services/sponsorWorkspaceApi.ts`
-- `packages/server/src/modules/applicants/`
-- `packages/server/src/modules/families/`
-- `packages/server/src/modules/supportAssignments/`
-- `packages/server/src/modules/contributions/`
-- `packages/server/src/modules/orders/`
-- `packages/seed/src/scripts/demo/generator.ts`
-- `packages/seed/src/demo-seed.ts`
+- [x] Remote Unit A passed its functional assertions in `7.1s`.
+- [ ] Remote Unit B failed before any Family mutation while waiting for an
+  exact `Guardian name` label. Najm Kit renders required labels with a visible
+  `*`, so the test locator could not match the field.
+- [ ] Passive final diagnostics did not run because the serial range stopped
+  after Unit B failed.
+- [x] No Family was created and no demo data was retained by the failed unit.
+- [x] The managed SSH tunnel closed and no secret was printed.
+- [x] The test now uses anchored required-label matchers that accept Najm Kit's
+  rendered marker for every affected Family wizard field.
 
-The existing E2E files are reference material. Their route-mocked tests do not
-satisfy this plan. Do not edit them to simulate a pass.
+The first required-label correction was tested once. Remote Unit A passed again
+in `7.1s`. Remote Unit B advanced beyond the corrected guardian text fields but
+then timed out locating `Housing situation` as a label. Installed Najm Kit
+proves this control is a composite select whose actual combobox is named by its
+`Choose housing situation` placeholder. No `POST /api/families` occurred, no
+Family was created, no demo data was retained, diagnostics did not run, the SSH
+tunnel closed, and no secret was printed.
+
+The first composite-select correction was tested once. The new five-second
+`#step-household` assertion passed, proving the wizard had advanced. Unit B then
+timed out on the exact combobox name because the test used
+`Choose housing situation`, while the authoritative English translation and
+rendered placeholder are `Choose a housing situation`. No
+`POST /api/families` occurred, no Family was created, no demo data was retained,
+diagnostics did not run, the SSH tunnel closed, and no secret was printed.
+
+The exact translated combobox correction was tested once. Both household
+selection and the five-second `#step-initial-children` transition assertion
+passed. Unit B then timed out on an exact `Add initial child` button name.
+Installed Najm Kit proves the empty `DynamicArray` button combines the add label
+and empty-state explanation into one accessible name, so the shorter exact name
+cannot match. No `POST /api/families` occurred, no credential flow ran,
+diagnostics did not run, the SSH tunnel closed, and no secret was printed.
+
+The test now matches the child action by an anchored `Add initial child` prefix
+and verifies the resulting child-name field within five seconds. The corrected
+source gate passes: `8 pass / 0 fail / 62 expect()`, web typecheck passes, and
+targeted ESLint is clean. One focused Unit B plus diagnostics browser attempt
+is authorized. Remote Units C-H remain `NOT IMPLEMENTED` and must not be
+invented by a tester.
+
+That child-action correction was tested once. Unit B completed Family creation,
+created one child, received a successful `POST /api/families`, displayed the
+credential card, retained the temporary credential in memory, found exactly
+one API-visible Family, and submitted the Family's first login. It then failed
+on a remote-test-only raw response-body extractor returning no `nextStep`.
+
+Installed Najm Auth and Kafil's established connected journey define the real
+branch proof as: successful login response, navigation to `/change-password`,
+no normal auth cookies, and a visible credential-setup form. The application
+client itself accepts the setup result at either the response root or its
+`data` envelope. Therefore the raw-body assertion was a TEST defect, not
+evidence of a PRODUCT defect. It has been removed; the route and setup-form
+checks now use five-second budgets.
+
+This failed attempt retained exactly one Family with one initial child. Report
+them only as masked aliases; their generated identity values and temporary
+credential are no longer available after the test process ended. Supported
+cleanup remains deferred to the plan's cleanup unit. After the corrected source
+gate passed (`8 pass / 0 fail / 66 expect()`, web typecheck, targeted ESLint,
+and `git diff --check`), one focused Unit B plus diagnostics browser attempt is
+authorized.
+
+That focused command passed Unit B and its passive diagnostics with native exit
+`0`: `2 passed (20.0s)`. The post-run acceptance audit found two assertions
+that the report had inferred rather than directly proved: Unit B did not clear
+the operator-dashboard loading state and assert its heading, and the
+required-field validation did not count `POST /api/families` requests. The
+remote spec now proves both dashboard UI readiness and zero create requests at
+the validation error, then proves exactly one create request after the real
+submission. Source regression coverage pins all four assertions. The corrected
+source gate passes (`8 pass / 0 fail / 70 expect()`, web typecheck, targeted
+ESLint, and scoped `git diff --check`). At that checkpoint, one new focused
+Unit B plus diagnostics attempt was authorized and Unit B remained unchecked
+pending its result.
+
+The assertion-complete focused retry passed on 2026-08-14 with native exit `0`:
+`2 passed (18.5s)`. Unit B passed in `16.5s` and passive diagnostics passed in
+`16ms`. All 11 boolean guards and 6 preflight checks passed. The operator
+dashboard loading state cleared and its heading rendered; invalid validation
+issued zero `POST /api/families` requests; the real submission issued exactly
+one. The complete Family creation, forced credential setup, temporary-
+credential replay denial, runtime-password login, role boundary, logout, and
+diagnostic assertions passed. The managed SSH tunnel closed and no sensitive
+value was printed. The disposable demo now retains at least three masked
+Families and three Children across the known attempts. Unit B is accepted.
+The next promotion is one combined Remote A-B plus diagnostics command; Remote
+Units C-H remain `NOT IMPLEMENTED`.
+
+The combined A-B prerequisite range passed on 2026-08-14 with native exit `0`:
+`3 passed (19.5s)`. Unit A passed in `4.7s`, Unit B passed in `13.0s`, and the
+shared diagnostics test passed in `14ms`. All 11 boolean guards and 6 preflight
+checks passed. Both identities completed their exact authentication,
+readiness, authorization-denial, and logout assertions; the combined admin and
+Family diagnostics remained clean. The managed SSH tunnel closed and no
+sensitive value was printed. The disposable demo now retains at least four
+masked Families and four Children across the known attempts. Units A and B are
+accepted together. Remote Unit C is the next coder implementation boundary;
+no Unit C browser command is authorized before its source and static gates are
+delivered.
+
+Remote Unit C is now implemented as a remote black-box Sponsor A journey. It
+uses a third isolated context; proves hydrated public-form validation sends
+zero application requests; submits exactly once; polls authenticated Mailpit by
+exact recipient, run start, and verification subject; confirms the real OTP;
+rechecks exactly one matching message and deletes it only after confirmation;
+proves pending login returns exact `403` without auth cookies; finds exactly one
+API-visible pending applicant; verifies the private admin details UI; approves
+once and captures the returned user/profile identifiers only in memory; replays
+approval for exact `409`; signs in by email and E.164 phone; proves sponsor
+dashboard/navigation/empty state; and proves real logout plus protected profile
+`401`. It uses no PostgreSQL, mocks, raw-response logging, screenshots, traces,
+or serialized secrets. Source validation passes: `9 pass / 0 fail / 99
+expect()`, web typecheck, targeted ESLint, and scoped `git diff --check`.
+
+The first corrected focused attempt stopped safely before public submission:
+`GET /api/auth/me` returned `200` with exact role `admin`, but the minimal
+`GET /api/applicants?limit=1&offset=0` capability probe returned `401`. This
+proves deployed role-permission data is behind Kafil's code-managed auth seed;
+`AUTH_ROLE_PERMISSIONS.admin` includes every applicants permission. No new
+Sponsor applicant was retained by this attempt. Unit C is blocked until the
+VPS runs the narrow idempotent `seed:admin` reconciliation and `seed:verify`
+passes. Only then is one new focused Unit C plus diagnostics attempt authorized.
+
+Historical local connected-work-unit results are not remote passes and are not
+part of this replacement plan's completion status.
 
 ---
 
-## 4. Scope and deliverables
+## 3. Hard safety contract
 
-### Required new acceptance files
+Every remote command must fail closed unless all of these are true:
 
-- `apps/web/test/e2e/connected-four-account.e2e.ts`
-- `apps/web/scripts/run-connected-four-account-e2e.ts`
-- `apps/web/scripts/connected-four-account-fixtures.ts`
-- `docs/evidence/connected-four-account/<masked-run-label>/README.md`
+- [x] `KAFIL_E2E_REMOTE_URL` is exactly `https://kafala360.ma` with no path,
+  query, credentials, alternate port, or alternate host.
+- [x] `KAFIL_E2E_ALLOW_REMOTE_DESTRUCTIVE=true` is explicitly present.
+- [x] Bootstrap Admin credentials are present only in the ignored local `.env`.
+- [x] SSH uses a key or existing non-password authentication. The runner rejects
+  `KAFIL_E2E_SSH_PASSWORD`.
+- [x] Mailpit HTTP is reached only through an SSH forward to VPS loopback.
+- [x] The Mailpit URL is exactly local loopback and matches the configured local
+  forwarding port.
+- [x] Mailpit Basic-auth credentials are present without being printed.
+- [x] Unauthenticated Mailpit API access returns `401` and authenticated access
+  succeeds.
+- [x] System Google Chrome exists.
+- [x] TLS verification is enabled.
+- [x] `/login`, `/apply`, `/api/system/health`, and
+  `/api/system/readiness` remain on the exact authorized origin and succeed.
+- [x] The selected local forwarding port is free before the runner starts.
 
-Add `test:e2e:connected` to `apps/web/package.json`. The command must load the
-root `.env`, then the ignored `.env.acceptance` overlay, start or connect to one
-local server, run only the connected spec, and shut down only a server process
-that it started itself. The runner must fail closed if the overlay does not
-resolve to local capture SMTP or if its database-mode authorization is absent.
+The runner may create or change only demo application records through the
+deployed UI or authenticated/public Kafil application APIs.
 
-The fixtures file may contain public aliases, deterministic demo IDs, expected
-statuses, and amount-building helpers. It must not contain a password, OTP,
-cookie, reset token, mailbox message, real email address, real phone number,
-guardian CIN, database URL, or API credential.
+Forbidden actions:
 
-### Allowed corrective changes
+- starting `next dev`, `next start`, or any local/remote Kafil process;
+- connecting to PostgreSQL or using SQL, Drizzle Studio, database backups, or
+  database plugins;
+- running migrations, seeds, resets, truncation, database drops, Docker,
+  Compose, Dokploy, deployment, volume, or filesystem cleanup commands;
+- opening a public Mailpit port or bypassing the SSH tunnel;
+- using `page.route()`, mocks, `clearCookies()`, forced clicks, or direct state
+  mutation to make a workflow pass;
+- printing `.env`, headers, cookies, passwords, temporary credentials, OTPs,
+  reset links, mailbox bodies, private household data, generated identifiers,
+  or raw response bodies containing those values;
+- automatic screenshots, traces, and video.
 
-Start with acceptance code only. If the unmocked workflow exposes a Kafil
-defect, record the failing assertion and observed response first, then make the
-smallest feature-owned Kafil fix and focused regression test needed. Do not:
-
-- patch installed Najm packages;
-- change published dependency versions;
-- reintroduce the retired auth bridge or legacy family requirement;
-- change the accepted post-Move-6 auth migration state inside this plan;
-- edit a deployed migration;
-- weaken privacy, authorization, financial, or idempotency assertions;
-- add retries, arbitrary sleeps, forced clicks, `test.skip`, or broad status
-  exemptions to obtain green output.
-
-If the defect belongs to Najm, SMTP infrastructure, PostgreSQL infrastructure,
-or another repository, report `BLOCKED` with evidence. Do not create a local
-Kafil workaround.
+The runner owns only the SSH process it starts. It must close that process in
+`finally`. Never kill every SSH, Bun, Node, or Chrome process.
 
 ---
 
-## 5. Secret-safe runtime model
+## 4. Runtime configuration
 
-Generate one run label in memory, for example:
+The tester runs commands from the repository on the local machine. The root
+ignored `.env` supplies values for these names:
 
 ```text
-c4a-YYYYMMDD-HHMM-<random-suffix>
+KAFIL_E2E_REMOTE_URL
+KAFIL_E2E_ALLOW_REMOTE_DESTRUCTIVE
+KAFIL_ADMIN_EMAIL
+KAFIL_ADMIN_PASSWORD
+KAFIL_E2E_SSH_HOST
+KAFIL_E2E_SSH_USER
+KAFIL_E2E_SSH_PORT
+KAFIL_E2E_SSH_IDENTITY_FILE          # optional when normal SSH config owns it
+KAFIL_E2E_MAILBOX_LOCAL_PORT
+KAFIL_E2E_MAILBOX_REMOTE_PORT
+KAFIL_E2E_MAILBOX_API_URL
+KAFIL_E2E_MAILBOX_USER
+KAFIL_E2E_MAILBOX_PASSWORD
 ```
 
-Use it to create non-real `.test` identities and to find this run's mailbox
-messages. In committed evidence, mask the random suffix and all identity
-fields; use only the four aliases.
+Check names and boolean presence only. Never echo values.
 
-Generate the Family, Sponsor A, and Sponsor B runtime passwords in the runner.
-Pass them to the Playwright child process through environment variables that
-are removed when the process exits. Never log their values. The spec must also
-keep these values out of:
-
-- test titles and assertion messages;
-- screenshots, videos, traces, HTML reports, and error-context files;
-- URLs, request logs, console logs, database diagnostics, and evidence files.
-
-Do not commit Playwright traces or videos for this plan because they can contain
-cookies, tokens, OTPs, credentials, and private responses. Take only named,
-intentional screenshots after sensitive dialogs and fields have been closed.
-
-The runner must validate the following as booleans without printing values:
-
-- database configuration is present;
-- database mode is dedicated-disposable or explicitly authorized local-demo;
-- admin credentials are present;
-- JWT and encryption secrets are present;
-- SMTP points to the approved disposable capture service;
-- the mailbox HTTP API is reachable.
-
-Any live-delivery SMTP configuration is an immediate blocker.
-For the authorized local-demo mode, the runner must require
-`KAFIL_E2E_ALLOW_DEFAULT_DATABASE=true`, must load `.env.acceptance` after
-`.env`, and must refuse every broad seed, reset, truncate, or database-drop
-operation. Gmail credentials may remain in `.env`, but they must be overridden
-with empty SMTP credentials and the local Mailpit host for every server and test
-child process.
-
----
-
-## 6. Acceptance harness
-
-Implement one serial Playwright describe block. Use `browser.newContext()` to
-create and retain four isolated contexts:
-
-1. `adminContext`
-2. `familyContext`
-3. `sponsorAContext`
-4. `sponsorBContext`
-
-Never copy cookies or storage state between them. After logout, assert the
-context no longer has a normal authenticated session before reusing it.
-
-The runner should follow the lifecycle pattern in `run-phase6-e2e.ts`, but it
-must not prepare the Phase 6 browser users and must not use their static
-password. It must:
-
-1. pass an explicit allowlist of required environment keys to the server and
-   Playwright child;
-2. use `127.0.0.1`, never a wildcard bind;
-3. wait for `/login` readiness;
-4. run only `connected-four-account.e2e.ts`;
-5. close database connections and any server it created in `finally`;
-6. leave an externally managed server running;
-7. return the real Playwright exit code.
-
-### Browser diagnostics
-
-Attach listeners before the first navigation in every context and record:
-
-- uncaught page errors;
-- console errors;
-- failed network requests except genuine navigation cancellation;
-- every HTTP response with status `>= 400` as method, status, and pathname.
-
-Each negative step must declare its one exact expected method, pathname, and
-status before the action. Remove exactly that response from the failure list,
-assert it occurred exactly once, then restore the default deny-all rule. Never
-allow an entire status code or pathname prefix.
-
-The final diagnostic assertion for each context must contain no unexplained
-page error, console error, request failure, `4xx`, or `5xx` response.
-
-Do not use `page.route()` or another network mock anywhere in this spec.
-
----
-
-## 7. Work unit A — prepare the authorized target
-
-- [ ] Record a masked database label, target mode, explicit authorization, and
-  masked run label.
-- [x] Apply pending migrations only to the authorized acceptance target.
-- [x] Run `bun run seed:verify` against that target.
-- [x] Verify `credential_setup_requirements` exists and is authoritative with
-  a read-only query; do not print rows or hashes.
-- [x] Verify `family_password_requirements` and both temporary bridge triggers
-  are absent. Their presence is a stale or partially migrated candidate.
-- [x] Verify the SMTP capture service accepts a synthetic probe message and
-  its HTTP API can query by exact recipient.
-- [x] Delete the synthetic probe message from the capture service.
-- [x] Verify `/login`, `/apply`, and `/api/system/health` on the local server.
-- [x] Verify no previous entity uses this run label.
-
-Stop if the database contains production-looking identities, the target mode
-is not explicitly authorized, or the mailbox can forward externally.
-
----
-
-## 8. Work unit B — Sponsor B managed-demo reuse
-
-Sponsor B is created first because the normal demo seed generates a random
-initial password and does not expose it. The acceptance workflow must establish
-a runtime-only password through the real recovery flow before proving the seed
-does not reset it.
-
-### First seed
-
-Run the demo seed with exactly:
+Current commands:
 
 ```powershell
-bun run seed:demo -- --families=0 --sponsors=1 --operators=0 --deliveries=2 --contributions=0
+bun run --cwd apps/web test:e2e:connected:remote:preflight
+bun run --cwd apps/web test:e2e:connected:remote
 ```
 
-- [x] Assert one stable demo Sponsor B exists.
-- [x] Assert Staff A and Staff B exist as active delivery profiles.
-- [x] Assert Sponsor B has one user row and one sponsor profile.
-- [x] Store its user ID, profile ID, and password-hash value in process memory
-  only. Never print or serialize the hash.
-
-### Establish a usable runtime password
-
-- [x] Open `/forgot-password` in `sponsorBContext`.
-- [x] Submit Sponsor B's exact demo email.
-- [x] Poll the disposable mailbox API by exact recipient and message time.
-- [ ] Assert exactly one matching reset message exists.
-- [x] Extract the reset link in memory without logging it.
-- [x] Complete `/reset-password` using the runtime Sponsor B password.
-- [x] Delete the captured reset message.
-- [x] Sign in as Sponsor B, assert the sponsor dashboard, sign out, and confirm
-  normal auth cookies are cleared.
-- [x] Refresh the in-memory hash snapshot after the reset.
-
-### Second seed
-
-Run the exact same demo command a second time.
-
-- [ ] Assert Sponsor B is reported as skipped/reused, not inserted or repaired.
-- [x] Assert Staff A and Staff B are reused without duplicate profiles.
-- [x] Assert Sponsor B still has exactly one user and one profile.
-- [x] Assert user ID, profile ID, and password hash equal the post-reset
-  in-memory values.
-- [x] Sign in again with the runtime password.
-
-This work unit fails if the seed duplicates, replaces, repairs, disables, or
-resets Sponsor B.
+The full remote command performs its own preflight. Do not run a separate
+preflight immediately before every focused browser command unless configuration
+or infrastructure changed.
 
 ---
 
-## 9. Work unit C — create the Family and finish first login
+## 5. Tester-visible harness contract
 
-Use `adminContext` for every operator-side action.
+Keep the remote path separate from the local connected harness:
 
-- [x] Sign in as Bootstrap Admin and assert the admin dashboard.
-- [x] Open the real family creation UI.
-- [x] Submit a unique run-labelled family with a non-real email, phone, CIN,
-  address, funding target, and at least one child.
-- [x] Exercise required-field validation before the successful submission.
-- [x] Assert the created profile is active and appears exactly once.
-- [x] Read the one-time initial credential only into process memory. Do not
-  screenshot, log, or place it in evidence.
-- [x] Close the credential handover surface before any screenshot.
+```text
+apps/web/playwright.remote.config.ts
+apps/web/scripts/connected-four-account-remote-runtime.ts
+apps/web/scripts/run-connected-four-account-remote-e2e.ts
+apps/web/test/connected-four-account-remote-runner.test.ts
+apps/web/test/e2e/connected-four-account.remote.ts
+```
 
-In `familyContext`:
+The remote spec is a `test.describe.serial` journey. Each delivered work unit is
+a separately named test and keeps process-memory state in isolated
+`BrowserContext` instances:
 
-- [x] Sign in with the family identifier and temporary credential.
-- [x] Assert the login returns the `credential_setup` branch and navigates to
-  `/change-password`, not `/dashboard`.
-- [x] Assert no normal authenticated session is usable before setup completes.
-- [x] Submit mismatched-password validation once, then set the runtime Family
-  password successfully.
-- [x] Assert the setup credential cannot be replayed.
-- [x] Sign in with the new password and assert family-only navigation.
-- [x] Attempt one admin-only endpoint from the family context and assert the
-  exact forbidden response.
-- [x] Sign out and sign in again to prove the new password survives recovery.
+```text
+remote unit A - guarded admin smoke
+remote unit B - Family creation and first login
+remote unit C - Sponsor A application and approval
+remote unit D - Sponsor B application and approval
+remote unit E - assignments and sponsor privacy
+remote unit F - contributions and exact funding
+remote unit G - ordering and delivery
+remote unit H - responsive RTL keyboard and cleanup
+remote diagnostics - final context assertions
+```
 
-Do not expose guardian CIN, exact address, child documents, or the temporary
-credential in screenshots, console output, traces, or the final report.
+`KAFIL_E2E_REMOTE_GREP` is implemented by the guarded runner and is passed to
+Playwright as one `--grep` argument. It does not bypass exact-origin checks,
+preflight, the child environment allowlist, TLS verification, tunnel ownership,
+or argument rejection.
+
+Because later units depend on earlier runtime state, testers normally select
+the smallest implemented prerequisite range. The combined A-B range and
+passive diagnostics pass. Unit C is independently runnable and now has an
+implemented, statically validated correction boundary, so its first proof is:
+
+```powershell
+$env:KAFIL_E2E_REMOTE_GREP='remote unit C|remote diagnostics'
+bun run --cwd apps/web test:e2e:connected:remote
+Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
+```
+
+The runner must restore or exclude temporary selection variables and close its
+tunnel even after Playwright fails.
+
+Testers are read-only. They must not add work units, refactor the spec, change a
+selector or timeout, update plan checkboxes, or repair application code. A
+missing unit is `NOT IMPLEMENTED`; a failure is reported to the coder.
+
+### Shared state rules
+
+- Generate one run label, Family password, Sponsor A password, Sponsor B
+  password, OTP match metadata, order idempotency keys, and non-sensitive file
+  candidates at runtime.
+- Keep all raw values in process memory only.
+- Never serialize storage state, credentials, OTPs, mailbox messages, private
+  household fields, generated emails/phones/CINs, or raw run IDs.
+- Use fresh isolated contexts for Admin, Family, Sponsor A, and Sponsor B.
+- Attach diagnostics immediately when every page is created.
+- Use the real sign-out UI for every role.
+- Close all pages and contexts in `afterAll`, even after a failure.
+
+### Readiness rules
+
+For every route:
+
+1. Register the exact expected response before navigation or action.
+2. Navigate with `waitUntil: "commit"`.
+3. Assert the response status.
+4. Assert the route-specific loading state is no longer visible.
+5. Assert the intended heading or control is visible.
+6. Resolve exactly one visible desktop/mobile action.
+7. Trial-click before each expensive mutation, then real-click the same locator.
+
+Do not use `networkidle`, arbitrary sleeps, `.first()` to hide duplicate
+controls, or `force: true`.
+
+### Diagnostics rules
+
+Capture page errors, console errors, failed requests, and all `4xx`/`5xx`
+responses. Default to deny-all. Before an intentional negative action, register
+one exact method + pathname + status allowance, consume it once, and restore
+deny-all immediately. Response, console, and failed-request allowances remain
+separate.
 
 ---
 
-## 10. Work unit D — Sponsor A application, OTP, and approval
+## 6. Remote Unit A - guarded admin smoke
 
-In `sponsorAContext`:
+Status: **PASS - COMBINED A-B RANGE AND DIAGNOSTICS**
 
-- [x] Open `/apply` and complete the real applicant form with run-labelled,
-  non-real identity data and the runtime Sponsor A password.
-- [x] Exercise one client validation error before successful submission.
-- [x] Start mailbox polling before the action that sends the OTP.
-- [x] Match messages by exact recipient, run start time, and verification
-  purpose. Never select the newest global message.
-- [x] Assert exactly one matching OTP message exists.
-- [x] Extract the OTP in memory, confirm it through the UI, then delete the
-  captured message.
-- [x] Assert the application is pending and has no normal sponsor session.
-- [x] Attempt normal login and assert the exact pending-account denial
-  (POST `/api/auth/login` → 403 with `message` matching `/inactive/i`, page
-  remains on `/login`, no `accessToken`/`refreshToken` cookies in context).
+- [x] Run every boolean safety check.
+- [x] Open the managed Mailpit SSH tunnel and authenticate to its API.
+- [x] Probe the exact deployed health/readiness routes with verified TLS.
+- [x] Log in as Bootstrap Admin.
+- [x] Await `GET /api/dashboard/operator` and dashboard readiness.
+- [x] Open `/assignments`, await `GET /api/support-assignments`, clear the
+  loading state, and trial-click the one visible creation control.
+- [x] Log out through the UI.
+- [x] Accept `/login` with its legitimate `from` query by asserting pathname,
+  not an end-anchored full URL.
+- [x] Assert auth cookies are absent and `GET /api/auth/me` returns `401`.
+- [x] Assert passive final diagnostics are clean for the completed A-B range.
+- [x] Assert the managed SSH tunnel closes.
+
+---
+
+## 7. Remote Unit B - Family creation and first login
+
+Status: **PASS - COMBINED A-B RANGE AND DIAGNOSTICS**
 
 In `adminContext`:
 
-- [x] Find Sponsor A by the run label and assert exactly one applicant row.
-- [x] Open its details and confirm run-labelled name, email, and E.164 phone.
-- [x] Approve once and assert the first POST `/api/applicants/{id}/approve`
-  returns 200.
-- [x] Replay the same POST and assert 409 with the response body matching
-  the regex `/pending review|already/i` (the second transaction aborts on
-  the "Only pending review or rejected applications can be approved" branch).
-- [x] Independent queries: exactly one row in `users` with `status = 'active'`
-  and the expected E.164 phone, and exactly one row in `sponsor_profiles`
-  linked to that user with the expected E.164 phone. (`sponsor_profiles`
-  has no `status` column; sponsor liveness is carried on `users.status`.)
+- [x] Log in and await the operator dashboard response and ready UI.
+- [x] Open the Family list only after registering the exact successful
+  `GET /api/families` list response.
+- [x] Assert the Family loading state clears.
+- [x] Resolve one visible `Create family` action and trial-click it.
+- [x] Exercise one required-field validation without sending a create request.
+- [x] Submit a unique run-labelled Family with `.test` email, Moroccan-format
+  phone, generated non-real guardian CIN, non-real address, positive integer
+  funding target, and at least one child.
+- [x] Assert `POST /api/families` succeeds.
+- [x] Assert the created Family appears exactly once in the admin API-visible
+  list for the run label.
+- [x] Capture the returned Family/profile ID and one-time credential in memory
+  only, then close the credential surface.
+In `familyContext`:
+
+- [x] Submit the temporary credential and prove the client-owned credential
+  setup branch by navigation to `/change-password`, no normal auth cookies, and
+  the visible setup form; do not parse a redundant raw login-response envelope.
+- [x] Prove a normal protected Family request is unavailable before setup.
+- [x] Exercise mismatched-password validation once.
+- [x] Set the runtime Family password through the real setup form.
+- [x] Attempt the temporary credential again and assert the documented denial.
+- [x] Sign in with the runtime password.
+- [x] Await `GET /api/dashboard/family` and `GET /api/families/me`.
+- [x] Assert Family-only navigation and the Family dashboard ready state.
+- [x] Request one admin-only endpoint and assert the current exact `401`
+  authorization contract once.
+- [x] Log out through the UI, assert cookies are absent, and assert a protected
+  Family request returns `401`.
+
+Report the created Family only as `Family <masked-run>`. Never report its raw
+email, phone, CIN, address, temporary credential, password, or IDs.
+
+---
+
+## 8. Remote Unit C - Sponsor A application and approval
+
+Status: **BLOCKED - VPS ADMIN APPLICANTS GRANT RECONCILIATION REQUIRED**
+
+Before the public submission, Unit C must prove that the configured Bootstrap
+Admin resolves from `GET /api/auth/me` with role `admin` and can successfully
+read a minimal applicants list. This fail-fast capability gate prevents a
+misconfigured role or stale deployment grant from retaining another pending
+Sponsor applicant. The applicants-page readiness waiter must select the
+successful list response because Najm Auth may recover one initial `401` by
+refreshing and retrying the request. Diagnostics may consume zero or one exact
+transient `GET /api/applicants -> 401`; a second `401` or the absence of a
+successful retry remains a failure.
+
+In `sponsorAContext`:
+
+- [ ] Open `/apply` and await its ready form.
+- [ ] Use a unique `.test` email, Moroccan-format phone, non-real identity data,
+  and a runtime password.
+- [ ] Exercise one client validation error before submission.
+- [ ] Start exact Mailpit polling before the action that sends OTP mail.
+- [ ] Match by exact recipient, run start time, and verification purpose.
+- [ ] Assert exactly one matching OTP message exists.
+- [ ] Keep the OTP in memory, type it through the real OTP control, and assert
+  confirmation succeeds.
+- [ ] Delete the exact Mailpit message only after successful confirmation using
+  Mailpit's authenticated v1 batch-delete contract.
+- [ ] Assert the application is pending and no normal sponsor session exists.
+- [ ] Attempt normal login once and assert exact `POST /api/auth/login -> 403`
+  with the documented inactive/pending message and no auth cookies.
+
+In `adminContext`:
+
+- [ ] Open the applicants list after its exact list response.
+- [ ] Find Sponsor A exactly once by the runtime label.
+- [ ] Open details and compare the runtime name/email/E.164 phone in memory.
+- [ ] Approve once and assert the exact approval request succeeds.
+- [ ] Replay the same approval request once and assert exact `409`.
 
 Back in `sponsorAContext`:
 
-- [x] Sign in with the original runtime password.
-- [x] Assert sponsor navigation (`/contribution` link) and the visible empty
-  supported-family state ("Find a family to support").
-- [x] Use the real sign-out UI button. Assert the POST `/api/auth/logout`
-  response, assert `accessToken`/`refreshToken` cookies are gone without
-  `clearCookies()`, and assert a follow-up GET `/api/sponsors/me/profile`
-  returns 401. Session recovery on `/login` does not restore authentication
-  after a successful logout.
-- [x] Sign in again with the stored E.164 phone identifier. The contract
-  resolves `+2126000XXXX` to the same Sponsor A account.
+- [ ] Sign in with email and await `GET /api/dashboard/sponsor`.
+- [ ] Assert sponsor navigation and the empty supported-family state.
+- [ ] Log out through the UI, assert cookies are absent, and assert
+  `GET /api/sponsors/me/profile -> 401`.
+- [ ] Sign in again with the same E.164 phone identifier, then log out.
 
-Do not capture the OTP, applicant password, or mailbox response in evidence.
+Do not report or preserve the OTP, applicant password, mailbox body, email,
+phone, or applicant/user/profile IDs.
 
 ---
 
-## 11. Work unit E — connect both sponsors and prove privacy
+## 9. Remote Unit D - Sponsor B application and approval
+
+Repeat Remote Unit C with a completely independent runtime identity,
+`sponsorBContext`, mailbox match, password, and application.
+
+- [ ] Sponsor B has exactly one matching OTP message.
+- [ ] Sponsor B's OTP confirms and its exact message is deleted.
+- [ ] Pending login is denied exactly once with no auth cookies.
+- [ ] Admin sees exactly one Sponsor B applicant for the runtime label.
+- [ ] First approval succeeds and replayed approval returns exact `409`.
+- [ ] Sponsor B signs in by email and reaches the sponsor dashboard.
+- [ ] Sponsor B logs out with cookies absent and protected profile `401`.
+
+Sponsor B is created through the real public deployment flow. This remote plan
+does not seed Sponsor B and does not claim seed reuse, stable database IDs, or
+password-hash preservation.
+
+---
+
+## 10. Remote Unit E - assignments and sponsor privacy
 
 In `adminContext`:
 
-- [ ] Create an active support assignment from Sponsor A to the Family.
-- [ ] Create an active support assignment from Sponsor B to the same Family.
-- [ ] Attempt the Sponsor A/Family assignment again and assert one exact
-  duplicate-conflict response.
-- [ ] Assert exactly two active assignments exist for the Family and exactly
-  one belongs to each sponsor.
+- [ ] Await exact assignment-page list readiness before each creation.
+- [ ] Create Sponsor A -> Family through the real dialog and assert
+  `POST /api/support-assignments` succeeds.
+- [ ] Create Sponsor B -> Family the same way.
+- [ ] Replay Sponsor A -> Family once and assert exact duplicate `409`.
+- [ ] Query the authenticated admin list and assert the API-visible result has
+  exactly two active assignments for the Family, one per runtime sponsor.
 
-In both sponsor contexts independently:
+In each sponsor context independently:
 
-- [ ] Assert the supported-family list contains the Family exactly once.
-- [ ] Assert the family summary contains only the sponsor-safe projection.
-- [ ] Assert guardian CIN, exact address, documents, private notes, other
-  sponsor identity, and other sponsor contribution history are absent.
-- [ ] Attempt to read the other sponsor's contribution and plan by ID and
-  assert the exact forbidden or not-found response required by the current
-  privacy contract.
+- [ ] Sign in and open `/sponsor/support`.
+- [ ] Assert the supported-family catalog contains the Family exactly once.
+- [ ] Assert the catalog row uses only the documented sponsor-safe keys.
+- [ ] Read the sponsor's own assignment-family summary and assert only the
+  documented safe assignment/family keys are present.
+- [ ] Search the returned JSON in memory and prove it contains none of the
+  Family CIN, exact address, Family email/phone, documents, private notes, or
+  the other sponsor's runtime identity values.
+- [ ] Create one minimal one-time plan and one pending contribution as privacy
+  canaries through that sponsor's own API.
+- [ ] Read the other sponsor's assignment by ID and assert exact `404`.
+- [ ] Read the other sponsor's contribution by ID and assert exact `404`.
+- [ ] Read the other sponsor's plan by ID and assert exact `404`.
+- [ ] Stop the canary plan through the owner context.
 
-Use read-only database checks to prove sensitive values never appear in audit
-metadata or outbox payloads created by these actions. Report only boolean
-results, not the sensitive values searched for.
+In `adminContext`, reject both pending canary contributions with a non-sensitive
+reason so they cannot affect later funding totals.
+
+API-visible counts and projection keys are verified here. Database constraints,
+audit metadata, outbox payloads, and physical row counts remain `NOT VERIFIED`.
 
 ---
 
-## 12. Work unit F — contribution and funding lifecycle
+## 11. Remote Unit F - contributions and exact funding
 
-Read the Family's `fundingTargetMinor` from the authenticated admin response.
-Keep every calculation as a safe integer. When the UI needs MAD text, build it
-from integer quotient and two-digit remainder; do not use floating-point money.
+Read the Family funding target from an authenticated deployed response. Keep
+all calculations in safe integer minor units. Convert to MAD display text from
+integer quotient and two-digit remainder; never use floating-point money.
 
-### Plan lifecycle
+### Sponsor A plan lifecycle
 
-In `sponsorAContext`:
-
-- [ ] Create one monthly plan for the Sponsor A assignment.
-- [ ] Pause it with a reason.
-- [ ] Resume it with a reason.
-- [ ] Stop it with a reason.
-- [ ] Attempt to resume the stopped plan and assert one exact conflict.
-- [ ] Assert lifecycle history and ownership remain Sponsor A-only.
+- [ ] Sponsor A creates one monthly plan for its own assignment.
+- [ ] Sponsor A pauses it with a non-sensitive reason.
+- [ ] Sponsor A resumes it with a non-sensitive reason.
+- [ ] Sponsor A stops it with a non-sensitive reason.
+- [ ] One resume-after-stop attempt returns exact `409`.
+- [ ] Sponsor B cannot read or mutate Sponsor A's plan.
 
 ### Contribution command coverage
 
-- [ ] Sponsor A submits a small pending contribution; Admin rejects it with a
-  reason; assert funding and ledger totals do not increase.
-- [ ] Sponsor A submits a second pending contribution; Admin validates it;
-  assert exactly one append-only funding ledger entry is added.
-- [ ] Admin repeats validation of the same contribution; assert one exact
-  conflict and no second ledger entry.
-- [ ] Admin refunds that validated contribution; assert one reversal entry and
-  the expected funding decrease, without deleting history.
-- [ ] Repeat the refund command once; assert no second reversal.
+- [ ] Sponsor A submits a small pending contribution.
+- [ ] Admin rejects it and the API-visible Family funding aggregate does not
+  increase.
+- [ ] Sponsor A submits a second pending contribution.
+- [ ] Admin validates it and the API-visible funding aggregate increases once.
+- [ ] Replayed validation returns the documented conflict and the aggregate
+  does not increase again.
+- [ ] Admin refunds it and the aggregate decreases once.
+- [ ] Replayed refund returns the documented denial/conflict and the aggregate
+  does not decrease again.
 
-### Exact target activation
+### Exact target
 
-- [ ] Split the target into two positive integer-minor-unit amounts, one for
-  Sponsor A and the remainder for Sponsor B.
-- [ ] Submit both contributions through their own sponsor contexts.
-- [ ] Validate the first and assert the Family remains below target.
-- [ ] Validate the second and assert validated funding equals the target
-  exactly, never above it.
-- [ ] Assert the Family activation behavior changes only on the exact final
-  validation.
-- [ ] Assert each sponsor sees only its own amount/history while Admin sees the
-  combined total.
+- [ ] Compute two positive minor-unit amounts whose integer sum equals the
+  target, one for each sponsor.
+- [ ] Submit each amount from its owning sponsor context.
+- [ ] Validate Sponsor A's amount and assert the Family remains below target.
+- [ ] Validate Sponsor B's amount and assert the visible/API funding total
+  equals the target exactly and never exceeds it.
+- [ ] Assert activation changes only after the final validation.
+- [ ] Assert each sponsor sees only its own contribution history while Admin
+  sees both contributions and the combined aggregate.
 
-At each step compare contribution rows, budget snapshot, family funding
-aggregate, and ledger count. A visual progress bar alone is insufficient.
+This proves deployed command behavior and visible/API aggregates. It does not
+prove physical ledger rows, append-only storage, locks, or audit/outbox writes;
+report those as `NOT VERIFIED`.
 
 ---
 
-## 13. Work unit G — order, reserve, purchase, and delivery lifecycle
+## 12. Remote Unit G - ordering and delivery
 
-Use real catalog and inventory. The Family performs family actions; Bootstrap
-Admin performs operator actions. Staff A/B remain delivery profiles only.
+Precondition: the deployed Family catalog exposes at least one active product
+with usable inventory, and two active delivery profiles are available. If not,
+stop as `ENVIRONMENT BLOCKED`; do not seed or modify deployment infrastructure.
 
-### Order 1: family cancellation
+### Order 1 - Family cancellation
 
-- [ ] Family adds a product, submits Order 1, and observes the reserved amount.
-- [ ] Family cancels the pending order through the supported UI.
-- [ ] Assert status history records cancellation and the reserve is released
-  exactly once.
-- [ ] Replay cancellation and assert no second release or duplicate event.
+- [ ] Family adds a real catalog product to its cart.
+- [ ] Family submits Order 1 with a runtime idempotency key.
+- [ ] The Family order detail shows the reserved amount.
+- [ ] Family cancels through the supported UI with a non-sensitive reason.
+- [ ] API/UI state shows cancelled and the visible budget reserve is restored.
+- [ ] Replay cancellation once and assert the documented denial without a
+  second visible aggregate change.
 
-### Order 2: admin rejection
+### Order 2 - Admin rejection
 
 - [ ] Family submits Order 2.
-- [ ] Admin rejects it with a reason.
-- [ ] Assert the reserve is released, inventory remains correct, and both role
-  projections show the permitted rejection history.
+- [ ] Admin rejects it with a non-sensitive reason.
+- [ ] Family and Admin projections show the permitted rejection state.
+- [ ] Visible/API budget state shows the reserve released once.
 
-### Order 3: purchase variance and delivery retry
+### Order 3 - purchase variance and delivery retry
 
 - [ ] Family submits Order 3.
 - [ ] Admin approves it.
 - [ ] Admin uploads a generated non-sensitive receipt and records a purchase
-  whose actual total differs from the reserved estimate.
-- [ ] Assert the variance updates reserved/spent/available minor units exactly
-  and preserves non-negative budget invariants.
-- [ ] Replay the exact purchase command with the same idempotency key and
-  assert one purchase, one ledger effect, and one receipt reference.
-- [ ] Assign Staff A and start delivery.
-- [ ] Record a failed attempt with a non-sensitive reason.
-- [ ] Assert the order requires reassignment and the failed attempt is
-  immutable in history.
-- [ ] Reassign to Staff B, start the retry, and confirm delivery with generated
-  non-sensitive evidence.
-- [ ] Replay confirmation and assert one delivery effect and no duplicate
-  lifecycle event.
+  whose actual integer-minor total differs from the reserved estimate.
+- [ ] Visible/API available, reserved, and spent totals match the expected
+  integer calculation and remain non-negative.
+- [ ] Replay the purchase with the same idempotency key and assert the deployed
+  idempotent/conflict contract plus no second visible aggregate change.
+- [ ] Assign Delivery Staff A and start delivery.
+- [ ] Record one failed attempt with a non-sensitive reason.
+- [ ] Assert the order requires reassignment and the history still shows the
+  failed attempt.
+- [ ] Reassign to Delivery Staff B, start the retry, and confirm delivery with
+  generated non-sensitive evidence.
+- [ ] Replay confirmation once and assert the documented denial/idempotent
+  result plus no duplicate visible lifecycle entry.
 
 ### Role projections
 
-- [ ] Family sees its own order, permitted totals, and lifecycle state.
-- [ ] Sponsor A and Sponsor B see the supported-family order projection but no
-  private address, receipt bytes, delivery notes, staff private fields, or
-  other sponsor financial history.
+- [ ] Family sees its own order and permitted lifecycle state.
+- [ ] Sponsor A and Sponsor B see only the supported-family order projection.
+- [ ] Sponsor projections exclude exact address, receipt bytes, delivery notes,
+  staff private fields, and other-sponsor financial history.
+- [ ] Family and both sponsors receive exact denials from mutation endpoints
+  they do not own.
 - [ ] Admin sees the complete operational projection.
-- [ ] Family and both sponsors receive exact forbidden responses from mutation
-  endpoints they do not own.
 
-After every mutation, assert the database status, status-event count, budget
-ledger count, inventory quantity, and visible UI agree.
+Database inventory rows, ledger rows, transaction locks, and immutable event
+storage remain `NOT VERIFIED` even when UI/API state is correct.
 
 ---
 
-## 14. Work unit H — responsive, RTL, keyboard, and state evidence
+## 13. Remote Unit H - responsive, RTL, keyboard, and cleanup
 
-Do not repeat the entire financial journey at every viewport. Preserve the
-created connected graph and inspect the critical stable surfaces below.
+Reuse the graph created earlier in the same command. Do not repeat financial
+mutations at each viewport and do not create screenshots.
 
-Capture intentional screenshots at:
+Viewports:
 
-- desktop `1440x900`;
-- tablet `768x1024`;
-- phone `390x844`;
-- Arabic RTL on phone and desktop.
+```text
+desktop 1440x900
+tablet  768x1024
+phone   390x844
+```
 
 Required surfaces:
 
-- Family dashboard and order history;
-- Sponsor A supported-family and contribution history;
-- Sponsor B supported-family and contribution history;
-- Admin support assignment, contribution, and order lifecycle details;
-- delivery history after Staff B confirmation.
+- Family dashboard, cart, and order history;
+- Sponsor A and Sponsor B supported-family and contribution history;
+- Admin assignments, contribution detail, order detail, and delivery history;
+- Arabic RTL on phone and desktop.
 
-For each surface:
+For each applicable surface:
 
-- [ ] no horizontal document overflow;
-- [ ] no clipped dialog/sheet action;
+- [ ] document width does not exceed viewport width;
+- [ ] primary controls and dialog/sheet actions are visible and not clipped;
 - [ ] keyboard focus reaches the primary action and returns after close;
-- [ ] loading, empty, validation, and server-error states remain readable;
+- [ ] loading, empty, validation, and exact server-error states are readable;
 - [ ] Arabic sets `dir="rtl"` without reversing money, identifiers, or status
   meaning;
-- [ ] no uncaught errors, unexplained failed responses, or broken images.
+- [ ] protected images load, complete, and decode with `naturalWidth > 0`;
+- [ ] there are no uncaught page errors, unexplained console errors, failed
+  requests, or unregistered `4xx`/`5xx` responses.
 
-Close sensitive dialogs and mask test identifiers before screenshots. Never
-capture the credential card, OTP form with a value, password form with a value,
-mailbox UI, cookies, tokens, exact address, guardian CIN, or document content.
+### Supported cleanup
 
----
+- [ ] Log out Admin, Family, Sponsor A, and Sponsor B through the real UI.
+- [ ] Assert auth cookies are absent in every context.
+- [ ] Delete every remaining exact run-recipient Mailpit message through the
+  authenticated batch-delete API.
+- [ ] End active test support assignments through the application when the
+  deployed UI/API permits it.
+- [ ] Remove temporary uploads through supported application commands.
+- [ ] Delete only removable test entities through supported application
+  commands.
+- [ ] Preserve validated financial/audit history when the product does not
+  provide a supported removal command.
+- [ ] Close all pages and contexts.
+- [ ] Confirm the managed SSH tunnel closes and the local forwarding port is
+  free.
+- [ ] Report retained entities only by masked aliases and counts.
 
-## 15. Cleanup and residue rules
-
-Cleanup is part of the test outcome, but financial and audit history must not be
-deleted with ad hoc SQL.
-
-- [ ] Sign out all four contexts and close them.
-- [ ] Delete mailbox messages for all run-labelled recipients.
-- [ ] Delete temporary upload candidates only through supported evidence APIs.
-- [ ] End active support assignments through the application when the product
-  permits it.
-- [ ] Remove other test entities only through supported application commands.
-- [ ] Do not use `seed:remove`; it targets the wider managed demo dataset and
-  catalog, not just this acceptance run.
-- [ ] Do not delete append-only ledger, audit, lifecycle, or validated financial
-  records to manufacture a clean database.
-- [ ] Record intentionally retained aliases and row counts under the masked run
-  label. In authorized local-demo mode, retained rows are expected unless a
-  supported application command can remove them without touching history.
-
-For a dedicated disposable target, the safest final cleanup is dropping the
-database after evidence is accepted. Database deletion remains an operator
-action outside the test spec and requires explicit confirmation of the exact
-target. Never drop the authorized existing local-demo database.
+No broad cleanup, seed removal, database deletion, VPS shell command, Docker
+operation, or volume deletion belongs in this test.
 
 ---
 
-## 16. Verification sequence
+## 14. Test execution and one-attempt rule
 
-Run focused checks while implementing. Final acceptance requires this order.
+For each coder-delivered range, test and promote in this order:
 
-### Focused connected run
+1. source tests for runner/config/spec contracts;
+2. affected web typecheck;
+3. Remote Units A-B plus diagnostics once;
+4. Remote Units A-C plus diagnostics once;
+5. continue through the smallest implemented prerequisite range ending at the
+   newly delivered unit;
+6. complete A-H plus diagnostics once;
+7. final local package gates without starting a local Kafil server.
+
+Before each browser command, report its level as focused prerequisite range or
+complete remote spec. Do not promise exact duration.
+
+After a failure:
+
+1. stop the command;
+2. read the final assertion and sanitized method/path/status evidence;
+3. classify `TEST`, `PRODUCT`, `RUNNER`, or `ENVIRONMENT`;
+4. record a value-free fingerprint;
+5. report the smallest likely owning-layer correction without editing;
+6. stop and return control to the coder.
+
+Never rerun an unchanged hypothesis. The coder must change the test,
+instrumentation, implementation, or diagnosis before authorizing one new
+focused attempt. A pre-browser SSH/Mailpit failure is `ENVIRONMENT`; confirm
+cleanup and report it without printing values.
+
+---
+
+## 15. Verification sequence
+
+### Source verification before a browser run
+
+Run from `apps/web`:
 
 ```powershell
-bun run --cwd apps/web test:e2e:connected
+bun test test/connected-four-account-remote-runner.test.ts
+bun run typecheck
+bun x eslint playwright.remote.config.ts `
+  scripts/connected-four-account-remote-runtime.ts `
+  scripts/run-connected-four-account-remote-e2e.ts `
+  test/connected-four-account-remote-runner.test.ts `
+  test/e2e/connected-four-account.remote.ts
 ```
 
-The output must name only the connected spec and must show the actual count and
-duration. Do not write a pass line manually.
+### Remote preflight after configuration or infrastructure changes
 
-### Package and database checks
+```powershell
+bun run --cwd apps/web test:e2e:connected:remote:preflight
+```
+
+### Focused prerequisite range
+
+Use the exact implemented range authorized by the coder. Run once, then remove
+the temporary environment variable in `finally`.
+
+### Complete remote journey
+
+```powershell
+bun run --cwd apps/web test:e2e:connected:remote
+```
+
+The terminal must show the real Playwright summary, native exit code `0`, clean
+diagnostics, and `MANAGED SSH TUNNEL CLOSED`.
+
+### Final local repository checks
+
+The test targets the VPS, but its source still belongs to the repository:
 
 ```powershell
 bun run --cwd apps/web lint
 bun run --cwd apps/web typecheck
 bun run --cwd apps/web test
-bun run --cwd packages/server typecheck
-bun run --cwd packages/server test
-bun run --cwd packages/seed test
-bun run test:db
-```
-
-### Production-style connected run
-
-```powershell
-bun run build
-$env:KAFIL_E2E_USE_PRODUCTION="1"
-bun run --cwd apps/web test:e2e:connected
-Remove-Item Env:KAFIL_E2E_USE_PRODUCTION -ErrorAction SilentlyContinue
-```
-
-The runner must start `next start`, not reuse an unrelated dev process, for
-this gate.
-
-### Root gate and schema drift
-
-```powershell
-bun run lint
-bun run typecheck
-bun run test
 bun run build
 bun run db:generate
 ```
 
-`db:generate` must create no migration for acceptance-only work. If a legitimate
-defect fix changes schema, stop this plan and create a separately reviewed
-migration slice; do not hide it inside Phase 4 acceptance.
+`db:generate` must create no migration for browser-test-only changes. Do not run
+`test:e2e:connected`, `test:db`, a local production discriminator, or a local
+Kafil server as part of this VPS plan unless a separately authorized non-remote
+task requires them.
 
 ---
 
-## 17. Completion gate
+## 16. Completion gate
 
-Every item must be true:
+Report this VPS black-box plan complete only when every item is true:
 
-- [ ] Four isolated authenticated contexts completed their assigned journey.
-- [ ] Sponsor B was reused once with stable IDs and unchanged post-reset hash.
-- [ ] Sponsor A received exactly one matching OTP and was approved exactly once.
-- [ ] The Family completed forced setup and the temporary credential was not
-  replayable.
-- [ ] Both sponsors support one Family and see it once.
-- [ ] Cross-sponsor financial reads and private household fields are denied.
-- [ ] Funding reaches the exact target using integer minor units.
-- [ ] Duplicate validation, refund, purchase, cancellation, and confirmation do
-  not duplicate ledger or lifecycle effects.
-- [ ] Staff A failure and Staff B reassignment/retry are preserved in immutable
-  delivery history.
-- [ ] Browser diagnostics are clean after exact negative-response allowances.
-- [ ] Desktop, tablet, phone, keyboard, and Arabic RTL evidence is complete.
-- [ ] No password, OTP, token, cookie, mailbox content, private household field,
-  raw database URL, hash, trace, or secret exists in the intended diff.
-- [ ] The final database state still has the Najm credential-setup table and no
-  legacy family requirement or temporary bridge triggers.
-- [ ] Focused, package, database, production-style, and root gates pass at one
-  recorded commit.
-- [ ] Cleanup is complete or retained test rows are documented by masked alias.
+- [ ] Four isolated authenticated contexts complete their assigned journey.
+- [ ] The Family completes forced password setup and the temporary credential
+  is denied afterward.
+- [ ] Sponsor A and Sponsor B each receive exactly one matching OTP, are
+  approved once, and have replayed approval rejected.
+- [ ] Both sponsors support the same Family exactly once in API-visible state.
+- [ ] Duplicate assignment and cross-sponsor reads return exact documented
+  conflicts/denials.
+- [ ] Sponsor projections contain none of the runtime private household or
+  other-sponsor values.
+- [ ] Contribution and funding aggregates reach the exact integer-minor target
+  without a visible duplicate effect.
+- [ ] Cancellation, rejection, purchase replay, delivery failure, reassignment,
+  confirmation, and confirmation replay show the documented deployed behavior.
+- [ ] Desktop, tablet, phone, keyboard, and Arabic RTL assertions pass.
+- [ ] Browser diagnostics are clean after exact one-shot negative allowances.
+- [ ] Every context logs out, auth cookies are absent, mailbox messages are
+  deleted, and the SSH tunnel closes.
+- [ ] No secret or runtime-sensitive value appears in terminal output, intended
+  diff, or retained artifacts.
+- [ ] Source tests, web checks, build, and schema-drift check pass.
+- [ ] Retained demo data is documented only by masked alias and count.
+- [ ] Database-only guarantees are explicitly reported `NOT VERIFIED`.
 
-Only then report the connected acceptance as complete. Mark root `PLAN.md`
-Phase 4 complete only when that roadmap exists and its prior-phase sequencing
-is also satisfied; otherwise report the connected result without recreating or
-editing the roadmap.
+This completion result means **VPS BLACK-BOX ACCEPTANCE COMPLETE**. It does not
+mean database/internal acceptance complete, and it does not complete or recreate
+the absent root `PLAN.md`.
 
 ---
 
-## 18. Final report template
+## 17. Final report template
 
 ```text
-Result: PASS | FAIL | BLOCKED
-Candidate commit: <sha or NOT RECORDED>
-Run label: <masked label>
-Database mode: DEDICATED DISPOSABLE | AUTHORIZED LOCAL DEMO
-Auth schema: POST-MOVE-6 PASS | FAIL
-Roadmap status: UPDATED | ABSENT | DEFERRED BY PHASE ORDER
+Target: https://kafala360.ma
+Mode: guarded VPS black-box acceptance
+Masked run: <masked alias only>
 
-Accounts:
-- Bootstrap Admin: PASS | FAIL
-- Family: PASS | FAIL
-- Sponsor A: PASS | FAIL
-- Sponsor B seed reuse: PASS | FAIL
+Preflight:
+- Boolean contracts: PASS | FAIL
+- Mailpit SSH tunnel/auth: PASS | FAIL
+- TLS/health/readiness: PASS | FAIL
 
-Connected graph:
-- Two active sponsor assignments to one family: PASS | FAIL
-- Cross-sponsor privacy: PASS | FAIL
-- Exact funding target: PASS | FAIL
-- Contribution lifecycle/idempotency: PASS | FAIL
-- Order/reserve/purchase lifecycle: PASS | FAIL
-- Staff A failure to Staff B completion: PASS | FAIL
+Commands:
+- Source tests: <exact summary and native exit>
+- Typecheck/lint: <exact result>
+- Focused ranges: <exact Playwright summaries and native exits>
+- Complete remote journey: <exact Playwright summary and native exit>
+- Final local repository checks: <exact results>
 
-Browser evidence:
-- Desktop: PASS | FAIL
-- Tablet: PASS | FAIL
-- Phone: PASS | FAIL
-- Arabic RTL: PASS | FAIL
-- Keyboard and focus: PASS | FAIL
-- Console/network diagnostics: PASS | FAIL
+Remote units:
+- A guarded admin smoke: PASS | FAIL | NOT RUN
+- B Family creation/first login: PASS | FAIL | NOT RUN
+- C Sponsor A application/approval: PASS | FAIL | NOT RUN
+- D Sponsor B application/approval: PASS | FAIL | NOT RUN
+- E assignments/privacy: PASS | FAIL | NOT RUN
+- F contributions/funding: PASS | FAIL | NOT RUN
+- G ordering/delivery: PASS | FAIL | NOT RUN
+- H responsive/RTL/keyboard/cleanup: PASS | FAIL | NOT RUN
+- Diagnostics: PASS | FAIL | NOT RUN
 
-Verification:
-- Focused connected E2E: <verbatim summary>
-- Production-style connected E2E: <verbatim summary>
-- Web/server/seed checks: <verbatim summaries>
-- PostgreSQL integration: <verbatim summary>
-- Root gate: <verbatim summaries>
-- db:generate: NO CHANGES | FAIL
+Evidence boundary:
+- UI/public API behavior: VERIFIED | NOT VERIFIED
+- Database uniqueness/rows/locks: NOT VERIFIED
+- Password hashes/seed idempotency: NOT VERIFIED
+- Ledger physical rows: NOT VERIFIED
+- Audit/outbox payloads: NOT VERIFIED
+- Migration state: NOT VERIFIED
 
-Cleanup:
-- Supported cleanup completed: YES | NO
-- Intentionally retained aliases/counts: <masked list or None>
-- Existing local-demo database preserved: YES | NOT APPLICABLE
+Hygiene:
+- Secrets printed: NO | YES
+- Mailbox messages deleted: YES | NO | PARTIAL
+- All contexts logged out/closed: YES | NO
+- Managed SSH tunnel closed: YES | NO
+- Retained demo aliases/counts documented: YES | NO
 
-Changed files:
-- <every file changed for this plan>
-
-Failures or blockers:
-- None
+Verdicts:
+- Command: PASS | FAIL | INTERRUPTED
+- VPS black-box plan: COMPLETE | IN PROGRESS | BLOCKED
+- Root roadmap: NOT PRESENT | IN PROGRESS | COMPLETE
 ```
-
-Do not claim `PASS` when a required command was skipped, a context shared auth
-state, an expected negative response was not counted exactly once, evidence
-contains secrets/private data, or the candidate commit is not recorded.
