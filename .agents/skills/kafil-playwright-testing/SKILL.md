@@ -1,6 +1,6 @@
 ---
 name: kafil-playwright-testing
-description: Design, run, diagnose, optimize, and report reliable Kafil Playwright tests. Use when creating or reviewing files under apps/web/test/e2e, changing an E2E runner or Playwright configuration, validating an authenticated browser workflow, running connected acceptance, optimizing managed-server lifecycle or route prewarming, collecting responsive/RTL/keyboard evidence, or investigating slow, flaky, timed-out, or network-failing Kafil browser tests.
+description: Design, run, diagnose, optimize, and report reliable Kafil Playwright tests. Use when creating or reviewing files under apps/web/test/e2e, changing an E2E runner or Playwright configuration, validating an authenticated browser workflow, running local connected or guarded remote VPS acceptance, optimizing managed-server lifecycle or route prewarming, collecting responsive/RTL/keyboard evidence, or investigating slow, flaky, rate-limited, timed-out, selector-ambiguous, or network-failing Kafil browser tests.
 ---
 
 # Kafil Playwright Testing
@@ -14,6 +14,9 @@ Build the smallest real browser proof first, preserve diagnostic integrity, and 
 3. Also read `.agents/skills/kafil-najm-backend/SKILL.md` when the journey touches server, storage, seed, migrations, permissions, money, or database assertions.
 4. Read the relevant Next.js 16 guide under `node_modules/next/dist/docs/` before changing application code.
 5. Inspect the current spec, runner, `playwright.config.ts`, package scripts, and installed contracts. Do not reconstruct them from memory.
+6. For guarded VPS work, read the active remote acceptance plan and inspect the
+   exact test titles, remote runner, remote Playwright config, app locale, and
+   deployed revision before constructing a command or diagnosing a selector.
 
 Use Bun only. Never start `next dev` directly inside `apps/web`; use the repository runner so `.env` loading, host, port, database, and cleanup behavior stay consistent.
 
@@ -67,6 +70,40 @@ Use `-PreflightOnly` before handing a long run to another coder and
 `-SkipDiagnostics` only when diagnostics is not passive.
 
 Set any outer command timeout longer than the Playwright test timeout. A 120-second shell timeout can kill the parent while leaving Next.js, Playwright, and Chromium children alive.
+
+## Run guarded remote VPS acceptance as a single shot
+
+Keep local connected and remote VPS selection separate:
+
+- local connected uses `KAFIL_E2E_GREP`;
+- guarded remote uses `KAFIL_E2E_REMOTE_GREP`;
+- copy exact test titles from the current spec; never guess a grep fragment;
+- include the exact passive diagnostics title and verify the Playwright header
+  reports the expected selected-test count before interpreting results.
+
+The remote command performs its own preflight. Run remote preflight-only after
+configuration or infrastructure changes, not automatically before every
+browser attempt. Treat preflight success as transport/readiness evidence only;
+it is not browser acceptance.
+
+Honor the active plan's one-attempt contract. After a remote preflight or
+browser failure, report sanitized evidence, classify ownership, confirm tunnel
+closure, and stop. Do not edit or rerun inside a read-only tester instruction.
+Have the coder add a narrow red/green source regression, deploy the owning fix,
+wait until the exact new image is healthy, and obtain a fresh user instruction
+before the next attempt. A successful GitHub build, image publication, or
+Dokploy trigger does not alone prove that the VPS is running that image.
+
+Keep remote Playwright retries at zero. Do not hide `429`, SSH, selector, or
+product failures with Playwright retries, extra login attempts, sleeps, or a
+larger timeout. Reuse an already authenticated serial context when later units
+need the same identity. When a deliberate demo rate-limit override changes,
+verify only the variable names and validated configuration state, restart or
+redeploy as required, then preflight the new runtime without printing values.
+Distinguish request-rate counters from database-backed failed-login lockouts.
+
+Read [references/remote-vps.md](references/remote-vps.md) before constructing,
+running, diagnosing, or reporting a guarded remote VPS attempt.
 
 ## Account for the managed server lifecycle
 
@@ -160,6 +197,14 @@ every diagnostic attempt.
   short trial click to detect an overlay or pointer interception without
   changing state. Never repair actionability with arbitrary `.first()` or
   `force: true`.
+- Resolve accessible names from Kafil's active locale and provider configuration,
+  not from Najm's untranslated fallback text. Scope collection assertions to a
+  stable row/card boundary before applying `onlyVisible`; multiple visible rows
+  are normal and must not be collapsed into one global match.
+- Inspect `NTable` card pagination at the tested viewport. Paged mode exposes a
+  localized pagination landmark and controls; infinite mode exposes its
+  continuation sentinel/status instead. Traverse the verified mode and prove
+  page/content advancement before asserting a target row.
 - Wait for React hydration before clicking controls whose server-rendered markup can appear before handlers attach.
 - For lazy images, scroll each image into view and assert both `complete` and `naturalWidth > 0`.
 - Use isolated `BrowserContext` instances for different identities. Do not share cookies or storage state between roles.
@@ -254,9 +299,25 @@ as ownership evidence, not as a substitute for the plan's production gate.
 Examples:
 
 - A `500` plus invalid SQL is a product defect; fix the repository and add a server regression test.
+- A black-box `500` without server logs is indeterminate between product and
+  environment; request an authorized redacted log slice instead of inventing
+  an exception class. Treat nearby expected `409` logs as unrelated unless the
+  request ID and failing operation match.
+- A `23505` unique-phone failure for a generated second identity is a fixture
+  namespace defect when the product correctly enforces uniqueness; broaden the
+  deterministic generator and add a collision regression instead of retrying.
+- A login `429` caused by re-authenticating the same serial Admin is a test
+  lifecycle defect; retain the authenticated context instead of weakening the
+  production limiter or adding attempts.
 - Two matching desktop/mobile links are a selector defect; target the visible copy.
+- Zero matches for raw package fallback text can be a localization-aware
+  selector defect; inspect the rendered accessible name and Kafil locale before
+  classifying the product.
 - An image `200` with `naturalWidth === 0` may be a lazy-loading test defect; scroll and poll decode state.
 - `EADDRINUSE` after a wrapper timeout is usually an orphaned runner tree; verify ownership before stopping it.
+- A managed SSH tunnel exiting before Mailpit readiness is an environment
+  failure for that attempt. A later preflight pass can support a separately
+  authorized new attempt but does not rewrite the earlier verdict.
 
 Assign ownership from the corrected request and documented contract:
 
@@ -286,6 +347,8 @@ After cleanup, confirm the port is free before restarting. Use a wrapper timeout
 After a focused pass:
 
 - quote the exact Playwright summary and duration;
+- report the selected-test count and confirm diagnostics actually matched the
+  grep; distinguish `NOT RUN` from exclusion by the selection pattern;
 - record the real process exit code and distinguish a PowerShell
   `NativeCommandError` wrapper from a nonzero native exit;
 - update only checklist items explicitly asserted by that run and map each
@@ -299,6 +362,8 @@ After a focused pass:
 - cite `error-context.md`, screenshots, logs, or other artifacts only when they
   exist after the final run; use the plan's masked per-run evidence directory;
 - describe only fields actually asserted by the test and present in the schema.
+- say `no unexpected HTTP errors`; do not claim there were no `4xx`/`5xx`
+  responses when exact negative-path assertions intentionally exercised them.
 
 Report three verdicts separately:
 

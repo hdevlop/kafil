@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-E RANGE PASS; UNIT F IMPLEMENTED AND A-F RANGE PENDING**
+Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G NOT IMPLEMENTED**
 
 Target: exactly `https://kafala360.ma`
 
@@ -383,6 +383,42 @@ pass, and `db:generate` reports no schema changes. One corrected combined
 Remote A-F plus diagnostics attempt is authorized; waiting alone or changing
 deployment credentials is not the owning-layer correction.
 
+The next corrected A-F attempt reached Unit D and returned `500` from the
+second independent `POST /api/applicants`. Authorized, request-correlated VPS
+logs identified `23505` on `users_phone_unique`: the remote fixture's four-digit
+phone namespace had collided with retained demo data, and the applicant path
+did not map the auth-user collision safely. The fixture now derives phones from
+the full synthetic subscriber namespace, and the applicant validator/service
+return a safe conflict for an actual existing-user phone collision. Source,
+server, database-concurrency, full repository, build, and schema-drift gates
+passed before the corrected image was deployed.
+
+The following A-F attempts exposed three Unit F selector defects after Units
+A-E passed: a global progress-bar locator matched four visible cards; the
+Family-scoped row was absent from the first server page; and the pagination
+button was selected by Najm's raw `Next` fallback instead of Kafil's localized
+`Next page` accessible name. The test now scopes the progress bar to the exact
+NTable Family row, traverses server pages while proving page advancement, and
+uses the application-owned localized pagination contract. Source regressions
+pin each correction. One intermediate grep selected only six tests because it
+used `remote unit diagnostics`; the exact diagnostics title is
+`remote diagnostics - final context assertions`.
+
+The final corrected A-F attempt on 2026-08-14 selected all seven intended tests.
+Units A-F passed in `7.5s`, `20.9s`, `23.2s`, `17.9s`, `28.9s`, and `21.0s`;
+passive diagnostics passed in `83ms`. Diagnostics found no unexpected page
+errors, console errors, failed requests, or unexplained HTTP errors across the
+Admin, Family, Sponsor A, and Sponsor B contexts. Intentional exact negative
+responses remain expected acceptance assertions, not failures. The managed SSH
+tunnel closed and the report exposed no secret or runtime-sensitive value. The
+supplied sanitized report did not reproduce the raw native-exit line, so this
+checkpoint records the seven terminal test verdicts without inventing it. The
+final source contract passes `14 pass / 0 fail / 194 expect()`, targeted lint
+and web typecheck are clean, the root check passes, and `db:generate` reports
+no schema drift. Units A-F are accepted together. Remote Unit G is the next
+coder implementation boundary; no Unit G browser command is authorized before
+its source and static gates are delivered.
+
 Historical local connected-work-unit results are not remote passes and are not
 part of this replacement plan's completion status.
 
@@ -503,9 +539,12 @@ preflight, the child environment allowlist, TLS verification, tunnel ownership,
 or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
-the smallest implemented prerequisite range. The combined A-E range passes
-with passive diagnostics. The next promotion is one combined A-F range plus
-diagnostics:
+the smallest implemented prerequisite range. The combined A-F range passes
+with passive diagnostics. Remote Unit G is the next coder implementation
+boundary; after it is implemented and its source/static gates pass, promote one
+combined A-G range plus diagnostics using the exact declared titles.
+
+The accepted A-F selection was:
 
 ```powershell
 $env:KAFIL_E2E_REMOTE_GREP='remote unit [A-F]|remote diagnostics'
@@ -560,7 +599,7 @@ separate.
 
 ## 6. Remote Unit A - guarded admin smoke
 
-Status: **PASS - COMBINED A-B RANGE AND DIAGNOSTICS**
+Status: **PASS - DEPENDENT A-F RANGE AND DIAGNOSTICS**
 
 - [x] Run every boolean safety check.
 - [x] Open the managed Mailpit SSH tunnel and authenticate to its API.
@@ -580,7 +619,7 @@ Status: **PASS - COMBINED A-B RANGE AND DIAGNOSTICS**
 
 ## 7. Remote Unit B - Family creation and first login
 
-Status: **PASS - COMBINED A-B RANGE AND DIAGNOSTICS**
+Status: **PASS - DEPENDENT A-F RANGE AND DIAGNOSTICS**
 
 In `adminContext`:
 
@@ -622,7 +661,7 @@ email, phone, CIN, address, temporary credential, password, or IDs.
 
 ## 8. Remote Unit C - Sponsor A application and approval
 
-Status: **PASS - FOCUSED UNIT C AND DIAGNOSTICS**
+Status: **PASS - DEPENDENT A-F RANGE AND DIAGNOSTICS**
 
 Before the public submission, Unit C must prove that the configured Bootstrap
 Admin resolves from `GET /api/auth/me` with role `admin` and can successfully
@@ -674,7 +713,7 @@ phone, or applicant/user/profile IDs.
 
 ## 9. Remote Unit D - Sponsor B application and approval
 
-Status: **PASS - FOCUSED UNIT D AND DIAGNOSTICS**
+Status: **PASS - DEPENDENT A-F RANGE AND DIAGNOSTICS**
 
 Repeat Remote Unit C with a completely independent runtime identity,
 `sponsorBContext`, mailbox match, password, and application.
@@ -695,7 +734,7 @@ password-hash preservation.
 
 ## 10. Remote Unit E - assignments and sponsor privacy
 
-Status: **PASS - DEPENDENT A-E RANGE AND DIAGNOSTICS**
+Status: **PASS - DEPENDENT A-F RANGE AND DIAGNOSTICS**
 
 In `adminContext`:
 
@@ -734,7 +773,7 @@ audit metadata, outbox payloads, and physical row counts remain `NOT VERIFIED`.
 
 ## 11. Remote Unit F - contributions and exact funding
 
-Status: **IMPLEMENTED - DEPENDENT A-F RANGE PROOF PENDING**
+Status: **PASS - DEPENDENT A-F RANGE AND DIAGNOSTICS**
 
 Read the Family funding target from an authenticated deployed response. Keep
 all calculations in safe integer minor units. Convert to MAD display text from
@@ -742,36 +781,36 @@ integer quotient and two-digit remainder; never use floating-point money.
 
 ### Sponsor A plan lifecycle
 
-- [ ] Sponsor A creates one monthly plan for its own assignment.
-- [ ] Sponsor A pauses it with a non-sensitive reason.
-- [ ] Sponsor A resumes it with a non-sensitive reason.
-- [ ] Sponsor A stops it with a non-sensitive reason.
-- [ ] One resume-after-stop attempt returns exact `409`.
-- [ ] Sponsor B cannot read or mutate Sponsor A's plan.
+- [x] Sponsor A creates one monthly plan for its own assignment.
+- [x] Sponsor A pauses it with a non-sensitive reason.
+- [x] Sponsor A resumes it with a non-sensitive reason.
+- [x] Sponsor A stops it with a non-sensitive reason.
+- [x] One resume-after-stop attempt returns exact `409`.
+- [x] Sponsor B cannot read or mutate Sponsor A's plan.
 
 ### Contribution command coverage
 
-- [ ] Sponsor A submits a small pending contribution.
-- [ ] Admin rejects it and the API-visible Family funding aggregate does not
+- [x] Sponsor A submits a small pending contribution.
+- [x] Admin rejects it and the API-visible Family funding aggregate does not
   increase.
-- [ ] Sponsor A submits a second pending contribution.
-- [ ] Admin validates it and the API-visible funding aggregate increases once.
-- [ ] Replayed validation returns the documented idempotent success and the
+- [x] Sponsor A submits a second pending contribution.
+- [x] Admin validates it and the API-visible funding aggregate increases once.
+- [x] Replayed validation returns the documented idempotent success and the
   aggregate does not increase again.
-- [ ] Admin refunds it and the aggregate decreases once.
-- [ ] Replayed refund returns the documented idempotent success and the
+- [x] Admin refunds it and the aggregate decreases once.
+- [x] Replayed refund returns the documented idempotent success and the
   aggregate does not decrease again.
 
 ### Exact target
 
-- [ ] Compute two positive minor-unit amounts whose integer sum equals the
+- [x] Compute two positive minor-unit amounts whose integer sum equals the
   target, one for each sponsor.
-- [ ] Submit each amount from its owning sponsor context.
-- [ ] Validate Sponsor A's amount and assert the Family remains below target.
-- [ ] Validate Sponsor B's amount and assert the visible/API funding total
+- [x] Submit each amount from its owning sponsor context.
+- [x] Validate Sponsor A's amount and assert the Family remains below target.
+- [x] Validate Sponsor B's amount and assert the visible/API funding total
   equals the target exactly and never exceeds it.
-- [ ] Assert activation changes only after the final validation.
-- [ ] Assert each sponsor sees only its own contribution history while Admin
+- [x] Assert activation changes only after the final validation.
+- [x] Assert each sponsor sees only its own contribution history while Admin
   sees both contributions and the combined aggregate.
 
 This proves deployed command behavior and visible/API aggregates. It does not

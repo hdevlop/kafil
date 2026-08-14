@@ -11,6 +11,7 @@ Use the existing helper in the current spec when one exists. Adapt these pattern
 - [Exact mailbox match](#exact-mailbox-match)
 - [Logout proof](#logout-proof)
 - [Exactly one visible actionable control](#exactly-one-visible-actionable-control)
+- [Localized NTable collection traversal](#localized-ntable-collection-traversal)
 - [Next.js development navigation readiness](#nextjs-development-navigation-readiness)
 - [Lazy image delivery and decode](#lazy-image-delivery-and-decode)
 - [Focused connected run](#focused-connected-run)
@@ -147,6 +148,65 @@ await createFamily.click();
 Use the same locator for the trial and real click. A hidden duplicate is a test
 selector problem. A correctly selected visible control whose center is covered
 by an application layer is a product layout defect. Do not use `force: true`.
+
+## Localized NTable collection traversal
+
+Treat responsive action duplication and collection multiplicity differently.
+Use `onlyVisible()` for one semantic action rendered in desktop/mobile copies;
+do not use it to force a card, row, or progress-bar collection to contain one
+visible element.
+
+Scope the runtime record to NTable's row boundary before resolving descendants:
+
+```ts
+const rows = page.locator('[data-ntable-cards-grid] > [data-row="true"]');
+const targetRow = rows.filter({
+  has: page.getByText(runtimeName, { exact: true }),
+});
+
+await expect(targetRow).toHaveCount(1);
+await expect(
+  targetRow.getByRole("progressbar", {
+    name: "Family funding progress",
+    exact: true,
+  }),
+).toHaveAttribute("aria-valuenow", "100");
+```
+
+Do not filter a compound card by exact full-card text. Match an exact descendant
+inside the stable row/card boundary so badges, percentages, and other text do
+not invalidate the selector.
+
+Before traversing pages, inspect the Kafil locale/provider and the rendered
+accessibility tree. Kafil-supplied labels override Najm fallbacks, so an English
+next control may be named `Next page` even when the package fallback is `Next`.
+Pin the application label in a source-contract test.
+
+For paged card mode:
+
+```ts
+const pagination = page.getByRole("navigation", {
+  name: "Pagination",
+  exact: true,
+});
+const nextPage = pagination.getByRole("button", {
+  name: "Next page",
+  exact: true,
+});
+const currentPage = pagination.locator('[aria-current="page"]');
+const previousLabel = await currentPage.getAttribute("aria-label");
+
+await nextPage.click();
+await expect.poll(() => currentPage.getAttribute("aria-label"))
+  .not.toBe(previousLabel);
+```
+
+For infinite card mode, no numbered pagination landmark is expected. Scroll the
+actual NTable viewport until `[data-ntable-cards-sentinel]` intersects, then
+prove the row count or target content advances. Fail immediately when
+`[data-ntable-cards-continuation-error]` appears. Stop at the verified end state
+and assert the target count; do not wait for a `Next` control that the mode does
+not render.
 
 ## Next.js development navigation readiness
 
