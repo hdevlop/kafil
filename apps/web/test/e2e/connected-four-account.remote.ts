@@ -511,9 +511,12 @@ async function createDeliveryStaffThroughUi(
   await expect(dialog).toBeVisible();
   const form = dialog.locator("#create-staff-form");
   await expect(form).toBeVisible({ timeout: 5_000 });
+  // Date of birth is deliberately absent. `createStaffFormSchema` only requires it
+  // when the operator function is selected, and these fixtures are delivery-only.
+  // Its control is a calendar popover with no text field, so a typed value could
+  // not reach it anyway.
   const fields: Array<[Locator, string]> = [
     [form.getByLabel(/^Full name\s*\*?$/), fixture.name],
-    [form.getByLabel(/^Date of birth\s*\*?$/), "1990-01-01"],
     [form.getByLabel(/^CIN\s*\*?$/), fixture.cin],
     [form.getByLabel(/^Phone\s*\*?$/), fixture.phone],
     [form.getByLabel(/^Email\s*\*?$/), fixture.email],
@@ -526,15 +529,28 @@ async function createDeliveryStaffThroughUi(
     await field.fill(value);
   }
 
+  // Resolve the portal through the trigger's own `aria-controls`, the same contract
+  // Unit E's assignment dialog uses. A global open-popover locator matches every
+  // visible portal on the page, which is how the first combined A-E attempt failed.
   const capabilities = form.getByRole("combobox", { name: /^Capabilities\s*\*?$/ });
   await capabilities.click();
+  await expect(capabilities).toHaveAttribute("aria-expanded", "true");
+  const capabilitiesPopoverId = await capabilities.getAttribute("aria-controls");
+  expect(
+    capabilitiesPopoverId,
+    "open capabilities combobox must identify its portal",
+  ).toBeTruthy();
   const capabilitiesPopover = page.locator(
-    '[data-slot="popover-content"][data-state="open"]',
+    `[data-slot="popover-content"][id=${JSON.stringify(capabilitiesPopoverId)}]`,
   );
+  await expect(capabilitiesPopover).toHaveAttribute("data-state", "open");
   await expect(capabilitiesPopover).toBeVisible();
+  // The form defaults `functions` to ["operator"], so the first click deselects it
+  // and the second selects Delivery, leaving exactly the delivery-only capability.
   await capabilitiesPopover.getByText("Operator", { exact: true }).click();
   await capabilitiesPopover.getByText("Delivery", { exact: true }).click();
   await page.keyboard.press("Escape");
+  await expect(capabilities).toHaveAttribute("aria-expanded", "false");
   await expect(capabilities).toContainText("Delivery");
   await expect(capabilities).not.toContainText("Operator");
 

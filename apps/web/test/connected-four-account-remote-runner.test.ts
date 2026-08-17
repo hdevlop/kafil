@@ -400,7 +400,6 @@ describe("connected four-account remote runner", () => {
     );
     for (const accessibleLabel of [
       "/^Full name\\s*\\*?$/",
-      "/^Date of birth\\s*\\*?$/",
       "/^CIN\\s*\\*?$/",
       "/^Phone\\s*\\*?$/",
       "/^Email\\s*\\*?$/",
@@ -412,6 +411,24 @@ describe("connected four-account remote runner", () => {
     }
     expect(deliveryStaffHelper).not.toMatch(
       /locator\(['"](?:input|textarea)\[name=/,
+    );
+    // Date of birth is a calendar popover, not a text field, and the schema only
+    // requires it for operator staff. Typing into it is what timed out the first
+    // Unit G attempt's successor; it must not come back as a filled field.
+    expect(deliveryStaffHelper).not.toMatch(/getByLabel\(\/\^Date of birth/);
+    // The capabilities portal is resolved through the trigger, never by a global
+    // open-popover match — the selector defect that stopped the first A-E attempt.
+    expect(deliveryStaffHelper).toContain(
+      'toHaveAttribute("aria-expanded", "true")',
+    );
+    expect(deliveryStaffHelper).toContain(
+      'capabilities.getAttribute("aria-controls")',
+    );
+    expect(deliveryStaffHelper).toContain(
+      'toHaveAttribute("aria-expanded", "false")',
+    );
+    expect(deliveryStaffHelper).not.toContain(
+      '[data-slot="popover-content"][data-state="open"]',
     );
     expect(unitG).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
     expect(unitG).toContain("createDeliveryStaffThroughUi(adminPage, fixture)");
