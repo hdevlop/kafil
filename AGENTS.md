@@ -34,7 +34,7 @@ which skill validation or convention was intentionally skipped.
 ## Toolchain
 
 - **Package manager:** `bun@1.3.14`. Use `bun install`, `bun run`, `bun test`. Never use npm/yarn/pnpm.
-- **`.env`** is loaded explicitly via `--env-file=.env` in root workspace scripts. Next.js does not auto-load it. The file is in `.gitignore` and there is **no root `.env.example`** — the committed templates are `deploy/env/app.env.example` and `deploy/env/infrastructure.env.example`.
+- **`.env`** is loaded explicitly via `--env-file=.env` in root workspace scripts. Next.js does not auto-load it. The file is in `.gitignore`; the committed template beside it is the root **`.env.example`**, and `deploy/env/app.env.example` plus `deploy/env/infrastructure.env.example` cover deployment. Without a root `.env`, `bun run build` and `bun run db:generate` both fail — they are `bun --env-file=.env` wrappers — and so does the guarded remote acceptance runner.
 - **Runtime:** single Next.js process. There is no second API server.
 - **Next.js 16 quirks:** `next.config.ts` (not `.mjs`), `serverExternalPackages: ["reflect-metadata"]`, `distDir` is `KAFIL_NEXT_DIST_DIR ?? ".next"`.
 - **UI library:** `najm-kit`. Najm packages are pinned by root `overrides` (`najm-core`, `najm-auth`, `najm-database`, `najm-mcp`, `najm-storage`, `najm-theme`, `diject`). Read installed declarations for contracts — `docs/plans/NAJM-STACK.md` lists older versions and is not authoritative for version numbers.
@@ -331,14 +331,18 @@ real environment. Never treat those values as valid at runtime.
 
 ## Roadmap
 
-The active roadmap is the root **`PLAN.md`** ("Kafil Remaining Work Plan").
-Its one companion is the root **`PAGINATION-PLAN.md`**, which carries the
-cross-repository list continuation, container height, and result total work
-owned by `PLAN.md` Phase 2.
+There is **no root `PLAN.md`** and no root `PAGINATION-PLAN.md`. Both were
+deleted in `b60f493`. Do not recreate either one, infer a phase status from a
+document that is not present, or claim root-roadmap completion.
 
-`docs/plans/` now holds only `NAJM-STACK.md` and a `README.md` index. That index
-still links `docs/PLAN.md`, `DECISIONS.md`, and `sections/*.md`, none of which
-exist any more — treat those links as dead and use root `PLAN.md` instead.
+The plans that do exist at the root are
+**`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`** (the active guarded remote VPS
+acceptance journey) and its **`CONNECTED-FOUR-ACCOUNT-BLOCKER-RECOVERY-SUBPLAN.md`**,
+plus **`AUTH-COOKIE-PLAN.md`** and **`AUTH-SESSION-PLAN.md`**.
+
+`docs/plans/` holds only `NAJM-STACK.md` and a `README.md` index. That index
+still links `docs/PLAN.md`, the root `PLAN.md`, `DECISIONS.md`, and
+`sections/*.md`, none of which exist — treat every one of those links as dead.
 
 Screenshot and browser evidence for completed work lives in `docs/evidence/`.
 

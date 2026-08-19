@@ -325,64 +325,64 @@
   },
   "users": {
     "success": {
-      "retrieved": "Usuario recuperado exitosamente",
-      "created": "Usuario creado exitosamente",
-      "updated": "Usuario actualizado exitosamente",
-      "deleted": "Usuario eliminado exitosamente",
-      "allDeleted": "Todos los usuarios han sido eliminados"
+      "retrieved": "User retrieved successfully",
+      "created": "User created successfully",
+      "updated": "User updated successfully",
+      "deleted": "User deleted successfully",
+      "allDeleted": "All users have been deleted"
     },
     "errors": {
-      "notFound": "No se encontró ningún usuario con la información proporcionada",
-      "adminRoleNotFound": "Rol de administrador no encontrado",
-      "idExists": "El ID de usuario ya existe"
+      "notFound": "No user was found with the information provided",
+      "adminRoleNotFound": "Administrator role not found",
+      "idExists": "That user ID already exists"
     },
     "validation": {
-      "nameMinLength": "El nombre debe tener al menos 2 caracteres",
-      "emailInvalid": "Formato de dirección de correo electrónico inválido",
-      "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
-      "passwordConfirmationRequired": "Se requiere confirmación de contraseña",
-      "passwordsDoNotMatch": "Las contraseñas no coinciden",
-      "roleRequired": "Por favor, selecciona un rol válido"
+      "nameMinLength": "The name must be at least 2 characters",
+      "emailInvalid": "Invalid email address format",
+      "passwordMinLength": "The password must be at least 8 characters",
+      "passwordConfirmationRequired": "Password confirmation is required",
+      "passwordsDoNotMatch": "The passwords do not match",
+      "roleRequired": "Select a valid role"
     },
     "form": {
-      "fullName": "Nombre Completo",
-      "fullNamePlaceholder": "Introduce el nombre completo",
-      "image": "Imagen",
-      "email": "Dirección de Correo Electrónico",
-      "emailPlaceholder": "Introduce la dirección de correo electrónico",
-      "password": "Contraseña",
-      "passwordPlaceholder": "Introduce la contraseña",
-      "newPassword": "Nueva Contraseña (dejar en blanco para mantener la actual)",
-      "confirmPassword": "Confirmar Contraseña",
-      "confirmPasswordPlaceholder": "Confirmar contraseña",
-      "userRole": "Rol de Usuario"
+      "fullName": "Full name",
+      "fullNamePlaceholder": "Enter the full name",
+      "image": "Image",
+      "email": "Email address",
+      "emailPlaceholder": "Enter the email address",
+      "password": "Password",
+      "passwordPlaceholder": "Enter the password",
+      "newPassword": "New password (leave blank to keep the current one)",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm the password",
+      "userRole": "User role"
     },
     "roles": {
-      "admin": "Administrador",
-      "user": "Usuario",
-      "moderator": "Moderador"
+      "admin": "Administrator",
+      "user": "User",
+      "moderator": "Moderator"
     },
     "dialogs": {
-      "createTitle": "Crear Nuevo Usuario",
-      "createButton": "Crear Usuario",
-      "viewTitle": "Detalles del Usuario",
-      "editTitle": "Editar Usuario",
-      "updateButton": "Actualizar Usuario",
-      "deleteButton": "Eliminar Usuario"
+      "createTitle": "Create new user",
+      "createButton": "Create user",
+      "viewTitle": "User details",
+      "editTitle": "Edit user",
+      "updateButton": "Update user",
+      "deleteButton": "Delete user"
     },
     "table": {
-      "selectAll": "Seleccionar todo",
-      "selectRow": "Seleccionar fila",
+      "selectAll": "Select all",
+      "selectRow": "Select row",
       "id": "ID",
-      "name": "Nombre",
-      "email": "Correo Electrónico",
-      "role": "Rol",
-      "status": "Estado"
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status"
     },
     "filters": {
-      "searchByName": "Buscar por nombre...",
-      "searchByEmail": "Buscar por correo electrónico...",
-      "filterByRole": "Filtrar por rol..."
+      "searchByName": "Search by name...",
+      "searchByEmail": "Search by email...",
+      "filterByRole": "Filter by role..."
     }
   },
   "responses": {

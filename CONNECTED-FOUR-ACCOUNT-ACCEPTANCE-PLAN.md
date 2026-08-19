@@ -1,12 +1,12 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G ACCESSIBLE-FIELD CORRECTION NOT RUN**
+Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G COMPOSITE-CONTROL CORRECTION NOT RUN**
 
 Target: exactly `https://kafala360.ma`
 
-Owner: the guarded remote Playwright journey. The root `PLAN.md` is currently
-absent. Do not recreate it, infer its phase status, or claim root-roadmap
-completion from this companion.
+Owner: the guarded remote Playwright journey. There is no root `PLAN.md`; it
+was deleted in `b60f493` and is not coming back. Do not recreate it, infer its
+phase status, or claim root-roadmap completion from this companion.
 
 This plan replaces the old local PostgreSQL connected-acceptance flow. It tests
 the deployed disposable Kafil demo from the tester's machine as a real user
@@ -447,17 +447,74 @@ dialog were visible, but the first raw
 `POST /api/staff`, Staff profile, order, or delivery mutation occurred. The
 managed SSH tunnel closed and no sensitive value was printed.
 
-Installed Najm Kit proves `NForm` forwards the form `id`, while `FormInput`
-binds its field through React Hook Form and does not emit that field name as an
-HTML `name` attribute. The timeout is therefore `TEST`, not `PRODUCT` or
-`ENVIRONMENT`. The helper now resolves every Staff value through the deployed
-English accessible label, accepts Najm's required marker, asserts each control
-is visible within five seconds, and contains no raw input/textarea name
-selector. The narrow regression passes `15 pass / 0 fail / 240 expect()`.
-Web typecheck, targeted ESLint, the root check, and `db:generate` also pass;
-there is no schema drift. One fresh combined A-G plus diagnostics attempt is
-authorized only after this exact correction is published and the intended
-deployment is healthy.
+That timeout was diagnosed against Najm Kit 2.11.5, where `FormInput` did not
+forward the field name to the native element: `NForm` forwarded the form `id`,
+but the `name` attribute never reached the input. The classification `TEST` was
+right for that installed version, and two separate corrections followed.
+
+The owning package fix landed first. Najm Kit `2.11.6`
+(`fix(kit): forward native form field bindings`) restored the native `name`,
+blur, and ref binding for text, number, password, textarea, and time controls,
+and Kafil adopted it in `400f710`. That commit is why
+`#create-staff-form input[name="name"]` would resolve today; the earlier
+checkpoint recorded only the test-side change, so this plan now records both.
+
+The test-side correction resolves every Staff value through the deployed English
+accessible label, accepts Najm's required marker, asserts each control is
+visible within five seconds, and contains no raw input/textarea name selector.
+
+A post-correction audit of the Staff dialog against installed Najm Kit then
+found two selectors that had never executed in a browser, because Unit G died at
+the `name` field before reaching either:
+
+- `Date of birth` was filled as a text field. `FormInput type="date"` renders
+  Najm's `DateInput`, which had no input element at all: a Radix popover trigger
+  over a calendar. It is now absent from the helper entirely, because
+  `createStaffFormSchema` requires that field only when the operator function is
+  selected and these fixtures are Delivery-only. This was the same
+  composite-control class as the earlier `Housing situation` and
+  `Add initial child` corrections.
+- the `Capabilities` combobox was named by its form label, but Najm Kit's
+  `MultiSelectInput` applied `aria-label` only when a consumer passed one, so
+  the control reached the accessibility tree anonymous and no accessible-name
+  matcher could resolve it. `SelectInput` was the only composite input with a
+  name source, which is why the accepted `Housing situation` correction had to
+  match a placeholder rather than a label.
+
+The second item is a package defect, not a test defect, and was fixed at the
+owning layer. Najm Kit `2.11.7`
+(`fix(kit): name composite form controls in the a11y tree`) names date,
+combobox, and multiselect triggers from their form label, and renders
+`DateInput`'s trigger as a real `<button type="button">` so it has a role, a tab
+stop, and keyboard activation. `select` keeps naming itself from
+`ariaLabel || placeholder`, so the accepted Unit B `Housing situation` selector
+is unchanged. Kafil adopted `2.11.7` in `03bb266`; the lockfile integrity
+matches the published registry integrity for that version.
+
+The Staff helper also now resolves the capabilities portal through the trigger's
+own `aria-controls` and asserts the combobox returns to
+`aria-expanded="false"`, replacing a global open-popover locator that was the
+same selector defect that stopped the first combined A-E attempt. Source
+regressions forbid both the date locator and the global-portal selector
+returning.
+
+Local state at this checkpoint: repository lint, typecheck, and all three
+package test suites pass (`302`, `336`, `85`). `bun run build` and
+`bun run db:generate` were **not run** — there is no root `.env` on the machine
+that made these corrections, and both scripts are `bun --env-file=.env`
+wrappers, so neither can execute there for any commit. They remain unverified
+rather than passed.
+
+No combined A-G browser attempt is authorized from a machine without a root
+`.env`: section 4's configuration, the bootstrap admin credentials, the SSH
+identity, and the Mailpit forward all come from that file, so preflight fails
+closed at its first boolean check. One fresh combined A-G plus diagnostics
+attempt is authorized from a configured machine once `03bb266` — or a later
+revision containing it — is published and the intended deployment is healthy.
+
+A najm-* version change invalidates any pending browser authorization whose
+diagnosis cited package rendering behavior. Re-audit the affected selectors
+against the newly installed package before spending a browser attempt.
 
 Historical local connected-work-unit results are not remote passes and are not
 part of this replacement plan's completion status.
@@ -580,10 +637,20 @@ or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
 the smallest implemented prerequisite range. The combined A-F range passes
-with passive diagnostics. Unit G and its Staff-creation correction are
+with passive diagnostics. Unit G and its composite-control correction are
 implemented with passing source/static gates. The next authorized browser
 promotion is one combined A-G range plus diagnostics using the exact declared
 titles after the published revision is healthy.
+
+Unit H is `NOT IMPLEMENTED`. It appears in the title list above because it is
+planned; there is no such test in the spec. Never include it in a grep and never
+report it as anything but `NOT RUN`.
+
+A grep must be checked against the spec's actual titles before it is run. The
+Playwright header's selected-test count is the confirmation: the A-G selection
+below must report eight tests. An intermediate attempt once selected only six
+because it used `remote unit diagnostics`, while the real title is
+`remote diagnostics - final context assertions`.
 
 The accepted A-F selection was:
 
@@ -870,7 +937,7 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
-Status: **IMPLEMENTED - ACCESSIBLE-FIELD CORRECTION REMOTE RANGE NOT RUN**
+Status: **IMPLEMENTED - COMPOSITE-CONTROL CORRECTION REMOTE RANGE NOT RUN**
 
 Precondition: the deployed Family catalog exposes at least one active product
 with usable inventory. If not, stop as `ENVIRONMENT BLOCKED`; do not seed or
@@ -883,8 +950,11 @@ not an environment precondition.
   response and ready UI.
 - [ ] Admin creates two fresh run-labelled Staff profiles through the real
   dialog, each with only the Delivery capability and no application account.
-- [ ] Each exact `POST /api/staff` succeeds and returns an active profile whose
-  function list is exactly `delivery`.
+- [ ] Each `POST /api/staff` returns a non-error status and an active profile
+  whose function list is exactly `delivery`. The spec asserts `status < 400`
+  here, as it does for every other success path in this journey; read "exact"
+  in this plan as applying to the asserted negative statuses (`401`, `403`,
+  `404`, `409`, `429`), which are matched exactly.
 - [ ] `GET /api/staff/options/delivery` exposes both exact run-labelled profiles
   once with distinct IDs before either is assigned to an order.
 
@@ -940,6 +1010,13 @@ storage remain `NOT VERIFIED` even when UI/API state is correct.
 ---
 
 ## 13. Remote Unit H - responsive, keyboard, and cleanup
+
+Status: **NOT IMPLEMENTED**
+
+No `remote unit H` test exists in the spec and it declares no viewport work. A
+tester must report this unit `NOT RUN`, must not select it in a grep, and must
+not invent it. The titles in section 5 include it because it is planned, not
+because it is delivered.
 
 Reuse the graph created earlier in the same command. Do not repeat financial
 mutations at each viewport and do not create screenshots.
@@ -1061,15 +1138,21 @@ diagnostics, and `MANAGED SSH TUNNEL CLOSED`.
 
 ### Final local repository checks
 
-The test targets the VPS, but its source still belongs to the repository:
+The test targets the VPS, but its source still belongs to the repository. Run
+the repository-wide gate, not just the `apps/web` slice, so a shared locale,
+schema, or server change cannot pass unnoticed:
 
 ```powershell
-bun run --cwd apps/web lint
-bun run --cwd apps/web typecheck
-bun run --cwd apps/web test
+bun run lint
+bun run typecheck
+bun run test
 bun run build
 bun run db:generate
 ```
+
+`build` and `db:generate` are `bun --env-file=.env` wrappers and cannot run
+without a root `.env`. If that file is absent, report both as `NOT RUN`, never
+as passed, and do not treat the remaining three as the full gate.
 
 `db:generate` must create no migration for browser-test-only changes. Do not run
 `test:e2e:connected`, `test:db`, a local production discriminator, or a local
