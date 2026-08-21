@@ -498,17 +498,38 @@ same selector defect that stopped the first combined A-E attempt. Source
 regressions forbid both the date locator and the global-portal selector
 returning.
 
-Local state at this checkpoint: repository lint, typecheck, and all three
-package test suites pass (`302`, `336`, `85`). `bun run build` and
-`bun run db:generate` were **not run** — there is no root `.env` on the machine
-that made these corrections, and both scripts are `bun --env-file=.env`
-wrappers, so neither can execute there for any commit. They remain unverified
-rather than passed.
+Local state at this checkpoint: the complete repository gate passes. Lint,
+typecheck, and all three package test suites pass (`302`, `336`, `85`), the
+production build completes, and `db:generate` reports `No schema changes`
+with the migrations directory untouched.
 
-No combined A-G browser attempt is authorized from a machine without a root
-`.env`: section 4's configuration, the bootstrap admin credentials, the SSH
+The machine that made these corrections has no root `.env`, which does not
+block either of the last two. `db:generate` needs nothing from it, because
+`drizzle.config.ts` falls back to a local URL and `generate` never connects.
+`bun run build` needs only values, and a missing `--env-file` target is
+tolerated rather than fatal, so the throwaway set the Dockerfile build stage
+already uses supplies them offline:
+
+```powershell
+$env:EMAIL_PROVIDER='console'
+$env:EMAIL_DEFAULT_FROM='no-reply@example.invalid'
+$env:FRONTEND_URL='https://demo.example.invalid'
+$env:NAJM_AUTH_INTERNAL_URL='http://127.0.0.1:3000/api/auth/session/recover'
+$env:JWT_ACCESS_SECRET='build-only-access-secret-at-least-32-characters'
+$env:JWT_REFRESH_SECRET='build-only-refresh-secret-at-least-32-characters'
+$env:NAJM_ENCRYPTION_KEY='1111111111111111111111111111111111111111111111111111111111111111'
+bun run build
+```
+
+Those values are build-only and are never valid at runtime. They close the
+local gate; they do not enable any remote command.
+
+The guarded remote runner is the one path that genuinely requires a real root
+`.env`. No combined A-G browser attempt is authorized from a machine without
+one: section 4's configuration, the bootstrap admin credentials, the SSH
 identity, and the Mailpit forward all come from that file, so preflight fails
-closed at its first boolean check. One fresh combined A-G plus diagnostics
+closed at its first boolean check. Never substitute the build-only throwaway
+values above for it. One fresh combined A-G plus diagnostics
 attempt is authorized from a configured machine once `03bb266` — or a later
 revision containing it — is published and the intended deployment is healthy.
 
@@ -1150,9 +1171,11 @@ bun run build
 bun run db:generate
 ```
 
-`build` and `db:generate` are `bun --env-file=.env` wrappers and cannot run
-without a root `.env`. If that file is absent, report both as `NOT RUN`, never
-as passed, and do not treat the remaining three as the full gate.
+`build` and `db:generate` are `bun --env-file=.env` wrappers, but a missing
+file is tolerated. `db:generate` needs nothing from it. `build` needs only
+values: supply the Dockerfile build stage's throwaway set, shown in section 2,
+and it completes offline. Report `NOT RUN` only when the command genuinely was
+not run — the absent `.env` is not by itself a reason to skip either one.
 
 `db:generate` must create no migration for browser-test-only changes. Do not run
 `test:e2e:connected`, `test:db`, a local production discriminator, or a local
