@@ -2627,7 +2627,7 @@ test.describe.serial("connected VPS acceptance", () => {
       const url = new URL(response.url());
       return (
         response.request().method() === "GET" &&
-        url.pathname === "/api/orders/me" &&
+        url.pathname === "/api/orders" &&
         url.searchParams.has("limit") &&
         url.searchParams.has("offset")
       );

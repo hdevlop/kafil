@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G COMPOSITE-CONTROL CORRECTION NOT RUN**
+Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G UNIFIED-ORDERS WAITER CORRECTION NOT RUN**
 
 Target: exactly `https://kafala360.ma`
 
@@ -533,6 +533,33 @@ values above for it. One fresh combined A-G plus diagnostics
 attempt is authorized from a configured machine once `03bb266` — or a later
 revision containing it — is published and the intended deployment is healthy.
 
+A configured-machine A-G attempt against
+`c1e1d9f1c451873b9d20026c6b886e0969783852` first stopped at Unit A because
+the local bootstrap Admin credential did not match the deployed account. After
+that local credential was corrected, one fresh command selected all eight
+intended tests. Units A-F passed; Unit G timed out in `3.0m`; passive
+diagnostics did not run (`6 passed / 1 failed / 1 did not run`, native exit
+`1`). Before the timeout, Unit G created two fresh masked Delivery Staff
+profiles and submitted one masked pending Family order. The managed SSH tunnel
+closed, the local forward was released, and no sensitive value was printed.
+
+The timeout is a `TEST` defect. The shared Orders page reads every principal's
+role-scoped list through `useOrdersWorkspace -> listOrders`, which calls
+`GET /api/orders` and is backed by `OrderController.listForPrincipal`. Unit G's
+route-readiness waiter still expected the older Family-only
+`GET /api/orders/me`, so it could never resolve. The test now waits for the
+exact unified `GET /api/orders` request with `limit` and `offset`; a source
+regression scopes that waiter and forbids the stale `/api/orders/me` predicate
+without changing the valid Family detail and cancellation routes.
+
+The corrected source contract passes `15 pass / 0 fail / 248 expect()`. Web
+typecheck, targeted ESLint, scoped `git diff --check`, the full root lint,
+typecheck, test and production-build gate, and `db:generate` all pass;
+`db:generate` reports no schema changes. No remote browser command has run
+against this waiter correction. One fresh combined A-G plus diagnostics
+attempt is authorized only after the corrected revision is published and the
+intended deployment is healthy.
+
 A najm-* version change invalidates any pending browser authorization whose
 diagnosis cited package rendering behavior. Re-audit the affected selectors
 against the newly installed package before spending a browser attempt.
@@ -658,7 +685,7 @@ or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
 the smallest implemented prerequisite range. The combined A-F range passes
-with passive diagnostics. Unit G and its composite-control correction are
+with passive diagnostics. Unit G and its unified-orders waiter correction are
 implemented with passing source/static gates. The next authorized browser
 promotion is one combined A-G range plus diagnostics using the exact declared
 titles after the published revision is healthy.
@@ -958,7 +985,7 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
-Status: **IMPLEMENTED - COMPOSITE-CONTROL CORRECTION REMOTE RANGE NOT RUN**
+Status: **IMPLEMENTED - UNIFIED-ORDERS WAITER CORRECTION REMOTE RANGE NOT RUN**
 
 Precondition: the deployed Family catalog exposes at least one active product
 with usable inventory. If not, stop as `ENVIRONMENT BLOCKED`; do not seed or

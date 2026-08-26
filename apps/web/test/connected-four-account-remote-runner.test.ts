@@ -375,6 +375,10 @@ describe("connected four-account remote runner", () => {
       specSource.indexOf('test("remote unit G - ordering and delivery"'),
       specSource.indexOf('test("remote diagnostics - final context assertions"'),
     );
+    const familyOrdersReadiness = unitG.slice(
+      unitG.indexOf("const familyOrdersResponse"),
+      unitG.indexOf("const order1Cell"),
+    );
     for (const contract of [
       '"/api/catalog/browse/products?limit=100&offset=0"',
       '"/api/staff/options/delivery"',
@@ -436,6 +440,12 @@ describe("connected four-account remote runner", () => {
     expect(unitG).toContain("expect(staffA.id).toBe(createdDeliveryStaff[0]!.id)");
     expect(unitG).toContain("expect(staffB.id).toBe(createdDeliveryStaff[1]!.id)");
     expect(unitG).not.toContain("fewer than two active Delivery profiles");
+    expect(familyOrdersReadiness).toContain('url.pathname === "/api/orders"');
+    expect(familyOrdersReadiness).not.toContain(
+      'url.pathname === "/api/orders/me"',
+    );
+    expect(familyOrdersReadiness).toContain('url.searchParams.has("limit")');
+    expect(familyOrdersReadiness).toContain('url.searchParams.has("offset")');
     expect(unitG).toContain('uploadGeneratedPdfEvidence(\n      adminPage,\n      "deliveries"');
     expect(unitG).toContain("actualTotalMinor - order3TotalMinor");
     expect(unitG).toContain("purchaseIdempotencyKey");
