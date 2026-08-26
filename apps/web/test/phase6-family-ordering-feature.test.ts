@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { QueryClient } from "@tanstack/react-query";
 
 import { normalizeKafilLanguage } from "../src/preferences";
 import { familyOrderingKeys } from "../src/features/Orders/hooks/familyOrderingKeys";
+import { orderKeys } from "../src/features/Orders/hooks/orderKeys";
 
 describe("Phase 6E family ordering contracts", () => {
   test("keeps cart and family order cache keys isolated", () => {
@@ -50,5 +52,27 @@ describe("Phase 6E family ordering contracts", () => {
     expect(forms).toContain("await cancel.mutateAsync({ id: orderId, reason: values.reason })");
     expect(forms).toContain('id="family-cancel-order-form"');
     expect(forms).toContain("schema={orderReasonFormSchema}");
+  });
+
+  test("submit and cancel invalidate the unified Orders page cache, not just the family namespace", async () => {
+    const hooks = readFileSync(
+      new URL("../src/features/Orders/hooks/useFamilyOrdering.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(hooks).toContain('import { orderKeys } from "./orderKeys";');
+    expect(hooks).toMatch(/mutationFn:\s*submitFamilyOrder,\s*invalidate:\s*invalidateOrders/);
+    expect(hooks).toMatch(/mutationFn:\s*cancelFamilyOrder,\s*invalidate:\s*invalidateOrders/);
+
+    const queryClient = new QueryClient();
+    const unifiedOrdersKey = [...orderKeys.all, "responsive", "principal", "family-1", "family", {}];
+    queryClient.setQueryData(unifiedOrdersKey, [{ id: "order-1", status: "cancelled" }]);
+
+    const invalidateOrders = [familyOrderingKeys.all, orderKeys.all];
+    await Promise.all(
+      invalidateOrders.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+    );
+
+    expect(queryClient.getQueryState(unifiedOrdersKey)?.isInvalidated).toBe(true);
   });
 });

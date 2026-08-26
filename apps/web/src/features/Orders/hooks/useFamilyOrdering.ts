@@ -15,6 +15,7 @@ import {
 } from "@/services/familyOrderingApi";
 
 import { familyOrderingKeys } from "./familyOrderingKeys";
+import { orderKeys } from "./orderKeys";
 import type { FamilyCart, FamilyOrder, FamilyOrderQuery } from "../familyTypes";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 
@@ -48,12 +49,13 @@ export function useFamilyOrder(id: string) {
 
 export function useFamilyOrderingCommands() {
   const invalidate = [familyOrderingKeys.all];
+  const invalidateOrders = [familyOrderingKeys.all, orderKeys.all];
   const add = useEntityCommand({ mutationFn: addFamilyCartItem, invalidate, successMessage: "Added to your cart.", errorMessage: "Could not add this item to your cart." });
   const setQuantity = useEntityCommand({ mutationFn: setFamilyCartItemQuantity, invalidate, successMessage: "Cart quantity updated.", errorMessage: "Could not update this cart quantity." });
   const remove = useEntityCommand({ mutationFn: removeFamilyCartItem, invalidate, successMessage: "Item removed from your cart.", errorMessage: "Could not remove this cart item." });
   const clear = useEntityCommand({ mutationFn: clearFamilyCart, invalidate, successMessage: "Cart cleared.", errorMessage: "Could not clear your cart." });
-  const submit = useEntityCommand({ mutationFn: submitFamilyOrder, invalidate, successMessage: "Order submitted for review.", errorMessage: "Could not submit your order." });
-  const cancel = useEntityCommand({ mutationFn: cancelFamilyOrder, invalidate, successMessage: "Pending order cancelled.", errorMessage: "Could not cancel this order." });
+  const submit = useEntityCommand({ mutationFn: submitFamilyOrder, invalidate: invalidateOrders, successMessage: "Order submitted for review.", errorMessage: "Could not submit your order." });
+  const cancel = useEntityCommand({ mutationFn: cancelFamilyOrder, invalidate: invalidateOrders, successMessage: "Pending order cancelled.", errorMessage: "Could not cancel this order." });
 
   return { add, setQuantity, remove, clear, submit, cancel };
 }
