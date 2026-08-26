@@ -2789,10 +2789,12 @@ test.describe.serial("connected VPS acceptance", () => {
     expect(purchase.status).toBeLessThan(400);
     const purchasedOrder3 = responseRecord(purchase.body);
     expect(purchasedOrder3.status).toBe("purchased");
+    expect(Number(purchasedOrder3.requestedTotalMinor)).toBe(order3TotalMinor);
     expect(Number(purchasedOrder3.actualTotalMinor)).toBe(actualTotalMinor);
-    expect(Number(purchasedOrder3.differenceMinor)).toBe(
-      actualTotalMinor - order3TotalMinor,
-    );
+    expect(
+      Number(purchasedOrder3.actualTotalMinor) -
+        Number(purchasedOrder3.requestedTotalMinor),
+    ).toBe(actualTotalMinor - order3TotalMinor);
     const budgetAfterPurchase = await readBudgetSnapshot(
       familyPage,
       "/api/budgets/me",

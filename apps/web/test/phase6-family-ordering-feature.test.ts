@@ -61,6 +61,9 @@ describe("Phase 6E family ordering contracts", () => {
     );
 
     expect(hooks).toContain('import { orderKeys } from "./orderKeys";');
+    expect(hooks).toContain(
+      "const invalidateOrders = [familyOrderingKeys.all, orderKeys.all];",
+    );
     expect(hooks).toMatch(/mutationFn:\s*submitFamilyOrder,\s*invalidate:\s*invalidateOrders/);
     expect(hooks).toMatch(/mutationFn:\s*cancelFamilyOrder,\s*invalidate:\s*invalidateOrders/);
 

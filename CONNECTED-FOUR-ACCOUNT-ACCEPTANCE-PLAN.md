@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G UNIFIED-ORDERS WAITER CORRECTION NOT RUN**
+Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G OPERATOR PURCHASE-VARIANCE ASSERTION CORRECTION NOT RUN**
 
 Target: exactly `https://kafala360.ma`
 
@@ -560,6 +560,44 @@ against this waiter correction. One fresh combined A-G plus diagnostics
 attempt is authorized only after the corrected revision is published and the
 intended deployment is healthy.
 
+That waiter correction was published as
+`abb63e3c5719c67a02a949a7ce2591599e9446be`. One combined A-G plus diagnostics
+attempt selected all eight intended tests. Units A-F passed; Unit G received a
+successful Family cancellation response but the shared Orders UI did not
+refresh to `Cancelled`; passive diagnostics did not run (`6 passed / 1 failed
+/ 1 did not run (3.3m)`, native exit `1`). The tunnel closed and the local
+forward was released. The failure was `PRODUCT`: the Family submit and cancel
+commands invalidated only the older family-ordering query namespace while the
+shared `/orders` page reads the unified orders namespace.
+
+Revision `1dc6b945ae1dc0aff1f46d82ec26d72bc86b721d` corrected that cache boundary:
+Family submit and cancel now invalidate both namespaces, while cart mutations
+retain their narrower invalidation. Source coverage pins the production
+invalidation declaration and both command consumers.
+
+One combined A-G plus diagnostics attempt then ran against that exact healthy
+revision and selected all eight intended tests. Units A-F passed. Unit G proved
+the cancellation UI/cache correction, advanced through Order 2 rejection, and
+successfully recorded the Order 3 purchase before failing its next test-only
+money assertion: expected `-1`, received `NaN`. The command ended `6 passed / 1
+failed / 1 did not run (3.4m)` with native exit `1`; passive diagnostics did
+not run, the managed tunnel closed, and the local forward was released.
+
+This second failure is `TEST`, not product evidence. The authoritative
+operator order-detail response exposes `requestedTotalMinor` and
+`actualTotalMinor`; it does not expose the Family-projection-only top-level
+`differenceMinor`. Unit G now asserts both documented operator totals and
+calculates the variance from them. Its source regression requires the
+documented requested total and forbids the nonexistent operator field.
+
+The corrected local gate passes: the focused source suite reports `20 pass / 0
+fail / 268 expect()`, web typecheck and targeted ESLint are clean, the complete
+root lint, typecheck, test, and production build pass, and `db:generate`
+reports no schema changes. No remote browser command has run against this
+operator purchase-variance assertion correction. One fresh combined A-G plus
+diagnostics attempt is authorized only after the corrected revision is
+published and the intended deployment is healthy.
+
 A najm-* version change invalidates any pending browser authorization whose
 diagnosis cited package rendering behavior. Re-audit the affected selectors
 against the newly installed package before spending a browser attempt.
@@ -685,10 +723,10 @@ or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
 the smallest implemented prerequisite range. The combined A-F range passes
-with passive diagnostics. Unit G and its unified-orders waiter correction are
-implemented with passing source/static gates. The next authorized browser
-promotion is one combined A-G range plus diagnostics using the exact declared
-titles after the published revision is healthy.
+with passive diagnostics. Unit G and its operator purchase-variance assertion
+correction are implemented with passing source/static gates. The next
+authorized browser promotion is one combined A-G range plus diagnostics using
+the exact declared titles after the published revision is healthy.
 
 Unit H is `NOT IMPLEMENTED`. It appears in the title list above because it is
 planned; there is no such test in the spec. Never include it in a grep and never
@@ -985,7 +1023,7 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
-Status: **IMPLEMENTED - UNIFIED-ORDERS WAITER CORRECTION REMOTE RANGE NOT RUN**
+Status: **IMPLEMENTED - OPERATOR PURCHASE-VARIANCE ASSERTION CORRECTION REMOTE RANGE NOT RUN**
 
 Precondition: the deployed Family catalog exposes at least one active product
 with usable inventory. If not, stop as `ENVIRONMENT BLOCKED`; do not seed or

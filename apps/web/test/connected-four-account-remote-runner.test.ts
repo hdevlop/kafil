@@ -447,6 +447,8 @@ describe("connected four-account remote runner", () => {
     expect(familyOrdersReadiness).toContain('url.searchParams.has("limit")');
     expect(familyOrdersReadiness).toContain('url.searchParams.has("offset")');
     expect(unitG).toContain('uploadGeneratedPdfEvidence(\n      adminPage,\n      "deliveries"');
+    expect(unitG).toContain("Number(purchasedOrder3.requestedTotalMinor)");
+    expect(unitG).not.toContain("purchasedOrder3.differenceMinor");
     expect(unitG).toContain("actualTotalMinor - order3TotalMinor");
     expect(unitG).toContain("purchaseIdempotencyKey");
     expect(unitG).toContain("confirmationIdempotencyKey");
