@@ -2478,6 +2478,8 @@ test.describe.serial("connected VPS acceptance", () => {
   });
 
   test("remote unit G - ordering and delivery", async () => {
+    test.setTimeout(240_000);
+
     expect(
       Boolean(
         state.familyProfileId &&

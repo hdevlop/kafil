@@ -436,6 +436,7 @@ describe("connected four-account remote runner", () => {
     );
     expect(unitG).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
     expect(unitG).toContain("createDeliveryStaffThroughUi(adminPage, fixture)");
+    expect(unitG).toContain("test.setTimeout(240_000);");
     expect(unitG).toContain("expect(deliveryStaff).toHaveLength(2)");
     expect(unitG).toContain("expect(staffA.id).toBe(createdDeliveryStaff[0]!.id)");
     expect(unitG).toContain("expect(staffB.id).toBe(createdDeliveryStaff[1]!.id)");

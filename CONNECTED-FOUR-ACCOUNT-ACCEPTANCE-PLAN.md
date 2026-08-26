@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G OPERATOR PURCHASE-VARIANCE ASSERTION CORRECTION NOT RUN**
+Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G SCOPED TIMEOUT CORRECTION NOT RUN**
 
 Target: exactly `https://kafala360.ma`
 
@@ -598,6 +598,40 @@ operator purchase-variance assertion correction. One fresh combined A-G plus
 diagnostics attempt is authorized only after the corrected revision is
 published and the intended deployment is healthy.
 
+That correction was published and deployed as
+`385986d334444696f5581a0a6be9c58a69179eaa`. The exact workflow verification,
+image publication, and Dokploy trigger passed, the deployment reported done,
+and the post-deployment preflight-only command passed all 11 boolean guards,
+SSH/Mailpit transport, Chrome, TLS, health, and readiness checks before closing
+its managed tunnel.
+
+One combined A-G plus diagnostics attempt then selected all eight intended
+tests with one worker and zero retries. Units A-F passed in `16.1s`, `27.3s`,
+`41.3s`, `27.6s`, `43.2s`, and `33.1s`. Unit G reached the final role-denial
+block after completing its Staff, cancellation, rejection, purchase variance,
+purchase replay, delivery failure/reassignment/confirmation/replay, Family,
+Sponsor, and Admin projection assertions. Its 180-second test deadline then
+expired as the first final exact denial was registered. No response status was
+observed because Playwright closed the page at the test deadline. Passive
+diagnostics did not run. The terminal result was `6 passed / 1 failed / 1 did
+not run (6.2m)`, native exit `1`; the managed tunnel closed, the local forward
+was released, the temporary grep was restored, and the worktree remained clean.
+
+This is a measured `TEST` budget defect, not evidence of an absent product
+response. Unit G now sets only its own timeout to 240 seconds, leaving the
+remote config's 180-second fail-fast default unchanged for every other test.
+The extra minute covers the three remaining exact denials, four real sign-outs,
+and page closure so the separate passive diagnostics test can run under its
+unchanged default, without adding a retry or weakening any operation-level
+waiter. A red/green source regression pins the Unit G-local budget.
+
+The corrected source contract passes `15 pass / 0 fail / 251 expect()`. Web
+typecheck and targeted ESLint are clean; the complete root lint, typecheck,
+test, and production build pass; and `db:generate` reports no schema changes.
+No remote command has run against this scoped timeout correction. One fresh
+combined A-G plus diagnostics attempt is authorized only after the corrected
+revision is published and the intended deployment is healthy.
+
 A najm-* version change invalidates any pending browser authorization whose
 diagnosis cited package rendering behavior. Re-audit the affected selectors
 against the newly installed package before spending a browser attempt.
@@ -723,8 +757,8 @@ or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
 the smallest implemented prerequisite range. The combined A-F range passes
-with passive diagnostics. Unit G and its operator purchase-variance assertion
-correction are implemented with passing source/static gates. The next
+with passive diagnostics. Unit G and its scoped timeout correction are
+implemented with passing source/static gates. The next
 authorized browser promotion is one combined A-G range plus diagnostics using
 the exact declared titles after the published revision is healthy.
 
@@ -1023,7 +1057,7 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
-Status: **IMPLEMENTED - OPERATOR PURCHASE-VARIANCE ASSERTION CORRECTION REMOTE RANGE NOT RUN**
+Status: **IMPLEMENTED - SCOPED TIMEOUT CORRECTION REMOTE RANGE NOT RUN**
 
 Precondition: the deployed Family catalog exposes at least one active product
 with usable inventory. If not, stop as `ENVIRONMENT BLOCKED`; do not seed or
