@@ -1,7 +1,6 @@
 import { server } from "@kafil/server";
 import { handle } from "najm-core";
 import { withAuthCookiePersistence } from "najm-auth/client/server";
-import { ensureLogoutCookiesCleared } from "@/lib/authLogoutResponse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,8 +17,7 @@ export const GET = serverHandler;
 const persistentPostHandler = withAuthCookiePersistence(serverHandler, {
   rememberCookieName: "kafil.remember",
 });
-export const POST = async (request: Request) =>
-  ensureLogoutCookiesCleared(request, await persistentPostHandler(request));
+export const POST = persistentPostHandler;
 export const PUT = serverHandler;
 export const PATCH = serverHandler;
 export const DELETE = serverHandler;

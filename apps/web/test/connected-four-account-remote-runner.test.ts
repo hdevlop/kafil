@@ -75,7 +75,7 @@ describe("connected four-account remote runner", () => {
   });
 
   test("validates and forwards one optional remote grep argument", () => {
-    const grep = "remote unit [AB]|remote diagnostics";
+    const grep = "remote step 0[12]|remote diagnostics";
     expect(readRemoteGrep({ KAFIL_E2E_REMOTE_GREP: `  ${grep}  ` })).toBe(grep);
     expect(readRemoteAcceptanceConfig({
       ...validEnvironment,
@@ -83,7 +83,7 @@ describe("connected four-account remote runner", () => {
     }).grep).toBe(grep);
     expect(buildRemotePlaywrightArgs(grep).slice(-2)).toEqual(["--grep", grep]);
     expect(buildRemotePlaywrightArgs()).not.toContain("--grep");
-    expect(() => readRemoteGrep({ KAFIL_E2E_REMOTE_GREP: "unit A\n--help" })).toThrow();
+    expect(() => readRemoteGrep({ KAFIL_E2E_REMOTE_GREP: "step 01\n--help" })).toThrow();
     expect(() => readRemoteGrep({
       KAFIL_E2E_REMOTE_GREP: "a".repeat(REMOTE_GREP_MAX_LENGTH + 1),
     })).toThrow();
@@ -133,30 +133,68 @@ describe("connected four-account remote runner", () => {
     expect(configSource).toContain('trace: "off"');
   });
 
-  test("defines serial remote units A-G with isolated contexts and passive diagnostics", () => {
-    const unitA = specSource.slice(
-      specSource.indexOf('test("remote unit A - guarded admin smoke"'),
-      specSource.indexOf('test("remote unit B - Family creation and first login"'),
+  test("defines 16 numbered serial remote steps with isolated contexts and passive diagnostics", () => {
+    const step01 = specSource.slice(
+      specSource.indexOf('test("remote step 01 - guarded admin smoke"'),
+      specSource.indexOf('test("remote step 02 - Family provisioning and first login"'),
     );
     expect(specSource).toContain('test.describe.serial("connected VPS acceptance"');
-    expect(specSource).toContain('test("remote unit A - guarded admin smoke"');
-    expect(specSource).toContain('test("remote unit B - Family creation and first login"');
-    expect(specSource).toContain('test("remote unit C - Sponsor A application and approval"');
-    expect(specSource).toContain('test("remote unit D - Sponsor B application and approval"');
-    expect(specSource).toContain('test("remote unit E - assignments and sponsor privacy"');
-    expect(specSource).toContain('test("remote unit F - contributions and exact funding"');
-    expect(specSource).toContain('test("remote unit G - ordering and delivery"');
+    for (const title of [
+      "remote step 01 - guarded admin smoke",
+      "remote step 02 - Family provisioning and first login",
+      "remote step 03 - Sponsor A application and approval",
+      "remote step 04 - Sponsor B application and approval",
+      "remote step 05 - assignments and sponsor privacy",
+      "remote step 06 - contributions and exact funding",
+      "remote step 07 - delivery staff and reversible orders",
+      "remote step 08 - purchase and delivery lifecycle",
+      "remote step 09 - Family order projection",
+      "remote step 10 - Sponsor A order privacy",
+      "remote step 11 - Sponsor B order privacy",
+      "remote step 12 - Admin order projection",
+      "remote step 13 - Family delivery assignment denial",
+      "remote step 14 - Sponsor A approval denial",
+      "remote step 15 - Sponsor B delivery confirmation denial",
+      "remote step 16 - role logout and closure",
+    ]) {
+      expect(specSource).toContain(`test("${title}"`);
+    }
+    expect(specSource).not.toContain('test("remote unit ');
     expect(specSource).toContain('test("remote diagnostics - final context assertions"');
+    expect(specSource.match(/test\("remote step /g)).toHaveLength(16);
     expect(specSource).toContain("browser.newContext()");
-    expect(unitA).toContain('"/api/dashboard/operator"');
-    expect(unitA).toContain('"Operator dashboard"');
-    expect(unitA).not.toContain("/^Welcome,/i");
+    expect(step01).toContain('"/api/dashboard/operator"');
+    expect(step01).toContain('"Operator dashboard"');
+    expect(step01).not.toContain("/^Welcome,/i");
+  });
+
+  test("observes the exact negative request and any response before awaiting the action", () => {
+    const helper = specSource.slice(
+      specSource.indexOf("async function expectExactNegativeResponse("),
+      specSource.indexOf("function responseData("),
+    );
+    expect(helper).toContain("const requestPromise = page.waitForRequest(");
+    expect(helper).toContain("const responsePromise = page.waitForResponse(");
+    expect(helper).toContain("const actionPromise = action();");
+    expect(helper.indexOf("const requestPromise")).toBeLessThan(
+      helper.indexOf("const actionPromise"),
+    );
+    expect(helper.indexOf("const responsePromise")).toBeLessThan(
+      helper.indexOf("const actionPromise"),
+    );
+    expect(helper).toContain("await Promise.race([");
+    expect(helper).toContain("requestPromise,");
+    expect(helper).toContain("actionPromise.then(");
+    expect(helper).toContain("await Promise.all([actionPromise, responsePromise])");
+    expect(helper).toContain("expect(response.status()).toBe(contract.status)");
+    expect(helper).not.toContain("response.status() === contract.status");
+    expect(helper).not.toContain("const result = await action();");
   });
 
   test("pins Family creation, credential setup, replay denial, and role boundaries", () => {
-    const unitB = specSource.slice(
-      specSource.indexOf('test("remote unit B - Family creation and first login"'),
-      specSource.indexOf('test("remote unit C - Sponsor A application and approval"'),
+    const step02 = specSource.slice(
+      specSource.indexOf('test("remote step 02 - Family provisioning and first login"'),
+      specSource.indexOf('test("remote step 03 - Sponsor A application and approval"'),
     );
     for (const contract of [
       '"/api/families"',
@@ -168,10 +206,10 @@ describe("connected four-account remote runner", () => {
       expect(specSource).toContain(contract);
     }
     expect(specSource).toContain("await createFamilyButton.click({ trial: true, timeout: 5_000 })");
-    expect(unitB).toContain('adminPage.getByText("Loading…", { exact: true })');
-    expect(unitB).toContain('name: "Operator dashboard", exact: true');
-    expect(unitB).toContain("expect(createFamilyRequestCount).toBe(0)");
-    expect(unitB).toContain("expect(createFamilyRequestCount).toBe(1)");
+    expect(step02).toContain('adminPage.getByText("Loading…", { exact: true })');
+    expect(step02).toContain('name: "Operator dashboard", exact: true');
+    expect(step02).toContain("expect(createFamilyRequestCount).toBe(0)");
+    expect(step02).toContain("expect(createFamilyRequestCount).toBe(1)");
     expect(specSource).toContain(
       'poll(() => new URL(familyPage.url()).pathname, { timeout: 5_000 })',
     );
@@ -187,9 +225,9 @@ describe("connected four-account remote runner", () => {
   });
 
   test("pins Sponsor A OTP, approval replay, identifiers, and logout boundaries", () => {
-    const unitC = specSource.slice(
-      specSource.indexOf('test("remote unit C - Sponsor A application and approval"'),
-      specSource.indexOf('test("remote unit D - Sponsor B application and approval"'),
+    const step03 = specSource.slice(
+      specSource.indexOf('test("remote step 03 - Sponsor A application and approval"'),
+      specSource.indexOf('test("remote step 04 - Sponsor B application and approval"'),
     );
     for (const contract of [
       '"/api/applicants"',
@@ -199,38 +237,38 @@ describe("connected four-account remote runner", () => {
       '"Application pending review"',
       '"Find a family to support"',
     ]) {
-      expect(unitC).toContain(contract);
+      expect(step03).toContain(contract);
     }
-    expect(unitC).toContain("expect(applicationRequestCount).toBe(0)");
-    expect(unitC).toContain("expect(applicationRequestCount).toBe(1)");
-    expect(unitC).toContain('browserJsonRequest(adminPage, "GET", "/api/auth/me")');
-    expect(unitC).toContain('expect(responseRecord(adminIdentity.body).role).toBe("admin")');
-    expect(unitC).toContain('"/api/applicants?limit=1&offset=0"');
-    expect(unitC.indexOf("const applicantsCapability")).toBeLessThan(
-      unitC.indexOf("let applicationRequestCount"),
+    expect(step03).toContain("expect(applicationRequestCount).toBe(0)");
+    expect(step03).toContain("expect(applicationRequestCount).toBe(1)");
+    expect(step03).toContain('browserJsonRequest(adminPage, "GET", "/api/auth/me")');
+    expect(step03).toContain('expect(responseRecord(adminIdentity.body).role).toBe("admin")');
+    expect(step03).toContain('"/api/applicants?limit=1&offset=0"');
+    expect(step03.indexOf("const applicantsCapability")).toBeLessThan(
+      step03.indexOf("let applicationRequestCount"),
     );
-    expect(unitC).toContain('{ method: "GET", path: "/api/applicants", status: 401 }');
-    expect(unitC).toContain("response.status() < 400");
-    expect(unitC).toContain("pollExactlyOneOtpMessage({");
-    expect(unitC).toContain("subjectKeyword: otpSubjectKeyword");
-    expect(unitC).toContain("expect(confirmedOtpMessages).toHaveLength(1)");
-    expect(unitC.indexOf("const confirmResponse")).toBeLessThan(
-      unitC.indexOf("await deleteMailboxMessage(otpMessage.ID)"),
+    expect(step03).toContain('{ method: "GET", path: "/api/applicants", status: 401 }');
+    expect(step03).toContain("response.status() < 400");
+    expect(step03).toContain("pollExactlyOneOtpMessage({");
+    expect(step03).toContain("subjectKeyword: otpSubjectKeyword");
+    expect(step03).toContain("expect(confirmedOtpMessages).toHaveLength(1)");
+    expect(step03.indexOf("const confirmResponse")).toBeLessThan(
+      step03.indexOf("await deleteMailboxMessage(otpMessage.ID)"),
     );
-    expect(unitC).toContain(
+    expect(step03).toContain(
       "await submitPreparedLogin(sponsorPage, sponsorADiagnostics, 403)",
     );
-    expect(unitC).toContain("expect(applicantMatches).toHaveLength(1)");
-    expect(unitC).toContain(
+    expect(step03).toContain("expect(applicantMatches).toHaveLength(1)");
+    expect(step03).toContain(
       'const applicantSearch = await onlyVisible(\n      adminPage.getByPlaceholder("Search applicant name...", { exact: true }),\n    )',
     );
-    expect(unitC).toContain("await applicantSearch.fill(sponsorAName)");
-    expect(unitC).not.toContain(
+    expect(step03).toContain("await applicantSearch.fill(sponsorAName)");
+    expect(step03).not.toContain(
       'adminPage\n      .getByPlaceholder("Search applicant name...", { exact: true })\n      .fill(sponsorAName)',
     );
-    expect(unitC).toContain("expect(approval.status()).toBe(200)");
-    expect(unitC).toContain("status: 409");
-    expect(unitC).toContain("prepareLogin(sponsorPage, expectedPhoneE164, sponsorAPassword)");
+    expect(step03).toContain("expect(approval.status()).toBe(200)");
+    expect(step03).toContain("status: 409");
+    expect(step03).toContain("prepareLogin(sponsorPage, expectedPhoneE164, sponsorAPassword)");
     expect(specSource).toContain("sponsorAContext = await newIsolatedContext(browser)");
     expect(specSource).toContain('assertDiagnosticsClean("sponsor-a", sponsorADiagnostics)');
     expect(specSource).not.toContain("@kafil/server/database");
@@ -242,9 +280,9 @@ describe("connected four-account remote runner", () => {
   });
 
   test("pins independent Sponsor B OTP, approval replay, and logout boundaries", () => {
-    const unitD = specSource.slice(
-      specSource.indexOf('test("remote unit D - Sponsor B application and approval"'),
-      specSource.indexOf('test("remote unit E - assignments and sponsor privacy"'),
+    const step04 = specSource.slice(
+      specSource.indexOf('test("remote step 04 - Sponsor B application and approval"'),
+      specSource.indexOf('test("remote step 05 - assignments and sponsor privacy"'),
     );
     for (const contract of [
       "sponsorBContext.newPage()",
@@ -259,47 +297,47 @@ describe("connected four-account remote runner", () => {
       '"/api/dashboard/sponsor"',
       '"/api/sponsors/me/profile"',
     ]) {
-      expect(unitD).toContain(contract);
+      expect(step04).toContain(contract);
     }
     expect(specSource).toContain("sponsorBContext = await newIsolatedContext(browser)");
     expect(specSource).toContain('assertDiagnosticsClean("sponsor-b", sponsorBDiagnostics)');
-    expect(unitD).toContain("await deleteMailboxMessage(otpMessage.ID)");
-    expect(unitD).toContain("await signOut(sponsorPage)");
-    expect(unitD).not.toContain("sponsorAEmail");
-    expect(unitD).not.toContain("sponsorAPassword");
-    expect(unitD).not.toContain("sponsorAApplicantId");
+    expect(step04).toContain("await deleteMailboxMessage(otpMessage.ID)");
+    expect(step04).toContain("await signOut(sponsorPage)");
+    expect(step04).not.toContain("sponsorAEmail");
+    expect(step04).not.toContain("sponsorAPassword");
+    expect(step04).not.toContain("sponsorAApplicantId");
   });
 
-  test("pins Unit E assignment, privacy, canary, and cleanup contracts", () => {
+  test("pins step 05 assignment, privacy, canary, and cleanup contracts", () => {
     const assignmentHelper = specSource.slice(
       specSource.indexOf("async function openComboboxSearch("),
       specSource.indexOf('test.describe.serial("connected VPS acceptance"'),
     );
-    const unitE = specSource.slice(
-      specSource.indexOf('test("remote unit E - assignments and sponsor privacy"'),
-      specSource.indexOf('test("remote unit F - contributions and exact funding"'),
+    const step05 = specSource.slice(
+      specSource.indexOf('test("remote step 05 - assignments and sponsor privacy"'),
+      specSource.indexOf('test("remote step 06 - contributions and exact funding"'),
     );
-    expect(unitE).toContain("await createAssignmentThroughUi(adminPage, sponsorAEmail)");
-    expect(unitE).toContain("await createAssignmentThroughUi(adminPage, sponsorBEmail)");
-    expect(unitE).toContain('{ method: "POST", path: duplicatePath, status: 409 }');
-    expect(unitE).toContain("expect(activeAssignments).toHaveLength(2)");
-    expect(unitE).toContain('"&status=active&limit=100&offset=0"');
-    expect(unitE).toContain('await page.goto("/sponsor/support", { waitUntil: "commit" })');
-    expect(unitE).toContain('toBe("/family")');
-    expect(unitE).toContain(
+    expect(step05).toContain("await createAssignmentThroughUi(adminPage, sponsorAEmail)");
+    expect(step05).toContain("await createAssignmentThroughUi(adminPage, sponsorBEmail)");
+    expect(step05).toContain('{ method: "POST", path: duplicatePath, status: 409 }');
+    expect(step05).toContain("expect(activeAssignments).toHaveLength(2)");
+    expect(step05).toContain('"&status=active&limit=100&offset=0"');
+    expect(step05).toContain('await page.goto("/sponsor/support", { waitUntil: "commit" })');
+    expect(step05).toContain('toBe("/family")');
+    expect(step05).toContain(
       '"/api/support-assignments/catalog?relationship=supported&limit=100&offset=0"',
     );
-    expect(unitE).toContain("expect(familyRows).toHaveLength(1)");
-    expect(unitE).toContain("containsForbiddenProjectionKey(sponsorProjection)");
-    expect(unitE).toContain("containsSensitiveValue(sponsorProjection");
-    expect(unitE).toContain('"/api/contributions/me/plans"');
-    expect(unitE).toContain('"/api/contributions/me"');
-    expect(unitE.match(/status: 404/g)).toHaveLength(3);
-    expect(unitE).toContain("Acceptance privacy canary complete");
-    expect(unitE).toContain('toBe("stopped")');
-    expect(unitE).toContain('toBe("rejected")');
-    expect(unitE).not.toContain("dbQuery(");
-    expect(unitE).not.toContain("console.log");
+    expect(step05).toContain("expect(familyRows).toHaveLength(1)");
+    expect(step05).toContain("containsForbiddenProjectionKey(sponsorProjection)");
+    expect(step05).toContain("containsSensitiveValue(sponsorProjection");
+    expect(step05).toContain('"/api/contributions/me/plans"');
+    expect(step05).toContain('"/api/contributions/me"');
+    expect(step05.match(/status: 404/g)).toHaveLength(3);
+    expect(step05).toContain("Acceptance privacy canary complete");
+    expect(step05).toContain('toBe("stopped")');
+    expect(step05).toContain('toBe("rejected")');
+    expect(step05).not.toContain("dbQuery(");
+    expect(step05).not.toContain("console.log");
     expect(assignmentHelper).toContain('toHaveAttribute("aria-expanded", "true")');
     expect(assignmentHelper).toContain('getAttribute("aria-controls")');
     expect(assignmentHelper).toContain('[data-slot="popover-content"]');
@@ -318,84 +356,130 @@ describe("connected four-account remote runner", () => {
     );
   });
 
-  test("pins Unit F plan ownership, idempotent commands, and exact funding", () => {
-    const unitF = specSource.slice(
-      specSource.indexOf('test("remote unit F - contributions and exact funding"'),
-      specSource.indexOf('test("remote unit G - ordering and delivery"'),
+  test("pins step 06 plan ownership, idempotent commands, and exact funding", () => {
+    const step06 = specSource.slice(
+      specSource.indexOf('test("remote step 06 - contributions and exact funding"'),
+      specSource.indexOf('test("remote step 07 - delivery staff and reversible orders"'),
     );
-    expect(unitF).toContain("readFamilyFundingFromSponsorCatalog(");
-    expect(unitF).toContain('await adminPage.goto("/dashboard", { waitUntil: "commit" })');
-    expect(unitF).not.toContain("prepareLogin(adminPage");
-    expect(unitF).not.toContain("submitPreparedLogin(adminPage");
-    expect(unitF).toContain('kind: "monthly"');
-    expect(unitF).toContain('/pause`');
-    expect(unitF).toContain('/resume`');
-    expect(unitF).toContain('/stop`');
-    expect(unitF).toContain("Acceptance resume-after-stop proof");
-    expect(unitF).toContain("sponsorBDiagnostics");
-    expect(unitF.match(/status: 404/g)).toHaveLength(2);
-    expect(unitF.match(/status: 409/g)).toHaveLength(1);
-    expect(unitF).toContain("acceptance-funding-reject");
-    expect(unitF).toContain("acceptance-funding-refund");
-    expect(unitF).toContain("validationReplay.status");
-    expect(unitF).toContain("refundReplay.status");
-    expect(unitF).toContain("sponsorATargetMinor + sponsorBTargetMinor");
-    expect(unitF).toContain('expect(funding.status).toBe("pending_funding")');
-    expect(unitF).toContain('expect(funding.status).toBe("active")');
-    expect(unitF).toContain('expect(funding.capacityStatus).toBe("funded")');
-    expect(unitF).toContain("const fundedFamilyRows = sponsorAPage.locator(");
-    expect(unitF).toContain(
+    expect(step06).toContain("readFamilyFundingFromSponsorCatalog(");
+    expect(step06).toContain('await adminPage.goto("/dashboard", { waitUntil: "commit" })');
+    expect(step06).not.toContain("prepareLogin(adminPage");
+    expect(step06).not.toContain("submitPreparedLogin(adminPage");
+    expect(step06).toContain('kind: "monthly"');
+    expect(step06).toContain('/pause`');
+    expect(step06).toContain('/resume`');
+    expect(step06).toContain('/stop`');
+    expect(step06).toContain("Acceptance resume-after-stop proof");
+    expect(step06).toContain("sponsorBDiagnostics");
+    expect(step06.match(/status: 404/g)).toHaveLength(2);
+    expect(step06.match(/status: 409/g)).toHaveLength(1);
+    expect(step06).toContain("acceptance-funding-reject");
+    expect(step06).toContain("acceptance-funding-refund");
+    expect(step06).toContain("validationReplay.status");
+    expect(step06).toContain("refundReplay.status");
+    expect(step06).toContain("sponsorATargetMinor + sponsorBTargetMinor");
+    expect(step06).toContain('expect(funding.status).toBe("pending_funding")');
+    expect(step06).toContain('expect(funding.status).toBe("active")');
+    expect(step06).toContain('expect(funding.capacityStatus).toBe("funded")');
+    expect(step06).toContain("const fundedFamilyRows = sponsorAPage.locator(");
+    expect(step06).toContain(
       "has: sponsorAPage.getByText(familyName, { exact: true })",
     );
-    expect(unitF).toContain(
+    expect(step06).toContain(
       'getByRole("navigation", {\n      name: "Pagination",\n      exact: true,',
     );
-    expect(unitF).toContain(
+    expect(step06).toContain(
       'getByRole("button", {\n        name: "Next page",\n        exact: true,',
     );
-    expect(unitF).not.toContain(
+    expect(step06).not.toContain(
       'getByRole("button", {\n        name: "Next",\n        exact: true,',
     );
-    expect(unitF).toContain('locator(\'[aria-current="page"]\')');
-    expect(unitF).toContain('const fundedProgress = await onlyVisible(');
-    expect(unitF).toContain('fundedFamilyRow.getByRole("progressbar"');
-    expect(unitF).not.toContain('locator(\'[data-slot="card"]\')');
-    expect(unitF).not.toContain('sponsorAPage.getByRole("progressbar")');
-    expect(unitF).toContain('expect(fundedProgress).toHaveAttribute(\n      "aria-valuenow",');
-    expect(unitF).toContain("expect(sponsorATargetRows).toHaveLength(1)");
-    expect(unitF).toContain("expect(sponsorBTargetRows).toHaveLength(1)");
-    expect(unitF).toContain("expect(adminTargetRows).toHaveLength(2)");
-    expect(unitF).not.toContain("dbQuery(");
-    expect(unitF).not.toContain("console.log");
+    expect(step06).toContain('locator(\'[aria-current="page"]\')');
+    expect(step06).toContain('const fundedProgress = await onlyVisible(');
+    expect(step06).toContain('fundedFamilyRow.getByRole("progressbar"');
+    expect(step06).not.toContain('locator(\'[data-slot="card"]\')');
+    expect(step06).not.toContain('sponsorAPage.getByRole("progressbar")');
+    expect(step06).toContain('expect(fundedProgress).toHaveAttribute(\n      "aria-valuenow",');
+    expect(step06).toContain("expect(sponsorATargetRows).toHaveLength(1)");
+    expect(step06).toContain("expect(sponsorBTargetRows).toHaveLength(1)");
+    expect(step06).toContain("expect(adminTargetRows).toHaveLength(2)");
+    expect(step06).not.toContain("dbQuery(");
+    expect(step06).not.toContain("console.log");
   });
 
-  test("pins Unit G order money, delivery retry, privacy, and denial contracts", () => {
+  test("pins numbered order steps, typed phase guards, privacy, denials, and logout", () => {
     const deliveryStaffHelper = specSource.slice(
       specSource.indexOf("async function createDeliveryStaffThroughUi"),
       specSource.indexOf("async function readFamilyFundingFromSponsorCatalog"),
     );
-    const unitG = specSource.slice(
-      specSource.indexOf('test("remote unit G - ordering and delivery"'),
+    const orderSubmissionHelper = specSource.slice(
+      specSource.indexOf("async function submitFamilyOrder("),
+      specSource.indexOf("async function openStaffDirectory("),
+    );
+    const orderSteps = specSource.slice(
+      specSource.indexOf('test("remote step 07 - delivery staff and reversible orders"'),
       specSource.indexOf('test("remote diagnostics - final context assertions"'),
     );
-    const familyOrdersReadiness = unitG.slice(
-      unitG.indexOf("const familyOrdersResponse"),
-      unitG.indexOf("const order1Cell"),
+    const step07 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 07 - delivery staff and reversible orders"'),
+      orderSteps.indexOf('test("remote step 08 - purchase and delivery lifecycle"'),
+    );
+    const step08 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 08 - purchase and delivery lifecycle"'),
+      orderSteps.indexOf('test("remote step 09 - Family order projection"'),
+    );
+    const step09 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 09 - Family order projection"'),
+      orderSteps.indexOf('test("remote step 10 - Sponsor A order privacy"'),
+    );
+    const step10 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 10 - Sponsor A order privacy"'),
+      orderSteps.indexOf('test("remote step 11 - Sponsor B order privacy"'),
+    );
+    const step11 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 11 - Sponsor B order privacy"'),
+      orderSteps.indexOf('test("remote step 12 - Admin order projection"'),
+    );
+    const step12 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 12 - Admin order projection"'),
+      orderSteps.indexOf('test("remote step 13 - Family delivery assignment denial"'),
+    );
+    const step13 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 13 - Family delivery assignment denial"'),
+      orderSteps.indexOf('test("remote step 14 - Sponsor A approval denial"'),
+    );
+    const step14 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 14 - Sponsor A approval denial"'),
+      orderSteps.indexOf('test("remote step 15 - Sponsor B delivery confirmation denial"'),
+    );
+    const step15 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 15 - Sponsor B delivery confirmation denial"'),
+      orderSteps.indexOf('test("remote step 16 - role logout and closure"'),
+    );
+    const step16 = orderSteps.slice(
+      orderSteps.indexOf('test("remote step 16 - role logout and closure"'),
+    );
+    const familyOrdersReadiness = orderSteps.slice(
+      orderSteps.indexOf("const familyOrdersResponse"),
+      orderSteps.indexOf("const order1Cell"),
     );
     for (const contract of [
       '"/api/catalog/browse/products?limit=100&offset=0"',
       '"/api/staff/options/delivery"',
-      '"/api/orders/cart/items"',
-      '"/api/orders/submit"',
       "/purchase`",
       "/delivery/assign`",
       "/delivery/start`",
       "/delivery/fail`",
       "/delivery/confirm`",
-      '"/api/orders/supported?limit=100&offset=0"',
     ]) {
-      expect(unitG).toContain(contract);
+      expect(orderSteps).toContain(contract);
     }
+    expect(orderSubmissionHelper).toContain('"/api/orders/cart/items"');
+    expect(orderSubmissionHelper).toContain('"/api/orders/submit"');
+    expect(orderSubmissionHelper).toContain(
+      '"/api/orders/supported?limit=100&offset=0"',
+    );
+    expect(orderSteps.match(/submitFamilyOrder\(/g)).toHaveLength(3);
     expect(specSource).toContain('page.goto("/staff", { waitUntil: "commit" })');
     expect(specSource).toContain('new URL(response.url()).pathname === "/api/staff"');
     expect(specSource).toContain('expect(created.functions).toEqual(["delivery"])');
@@ -421,7 +505,7 @@ describe("connected four-account remote runner", () => {
     );
     // Date of birth is a calendar popover, not a text field, and the schema only
     // requires it for operator staff. Typing into it is what timed out the first
-    // Unit G attempt's successor; it must not come back as a filled field.
+    // The delivery-staff attempt's successor; it must not come back as a filled field.
     expect(deliveryStaffHelper).not.toMatch(/getByLabel\(\/\^Date of birth/);
     // The capabilities portal is resolved through the trigger, never by a global
     // open-popover match — the selector defect that stopped the first A-E attempt.
@@ -437,34 +521,78 @@ describe("connected four-account remote runner", () => {
     expect(deliveryStaffHelper).not.toContain(
       '[data-slot="popover-content"][data-state="open"]',
     );
-    expect(unitG).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
-    expect(unitG).toContain("createDeliveryStaffThroughUi(adminPage, fixture)");
-    expect(unitG).toContain("test.setTimeout(300_000);");
-    expect(unitG).toContain("expect(deliveryStaff).toHaveLength(2)");
-    expect(unitG).toContain("expect(staffA.id).toBe(createdDeliveryStaff[0]!.id)");
-    expect(unitG).toContain("expect(staffB.id).toBe(createdDeliveryStaff[1]!.id)");
-    expect(unitG).not.toContain("fewer than two active Delivery profiles");
+    expect(specSource).toContain('type OrderJourneyState =');
+    expect(specSource).toContain('phase: "not-started"');
+    expect(specSource).toContain('phase: "reversible-orders-complete"');
+    expect(specSource).toContain('phase: "delivery-complete"');
+    expect(specSource).toContain('phase: "family-projection-complete"');
+    expect(specSource).toContain('phase: "sponsor-a-projection-complete"');
+    expect(specSource).toContain('phase: "sponsor-b-projection-complete"');
+    expect(specSource).toContain('phase: "admin-projection-complete"');
+    expect(specSource).toContain('phase: "family-denial-complete"');
+    expect(specSource).toContain('phase: "sponsor-a-denial-complete"');
+    expect(specSource).toContain('phase: "denials-complete"');
+    expect(specSource).toContain('function requireReversibleOrdersComplete(');
+    expect(specSource).toContain('function requireDeliveredOrderPhase(');
+    expect(orderSteps).not.toContain("test.setTimeout(");
+    expect(step07).toContain("createDeliveryStaffThroughUi(adminPage, fixture)");
+    expect(step07).toContain("expect(deliveryStaff).toHaveLength(2)");
+    expect(step07).toContain("expect(staffA.id).toBe(createdDeliveryStaff[0]!.id)");
+    expect(step07).toContain("expect(staffB.id).toBe(createdDeliveryStaff[1]!.id)");
+    expect(step07).toContain('phase: "reversible-orders-complete"');
+    expect(step08).toContain("requireReversibleOrdersComplete(orderJourneyState)");
+    expect(step08).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
+    expect(step08).toContain('phase: "delivery-complete"');
+    expect(step09).toContain('requireDeliveredOrderPhase(\n      orderJourneyState,\n      "delivery-complete"');
+    expect(step09).toContain('phase: "family-projection-complete"');
+    expect(step10).toContain('"family-projection-complete"');
+    expect(step10).toContain("familyProjection.pages.sponsorAPage");
+    expect(step10).toContain('phase: "sponsor-a-projection-complete"');
+    expect(step11).toContain('"sponsor-a-projection-complete"');
+    expect(step11).toContain("sponsorAProjection.pages.sponsorBPage");
+    expect(step11).toContain('phase: "sponsor-b-projection-complete"');
+    expect(step12).toContain('"sponsor-b-projection-complete"');
+    expect(step12).not.toContain("status: 403");
+    expect(step12).toContain('phase: "admin-projection-complete"');
+    expect(step13).toContain('"admin-projection-complete"');
+    expect(step13.match(/status: 401/g)).toHaveLength(1);
+    expect(step13).not.toContain("status: 403");
+    expect(step13).toContain("/delivery/assign`");
+    expect(step13).toContain('phase: "family-denial-complete"');
+    expect(step14).toContain('"family-denial-complete"');
+    expect(step14.match(/status: 401/g)).toHaveLength(1);
+    expect(step14).not.toContain("status: 403");
+    expect(step14).toContain("/approve`");
+    expect(step14).toContain('phase: "sponsor-a-denial-complete"');
+    expect(step15).toContain('"sponsor-a-denial-complete"');
+    expect(step15.match(/status: 401/g)).toHaveLength(1);
+    expect(step15).not.toContain("status: 403");
+    expect(step15).toContain("/delivery/confirm`");
+    expect(step15).toContain('phase: "denials-complete"');
+    expect(step16).toContain('"denials-complete"');
+    expect(step16).toContain("await signOut(familyPage)");
+    expect(step16).toContain("await signOut(sponsorAPage)");
+    expect(step16).toContain("await signOut(sponsorBPage)");
+    expect(step16).toContain("await signOut(adminPage)");
+    expect(orderSteps).not.toContain("fewer than two active Delivery profiles");
     expect(familyOrdersReadiness).toContain('url.pathname === "/api/orders"');
     expect(familyOrdersReadiness).not.toContain(
       'url.pathname === "/api/orders/me"',
     );
     expect(familyOrdersReadiness).toContain('url.searchParams.has("limit")');
     expect(familyOrdersReadiness).toContain('url.searchParams.has("offset")');
-    expect(unitG).toContain('uploadGeneratedPdfEvidence(\n      adminPage,\n      "deliveries"');
-    expect(unitG).toContain("Number(purchasedOrder3.requestedTotalMinor)");
-    expect(unitG).not.toContain("purchasedOrder3.differenceMinor");
-    expect(unitG).toContain("actualTotalMinor - order3TotalMinor");
-    expect(unitG).toContain("purchaseIdempotencyKey");
-    expect(unitG).toContain("confirmationIdempotencyKey");
-    expect(unitG).toContain('expect(failedAttempts[0]!.status).toBe("failed")');
-    expect(unitG).toContain("expect(reassignedAttempts).toHaveLength(2)");
-    expect(unitG).toContain('expect(reassignedAttempts[1]!.staffProfileId).toBe(staffB.id)');
-    expect(unitG).toContain("sponsorAllowedOrderKeys");
-    expect(unitG).toContain("sponsorForbiddenKeys");
-    expect(unitG).toContain("containsSensitiveValue(orderMatches[0], sponsorSensitiveValues)");
-    expect(unitG.match(/status: 403/g)).toHaveLength(3);
-    expect(unitG).not.toContain("dbQuery(");
-    expect(unitG).not.toContain("console.log");
+    expect(orderSteps).toContain('uploadGeneratedPdfEvidence(\n      adminPage,\n      "deliveries"');
+    expect(orderSteps).toContain("Number(purchasedOrder3.requestedTotalMinor)");
+    expect(orderSteps).not.toContain("purchasedOrder3.differenceMinor");
+    expect(orderSteps).toContain("actualTotalMinor - order3TotalMinor");
+    expect(orderSteps).toContain("purchaseIdempotencyKey");
+    expect(orderSteps).toContain("confirmationIdempotencyKey");
+    expect(orderSteps).toContain('expect(failedAttempts[0]!.status).toBe("failed")');
+    expect(orderSteps).toContain("expect(reassignedAttempts).toHaveLength(2)");
+    expect(orderSteps).toContain('expect(reassignedAttempts[1]!.staffProfileId).toBe(staffBId)');
+    expect(specSource).toContain("async function assertSponsorOrderProjection(");
+    expect(orderSteps).not.toContain("dbQuery(");
+    expect(orderSteps).not.toContain("console.log");
   });
 
   test("matches required Najm form labels without exact-name timeouts", () => {
