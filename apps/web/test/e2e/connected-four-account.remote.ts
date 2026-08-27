@@ -334,9 +334,10 @@ async function signOut(page: Page): Promise<void> {
 
 async function assertNoAuthCookies(context: BrowserContext): Promise<void> {
   const cookies = await context.cookies();
-  expect(
-    cookies.find((cookie) => /^(accessToken|refreshToken|najm\.session)$/i.test(cookie.name)),
-  ).toBeUndefined();
+  const hasAuthCookie = cookies.some((cookie) =>
+    /^(accessToken|refreshToken|najm\.session)$/i.test(cookie.name),
+  );
+  expect(hasAuthCookie).toBe(false);
 }
 
 async function browserJsonRequest(
@@ -2478,7 +2479,7 @@ test.describe.serial("connected VPS acceptance", () => {
   });
 
   test("remote unit G - ordering and delivery", async () => {
-    test.setTimeout(240_000);
+    test.setTimeout(300_000);
 
     expect(
       Boolean(

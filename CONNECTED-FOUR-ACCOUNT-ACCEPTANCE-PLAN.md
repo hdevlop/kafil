@@ -1,6 +1,6 @@
 # Kafil VPS Four-Account Black-Box Acceptance Plan
 
-Status: **IN PROGRESS - REMOTE A-F RANGE AND DIAGNOSTICS PASS; UNIT G SCOPED TIMEOUT CORRECTION NOT RUN**
+Status: **IN PROGRESS - UNIT C LOGOUT CORRECTION IMPLEMENTED LOCALLY; DEPLOYED PROOF NOT RUN**
 
 Target: exactly `https://kafala360.ma`
 
@@ -618,12 +618,13 @@ not run (6.2m)`, native exit `1`; the managed tunnel closed, the local forward
 was released, the temporary grep was restored, and the worktree remained clean.
 
 This is a measured `TEST` budget defect, not evidence of an absent product
-response. Unit G now sets only its own timeout to 240 seconds, leaving the
+response. Unit G then set only its own timeout to 240 seconds, leaving the
 remote config's 180-second fail-fast default unchanged for every other test.
-The extra minute covers the three remaining exact denials, four real sign-outs,
-and page closure so the separate passive diagnostics test can run under its
-unchanged default, without adding a retry or weakening any operation-level
-waiter. A red/green source regression pins the Unit G-local budget.
+That extra minute was intended to cover the three remaining exact denials,
+four real sign-outs, and page closure so the separate passive diagnostics test
+could run under its unchanged default, without adding a retry or weakening any
+operation-level waiter. A red/green source regression pinned the Unit G-local
+budget.
 
 The corrected source contract passes `15 pass / 0 fail / 251 expect()`. Web
 typecheck and targeted ESLint are clean; the complete root lint, typecheck,
@@ -631,6 +632,85 @@ test, and production build pass; and `db:generate` reports no schema changes.
 No remote command has run against this scoped timeout correction. One fresh
 combined A-G plus diagnostics attempt is authorized only after the corrected
 revision is published and the intended deployment is healthy.
+
+That 240-second correction was published and deployed as
+`470f3aeebace79c6b675543a19331c307d4f78da`. The exact GitHub verification,
+image publication, and Dokploy trigger passed, the deployment reported done,
+and a post-deployment preflight-only command passed all 11 boolean guards,
+SSH/Mailpit transport, Chrome, verified TLS, health, and readiness before
+closing its managed tunnel.
+
+One combined A-G plus diagnostics attempt then selected all eight intended
+tests with one worker and zero retries. Units A-F passed in `13.9s`, `28.5s`,
+`32.6s`, `20.5s`, `39.0s`, and `24.8s`. Unit G again reached the first final
+role-denial call only after completing its Staff, cancellation, rejection,
+purchase variance and replay, delivery failure/reassignment/confirmation and
+replay, Family, Sponsor, and Admin projection assertions. Its 240-second test
+deadline expired while the expected response waiter for
+`POST /api/orders/:id/delivery/assign -> 403` was being registered. The action
+and response status were not observed because Playwright closed the page at the
+test deadline. Passive diagnostics did not run. The terminal result was
+`6 passed / 1 failed / 1 did not run (6.7m)`, native exit `1`; the managed
+tunnel closed, the local forward was released, the temporary grep was restored,
+and the worktree remained clean.
+
+This is still a measured `TEST` budget defect, not product-response evidence:
+the expected negative action had not executed when the test-wide deadline
+closed its page. Unit G now sets only its own timeout to 300 seconds. The extra
+minute is measured from the observed 240-second pre-denial runtime and leaves
+headroom for the three exact denials, four real sign-outs, and page closure so
+passive diagnostics can run separately. The remote config's 180-second default,
+zero retries, every operation-level waiter, and diagnostics are unchanged.
+
+The corrected red/green source contract passes `15 pass / 0 fail / 251
+expect()`. Web typecheck and targeted ESLint are clean; the complete root lint,
+typecheck, and test suites pass. The first production-build invocation compiled
+and typechecked but stopped at page-data collection because the root `.env`
+does not define `EMAIL_PROVIDER`; the plan-approved Docker build-stage
+throwaway values were then scoped to the command only and the complete
+production build passed without changing `.env`. `db:generate` reports no
+schema changes. No remote command has run against this 300-second correction.
+This correction changes only the local Playwright spec, its source-contract
+test, and this plan; the deployed application code, installed package versions,
+API contracts, and VPS configuration are unchanged. Under section 14's
+test-only correction boundary, one fresh combined A-G plus diagnostics attempt
+is authorized against the already-confirmed healthy application revision
+`470f3aeebace79c6b675543a19331c307d4f78da` before the final evidence commit
+and push. A new VPS image is not a prerequisite for a local runner-only change.
+
+That fresh A-G plus diagnostics attempt passed Unit A in `9.4s` and Unit B in
+`21.6s`, then failed Unit C in `23.0s` during the second Sponsor A logout after
+phone-identifier login. The exact logout response was successful and the page
+reached `/login`, but the browser still held `najm.session`. Units D-G and
+passive diagnostics did not run. The terminal result was `2 passed / 1 failed /
+5 did not run (58.9s)`, native exit `1`; the managed tunnel closed, the local
+forward was released, and the temporary grep was restored. The failed journey
+retained one masked Family with one Child and one approved Sponsor A profile;
+its exact OTP message was deleted. No sensitive runtime value from the failed
+assertion is retained or repeated in this plan.
+
+This exposed two owning defects. The successful logout response did not
+reliably remove the short-lived signed session cookie, classified `PRODUCT` at
+the Kafil/Najm response boundary. The Playwright assertion inspected the full
+matching cookie object, allowing the assertion renderer to include sensitive
+cookie data, classified `TEST SECURITY`. Kafil now keeps Najm's standard
+logout and persistence handlers, then guarantees value-free expiry headers for
+both `refreshToken` and `najm.session` after a successful exact logout response.
+The acceptance helper now asserts only a boolean indicating whether any auth
+cookie remains; it never passes a cookie object, cookie name, domain, or value
+to the assertion renderer.
+
+The red regression failed both the missing-deletion and unsafe-source
+contracts. After the correction, the focused suites report `21 pass / 0 fail /
+285 expect()`, web typecheck passes, and targeted ESLint is clean. Because this
+correction changes an application route response, it crosses section 14's VPS
+publication boundary. The complete root lint, typecheck, and test suites pass;
+the production build passes with only the plan-approved Docker build-stage
+throwaway values scoped to that command; `db:generate` reports no schema
+changes; and the final diff/secret audit is clean. No remote browser attempt is
+authorized until the correction is committed and pushed, the image is
+published and deployed, and the intended revision passes post-deployment
+health and readiness checks.
 
 A najm-* version change invalidates any pending browser authorization whose
 diagnosis cited package rendering behavior. Re-audit the affected selectors
@@ -757,10 +837,13 @@ or argument rejection.
 
 Because later units depend on earlier runtime state, testers normally select
 the smallest implemented prerequisite range. The combined A-F range passes
-with passive diagnostics. Unit G and its scoped timeout correction are
+with passive diagnostics. Unit G and its 300-second scoped timeout correction are
 implemented with passing source/static gates. The next
 authorized browser promotion is one combined A-G range plus diagnostics using
-the exact declared titles after the published revision is healthy.
+the exact declared titles against the already-confirmed healthy application
+revision. A newly healthy deployment is required first only when the owning
+correction changes application code, packages, runtime configuration, or
+deployment inputs.
 
 Unit H is `NOT IMPLEMENTED`. It appears in the title list above because it is
 planned; there is no such test in the spec. Never include it in a grep and never
@@ -835,7 +918,7 @@ separate.
 
 ## 6. Remote Unit A - guarded admin smoke
 
-Status: **PASS - DEPENDENT A-F RANGE AND DIAGNOSTICS**
+Status: **CORRECTION IMPLEMENTED LOCALLY - SECOND LOGOUT DEPLOYED PROOF NOT RUN**
 
 - [x] Run every boolean safety check.
 - [x] Open the managed Mailpit SSH tunnel and authenticate to its API.
@@ -940,7 +1023,8 @@ Back in `sponsorAContext`:
 - [x] Assert sponsor navigation and the empty supported-family state.
 - [x] Log out through the UI, assert cookies are absent, and assert
   `GET /api/sponsors/me/profile -> 401`.
-- [x] Sign in again with the same E.164 phone identifier, then log out.
+- [ ] Sign in again with the same E.164 phone identifier, then log out with
+  `najm.session` absent after the successful response.
 
 Do not report or preserve the OTP, applicant password, mailbox body, email,
 phone, or applicant/user/profile IDs.
@@ -1057,7 +1141,7 @@ report those as `NOT VERIFIED`.
 
 ## 12. Remote Unit G - ordering and delivery
 
-Status: **IMPLEMENTED - SCOPED TIMEOUT CORRECTION REMOTE RANGE NOT RUN**
+Status: **IMPLEMENTED - 300-SECOND SCOPED TIMEOUT CORRECTION REMOTE RANGE NOT RUN**
 
 Precondition: the deployed Family catalog exposes at least one active product
 with usable inventory. If not, stop as `ENVIRONMENT BLOCKED`; do not seed or
@@ -1217,6 +1301,29 @@ Never rerun an unchanged hypothesis. The coder must change the test,
 instrumentation, implementation, or diagnosis before authorizing one new
 focused attempt. A pre-browser SSH/Mailpit failure is `ENVIRONMENT`; confirm
 cleanup and report it without printing values.
+
+### Correction publication boundary
+
+Do not create a commit, push, image, or deployment cycle for every intermediate
+Playwright edit.
+
+- A runner-only correction that changes only the remote spec, its runner or
+  source-contract tests, and plan evidence may be exercised from the local
+  worktree after its red/green source regression, affected static checks, full
+  required local gate, exact diff audit, and one fresh user instruction. The
+  deployed application revision must already be known healthy, and no
+  application/package/config input may have changed. Commit and push the
+  accepted runner correction and its browser evidence once, as one logical
+  result.
+- A correction that changes application code, a Najm or other runtime package,
+  runtime/deployment configuration, migrations, seed/grant state, or any input
+  consumed by the VPS must be committed and pushed, pass verification and image
+  publication, trigger deployment, and be separately confirmed healthy before
+  the next remote attempt.
+- If a test-only push automatically triggers the deployment workflow, that
+  trigger is publication side effect, not evidence that the unchanged
+  application needed redeployment. Never spend an extra browser attempt solely
+  to match that incidental image.
 
 ---
 

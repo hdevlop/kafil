@@ -236,6 +236,9 @@ describe("connected four-account remote runner", () => {
     expect(specSource).not.toContain("@kafil/server/database");
     expect(specSource).not.toContain("dbQuery(");
     expect(specSource).not.toContain("console.log");
+    expect(specSource).toContain("cookies.some((cookie) =>");
+    expect(specSource).toContain("expect(hasAuthCookie).toBe(false)");
+    expect(specSource).not.toContain("cookies.find((cookie) =>");
   });
 
   test("pins independent Sponsor B OTP, approval replay, and logout boundaries", () => {
@@ -436,7 +439,7 @@ describe("connected four-account remote runner", () => {
     );
     expect(unitG).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
     expect(unitG).toContain("createDeliveryStaffThroughUi(adminPage, fixture)");
-    expect(unitG).toContain("test.setTimeout(240_000);");
+    expect(unitG).toContain("test.setTimeout(300_000);");
     expect(unitG).toContain("expect(deliveryStaff).toHaveLength(2)");
     expect(unitG).toContain("expect(staffA.id).toBe(createdDeliveryStaff[0]!.id)");
     expect(unitG).toContain("expect(staffB.id).toBe(createdDeliveryStaff[1]!.id)");

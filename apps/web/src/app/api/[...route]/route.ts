@@ -1,6 +1,7 @@
 import { server } from "@kafil/server";
 import { handle } from "najm-core";
 import { withAuthCookiePersistence } from "najm-auth/client/server";
+import { ensureLogoutCookiesCleared } from "@/lib/authLogoutResponse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,9 +15,11 @@ export const GET = serverHandler;
 // recognizes a setup response without configuration. Only the preference
 // cookie name is Kafil's, and renaming it would silently restore persistent
 // cookies for a browser still holding `kafil.remember=0`.
-export const POST = withAuthCookiePersistence(serverHandler, {
+const persistentPostHandler = withAuthCookiePersistence(serverHandler, {
   rememberCookieName: "kafil.remember",
 });
+export const POST = async (request: Request) =>
+  ensureLogoutCookiesCleared(request, await persistentPostHandler(request));
 export const PUT = serverHandler;
 export const PATCH = serverHandler;
 export const DELETE = serverHandler;
