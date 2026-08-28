@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import {
   REMOTE_GREP_MAX_LENGTH,
+  buildRemoteAuthPlaywrightArgs,
   buildRemotePlaywrightArgs,
   buildSshTunnelArgs,
   handleConcurrentPromise,
@@ -33,6 +34,10 @@ const validEnvironment: Record<string, string> = {
 
 const runnerSource = readFileSync(
   new URL("../scripts/run-connected-four-account-remote-e2e.ts", import.meta.url),
+  "utf8",
+);
+const sharedRunnerSource = readFileSync(
+  new URL("../scripts/remote-acceptance-runner.ts", import.meta.url),
   "utf8",
 );
 const configSource = readFileSync(
@@ -114,6 +119,9 @@ describe("connected four-account remote runner", () => {
     }).grep).toBe(grep);
     expect(buildRemotePlaywrightArgs(grep).slice(-2)).toEqual(["--grep", grep]);
     expect(buildRemotePlaywrightArgs()).not.toContain("--grep");
+    expect(buildRemoteAuthPlaywrightArgs()).toContain(
+      "test/e2e/auth-lifecycle.remote.ts",
+    );
     expect(() => readRemoteGrep({ KAFIL_E2E_REMOTE_GREP: "step 01\n--help" })).toThrow();
     expect(() => readRemoteGrep({
       KAFIL_E2E_REMOTE_GREP: "a".repeat(REMOTE_GREP_MAX_LENGTH + 1),
@@ -152,10 +160,10 @@ describe("connected four-account remote runner", () => {
   test("keeps preflight ahead of filtered Playwright and never starts Next.js", () => {
     expect(runnerSource).not.toContain("next dev");
     expect(runnerSource).not.toContain("next start");
-    expect(runnerSource).toContain('"--preflight-only"');
-    expect(runnerSource).toContain("buildRemotePlaywrightArgs(config.grep)");
-    expect(runnerSource.indexOf("await waitForMailbox")).toBeLessThan(
-      runnerSource.indexOf("buildRemotePlaywrightArgs(config.grep)"),
+    expect(runnerSource).toContain("buildRemotePlaywrightArgs(readRemoteGrep(Bun.env))");
+    expect(sharedRunnerSource).toContain('"--preflight-only"');
+    expect(sharedRunnerSource.indexOf("await waitForMailbox")).toBeLessThan(
+      sharedRunnerSource.indexOf("options.buildPlaywrightArgs()"),
     );
     expect(configSource).toContain('baseURL !== "https://kafala360.ma"');
     expect(configSource).toContain("timeout: 180_000");
@@ -326,11 +334,10 @@ describe("connected four-account remote runner", () => {
     expect(specSource).not.toContain("@kafil/server/database");
     expect(specSource).not.toContain("dbQuery(");
     expect(specSource).not.toContain("console.log");
-    expect(specSource).toContain("const authCookieKinds = cookies.flatMap((cookie) =>");
-    expect(specSource).toContain('return ["access"]');
-    expect(specSource).toContain('return ["refresh"]');
-    expect(specSource).toContain('return ["session"]');
+    expect(specSource).toContain("describeRecognizedAuthCookies(cookies)");
+    expect(specSource).toContain("recordAuthCookieWriters(page)");
     expect(specSource).toContain("auth-boundary-responses=");
+    expect(specSource).toContain("cookie-writers=");
     expect(specSource).not.toContain("cookie.value");
     expect(specSource).not.toContain("cookies.find((cookie) =>");
   });
@@ -719,12 +726,16 @@ describe("connected four-account remote runner", () => {
     expect(signOutHelper).toContain(
       "await signOutButton.click({ trial: true, timeout: 5_000 })",
     );
+    expect(signOutHelper).toContain("recordAuthCookieWriters(page)");
+    expect(signOutHelper).toContain("await cookieWriterRecorder.stop()");
     expect(signOutHelper).toContain('page.on("response", observeAuthBoundaryResponse)');
     expect(signOutHelper).toContain('page.off("response", observeAuthBoundaryResponse)');
     expect(signOutHelper).toContain('"/api/auth/session/recover"');
     expect(signOutHelper.indexOf("click({ trial: true")).toBeLessThan(
       signOutHelper.indexOf("page.waitForResponse("),
     );
+    expect(specSource).toContain("describeRecognizedAuthCookies(cookies)");
+    expect(specSource).toContain("cookie-writers=${JSON.stringify(cookieWriterEvents)}");
     expect(orderSteps).not.toContain("fewer than two active Delivery profiles");
     expect(familyOrdersReadiness).toContain('url.pathname === "/api/orders"');
     expect(familyOrdersReadiness).not.toContain(

@@ -193,6 +193,16 @@ export function buildRemotePlaywrightArgs(grep?: string): string[] {
   return args;
 }
 
+export function buildRemoteAuthPlaywrightArgs(): string[] {
+  return [
+    "playwright",
+    "test",
+    "test/e2e/auth-lifecycle.remote.ts",
+    "--config",
+    "playwright.remote.config.ts",
+  ];
+}
+
 export function buildSshTunnelArgs(config: RemoteAcceptanceConfig): string[] {
   const args = [
     "-N",

@@ -43,5 +43,10 @@ export const auth = defineAuth({
   },
   refreshThreshold: 0.8,
   tabSync: true,
-  verifyAlways: true,
+  // Proxy is an optimistic routing boundary. Revalidating every otherwise
+  // valid signed snapshot makes every protected page response a potential
+  // `najm.session` writer, including a response that began before logout and
+  // arrives after the logout deletion. API authorization remains authoritative,
+  // and a missing or expired snapshot still uses Najm's recovery path.
+  verifyAlways: false,
 });

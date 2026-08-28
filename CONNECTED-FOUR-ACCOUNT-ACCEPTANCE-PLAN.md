@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS — CORRECTED 4-TEST FOCUSED RANGE PASSED; FRESH 18-TEST AUTHORIZATION REQUIRED**
+Status: **IN PROGRESS — DEDICATED AUTH MATRIX IMPLEMENTED LOCALLY; REMOTE EXECUTION PENDING**
 
 Target: exactly `https://kafala360.ma`
 
@@ -893,7 +893,12 @@ deployed, and confirmed healthy. The corrected 5-test Sponsor B range and the
 later corrected 4-test Sponsor A diagnostic range have both passed. The plan
 remains **IN PROGRESS** until:
 
-- a fresh user instruction authorizes one complete remote attempt;
+
+- the dedicated auth lifecycle slice in section 11 proves every login/logout
+  boundary, the last `najm.session` writer, cross-tab logout, and an in-flight
+  protected-request overlap without retaining cookie values;
+- a fresh user instruction authorizes one complete remote attempt after that
+  auth slice passes on the exact healthy deployed revision;
 - the runner header reports exactly `18` tests, one worker, and zero retries;
 - all 16 numbered steps, the responsive unit, and diagnostics pass together;
 - step 16 reports zero retained API-visible runtime rows, protected evidence
@@ -902,3 +907,279 @@ remains **IN PROGRESS** until:
   marker/output pass the secret and runtime-sensitive-value audit;
 - the accepted test/plan evidence is committed and pushed under section 8;
 - database-only guarantees remain explicitly `NOT VERIFIED`.
+
+## 11. Dedicated auth lifecycle isolation plan
+
+### 11.1 Reason and latest complete-attempt evidence
+
+The latest freshly authorized complete attempt ran once against the same
+healthy deployed application revision
+`8334f4c6478ec90565ca31f45eab7fdc29d101cb`:
+
+- guarded preflight passed all 11 booleans plus SSH identity, system Chrome,
+  forwarding-port availability, authenticated Mailpit, verified TLS,
+  `/login`, `/apply`, health, and readiness;
+- Playwright selected exactly `18` tests with one worker and zero retries;
+- steps 01 and 02 passed in `9.1s` and `20.7s`;
+- step 03 failed in `25.4s` at Sponsor A's first real logout after email login;
+- the exact `POST /api/auth/logout` returned `200` and navigation reached
+  `/login`, but the value-free cookie assertion found only the recognized
+  `session` kind still present; the browser-visible auth-boundary response list
+  contained only `/api/auth/logout:200`;
+- steps 04-16, the responsive unit, and diagnostics did not run;
+- terminal: `1 failed, 15 did not run, 2 passed (57.5s)`, native exit `1`;
+- the runner reported `MANAGED SSH TUNNEL CLOSED`, the forwarding port was
+  independently free, and the sole retained artifact was the value-free failed
+  `.last-run.json` marker with one failed test ID;
+- no error context was retained, and configured-secret plus
+  runtime-sensitive-pattern scans found zero matches;
+- step 16 did not run, so this attempt's disposable graph may remain.
+
+This is classified `PRODUCT`, currently suspected at the Najm session-recovery
+and logout ordering boundary. It is not yet a proved package root cause. The
+signature is consistent with a protected response that began with the old
+refresh cookie, recovered a signed `najm.session` server-side, and delivered
+that cookie after the successful logout response deleted the refresh cookie.
+Because middleware recovery is server-to-server, the browser may not expose a
+separate `/api/auth/session/recover` request. The isolated logout-response test
+proves deletion headers on that response only; it does not prove that no older
+response can write the session cookie afterward.
+
+Do not start another complete 18-test journey to investigate this hypothesis.
+First implement and pass the smallest dedicated auth lifecycle slice below.
+
+### 11.2 Value-free causal instrumentation
+
+Extend the auth diagnostic before changing product behavior. From immediately
+before the one logout click through the protected-denial assertion, retain only:
+
+- monotonically increasing event order;
+- browser-visible response method, pathname, and status;
+- whether a response contains a `najm.session` `set` or `delete` directive;
+- the remaining recognized cookie kind plus domain and path;
+- the final pathname and protected endpoint status.
+
+Parse cookie headers in memory and discard their values. Never retain or print
+cookie values, credentials, identities, tokens, response bodies, or raw
+`Set-Cookie` headers. Observe every browser-visible response in the interval,
+not only `/api/auth/logout`, `/api/auth/refresh`, and
+`/api/auth/session/recover`. Register observers before the action and remove
+them in `finally`.
+
+The diagnostic must distinguish these outcomes:
+
+1. logout omitted or scoped the `najm.session` deletion incorrectly;
+2. logout deleted it and a later browser-visible response reissued it;
+3. the remaining cookie has a different domain/path and was never targeted;
+4. no response-level writer is visible, which leaves server-side middleware
+   recovery or browser cookie-application ordering as the narrowed boundary.
+
+No retry, sleep, longer timeout, `clearCookies()`, forced click, mock,
+`page.route()`, raw header logging, or direct state mutation may be added.
+
+### 11.3 Source and package regression ladder
+
+Before any remote browser attempt:
+
+1. Add a red source contract for the value-free diagnostic and its exact event
+   fields.
+2. Add a package-boundary regression that overlaps a protected session
+   recovery with logout and completes the recovery response after logout. The
+   assertion must prove the final cookie contract, not only the contents of the
+   logout response.
+3. Keep the existing sequential `withAuthCookiePersistence()` regression; it
+   remains useful but is insufficient by itself.
+4. Exercise the real Next.js 16 proxy integration with `verifyAlways: true`, a
+   protected request, real logout, and the public `/login` navigation.
+5. Fix the narrowest owning layer only after the red regression identifies it.
+   If ownership is Najm, validate and publish the Najm package before updating
+   Kafil. If ownership is Kafil integration, keep the correction in the
+   existing auth/proxy boundary without adding a parallel auth system.
+6. Run the owning package gate, Kafil's focused auth tests, targeted lint and
+   typecheck, the root gate in section 9, and `db:generate` with no schema
+   change.
+
+### 11.4 Dedicated browser matrix
+
+Implement a separate serial remote auth spec rather than embedding these
+diagnostics in the financial journey. Reuse the guarded runner's exact-origin,
+one-worker, zero-retry, verified-TLS, no-artifact, and owned-tunnel contracts.
+The runner must select this spec explicitly and fail closed if it would also
+select the 18-test financial spec.
+
+The planned exact titles are:
+
+```text
+remote auth 01 - guarded setup and Admin lifecycle
+remote auth 02 - Family first-login and lifecycle
+remote auth 03 - Sponsor email lifecycle
+remote auth 04 - Sponsor phone lifecycle
+remote auth 05 - Sponsor same-context email-phone sequence
+remote auth 06 - cross-tab logout propagation
+remote auth 07 - in-flight protected response logout overlap
+remote auth 08 - stale session without refresh is denied and cleared
+remote auth 09 - supported cleanup and closure
+remote auth diagnostics - final context and cookie-writer assertions
+```
+
+Discovery-only listing must report exactly **10 tests in one file** before the
+first remote instruction is requested.
+
+Every principal lifecycle must use a fresh isolated context except the two
+tests whose contract intentionally requires same-context or same-context
+cross-tab behavior. Each applicable lifecycle must assert:
+
+- no recognized auth cookie before login;
+- one exact hydrated `POST /api/auth/login` with success;
+- the correct role surface and one protected read succeed;
+- one real UI logout produces one exact successful
+  `POST /api/auth/logout`;
+- navigation reaches `/login`;
+- `refreshToken` and `najm.session` are both absent;
+- the role's protected endpoint returns one exact `401`;
+- a real re-login succeeds when the matrix title includes a repeated or
+  alternate-identifier lifecycle.
+
+Specific boundaries:
+
+- Admin uses the configured existing account and proves logout/re-login without
+  creating a second Admin.
+- Family is provisioned through the deployed Admin UI, completes credential
+  setup, proves the temporary credential is rejected, then proves normal
+  login/logout/re-login.
+- Sponsor is created through the public application, exact OTP, approval, and
+  replay contracts, then proves email and normalized-phone login separately.
+- The same-context sequence performs email login/logout followed by phone
+  login/logout for the same Sponsor without replacing or clearing the context.
+- The cross-tab unit uses two pages in one context, proves package tab-sync
+  logout propagation, and proves the second page cannot refresh or restore the
+  authenticated state.
+- The overlap unit registers the protected request before triggering the one
+  logout action, proves the observed ordering without arbitrary delay, and
+  fails if any later response restores `najm.session`.
+- The stale-session unit begins only through an authorized product flow. It
+  must prove that `najm.session` without `refreshToken` cannot authenticate a
+  protected request and that the normal middleware response clears it. It must
+  not manufacture cookies or mutate browser state directly.
+
+The setup creates only the minimum disposable Family, Sponsor, applicant, and
+mailbox records required by these auth paths. The cleanup unit removes them
+through supported authenticated application APIs and exact-recipient Mailpit
+deletion, reports counts only, performs real logout, and closes every page and
+context. Database-only guarantees remain `NOT VERIFIED`.
+
+### 11.5 Promotion and one-attempt rule
+
+After the source/package correction is committed, published, deployed when
+required, and the exact new image is confirmed healthy:
+
+1. Obtain one fresh user instruction for the dedicated 10-test auth matrix.
+2. Run it once with one worker and zero retries; verify the header says exactly
+   `10` tests before interpreting results.
+3. On failure, preserve the native exit and sanitized last-writer fingerprint,
+   classify ownership, confirm tunnel/port cleanup, audit artifacts, and stop
+   without editing or rerunning.
+4. On success, require all nine auth units plus diagnostics to pass, supported
+   cleanup counts to be zero, the tunnel and artifact audit to be clean, and
+   the accepted evidence to be committed and pushed.
+5. Only then obtain a separate fresh instruction for one complete 18-test
+   four-account attempt. The auth-matrix authorization must never be reused for
+   the financial journey.
+
+### 11.6 Local correction evidence (2026-08-28)
+
+The deterministic package-boundary regression identifies Kafil's proxy
+configuration as the narrow owning layer:
+
+- installed `najm-auth@3.1.5` intentionally performs session recovery and
+  reissues `najm.session` on every protected request when `verifyAlways: true`;
+- the regression starts that recovery, applies the logout deletion first, then
+  completes the older protected response and proves that the final simulated
+  browser cookie state contains `najm.session`;
+- the corrected `verifyAlways: false` branch accepts the same valid signed
+  snapshot without recovery, emits no session-cookie directive, applies the
+  logout deletion, and proves the final session-cookie state is absent;
+- Kafil's API authorization remains authoritative, while missing, invalid, or
+  expired proxy snapshots still use Najm recovery.
+
+The removed Proxy prefetch detector was not a valid Next.js 16 boundary:
+internal Flight headers such as `next-router-prefetch` and
+`next-router-state-tree` are stripped before the Proxy function receives its
+`Request`. The Proxy now delegates directly to `auth.middleware(request)`.
+
+Value-free browser diagnostics now classify only recognized cookie kind,
+domain, and path, and record only response order, method, pathname, status, and
+the `najm.session` set/delete directive scope. Cookie values and raw
+`Set-Cookie` headers are discarded in memory and cannot enter an assertion or
+artifact.
+
+Local verification:
+
+- focused auth/proxy/runner/session tests: `34 passed`, `0 failed`;
+- root lint: passed;
+- root typecheck: passed;
+- root tests: web `314 passed`; server `336 passed`, `53` database-opt-in tests
+  skipped; seed `85 passed`; no failures;
+- production build: passed with the Dockerfile's documented throwaway
+  build-only environment after the ordinary local environment lacked
+  `EMAIL_PROVIDER` during page-data collection;
+- `db:generate`: passed with `No schema changes, nothing to migrate`.
+
+No remote browser test was run under the implementation instruction. The
+separate 10-test spec and fail-closed runner in section 11.4 are implemented as
+recorded below; a fresh explicit instruction is still required for their one
+remote execution.
+
+### 11.7 Dedicated auth-matrix implementation evidence (2026-08-28)
+
+The remote auth lifecycle is now a separate serial spec with the exact ten
+titles in section 11.4. Its dedicated command can select only
+`test/e2e/auth-lifecycle.remote.ts`; it accepts no grep and cannot co-select the
+18-test financial spec. Both remote commands reuse one guarded preflight and
+owned-tunnel implementation, preserving the exact origin, verified TLS, system
+Chrome, one worker, zero retries, disabled browser artifacts, authenticated
+loopback Mailpit, and tunnel cleanup contracts.
+
+The matrix creates only one disposable Family and one Sponsor/applicant. It
+proves Admin logout/re-login, Family credential setup and temporary-credential
+denial, Sponsor email and normalized-phone lifecycles, the same-context
+email/phone sequence, cross-tab logout propagation, an authenticated protected
+request initiated before logout, post-logout protected denial, supported
+Family/applicant cleanup, exact-recipient mailbox cleanup, and counts-only
+closure diagnostics.
+
+Each real logout starts the value-free response recorder before the click and
+keeps it active until one exact protected `401` is consumed. The retained
+in-memory evidence contains only alias, final pathname, protected status, event
+order, method, pathname, response status, and `najm.session` set/delete scope.
+Every unit fails if a session writer is observed after the logout deletion or
+if any recognized auth cookie remains.
+
+An exact “session cookie present while only the HttpOnly refresh cookie is
+removed” state cannot be reached through a supported browser product action:
+logout clears both, and manufacturing or filtering HttpOnly cookies would be
+direct browser-state mutation forbidden by this plan. Therefore the exact
+session-only construction remains covered by the deterministic package-boundary
+regression, while remote auth unit 08 proves the reachable black-box boundary:
+after real logout, protected API and route access are denied and no stale auth
+cookie can survive or recover the session.
+
+Local source evidence before the final root gate:
+
+- the new source contract was red with `0 passed, 3 failed` before the auth spec
+  and runner existed;
+- focused auth/runner regressions pass with `27 passed, 0 failed`;
+- targeted ESLint and the web typecheck pass;
+- discovery-only Playwright listing with non-secret placeholders reports
+  exactly `10 tests in 1 file` without launching Chrome, opening an SSH tunnel,
+  or contacting the VPS.
+
+The complete local gate also passes: root lint and typecheck; web `317 passed`;
+server `336 passed` with `53` database-opt-in tests skipped; seed `85 passed`;
+the production build with Dockerfile-equivalent command-scoped throwaway
+values; and `db:generate` with `No schema changes, nothing to migrate`.
+
+No remote preflight or browser attempt was executed. The next remote action is
+exactly one dedicated auth-matrix command after the application correction is
+committed, published, deployed, and the exact revision is confirmed healthy,
+followed by a fresh explicit user instruction.

@@ -64,6 +64,19 @@ describe("the proxy stays free of React-server code", () => {
     expect(authConfig).not.toContain("client/server/react");
     expect(authConfig).not.toContain('from "react"');
   });
+
+  test("proxy treats the signed session as an optimistic snapshot", () => {
+    expect(authConfig).toContain("verifyAlways: false");
+    expect(authConfig).not.toContain("verifyAlways: true");
+
+    // Next.js 16 strips internal Flight headers before Proxy receives the
+    // Request. An in-function prefetch detector therefore cannot reliably
+    // prevent an older protected response from recovering `najm.session`
+    // after logout.
+    expect(proxy).not.toContain("next-router-prefetch");
+    expect(proxy).not.toContain("next-router-state-tree");
+    expect(proxy).toContain("return auth.middleware(request)");
+  });
 });
 
 describe("every session consumer goes through the shared module", () => {

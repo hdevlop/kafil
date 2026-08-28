@@ -20,6 +20,11 @@ import {
   handleConcurrentPromise,
   retryReadAfterConnectionReset,
 } from "../../scripts/connected-four-account-remote-runtime";
+import {
+  describeRecognizedAuthCookies,
+  recordAuthCookieWriters,
+  type AuthCookieWriterEvent,
+} from "./authCookieDiagnostics";
 
 const baseUrl = process.env.KAFIL_E2E_BASE_URL ?? "";
 const adminEmail = process.env.KAFIL_ADMIN_EMAIL ?? "";
@@ -439,15 +444,27 @@ async function signOut(page: Page): Promise<void> {
       }),
     ).toBe(true);
     await signOutButton.click({ trial: true, timeout: 5_000 });
-    const logoutResponse = page.waitForResponse(
-      (response) =>
-        response.request().method() === "POST" &&
-        new URL(response.url()).pathname === "/api/auth/logout",
-    );
-    await signOutButton.click();
-    expect((await logoutResponse).status()).toBeLessThan(400);
-    await expect.poll(() => new URL(page.url()).pathname).toBe("/login");
-    await assertNoAuthCookies(page.context(), authBoundaryResponses);
+    const cookieWriterRecorder = recordAuthCookieWriters(page);
+    let cookieWriterRecorderStopped = false;
+    try {
+      const logoutResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          new URL(response.url()).pathname === "/api/auth/logout",
+      );
+      await signOutButton.click();
+      expect((await logoutResponse).status()).toBeLessThan(400);
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/login");
+      const cookieWriterEvents = await cookieWriterRecorder.stop();
+      cookieWriterRecorderStopped = true;
+      await assertNoAuthCookies(
+        page.context(),
+        authBoundaryResponses,
+        cookieWriterEvents,
+      );
+    } finally {
+      if (!cookieWriterRecorderStopped) await cookieWriterRecorder.stop();
+    }
   } finally {
     page.off("response", observeAuthBoundaryResponse);
   }
@@ -462,17 +479,13 @@ async function restoreDesktopViewports(...pages: Page[]): Promise<void> {
 async function assertNoAuthCookies(
   context: BrowserContext,
   authBoundaryResponses: string[] = [],
+  cookieWriterEvents: AuthCookieWriterEvent[] = [],
 ): Promise<void> {
   const cookies = await context.cookies();
-  const authCookieKinds = cookies.flatMap((cookie) => {
-    if (/^accessToken$/i.test(cookie.name)) return ["access"];
-    if (/^refreshToken$/i.test(cookie.name)) return ["refresh"];
-    if (/^najm\.session$/i.test(cookie.name)) return ["session"];
-    return [];
-  });
+  const authCookieScopes = describeRecognizedAuthCookies(cookies);
   expect(
-    authCookieKinds,
-    `recognized auth cookies remained after logout; kinds=${authCookieKinds.join(",") || "none"}; auth-boundary-responses=${authBoundaryResponses.join(",") || "none"}`,
+    authCookieScopes,
+    `recognized auth cookies remained after logout; scopes=${JSON.stringify(authCookieScopes)}; auth-boundary-responses=${authBoundaryResponses.join(",") || "none"}; cookie-writers=${JSON.stringify(cookieWriterEvents)}`,
   ).toEqual([]);
 }
 
