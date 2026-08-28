@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS — 17-TEST CORE PASSED; RESPONSIVE PRODUCT DEFECT FIXED IN NAJM KIT; CORRECTED KAFIL DEPLOYMENT PENDING**
+Status: **IN PROGRESS — CORRECTED 3-TEST FOCUSED RANGE PASSED; FRESH 18-TEST AUTHORIZATION REQUIRED**
 
 Target: exactly `https://kafala360.ma`
 
@@ -204,14 +204,74 @@ React-server tests, lint/type checks, build, and a current public API snapshot.
 The commit-linked tarball was published and registry integrity verification
 passed.
 
-Kafil now resolves the exact `najm-kit@2.11.8` package locally. The installed
+Kafil now resolves the exact `najm-kit@2.11.8` package. The installed
 compiled artifact contains the focus-transfer and keyboard-navigation logic.
 The root lint and typecheck gates passed; tests passed with `305` web, `336`
 server (`53` opt-in database integrations skipped), and `85` seed tests. The
 production build passed with only the Dockerfile's command-scoped throwaway
 build values, and `bun run db:generate` reported no schema changes. The
-dependency change still requires commit, image publication, deployment, and a
-healthy exact-revision check before another remote browser instruction.
+dependency and acceptance changes were committed as `1d77005` and `8334f4c`
+and pushed. GitHub verification, the exact SHA/main image publication, and the
+Dokploy trigger passed. A value-free read-only deployment check then confirmed
+exactly one app-service container at full OCI revision
+`8334f4c6478ec90565ca31f45eab7fdc29d101cb` with Docker health `healthy`.
+Guarded preflight passed all 11 booleans plus SSH identity, Chrome, forwarding-
+port availability, authenticated Mailpit, TLS `/login` and `/apply`, health,
+and readiness, then closed the managed tunnel. A fresh instruction is now
+required before the next remote browser attempt.
+
+That freshly authorized complete attempt then ran once on deployed revision
+`8334f4c`:
+
+- guarded preflight passed every boolean plus SSH, Mailpit Basic auth, Chrome,
+  TLS, application health, and readiness;
+- Playwright reported exactly `18` tests, one worker, and zero retries;
+- steps 01-15 and the responsive unit passed, including the corrected keyboard
+  focus, phone/tablet, RTL, protected-image, and overflow assertions;
+- step 16 timed out after 180 seconds on its first Family logout, before any
+  supported record-deletion request ran: the responsive unit had left the
+  shared Family page at the phone viewport, and the test helper selected a
+  logout button that Playwright reported outside the viewport;
+- the final diagnostics test did not run after the serial failure;
+- terminal: `1 failed, 1 did not run, 16 passed (7.6m)`, native exit `1`;
+- the managed SSH tunnel closed and the local forwarding port was free;
+- the only retained artifact was the value-free failed `.last-run.json`
+  marker, with one failed test ID and no screenshot, trace, video, or retained
+  error context; configured-secret and runtime-sensitive-pattern scans found
+  no match.
+
+This failure is classified `TEST`, not a Kafil or Najm product failure. Its
+value-free fingerprint is step 16, `/products`, logout icon button, no
+`POST /api/auth/logout` response, outside-viewport actionability, 180-second
+timeout. The disposable graph from this attempt may remain because cleanup did
+not reach its first deletion.
+
+The test-only correction now restores all four shared pages to a deterministic
+desktop viewport before step 16 begins logout. The logout helper also performs
+one five-second non-mutating trial click before registering the exact response
+observer and issuing the real click, so a future actionability regression fails
+quickly without duplicating the mutation.
+
+Correction evidence:
+
+- the new source contract failed against the old helper with `15 passed, 1
+  failed, 319 assertions`, then passed after the correction with `16 passed, 0
+  failed, 354 assertions`;
+- targeted web lint and typecheck passed;
+- the complete root lint and typecheck gates passed;
+- root tests passed with `305` web, `336` server (`53` opt-in database tests
+  skipped), and `85` seed tests;
+- the first root build wrapper returned `255` after compilation without a
+  Next.js error; no unrelated processes were stopped, the equivalent package
+  build passed completely, and the exact root `bun run build` then passed with
+  the Dockerfile's command-scoped build-only values;
+- `bun run db:generate` reported `No schema changes, nothing to migrate`;
+- discovery-only Playwright listing with non-secret placeholders reported
+  exactly `18 tests in 1 file` without opening a browser or contacting the VPS.
+
+This correction changes only the remote spec, its source-contract test, and
+this plan. It does not require application deployment. A fresh instruction is
+required before another remote attempt.
 
 Local implementation evidence:
 
@@ -238,6 +298,127 @@ Local implementation evidence:
 The plan remains in progress until one freshly authorized 18-test remote attempt
 passes and its sanitized output/artifact audit is recorded. Database-only
 guarantees remain explicitly not verified.
+
+The next freshly authorized 18-test attempt ran once on the same healthy exact
+revision `8334f4c6478ec90565ca31f45eab7fdc29d101cb`:
+
+- guarded preflight passed, Playwright selected exactly `18` tests with one
+  worker and zero retries, and step 01 passed;
+- step 02 created its disposable Family and completed first-login setup, but
+  its final real logout failed the immediate cookie-absence assertion after
+  `POST /api/auth/logout` returned below `400` and navigation reached `/login`;
+- the assertion proved only that one of `accessToken`, `refreshToken`, or
+  `najm.session` remained. It discarded the cookie kind, so the evidence cannot
+  distinguish a canonical deletion defect from a late session-recovery
+  response;
+- steps 03-16, responsive, and diagnostics did not run after the serial
+  failure; terminal: `1 failed, 16 did not run, 1 passed (42.4s)`, native exit
+  `1`;
+- the managed tunnel closed, the forwarding port was free, and only the
+  value-free failed `.last-run.json` marker remained. No exact configured
+  secret or runtime-sensitive pattern was retained;
+- because cleanup did not run, the disposable Family created by this attempt
+  may remain.
+
+This failure is `UNCLASSIFIED`, not yet a confirmed Najm package defect. The
+same deployed package/revision previously passed the same logout boundary in
+focused and complete runs, while the latest assertion retained insufficient
+metadata to identify the remaining cookie.
+
+The local diagnostic correction keeps values private and records only:
+
+- the remaining recognized kind as `access`, `refresh`, or `session`;
+- the pathname and status of logout, refresh, and session-recovery responses
+  observed across the real logout action.
+
+It does not add a retry, sleep, timeout, cookie clearing, forced click, or
+application mutation. Its source contract passes with `16 passed, 0 failed,
+361 assertions`; targeted lint and web typecheck pass; and the complete root
+lint, typecheck, test, production build, and `db:generate` gate passes with
+`305` web tests, `336` server tests (`53` database integrations skipped), `85`
+seed tests, and no schema change. The next safe remote action is one freshly
+authorized focused selection of steps 01-02 plus diagnostics. A product/package
+correction must be based on that value-free fingerprint; a complete 18-test
+proof remains required afterward. A discovery-only Playwright listing with
+non-secret placeholders confirms that focused selection is exactly `3 tests in
+1 file` without launching a browser or contacting the VPS.
+
+The freshly authorized 3-test diagnostic range then ran once on deployed
+revision `8334f4c`:
+
+- guarded preflight passed every boolean plus SSH, authenticated Mailpit,
+  Chrome, verified TLS, health, and readiness;
+- Playwright reported exactly `3` tests, one worker, and zero retries;
+- steps 01 and 02 passed. The step 02 final real logout removed every recognized
+  auth cookie and the protected Family endpoint returned `401`, so the prior
+  logout-cookie symptom did not reproduce in this focused attempt;
+- final diagnostics failed immediately because it unconditionally required the
+  cleanup summary produced only by step 16, which the focused grep correctly
+  excluded;
+- terminal: `1 failed, 2 passed (40.2s)`, native exit `1`;
+- the managed tunnel closed, the forwarding port was free, and the sole
+  retained artifact was the value-free failed `.last-run.json` marker with one
+  failed test ID and zero configured-secret matches;
+- step 16 did not run, so the disposable Family from this focused attempt may
+  remain.
+
+This is classified `TEST`: the final diagnostics test was not passive for a
+focused prerequisite range. It is not evidence of a Kafil or Najm Auth product
+failure. The step 02 pass clears the focused reproduction checkpoint but does
+not prove that an intermittent logout race cannot recur.
+
+The narrow local correction now runs cleanup-summary assertions only when step
+16 actually produced a summary, while always asserting the diagnostics attached
+to all four contexts. Complete-run cleanup remains strict because step 16 must
+assign `cleanupSummary` before that test can pass. The new source regression was
+red at `16 passed, 1 failed, 362 assertions` against the old diagnostic and is
+green at `17 passed, 0 failed, 368 assertions` after the correction. No timeout,
+retry, sleep, cookie clearing, application code, deployment, or VPS state was
+changed. One fresh authorization is required before repeating the corrected
+3-test focused range. The correction's complete local gate passes: lint,
+typecheck, `305` web tests, `336` server tests (`53` database integrations
+skipped), `85` seed tests, the production build, and `db:generate` with no
+schema change. A discovery-only Playwright listing selects exactly the intended
+three tests—steps 01-02 plus diagnostics—in one file without launching a
+browser or contacting the VPS.
+
+The first authorized attempt after that correction stopped in guarded preflight
+before Playwright started because authenticated Mailpit readiness did not
+converge through the managed SSH tunnel. It exited `1`, reported
+`MANAGED SSH TUNNEL CLOSED`, left the forwarding port free, and created no new
+browser artifact. This was classified `ENVIRONMENT`; all three selected tests
+were `NOT RUN`.
+
+The next instruction authorized diagnosis and one corrected focused attempt.
+Read-only checks proved that the root-only VPS mailbox file remained mode
+`0600`, local and VPS credential fingerprints matched, and Mailpit returned the
+required unauthenticated `401` and authenticated `200` without exposing values
+or mailbox content. A separately owned diagnostic tunnel then reached the same
+401/200 readiness pair within the runner's existing window and closed cleanly.
+No credential, VPS, runner, timeout, retry, or application change was needed;
+the earlier preflight failure was transient.
+
+The corrected focused browser attempt then passed on deployed revision
+`8334f4c`:
+
+- guarded preflight passed all 11 booleans plus SSH identity, Chrome, forwarding
+  port availability, authenticated Mailpit, verified TLS, `/login`, `/apply`,
+  health, and readiness;
+- Playwright reported exactly `3` tests, one worker, and zero retries;
+- step 01 passed in `13.7s`;
+- step 02 passed in `26.7s`, including real logout, recognized auth-cookie
+  absence, and the protected Family `401` assertion;
+- passive diagnostics passed in `30ms` with no unexpected page errors, console
+  errors, failed requests, or unexplained HTTP errors;
+- terminal: `3 passed (44.4s)`, native exit `0`;
+- the managed SSH tunnel closed and the forwarding port was free;
+- the sole artifact was the passed `.last-run.json` marker with zero failed
+  test IDs; configured-secret and runtime-sensitive-value scans found no match.
+
+Steps 03-16 and the responsive unit were excluded by the focused grep. Because
+step 16 was excluded, this attempt's disposable Family may remain. The passive-
+diagnostics correction and step 02 focused boundary are accepted; promotion now
+requires a fresh instruction for one complete 18-test attempt.
 
 The previous successful command selected the focused prerequisite range through the
 corrected denial plus diagnostics:
@@ -376,7 +557,7 @@ freshly authorized remote attempt.
 | Step | Contract | Current organized code |
 | --- | --- | --- |
 | 01 | Admin login, dashboard/assignment readiness, real logout, cookie absence, protected `401` | Complete-range remote pass on `4ef0d03` |
-| 02 | Family UI creation, first-login password setup, temporary-credential denial, role boundary | Complete-range remote pass on `4ef0d03` |
+| 02 | Family UI creation, first-login password setup, temporary-credential denial, role boundary | Passed on `4ef0d03`; corrected 3-test range on `8334f4c` passed real logout, cookie absence, and protected `401`; intermittent complete-run symptom remains unclassified |
 | 03 | Sponsor A application, exact OTP/delete, pending denial, approval/replay, email/phone login | Complete-range remote pass on `4ef0d03` with Najm Auth 3.1.5; both real logout cookie-absence assertions passed |
 | 04 | Independent Sponsor B application, OTP/delete, approval/replay, login/logout | Complete-range remote pass on `4ef0d03` |
 | 05 | Two assignments, duplicate `409`, safe sponsor projections, cross-sponsor `404` boundaries | Complete-range remote pass on `4ef0d03` |
@@ -390,9 +571,9 @@ freshly authorized remote attempt.
 | 13 | Family assignment request returns one exact `401` | Complete-range remote pass on `4ef0d03` |
 | 14 | Sponsor A approval request returns one exact `401` | Complete-range remote pass on `4ef0d03` |
 | 15 | Sponsor B delivery-confirmation request returns one exact `401` | Complete-range remote pass on `4ef0d03` |
-| Responsive | Tablet Admin Staff, phone Family Products, protected-image decode/authenticated bytes, keyboard-only View dialog, phone Sponsor RTL Orders, and no horizontal overflow | Failed remotely on `4ef0d03` at shared menu focus; fixed and verified in published `najm-kit@2.11.8`; corrected Kafil deployment and remote proof pending |
-| 16 | Supported deletion of the Family graph, two evidence files, two Staff profiles, two approved applicants, and exact-recipient mailbox messages; zero API-visible retained runtime rows/files/messages; real logout and page closure | Did not run after the responsive serial failure; cleanup contract is implemented locally, but combined remote proof and assessment of possible failed-attempt residue remain pending |
-| Diagnostics | Counts-only cleanup summary, database boundary `NOT VERIFIED`, and no unexpected page errors, console errors, failed requests, or unexplained HTTP errors | Implemented locally; remote proof pending for the 18-test range |
+| Responsive | Tablet Admin Staff, phone Family Products, protected-image decode/authenticated bytes, keyboard-only View dialog, phone Sponsor RTL Orders, and no horizontal overflow | Passed remotely on healthy exact revision `8334f4c` |
+| 16 | Supported deletion of the Family graph, two evidence files, two Staff profiles, two approved applicants, and exact-recipient mailbox messages; zero API-visible retained runtime rows/files/messages; real logout and page closure | Failed before its first deletion because the test reused the phone viewport for desktop-sidebar logout; source regression and deterministic viewport correction pass locally; fresh remote proof pending |
+| Diagnostics | Counts-only cleanup summary, database boundary `NOT VERIFIED`, and no unexpected page errors, console errors, failed requests, or unexplained HTTP errors | Passive-range correction passed remotely in the corrected 3-test focused range on `8334f4c`; complete-range cleanup-summary proof remains pending |
 
 Steps 07-16 reuse the same four authenticated pages. Typed in-memory phases
 fail closed at every boundary:
@@ -458,6 +639,19 @@ tests before interpreting results. It passed, and the later complete 17-test
 selection also passed once after its own fresh user instruction. Do not repeat
 either remote level without a new plan reason and fresh instruction.
 
+Corrected diagnostic range that passed after a fresh user instruction:
+
+```powershell
+$env:KAFIL_E2E_REMOTE_GREP='remote step 0[1-2]|remote diagnostics'
+bun run --cwd apps/web test:e2e:connected:remote
+Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
+```
+
+Its header reported exactly 3 tests, one worker, and zero retries, and all three
+tests passed. Do not repeat this range without a new plan reason and fresh
+instruction. Promotion to the complete range requires its own fresh
+authorization.
+
 Next complete range, only after the corrected Kafil revision is deployed,
 confirmed healthy, and a fresh instruction is received:
 
@@ -513,15 +707,15 @@ migration for this browser-test-only change.
 Responsive tablet/phone, RTL, keyboard focus, protected-image decode, supported
 application cleanup, and counts-only retained-data reporting are implemented.
 The financial journey is not repeated at each viewport. The required local gate
-passes with `najm-kit@2.11.8` and no schema drift. Because the failed responsive
-attempt stopped before step 16, its disposable application graph may remain;
-the next authorized activity must assess that residue through supported
-application surfaces without database, Docker, or VPS cleanup shortcuts.
+passes with `najm-kit@2.11.8` and no schema drift. The responsive unit now has a
+remote pass on `8334f4c`, but the following cleanup test failed before its first
+deletion. Its graph may remain in addition to residue from the earlier failed
+responsive attempt; any residue assessment must use supported application
+surfaces without database, Docker, or VPS cleanup shortcuts.
 
-The plan remains **IN PROGRESS** until:
+The corrected Kafil dependency revision is committed, pushed, published,
+deployed, and confirmed healthy. The plan remains **IN PROGRESS** until:
 
-- the corrected Kafil dependency revision is committed, pushed, published,
-  deployed, and confirmed healthy;
 - a fresh user instruction authorizes one complete remote attempt;
 - the runner header reports exactly `18` tests, one worker, and zero retries;
 - all 16 numbered steps, the responsive unit, and diagnostics pass together;

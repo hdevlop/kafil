@@ -171,6 +171,23 @@ describe("connected four-account remote runner", () => {
     expect(step01).not.toContain("/^Welcome,/i");
   });
 
+  test("keeps focused diagnostics passive while retaining complete-run cleanup assertions", () => {
+    const diagnostics = specSource.slice(
+      specSource.indexOf('test("remote diagnostics - final context assertions"'),
+    );
+
+    expect(diagnostics).toContain("if (cleanupSummary) {");
+    expect(diagnostics).not.toContain(
+      'throw new Error("Counts-only cleanup summary was not recorded")',
+    );
+    expect(diagnostics).toContain("cleanupSummary.applicationRowsRetained");
+    expect(diagnostics).toContain("cleanupSummary.evidenceFilesRetained");
+    expect(diagnostics).toContain("cleanupSummary.mailboxMessagesRetained");
+    expect(diagnostics.indexOf("if (cleanupSummary) {")).toBeLessThan(
+      diagnostics.indexOf('assertDiagnosticsClean("admin"'),
+    );
+  });
+
   test("observes the exact negative request and any response before awaiting the action", () => {
     const helper = specSource.slice(
       specSource.indexOf("async function expectExactNegativeResponse("),
@@ -277,8 +294,12 @@ describe("connected four-account remote runner", () => {
     expect(specSource).not.toContain("@kafil/server/database");
     expect(specSource).not.toContain("dbQuery(");
     expect(specSource).not.toContain("console.log");
-    expect(specSource).toContain("cookies.some((cookie) =>");
-    expect(specSource).toContain("expect(hasAuthCookie).toBe(false)");
+    expect(specSource).toContain("const authCookieKinds = cookies.flatMap((cookie) =>");
+    expect(specSource).toContain('return ["access"]');
+    expect(specSource).toContain('return ["refresh"]');
+    expect(specSource).toContain('return ["session"]');
+    expect(specSource).toContain("auth-boundary-responses=");
+    expect(specSource).not.toContain("cookie.value");
     expect(specSource).not.toContain("cookies.find((cookie) =>");
   });
 
@@ -411,6 +432,10 @@ describe("connected four-account remote runner", () => {
   });
 
   test("pins numbered order steps, typed phase guards, privacy, denials, and logout", () => {
+    const signOutHelper = specSource.slice(
+      specSource.indexOf("async function signOut(page: Page)"),
+      specSource.indexOf("async function assertNoAuthCookies("),
+    );
     const deliveryStaffHelper = specSource.slice(
       specSource.indexOf("async function createDeliveryStaffThroughUi"),
       specSource.indexOf("async function readFamilyFundingFromSponsorCatalog"),
@@ -601,6 +626,12 @@ describe("connected four-account remote runner", () => {
     expect(responsive).not.toContain("submitFamilyOrder(");
     expect(responsive).not.toContain('browserJsonRequest(\n      familyPage,\n      "POST"');
     expect(step16).toContain('"denials-complete"');
+    expect(step16).toContain(
+      "await restoreDesktopViewports(adminPage, familyPage, sponsorAPage, sponsorBPage)",
+    );
+    expect(step16.indexOf("await restoreDesktopViewports(")).toBeLessThan(
+      step16.indexOf("await signOut(familyPage)"),
+    );
     expect(step16).toContain("await signOut(familyPage)");
     expect(step16).toContain("await signOut(sponsorAPage)");
     expect(step16).toContain("await signOut(sponsorBPage)");
@@ -611,11 +642,21 @@ describe("connected four-account remote runner", () => {
     expect(step16).toContain('browserJsonRequest(adminPage, "DELETE", `/api/staff/${staffProfileId}`)');
     expect(step16).toContain('browserJsonRequest(adminPage, "DELETE", `/api/applicants/${applicantId}`)');
     expect(step16).toContain("applicationRowsRetained");
+    expect(step16).toContain("cleanupSummary = {");
     expect(step16).toContain('reporting: "counts-only"');
     expect(step16).toContain('databaseOnlyGuarantees: "NOT VERIFIED"');
     expect(step16).toContain("deleteMailboxMessages(");
     expect(step16).not.toContain("dbQuery(");
     expect(step16).not.toContain("console.log");
+    expect(signOutHelper).toContain(
+      "await signOutButton.click({ trial: true, timeout: 5_000 })",
+    );
+    expect(signOutHelper).toContain('page.on("response", observeAuthBoundaryResponse)');
+    expect(signOutHelper).toContain('page.off("response", observeAuthBoundaryResponse)');
+    expect(signOutHelper).toContain('"/api/auth/session/recover"');
+    expect(signOutHelper.indexOf("click({ trial: true")).toBeLessThan(
+      signOutHelper.indexOf("page.waitForResponse("),
+    );
     expect(orderSteps).not.toContain("fewer than two active Delivery profiles");
     expect(familyOrdersReadiness).toContain('url.pathname === "/api/orders"');
     expect(familyOrdersReadiness).not.toContain(

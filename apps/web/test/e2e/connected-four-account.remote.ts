@@ -409,34 +409,67 @@ async function submitPreparedLogin(
 }
 
 async function signOut(page: Page): Promise<void> {
+  const authBoundaryResponses: string[] = [];
+  const observeAuthBoundaryResponse = (response: Response): void => {
+    const url = new URL(response.url());
+    if (
+      response.request().method() === "POST" &&
+      ["/api/auth/logout", "/api/auth/refresh", "/api/auth/session/recover"].includes(
+        url.pathname,
+      )
+    ) {
+      authBoundaryResponses.push(`${url.pathname}:${response.status()}`);
+    }
+  };
+  page.on("response", observeAuthBoundaryResponse);
   const signOutButton = await onlyVisible(
     page.locator("button").filter({ has: page.locator("svg.lucide-log-out") }),
   );
-  await expect.poll(
-    () => signOutButton.evaluate((button) => {
-      const propsKey = Object.keys(button).find((key) => key.startsWith("__reactProps$"));
-      if (!propsKey) return false;
-      const props = (button as unknown as Record<string, { onClick?: unknown }>)[propsKey];
-      return typeof props?.onClick === "function";
-    }),
-  ).toBe(true);
-  const logoutResponse = page.waitForResponse(
-    (response) =>
-      response.request().method() === "POST" &&
-      new URL(response.url()).pathname === "/api/auth/logout",
-  );
-  await signOutButton.click();
-  expect((await logoutResponse).status()).toBeLessThan(400);
-  await expect.poll(() => new URL(page.url()).pathname).toBe("/login");
-  await assertNoAuthCookies(page.context());
+  try {
+    await expect.poll(
+      () => signOutButton.evaluate((button) => {
+        const propsKey = Object.keys(button).find((key) => key.startsWith("__reactProps$"));
+        if (!propsKey) return false;
+        const props = (button as unknown as Record<string, { onClick?: unknown }>)[propsKey];
+        return typeof props?.onClick === "function";
+      }),
+    ).toBe(true);
+    await signOutButton.click({ trial: true, timeout: 5_000 });
+    const logoutResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === "/api/auth/logout",
+    );
+    await signOutButton.click();
+    expect((await logoutResponse).status()).toBeLessThan(400);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/login");
+    await assertNoAuthCookies(page.context(), authBoundaryResponses);
+  } finally {
+    page.off("response", observeAuthBoundaryResponse);
+  }
 }
 
-async function assertNoAuthCookies(context: BrowserContext): Promise<void> {
-  const cookies = await context.cookies();
-  const hasAuthCookie = cookies.some((cookie) =>
-    /^(accessToken|refreshToken|najm\.session)$/i.test(cookie.name),
+async function restoreDesktopViewports(...pages: Page[]): Promise<void> {
+  await Promise.all(
+    pages.map((page) => page.setViewportSize({ width: 1280, height: 900 })),
   );
-  expect(hasAuthCookie).toBe(false);
+}
+
+async function assertNoAuthCookies(
+  context: BrowserContext,
+  authBoundaryResponses: string[] = [],
+): Promise<void> {
+  const cookies = await context.cookies();
+  const authCookieKinds = cookies.flatMap((cookie) => {
+    if (/^accessToken$/i.test(cookie.name)) return ["access"];
+    if (/^refreshToken$/i.test(cookie.name)) return ["refresh"];
+    if (/^najm\.session$/i.test(cookie.name)) return ["session"];
+    return [];
+  });
+  expect(
+    authCookieKinds,
+    `recognized auth cookies remained after logout; kinds=${authCookieKinds.join(",") || "none"}; auth-boundary-responses=${authBoundaryResponses.join(",") || "none"}`,
+  ).toEqual([]);
 }
 
 async function browserJsonRequest(
@@ -3561,6 +3594,7 @@ test.describe.serial("connected VPS acceptance", () => {
     const { deliveryProofPath, receiptPath, staffAId, staffBId } =
       denialsComplete;
 
+    await restoreDesktopViewports(adminPage, familyPage, sponsorAPage, sponsorBPage);
     await signOut(familyPage);
     await signOut(sponsorAPage);
     await signOut(sponsorBPage);
@@ -3690,17 +3724,16 @@ test.describe.serial("connected VPS acceptance", () => {
   });
 
   test("remote diagnostics - final context assertions", async () => {
-    if (!cleanupSummary) {
-      throw new Error("Counts-only cleanup summary was not recorded");
+    if (cleanupSummary) {
+      expect(cleanupSummary.applicationRowsRetained).toBe(0);
+      expect(cleanupSummary.evidenceFilesRetained).toBe(0);
+      expect(cleanupSummary.mailboxMessagesRetained).toBe(0);
+      expect(cleanupSummary.evidenceFilesDeleted).toBe(2);
+      expect(Number.isSafeInteger(cleanupSummary.mailboxMessagesDeleted)).toBe(true);
+      expect(cleanupSummary.mailboxMessagesDeleted).toBeGreaterThanOrEqual(0);
+      expect(cleanupSummary.reporting).toBe("counts-only");
+      expect(cleanupSummary.databaseOnlyGuarantees).toBe("NOT VERIFIED");
     }
-    expect(cleanupSummary.applicationRowsRetained).toBe(0);
-    expect(cleanupSummary.evidenceFilesRetained).toBe(0);
-    expect(cleanupSummary.mailboxMessagesRetained).toBe(0);
-    expect(cleanupSummary.evidenceFilesDeleted).toBe(2);
-    expect(Number.isSafeInteger(cleanupSummary.mailboxMessagesDeleted)).toBe(true);
-    expect(cleanupSummary.mailboxMessagesDeleted).toBeGreaterThanOrEqual(0);
-    expect(cleanupSummary.reporting).toBe("counts-only");
-    expect(cleanupSummary.databaseOnlyGuarantees).toBe("NOT VERIFIED");
     assertDiagnosticsClean("admin", adminDiagnostics);
     assertDiagnosticsClean("family", familyDiagnostics);
     assertDiagnosticsClean("sponsor-a", sponsorADiagnostics);
