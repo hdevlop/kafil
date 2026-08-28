@@ -59,6 +59,22 @@ interface BrowserJsonResult {
   body: unknown;
 }
 
+interface BrowserResourceResult {
+  status: number;
+  contentType: string;
+  byteLength: number;
+}
+
+interface CleanupSummary {
+  applicationRowsRetained: number;
+  evidenceFilesRetained: number;
+  mailboxMessagesRetained: number;
+  evidenceFilesDeleted: number;
+  mailboxMessagesDeleted: number;
+  reporting: "counts-only";
+  databaseOnlyGuarantees: "NOT VERIFIED";
+}
+
 interface BudgetSnapshot {
   availableMinor: number;
   reservedMinor: number;
@@ -156,7 +172,8 @@ interface MailpitMessage extends MailpitMessageSummary {
   HTML?: string;
 }
 
-const runLabel = `vps-${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`;
+const runStartedAt = Date.now();
+const runLabel = `vps-${runStartedAt.toString(36)}-${crypto.randomUUID().slice(0, 8)}`;
 const familyEmail = buildRunEmail(runLabel, "family");
 const familyPhone = buildRunPhone(runLabel, "family");
 const familyCin = buildRunCin(runLabel, "family");
@@ -308,10 +325,28 @@ async function expectNoneVisible(locator: Locator): Promise<void> {
   }).toBe(0);
 }
 
-async function setEnglish(context: BrowserContext): Promise<void> {
+async function setLanguage(
+  context: BrowserContext,
+  language: "ar" | "en",
+): Promise<void> {
   await context.addCookies([
-    { name: "kafil-ui-language", value: "en", url: baseUrl },
+    { name: "kafil-ui-language", value: language, url: baseUrl },
   ]);
+}
+
+async function setEnglish(context: BrowserContext): Promise<void> {
+  await setLanguage(context, "en");
+}
+
+async function expectNoHorizontalOverflow(page: Page): Promise<void> {
+  await expect.poll(() =>
+    page.evaluate(() =>
+      Math.max(
+        0,
+        document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ),
+  ).toBeLessThanOrEqual(1);
 }
 
 async function waitForLoginHydration(page: Page): Promise<Locator> {
@@ -406,7 +441,7 @@ async function assertNoAuthCookies(context: BrowserContext): Promise<void> {
 
 async function browserJsonRequest(
   page: Page,
-  method: "GET" | "POST",
+  method: "DELETE" | "GET" | "POST",
   path: string,
   body?: Record<string, unknown>,
 ): Promise<BrowserJsonResult> {
@@ -424,6 +459,26 @@ async function browserJsonRequest(
       };
     },
     { requestBody: body, requestMethod: method, requestPath: path, rootUrl: baseUrl },
+  );
+}
+
+async function browserResourceRequest(
+  page: Page,
+  path: string,
+): Promise<BrowserResourceResult> {
+  return page.evaluate(
+    async ({ requestPath, rootUrl }) => {
+      const response = await fetch(`${rootUrl}${requestPath}`, {
+        credentials: "include",
+      });
+      const bytes = await response.arrayBuffer();
+      return {
+        status: response.status,
+        contentType: response.headers.get("content-type") ?? "",
+        byteLength: bytes.byteLength,
+      };
+    },
+    { requestPath: path, rootUrl: baseUrl },
   );
 }
 
@@ -934,18 +989,20 @@ function mailboxFetch(path: string, init: RequestInit = {}): Promise<globalThis.
   return fetch(new URL(path, mailboxApiUrl), { ...init, headers });
 }
 
-async function findOtpMailboxMessages(input: {
+async function findMailboxMessages(input: {
   recipient: string;
   since: number;
-  subjectKeyword: string;
+  subjectKeyword?: string;
   signal?: AbortSignal;
 }): Promise<MailpitMessage[]> {
-  const query = `to:${input.recipient} subject:"${input.subjectKeyword}"`;
+  const query = input.subjectKeyword
+    ? `to:${input.recipient} subject:"${input.subjectKeyword}"`
+    : `to:${input.recipient}`;
   const search = await mailboxFetch(
     `/api/v1/search?query=${encodeURIComponent(query)}`,
     { signal: input.signal },
   );
-  if (!search.ok) throw new Error("Authenticated Mailpit OTP search failed.");
+  if (!search.ok) throw new Error("Authenticated Mailpit search failed.");
   const payload = (await search.json()) as { messages?: MailpitMessageSummary[] };
   const matches: MailpitMessage[] = [];
   for (const summary of payload.messages ?? []) {
@@ -953,14 +1010,26 @@ async function findOtpMailboxMessages(input: {
     const detail = await mailboxFetch(`/api/v1/message/${summary.ID}`, {
       signal: input.signal,
     });
-    if (!detail.ok) throw new Error("Authenticated Mailpit OTP detail read failed.");
+    if (!detail.ok) throw new Error("Authenticated Mailpit detail read failed.");
     const message = (await detail.json()) as MailpitMessage;
     const exactRecipient = message.To.some(
       (destination) => destination.Address.toLowerCase() === input.recipient.toLowerCase(),
     );
-    if (exactRecipient && message.Subject.includes(input.subjectKeyword)) matches.push(message);
+    const subjectMatches = input.subjectKeyword
+      ? message.Subject.includes(input.subjectKeyword)
+      : true;
+    if (exactRecipient && subjectMatches) matches.push(message);
   }
   return matches;
+}
+
+async function findOtpMailboxMessages(input: {
+  recipient: string;
+  since: number;
+  subjectKeyword: string;
+  signal?: AbortSignal;
+}): Promise<MailpitMessage[]> {
+  return findMailboxMessages(input);
 }
 
 async function pollExactlyOneOtpMessage(input: {
@@ -988,13 +1057,18 @@ function extractOtp(message: MailpitMessage): string {
   return match[1]!;
 }
 
-async function deleteMailboxMessage(messageId: string): Promise<void> {
+async function deleteMailboxMessages(messageIds: string[]): Promise<void> {
+  if (messageIds.length === 0) return;
   const response = await mailboxFetch("/api/v1/messages", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ IDs: [messageId] }),
+    body: JSON.stringify({ IDs: messageIds }),
   });
   expect(response.ok, "Mailpit batch delete must succeed").toBe(true);
+}
+
+async function deleteMailboxMessage(messageId: string): Promise<void> {
+  await deleteMailboxMessages([messageId]);
 }
 
 async function selectDate(
@@ -1053,6 +1127,7 @@ test.describe.serial("connected VPS acceptance", () => {
   const sponsorADiagnostics = makeDiagnostics();
   const sponsorBDiagnostics = makeDiagnostics();
   let orderJourneyState: OrderJourneyState = { phase: "not-started" };
+  let cleanupSummary: CleanupSummary | undefined;
 
   test.beforeAll(async ({ browser }) => {
     expect(adminEmail && adminPassword, "remote admin credentials must be present").toBeTruthy();
@@ -3384,27 +3459,248 @@ test.describe.serial("connected VPS acceptance", () => {
     };
   });
 
-  test("remote step 16 - role logout and closure", async () => {
+  test("remote responsive - phone, tablet, RTL, keyboard, and protected images", async () => {
+    const denialsComplete = requireDeliveredOrderPhase(
+      orderJourneyState,
+      "denials-complete",
+    );
+    const { adminPage, familyPage, sponsorBPage } = denialsComplete.pages;
+
+    await adminPage.setViewportSize({ width: 768, height: 900 });
+    await adminPage.goto("/staff", { waitUntil: "commit" });
+    await expect(adminPage.getByRole("heading", { name: "Staff", exact: true })).toBeVisible();
+    await expect(adminPage.getByText(deliveryStaffFixtures[0]!.name, { exact: true })).toBeVisible();
+    await expect(adminPage.getByText(deliveryStaffFixtures[1]!.name, { exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(adminPage);
+
+    await familyPage.setViewportSize({ width: 390, height: 844 });
+    await familyPage.goto("/products", { waitUntil: "commit" });
+    await expect(
+      familyPage.getByRole("heading", { name: "Products", exact: true }),
+    ).toBeVisible();
+    const protectedProductImages = familyPage.locator(
+      'img[src*="/api/product-images/files/serve/"]',
+    );
+    await expect.poll(() => protectedProductImages.count()).toBeGreaterThan(0);
+    const protectedProductImage = protectedProductImages.first();
+    await protectedProductImage.scrollIntoViewIfNeeded();
+    await expect.poll(() =>
+      protectedProductImage.evaluate((node) => {
+        const image = node as HTMLImageElement;
+        return image.complete && image.naturalWidth > 0;
+      }),
+    ).toBe(true);
+    const productName = (await protectedProductImage.getAttribute("alt")) ?? "";
+    const protectedImageSource =
+      (await protectedProductImage.getAttribute("src")) ?? "";
+    expect(productName.length).toBeGreaterThan(0);
+    expect(protectedImageSource.length).toBeGreaterThan(0);
+    const imagePath = new URL(protectedImageSource, baseUrl).pathname;
+    const protectedImageResponse = await browserResourceRequest(familyPage, imagePath);
+    expect(protectedImageResponse.status).toBe(200);
+    expect(protectedImageResponse.contentType.startsWith("image/")).toBe(true);
+    expect(protectedImageResponse.byteLength).toBeGreaterThan(0);
+
+    const productRow = protectedProductImage.locator(
+      "xpath=ancestor::*[@data-row='true'][1]",
+    );
+    const rowActions = productRow.getByRole("button", {
+      name: "Row actions",
+      exact: true,
+    });
+    await rowActions.focus();
+    await expect(rowActions).toBeFocused();
+    await familyPage.keyboard.press("Enter");
+    const viewMenuItem = familyPage.getByRole("menuitem", {
+      name: "View",
+      exact: true,
+    });
+    await expect(viewMenuItem).toBeFocused();
+    await familyPage.keyboard.press("Enter");
+    const productDialog = familyPage.getByRole("dialog", {
+      name: productName,
+      exact: true,
+    });
+    await expect(productDialog).toBeVisible();
+    await expect.poll(() =>
+      productDialog.evaluate((dialog) => dialog.contains(document.activeElement)),
+    ).toBe(true);
+    await familyPage.keyboard.press("Escape");
+    await expect(productDialog).toBeHidden();
+    await expectNoHorizontalOverflow(familyPage);
+
+    const supportedOrders = await browserJsonRequest(
+      sponsorBPage,
+      "GET",
+      "/api/orders/supported?limit=100&offset=0",
+    );
+    expect(supportedOrders.status).toBe(200);
+    const targetOrders = responseRows(supportedOrders.body).filter(
+      (order) => order.id === denialsComplete.order3Id,
+    );
+    expect(targetOrders.length, "Sponsor B must retain exactly one target order").toBe(1);
+    const orderNumber = String(targetOrders[0]!.orderNumber ?? "");
+    expect(orderNumber.length).toBeGreaterThan(0);
+
+    await setLanguage(sponsorBPage.context(), "ar");
+    await sponsorBPage.setViewportSize({ width: 375, height: 812 });
+    await sponsorBPage.goto("/orders", { waitUntil: "commit" });
+    await expect(sponsorBPage.locator("html")).toHaveAttribute("dir", "rtl");
+    await expect(sponsorBPage.getByText(orderNumber, { exact: true }).first()).toBeVisible();
+    await expectNoHorizontalOverflow(sponsorBPage);
+    await setEnglish(sponsorBPage.context());
+  });
+
+  test("remote step 16 - supported cleanup, role logout, and closure", async () => {
     const denialsComplete = requireDeliveredOrderPhase(
       orderJourneyState,
       "denials-complete",
     );
     const { adminPage, familyPage, sponsorAPage, sponsorBPage } =
       denialsComplete.pages;
+    const { deliveryProofPath, receiptPath, staffAId, staffBId } =
+      denialsComplete;
 
     await signOut(familyPage);
     await signOut(sponsorAPage);
     await signOut(sponsorBPage);
-    await signOut(adminPage);
     await Promise.all([
       familyPage.close(),
       sponsorAPage.close(),
       sponsorBPage.close(),
-      adminPage.close(),
     ]);
+
+    const familyDelete = await browserJsonRequest(adminPage, "DELETE", `/api/families/${state.familyProfileId}`);
+    expect(familyDelete.status).toBeLessThan(400);
+
+    const receiptFileName = receiptPath.slice(receiptPath.lastIndexOf("/") + 1);
+    const deliveryProofFileName = deliveryProofPath.slice(
+      deliveryProofPath.lastIndexOf("/") + 1,
+    );
+    let evidenceFilesDeleted = 0;
+    const receiptDelete = await browserJsonRequest(
+      adminPage,
+      "DELETE",
+      `/api/order-evidence/receipts/${receiptFileName}`,
+    );
+    expect(receiptDelete.status).toBeLessThan(400);
+    expect(responseRecord(receiptDelete.body).deleted).toBe(true);
+    evidenceFilesDeleted += 1;
+    const deliveryProofDelete = await browserJsonRequest(
+      adminPage,
+      "DELETE",
+      `/api/order-evidence/deliveries/${deliveryProofFileName}`,
+    );
+    expect(deliveryProofDelete.status).toBeLessThan(400);
+    expect(responseRecord(deliveryProofDelete.body).deleted).toBe(true);
+    evidenceFilesDeleted += 1;
+
+    for (const staffProfileId of [staffAId, staffBId]) {
+      const staffDelete = await browserJsonRequest(adminPage, "DELETE", `/api/staff/${staffProfileId}`);
+      expect(staffDelete.status).toBeLessThan(400);
+    }
+    for (const applicantId of [state.sponsorAApplicantId, state.sponsorBApplicantId]) {
+      const applicantDelete = await browserJsonRequest(adminPage, "DELETE", `/api/applicants/${applicantId}`);
+      expect(applicantDelete.status).toBeLessThan(400);
+    }
+
+    const encodedRunLabel = encodeURIComponent(runLabel);
+    const applicationChecks = await Promise.all([
+      browserJsonRequest(
+        adminPage,
+        "GET",
+        `/api/families?search=${encodedRunLabel}&limit=100&offset=0`,
+      ),
+      browserJsonRequest(
+        adminPage,
+        "GET",
+        `/api/sponsors?search=${encodedRunLabel}&limit=100&offset=0`,
+      ),
+      browserJsonRequest(
+        adminPage,
+        "GET",
+        `/api/applicants?search=${encodedRunLabel}&limit=100&offset=0`,
+      ),
+      browserJsonRequest(
+        adminPage,
+        "GET",
+        `/api/staff?search=${encodedRunLabel}&limit=100&offset=0`,
+      ),
+      browserJsonRequest(
+        adminPage,
+        "GET",
+        `/api/orders?familyProfileId=${state.familyProfileId}&limit=100&offset=0`,
+      ),
+      browserJsonRequest(
+        adminPage,
+        "GET",
+        `/api/contributions?familyProfileId=${state.familyProfileId}&limit=100&offset=0`,
+      ),
+    ]);
+    expect(
+      applicationChecks.every((result) => result.status === 200),
+      "All supported cleanup verification queries must succeed",
+    ).toBe(true);
+    const applicationRowsRetained = applicationChecks.reduce(
+      (count, result) => count + responseRows(result.body).length,
+      0,
+    );
+    expect(applicationRowsRetained, "No API-visible runtime application rows may remain").toBe(0);
+
+    const orphanEvidence = await browserJsonRequest(
+      adminPage,
+      "GET",
+      "/api/order-evidence/maintenance/orphans",
+    );
+    expect(orphanEvidence.status).toBe(200);
+    const evidenceFilesRetained = responseRows(orphanEvidence.body).filter(
+      (candidate) =>
+        candidate.path === receiptPath || candidate.path === deliveryProofPath,
+    ).length;
+    expect(evidenceFilesRetained, "No runtime order-evidence file may remain").toBe(0);
+
+    const mailboxMessages = (
+      await Promise.all([
+        findMailboxMessages({ recipient: sponsorAEmail, since: runStartedAt }),
+        findMailboxMessages({ recipient: sponsorBEmail, since: runStartedAt }),
+      ])
+    ).flat();
+    const mailboxMessageIds = [...new Set(mailboxMessages.map((message) => message.ID))];
+    await deleteMailboxMessages(mailboxMessageIds);
+    const mailboxMessagesRetained = (
+      await Promise.all([
+        findMailboxMessages({ recipient: sponsorAEmail, since: runStartedAt }),
+        findMailboxMessages({ recipient: sponsorBEmail, since: runStartedAt }),
+      ])
+    ).reduce((count, messages) => count + messages.length, 0);
+    expect(mailboxMessagesRetained, "No exact-recipient runtime mailbox message may remain").toBe(0);
+
+    cleanupSummary = {
+      applicationRowsRetained,
+      evidenceFilesRetained,
+      mailboxMessagesRetained,
+      evidenceFilesDeleted,
+      mailboxMessagesDeleted: mailboxMessageIds.length,
+      reporting: "counts-only",
+      databaseOnlyGuarantees: "NOT VERIFIED",
+    };
+
+    await signOut(adminPage);
+    await adminPage.close();
   });
 
   test("remote diagnostics - final context assertions", async () => {
+    if (!cleanupSummary) {
+      throw new Error("Counts-only cleanup summary was not recorded");
+    }
+    expect(cleanupSummary.applicationRowsRetained).toBe(0);
+    expect(cleanupSummary.evidenceFilesRetained).toBe(0);
+    expect(cleanupSummary.mailboxMessagesRetained).toBe(0);
+    expect(cleanupSummary.evidenceFilesDeleted).toBe(2);
+    expect(Number.isSafeInteger(cleanupSummary.mailboxMessagesDeleted)).toBe(true);
+    expect(cleanupSummary.mailboxMessagesDeleted).toBeGreaterThanOrEqual(0);
+    expect(cleanupSummary.reporting).toBe("counts-only");
+    expect(cleanupSummary.databaseOnlyGuarantees).toBe("NOT VERIFIED");
     assertDiagnosticsClean("admin", adminDiagnostics);
     assertDiagnosticsClean("family", familyDiagnostics);
     assertDiagnosticsClean("sponsor-a", sponsorADiagnostics);

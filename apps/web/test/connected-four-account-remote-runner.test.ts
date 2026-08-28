@@ -133,7 +133,7 @@ describe("connected four-account remote runner", () => {
     expect(configSource).toContain('trace: "off"');
   });
 
-  test("defines 16 numbered serial remote steps with isolated contexts and passive diagnostics", () => {
+  test("defines 16 numbered serial remote steps, one state-neutral responsive unit, and passive diagnostics", () => {
     const step01 = specSource.slice(
       specSource.indexOf('test("remote step 01 - guarded admin smoke"'),
       specSource.indexOf('test("remote step 02 - Family provisioning and first login"'),
@@ -155,11 +155,14 @@ describe("connected four-account remote runner", () => {
       "remote step 13 - Family delivery assignment denial",
       "remote step 14 - Sponsor A approval denial",
       "remote step 15 - Sponsor B delivery confirmation denial",
-      "remote step 16 - role logout and closure",
+      "remote step 16 - supported cleanup, role logout, and closure",
     ]) {
       expect(specSource).toContain(`test("${title}"`);
     }
     expect(specSource).not.toContain('test("remote unit ');
+    expect(specSource).toContain(
+      'test("remote responsive - phone, tablet, RTL, keyboard, and protected images"',
+    );
     expect(specSource).toContain('test("remote diagnostics - final context assertions"');
     expect(specSource.match(/test\("remote step /g)).toHaveLength(16);
     expect(specSource).toContain("browser.newContext()");
@@ -454,10 +457,22 @@ describe("connected four-account remote runner", () => {
     );
     const step15 = orderSteps.slice(
       orderSteps.indexOf('test("remote step 15 - Sponsor B delivery confirmation denial"'),
-      orderSteps.indexOf('test("remote step 16 - role logout and closure"'),
+      orderSteps.indexOf(
+        'test("remote responsive - phone, tablet, RTL, keyboard, and protected images"',
+      ),
+    );
+    const responsive = orderSteps.slice(
+      orderSteps.indexOf(
+        'test("remote responsive - phone, tablet, RTL, keyboard, and protected images"',
+      ),
+      orderSteps.indexOf(
+        'test("remote step 16 - supported cleanup, role logout, and closure"',
+      ),
     );
     const step16 = orderSteps.slice(
-      orderSteps.indexOf('test("remote step 16 - role logout and closure"'),
+      orderSteps.indexOf(
+        'test("remote step 16 - supported cleanup, role logout, and closure"',
+      ),
     );
     const familyOrdersReadiness = orderSteps.slice(
       orderSteps.indexOf("const familyOrdersResponse"),
@@ -569,11 +584,38 @@ describe("connected four-account remote runner", () => {
     expect(step15).not.toContain("status: 403");
     expect(step15).toContain("/delivery/confirm`");
     expect(step15).toContain('phase: "denials-complete"');
+    expect(responsive).toContain('"denials-complete"');
+    expect(responsive).toContain("setViewportSize({ width: 768, height: 900 })");
+    expect(responsive).toContain("setViewportSize({ width: 390, height: 844 })");
+    expect(responsive).toContain("setViewportSize({ width: 375, height: 812 })");
+    expect(responsive).toContain('toHaveAttribute("dir", "rtl")');
+    expect(responsive).toContain('img[src*="/api/product-images/files/serve/"]');
+    expect(responsive).toContain("image.complete && image.naturalWidth > 0");
+    expect(responsive).toContain("browserResourceRequest(familyPage, imagePath)");
+    expect(responsive).toContain('name: "Row actions"');
+    expect(responsive).toContain("await rowActions.focus()");
+    expect(responsive).toContain('await familyPage.keyboard.press("Enter")');
+    expect(responsive).toContain('name: "View"');
+    expect(responsive).toContain('await familyPage.keyboard.press("Escape")');
+    expect(responsive).toContain("expectNoHorizontalOverflow(");
+    expect(responsive).not.toContain("submitFamilyOrder(");
+    expect(responsive).not.toContain('browserJsonRequest(\n      familyPage,\n      "POST"');
     expect(step16).toContain('"denials-complete"');
     expect(step16).toContain("await signOut(familyPage)");
     expect(step16).toContain("await signOut(sponsorAPage)");
     expect(step16).toContain("await signOut(sponsorBPage)");
     expect(step16).toContain("await signOut(adminPage)");
+    expect(step16).toContain('browserJsonRequest(adminPage, "DELETE", `/api/families/${state.familyProfileId}`)');
+    expect(step16).toContain('`/api/order-evidence/receipts/${receiptFileName}`');
+    expect(step16).toContain('`/api/order-evidence/deliveries/${deliveryProofFileName}`');
+    expect(step16).toContain('browserJsonRequest(adminPage, "DELETE", `/api/staff/${staffProfileId}`)');
+    expect(step16).toContain('browserJsonRequest(adminPage, "DELETE", `/api/applicants/${applicantId}`)');
+    expect(step16).toContain("applicationRowsRetained");
+    expect(step16).toContain('reporting: "counts-only"');
+    expect(step16).toContain('databaseOnlyGuarantees: "NOT VERIFIED"');
+    expect(step16).toContain("deleteMailboxMessages(");
+    expect(step16).not.toContain("dbQuery(");
+    expect(step16).not.toContain("console.log");
     expect(orderSteps).not.toContain("fewer than two active Delivery profiles");
     expect(familyOrdersReadiness).toContain('url.pathname === "/api/orders"');
     expect(familyOrdersReadiness).not.toContain(
