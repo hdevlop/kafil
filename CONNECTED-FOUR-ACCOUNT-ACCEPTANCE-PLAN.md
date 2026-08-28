@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS — CORRECTED 3-TEST FOCUSED RANGE PASSED; FRESH 18-TEST AUTHORIZATION REQUIRED**
+Status: **IN PROGRESS — CORRECTED 5-TEST FOCUSED RANGE PASSED; FRESH 18-TEST AUTHORIZATION REQUIRED**
 
 Target: exactly `https://kafala360.ma`
 
@@ -420,6 +420,76 @@ step 16 was excluded, this attempt's disposable Family may remain. The passive-
 diagnostics correction and step 02 focused boundary are accepted; promotion now
 requires a fresh instruction for one complete 18-test attempt.
 
+That freshly authorized complete attempt then ran once against deployed
+revision `8334f4c` using the accepted test-only commit `b465bee`:
+
+- guarded preflight passed all 11 booleans plus SSH identity, Chrome, forwarding
+  port availability, authenticated Mailpit, verified TLS, `/login`, `/apply`,
+  health, and readiness;
+- Playwright reported exactly `18` tests, one worker, and zero retries;
+- steps 01-03 passed in `10.0s`, `26.8s`, and `43.9s` respectively;
+- step 04 failed after `7.9s` when the concurrently started Sponsor B OTP poll
+  received a Node-side `fetch failed` with nested `ECONNRESET`. The promise had
+  no rejection handler until the later application-response block caught up,
+  so Playwright closed the page and the pending `/api/applicants` response
+  observer then failed secondarily; no application response status was proved;
+- steps 05-16, the responsive unit, and diagnostics did not run;
+- terminal: `1 failed, 14 did not run, 3 passed (1.5m)`, native exit `1`;
+- the managed tunnel closed and the forwarding port was free;
+- the sole retained artifact was the failed `.last-run.json` marker with one
+  failed test ID; configured-secret and runtime-sensitive-value scans found no
+  match.
+
+This is classified `TEST`, exposed by a transient Mailpit transport reset. It
+is not evidence of a Kafil application or deployed Mailpit-auth defect: the
+exact preflight contract had passed, the failure was a Node-side mailbox read,
+and the browser response observer failed only after the unhandled concurrent
+promise closed its page. Value-free fingerprint: step 04, `/apply`, Sponsor B
+OTP polling, read-only Mailpit fetch, `ECONNRESET`, application response status
+not observed, `7.9s`.
+
+The narrow local correction marks each concurrently started OTP polling promise
+handled immediately while returning the original promise so its later assertion
+is not swallowed. Read-only Mailpit GETs retry exactly once only when an error
+or nested cause has code `ECONNRESET`; refused connections, HTTP/auth failures,
+mailbox mutations, browser actions, and every other error remain fail-fast. It
+adds no Playwright retry, timeout, sleep, browser replay, application code, VPS
+configuration, or deployment change. The new source/helper regression was red
+because both contracts were absent and is green with `18 passed, 0 failed, 376
+assertions`; targeted remote-file lint and web typecheck pass. The complete root
+lint, typecheck, test, production build, and `db:generate` gate passes with
+`305` web tests, `336` server tests (`53` database integrations skipped), `85`
+seed tests, and no schema change. A discovery-only Playwright listing with
+non-secret placeholders selects exactly `5 tests in 1 file` without launching a
+browser or contacting the VPS. The next safe remote level is one freshly
+authorized five-test prerequisite range: steps 01-04 plus passive diagnostics.
+
+That freshly authorized five-test prerequisite range then passed once on the
+same healthy deployed revision `8334f4c`:
+
+- guarded preflight passed all 11 booleans plus SSH identity, Chrome, forwarding
+  port availability, authenticated Mailpit, verified TLS, `/login`, `/apply`,
+  health, and readiness;
+- Playwright reported exactly `5` tests, one worker, and zero retries;
+- steps 01-04 passed in `10.7s`, `26.7s`, `35.0s`, and `28.7s` respectively;
+- step 04 completed Sponsor B's independent OTP, approval/replay, login, and
+  logout contract without an unhandled mailbox-poll rejection;
+- passive diagnostics passed in `30ms` with no unexpected page errors, console
+  errors, failed requests, or unexplained HTTP errors;
+- steps 05-16 and the responsive unit were excluded by the focused grep and did
+  not run; because step 16 was excluded, this attempt's disposable graph may
+  remain;
+- terminal: `5 passed (1.7m)`, native exit `0`;
+- the runner reported `MANAGED SSH TUNNEL CLOSED`, and the forwarding port was
+  independently confirmed free;
+- the sole retained artifact was the passed `.last-run.json` marker with zero
+  failed test IDs; configured-secret and runtime-sensitive-value scans found no
+  match.
+
+The transient-reset harness correction and step 04 focused boundary are now
+accepted. Promotion requires a fresh instruction for one complete 18-test
+attempt; it must not run under the focused authorization.
+
 The previous successful command selected the focused prerequisite range through the
 corrected denial plus diagnostics:
 
@@ -559,7 +629,7 @@ freshly authorized remote attempt.
 | 01 | Admin login, dashboard/assignment readiness, real logout, cookie absence, protected `401` | Complete-range remote pass on `4ef0d03` |
 | 02 | Family UI creation, first-login password setup, temporary-credential denial, role boundary | Passed on `4ef0d03`; corrected 3-test range on `8334f4c` passed real logout, cookie absence, and protected `401`; intermittent complete-run symptom remains unclassified |
 | 03 | Sponsor A application, exact OTP/delete, pending denial, approval/replay, email/phone login | Complete-range remote pass on `4ef0d03` with Najm Auth 3.1.5; both real logout cookie-absence assertions passed |
-| 04 | Independent Sponsor B application, OTP/delete, approval/replay, login/logout | Complete-range remote pass on `4ef0d03` |
+| 04 | Independent Sponsor B application, OTP/delete, approval/replay, login/logout | Corrected five-test prerequisite range passed remotely on healthy revision `8334f4c`, including passive diagnostics |
 | 05 | Two assignments, duplicate `409`, safe sponsor projections, cross-sponsor `404` boundaries | Complete-range remote pass on `4ef0d03` |
 | 06 | Plan lifecycle, contribution validation/refund replays, exact target funding | Complete-range remote pass on `4ef0d03` |
 | 07 | Two Delivery Staff profiles, Order 1 cancellation, Order 2 rejection, reserve restoration | Complete-range remote pass on `4ef0d03` |
@@ -652,6 +722,19 @@ tests passed. Do not repeat this range without a new plan reason and fresh
 instruction. Promotion to the complete range requires its own fresh
 authorization.
 
+Next safe Sponsor B prerequisite range, only after a fresh user instruction:
+
+```powershell
+$env:KAFIL_E2E_REMOTE_GREP='remote step 0[1-4]|remote diagnostics'
+bun run --cwd apps/web test:e2e:connected:remote
+Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
+```
+
+Verify the header reports exactly 5 tests, one worker, and zero retries. Run it
+once. It passed with all five tests and the artifact/tunnel audit clean. Do not
+repeat it without a new plan reason and fresh instruction; do not promote
+directly to the complete range under that focused authorization.
+
 Next complete range, only after the corrected Kafil revision is deployed,
 confirmed healthy, and a fresh instruction is received:
 
@@ -714,7 +797,8 @@ responsive attempt; any residue assessment must use supported application
 surfaces without database, Docker, or VPS cleanup shortcuts.
 
 The corrected Kafil dependency revision is committed, pushed, published,
-deployed, and confirmed healthy. The plan remains **IN PROGRESS** until:
+deployed, and confirmed healthy. The corrected 5-test focused range has passed.
+The plan remains **IN PROGRESS** until:
 
 - a fresh user instruction authorizes one complete remote attempt;
 - the runner header reports exactly `18` tests, one worker, and zero retries;

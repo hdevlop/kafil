@@ -43,6 +43,33 @@ export function readRemoteGrep(env: Environment): string | undefined {
   return raw;
 }
 
+function isConnectionReset(error: unknown): boolean {
+  let current = error;
+  for (let depth = 0; depth < 4; depth += 1) {
+    if (!current || typeof current !== "object") return false;
+    const candidate = current as { cause?: unknown; code?: unknown };
+    if (candidate.code === "ECONNRESET") return true;
+    current = candidate.cause;
+  }
+  return false;
+}
+
+export async function retryReadAfterConnectionReset<T>(
+  read: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await read();
+  } catch (error) {
+    if (!isConnectionReset(error)) throw error;
+    return await read();
+  }
+}
+
+export function handleConcurrentPromise<T>(promise: Promise<T>): Promise<T> {
+  void promise.catch(() => undefined);
+  return promise;
+}
+
 function port(env: Environment, name: string): number {
   return Number(value(env, name));
 }

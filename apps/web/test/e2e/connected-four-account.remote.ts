@@ -16,6 +16,10 @@ import {
   buildRunPhone,
   formatMadFromMinor,
 } from "../../scripts/connected-four-account-fixtures";
+import {
+  handleConcurrentPromise,
+  retryReadAfterConnectionReset,
+} from "../../scripts/connected-four-account-remote-runtime";
 
 const baseUrl = process.env.KAFIL_E2E_BASE_URL ?? "";
 const adminEmail = process.env.KAFIL_ADMIN_EMAIL ?? "";
@@ -1019,7 +1023,10 @@ function mailboxFetch(path: string, init: RequestInit = {}): Promise<globalThis.
     "Authorization",
     `Basic ${Buffer.from(`${mailboxApiUser}:${mailboxApiPassword}`).toString("base64")}`,
   );
-  return fetch(new URL(path, mailboxApiUrl), { ...init, headers });
+  const read = () => fetch(new URL(path, mailboxApiUrl), { ...init, headers });
+  return (init.method ?? "GET").toUpperCase() === "GET"
+    ? retryReadAfterConnectionReset(read)
+    : read();
 }
 
 async function findMailboxMessages(input: {
@@ -1519,12 +1526,14 @@ test.describe.serial("connected VPS acceptance", () => {
     const submitStartedAt = Date.now();
     const otpSubjectKeyword = "Verify your Kafil sponsor application";
     const otpPolling = new AbortController();
-    const otpMessagePromise = pollExactlyOneOtpMessage({
-      recipient: sponsorAEmail,
-      since: submitStartedAt,
-      subjectKeyword: otpSubjectKeyword,
-      signal: otpPolling.signal,
-    });
+    const otpMessagePromise = handleConcurrentPromise(
+      pollExactlyOneOtpMessage({
+        recipient: sponsorAEmail,
+        since: submitStartedAt,
+        subjectKeyword: otpSubjectKeyword,
+        signal: otpPolling.signal,
+      }),
+    );
     let otpMessage: MailpitMessage;
     try {
       const submitResponse = sponsorPage.waitForResponse(
@@ -1829,12 +1838,14 @@ test.describe.serial("connected VPS acceptance", () => {
     const submitStartedAt = Date.now();
     const otpSubjectKeyword = "Verify your Kafil sponsor application";
     const otpPolling = new AbortController();
-    const otpMessagePromise = pollExactlyOneOtpMessage({
-      recipient: sponsorBEmail,
-      since: submitStartedAt,
-      subjectKeyword: otpSubjectKeyword,
-      signal: otpPolling.signal,
-    });
+    const otpMessagePromise = handleConcurrentPromise(
+      pollExactlyOneOtpMessage({
+        recipient: sponsorBEmail,
+        since: submitStartedAt,
+        subjectKeyword: otpSubjectKeyword,
+        signal: otpPolling.signal,
+      }),
+    );
     let otpMessage: MailpitMessage;
     try {
       const submitResponse = sponsorPage.waitForResponse(

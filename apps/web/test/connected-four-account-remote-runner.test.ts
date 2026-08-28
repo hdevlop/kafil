@@ -5,6 +5,8 @@ import {
   REMOTE_GREP_MAX_LENGTH,
   buildRemotePlaywrightArgs,
   buildSshTunnelArgs,
+  handleConcurrentPromise,
+  retryReadAfterConnectionReset,
   readRemoteAcceptanceConfig,
   readRemoteGrep,
   remoteAcceptanceChecks,
@@ -43,6 +45,35 @@ const specSource = readFileSync(
 );
 
 describe("connected four-account remote runner", () => {
+  test("retries only one connection-reset read and handles concurrent rejection immediately", async () => {
+    let resetReadCount = 0;
+    const recovered = await retryReadAfterConnectionReset(async () => {
+      resetReadCount += 1;
+      if (resetReadCount === 1) {
+        throw Object.assign(new TypeError("fetch failed"), {
+          cause: Object.assign(new Error("read reset"), { code: "ECONNRESET" }),
+        });
+      }
+      return "recovered";
+    });
+    expect(recovered).toBe("recovered");
+    expect(resetReadCount).toBe(2);
+
+    let refusedReadCount = 0;
+    await expect(
+      retryReadAfterConnectionReset(async () => {
+        refusedReadCount += 1;
+        throw Object.assign(new Error("connection refused"), { code: "ECONNREFUSED" });
+      }),
+    ).rejects.toThrow("connection refused");
+    expect(refusedReadCount).toBe(1);
+
+    const rejection = Promise.reject(new Error("mailbox transport failed"));
+    const handled = handleConcurrentPromise(rejection);
+    expect(handled).toBe(rejection);
+    await expect(handled).rejects.toThrow("mailbox transport failed");
+  });
+
   test("accepts only the exact authorized HTTPS origin and loopback mailbox", () => {
     expect(remoteAcceptanceChecks(validEnvironment).every((check) => check.ok)).toBe(true);
     expect(() =>
@@ -270,6 +301,7 @@ describe("connected four-account remote runner", () => {
     expect(step03).toContain('{ method: "GET", path: "/api/applicants", status: 401 }');
     expect(step03).toContain("response.status() < 400");
     expect(step03).toContain("pollExactlyOneOtpMessage({");
+    expect(step03).toContain("handleConcurrentPromise(\n      pollExactlyOneOtpMessage({");
     expect(step03).toContain("subjectKeyword: otpSubjectKeyword");
     expect(step03).toContain("expect(confirmedOtpMessages).toHaveLength(1)");
     expect(step03.indexOf("const confirmResponse")).toBeLessThan(
@@ -323,6 +355,7 @@ describe("connected four-account remote runner", () => {
     ]) {
       expect(step04).toContain(contract);
     }
+    expect(step04).toContain("handleConcurrentPromise(\n      pollExactlyOneOtpMessage({");
     expect(specSource).toContain("sponsorBContext = await newIsolatedContext(browser)");
     expect(specSource).toContain('assertDiagnosticsClean("sponsor-b", sponsorBDiagnostics)');
     expect(step04).toContain("await deleteMailboxMessage(otpMessage.ID)");
