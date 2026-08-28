@@ -299,7 +299,7 @@ describe("connected four-account remote runner", () => {
       step03.indexOf("let applicationRequestCount"),
     );
     expect(step03).toContain('{ method: "GET", path: "/api/applicants", status: 401 }');
-    expect(step03).toContain("response.status() < 400");
+    expect(step03).toContain("transientStatus: 401");
     expect(step03).toContain("pollExactlyOneOtpMessage({");
     expect(step03).toContain("handleConcurrentPromise(\n      pollExactlyOneOtpMessage({");
     expect(step03).toContain("subjectKeyword: otpSubjectKeyword");
@@ -333,6 +333,41 @@ describe("connected four-account remote runner", () => {
     expect(specSource).toContain("auth-boundary-responses=");
     expect(specSource).not.toContain("cookie.value");
     expect(specSource).not.toContain("cookies.find((cookie) =>");
+  });
+
+  test("fails applicants collection navigation with value-free bounded diagnostics", () => {
+    const helper = specSource.slice(
+      specSource.indexOf("async function navigateToCollectionReadiness("),
+      specSource.indexOf("async function expectExactNegativeResponse("),
+    );
+    const step03 = specSource.slice(
+      specSource.indexOf('test("remote step 03 - Sponsor A application and approval"'),
+      specSource.indexOf('test("remote step 04 - Sponsor B application and approval"'),
+    );
+    const step04 = specSource.slice(
+      specSource.indexOf('test("remote step 04 - Sponsor B application and approval"'),
+      specSource.indexOf('test("remote step 05 - assignments and sponsor privacy"'),
+    );
+
+    expect(helper).toContain("observedStatuses: number[] = []");
+    expect(helper).toContain("transientStatusCount === 0");
+    expect(helper).toContain("transientStatusCount += 1");
+    expect(helper).toContain("{ timeout: 30_000 }");
+    expect(helper).toContain("method=GET path=${path} status=${response.status()}");
+    expect(helper).toContain('statuses=${observedStatuses.join(",") || "none"}');
+    expect(helper).toContain("handleConcurrentPromise(");
+    expect(helper).toContain('waitUntil: "commit"');
+    expect(helper).toContain("await Promise.all([responsePromise, navigationPromise])");
+    expect(helper).not.toContain("response.body(");
+    expect(helper).not.toContain("response.json(");
+
+    for (const step of [step03, step04]) {
+      expect(step).toContain("await navigateToCollectionReadiness(");
+      expect(step).toContain('path: "/api/applicants"');
+      expect(step).toContain('routePath: "/applicants"');
+      expect(step).toContain('requiredSearchParams: ["limit", "offset"]');
+      expect(step).not.toContain("const applicantsResponse = adminPage.waitForResponse(");
+    }
   });
 
   test("pins independent Sponsor B OTP, approval replay, and logout boundaries", () => {

@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS — CORRECTED 5-TEST FOCUSED RANGE PASSED; FRESH 18-TEST AUTHORIZATION REQUIRED**
+Status: **IN PROGRESS — CORRECTED 4-TEST FOCUSED RANGE PASSED; FRESH 18-TEST AUTHORIZATION REQUIRED**
 
 Target: exactly `https://kafala360.ma`
 
@@ -490,6 +490,88 @@ The transient-reset harness correction and step 04 focused boundary are now
 accepted. Promotion requires a fresh instruction for one complete 18-test
 attempt; it must not run under the focused authorization.
 
+That freshly authorized complete attempt then ran once on the same healthy
+deployed revision `8334f4c` using accepted test-only commit `ac12d3c`:
+
+- guarded preflight passed all 11 booleans plus SSH identity, Chrome, forwarding
+  port availability, authenticated Mailpit, verified TLS, `/login`, `/apply`,
+  health, and readiness;
+- Playwright reported exactly `18` tests, one worker, and zero retries;
+- steps 01 and 02 passed in `9.9s` and `28.3s` respectively;
+- step 03 timed out after 180 seconds while the Admin applicants page waited for
+  a successful paginated `GET /api/applicants`; the pending response waiter then
+  rejected when Playwright closed the page and context;
+- the waiter matched only a successful response, so it retained no response
+  status and could not distinguish a repeated authorization response, another
+  application error, a redirect, or a missing request;
+- steps 04-16, the responsive unit, and diagnostics did not run after the serial
+  failure;
+- terminal: `1 failed, 15 did not run, 2 passed (3.7m)`, native exit `1`;
+- the runner reported `MANAGED SSH TUNNEL CLOSED`, and the forwarding port was
+  independently confirmed free;
+- the sole retained artifact was the failed `.last-run.json` marker with one
+  failed test ID; the referenced error context was not retained, and configured-
+  secret and runtime-sensitive-value scans found no match.
+
+This is classified `TEST`: the success-only collection waiter violated the
+fail-fast diagnostic contract. The underlying product/environment outcome is
+not classified because no response status was proved. Value-free fingerprint:
+step 03, route `/applicants`, request `GET /api/applicants`, status `none`,
+successful paginated response not observed, 180-second timeout.
+
+The narrow test-only correction replaces both Sponsor A and Sponsor B
+applicants-page waiters with one shared bounded helper. It registers before
+navigation, keeps both response and navigation promises handled concurrently,
+allows at most the one documented transient `401`, accepts the next successful
+paginated response, and fails on the next non-success response. A missing
+terminal response now fails after 30 seconds without increasing the shared
+180-second test timeout. Its error contains only method, path, observed status
+codes, and current pathname; it never reads a response body, query value,
+identity, credential, cookie, or mailbox content.
+
+Correction evidence:
+
+- the new source contract was red against the old source with `18 passed, 1
+  failed, 377 assertions`;
+- after implementation it passed with `19 passed, 0 failed, 397 assertions`;
+- targeted remote-file ESLint and web typecheck passed;
+- the complete root lint and typecheck gates passed;
+- root tests passed with `308` web, `336` server (`53` opt-in database
+  integrations skipped), and `85` seed tests;
+- the production build passed with Docker's command-scoped build-only values;
+- `bun run db:generate` reported `No schema changes, nothing to migrate`;
+- discovery-only Playwright listing with non-secret placeholders selected
+  exactly `4 tests in 1 file`: steps 01-03 plus passive diagnostics, without
+  launching a browser or contacting the VPS.
+
+The correction changes only the remote spec, its source-contract test, and this
+plan, so no application deployment is required. The user's current fresh
+instruction authorizes exactly one corrected four-test prerequisite attempt.
+
+That corrected four-test prerequisite attempt then passed once on the same
+healthy deployed revision `8334f4c`:
+
+- guarded preflight passed all 11 booleans plus SSH identity, Chrome, forwarding
+  port availability, authenticated Mailpit, verified TLS, `/login`, `/apply`,
+  health, and readiness;
+- Playwright reported exactly `4` tests, one worker, and zero retries;
+- steps 01, 02, and 03 passed in `13.2s`, `26.0s`, and `27.3s` respectively;
+- passive diagnostics passed in `20ms` with no unexpected page errors, console
+  errors, failed requests, or unexplained HTTP errors;
+- steps 04-16 and the responsive unit were excluded by the focused grep and did
+  not run; because step 16 was excluded, this attempt's disposable graph may
+  remain;
+- terminal: `4 passed (1.1m)`, native exit `0`;
+- the runner reported `MANAGED SSH TUNNEL CLOSED`, and the forwarding port was
+  independently confirmed free;
+- the sole retained artifact was the passed `.last-run.json` marker with zero
+  failed test IDs and no error context; configured-secret and runtime-sensitive-
+  value scans found no match.
+
+The bounded collection diagnostic and corrected step-03 boundary are accepted.
+Promotion now requires a fresh instruction for one complete 18-test attempt; it
+must not run under this focused authorization.
+
 The previous successful command selected the focused prerequisite range through the
 corrected denial plus diagnostics:
 
@@ -628,7 +710,7 @@ freshly authorized remote attempt.
 | --- | --- | --- |
 | 01 | Admin login, dashboard/assignment readiness, real logout, cookie absence, protected `401` | Complete-range remote pass on `4ef0d03` |
 | 02 | Family UI creation, first-login password setup, temporary-credential denial, role boundary | Passed on `4ef0d03`; corrected 3-test range on `8334f4c` passed real logout, cookie absence, and protected `401`; intermittent complete-run symptom remains unclassified |
-| 03 | Sponsor A application, exact OTP/delete, pending denial, approval/replay, email/phone login | Complete-range remote pass on `4ef0d03` with Najm Auth 3.1.5; both real logout cookie-absence assertions passed |
+| 03 | Sponsor A application, exact OTP/delete, pending denial, approval/replay, email/phone login | Bounded collection observer and complete step contract passed in the corrected four-test range on healthy revision `8334f4c` |
 | 04 | Independent Sponsor B application, OTP/delete, approval/replay, login/logout | Corrected five-test prerequisite range passed remotely on healthy revision `8334f4c`, including passive diagnostics |
 | 05 | Two assignments, duplicate `409`, safe sponsor projections, cross-sponsor `404` boundaries | Complete-range remote pass on `4ef0d03` |
 | 06 | Plan lifecycle, contribution validation/refund replays, exact target funding | Complete-range remote pass on `4ef0d03` |
@@ -708,6 +790,16 @@ Run it once only after a fresh user instruction. Verify the header reports 4
 tests before interpreting results. It passed, and the later complete 17-test
 selection also passed once after its own fresh user instruction. Do not repeat
 either remote level without a new plan reason and fresh instruction.
+
+The latest complete attempt supplies a new plan reason for this same smallest
+prerequisite range. Its success-only collection waiter has changed to the
+bounded value-free observer described in section 2, and the user's current
+instruction authorizes one attempt. Verify the header reports exactly 4 tests,
+one worker, and zero retries. Whether it passes or fails, restore the grep and
+stop; a complete 18-test attempt requires another fresh instruction.
+
+That attempt passed with all four tests and the tunnel/artifact audit clean. Do
+not repeat it without a new plan reason and fresh instruction.
 
 Corrected diagnostic range that passed after a fresh user instruction:
 
@@ -797,8 +889,9 @@ responsive attempt; any residue assessment must use supported application
 surfaces without database, Docker, or VPS cleanup shortcuts.
 
 The corrected Kafil dependency revision is committed, pushed, published,
-deployed, and confirmed healthy. The corrected 5-test focused range has passed.
-The plan remains **IN PROGRESS** until:
+deployed, and confirmed healthy. The corrected 5-test Sponsor B range and the
+later corrected 4-test Sponsor A diagnostic range have both passed. The plan
+remains **IN PROGRESS** until:
 
 - a fresh user instruction authorizes one complete remote attempt;
 - the runner header reports exactly `18` tests, one worker, and zero retries;

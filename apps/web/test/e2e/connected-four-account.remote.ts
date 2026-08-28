@@ -588,6 +588,64 @@ function containsProjectionKey(value: unknown, forbiddenKeys: string[]): boolean
   });
 }
 
+async function navigateToCollectionReadiness(
+  page: Page,
+  input: {
+    path: string;
+    requiredSearchParams: string[];
+    routePath: string;
+    transientStatus: number;
+  },
+): Promise<Response> {
+  const { path, requiredSearchParams, routePath, transientStatus } = input;
+  const observedStatuses: number[] = [];
+  let transientStatusCount = 0;
+  const responsePromise = handleConcurrentPromise(
+    page
+      .waitForResponse(
+        (response) => {
+          const url = new URL(response.url());
+          if (
+            response.request().method() !== "GET" ||
+            url.pathname !== path ||
+            !requiredSearchParams.every((name) => url.searchParams.has(name))
+          ) {
+            return false;
+          }
+          observedStatuses.push(response.status());
+          if (response.status() === transientStatus && transientStatusCount === 0) {
+            transientStatusCount += 1;
+            return false;
+          }
+          return true;
+        },
+        { timeout: 30_000 },
+      )
+      .catch(() => {
+        throw new Error(
+          `Collection readiness timed out; method=GET path=${path} statuses=${observedStatuses.join(",") || "none"} current-path=${new URL(page.url()).pathname}`,
+        );
+      }),
+  );
+  const navigationPromise = handleConcurrentPromise(
+    page.goto(routePath, { waitUntil: "commit" }).then(() => {
+      const currentPath = new URL(page.url()).pathname;
+      if (currentPath !== routePath) {
+        throw new Error(
+          `Collection navigation changed route; expected-path=${routePath} current-path=${currentPath}`,
+        );
+      }
+    }),
+  );
+  const [response] = await Promise.all([responsePromise, navigationPromise]);
+  if (response.status() >= 400) {
+    throw new Error(
+      `Collection readiness failed; method=GET path=${path} status=${response.status()} statuses=${observedStatuses.join(",") || "none"}`,
+    );
+  }
+  return response;
+}
+
 async function expectExactNegativeResponse(
   page: Page,
   captured: Diagnostics,
@@ -1597,25 +1655,19 @@ test.describe.serial("connected VPS acceptance", () => {
     await assertNoAuthCookies(sponsorAContext);
 
     // Najm Auth may answer one request with 401, refresh, and retry it once.
-    // The route is ready only when that retry succeeds; a second 401 remains
-    // an unexplained diagnostic failure.
+    // The route is ready only when that retry succeeds; a second 401 or any
+    // other terminal error fails immediately with a value-free status trail.
     registerExpectedResponse(
       adminDiagnostics,
       { method: "GET", path: "/api/applicants", status: 401 },
       false,
     );
-    const applicantsResponse = adminPage.waitForResponse((response) => {
-      const url = new URL(response.url());
-      return (
-        response.request().method() === "GET" &&
-        url.pathname === "/api/applicants" &&
-        url.searchParams.has("limit") &&
-        url.searchParams.has("offset") &&
-        response.status() < 400
-      );
+    await navigateToCollectionReadiness(adminPage, {
+      path: "/api/applicants",
+      requiredSearchParams: ["limit", "offset"],
+      routePath: "/applicants",
+      transientStatus: 401,
     });
-    await adminPage.goto("/applicants", { waitUntil: "commit" });
-    expect((await applicantsResponse).status()).toBeLessThan(400);
     await expectNoneVisible(adminPage.getByText("Loading applicants...", { exact: true }));
     const filteredApplicantsResponse = adminPage.waitForResponse((response) => {
       const url = new URL(response.url());
@@ -1913,18 +1965,12 @@ test.describe.serial("connected VPS acceptance", () => {
       { method: "GET", path: "/api/applicants", status: 401 },
       false,
     );
-    const applicantsResponse = adminPage.waitForResponse((response) => {
-      const url = new URL(response.url());
-      return (
-        response.request().method() === "GET" &&
-        url.pathname === "/api/applicants" &&
-        url.searchParams.has("limit") &&
-        url.searchParams.has("offset") &&
-        response.status() < 400
-      );
+    await navigateToCollectionReadiness(adminPage, {
+      path: "/api/applicants",
+      requiredSearchParams: ["limit", "offset"],
+      routePath: "/applicants",
+      transientStatus: 401,
     });
-    await adminPage.goto("/applicants", { waitUntil: "commit" });
-    expect((await applicantsResponse).status()).toBeLessThan(400);
     await expectNoneVisible(adminPage.getByText("Loading applicants...", { exact: true }));
     const filteredApplicantsResponse = adminPage.waitForResponse((response) => {
       const url = new URL(response.url());
