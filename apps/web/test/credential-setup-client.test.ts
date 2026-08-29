@@ -55,8 +55,11 @@ describe("credential setup client", () => {
     // Renaming this silently restores persistent cookies for a browser that
     // still holds kafil.remember=0.
     expect(route).toContain('rememberCookieName: "kafil.remember"');
-    expect(route).toContain('from "najm-auth/client/server"');
-    expect(route).toContain("export const POST = persistentPostHandler;");
+    expect(route).toContain('import { auth } from "@/lib/auth"');
+    expect(route).toContain("auth.routeHandlers(serverHandler");
+    expect(route).toContain(
+      "export const { GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS } = handlers;",
+    );
     expect(route).not.toContain("ensureLogoutCookiesCleared");
     expect(route).not.toContain("@/lib/authCookiePersistence");
   });

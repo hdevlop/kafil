@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 
 export default async function proxy(request: Request) {
-  return auth.middleware(request);
+  return auth.proxy(request);
 }
 
 export const config = {

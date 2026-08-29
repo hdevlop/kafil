@@ -66,8 +66,8 @@ describe("the proxy stays free of React-server code", () => {
   });
 
   test("proxy treats the signed session as an optimistic snapshot", () => {
-    expect(authConfig).toContain("verifyAlways: false");
-    expect(authConfig).not.toContain("verifyAlways: true");
+    expect(authConfig).toContain('proxySessionMode: "optimistic"');
+    expect(authConfig).not.toContain('proxySessionMode: "authoritative"');
 
     // Next.js 16 strips internal Flight headers before Proxy receives the
     // Request. An in-function prefetch detector therefore cannot reliably
@@ -75,7 +75,7 @@ describe("the proxy stays free of React-server code", () => {
     // after logout.
     expect(proxy).not.toContain("next-router-prefetch");
     expect(proxy).not.toContain("next-router-state-tree");
-    expect(proxy).toContain("return auth.middleware(request)");
+    expect(proxy).toContain("return auth.proxy(request)");
   });
 });
 

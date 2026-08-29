@@ -13,10 +13,10 @@ const settingsSheets = readFileSync(
 describe("dashboard auth tab-sync integration", () => {
   test("redirects a mounted protected shell when Najm broadcasts logout", () => {
     expect(dashboardShell).toContain(
-      'import { SignOutButton, useSession } from "najm-auth/client/react"',
+      'import { Protected, SignOutButton } from "najm-auth/client/react"',
     );
     expect(dashboardShell).toContain(
-      'useSession({ required: true, redirectTo: "/login" })',
+      '<Protected redirectTo="/login">',
     );
   });
 

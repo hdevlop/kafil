@@ -1,6 +1,6 @@
 "use client";
 
-import { SignOutButton, useSession } from "najm-auth/client/react";
+import { Protected, SignOutButton } from "najm-auth/client/react";
 import { LogOut, Settings2, UserRound } from "lucide-react";
 import { NButton, NajmScroll, NSidebar, NSidebarProvider, useNSidebar } from "najm-kit";
 import Link from "next/link";
@@ -50,7 +50,6 @@ function SidebarAction({ icon: Icon, label, onClick }: Readonly<{ icon: Componen
 }
 
 function DashboardShellBody({ children, user }: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
-   useSession({ required: true, redirectTo: "/login" });
    const pathname = usePathname();
    const { t } = useKafilLanguage();
    const sidebar = useNSidebar();
@@ -156,10 +155,12 @@ function DashboardShellBody({ children, user }: Readonly<{ children: React.React
 
 export function DashboardShell({ children, user, }: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
    return (
-      <KafilRoleProvider role={user.role}>
-         <NSidebarProvider mobileBreakpoint="lg">
-            <DashboardShellBody user={user}>{children}</DashboardShellBody>
-         </NSidebarProvider>
-      </KafilRoleProvider>
+      <Protected redirectTo="/login">
+         <KafilRoleProvider role={user.role}>
+            <NSidebarProvider mobileBreakpoint="lg">
+               <DashboardShellBody user={user}>{children}</DashboardShellBody>
+            </NSidebarProvider>
+         </KafilRoleProvider>
+      </Protected>
    );
 }

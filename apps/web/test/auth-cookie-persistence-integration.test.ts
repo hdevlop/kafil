@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { withAuthCookiePersistence } from "najm-auth/client/server";
+import { auth } from "../src/lib/auth";
 
 const setCookiesOf = (response: Response) =>
   (response.headers as Headers & { getSetCookie(): string[] }).getSetCookie();
 
 describe("Kafil Najm auth-cookie integration", () => {
-  test("the installed wrapper owns successful logout cookie deletion", async () => {
-    const handler = withAuthCookiePersistence(
+  test("the composed handlers own successful logout cookie deletion", async () => {
+    const handlers = auth.routeHandlers(
       async () => {
         const headers = new Headers();
         headers.append(
@@ -20,7 +20,7 @@ describe("Kafil Najm auth-cookie integration", () => {
     );
 
     const cookies = setCookiesOf(
-      await handler(
+      await handlers.POST(
         new Request("https://app.test/api/auth/logout", { method: "POST" }),
       ),
     );
