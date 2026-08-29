@@ -1290,3 +1290,57 @@ The complete correction gate passes: root lint and typecheck; web `322 passed`;
 server `336 passed` with `53` database-opt-in tests skipped; seed `85 passed`;
 production build with the Dockerfile-equivalent command-scoped build values;
 and `db:generate` with `No schema changes, nothing to migrate`.
+
+### 11.10 Published cross-tab proof and residue-safe cleanup (2026-08-29)
+
+The runtime correction was committed and pushed as full revision
+`cf87a29e30b4e302ba58327133333c0320916038`. GitHub verification, production
+image publication, and the Dokploy trigger passed. A separate value-free,
+read-only Docker check observed the old healthy revision during the asynchronous
+handoff, then required exactly one Compose `service=app` container at the full
+target OCI revision with Docker health `healthy` before browser promotion.
+
+The smallest state-complete auth 06 prerequisite then ran once on that exact
+healthy revision. Guarded preflight passed every boolean, SSH, system Chrome,
+owned Mailpit forwarding, TLS page, health, and readiness boundary. Playwright
+reported exactly `7 tests using 1 worker`, zero retries: auth units 01 through
+06 plus passive diagnostics all passed in `2.0m`; cross-tab logout itself
+passed in `7.6s`. The tunnel closed, the forwarding port was free, and the sole
+passed-run marker had zero configured-secret or auth-token matches.
+
+Interrupted earlier attempts left disposable auth-matrix records before unit 09
+could run. The supported cleanup now selects residue only when both the exact
+reserved `Auth Family auth-...` or `Auth Sponsor auth-...` name shape and its
+matching `c4a-family.test` or `c4a-sponsor.test` email shape are present. It
+deletes those records through authenticated Family and Applicant application
+APIs, whose approved-Applicant deletion owns the linked Sponsor graph. Mailpit
+cleanup searches the reserved Sponsor test domain, loads message details, and
+deletes only exact auth-matrix recipient shapes. It retains and reports counts
+only. Near-match identities and other `.test` records are excluded by a red/
+green predicate regression. The focused cleanup, diagnostic, response, runner,
+shared-runner, and tab-sync range passes with `29 passed`, `0 failed`, and `462`
+assertions; targeted ESLint and web typecheck pass. This is test/spec/plan-only
+and requires no new application deployment before the final complete matrix.
+
+The complete ten-test command then ran once against the same exact healthy
+revision. Auth units 01 through 09 all passed, including overlap, stale-session
+denial, accumulated residue deletion, counts-only closure, and Admin logout.
+Final diagnostics alone failed with the new bounded fingerprint
+`resource-http;status=401;path=/api/presets`; the native result was `9 passed`,
+`1 failed` in `1.9m`, exit `1`. The cleanup unit had already completed, the
+tunnel closed, the port was free, and the sole failed-run marker had zero
+configured-secret or auth-token matches.
+
+The fingerprint identified a Kafil UI lifecycle defect rather than an auth
+denial defect. `AdminThemeSettingsSheets` mounted Najm's query-owning
+`NThemeSettingsProvider` whenever the role was Admin, even while both Theme and
+Branding sheets were closed. Its unnecessary protected Presets read could
+therefore overlap the final logout and correctly receive `401`. The narrow
+correction keeps the one shared provider mounted while either Theme or Branding
+is active—preserving drafts across sheet-to-sheet switching—but returns `null`
+while both are closed. A red source contract identified the idle mount; the
+focused tab-sync, cleanup, auth-runner, and theme-adoption range then passed
+with `20 passed`, `0 failed`, followed by targeted ESLint and web typecheck.
+Because this changes runtime query lifecycle, it requires a new complete root
+gate, commit, image, deployment, and exact healthy-revision check before the
+next complete auth proof.

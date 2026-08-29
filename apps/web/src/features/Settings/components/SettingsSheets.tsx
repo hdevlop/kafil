@@ -245,7 +245,12 @@ export function AdminThemeSettingsSheets({
   const { language } = useKafilLanguage();
   const router = useRouter();
 
-  if (!canOpenThemeSettings(role)) return null;
+  if (
+    !canOpenThemeSettings(role) ||
+    (activeSheet !== "theme" && activeSheet !== "branding")
+  ) {
+    return null;
+  }
 
   return (
     <NThemeSettingsProvider

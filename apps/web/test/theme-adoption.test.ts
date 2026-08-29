@@ -133,7 +133,10 @@ describe("najm-theme adoption — Kafil boundary", () => {
     const sheet = readSource(
       "../src/features/Settings/components/SettingsSheets.tsx",
     );
-    expect(sheet).toContain("if (!canOpenThemeSettings(role)) return null;");
+    expect(sheet).toContain("!canOpenThemeSettings(role) ||");
+    expect(sheet).toContain(
+      '(activeSheet !== "theme" && activeSheet !== "branding")',
+    );
   });
 
   test("adds admin-only Theme and Branding sidebar actions without routes", () => {

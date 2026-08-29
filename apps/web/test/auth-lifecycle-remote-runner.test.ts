@@ -60,6 +60,9 @@ describe("dedicated remote auth lifecycle runner", () => {
     expect(source).toContain("await expectProtectedDenied(");
     expect(source).toContain("await cookieWriterRecorder.stop()");
     expect(source).toContain("expect(familyList.status).toBe(200)");
+    expect(source).toContain("findDisposableAuthMailboxMessages()");
+    expect(source).toContain("filter(isDisposableAuthFamily)");
+    expect(source).toContain("filter(isDisposableAuthSponsor)");
     expect(source).toContain("if (cleanupSummary)");
     expect(source).toContain("expect(logoutEvidence.length).toBeGreaterThan(0)");
     expect(source.indexOf("await expectProtectedDenied(")).toBeLessThan(

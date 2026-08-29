@@ -24,6 +24,11 @@ import {
   recordAuthCookieWriters,
   type AuthCookieWriterEvent,
 } from "./authCookieDiagnostics";
+import {
+  isDisposableAuthFamily,
+  isDisposableAuthSponsor,
+  isDisposableAuthSponsorRecipient,
+} from "./authLifecycleCleanup";
 import { consoleErrorFingerprint } from "./authLifecycleDiagnostics";
 import { responseRows } from "./authLifecycleResponses";
 
@@ -470,6 +475,26 @@ async function findMailboxMessages(input: {
   return matches;
 }
 
+async function findDisposableAuthMailboxMessages(): Promise<MailpitMessage[]> {
+  const search = await mailboxFetch(
+    `/api/v1/search?query=${encodeURIComponent(`to:${CONNECTED_RUN_FIXTURE.sponsorEmailDomain}`)}`,
+  );
+  if (!search.ok) throw new Error("Authenticated Mailpit cleanup search failed.");
+  const payload = (await search.json()) as { messages?: MailpitMessageSummary[] };
+  const matches: MailpitMessage[] = [];
+  for (const summary of payload.messages ?? []) {
+    const detail = await mailboxFetch(`/api/v1/message/${summary.ID}`);
+    if (!detail.ok) throw new Error("Authenticated Mailpit cleanup detail read failed.");
+    const message = (await detail.json()) as MailpitMessage;
+    if (message.To.some((destination) =>
+      isDisposableAuthSponsorRecipient(destination.Address)
+    )) {
+      matches.push(message);
+    }
+  }
+  return matches;
+}
+
 async function pollExactlyOneOtpMessage(input: {
   recipient: string;
   since: number;
@@ -891,38 +916,57 @@ test.describe.serial("remote auth lifecycle", () => {
   });
 
   test("remote auth 09 - supported cleanup and closure", async () => {
-    const familyDelete = await browserJsonRequest(
+    const familyCandidatesResponse = await browserJsonRequest(
       adminPage,
-      "DELETE",
-      `/api/families/${state.familyProfileId}`,
+      "GET",
+      `/api/families?search=${encodeURIComponent("Auth Family auth-")}&limit=100&offset=0`,
     );
-    expect(familyDelete.status).toBeLessThan(400);
-    const applicantDelete = await browserJsonRequest(
+    const applicantCandidatesResponse = await browserJsonRequest(
       adminPage,
-      "DELETE",
-      `/api/applicants/${state.sponsorApplicantId}`,
+      "GET",
+      `/api/applicants?search=${encodeURIComponent("Auth Sponsor auth-")}&limit=100&offset=0`,
     );
-    expect(applicantDelete.status).toBeLessThan(400);
+    expect(familyCandidatesResponse.status).toBe(200);
+    expect(applicantCandidatesResponse.status).toBe(200);
+    const familyCandidates = responseRows(familyCandidatesResponse.body).filter(
+      isDisposableAuthFamily,
+    );
+    const applicantCandidates = responseRows(applicantCandidatesResponse.body).filter(
+      isDisposableAuthSponsor,
+    );
+    expect(familyCandidates.length).toBeGreaterThan(0);
+    expect(applicantCandidates.length).toBeGreaterThan(0);
+    for (const candidate of familyCandidates) {
+      const id = typeof candidate.id === "string" ? candidate.id : "";
+      expect(id).not.toBe("");
+      expect((await browserJsonRequest(adminPage, "DELETE", `/api/families/${id}`)).status)
+        .toBeLessThan(400);
+    }
+    for (const candidate of applicantCandidates) {
+      const id = typeof candidate.id === "string" ? candidate.id : "";
+      expect(id).not.toBe("");
+      expect((await browserJsonRequest(adminPage, "DELETE", `/api/applicants/${id}`)).status)
+        .toBeLessThan(400);
+    }
 
-    const encodedRunLabel = encodeURIComponent(runLabel);
+    const encodedFamilyPrefix = encodeURIComponent("Auth Family auth-");
+    const encodedSponsorPrefix = encodeURIComponent("Auth Sponsor auth-");
     const applicationChecks = await Promise.all([
-      browserJsonRequest(adminPage, "GET", `/api/families?search=${encodedRunLabel}&limit=10&offset=0`),
-      browserJsonRequest(adminPage, "GET", `/api/sponsors?search=${encodedRunLabel}&limit=10&offset=0`),
-      browserJsonRequest(adminPage, "GET", `/api/applicants?search=${encodedRunLabel}&limit=10&offset=0`),
+      browserJsonRequest(adminPage, "GET", `/api/families?search=${encodedFamilyPrefix}&limit=100&offset=0`),
+      browserJsonRequest(adminPage, "GET", `/api/sponsors?search=${encodedSponsorPrefix}&limit=100&offset=0`),
+      browserJsonRequest(adminPage, "GET", `/api/applicants?search=${encodedSponsorPrefix}&limit=100&offset=0`),
     ]);
     expect(applicationChecks.every((result) => result.status === 200)).toBe(true);
-    const applicationRowsRetained = applicationChecks.reduce(
-      (count, result) => count + responseRows(result.body).length,
-      0,
-    );
+    const applicationRowsRetained =
+      responseRows(applicationChecks[0].body).filter(isDisposableAuthFamily).length +
+      responseRows(applicationChecks[1].body).filter(isDisposableAuthSponsor).length +
+      responseRows(applicationChecks[2].body).filter(isDisposableAuthSponsor).length;
     expect(applicationRowsRetained).toBe(0);
 
-    const messages = await findMailboxMessages({ recipient: sponsorEmail, since: runStartedAt });
+    const messages = await findDisposableAuthMailboxMessages();
     const messageIds = [...new Set(messages.map((message) => message.ID))];
     await deleteMailboxMessages(messageIds);
-    const mailboxMessagesRetained = (
-      await findMailboxMessages({ recipient: sponsorEmail, since: runStartedAt })
-    ).length;
+    const mailboxMessagesRetained = (await findDisposableAuthMailboxMessages()).length;
     expect(mailboxMessagesRetained).toBe(0);
     cleanupSummary = {
       applicationRowsRetained,
