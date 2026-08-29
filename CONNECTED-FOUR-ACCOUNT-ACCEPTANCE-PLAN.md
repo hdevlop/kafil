@@ -1344,3 +1344,59 @@ with `20 passed`, `0 failed`, followed by targeted ESLint and web typecheck.
 Because this changes runtime query lifecycle, it requires a new complete root
 gate, commit, image, deployment, and exact healthy-revision check before the
 next complete auth proof.
+
+### 11.11 Idle-query deployment and overlap-route correction (2026-08-29)
+
+The idle theme-query correction was committed and pushed as full revision
+`2f9c6da86d13fd0483e525aeafd7e01c7480d23e`. GitHub verification, production
+image publication, and the Dokploy trigger passed. A separate read-only Docker
+check then required exactly one Compose `service=app` container at that full
+OCI revision with Docker health `healthy`.
+
+The complete auth matrix ran against that exact healthy revision with the
+guarded preflight fully green, exactly `10 tests using 1 worker`, and zero
+retries. Auth units 01 through 09 all passed, including supported cleanup and
+Admin logout. The prior `/api/presets` fingerprint did not recur. Diagnostics
+alone failed with `resource-http;status=404;path=/sponsor`; the native result
+was `9 passed`, `1 failed` in `1.6m`, exit `1`. The tunnel closed, the forwarding
+port was free, and the sole failed-run marker had zero configured-secret or
+auth-token matches.
+
+This was a browser-contract defect in auth unit 07. `/sponsor` is protected by
+the proxy but has no application page, while `/sponsor/support` is the deployed
+Sponsor surface. The overlap unit now starts its observed request against that
+real route and requires the completed response to be exactly `200`; its source
+contract forbids returning to the nonexistent root route. The regression was
+red before the change and passes afterward. The complete local gate passes:
+root lint and typecheck; web `325 passed`; server `336 passed` with `53`
+database-opt-in tests skipped; seed `85 passed`; the production build with
+Dockerfile-equivalent command-scoped build values; and `db:generate` with `No
+schema changes, nothing to migrate`.
+
+The real route exposed one additional safe race outcome: when the protected
+render completed after logout, the client attempted one `POST
+/api/auth/refresh`, which the deployed server correctly denied with `401`.
+Unit 07 now registers that exact denial before starting the overlap and treats
+its occurrence as timing-dependent; it neither permits another method, path,
+or status nor weakens the required logout, cookie absence, protected-read
+denial, and no-late-writer assertions. The source contract was red before this
+registration and passes afterward. The complete local gate was rerun with the
+same green counts and no schema drift.
+
+The smallest state-complete promotion range then passed exactly `5 tests using
+1 worker` in `1.3m`: auth units 01 through 03, auth unit 07, and passive final
+diagnostics. The guarded preflight was fully green; the managed tunnel closed;
+the forwarding port was free; and the sole passed-run marker contained no
+configured-secret or auth-token match.
+
+The unfiltered dedicated auth command then passed exactly `10 tests using 1
+worker`, zero retries, in `2.6m` against the same sole healthy deployed
+revision `2f9c6da86d13fd0483e525aeafd7e01c7480d23e`. All nine auth units and final
+diagnostics passed. Supported application and exact-recipient mailbox cleanup
+retained zero matrix records, every context closed, every logout ended at
+`/login` with both recognized auth cookies absent, every protected denial was
+`401`, and no response set `najm.session` after its logout deletion. The runner
+reported `MANAGED SSH TUNNEL CLOSED`; local port `8025` was free; the artifact
+directory contained only the passed `.last-run.json` marker; and the final
+secret/token scan found zero matches. The dedicated remote auth lifecycle is
+accepted. The separate 18-test financial four-account journey was not run.

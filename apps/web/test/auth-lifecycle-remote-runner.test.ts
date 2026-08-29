@@ -70,6 +70,13 @@ describe("dedicated remote auth lifecycle runner", () => {
     );
     expect(source).toContain("describeRecognizedAuthCookies(cookies)");
     expect(source).not.toContain("cookie.value");
+    expect(source).toContain('pathname === "/sponsor/support"');
+    expect(source).toContain('fetch(`${rootUrl}/sponsor/support`');
+    expect(source).toContain("expect(await protectedFetch).toBe(200)");
+    expect(source).not.toContain('fetch(`${rootUrl}/sponsor`,');
+    expect(source).toMatch(
+      /registerExpectedResponse\([\s\S]*?path: "\/api\/auth\/refresh"[\s\S]*?status: 401[\s\S]*?\},\s*false,\s*\)/,
+    );
   });
 
   test("selects only the auth spec and preserves guarded remote contracts", () => {

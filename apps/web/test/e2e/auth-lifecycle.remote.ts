@@ -859,6 +859,15 @@ test.describe.serial("remote auth lifecycle", () => {
     attachDiagnostics(protectedPage, sponsor.captured);
     await protectedPage.goto("/dashboard", { waitUntil: "commit" });
     await expect.poll(() => new URL(protectedPage.url()).pathname).toBe("/dashboard");
+    registerExpectedResponse(
+      sponsor.captured,
+      {
+        method: "POST",
+        path: "/api/auth/refresh",
+        status: 401,
+      },
+      false,
+    );
     const evidence = await logoutAndDeny({
       alias: "sponsor-overlap",
       page: sponsor.page,
@@ -868,17 +877,21 @@ test.describe.serial("remote auth lifecycle", () => {
       beforeClick: async () => {
         const requestStarted = protectedPage.waitForRequest(
           (request) =>
-            request.method() === "GET" && new URL(request.url()).pathname === "/sponsor",
+            request.method() === "GET" &&
+            new URL(request.url()).pathname === "/sponsor/support",
         );
         const protectedFetch = handleConcurrentPromise(
           protectedPage.evaluate(async (rootUrl) => {
-            const response = await fetch(`${rootUrl}/sponsor`, { credentials: "include" });
+            const response = await fetch(`${rootUrl}/sponsor/support`, {
+              credentials: "include",
+            });
             await response.text();
+            return response.status;
           }, baseUrl),
         );
         await requestStarted;
         return async () => {
-          await protectedFetch;
+          expect(await protectedFetch).toBe(200);
         };
       },
     });
