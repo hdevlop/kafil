@@ -49,6 +49,7 @@ describe("dedicated remote auth lifecycle runner", () => {
     expect(source).not.toContain("clearCookies(");
     expect(source).not.toContain("waitForTimeout(");
     expect(source).not.toContain("force: true");
+    expect(source).toContain('await page.waitForLoadState("domcontentloaded")');
   });
 
   test("keeps cookie-writer observation active through protected denial", () => {
@@ -70,12 +71,19 @@ describe("dedicated remote auth lifecycle runner", () => {
     );
     expect(source).toContain("describeRecognizedAuthCookies(cookies)");
     expect(source).not.toContain("cookie.value");
-    expect(source).toContain('pathname === "/sponsor/support"');
-    expect(source).toContain('fetch(`${rootUrl}/sponsor/support`');
-    expect(source).toContain("expect(await protectedFetch).toBe(200)");
+    expect(source).toContain('pathname === "/family"');
+    expect(source).toContain('fetch(`${rootUrl}/family`');
+    expect(source).toContain("keepalive: true");
+    expect(source).toContain("expect([200, 307]).toContain(response.status())");
+    expect(source).toContain('expect(new URL(location!, baseUrl).pathname).toBe("/login")');
     expect(source).not.toContain('fetch(`${rootUrl}/sponsor`,');
+    expect(source).not.toContain('fetch(`${rootUrl}/sponsor/support`');
     expect(source).toMatch(
       /registerExpectedResponse\([\s\S]*?path: "\/api\/auth\/refresh"[\s\S]*?status: 401[\s\S]*?\},\s*false,\s*\)/,
+    );
+    expect(source.match(/path: "\/api\/auth\/refresh"/g)).toHaveLength(2);
+    expect(source).toMatch(
+      /alias: "sponsor-cross-tab"[\s\S]*?observedPages: \[secondPage\]/,
     );
   });
 

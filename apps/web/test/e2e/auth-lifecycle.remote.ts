@@ -302,6 +302,7 @@ async function login(
   await prepareLogin(page, identifier, password);
   await submitLogin(page);
   await expect.poll(() => new URL(page.url()).pathname).toBe(expectedDashboardPath);
+  await page.waitForLoadState("domcontentloaded");
 }
 
 async function browserJsonRequest(
@@ -835,15 +836,25 @@ test.describe.serial("remote auth lifecycle", () => {
     await login(sponsor.page, sponsorEmail, sponsorPassword);
     const secondPage = await sponsor.context.newPage();
     attachDiagnostics(secondPage, sponsor.captured);
-    await secondPage.goto("/dashboard", { waitUntil: "commit" });
+    await secondPage.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect.poll(() => new URL(secondPage.url()).pathname).toBe("/dashboard");
     expect((await browserJsonRequest(secondPage, "GET", "/api/sponsors/me/profile")).status).toBe(200);
+    registerExpectedResponse(
+      sponsor.captured,
+      {
+        method: "POST",
+        path: "/api/auth/refresh",
+        status: 401,
+      },
+      false,
+    );
     logoutEvidence.push(
       await logoutAndDeny({
         alias: "sponsor-cross-tab",
         page: sponsor.page,
         diagnostics: sponsor.captured,
         protectedPath: "/api/sponsors/me/profile",
+        observedPages: [secondPage],
       }),
     );
     await expect.poll(() => new URL(secondPage.url()).pathname).toBe("/login");
@@ -857,7 +868,7 @@ test.describe.serial("remote auth lifecycle", () => {
     await login(sponsor.page, sponsorEmail, sponsorPassword);
     const protectedPage = await sponsor.context.newPage();
     attachDiagnostics(protectedPage, sponsor.captured);
-    await protectedPage.goto("/dashboard", { waitUntil: "commit" });
+    await protectedPage.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect.poll(() => new URL(protectedPage.url()).pathname).toBe("/dashboard");
     registerExpectedResponse(
       sponsor.captured,
@@ -875,23 +886,35 @@ test.describe.serial("remote auth lifecycle", () => {
       protectedPath: "/api/sponsors/me/profile",
       observedPages: [protectedPage],
       beforeClick: async () => {
+        const protectedResponse = handleConcurrentPromise(
+          protectedPage.waitForResponse(
+            (response) =>
+              response.request().method() === "GET" &&
+              new URL(response.url()).pathname === "/family",
+          ),
+        );
         const requestStarted = protectedPage.waitForRequest(
           (request) =>
             request.method() === "GET" &&
-            new URL(request.url()).pathname === "/sponsor/support",
+            new URL(request.url()).pathname === "/family",
         );
-        const protectedFetch = handleConcurrentPromise(
-          protectedPage.evaluate(async (rootUrl) => {
-            const response = await fetch(`${rootUrl}/sponsor/support`, {
-              credentials: "include",
-            });
-            await response.text();
-            return response.status;
-          }, baseUrl),
-        );
+        await protectedPage.evaluate((rootUrl) => {
+          void fetch(`${rootUrl}/family`, {
+            credentials: "include",
+            keepalive: true,
+          })
+            .then((response) => response.text())
+            .catch(() => undefined);
+        }, baseUrl);
         await requestStarted;
         return async () => {
-          expect(await protectedFetch).toBe(200);
+          const response = await protectedResponse;
+          expect([200, 307]).toContain(response.status());
+          if (response.status() === 307) {
+            const location = response.headers()["location"];
+            expect(location).toBeDefined();
+            expect(new URL(location!, baseUrl).pathname).toBe("/login");
+          }
         };
       },
     });

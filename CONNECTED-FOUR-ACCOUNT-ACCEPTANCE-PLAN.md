@@ -1400,3 +1400,51 @@ reported `MANAGED SSH TUNNEL CLOSED`; local port `8025` was free; the artifact
 directory contained only the passed `.last-run.json` marker; and the final
 secret/token scan found zero matches. The dedicated remote auth lifecycle is
 accepted. The separate 18-test financial four-account journey was not run.
+
+### 11.12 Najm Auth 3.2.0 DX rollout and renewed remote proof (2026-08-29)
+
+Najm Auth `3.2.0` was published from attributable release commit
+`ed095c8a15a95c8bcc5d795b529985dd1fc6c7a6` after its package tests, API
+surface check, and a real Next.js 16 production fixture passed. The release
+adds the composed `auth.proxy` and `auth.routeHandlers` integration, explicit
+`proxySessionMode`, all supported route-handler verbs, cookie persistence, and
+dynamic route-context forwarding. Kafil now pins that registry release and
+uses the shared composition without app-owned auth cookie plumbing.
+
+Kafil revision `94727ccc3c81847880583a11a029b61de0149f84` was committed and
+pushed. GitHub Actions run `33254307709` passed exact-revision verification,
+published the production image, and triggered Dokploy. A separate value-free,
+read-only Docker check then observed exactly one running Kafil container whose
+OCI revision was the full target SHA and whose Docker status was `healthy`.
+
+The first post-deploy auth attempt exposed a cold login-hydration timeout in
+Family setup. A stabilized rerun cleared that boundary, then proved a bounded
+cross-tab race where the receiving tab may issue one correctly denied `POST
+/api/auth/refresh` with status `401`. Unit 06 now permits only that exact
+optional denial and includes the receiving tab in the no-late-cookie-writer
+observation. Subsequent interrupted attempts made two further browser-contract
+boundaries explicit: successful document login waits for destination
+`DOMContentLoaded`, and unit 07 starts a `keepalive` read against the direct
+Sponsor-accessible protected `/family` surface. The overlap accepts only an
+authenticated `200` or a post-logout `307` whose exact destination is
+`/login`; both remain subject to cookie-deletion, protected-denial, and
+no-session-rewrite assertions. Focused runner/diagnostic tests, ESLint, and web
+typecheck passed after each correction.
+
+The final unfiltered command `bun run --cwd apps/web test:e2e:auth:remote`
+passed exactly `10 tests using 1 worker`, zero retries, in `2.2m` against the
+same healthy deployed revision. All nine auth units and passive diagnostics
+passed, including Admin and Family lifecycle, Sponsor email and phone login,
+same-context identity switching, cross-tab logout, response/logout overlap,
+stale-session denial, supported application/mailbox cleanup, context closure,
+cookie absence, protected `401` responses, and no late `najm.session` writer.
+
+The managed SSH tunnel closed and local Mailpit port `8025` was free. The
+artifact directory retained only the passed `.last-run.json` marker;
+screenshots, traces, and videos were disabled, and a configured-secret scan
+found zero matches. The final repository gate passed with web `325 passed`,
+server `336 passed` plus `53` database-opt-in skips, seed `85 passed`, a
+production build using the documented build-only values, and `db:generate`
+reporting `No schema changes, nothing to migrate`. The dedicated remote auth
+lifecycle remains accepted on Najm Auth `3.2.0`. The separate 18-test financial
+four-account journey was not run.
