@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
+import {
+  buildRemoteAuthPlaywrightArgs,
+  readRemoteAuthGrep,
+} from "../scripts/connected-four-account-remote-runtime";
+
 const specUrl = new URL("e2e/auth-lifecycle.remote.ts", import.meta.url);
 const runnerUrl = new URL(
   "../scripts/run-auth-lifecycle-remote-e2e.ts",
@@ -54,6 +59,9 @@ describe("dedicated remote auth lifecycle runner", () => {
     expect(source).toContain("recordAuthCookieWriters(page, ...observedPages)");
     expect(source).toContain("await expectProtectedDenied(");
     expect(source).toContain("await cookieWriterRecorder.stop()");
+    expect(source).toContain("expect(familyList.status).toBe(200)");
+    expect(source).toContain("if (cleanupSummary)");
+    expect(source).toContain("expect(logoutEvidence.length).toBeGreaterThan(0)");
     expect(source.indexOf("await expectProtectedDenied(")).toBeLessThan(
       source.indexOf("await cookieWriterRecorder.stop()"),
     );
@@ -75,10 +83,20 @@ describe("dedicated remote auth lifecycle runner", () => {
 
     expect(runtime).toContain("buildRemoteAuthPlaywrightArgs");
     expect(runtime).toContain('"test/e2e/auth-lifecycle.remote.ts"');
-    expect(runner).toContain("buildRemoteAuthPlaywrightArgs()");
+    expect(runner).toContain("buildRemoteAuthPlaywrightArgs(readRemoteAuthGrep(Bun.env))");
     expect(runner).not.toContain("buildRemotePlaywrightArgs");
     expect(runner).not.toContain("KAFIL_E2E_REMOTE_GREP");
     expect(runner).toContain("rejectRemoteGrep: true");
+    expect(buildRemoteAuthPlaywrightArgs("remote auth 0[1-2]").slice(-2)).toEqual([
+      "--grep",
+      "remote auth 0[1-2]",
+    ]);
+    expect(readRemoteAuthGrep({
+      KAFIL_E2E_REMOTE_AUTH_GREP: "remote auth 0[1-2]|remote auth diagnostics",
+    })).toBe("remote auth 0[1-2]|remote auth diagnostics");
+    expect(() => readRemoteAuthGrep({
+      KAFIL_E2E_REMOTE_AUTH_GREP: "remote auth 01\n--help",
+    })).toThrow();
     expect(sharedRunner).toContain("options.rejectRemoteGrep && readRemoteGrep(Bun.env)");
     expect(sharedRunner).toContain('"--preflight-only"');
     expect(sharedRunner).toContain("await waitForMailbox");

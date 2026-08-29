@@ -29,18 +29,29 @@ function value(env: Environment, name: string): string {
   return env[name]?.trim() ?? "";
 }
 
-export function readRemoteGrep(env: Environment): string | undefined {
-  const raw = env.KAFIL_E2E_REMOTE_GREP?.trim();
+function readBoundedGrep(
+  env: Environment,
+  name: "KAFIL_E2E_REMOTE_GREP" | "KAFIL_E2E_REMOTE_AUTH_GREP",
+): string | undefined {
+  const raw = env[name]?.trim();
   if (!raw) return undefined;
   if (/[\r\n\0]/.test(raw)) {
-    throw new Error("KAFIL_E2E_REMOTE_GREP must be one single-line pattern.");
+    throw new Error(`${name} must be one single-line pattern.`);
   }
   if (raw.length > REMOTE_GREP_MAX_LENGTH) {
     throw new Error(
-      `KAFIL_E2E_REMOTE_GREP exceeds the ${REMOTE_GREP_MAX_LENGTH}-character maximum.`,
+      `${name} exceeds the ${REMOTE_GREP_MAX_LENGTH}-character maximum.`,
     );
   }
   return raw;
+}
+
+export function readRemoteGrep(env: Environment): string | undefined {
+  return readBoundedGrep(env, "KAFIL_E2E_REMOTE_GREP");
+}
+
+export function readRemoteAuthGrep(env: Environment): string | undefined {
+  return readBoundedGrep(env, "KAFIL_E2E_REMOTE_AUTH_GREP");
 }
 
 function isConnectionReset(error: unknown): boolean {
@@ -193,14 +204,16 @@ export function buildRemotePlaywrightArgs(grep?: string): string[] {
   return args;
 }
 
-export function buildRemoteAuthPlaywrightArgs(): string[] {
-  return [
+export function buildRemoteAuthPlaywrightArgs(grep?: string): string[] {
+  const args = [
     "playwright",
     "test",
     "test/e2e/auth-lifecycle.remote.ts",
     "--config",
     "playwright.remote.config.ts",
   ];
+  if (grep) args.push("--grep", grep);
+  return args;
 }
 
 export function buildSshTunnelArgs(config: RemoteAcceptanceConfig): string[] {

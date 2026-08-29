@@ -1183,3 +1183,110 @@ No remote preflight or browser attempt was executed. The next remote action is
 exactly one dedicated auth-matrix command after the application correction is
 committed, published, deployed, and the exact revision is confirmed healthy,
 followed by a fresh explicit user instruction.
+
+### 11.8 First dedicated auth attempt and test-harness correction (2026-08-28)
+
+Application revision `ff6a84d750ed5654cdda151894dcf9f82775db79` was
+committed, pushed, published, deployed, confirmed as the exact live OCI
+revision, and healthy before the authorized attempt. All eleven guarded
+preflight checks passed, including exact target/origin, SSH, system Chrome,
+owned Mailpit forwarding, `/login`, `/apply`, health, and readiness. Playwright
+then reported exactly `10 tests using 1 worker` with zero configured retries.
+
+The attempt stopped natively after Admin passed and Family failed while looking
+up the newly provisioned Family: `1 failed`, `8 did not run`, `1 passed` in
+`19.0s`, exit `1`. The owned tunnel closed and the forwarding port was free.
+The only retained artifact was Playwright's value-free failed-run marker; it
+contained no configured secret, credential, identity, cookie, token, database
+URL, screenshot, trace, video, or browser payload. Cleanup had not yet run, so
+the disposable Family from this attempt may remain for later supported cleanup.
+
+The failure was a deterministic test-harness defect, not evidence of a product
+search failure. The helper first unwrapped Najm's normal `{ data: [...] }` list
+envelope with `responseRecord()` and then tried to read `.data` from the
+resulting array, always returning zero rows. It also discarded the Family-list
+HTTP status before asserting the lookup. Server source confirms that Family
+search includes name, guardian name, email, and phone.
+
+The correction now parses exactly one direct Najm list envelope and retains
+explicit `200` assertions for both Family and applicant lookups. A focused
+auth-only grep variable was added so promotion can exercise the smallest
+prerequisite title range without allowing the financial spec to be selected;
+the complete auth command still selects all ten titles. Final diagnostics are
+strict about cleanup for a complete run and validate only the logout evidence
+actually produced by an intentionally focused range.
+
+Correction evidence:
+
+- the response-envelope regression and missing-status source contract were red
+  with `2 passed`, `2 failed`, and `1 error` before the correction;
+- focused response/runner regressions pass with `5 passed`, `0 failed`;
+- the response, auth-runner, and shared-runner regressions pass with `24
+  passed`, `0 failed` and `448` assertions;
+- targeted ESLint and the web typecheck pass;
+- discovery-only listing reports exactly `3 tests in 1 file` for the focused
+  Admin/Family/diagnostics range and exactly `10 tests in 1 file` for the
+  complete matrix without opening Chrome, SSH, or the VPS;
+- the root lint, typecheck, and test stages pass; the production build passes
+  with the Dockerfile's documented command-scoped build-only values; and
+  `db:generate` reports `No schema changes, nothing to migrate`.
+
+This correction changes only the Playwright spec, guarded runner, tests, and
+this plan. It does not change the deployed application runtime, so section 8's
+test-only promotion path may validate it against the already healthy exact
+deployment before the accepted browser evidence is committed and pushed.
+
+### 11.9 Focused promotion and cross-tab integration correction (2026-08-28)
+
+The first focused promotion selected Admin, Family, and passive diagnostics:
+exactly `3 tests using 1 worker`, zero retries. Admin and Family both passed,
+proving the corrected list-envelope parser and the complete Family
+first-login/logout/re-login lifecycle. Passive diagnostics then found one
+unexpected Admin `console-error`; the attempt ended `2 passed`, `1 failed` in
+`58.0s`, exit `1`. The tunnel closed, the forwarding port was free, and the
+sole failed-run marker had zero configured-secret or auth-token matches.
+
+Because the original diagnostic intentionally discarded all console content,
+it could not distinguish an HTTP resource failure from another console class.
+A red/green helper now converts unexpected console messages into a bounded,
+value-free fingerprint containing only a known category, optional HTTP status,
+and URL pathname. It discards arbitrary text, query values, origins, and all
+console arguments. The narrower Admin-plus-diagnostics range then passed
+exactly `2 tests using 1 worker` in `15.8s`; its closure and artifact audits
+were clean.
+
+The complete matrix was then invoked with no grep. Its header was exactly `10
+tests using 1 worker`, zero retries. Auth units 01 through 05 passed: Admin,
+Family, Sponsor email, Sponsor phone, and the same-context email/phone sequence.
+Unit 06 failed because logout in the first Sponsor tab left the second tab on
+`/dashboard` for the full 30-second assertion interval. Units 07 through 09
+and diagnostics did not run. The native result was `5 passed`, `1 failed`, `4
+did not run` in `2.1m`, exit `1`; the tunnel, port, marker, and secret audits
+were clean. Supported cleanup had not run, so the attempt's disposable Family,
+Sponsor, applicant, and exact-recipient mailbox records may remain for the next
+supported cleanup.
+
+Installed `najm-auth@3.1.5` owns BroadcastChannel synchronization: on remote
+logout it clears the receiving tab's client auth state, blocks authenticated
+requests, notifies subscribers, and emits the logout event. Navigation is an
+application integration responsibility. Kafil's protected dashboard shell did
+not subscribe with Najm's documented required-session redirect hook, so the
+server-rendered shell remained visible after the receiving state became
+unauthenticated.
+
+The narrow correction mounts `useSession({ required: true, redirectTo:
+"/login" })` inside `DashboardShellBody`, which exists only under the
+server-protected dashboard layout. Public routes therefore remain unaffected,
+while a local or cross-tab Najm logout moves every mounted protected dashboard
+to `/login`. The integration source contract was red with `0 passed`, `1
+failed`, then the combined auth response, diagnostic, runner, shared-runner,
+and tab-sync regressions passed with `27 passed`, `0 failed`, and `454`
+assertions. Targeted ESLint and web typecheck also pass. Because this correction
+changes runtime frontend behavior, it must pass the root gate and be committed,
+published, deployed, and confirmed healthy before remote auth unit 06 is
+re-entered.
+
+The complete correction gate passes: root lint and typecheck; web `322 passed`;
+server `336 passed` with `53` database-opt-in tests skipped; seed `85 passed`;
+production build with the Dockerfile-equivalent command-scoped build values;
+and `db:generate` with `No schema changes, nothing to migrate`.

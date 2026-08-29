@@ -1,6 +1,6 @@
 "use client";
 
-import { SignOutButton } from "najm-auth/client/react";
+import { SignOutButton, useSession } from "najm-auth/client/react";
 import { LogOut, Settings2, UserRound } from "lucide-react";
 import { NButton, NajmScroll, NSidebar, NSidebarProvider, useNSidebar } from "najm-kit";
 import Link from "next/link";
@@ -50,6 +50,7 @@ function SidebarAction({ icon: Icon, label, onClick }: Readonly<{ icon: Componen
 }
 
 function DashboardShellBody({ children, user }: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
+   useSession({ required: true, redirectTo: "/login" });
    const pathname = usePathname();
    const { t } = useKafilLanguage();
    const sidebar = useNSidebar();
