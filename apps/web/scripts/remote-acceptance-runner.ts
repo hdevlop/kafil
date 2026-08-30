@@ -18,6 +18,90 @@ export interface RemoteAcceptanceRunnerOptions {
   rejectRemoteGrep?: boolean;
 }
 
+export type SshFailureClassification =
+  | "authentication-failed"
+  | "broken-pipe"
+  | "connection-reset"
+  | "connection-timeout"
+  | "forwarding-failed"
+  | "host-key-failed"
+  | "remote-closed"
+  | "unknown";
+
+export type AcceptanceExit =
+  | { source: "playwright"; exitCode: number }
+  | { source: "tunnel"; exitCode: number };
+
+const SSH_DIAGNOSTIC_TAIL_LIMIT = 8_192;
+
+export function classifySshFailure(rawDiagnostic: string): SshFailureClassification {
+  const diagnostic = rawDiagnostic.toLowerCase();
+  if (
+    diagnostic.includes("host key verification failed") ||
+    diagnostic.includes("remote host identification has changed")
+  ) {
+    return "host-key-failed";
+  }
+  if (
+    diagnostic.includes("permission denied") ||
+    diagnostic.includes("authentication failed")
+  ) {
+    return "authentication-failed";
+  }
+  if (
+    diagnostic.includes("administratively prohibited") ||
+    diagnostic.includes("port forwarding failed") ||
+    diagnostic.includes("cannot listen to port") ||
+    diagnostic.includes("address already in use") ||
+    diagnostic.includes("open failed")
+  ) {
+    return "forwarding-failed";
+  }
+  if (diagnostic.includes("connection timed out")) return "connection-timeout";
+  if (diagnostic.includes("connection reset")) return "connection-reset";
+  if (diagnostic.includes("broken pipe")) return "broken-pipe";
+  if (
+    diagnostic.includes("connection closed by") ||
+    diagnostic.includes("closed by remote host")
+  ) {
+    return "remote-closed";
+  }
+  return "unknown";
+}
+
+async function readSshFailureClassification(
+  stderr: ReadableStream<Uint8Array>,
+): Promise<SshFailureClassification> {
+  const reader = stderr.getReader();
+  const decoder = new TextDecoder();
+  let diagnosticTail = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    diagnosticTail = (
+      diagnosticTail + decoder.decode(value, { stream: true })
+    ).slice(-SSH_DIAGNOSTIC_TAIL_LIMIT);
+  }
+  diagnosticTail = (
+    diagnosticTail + decoder.decode()
+  ).slice(-SSH_DIAGNOSTIC_TAIL_LIMIT);
+  return classifySshFailure(diagnosticTail);
+}
+
+export async function waitForAcceptanceExit(
+  playwrightExited: Promise<number>,
+  tunnelExited: Promise<number>,
+): Promise<AcceptanceExit> {
+  return await Promise.race([
+    playwrightExited.then((exitCode) => ({
+      source: "playwright" as const,
+      exitCode,
+    })),
+    tunnelExited.then((exitCode) => ({ source: "tunnel" as const, exitCode })),
+  ]);
+}
+
 function readEnv(name: string): string | undefined {
   const value = Bun.env[name]?.trim();
   return value ? value : undefined;
@@ -135,11 +219,11 @@ function childEnvironment(
   return child;
 }
 
-async function closeTunnel(tunnel: Subprocess | undefined): Promise<void> {
-  if (!tunnel || tunnel.exitCode !== null) return;
-  tunnel.kill();
-  await Promise.race([tunnel.exited, Bun.sleep(3_000)]);
-  if (tunnel.exitCode === null) tunnel.kill(9);
+async function closeOwnedProcess(process: Subprocess | undefined): Promise<void> {
+  if (!process || process.exitCode !== null) return;
+  process.kill();
+  await Promise.race([process.exited, Bun.sleep(3_000)]);
+  if (process.exitCode === null) process.kill(9);
 }
 
 export async function runRemoteAcceptance(
@@ -150,6 +234,7 @@ export async function runRemoteAcceptance(
     .slice(2)
     .filter((argument) => argument !== "--preflight-only");
   let tunnel: Subprocess | undefined;
+  let sshFailureClassification: Promise<SshFailureClassification> | undefined;
   let exitCode = 1;
 
   try {
@@ -181,11 +266,15 @@ export async function runRemoteAcceptance(
     }
     console.log("PREFLIGHT OK Mailpit local forwarding port free");
 
-    tunnel = spawn({
+    const startedTunnel = spawn({
       cmd: ["ssh", ...buildSshTunnelArgs(config)],
-      stderr: "ignore",
+      stderr: "pipe",
       stdout: "ignore",
     });
+    tunnel = startedTunnel;
+    sshFailureClassification = readSshFailureClassification(startedTunnel.stderr).catch(
+      () => "unknown",
+    );
     await waitForMailbox(config, tunnel);
     console.log("PREFLIGHT OK managed SSH tunnel and authenticated Mailpit API");
 
@@ -205,13 +294,23 @@ export async function runRemoteAcceptance(
         stderr: "inherit",
         stdout: "inherit",
       });
-      exitCode = await testProcess.exited;
+      const outcome = await waitForAcceptanceExit(testProcess.exited, tunnel.exited);
+      if (outcome.source === "tunnel") {
+        await closeOwnedProcess(testProcess);
+        const classification = await sshFailureClassification;
+        console.error(
+          `ENVIRONMENT managed SSH tunnel exited during browser execution; reason=${classification}; exit=${outcome.exitCode}.`,
+        );
+        exitCode = 1;
+      } else {
+        exitCode = outcome.exitCode;
+      }
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Remote acceptance failed.");
     exitCode = 1;
   } finally {
-    await closeTunnel(tunnel);
+    await closeOwnedProcess(tunnel);
     console.log("MANAGED SSH TUNNEL CLOSED");
   }
 

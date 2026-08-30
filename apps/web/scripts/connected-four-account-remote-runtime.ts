@@ -231,7 +231,7 @@ export function buildSshTunnelArgs(config: RemoteAcceptanceConfig): string[] {
     "-o",
     "ServerAliveInterval=15",
     "-o",
-    "ServerAliveCountMax=2",
+    "ServerAliveCountMax=4",
     "-p",
     String(config.sshPort),
     "-L",

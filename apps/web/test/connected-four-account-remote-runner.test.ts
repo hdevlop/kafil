@@ -16,6 +16,10 @@ import {
   buildRunEmail,
   buildRunPhone,
 } from "../scripts/connected-four-account-fixtures";
+import {
+  classifySshFailure,
+  waitForAcceptanceExit,
+} from "../scripts/remote-acceptance-runner";
 
 const validEnvironment: Record<string, string> = {
   KAFIL_E2E_REMOTE_URL: "https://kafala360.ma",
@@ -106,8 +110,54 @@ describe("connected four-account remote runner", () => {
     expect(args).toContain("BatchMode=yes");
     expect(args).toContain("ExitOnForwardFailure=yes");
     expect(args).toContain("StrictHostKeyChecking=yes");
+    expect(args).toContain("ServerAliveInterval=15");
+    expect(args).toContain("ServerAliveCountMax=4");
     expect(args).toContain("58025:127.0.0.1:58025");
     expect(args.join(" ")).not.toContain("not-a-runtime-secret");
+  });
+
+  test("classifies SSH failures without retaining raw diagnostics", () => {
+    const secret = "sensitive-user@example.test";
+    const classifications = [
+      classifySshFailure(`ssh: connect to host ${secret} port 22: Connection timed out`),
+      classifySshFailure(`client_loop: send disconnect: Broken pipe ${secret}`),
+      classifySshFailure(`Connection reset by peer ${secret}`),
+      classifySshFailure(`channel 3: open failed: administratively prohibited ${secret}`),
+      classifySshFailure(`Permission denied (publickey) ${secret}`),
+      classifySshFailure(`Host key verification failed ${secret}`),
+      classifySshFailure(`unrecognized failure ${secret}`),
+    ];
+
+    expect(classifications).toEqual([
+      "connection-timeout",
+      "broken-pipe",
+      "connection-reset",
+      "forwarding-failed",
+      "authentication-failed",
+      "host-key-failed",
+      "unknown",
+    ]);
+    expect(JSON.stringify(classifications)).not.toContain(secret);
+  });
+
+  test("fails fast when the managed tunnel exits before Playwright", async () => {
+    let finishTunnel!: (exitCode: number) => void;
+    let finishPlaywright!: (exitCode: number) => void;
+    const tunnelExited = new Promise<number>((resolve) => {
+      finishTunnel = resolve;
+    });
+    const playwrightExited = new Promise<number>((resolve) => {
+      finishPlaywright = resolve;
+    });
+
+    const outcome = waitForAcceptanceExit(playwrightExited, tunnelExited);
+    finishTunnel(255);
+    finishPlaywright(0);
+
+    expect(await outcome).toEqual({ source: "tunnel", exitCode: 255 });
+    expect(sharedRunnerSource).toContain('stderr: "pipe"');
+    expect(sharedRunnerSource).toContain("await closeOwnedProcess(testProcess)");
+    expect(sharedRunnerSource).toContain("ENVIRONMENT managed SSH tunnel exited during browser execution");
   });
 
   test("validates and forwards one optional remote grep argument", () => {

@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS — DEDICATED AUTH MATRIX IMPLEMENTED LOCALLY; REMOTE EXECUTION PENDING**
+Status: **IN PROGRESS — AUTH MATRIX AND FINANCIAL STEPS 01-03 ACCEPTED; COMPLETE 18-TEST RUN PENDING**
 
 Target: exactly `https://kafala360.ma`
 
@@ -1448,3 +1448,97 @@ production build using the documented build-only values, and `db:generate`
 reporting `No schema changes, nothing to migrate`. The dedicated remote auth
 lifecycle remains accepted on Najm Auth `3.2.0`. The separate 18-test financial
 four-account journey was not run.
+
+### 11.13 Financial attempt transport failure and supervised-tunnel correction (2026-08-30)
+
+The next freshly authorized financial attempt invoked the unfiltered dedicated
+command once. Guarded preflight passed all eleven boolean contracts, SSH
+identity, system Chrome, forwarding-port availability, authenticated Mailpit,
+verified TLS, `/login`, `/apply`, health, and readiness. Playwright then
+reported exactly `18 tests using 1 worker` with zero retries.
+
+Remote steps 01 and 02 passed in `11.7s` and `29.9s`. Step 03 failed in `44.8s`
+when its concurrently handled Sponsor A OTP read could no longer connect to the
+runner-owned loopback Mailpit forward: `ECONNREFUSED`. Steps 04 through 16, the
+responsive unit, and diagnostics did not run. The native result was `1 failed`,
+`15 did not run`, and `2 passed` in `1.5m`, exit `1`. The runner reported
+`MANAGED SSH TUNNEL CLOSED`; the forwarding port was free; no matching owned
+SSH process remained; and the only retained artifact was the failed
+`.last-run.json` marker with one failed test ID. The referenced error context
+was not retained. No screenshot, trace, video, configured-secret match, or
+runtime-sensitive-pattern match remained. Supported cleanup did not run, so
+this attempt's disposable Family may remain.
+
+This is classified `ENVIRONMENT`, at the managed SSH-forward lifecycle. The
+application result beyond step 02 is not classified. Preflight proved the
+forward was initially reachable, but the previous runner checked the SSH
+process only while waiting for initial Mailpit readiness, discarded SSH
+stderr, and then awaited Playwright alone. It could therefore surface a later
+forward loss only as the mailbox fetch failure.
+
+The narrow test/runner correction now supervises the SSH and Playwright exit
+promises as one lifecycle. If the tunnel exits first, it stops only the owned
+Playwright process and emits a bounded value-free `ENVIRONMENT` fingerprint
+containing only an allowlisted reason and numeric SSH exit code. SSH stderr is
+drained into an in-memory tail capped at 8192 characters, classified as one of
+the fixed transport/authentication/forwarding categories, and otherwise
+discarded; raw stderr is never printed or retained. A stderr-reader error maps
+to `unknown` without producing an unhandled rejection. The SSH keepalive
+interval remains 15 seconds while the missed-reply allowance increases from
+two to four, tolerating a short network stall without adding a browser retry,
+mailbox mutation retry, sleep, timeout increase, or journey replay.
+
+Local correction evidence:
+
+- the focused runner regression was red with `0 passed`, `1 failed`, and `1`
+  load error because the supervision and classifier exports did not exist;
+- the same focused regression is green with `21 passed`, `0 failed`, and `409`
+  assertions;
+- the combined financial/auth runner range passes with `24 passed`, `0 failed`,
+  and `467` assertions;
+- web typecheck and targeted ESLint pass;
+- the complete root lint and typecheck gates pass; web tests pass with `327`,
+  server tests with `336` plus `53` database-opt-in skips, and seed tests with
+  `85`;
+- the first ordinary production-build command reached successful compilation
+  and TypeScript but stopped during page-data collection because the local
+  `.env` lacks `EMAIL_PROVIDER`; the documented Dockerfile-equivalent,
+  command-scoped build-only values then produced a successful build without
+  modifying `.env`;
+- `db:generate` reports `No schema changes, nothing to migrate`.
+
+This runner-only correction does not change the deployed Kafil application and
+cannot guarantee that an external SSH connection never fails. It makes a
+tunnel loss immediate and attributable and reduces sensitivity to brief missed
+keepalives while preserving fail-closed acceptance. No remote preflight or
+browser attempt was run after the correction. A new remote invocation requires
+a fresh user instruction under the one-attempt rule.
+
+That fresh instruction then authorized the smallest state-complete promotion
+range: remote steps 01 through 03 plus passive diagnostics. The corrected
+runner's guarded preflight passed all eleven boolean contracts, SSH identity,
+system Chrome, forwarding-port availability, authenticated Mailpit, verified
+TLS, `/login`, `/apply`, health, and readiness. Playwright reported exactly `4
+tests using 1 worker` with zero retries.
+
+Step 01 passed in `8.6s`, step 02 in `23.4s`, and step 03 in `28.9s`. Step 03
+completed Sponsor A's exact OTP lookup/deletion, pending-login denial,
+approval/replay, email and normalized-phone login, real logout, recognized
+cookie absence, and protected denial without another tunnel interruption.
+Passive diagnostics passed in `42ms` with no unexpected page errors, console
+errors, failed requests, or unexplained HTTP errors. Steps 04 through 16 and
+the responsive unit were excluded by the focused grep; supported cleanup did
+not run, so disposable records from this and interrupted earlier attempts may
+remain.
+
+The terminal result was `4 passed (1.1m)`, native exit `0`. The runner reported
+`MANAGED SSH TUNNEL CLOSED`; the configured forwarding port was free; no owned
+SSH-forward process remained; and the temporary grep was restored. The only
+artifact was a passed `.last-run.json` marker with zero failed test IDs. No
+error context, screenshot, trace, video, configured-secret match, or runtime-
+sensitive-pattern match remained.
+
+The supervised-tunnel correction and focused Sponsor A boundary are accepted.
+Promotion now requires the accepted test/plan evidence to be committed and
+pushed, followed by a separate fresh instruction for one complete unfiltered
+18-test attempt. This focused authorization must not be reused for that run.
