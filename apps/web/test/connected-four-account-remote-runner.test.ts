@@ -5,7 +5,6 @@ import {
   REMOTE_GREP_MAX_LENGTH,
   buildRemoteAuthPlaywrightArgs,
   buildRemotePlaywrightArgs,
-  buildSshTunnelArgs,
   handleConcurrentPromise,
   retryReadAfterConnectionReset,
   readRemoteAcceptanceConfig,
@@ -16,24 +15,15 @@ import {
   buildRunEmail,
   buildRunPhone,
 } from "../scripts/connected-four-account-fixtures";
-import {
-  classifySshFailure,
-  waitForAcceptanceExit,
-} from "../scripts/remote-acceptance-runner";
 
 const validEnvironment: Record<string, string> = {
   KAFIL_E2E_REMOTE_URL: "https://kafala360.ma",
   KAFIL_E2E_ALLOW_REMOTE_DESTRUCTIVE: "true",
   KAFIL_ADMIN_EMAIL: "admin@example.test",
   KAFIL_ADMIN_PASSWORD: "not-a-runtime-secret",
-  KAFIL_E2E_SSH_HOST: "demo.example.test",
-  KAFIL_E2E_SSH_USER: "tester",
-  KAFIL_E2E_SSH_PORT: "22",
-  KAFIL_E2E_MAILBOX_LOCAL_PORT: "58025",
-  KAFIL_E2E_MAILBOX_REMOTE_PORT: "58025",
-  KAFIL_E2E_MAILBOX_API_URL: "http://127.0.0.1:58025",
-  KAFIL_E2E_MAILBOX_USER: "acceptance",
-  KAFIL_E2E_MAILBOX_PASSWORD: "not-a-runtime-secret",
+  KAFIL_E2E_MAILBOX_API_HOST: "mail-api.example.test",
+  KAFIL_E2E_MAILBOX_API_URL: "https://mail-api.example.test",
+  KAFIL_E2E_MAILBOX_TOKEN: "not-a-runtime-secret-but-at-least-32-characters",
 };
 
 const runnerSource = readFileSync(
@@ -50,6 +40,22 @@ const configSource = readFileSync(
 );
 const specSource = readFileSync(
   new URL("e2e/connected-four-account.remote.ts", import.meta.url),
+  "utf8",
+);
+const rootEnvExample = readFileSync(
+  new URL("../../../.env.example", import.meta.url),
+  "utf8",
+);
+const mailTestHubVpsHelper = readFileSync(
+  new URL("../../../scripts/configureMailTestHubVps.sh", import.meta.url),
+  "utf8",
+);
+const mailTestHubCompose = readFileSync(
+  new URL("../../../deploy/mail-test-hub/compose.yml", import.meta.url),
+  "utf8",
+);
+const mailTestHubCaddy = readFileSync(
+  new URL("../../../deploy/mail-test-hub/Caddyfile.host.example", import.meta.url),
   "utf8",
 );
 
@@ -83,7 +89,7 @@ describe("connected four-account remote runner", () => {
     await expect(handled).rejects.toThrow("mailbox transport failed");
   });
 
-  test("accepts only the exact authorized HTTPS origin and loopback mailbox", () => {
+  test("accepts only the exact authorized origin and HTTPS mail-test API", () => {
     expect(remoteAcceptanceChecks(validEnvironment).every((check) => check.ok)).toBe(true);
     expect(() =>
       readRemoteAcceptanceConfig({
@@ -94,70 +100,65 @@ describe("connected four-account remote runner", () => {
     expect(() =>
       readRemoteAcceptanceConfig({
         ...validEnvironment,
-        KAFIL_E2E_MAILBOX_API_URL: "http://203.0.113.10:58025",
+        KAFIL_E2E_MAILBOX_API_URL: "http://mail-api.example.test",
       }),
     ).toThrow();
     expect(() =>
       readRemoteAcceptanceConfig({
         ...validEnvironment,
-        KAFIL_E2E_SSH_PASSWORD: "forbidden",
+        KAFIL_E2E_MAILBOX_API_HOST: "other.example.test",
+      }),
+    ).toThrow();
+    expect(() =>
+      readRemoteAcceptanceConfig({
+        ...validEnvironment,
+        KAFIL_E2E_TAILSCALE_DISCONNECT_AFTER: "false",
+      }),
+    ).toThrow();
+    expect(() =>
+      readRemoteAcceptanceConfig({
+        ...validEnvironment,
+        KAFIL_E2E_MAILBOX_TOKEN: "weak",
       }),
     ).toThrow();
   });
 
-  test("builds a fail-closed owned SSH forward without a password", () => {
-    const args = buildSshTunnelArgs(readRemoteAcceptanceConfig(validEnvironment));
-    expect(args).toContain("BatchMode=yes");
-    expect(args).toContain("ExitOnForwardFailure=yes");
-    expect(args).toContain("StrictHostKeyChecking=yes");
-    expect(args).toContain("ServerAliveInterval=15");
-    expect(args).toContain("ServerAliveCountMax=4");
-    expect(args).toContain("58025:127.0.0.1:58025");
-    expect(args.join(" ")).not.toContain("not-a-runtime-secret");
+  test("owns no SSH, Tailscale, or local forwarding lifecycle", () => {
+    expect(sharedRunnerSource).not.toContain('["ssh"');
+    expect(sharedRunnerSource).not.toContain('["tailscale"');
+    expect(sharedRunnerSource).not.toContain("disconnectPrivateNetwork");
+    expect(sharedRunnerSource).not.toContain("forwarding port");
+    expect(sharedRunnerSource).toContain("NO MANAGED MAILBOX TRANSPORT");
+    expect(sharedRunnerSource).toContain(
+      "KAFIL_E2E_MAILBOX_TOKEN: config.mailboxToken",
+    );
+    expect(sharedRunnerSource).not.toContain("KAFIL_E2E_MAILBOX_PASSWORD");
+    expect(specSource).toContain(
+      'headers.set("Authorization", `Bearer ${mailboxApiToken}`)',
+    );
   });
 
-  test("classifies SSH failures without retaining raw diagnostics", () => {
-    const secret = "sensitive-user@example.test";
-    const classifications = [
-      classifySshFailure(`ssh: connect to host ${secret} port 22: Connection timed out`),
-      classifySshFailure(`client_loop: send disconnect: Broken pipe ${secret}`),
-      classifySshFailure(`Connection reset by peer ${secret}`),
-      classifySshFailure(`channel 3: open failed: administratively prohibited ${secret}`),
-      classifySshFailure(`Permission denied (publickey) ${secret}`),
-      classifySshFailure(`Host key verification failed ${secret}`),
-      classifySshFailure(`unrecognized failure ${secret}`),
-    ];
-
-    expect(classifications).toEqual([
-      "connection-timeout",
-      "broken-pipe",
-      "connection-reset",
-      "forwarding-failed",
-      "authentication-failed",
-      "host-key-failed",
-      "unknown",
-    ]);
-    expect(JSON.stringify(classifications)).not.toContain(secret);
-  });
-
-  test("fails fast when the managed tunnel exits before Playwright", async () => {
-    let finishTunnel!: (exitCode: number) => void;
-    let finishPlaywright!: (exitCode: number) => void;
-    const tunnelExited = new Promise<number>((resolve) => {
-      finishTunnel = resolve;
-    });
-    const playwrightExited = new Promise<number>((resolve) => {
-      finishPlaywright = resolve;
-    });
-
-    const outcome = waitForAcceptanceExit(playwrightExited, tunnelExited);
-    finishTunnel(255);
-    finishPlaywright(0);
-
-    expect(await outcome).toEqual({ source: "tunnel", exitCode: 255 });
-    expect(sharedRunnerSource).toContain('stderr: "pipe"');
-    expect(sharedRunnerSource).toContain("await closeOwnedProcess(testProcess)");
-    expect(sharedRunnerSource).toContain("ENVIRONMENT managed SSH tunnel exited during browser execution");
+  test("pins the reusable Mailpit dashboard and app-scoped gateway boundaries", () => {
+    expect(rootEnvExample).toContain(
+      "KAFIL_E2E_MAILBOX_API_HOST=mail-api.example.invalid",
+    );
+    expect(rootEnvExample).toContain(
+      "KAFIL_E2E_MAILBOX_TOKEN=replace-with-the-kafil-gateway-token",
+    );
+    expect(mailTestHubCompose).toContain(
+      "image: axllent/mailpit:v1.30.0",
+    );
+    expect(mailTestHubCompose).toContain(
+      "127.0.0.1:${MAIL_TEST_DASHBOARD_LOOPBACK_PORT:-59025}:8025",
+    );
+    expect(mailTestHubCompose).toContain(
+      "127.0.0.1:${MAIL_TEST_GATEWAY_LOOPBACK_PORT:-59026}:8080",
+    );
+    expect(mailTestHubCompose).toContain("internal: true");
+    expect(mailTestHubCaddy).toContain("reverse_proxy 127.0.0.1:59025");
+    expect(mailTestHubCaddy).toContain("reverse_proxy 127.0.0.1:59026");
+    expect(mailTestHubVpsHelper).toContain('[[ "${dashboard_status}" != "401"');
+    expect(mailTestHubVpsHelper).toContain('"${gateway_status}" != "401"');
   });
 
   test("validates and forwards one optional remote grep argument", () => {

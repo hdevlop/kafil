@@ -36,14 +36,13 @@ const baseUrl = process.env.KAFIL_E2E_BASE_URL ?? "";
 const adminEmail = process.env.KAFIL_ADMIN_EMAIL ?? "";
 const adminPassword = process.env.KAFIL_ADMIN_PASSWORD ?? "";
 const mailboxApiUrl = process.env.KAFIL_E2E_MAILBOX_API_URL ?? "";
-const mailboxApiUser = process.env.KAFIL_E2E_MAILBOX_USER ?? "";
-const mailboxApiPassword = process.env.KAFIL_E2E_MAILBOX_PASSWORD ?? "";
+const mailboxApiToken = process.env.KAFIL_E2E_MAILBOX_TOKEN ?? "";
 
 if (baseUrl !== "https://kafala360.ma") {
   throw new Error("Remote auth acceptance requires the exact guarded demo origin.");
 }
-if (!mailboxApiUrl || !mailboxApiUser || !mailboxApiPassword) {
-  throw new Error("Remote auth acceptance requires guarded Mailpit configuration.");
+if (!mailboxApiUrl || !mailboxApiToken) {
+  throw new Error("Remote auth acceptance requires the guarded mail-test gateway.");
 }
 
 interface ExpectedResponse {
@@ -433,10 +432,7 @@ async function selectDate(
 
 function mailboxFetch(path: string, init: RequestInit = {}): Promise<globalThis.Response> {
   const headers = new Headers(init.headers);
-  headers.set(
-    "Authorization",
-    `Basic ${Buffer.from(`${mailboxApiUser}:${mailboxApiPassword}`).toString("base64")}`,
-  );
+  headers.set("Authorization", `Bearer ${mailboxApiToken}`);
   const read = () => fetch(new URL(path, mailboxApiUrl), { ...init, headers });
   return (init.method ?? "GET").toUpperCase() === "GET"
     ? retryReadAfterConnectionReset(read)

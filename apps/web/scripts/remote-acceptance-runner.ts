@@ -1,10 +1,8 @@
-import { spawn, type Subprocess } from "bun";
+import { spawn } from "bun";
 import { existsSync } from "node:fs";
-import { connect } from "node:net";
 import { resolve } from "node:path";
 
 import {
-  buildSshTunnelArgs,
   mailboxAuthorization,
   readRemoteAcceptanceConfig,
   readRemoteGrep,
@@ -16,90 +14,6 @@ export interface RemoteAcceptanceRunnerOptions {
   buildPlaywrightArgs: () => string[];
   passLabel: string;
   rejectRemoteGrep?: boolean;
-}
-
-export type SshFailureClassification =
-  | "authentication-failed"
-  | "broken-pipe"
-  | "connection-reset"
-  | "connection-timeout"
-  | "forwarding-failed"
-  | "host-key-failed"
-  | "remote-closed"
-  | "unknown";
-
-export type AcceptanceExit =
-  | { source: "playwright"; exitCode: number }
-  | { source: "tunnel"; exitCode: number };
-
-const SSH_DIAGNOSTIC_TAIL_LIMIT = 8_192;
-
-export function classifySshFailure(rawDiagnostic: string): SshFailureClassification {
-  const diagnostic = rawDiagnostic.toLowerCase();
-  if (
-    diagnostic.includes("host key verification failed") ||
-    diagnostic.includes("remote host identification has changed")
-  ) {
-    return "host-key-failed";
-  }
-  if (
-    diagnostic.includes("permission denied") ||
-    diagnostic.includes("authentication failed")
-  ) {
-    return "authentication-failed";
-  }
-  if (
-    diagnostic.includes("administratively prohibited") ||
-    diagnostic.includes("port forwarding failed") ||
-    diagnostic.includes("cannot listen to port") ||
-    diagnostic.includes("address already in use") ||
-    diagnostic.includes("open failed")
-  ) {
-    return "forwarding-failed";
-  }
-  if (diagnostic.includes("connection timed out")) return "connection-timeout";
-  if (diagnostic.includes("connection reset")) return "connection-reset";
-  if (diagnostic.includes("broken pipe")) return "broken-pipe";
-  if (
-    diagnostic.includes("connection closed by") ||
-    diagnostic.includes("closed by remote host")
-  ) {
-    return "remote-closed";
-  }
-  return "unknown";
-}
-
-async function readSshFailureClassification(
-  stderr: ReadableStream<Uint8Array>,
-): Promise<SshFailureClassification> {
-  const reader = stderr.getReader();
-  const decoder = new TextDecoder();
-  let diagnosticTail = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    diagnosticTail = (
-      diagnosticTail + decoder.decode(value, { stream: true })
-    ).slice(-SSH_DIAGNOSTIC_TAIL_LIMIT);
-  }
-  diagnosticTail = (
-    diagnosticTail + decoder.decode()
-  ).slice(-SSH_DIAGNOSTIC_TAIL_LIMIT);
-  return classifySshFailure(diagnosticTail);
-}
-
-export async function waitForAcceptanceExit(
-  playwrightExited: Promise<number>,
-  tunnelExited: Promise<number>,
-): Promise<AcceptanceExit> {
-  return await Promise.race([
-    playwrightExited.then((exitCode) => ({
-      source: "playwright" as const,
-      exitCode,
-    })),
-    tunnelExited.then((exitCode) => ({ source: "tunnel" as const, exitCode })),
-  ]);
 }
 
 function readEnv(name: string): string | undefined {
@@ -125,47 +39,34 @@ function findSystemChrome(): string | undefined {
   return candidates.find((candidate) => existsSync(candidate));
 }
 
-async function isLoopbackPortListening(port: number): Promise<boolean> {
-  return await new Promise((resolveListening) => {
-    const socket = connect({ host: "127.0.0.1", port });
-    let settled = false;
-    const finish = (listening: boolean) => {
-      if (settled) return;
-      settled = true;
-      socket.destroy();
-      resolveListening(listening);
-    };
-    socket.setTimeout(750);
-    socket.once("connect", () => finish(true));
-    socket.once("timeout", () => finish(false));
-    socket.once("error", () => finish(false));
-  });
-}
-
-async function waitForMailbox(
-  config: RemoteAcceptanceConfig,
-  tunnel: Subprocess,
-): Promise<void> {
+async function waitForMailbox(config: RemoteAcceptanceConfig): Promise<void> {
   const authorization = mailboxAuthorization(config);
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    if (tunnel.exitCode !== null) {
-      throw new Error("Managed SSH tunnel exited before Mailpit readiness.");
-    }
     try {
-      const unauthenticated = await fetch(`${config.mailboxApiUrl}/api/v1/info`);
-      const authenticated = await fetch(`${config.mailboxApiUrl}/api/v1/messages?limit=1`, {
+      const unauthenticated = await fetch(`${config.mailboxApiUrl}/api/v1/info`, {
+        signal: AbortSignal.timeout(3_000),
+      });
+      const authenticated = await fetch(`${config.mailboxApiUrl}/api/v1/info`, {
         headers: { Authorization: authorization },
+        signal: AbortSignal.timeout(3_000),
       });
       if (unauthenticated.status === 401 && authenticated.status === 200) {
-        const payload = (await authenticated.json()) as { messages?: unknown };
-        if (Array.isArray(payload.messages)) return;
+        const payload = (await authenticated.json()) as {
+          service?: unknown;
+          app?: unknown;
+        };
+        if (payload.service === "mail-test-gateway" && payload.app === "kafil") {
+          return;
+        }
       }
     } catch {
-      // The tunnel or Mailpit is still becoming ready.
+      // The public HTTPS gateway or its private Mailpit dependency is becoming ready.
     }
     await Bun.sleep(250);
   }
-  throw new Error("Authenticated Mailpit API did not become ready through the managed tunnel.");
+  throw new Error(
+    "Authenticated Kafil mail-test gateway did not become ready over verified HTTPS.",
+  );
 }
 
 async function assertRemoteEndpoint(
@@ -197,8 +98,7 @@ function childEnvironment(
     KAFIL_ADMIN_EMAIL: config.adminEmail,
     KAFIL_ADMIN_PASSWORD: config.adminPassword,
     KAFIL_E2E_MAILBOX_API_URL: config.mailboxApiUrl,
-    KAFIL_E2E_MAILBOX_USER: config.mailboxUser,
-    KAFIL_E2E_MAILBOX_PASSWORD: config.mailboxPassword,
+    KAFIL_E2E_MAILBOX_TOKEN: config.mailboxToken,
   };
   for (const name of [
     "PATH",
@@ -219,13 +119,6 @@ function childEnvironment(
   return child;
 }
 
-async function closeOwnedProcess(process: Subprocess | undefined): Promise<void> {
-  if (!process || process.exitCode !== null) return;
-  process.kill();
-  await Promise.race([process.exited, Bun.sleep(3_000)]);
-  if (process.exitCode === null) process.kill(9);
-}
-
 export async function runRemoteAcceptance(
   options: RemoteAcceptanceRunnerOptions,
 ): Promise<number> {
@@ -233,8 +126,6 @@ export async function runRemoteAcceptance(
   const unexpectedArguments = Bun.argv
     .slice(2)
     .filter((argument) => argument !== "--preflight-only");
-  let tunnel: Subprocess | undefined;
-  let sshFailureClassification: Promise<SshFailureClassification> | undefined;
   let exitCode = 1;
 
   try {
@@ -250,33 +141,14 @@ export async function runRemoteAcceptance(
     }
     const config = readRemoteAcceptanceConfig(Bun.env);
 
-    if (config.sshIdentityFile && !existsSync(config.sshIdentityFile)) {
-      throw new Error("Configured SSH identity file does not exist.");
-    }
-    console.log("PREFLIGHT OK SSH identity configuration");
-
     const chromeExecutable = findSystemChrome();
     if (!chromeExecutable) {
       throw new Error("System Google Chrome was not found for remote Playwright.");
     }
     console.log("PREFLIGHT OK system Chrome present");
 
-    if (await isLoopbackPortListening(config.mailboxLocalPort)) {
-      throw new Error("Remote Mailpit local forwarding port is already in use.");
-    }
-    console.log("PREFLIGHT OK Mailpit local forwarding port free");
-
-    const startedTunnel = spawn({
-      cmd: ["ssh", ...buildSshTunnelArgs(config)],
-      stderr: "pipe",
-      stdout: "ignore",
-    });
-    tunnel = startedTunnel;
-    sshFailureClassification = readSshFailureClassification(startedTunnel.stderr).catch(
-      () => "unknown",
-    );
-    await waitForMailbox(config, tunnel);
-    console.log("PREFLIGHT OK managed SSH tunnel and authenticated Mailpit API");
+    await waitForMailbox(config);
+    console.log("PREFLIGHT OK app-scoped HTTPS mail-test gateway");
 
     for (const path of ["/login", "/apply", "/api/system/health", "/api/system/readiness"]) {
       await assertRemoteEndpoint(config, path);
@@ -294,24 +166,13 @@ export async function runRemoteAcceptance(
         stderr: "inherit",
         stdout: "inherit",
       });
-      const outcome = await waitForAcceptanceExit(testProcess.exited, tunnel.exited);
-      if (outcome.source === "tunnel") {
-        await closeOwnedProcess(testProcess);
-        const classification = await sshFailureClassification;
-        console.error(
-          `ENVIRONMENT managed SSH tunnel exited during browser execution; reason=${classification}; exit=${outcome.exitCode}.`,
-        );
-        exitCode = 1;
-      } else {
-        exitCode = outcome.exitCode;
-      }
+      exitCode = await testProcess.exited;
     }
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Remote acceptance failed.");
     exitCode = 1;
   } finally {
-    await closeOwnedProcess(tunnel);
-    console.log("MANAGED SSH TUNNEL CLOSED");
+    console.log("NO MANAGED MAILBOX TRANSPORT");
   }
 
   return exitCode;

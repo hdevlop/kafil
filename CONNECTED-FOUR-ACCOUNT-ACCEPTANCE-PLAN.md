@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS — AUTH MATRIX AND FINANCIAL STEPS 01-03 ACCEPTED; COMPLETE 18-TEST RUN PENDING**
+Status: **IN PROGRESS - AUTH MATRIX ACCEPTED; FINANCIAL STEPS 01-04 ACCEPTED; MAIL-TEST HUB VPS ACTIVATION PENDING**
 
 Target: exactly `https://kafala360.ma`
 
@@ -29,7 +29,7 @@ Verified by this plan:
 - sponsor-safe projections;
 - visible/API integer-minor financial aggregates;
 - order, purchase, and delivery lifecycle behavior;
-- real logout, cookie removal, diagnostics, and SSH tunnel cleanup.
+- real logout, cookie removal, diagnostics, and mailbox-transport isolation.
 
 Not verified without database access:
 
@@ -40,6 +40,17 @@ Not verified without database access:
 - migration state on the VPS.
 
 ## 2. Current checkpoint
+
+The authoritative checkpoint is section 11.15. The latest complete 18-test
+attempt reached and passed steps 01-04 before the runner-owned SSH transport
+reset a second time. The browser result after step 04 is unclassified. SSH
+forwarding is retired. The proposed Tailscale replacement in section 11.14 was
+implemented locally but was not activated; it is now superseded by one
+standalone VPS mail-test hub. The active runner uses an exact verified-HTTPS
+gateway, a Kafil-only bearer token, and no SSH, Tailscale, local forward, or
+managed network lifecycle. Mailpit and its existing dashboard remain behind
+the VPS proxy and private Docker network. VPS activation is still pending. The
+chronology below remains historical evidence.
 
 The latest failed complete-range attempt ran against application revision
 `2de79a62c4b516674328a06df75e54693cf9adb6`. Its image was published,
@@ -623,13 +634,17 @@ The runner must fail closed unless all of these are true:
 - `KAFIL_E2E_REMOTE_URL` is exactly the target origin;
 - `KAFIL_E2E_ALLOW_REMOTE_DESTRUCTIVE=true` is explicit;
 - Admin credentials are present only in ignored local environment data;
-- SSH uses key or existing non-password authentication;
-- Mailpit is reached only through a runner-owned loopback SSH forward;
-- Mailpit Basic auth succeeds and unauthenticated access is denied;
+- all legacy SSH, forwarding, and Tailscale environment names are absent;
+- the mailbox URL is exact verified HTTPS on the separately configured API
+  hostname, with no credentials, query, fragment, path prefix, or custom port;
+- the Kafil gateway bearer token is at least 32 characters and is never the
+  Mailpit dashboard password;
+- unauthenticated gateway access returns `401`, while authenticated
+  `/api/v1/info` identifies exactly the `mail-test-gateway` and `kafil` scope;
 - system Chrome exists;
 - TLS verification remains enabled;
 - `/login`, `/apply`, health, and readiness succeed on the exact origin;
-- the configured local forwarding port is free before startup.
+- the runner owns no mailbox transport process or private-network state.
 
 The runner may mutate only disposable demo application records through the
 deployed UI or authenticated/public application APIs.
@@ -642,7 +657,8 @@ Forbidden:
 - screenshots, traces, or video;
 - printing environment values, credentials, OTPs, cookies, mailbox content,
   private household data, generated identities, IDs, or raw sensitive bodies;
-- killing unrelated SSH, Bun, Node, or Chrome processes.
+- starting, stopping, or killing unrelated VPN, SSH, Docker, Bun, Node, or
+  Chrome processes.
 
 ## 4. Runtime configuration
 
@@ -653,18 +669,22 @@ KAFIL_E2E_REMOTE_URL
 KAFIL_E2E_ALLOW_REMOTE_DESTRUCTIVE
 KAFIL_ADMIN_EMAIL
 KAFIL_ADMIN_PASSWORD
-KAFIL_E2E_SSH_HOST
-KAFIL_E2E_SSH_USER
-KAFIL_E2E_SSH_PORT
-KAFIL_E2E_SSH_IDENTITY_FILE
-KAFIL_E2E_MAILBOX_LOCAL_PORT
-KAFIL_E2E_MAILBOX_REMOTE_PORT
+KAFIL_E2E_MAILBOX_API_HOST
 KAFIL_E2E_MAILBOX_API_URL
-KAFIL_E2E_MAILBOX_USER
-KAFIL_E2E_MAILBOX_PASSWORD
+KAFIL_E2E_MAILBOX_TOKEN
 ```
 
 Check presence and validated state only. Never echo resolved values.
+
+The standalone deployment is `deploy/mail-test-hub/compose.yml`. Mailpit owns
+the existing human dashboard and persistent test-message volume. The gateway
+exposes only authenticated info, scoped search, scoped detail, and scoped
+delete. Kafil and School use distinct tokens and exclusive recipient domains;
+the dashboard password is never distributed to either test runner. SMTP,
+Mailpit, and the gateway share the internal `mail-test-hub` Docker network.
+Only the dashboard and gateway loopback ports are handed to the existing VPS
+HTTPS proxy. The reusable VPS helper is
+`scripts/configureMailTestHubVps.sh`.
 
 ## 5. Numbered browser journey
 
@@ -775,7 +795,7 @@ bun x eslint playwright.remote.config.ts `
   test/e2e/connected-four-account.remote.ts
 ```
 
-Remote preflight is needed after configuration, SSH, mailbox, or deployment
+Remote preflight is needed after gateway configuration, Mailpit, HTTPS proxy, or deployment
 state changes. The full remote command performs its own preflight.
 
 Focused prerequisite range that passed once on healthy `4ef0d03`:
@@ -843,7 +863,7 @@ After any failure:
 
 1. preserve the native exit and final sanitized assertion;
 2. classify `TEST`, `PRODUCT`, `RUNNER`, or `ENVIRONMENT`;
-3. confirm tunnel closure and forwarding-port release;
+3. confirm the runner reported `NO MANAGED MAILBOX TRANSPORT`;
 4. record a value-free fingerprint;
 5. stop without editing or rerunning under the tester instruction.
 
@@ -903,7 +923,7 @@ remains **IN PROGRESS** until:
 - all 16 numbered steps, the responsive unit, and diagnostics pass together;
 - step 16 reports zero retained API-visible runtime rows, protected evidence
   files, and exact-recipient mailbox messages through counts-only assertions;
-- the managed tunnel closes, its forwarding port is free, and the retained
+- the runner reports `NO MANAGED MAILBOX TRANSPORT`, and the retained
   marker/output pass the secret and runtime-sensitive-value audit;
 - the accepted test/plan evidence is committed and pushed under section 8;
 - database-only guarantees remain explicitly `NOT VERIFIED`.
@@ -1542,3 +1562,204 @@ The supervised-tunnel correction and focused Sponsor A boundary are accepted.
 Promotion now requires the accepted test/plan evidence to be committed and
 pushed, followed by a separate fresh instruction for one complete unfiltered
 18-test attempt. This focused authorization must not be reused for that run.
+
+### 11.14 Second transport reset and private-mailbox migration (2026-08-30)
+
+After revision `3e25610e86e11d012d3cdb1ac2d026a96940e676` was pushed and the
+deployed Kafil application was confirmed at that exact healthy revision, one
+freshly authorized unfiltered attempt started. Guarded preflight passed, and
+remote steps 01 through 04 passed. During the remaining serial journey, the
+managed SSH process exited with code `255` and the bounded classification
+`connection-reset`. The runner stopped its owned Playwright process, so there
+was no terminal Playwright summary and no application classification after
+step 04. The tunnel closed, no runner-owned process or forwarding port
+remained, and the value-free artifact audit was clean. Supported step-16
+cleanup did not run, so disposable application/mailbox residue may remain.
+
+This is the second independent loss of an SSH forward after initial Mailpit
+preflight. Keeping more SSH supervision would improve attribution but would
+not remove the transport dependency. The active runner therefore no longer
+opens SSH at all. Its replacement contract is:
+
+- the public browser target remains exactly `https://kafala360.ma` with normal
+  TLS verification;
+- the mailbox endpoint is exact private HTTPS on a MagicDNS `*.ts.net` host and
+  a required explicit port;
+- the separately configured private hostname must exactly match the endpoint;
+- every legacy SSH/forwarding environment name must be absent;
+- `tailscale status --json` must report backend `Running` before any mailbox or
+  browser operation;
+- unauthenticated Mailpit stays `401`, authenticated Mailpit stays `200`, and
+  mailbox credentials remain app-specific;
+- `KAFIL_E2E_TAILSCALE_DISCONNECT_AFTER=true` makes the runner execute
+  `tailscale down` after success or failure and fail the run if disconnecting
+  fails. It disconnects only the local test device; the VPS node and its
+  tailnet-only Serve declaration remain available.
+
+The reusable VPS helper accepts an app name, the app's loopback Mailpit port,
+and its dedicated tailnet HTTPS port. It refuses a Mailpit API that does not
+deny unauthenticated access, then configures persistent tailnet-only Tailscale
+Serve to `http://127.0.0.1:<mailpit-port>`. The grants example permits only TCP
+`18025` to the Kafil mailbox tag and TCP `28025` to the School mailbox tag. It
+does not grant SSH, database, Redis, Docker, or public application access.
+School must run a separate Mailpit process and volume; credentials alone are
+not a data-isolation boundary.
+
+A value-free audit found Tailscale absent on both the Windows test machine and
+the VPS. Repository implementation can therefore be verified locally, but the
+route cannot be activated without the tailnet owner's external enrollment.
+Activation requires, in order:
+
+1. install Tailscale on the Windows test machine and VPS and enroll both in the
+   same tailnet;
+2. apply the least-privilege identities/grants from
+   `deploy/tailscale-grants.example.hujson` with real tailnet identities;
+3. tag the VPS for Kafil and run
+   `bash scripts/configurePrivateMailboxVps.sh kafil 18025 18025` on it;
+4. remove all legacy SSH/forwarding names from the ignored root `.env`, set the
+   exact private hostname and HTTPS URL, retain Kafil's Mailpit credentials,
+   and choose the explicit disconnect value;
+5. run the guarded remote preflight once and audit the disconnect postcondition.
+
+No browser journey is authorized by this infrastructure migration. After the
+private preflight passes and the same application revision remains healthy,
+the next unfiltered 18-test attempt still needs its own fresh instruction under
+the one-attempt rule.
+
+Local migration verification is green: the combined financial/auth runner
+range passes with `23 passed`, `0 failed`, and `475` assertions; targeted
+ESLint, web typecheck, and Bash syntax validation pass; root lint, typecheck,
+and every standard web/server/seed test pass; the production build passes with
+the documented command-scoped build-only values; and `db:generate` reports `No
+schema changes, nothing to migrate`. No remote preflight or browser test was
+run.
+
+### 11.15 Standalone Mailpit hub migration (2026-08-30)
+
+The tailnet route in section 11.14 was not activated. The user selected a
+reusable standalone mail-test service that can support Kafil, School, and later
+VPS applications without installing a client VPN or opening an SSH session for
+normal browser tests. This section supersedes only section 11.14's proposed
+Tailscale activation; it does not rewrite the earlier SSH failure evidence.
+
+The hub is independent from the Kafil application image:
+
+- `deploy/mail-test-hub/compose.yml` runs pinned Mailpit `v1.30.0`, its
+  persistent volume, and a small Bun gateway;
+- Mailpit supplies its existing human dashboard with a strong Admin Basic-auth
+  credential;
+- the gateway accepts a distinct bearer token per application and permits only
+  authenticated info, search, detail, and exact batch deletion;
+- each token has exclusive recipient domains. A search outside the scope is
+  denied, and a detail or delete is hidden unless every recipient on the
+  message belongs to the authenticated app;
+- Mailpit's send, relay, tag, global list, and administrative APIs are not
+  exposed by the gateway;
+- SMTP, Mailpit HTTP, and gateway HTTP remain on the internal
+  `mail-test-hub` Docker network. Host bindings are loopback-only. The new
+  default ports `59025`, `59026`, and `59027` intentionally avoid the existing
+  Kafil Mailpit HTTP binding on `58025` during migration;
+- the existing host HTTPS proxy publishes separate dashboard and gateway
+  hostnames on normal port `443`. No raw Mailpit, SMTP, gateway, SSH, or VPN
+  port becomes public;
+- Mailpit prunes messages by both count and age. The service stays running;
+  there is deliberately no public start/stop endpoint.
+
+The remote runner now requires exact `https://<configured-api-host>` with no
+custom port or path, a Kafil token of at least 32 characters, and absence of
+all legacy SSH/forwarding/Tailscale names. Preflight proves unauthenticated
+`401`, authenticated gateway identity `mail-test-gateway`, exact app scope
+`kafil`, system Chrome, target TLS, pages, health, and readiness. It forwards
+only the bearer token to Playwright and always reports
+`NO MANAGED MAILBOX TRANSPORT`; it starts and stops no SSH, Tailscale, forward,
+Docker, or Mailpit process.
+
+VPS activation requires external infrastructure authority and remains pending:
+
+1. create dashboard and API DNS names for the VPS;
+2. create `/opt/mail-test-hub/hub.env` from the committed example, generate
+   independent dashboard, Kafil, and School credentials, and set mode `0600`;
+3. run `bash scripts/configureMailTestHubVps.sh` from the deployed repository
+   release; this validates Compose, starts the isolated hub, and proves both
+   loopback authentication boundaries without printing credentials;
+4. merge `deploy/mail-test-hub/Caddyfile.host.example` into the existing host
+   proxy with the real DNS names, validate, reload, and prove normal TLS;
+5. join each acceptance application container to external network
+   `mail-test-hub` and configure SMTP host `mailpit`, port `1025`; keep the old
+   Kafil Mailpit running until the new delivery and dashboard are proved;
+6. replace the ignored local remote-runner mailbox settings with the exact API
+   hostname, HTTPS origin, and Kafil token; remove legacy SSH, forwarding,
+   private-host, and Tailscale names;
+7. run guarded preflight once. Do not run the browser journey under this
+   infrastructure instruction.
+
+The gateway source test was red before the service module existed, then passed
+with `4 passed`, `0 failed`, covering strict configuration, unauthenticated
+denial, Kafil/School search and detail isolation, and exact scoped deletion.
+The remote runner contract was then observed red against its former Tailscale
+implementation. The combined gateway, financial-runner, and auth-runner source
+range passes with `27 passed`, `0 failed`, and `503` assertions. Targeted ESLint
+and the web typecheck pass. The full root lint and typecheck gates pass; standard
+tests pass with web `330`, server `336` plus `53` database-opt-in skips, and seed
+`85`. The ordinary production build reached successful compilation and
+TypeScript before the documented missing local `EMAIL_PROVIDER` condition; the
+Dockerfile-equivalent command-scoped build-only values then produced a complete
+production build without modifying `.env`. A final unchanged gate repeat hit
+one transient Google Fonts fetch failure; its single unchanged retry completed
+the production build. `db:generate` reports `No schema changes, nothing to
+migrate`.
+
+This Windows verification host has neither Bash nor Docker installed, so local
+`bash -n` and `docker compose config` execution were unavailable. The source
+contracts pin loopback bindings, the internal Docker network, both unauthenticated
+`401` boundaries, and the no-SSH/no-Tailscale runner lifecycle, but the VPS must
+still perform native Bash and Compose validation before activation. No VPS
+command, remote preflight, or browser journey has been run for this migration.
+
+An external edge probe on 2026-08-30 confirmed that the proposed dashboard
+name `mail.kafala360.ma` resolves to the VPS, but verified HTTPS fails because
+the presented certificate chain is not publicly trusted; an explicitly
+insecure diagnostic request reaches the edge and returns `404`. The proposed
+gateway name `mail-api.kafala360.ma` does not resolve. Activation is therefore
+blocked before Compose or guarded preflight: create the API DNS record, install
+both host routes in the existing proxy, and obtain publicly trusted certificates.
+The insecure request is diagnostic evidence only and is forbidden in the
+runner, which must retain normal TLS verification.
+
+On 2026-08-31 the user adopted the neutral infrastructure domain
+`najmstack.com`. Its root and wildcard `A` records resolve publicly to the same
+VPS, including `mail.najmstack.com`, `mail-api.najmstack.com`, and
+`deploy.najmstack.com`. The first two names replace the earlier proposed Kafala
+mail hostnames; `deploy.najmstack.com` is also the intended replacement for the
+existing Dokploy management hostname. Migration must be additive: configure
+and verify the new Dokploy route, publicly trusted TLS, and authenticated login
+before removing any old Dokploy DNS or proxy route. Likewise, retain the old
+Mailpit instance and old application SMTP settings until the shared hub proves
+authenticated dashboard/API access and application delivery. DNS removal is a
+separate cleanup step after those proofs, not part of initial activation. No
+guarded preflight or browser journey was run for the DNS change.
+
+The first VPS activation handoff on 2026-08-31 made no changes because its
+mandated checkout path `/opt/kafil/current` existed but was empty. It reported
+the three new hostnames as failed, but independent queries through both
+`1.1.1.1` and `8.8.8.8` resolved `deploy.najmstack.com`,
+`mail.najmstack.com`, and `mail-api.najmstack.com` to the intended VPS. Those
+DNS failures are therefore unaccepted probe output, not a public DNS blocker.
+The next VPS action is read-only discovery of the real Dokploy installation,
+edge owner, deployed Kafil artifact, and repository/release location. It must
+not run guarded preflight or change infrastructure until the actual paths and
+deployment owner are known.
+
+Read-only VPS discovery then established the actual topology: Dokploy
+`v0.29.13` runs in Swarm mode; `dokploy-traefik` owns ports `80` and `443`, and
+the Dokploy service owns port `3000`. Its current management hostname is
+`deploy.kafala360.ma`. Kafil is a Dokploy Compose deployment whose runtime code
+is materialized at `/etc/dokploy/compose/kafil-demo-vdadlv/code`, without a Git
+checkout. The existing Kafil Mailpit remains running with a loopback binding.
+The deployed code does not contain the mail-hub files because the completed
+hub/runner migration is still an uncommitted local change on `main` at
+`3e25610`; `origin/main` is at the same pre-migration revision. Consequently,
+no VPS prompt can safely activate the committed design yet. Publication of the
+audited local change is the next boundary and may trigger Dokploy, so it
+requires explicit authorization before commit/push. No VPS state, SMTP setting,
+remote preflight, browser journey, or old DNS record changed during discovery.

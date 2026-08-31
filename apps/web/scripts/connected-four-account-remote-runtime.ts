@@ -13,15 +13,9 @@ export interface RemoteAcceptanceConfig {
   remoteUrl: string;
   adminEmail: string;
   adminPassword: string;
-  sshHost: string;
-  sshUser: string;
-  sshPort: number;
-  sshIdentityFile?: string;
-  mailboxLocalPort: number;
-  mailboxRemotePort: number;
+  mailboxApiHost: string;
   mailboxApiUrl: string;
-  mailboxUser: string;
-  mailboxPassword: string;
+  mailboxToken: string;
   grep?: string;
 }
 
@@ -81,14 +75,6 @@ export function handleConcurrentPromise<T>(promise: Promise<T>): Promise<T> {
   return promise;
 }
 
-function port(env: Environment, name: string): number {
-  return Number(value(env, name));
-}
-
-function validPort(candidate: number): boolean {
-  return Number.isInteger(candidate) && candidate >= 1 && candidate <= 65_535;
-}
-
 function exactRemoteUrl(raw: string): boolean {
   try {
     const url = new URL(raw);
@@ -105,14 +91,26 @@ function exactRemoteUrl(raw: string): boolean {
   }
 }
 
-function exactMailboxUrl(raw: string, localPort: number): boolean {
-  if (!validPort(localPort)) return false;
+function mailboxApiHost(raw: string): boolean {
+  const labels = raw.split(".");
+  return raw === raw.toLowerCase() &&
+    raw.length <= 253 &&
+    labels.length >= 2 &&
+    labels.every((label) =>
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label),
+    ) &&
+    !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(raw) &&
+    !raw.endsWith(".ts.net");
+}
+
+function exactMailboxApiUrl(raw: string, expectedHost: string): boolean {
+  if (!mailboxApiHost(expectedHost)) return false;
   try {
     const url = new URL(raw);
     return (
-      url.protocol === "http:" &&
-      url.hostname === "127.0.0.1" &&
-      url.port === String(localPort) &&
+      url.protocol === "https:" &&
+      url.hostname === expectedHost &&
+      url.port === "" &&
       url.pathname === "/" &&
       url.search === "" &&
       url.hash === "" &&
@@ -124,9 +122,20 @@ function exactMailboxUrl(raw: string, localPort: number): boolean {
   }
 }
 
+const LEGACY_TRANSPORT_NAMES = [
+  "KAFIL_E2E_SSH_HOST",
+  "KAFIL_E2E_SSH_USER",
+  "KAFIL_E2E_SSH_PORT",
+  "KAFIL_E2E_SSH_IDENTITY_FILE",
+  "KAFIL_E2E_SSH_PASSWORD",
+  "KAFIL_E2E_MAILBOX_LOCAL_PORT",
+  "KAFIL_E2E_MAILBOX_REMOTE_PORT",
+  "KAFIL_E2E_MAILBOX_PRIVATE_HOST",
+  "KAFIL_E2E_TAILSCALE_DISCONNECT_AFTER",
+] as const;
+
 export function remoteAcceptanceChecks(env: Environment): RemoteAcceptanceCheck[] {
-  const localPort = port(env, "KAFIL_E2E_MAILBOX_LOCAL_PORT");
-  const remotePort = port(env, "KAFIL_E2E_MAILBOX_REMOTE_PORT");
+  const expectedMailboxApiHost = value(env, "KAFIL_E2E_MAILBOX_API_HOST");
   return [
     {
       name: "REMOTE_URL_EXACT",
@@ -140,27 +149,24 @@ export function remoteAcceptanceChecks(env: Environment): RemoteAcceptanceCheck[
       name: "ADMIN_CREDENTIALS_PRESENT",
       ok: Boolean(value(env, "KAFIL_ADMIN_EMAIL")) && Boolean(value(env, "KAFIL_ADMIN_PASSWORD")),
     },
-    { name: "SSH_HOST_PRESENT", ok: Boolean(value(env, "KAFIL_E2E_SSH_HOST")) },
     {
-      name: "SSH_USER_PRESENT",
-      ok: /^\S+$/.test(value(env, "KAFIL_E2E_SSH_USER")),
-    },
-    { name: "SSH_PORT_VALID", ok: validPort(port(env, "KAFIL_E2E_SSH_PORT")) },
-    {
-      name: "SSH_PASSWORD_ABSENT",
-      ok: !value(env, "KAFIL_E2E_SSH_PASSWORD"),
-    },
-    { name: "MAILBOX_LOCAL_PORT_VALID", ok: validPort(localPort) },
-    { name: "MAILBOX_REMOTE_PORT_VALID", ok: validPort(remotePort) },
-    {
-      name: "MAILBOX_API_LOOPBACK_EXACT",
-      ok: exactMailboxUrl(value(env, "KAFIL_E2E_MAILBOX_API_URL"), localPort),
+      name: "LEGACY_MANAGED_TRANSPORT_CONFIG_ABSENT",
+      ok: LEGACY_TRANSPORT_NAMES.every((name) => !value(env, name)),
     },
     {
-      name: "MAILBOX_CREDENTIALS_PRESENT",
-      ok:
-        Boolean(value(env, "KAFIL_E2E_MAILBOX_USER")) &&
-        Boolean(value(env, "KAFIL_E2E_MAILBOX_PASSWORD")),
+      name: "MAILBOX_API_HOST_VALID",
+      ok: mailboxApiHost(expectedMailboxApiHost),
+    },
+    {
+      name: "MAILBOX_API_HTTPS_EXACT",
+      ok: exactMailboxApiUrl(
+        value(env, "KAFIL_E2E_MAILBOX_API_URL"),
+        expectedMailboxApiHost,
+      ),
+    },
+    {
+      name: "MAILBOX_APP_TOKEN_STRONG",
+      ok: value(env, "KAFIL_E2E_MAILBOX_TOKEN").length >= 32,
     },
   ];
 }
@@ -174,20 +180,13 @@ export function readRemoteAcceptanceConfig(env: Environment): RemoteAcceptanceCo
     );
   }
 
-  const identityFile = value(env, "KAFIL_E2E_SSH_IDENTITY_FILE");
   return {
     remoteUrl: REMOTE_ACCEPTANCE_ORIGIN,
     adminEmail: value(env, "KAFIL_ADMIN_EMAIL"),
     adminPassword: value(env, "KAFIL_ADMIN_PASSWORD"),
-    sshHost: value(env, "KAFIL_E2E_SSH_HOST"),
-    sshUser: value(env, "KAFIL_E2E_SSH_USER"),
-    sshPort: port(env, "KAFIL_E2E_SSH_PORT"),
-    sshIdentityFile: identityFile || undefined,
-    mailboxLocalPort: port(env, "KAFIL_E2E_MAILBOX_LOCAL_PORT"),
-    mailboxRemotePort: port(env, "KAFIL_E2E_MAILBOX_REMOTE_PORT"),
+    mailboxApiHost: value(env, "KAFIL_E2E_MAILBOX_API_HOST"),
     mailboxApiUrl: value(env, "KAFIL_E2E_MAILBOX_API_URL"),
-    mailboxUser: value(env, "KAFIL_E2E_MAILBOX_USER"),
-    mailboxPassword: value(env, "KAFIL_E2E_MAILBOX_PASSWORD"),
+    mailboxToken: value(env, "KAFIL_E2E_MAILBOX_TOKEN"),
     grep: readRemoteGrep(env),
   };
 }
@@ -216,32 +215,6 @@ export function buildRemoteAuthPlaywrightArgs(grep?: string): string[] {
   return args;
 }
 
-export function buildSshTunnelArgs(config: RemoteAcceptanceConfig): string[] {
-  const args = [
-    "-N",
-    "-T",
-    "-o",
-    "BatchMode=yes",
-    "-o",
-    "ExitOnForwardFailure=yes",
-    "-o",
-    "StrictHostKeyChecking=yes",
-    "-o",
-    "ConnectTimeout=10",
-    "-o",
-    "ServerAliveInterval=15",
-    "-o",
-    "ServerAliveCountMax=4",
-    "-p",
-    String(config.sshPort),
-    "-L",
-    `${config.mailboxLocalPort}:127.0.0.1:${config.mailboxRemotePort}`,
-  ];
-  if (config.sshIdentityFile) args.push("-i", config.sshIdentityFile);
-  args.push(`${config.sshUser}@${config.sshHost}`);
-  return args;
-}
-
 export function mailboxAuthorization(config: RemoteAcceptanceConfig): string {
-  return `Basic ${Buffer.from(`${config.mailboxUser}:${config.mailboxPassword}`).toString("base64")}`;
+  return `Bearer ${config.mailboxToken}`;
 }

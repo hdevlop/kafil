@@ -1,0 +1,28 @@
+# Merge these site blocks into the existing host Caddy configuration after both
+# DNS names resolve to this VPS. Mailpit and the gateway remain loopback-only.
+
+MAIL_TEST_DASHBOARD_HOSTNAME {
+	encode zstd gzip
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+	}
+	reverse_proxy 127.0.0.1:59025
+}
+
+MAIL_TEST_API_HOSTNAME {
+	encode zstd gzip
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+	}
+	reverse_proxy 127.0.0.1:59026
+}
