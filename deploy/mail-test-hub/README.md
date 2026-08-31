@@ -42,6 +42,32 @@ The service is designed to stay running. Mailpit automatically removes old
 messages according to `MAIL_TEST_MAX_MESSAGES` and `MAIL_TEST_MAX_AGE`.
 Stopping it is optional; no public start/stop endpoint exists.
 
+## Dokploy Traefik edge
+
+When Dokploy Traefik owns ports `80` and `443`, do not install or start Caddy.
+First verify that Traefik is attached to the external Docker network configured
+by `MAIL_TEST_EDGE_NETWORK` (default `dokploy-network`). Then start the hub with
+the committed network override:
+
+```bash
+KAFIL_RELEASE_DIR=/opt/mail-test-hub/source \
+MAIL_TEST_HUB_COMPOSE_OVERRIDE_FILE=/opt/mail-test-hub/source/deploy/mail-test-hub/compose.dokploy.yml \
+bash /opt/mail-test-hub/source/scripts/configureMailTestHubVps.sh
+```
+
+The override gives the authenticated dashboard and gateway stable aliases on
+the existing edge network. It does not publish any additional host port. Copy
+`traefik.dynamic.example.yml` into Dokploy's managed dynamic configuration only
+after replacing both hostname placeholders, back up the previous file, and use
+the installed Dokploy/Traefik validation path before relying on hot reload.
+Alternatively, register the two services through Dokploy's native Compose
+domain UI using container ports `8025` and `8080`; use exactly one routing
+owner, never both.
+
+Keep application SMTP migration separate. Kafil and School must receive their
+own gateway tokens, and their container-to-Mailpit route must be proven without
+placing SMTP on a public interface.
+
 ## Credential boundaries
 
 - Never place the dashboard password in a local browser-test environment.

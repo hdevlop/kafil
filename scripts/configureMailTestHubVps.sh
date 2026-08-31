@@ -3,6 +3,7 @@ set -euo pipefail
 
 readonly repo_root="${KAFIL_RELEASE_DIR:-/opt/kafil/current}"
 readonly compose_file="${MAIL_TEST_HUB_COMPOSE_FILE:-${repo_root}/deploy/mail-test-hub/compose.yml}"
+readonly compose_override_file="${MAIL_TEST_HUB_COMPOSE_OVERRIDE_FILE:-}"
 readonly env_file="${MAIL_TEST_HUB_ENV_FILE:-/opt/mail-test-hub/hub.env}"
 
 for command in docker curl sleep stat; do
@@ -16,6 +17,10 @@ if [[ ! -f "${compose_file}" || ! -f "${env_file}" ]]; then
   echo "Mail-test hub compose or environment file is missing." >&2
   exit 1
 fi
+if [[ -n "${compose_override_file}" && ! -f "${compose_override_file}" ]]; then
+  echo "Mail-test hub Compose override file is missing." >&2
+  exit 1
+fi
 
 if [[ "$(stat -c '%a' "${env_file}")" != "600" ]]; then
   echo "Mail-test hub environment file must have mode 0600." >&2
@@ -23,6 +28,9 @@ if [[ "$(stat -c '%a' "${env_file}")" != "600" ]]; then
 fi
 
 compose=(docker compose --env-file "${env_file}" -f "${compose_file}")
+if [[ -n "${compose_override_file}" ]]; then
+  compose+=(-f "${compose_override_file}")
+fi
 "${compose[@]}" config --quiet
 "${compose[@]}" up -d --build
 

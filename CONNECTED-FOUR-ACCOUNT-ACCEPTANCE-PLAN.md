@@ -1763,3 +1763,13 @@ no VPS prompt can safely activate the committed design yet. Publication of the
 audited local change is the next boundary and may trigger Dokploy, so it
 requires explicit authorization before commit/push. No VPS state, SMTP setting,
 remote preflight, browser journey, or old DNS record changed during discovery.
+
+The audited migration was published to `origin/main` as `2997879`. Because the
+discovered edge is Dokploy Traefik rather than host Caddy, a follow-up source
+contract adds an optional Compose override for the existing Dokploy edge
+network, stable authenticated dashboard/gateway aliases, and a matching
+Traefik dynamic-file example. The base deployment retains loopback-only host
+bindings and its isolated network; the override publishes no raw port. Kafil
+and School remain distinct gateway scopes. SMTP migration remains deferred
+until public dashboard/API authentication passes and the durable client-network
+attachment for each Dokploy Compose application is known.

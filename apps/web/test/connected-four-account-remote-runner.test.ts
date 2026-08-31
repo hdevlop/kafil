@@ -58,6 +58,14 @@ const mailTestHubCaddy = readFileSync(
   new URL("../../../deploy/mail-test-hub/Caddyfile.host.example", import.meta.url),
   "utf8",
 );
+const mailTestHubDokployCompose = readFileSync(
+  new URL("../../../deploy/mail-test-hub/compose.dokploy.yml", import.meta.url),
+  "utf8",
+);
+const mailTestHubTraefik = readFileSync(
+  new URL("../../../deploy/mail-test-hub/traefik.dynamic.example.yml", import.meta.url),
+  "utf8",
+);
 
 describe("connected four-account remote runner", () => {
   test("retries only one connection-reset read and handles concurrent rejection immediately", async () => {
@@ -157,6 +165,19 @@ describe("connected four-account remote runner", () => {
     expect(mailTestHubCompose).toContain("internal: true");
     expect(mailTestHubCaddy).toContain("reverse_proxy 127.0.0.1:59025");
     expect(mailTestHubCaddy).toContain("reverse_proxy 127.0.0.1:59026");
+    expect(mailTestHubDokployCompose).toContain(
+      "name: ${MAIL_TEST_EDGE_NETWORK:-dokploy-network}",
+    );
+    expect(mailTestHubDokployCompose).toContain("najmstack-mailpit");
+    expect(mailTestHubDokployCompose).toContain("najmstack-mail-gateway");
+    expect(mailTestHubTraefik).toContain(
+      "Host(`MAIL_TEST_DASHBOARD_HOSTNAME`)",
+    );
+    expect(mailTestHubTraefik).toContain("Host(`MAIL_TEST_API_HOSTNAME`)");
+    expect(mailTestHubTraefik).toContain("certResolver: letsencrypt");
+    expect(mailTestHubVpsHelper).toContain(
+      "MAIL_TEST_HUB_COMPOSE_OVERRIDE_FILE",
+    );
     expect(mailTestHubVpsHelper).toContain('[[ "${dashboard_status}" != "401"');
     expect(mailTestHubVpsHelper).toContain('"${gateway_status}" != "401"');
   });

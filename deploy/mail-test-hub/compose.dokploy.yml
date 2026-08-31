@@ -1,0 +1,21 @@
+services:
+  mailpit:
+    networks:
+      mail-test-hub: {}
+      dokploy-edge:
+        aliases:
+          - najmstack-mailpit
+
+  gateway:
+    networks:
+      mail-test-hub: {}
+      dokploy-edge:
+        aliases:
+          - najmstack-mail-gateway
+
+networks:
+  mail-test-hub:
+    internal: true
+  dokploy-edge:
+    external: true
+    name: ${MAIL_TEST_EDGE_NETWORK:-dokploy-network}

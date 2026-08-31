@@ -1,0 +1,65 @@
+http:
+  routers:
+    najmstack-mail-http:
+      rule: Host(`MAIL_TEST_DASHBOARD_HOSTNAME`)
+      entryPoints:
+        - web
+      middlewares:
+        - najmstack-mail-https
+      service: najmstack-mail
+    najmstack-mail-https:
+      rule: Host(`MAIL_TEST_DASHBOARD_HOSTNAME`)
+      entryPoints:
+        - websecure
+      middlewares:
+        - najmstack-mail-security
+      service: najmstack-mail
+      tls:
+        certResolver: letsencrypt
+    najmstack-mail-api-http:
+      rule: Host(`MAIL_TEST_API_HOSTNAME`)
+      entryPoints:
+        - web
+      middlewares:
+        - najmstack-mail-https
+      service: najmstack-mail-api
+    najmstack-mail-api-https:
+      rule: Host(`MAIL_TEST_API_HOSTNAME`)
+      entryPoints:
+        - websecure
+      middlewares:
+        - najmstack-mail-security
+      service: najmstack-mail-api
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    najmstack-mail-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    najmstack-mail-security:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        customFrameOptionsValue: DENY
+        customResponseHeaders:
+          Server: ""
+        forceSTSHeader: true
+        frameDeny: true
+        referrerPolicy: no-referrer
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+
+  services:
+    najmstack-mail:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://najmstack-mailpit:8025
+    najmstack-mail-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://najmstack-mail-gateway:8080
