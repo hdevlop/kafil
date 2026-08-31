@@ -67,12 +67,18 @@ fi
 
 "${compose[@]}" exec -T gateway bun -e '
   const apps = JSON.parse(process.env.MAIL_TEST_GATEWAY_APPS_JSON ?? "[]");
-  const token = apps[0]?.token;
-  if (!token) process.exit(1);
-  const response = await fetch("http://127.0.0.1:8080/api/v1/info", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  process.exit(response.ok ? 0 : 1);
+  if (apps.length === 0) process.exit(1);
+  for (const app of apps) {
+    if (!app?.id || !app?.token) process.exit(1);
+    const response = await fetch("http://127.0.0.1:8080/api/v1/info", {
+      headers: { Authorization: `Bearer ${app.token}` },
+    });
+    if (!response.ok) process.exit(1);
+    const payload = await response.json();
+    if (payload?.service !== "mail-test-gateway" || payload?.app !== app.id) {
+      process.exit(1);
+    }
+  }
 '
 
-echo "Mail-test hub ready on authenticated loopback dashboard and API ports."
+echo "Mail-test hub ready with every app scope authenticated on loopback ports."

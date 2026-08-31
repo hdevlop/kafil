@@ -1808,3 +1808,14 @@ example, Mailpit SMTP allowlist, and gateway isolation regression are corrected
 together to `school.test`. The live hub must receive the same value-preserving
 configuration update and controlled hub-only restart before either application
 SMTP setting changes.
+
+The first live correction instruction terminated at its pre-mutation validator
+and restored the environment because it did not distinguish the JSON domain
+`school-e2e.test` from the SMTP-regex form `school-e2e\.test`. Independent
+normal-TLS probes immediately afterward still returned Dokploy `200` and both
+mail boundaries `401`, so the shared hub remained available; the report's later
+forced `FAIL` fields were not executed health evidence. A deterministic
+one-time updater now requires both exact legacy fragments, derives and compares
+the complete expected environment without exposing it, preserves credentials,
+verifies every configured app token, enforces finite timeouts, retains the old
+Mailpit, and automatically restores the prior environment on failure.

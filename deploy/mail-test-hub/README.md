@@ -73,6 +73,12 @@ The committed recipient scopes are `c4a-sponsor.test` for Kafil and
 acceptance-recipient contract, and update both the gateway JSON and Mailpit SMTP
 allowlist together.
 
+For the one-time correction from the former `school-e2e.test` proposal, use
+`scripts/updateMailTestHubSchoolScopeVps.sh`. It requires exactly the two known
+legacy fragments, constructs the expected new file independently, compares the
+entire result, preserves the old Mailpit and credentials, validates every app
+token through the gateway, and rolls back on any failure.
+
 ## Credential boundaries
 
 - Never place the dashboard password in a local browser-test environment.

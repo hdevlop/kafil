@@ -50,6 +50,10 @@ const mailTestHubVpsHelper = readFileSync(
   new URL("../../../scripts/configureMailTestHubVps.sh", import.meta.url),
   "utf8",
 );
+const mailTestHubSchoolScopeUpdater = readFileSync(
+  new URL("../../../scripts/updateMailTestHubSchoolScopeVps.sh", import.meta.url),
+  "utf8",
+);
 const mailTestHubCompose = readFileSync(
   new URL("../../../deploy/mail-test-hub/compose.yml", import.meta.url),
   "utf8",
@@ -190,6 +194,15 @@ describe("connected four-account remote runner", () => {
     );
     expect(mailTestHubVpsHelper).toContain('[[ "${dashboard_status}" != "401"');
     expect(mailTestHubVpsHelper).toContain('"${gateway_status}" != "401"');
+    expect(mailTestHubVpsHelper).toContain("for (const app of apps)");
+    expect(mailTestHubSchoolScopeUpdater).toContain(
+      "sed 's/school-e2e/school/g'",
+    );
+    expect(mailTestHubSchoolScopeUpdater).toContain(
+      'cmp --silent "${expected_file}" "${env_file}"',
+    );
+    expect(mailTestHubSchoolScopeUpdater).toContain("rollback_required=1");
+    expect(mailTestHubSchoolScopeUpdater).toContain("timeout 10m");
   });
 
   test("validates and forwards one optional remote grep argument", () => {
