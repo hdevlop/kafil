@@ -54,6 +54,10 @@ const mailTestHubCompose = readFileSync(
   new URL("../../../deploy/mail-test-hub/compose.yml", import.meta.url),
   "utf8",
 );
+const mailTestHubEnvExample = readFileSync(
+  new URL("../../../deploy/mail-test-hub/hub.env.example", import.meta.url),
+  "utf8",
+);
 const mailTestHubCaddy = readFileSync(
   new URL("../../../deploy/mail-test-hub/Caddyfile.host.example", import.meta.url),
   "utf8",
@@ -163,6 +167,12 @@ describe("connected four-account remote runner", () => {
       "127.0.0.1:${MAIL_TEST_GATEWAY_LOOPBACK_PORT:-59026}:8080",
     );
     expect(mailTestHubCompose).toContain("internal: true");
+    expect(mailTestHubEnvExample).toContain(
+      '"id":"school","token":"replace-with-a-unique-school-token-at-least-32-characters","recipientDomains":["school.test"]',
+    );
+    expect(mailTestHubEnvExample).toContain(
+      "MAIL_TEST_SMTP_ALLOWED_RECIPIENTS=@(c4a-sponsor\\.test|school\\.test)$",
+    );
     expect(mailTestHubCaddy).toContain("reverse_proxy 127.0.0.1:59025");
     expect(mailTestHubCaddy).toContain("reverse_proxy 127.0.0.1:59026");
     expect(mailTestHubDokployCompose).toContain(

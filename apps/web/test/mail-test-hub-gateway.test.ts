@@ -21,7 +21,7 @@ const config: MailTestGatewayConfig = {
     {
       id: "school",
       token: schoolToken,
-      recipientDomains: ["school-e2e.test"],
+      recipientDomains: ["school.test"],
     },
   ],
 };
@@ -42,7 +42,7 @@ const messages = new Map([
     {
       ID: "school-message",
       Created: "2026-08-30T12:00:01Z",
-      To: [{ Address: "student@school-e2e.test", Name: "" }],
+      To: [{ Address: "student@school.test", Name: "" }],
       Subject: "School verification",
       Body: "654321",
     },
@@ -174,7 +174,7 @@ describe("mail test hub gateway", () => {
 
     const wrongDomain = await gateway(
       new Request(
-        "https://mail-api.example.test/api/v1/search?query=to%3Aschool-e2e.test",
+        "https://mail-api.example.test/api/v1/search?query=to%3Aschool.test",
         { headers: bearer(kafilToken) },
       ),
     );

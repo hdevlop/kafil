@@ -68,6 +68,11 @@ Keep application SMTP migration separate. Kafil and School must receive their
 own gateway tokens, and their container-to-Mailpit route must be proven without
 placing SMTP on a public interface.
 
+The committed recipient scopes are `c4a-sponsor.test` for Kafil and
+`school.test` for School. Change a scope only from the application's verified
+acceptance-recipient contract, and update both the gateway JSON and Mailpit SMTP
+allowlist together.
+
 ## Credential boundaries
 
 - Never place the dashboard password in a local browser-test environment.

@@ -1773,3 +1773,38 @@ bindings and its isolated network; the override publishes no raw port. Kafil
 and School remain distinct gateway scopes. SMTP migration remains deferred
 until public dashboard/API authentication passes and the durable client-network
 attachment for each Dokploy Compose application is known.
+
+The hub was then activated from exact source commit `f3522b3` on the discovered
+Dokploy edge. Native Bash and merged Compose validation passed;
+`dokploy-network` provides Traefik reachability; hub bindings remain
+loopback-only; and the listed raw ports are blocked publicly. Normal public TLS
+returns the required unauthenticated `401` for both `mail.najmstack.com` and
+`mail-api.najmstack.com/api/v1/info`. Authenticated identity checks passed for
+the distinct `kafil` and `school` gateway scopes. The existing Kafil Mailpit
+remains running and neither application's SMTP configuration changed. School
+was identified as Dokploy Compose runtime `school-school-lghkg3`, on the edge
+network with a discoverable SMTP contract. `deploy.najmstack.com` remains the
+only infrastructure blocker because assigning the Dokploy server domain needs
+an authenticated administrator action; its TLS is not ready. No remote
+preflight or browser journey was run, and no old DNS record is safe to remove
+yet.
+
+The authenticated Dokploy administrator then assigned
+`deploy.najmstack.com` with HTTPS and Let's Encrypt. Interactive login passed,
+and an independent normal-TLS probe returned `200`. The mail dashboard and API
+continued to return their required unauthenticated `401` responses. The former
+`deploy.kafala360.ma` route now returns `404`; its DNS record is retained only
+until Kafil and School deployment integrations are audited for references to
+the old management hostname. Kafil has no installed Dokploy GitHub App and no
+repository webhook. SMTP remains unchanged for both applications, the old
+Mailpit remains running, and guarded preflight/browser acceptance remains
+unspent.
+
+The SMTP readiness audit passed network name resolution and TCP port `1025`
+from both Kafil and School. It also found one configuration mismatch before any
+application mutation: School's verified recipient namespace is `school.test`,
+while the first hub environment used `school-e2e.test`. The committed hub
+example, Mailpit SMTP allowlist, and gateway isolation regression are corrected
+together to `school.test`. The live hub must receive the same value-preserving
+configuration update and controlled hub-only restart before either application
+SMTP setting changes.
