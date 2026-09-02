@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS - AUTH MATRIX ACCEPTED; FINANCIAL STEPS 01-04 ACCEPTED; MAIL-TEST HUB READY; KAFIL PRIVATE SMTP DEPLOYMENT PENDING**
+Status: **IN PROGRESS - AUTH MATRIX ACCEPTED; FINANCIAL STEPS 01-04 ACCEPTED; MAIL-TEST HUB READY; DOKPLOY WEBHOOK ORIGIN CORRECTION PENDING**
 
 Target: exactly `https://kafala360.ma`
 
@@ -1897,3 +1897,31 @@ no schema change. This runtime-infrastructure correction must now be committed,
 pushed, deployed, and confirmed as the exact sole healthy revision before the
 value-free SMTP check is repeated. No browser attempt is authorized by this
 implementation evidence.
+
+The correction was committed and pushed as full revision
+`0918ce3629d898c5f2e98fd5224250955ce4654c`. GitHub Actions run
+`33669424694` passed exact-revision verification and published the SHA/main
+image. Its Dokploy job then called the configured secret endpoint four times
+under the workflow's existing curl retry policy; every call returned `404`, and
+the job exited `22`. A read-only VPS check afterward proved the sole Kafil app
+container remained healthy at the prior revision `18fa3fce6df0705655dd6bdc3e97589aefb6df0e`
+without the private mail network. Image publication is therefore accepted, but
+deployment is not. No browser preflight or Playwright test ran.
+
+This matches the management-host migration: the retired Dokploy hostname now
+returns `404`, while `deploy.najmstack.com` owns the authenticated management
+route. A narrow workflow correction accepts only webhook secrets beginning
+with the old or new known HTTPS origin, preserves the opaque path in process
+memory, canonicalizes the old origin to `deploy.najmstack.com`, and sends curl
+only to that value. It never prints or persists the webhook. The new source
+contract was red at `19 passed`, `1 failed`; after implementation it is green
+at `20 passed`, `0 failed`, and `436` assertions. Targeted ESLint passes;
+`actionlint` is unavailable on this host. The correction needs the complete
+local gate, a new commit/push, and a successful exact-revision workflow before
+the private SMTP runtime check can be repeated. Do not rerun the failed job
+unchanged.
+
+The complete correction gate then passed: root lint, typecheck, every standard
+web/server/seed test, the production build, and `db:generate` with no schema
+change. The exact workflow/test/plan diff passed whitespace and sensitive-data
+review before publication.

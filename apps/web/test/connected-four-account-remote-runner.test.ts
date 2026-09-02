@@ -78,6 +78,10 @@ const productionCompose = readFileSync(
   new URL("../../../compose.production.yml", import.meta.url),
   "utf8",
 );
+const deployWorkflow = readFileSync(
+  new URL("../../../.github/workflows/deploy-demo.yml", import.meta.url),
+  "utf8",
+);
 
 describe("connected four-account remote runner", () => {
   test("retries only one connection-reset read and handles concurrent rejection immediately", async () => {
@@ -212,6 +216,12 @@ describe("connected four-account remote runner", () => {
     );
     expect(productionCompose).toContain(
       "  mail-test-hub:\n    external: true\n    name: mail-test-hub",
+    );
+    expect(deployWorkflow).toContain("https://deploy.najmstack.com/");
+    expect(deployWorkflow).toContain("https://deploy.kafala360.ma/");
+    expect(deployWorkflow).toContain('"$deploy_webhook"');
+    expect(deployWorkflow).not.toContain(
+      '            "$DOKPLOY_DEPLOY_WEBHOOK"',
     );
   });
 

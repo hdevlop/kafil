@@ -104,6 +104,18 @@ jobs:
           DEPLOY_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           test -n "$DOKPLOY_DEPLOY_WEBHOOK"
+          case "$DOKPLOY_DEPLOY_WEBHOOK" in
+            "https://deploy.najmstack.com/"*)
+              deploy_webhook="$DOKPLOY_DEPLOY_WEBHOOK"
+              ;;
+            "https://deploy.kafala360.ma/"*)
+              deploy_webhook="https://deploy.najmstack.com/${DOKPLOY_DEPLOY_WEBHOOK#https://deploy.kafala360.ma/}"
+              ;;
+            *)
+              echo "Dokploy webhook origin is not recognized." >&2
+              exit 1
+              ;;
+          esac
           if [ -z "$DEPLOY_MESSAGE" ]; then
             DEPLOY_MESSAGE="Deploy ${GITHUB_SHA}"
           fi
@@ -124,4 +136,4 @@ jobs:
             --header "Content-Type: application/json" \
             --header "X-GitHub-Event: push" \
             --data "$payload" \
-            "$DOKPLOY_DEPLOY_WEBHOOK"
+            "$deploy_webhook"
