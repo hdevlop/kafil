@@ -31,13 +31,19 @@ local connected harness and its managed Next.js process.
    forwarding, or Tailscale environment name is present.
 5. When the journey consumes application-sent mail, separately prove that the
    application uses the plan-designated non-live provider and SMTP host/port,
-   is attached to the required private mail network, and resolves and reaches
-   that SMTP endpoint from its own container. Do not accept public gateway
-   readiness or a reachable shared-edge alias as proof of this private route.
-6. Run preflight-only after mailbox gateway, environment, image, deployment, or
+   and resolves and reaches that SMTP endpoint from its own container. A shared
+   Docker network is acceptable only when the active plan names it and a unique
+   hostname selects the intended non-live mailbox service; public gateway
+   readiness alone is still not SMTP-delivery evidence.
+6. Separate repository source, published image, deployment trigger, managed
+   deployment definition, and running container evidence. For raw or
+   dashboard-managed Compose, verify that the managed definition contains the
+   required structural change; a webhook `2xx` does not prove it. Never patch
+   only the rendered Compose file when the orchestrator will overwrite it.
+7. Run preflight-only after mailbox gateway, environment, image, deployment, or
    other infrastructure state changes. Do not spend a browser attempt when
    transport is unknown.
-7. Keep `retries: 0`, one worker, isolated contexts, verified TLS, and automatic
+8. Keep `retries: 0`, one worker, isolated contexts, verified TLS, and automatic
    artifacts disabled when the plan requires secret-safe black-box output.
 
 Preflight proves only configuration, mailbox-gateway authentication and scope,
@@ -110,7 +116,8 @@ generator, retry, timeout, or pagination hypothesis.
 | Signal | Default classification | Next evidence |
 | --- | --- | --- |
 | Exact HTTPS gateway, unauthenticated `401`, identity, or app scope check fails | `ENVIRONMENT` | Fresh preflight after infrastructure is stable |
-| App SMTP uses a shared-edge alias or lacks the required private mail network | `ENVIRONMENT` | Correct the deployment route, then repeat only the read-only runtime check |
+| App SMTP provider, unique planned hostname, port, DNS, or TCP check fails | `ENVIRONMENT` | Correct the deployment route, then repeat only the read-only runtime check |
+| Webhook succeeds but the managed Compose source lacks the repository change | `ENVIRONMENT` | Update the orchestrator-owned source, redeploy, and prove the exact healthy revision |
 | `429` after repeating login for an already-authenticated serial identity | `TEST` | Remove the redundant login and retain the context |
 | `429` on the first intended request | `ENVIRONMENT` or configuration | Verify deployed limiter configuration and prior counter state |
 | DOM count is greater than one with no HTTP error | `TEST` | Scope to the semantic row/action and inspect responsive duplicates |

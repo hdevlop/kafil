@@ -89,10 +89,20 @@ it is not browser acceptance.
 When the journey reads application-sent mail, validate the emitting
 application's SMTP boundary separately before remote preflight. Gateway
 readiness does not prove that the application uses the hub. Require the
-plan-designated provider, hostname, port, and private-network attachment, then
-prove DNS and TCP reachability from the application container without printing
-values. A reachable alias on a shared edge network is not equivalent to a
-required private application-to-mail network.
+plan-designated provider, unique hostname, and port, then prove DNS and TCP
+reachability from the application container without printing values. Accept a
+shared Docker network only when the plan explicitly names that topology and the
+hostname uniquely selects the intended non-live mailbox service.
+
+Treat source publication, image publication, deployment-trigger success,
+managed deployment-source state, and the running container as distinct
+checkpoints. When an orchestrator owns a raw or dashboard-managed Compose
+definition, a repository Compose edit does not change that definition. Verify
+the deployed source type and a value-free structural invariant such as the
+required network reference, then require the exact intended healthy container
+revision. A successful webhook response alone is not deployment evidence, and
+never patch only an orchestrator's rendered file when its managed source will
+overwrite that change.
 
 Honor the active plan's one-attempt contract. After a remote preflight or
 browser failure, report sanitized evidence, classify ownership, confirm the
