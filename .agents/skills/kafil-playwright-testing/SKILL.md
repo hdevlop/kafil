@@ -86,21 +86,33 @@ configuration or infrastructure changes, not automatically before every
 browser attempt. Treat preflight success as transport/readiness evidence only;
 it is not browser acceptance.
 
+When the journey reads application-sent mail, validate the emitting
+application's SMTP boundary separately before remote preflight. Gateway
+readiness does not prove that the application uses the hub. Require the
+plan-designated provider, hostname, port, and private-network attachment, then
+prove DNS and TCP reachability from the application container without printing
+values. A reachable alias on a shared edge network is not equivalent to a
+required private application-to-mail network.
+
 Honor the active plan's one-attempt contract. After a remote preflight or
-browser failure, report sanitized evidence, classify ownership, confirm tunnel
-closure, and stop. Do not edit or rerun inside a read-only tester instruction.
+browser failure, report sanitized evidence, classify ownership, confirm the
+runner's declared mailbox-transport postcondition, and stop. For the current
+standalone HTTPS gateway this is `NO MANAGED MAILBOX TRANSPORT`; do not report
+or probe for an SSH tunnel that the runner no longer owns. Do not edit or rerun
+inside a read-only tester instruction.
 Have the coder add a narrow red/green source regression, deploy the owning fix,
 wait until the exact new image is healthy, and obtain a fresh user instruction
 before the next attempt. A successful GitHub build, image publication, or
 Dokploy trigger does not alone prove that the VPS is running that image.
 
-Keep remote Playwright retries at zero. Do not hide `429`, SSH, selector, or
-product failures with Playwright retries, extra login attempts, sleeps, or a
-larger timeout. Reuse an already authenticated serial context when later units
-need the same identity. When a deliberate demo rate-limit override changes,
-verify only the variable names and validated configuration state, restart or
-redeploy as required, then preflight the new runtime without printing values.
-Distinguish request-rate counters from database-backed failed-login lockouts.
+Keep remote Playwright retries at zero. Do not hide `429`, mailbox-gateway,
+selector, or product failures with Playwright retries, extra login attempts,
+sleeps, or a larger timeout. Reuse an already authenticated serial context when
+later units need the same identity. When a deliberate demo rate-limit override
+changes, verify only the variable names and validated configuration state,
+restart or redeploy as required, then preflight the new runtime without
+printing values. Distinguish request-rate counters from database-backed
+failed-login lockouts.
 
 Read [references/remote-vps.md](references/remote-vps.md) before constructing,
 running, diagnosing, or reporting a guarded remote VPS attempt.
@@ -315,7 +327,8 @@ Examples:
   classifying the product.
 - An image `200` with `naturalWidth === 0` may be a lazy-loading test defect; scroll and poll decode state.
 - `EADDRINUSE` after a wrapper timeout is usually an orphaned runner tree; verify ownership before stopping it.
-- A managed SSH tunnel exiting before Mailpit readiness is an environment
+- A standalone mailbox gateway that fails exact TLS, unauthenticated-denial,
+  authenticated identity, or application-scope readiness is an environment
   failure for that attempt. A later preflight pass can support a separately
   authorized new attempt but does not rewrite the earlier verdict.
 

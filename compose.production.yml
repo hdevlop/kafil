@@ -27,6 +27,10 @@ services:
   app:
     <<: *app
     restart: unless-stopped
+    networks:
+      - backend
+      - frontend
+      - mail-test-hub
     depends_on:
       postgres:
         condition: service_healthy
@@ -131,6 +135,9 @@ networks:
   backend:
     internal: true
   frontend:
+  mail-test-hub:
+    external: true
+    name: mail-test-hub
 
 volumes:
   postgres_data:

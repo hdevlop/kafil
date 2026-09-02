@@ -24,13 +24,25 @@ local connected harness and its managed Next.js process.
 3. Confirm the intended commit was built and that the VPS reports the new image
    healthy. Treat a GitHub success and Dokploy trigger as publication evidence,
    not proof that container replacement finished.
-4. Run preflight-only after SSH, mailbox, environment, image, or deployment
-   state changes. Do not spend a browser attempt when transport is unknown.
-5. Keep `retries: 0`, one worker, isolated contexts, verified TLS, and automatic
+4. For the current standalone mail-test hub, require the exact verified-HTTPS
+   API origin, no URL credentials/query/fragment/path prefix/custom port, a
+   dedicated bearer token, unauthenticated `401`, and authenticated gateway
+   identity plus exact application scope. Fail when any retired SSH,
+   forwarding, or Tailscale environment name is present.
+5. When the journey consumes application-sent mail, separately prove that the
+   application uses the plan-designated non-live provider and SMTP host/port,
+   is attached to the required private mail network, and resolves and reaches
+   that SMTP endpoint from its own container. Do not accept public gateway
+   readiness or a reachable shared-edge alias as proof of this private route.
+6. Run preflight-only after mailbox gateway, environment, image, deployment, or
+   other infrastructure state changes. Do not spend a browser attempt when
+   transport is unknown.
+7. Keep `retries: 0`, one worker, isolated contexts, verified TLS, and automatic
    artifacts disabled when the plan requires secret-safe black-box output.
 
-Preflight proves only configuration, SSH/Mailpit transport, Chrome, TLS, health,
-and readiness. It does not prove login, browser behavior, or any work unit.
+Preflight proves only configuration, mailbox-gateway authentication and scope,
+Chrome, TLS, health, and readiness. It does not prove SMTP delivery, login,
+browser behavior, or any work unit.
 
 ## Select the exact range
 
@@ -66,7 +78,9 @@ Treat every invocation as one attempt. On any preflight or browser failure:
 1. Preserve the native exit code and final assertion.
 2. Record only sanitized method, path, status, selector/accessibility contract,
    failure class, and elapsed time.
-3. Confirm `MANAGED SSH TUNNEL CLOSED`.
+3. Confirm the runner's declared mailbox-transport postcondition. The current
+   standalone-gateway runner must report `NO MANAGED MAILBOX TRANSPORT` and must
+   not start or stop SSH, Tailscale, Docker, Mailpit, or a local forward.
 4. Classify `TEST`, `PRODUCT`, `RUNNER`, or `ENVIRONMENT`.
 5. Stop without editing or rerunning under the tester instruction.
 
@@ -95,7 +109,8 @@ generator, retry, timeout, or pagination hypothesis.
 
 | Signal | Default classification | Next evidence |
 | --- | --- | --- |
-| SSH tunnel exits before authenticated Mailpit readiness | `ENVIRONMENT` | Fresh preflight after infrastructure is stable |
+| Exact HTTPS gateway, unauthenticated `401`, identity, or app scope check fails | `ENVIRONMENT` | Fresh preflight after infrastructure is stable |
+| App SMTP uses a shared-edge alias or lacks the required private mail network | `ENVIRONMENT` | Correct the deployment route, then repeat only the read-only runtime check |
 | `429` after repeating login for an already-authenticated serial identity | `TEST` | Remove the redundant login and retain the context |
 | `429` on the first intended request | `ENVIRONMENT` or configuration | Verify deployed limiter configuration and prior counter state |
 | DOM count is greater than one with no HTTP error | `TEST` | Scope to the semantic row/action and inspect responsive duplicates |
@@ -138,7 +153,7 @@ expected approval replay `409` is not evidence for a later applicant submission
 `500` unless request correlation proves they are the same operation.
 
 When no log path is authorized, report the limit honestly and stop. Do not add
-SSH application-log access to a mailbox-only runner without a separate security
+VPS application-log access to a mailbox-only runner without a separate security
 and runner-design change.
 
 ## Select localized collections
@@ -161,7 +176,8 @@ Report:
 - diagnostics separately;
 - final assertion and sanitized method/path/status evidence;
 - native exit code;
-- `MANAGED SSH TUNNEL CLOSED`;
+- the declared mailbox-transport postcondition (`NO MANAGED MAILBOX TRANSPORT`
+  for the current standalone-gateway runner);
 - command, work-unit/range, and whole-plan verdicts separately.
 
 Say `no unexpected HTTP errors` when diagnostics pass. Do not say `no >=400`

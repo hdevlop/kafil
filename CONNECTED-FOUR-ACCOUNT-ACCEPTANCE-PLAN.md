@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **IN PROGRESS - AUTH MATRIX ACCEPTED; FINANCIAL STEPS 01-04 ACCEPTED; MAIL-TEST HUB VPS ACTIVATION PENDING**
+Status: **IN PROGRESS - AUTH MATRIX ACCEPTED; FINANCIAL STEPS 01-04 ACCEPTED; MAIL-TEST HUB READY; KAFIL PRIVATE SMTP DEPLOYMENT PENDING**
 
 Target: exactly `https://kafala360.ma`
 
@@ -45,12 +45,15 @@ The authoritative checkpoint is section 11.15. The latest complete 18-test
 attempt reached and passed steps 01-04 before the runner-owned SSH transport
 reset a second time. The browser result after step 04 is unclassified. SSH
 forwarding is retired. The proposed Tailscale replacement in section 11.14 was
-implemented locally but was not activated; it is now superseded by one
-standalone VPS mail-test hub. The active runner uses an exact verified-HTTPS
-gateway, a Kafil-only bearer token, and no SSH, Tailscale, local forward, or
-managed network lifecycle. Mailpit and its existing dashboard remain behind
-the VPS proxy and private Docker network. VPS activation is still pending. The
-chronology below remains historical evidence.
+implemented locally but was not activated; it is superseded by the standalone
+VPS mail-test hub. The active runner uses an exact verified-HTTPS gateway, a
+Kafil-only bearer token, and no SSH, Tailscale, local forward, or managed
+network lifecycle. The hub and guarded HTTPS preflight are now ready as
+recorded at the end of section 11.15. Kafil now uses SMTP at runtime, but the
+value-free cutover audit found that it still reaches Mailpit through the
+Dokploy edge network instead of the required private `mail-test-hub` network.
+That attachment must be corrected before the next preflight or browser
+attempt. The chronology below remains historical evidence.
 
 The latest failed complete-range attempt ran against application revision
 `2de79a62c4b516674328a06df75e54693cf9adb6`. Its image was published,
@@ -908,17 +911,22 @@ deletion. Its graph may remain in addition to residue from the earlier failed
 responsive attempt; any residue assessment must use supported application
 surfaces without database, Docker, or VPS cleanup shortcuts.
 
-The corrected Kafil dependency revision is committed, pushed, published,
-deployed, and confirmed healthy. The corrected 5-test Sponsor B range and the
-later corrected 4-test Sponsor A diagnostic range have both passed. The plan
+The dedicated auth lifecycle is accepted on Najm Auth `3.2.0`, including the
+last `najm.session` writer, cross-tab logout, and the protected-response/logout
+overlap. The corrected Sponsor A and Sponsor B prerequisite ranges also passed.
+The shared HTTPS mail-test hub and Kafil gateway scope are ready. Kafil's
+runtime now uses SMTP, but its private hub attachment is incomplete. The plan
 remains **IN PROGRESS** until:
 
-
-- the dedicated auth lifecycle slice in section 11 proves every login/logout
-  boundary, the last `najm.session` writer, cross-tab logout, and an in-flight
-  protected-request overlap without retaining cookie values;
-- a fresh user instruction authorizes one complete remote attempt after that
-  auth slice passes on the exact healthy deployed revision;
+- a value-free runtime check proves `EMAIL_PROVIDER=smtp`, the Kafil app's
+  `mail-test-hub` attachment, `mailpit:1025` reachability, and disabled live
+  delivery without printing provider credentials or environment values;
+- the ignored local runner configuration uses only the exact HTTPS gateway
+  host/origin and Kafil token and contains no retired transport name;
+- the committed guarded preflight passes after that runtime/configuration
+  change;
+- a separate fresh user instruction authorizes one complete remote attempt on
+  the exact healthy deployed revision;
 - the runner header reports exactly `18` tests, one worker, and zero retries;
 - all 16 numbered steps, the responsive unit, and diagnostics pass together;
 - step 16 reports zero retained API-visible runtime rows, protected evidence
@@ -1819,3 +1827,73 @@ one-time updater now requires both exact legacy fragments, derives and compares
 the complete expected environment without exposing it, preserves credentials,
 verifies every configured app token, enforces finite timeouts, retains the old
 Mailpit, and automatically restores the prior environment on failure.
+
+A resumed read-only audit on 2026-09-02 found the correction already applied,
+so the one-time updater was not rerun. The live environment contained neither
+legacy School fragment and contained both exact `school.test` forms. Compose
+validation passed; the dashboard and gateway loopback endpoints both denied
+unauthenticated access with `401`; the two configured gateway entries
+authenticated as the exact `kafil`/`c4a-sponsor.test` and
+`school`/`school.test` scopes; both hub containers and the retained old Kafil
+Mailpit were running. One updater backup existed, and the VPS updater hash
+matched the committed script. No credential or environment value was printed.
+
+The committed package preflight first failed closed against the ignored local
+`.env` because that file still contains the retired SSH/forwarding names. No
+browser started. The same committed runner entrypoint was then invoked with
+Bun automatic environment-file loading disabled and only validated values held
+in process memory. All seven boolean contracts, system Chrome, the app-scoped
+verified-HTTPS gateway, `/login`, `/apply`, health, and readiness passed; the
+runner reported `PREFLIGHT PASS remote connected acceptance` and
+`NO MANAGED MAILBOX TRANSPORT`, exit `0`. This proves gateway and application
+readiness only; it does not prove SMTP delivery.
+
+Kafil currently uses `EMAIL_PROVIDER=resend` in its Docker runtime. The user
+will deliberately switch the test deployment to `EMAIL_PROVIDER=smtp` with the
+private hub route before acceptance continues. This resumption made no Kafil,
+School, Dokploy, container-environment, SMTP, or browser mutation. Before a
+remote browser attempt, verify without printing values that the Kafil app is
+joined to `mail-test-hub`, resolves and reaches `mailpit:1025`, uses the SMTP
+provider, and has live delivery disabled. Then replace the ignored local
+runner settings with the exact HTTPS API host/origin and Kafil bearer token,
+remove every retired transport name, and run the committed guarded preflight.
+The complete 18-test journey still requires its own fresh instruction after
+those checks pass.
+
+The resumed plan/testing-skill documentation slice passed the focused guarded-
+runner source contract with `20 passed`, `0 failed`, and `430` assertions. The
+skill frontmatter sanity check and `git diff --check` passed. The complete root
+lint, typecheck, standard test, production build, and `db:generate` gate also
+passed; Drizzle reported `No schema changes, nothing to migrate`. No remote
+browser journey ran during this slice.
+
+After the user reported the SMTP switch complete, a value-free read-only audit
+on 2026-09-02 found exactly one running, healthy Kafil app container at full
+OCI revision `18fa3fce6df0705655dd6bdc3e97589aefb6df0e`. It confirmed
+`EMAIL_PROVIDER=smtp`, `SMTP_PORT=1025`, and successful DNS/TCP reachability to
+both the private service name and the edge alias. The configured SMTP host was
+the `najmstack-mailpit` Dokploy edge alias, however, and the Kafil container was
+attached to `dokploy-network` but not to `mail-test-hub`. The required private
+route therefore remains unproved even though SMTP is reachable. This is an
+`ENVIRONMENT` readiness failure, not a browser or product result. No guarded
+preflight or Playwright test ran, and no VPS or environment mutation was made.
+
+The next action is to attach the Kafil app service durably to the external
+`mail-test-hub` network and configure `SMTP_HOST=mailpit`, preserving
+`EMAIL_PROVIDER=smtp` and `SMTP_PORT=1025`. Repeat only the value-free runtime
+check afterward. Run guarded preflight only when that check passes; the complete
+18-test journey still needs a separate fresh instruction after preflight.
+
+The durable repository correction is now implemented locally. Only the
+long-running `app` service adds the existing external `mail-test-hub` network;
+the migration tool, PostgreSQL, Redis, and edge services retain their previous
+network sets. The remote-runner source contract pins both the app attachment
+and the external network declaration. Focused verification passes with `20
+passed`, `0 failed`, and `432` assertions; targeted ESLint and web typecheck
+pass; and the proposed Compose file passes native `docker compose config
+--quiet` on the VPS without changing a service. The complete root lint,
+typecheck, standard test, production build, and `db:generate` gate passes with
+no schema change. This runtime-infrastructure correction must now be committed,
+pushed, deployed, and confirmed as the exact sole healthy revision before the
+value-free SMTP check is repeated. No browser attempt is authorized by this
+implementation evidence.

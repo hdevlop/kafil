@@ -74,6 +74,10 @@ const mailTestHubTraefik = readFileSync(
   new URL("../../../deploy/mail-test-hub/traefik.dynamic.example.yml", import.meta.url),
   "utf8",
 );
+const productionCompose = readFileSync(
+  new URL("../../../compose.production.yml", import.meta.url),
+  "utf8",
+);
 
 describe("connected four-account remote runner", () => {
   test("retries only one connection-reset read and handles concurrent rejection immediately", async () => {
@@ -203,6 +207,12 @@ describe("connected four-account remote runner", () => {
     );
     expect(mailTestHubSchoolScopeUpdater).toContain("rollback_required=1");
     expect(mailTestHubSchoolScopeUpdater).toContain("timeout 10m");
+    expect(productionCompose).toContain(
+      "  app:\n    <<: *app\n    restart: unless-stopped\n    networks:\n      - backend\n      - frontend\n      - mail-test-hub",
+    );
+    expect(productionCompose).toContain(
+      "  mail-test-hub:\n    external: true\n    name: mail-test-hub",
+    );
   });
 
   test("validates and forwards one optional remote grep argument", () => {
