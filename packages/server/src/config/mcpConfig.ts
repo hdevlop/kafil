@@ -5,5 +5,7 @@ export const mcpConfig = () =>
     name: "kafil-mcp",
     version: "0.1.0",
     path: "/mcp",
-    cors: true,
+    auth: { type: "najm-auth" },
+    cors: false,
+    exposeErrorDetails: false,
   });

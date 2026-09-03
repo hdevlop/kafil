@@ -48,6 +48,7 @@ export const authConfig = () =>
     encryptionKey: envConfig.auth.encryptionKey,
     frontendUrl: envConfig.auth.frontendUrl,
     oauth: googleOAuthConfig(),
+    publicRegistration: false,
     registrationMode: "pending",
     jwt: {
       accessSecret: envConfig.auth.jwtAccessSecret!,

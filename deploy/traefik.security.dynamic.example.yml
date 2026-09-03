@@ -1,0 +1,26 @@
+# Install this middleware in Dokploy Traefik's existing dynamic-file provider,
+# then attach `kafil-security@file` to Kafil's existing HTTPS router. Do not
+# create a second router for the same hostname.
+http:
+  middlewares:
+    kafil-security:
+      headers:
+        contentTypeNosniff: true
+        customFrameOptionsValue: DENY
+        frameDeny: true
+        referrerPolicy: strict-origin-when-cross-origin
+        permissionsPolicy: camera=(), geolocation=(), microphone=()
+        forceSTSHeader: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        # Preload is intentionally deferred until every HTTPS subdomain is
+        # audited and the domain owner accepts the long-lived browser policy.
+        stsPreload: false
+        # This baseline is intentionally narrow, enforceable, and compatible
+        # with Next.js inline bootstrapping. Iterate the report-only policy
+        # below before enforcing script/style/connect source restrictions.
+        contentSecurityPolicy: "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
+        contentSecurityPolicyReportOnly: "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self' data:; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: blob:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:"
+        customResponseHeaders:
+          Server: ""
+          X-Powered-By: ""

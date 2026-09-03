@@ -40,8 +40,12 @@ describe("Kafil auth definitions", () => {
     );
   });
 
-  it("assigns public registration to the sponsor workflow", () => {
-    expect(authConfig().config).toMatchObject({ defaultRole: "sponsor" });
+  it("keeps generic public registration closed while applicants remain app-owned", () => {
+    expect(authConfig().config).toMatchObject({
+      defaultRole: "sponsor",
+      publicRegistration: false,
+      registrationMode: "pending",
+    });
   });
 
   it("enables Google only with complete credentials and links existing accounts", () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { LoggerService } from "najm-core";
 import { I18nService } from "najm-i18n";
+import { McpRegistryService } from "najm-mcp";
 
 import {
   KAFIL_DEFAULT_LANGUAGE,
@@ -56,20 +57,19 @@ describe("Kafil server", () => {
     });
   });
 
-  it("serves the MCP endpoint with all domain module tools", async () => {
+  it("requires authentication before disclosing the MCP catalog", async () => {
     const discoveryResponse = await server.fetch(
       new Request("http://localhost/api/mcp/tools"),
     );
 
-    expect(discoveryResponse.status).toBe(200);
+    expect(discoveryResponse.status).toBe(401);
+  });
 
-    const discovery = (await discoveryResponse.json()) as {
-      name: string;
-      tools: Array<{ name: string }>;
-    };
+  it("registers all domain module tools internally", async () => {
+    await server.init();
+    const registry = server.container.get(McpRegistryService);
 
-    expect(discovery.name).toBe("kafil-mcp");
-    expect(discovery.tools.map((tool) => tool.name).sort()).toEqual([
+    expect(registry.tools.map((tool) => tool.name).sort()).toEqual([
       "admin-access_create_permission",
       "admin-access_deactivate",
       "admin-access_get_role",
