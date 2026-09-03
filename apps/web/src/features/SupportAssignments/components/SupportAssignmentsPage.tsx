@@ -108,7 +108,7 @@ export function SupportAssignmentsPage() {
       row: (assignment) =>
         [
           {
-            label: "View",
+            label: t("common.view"),
             icon: Eye,
             onSelect: () => openView(assignment),
           },

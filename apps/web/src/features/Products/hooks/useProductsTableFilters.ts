@@ -2,6 +2,7 @@
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { PRODUCT_TABLE_COLUMN_IDS } from "./useProductsTableColumns";
 import type { ProductsWorkspaceFilters } from "./useProductsWorkspace";
 
@@ -15,12 +16,13 @@ export function useProductsTableFilters(
   filters: ProductsWorkspaceFilters,
   setFilters: Dispatch<SetStateAction<ProductsWorkspaceFilters>>,
 ) {
+  const { t } = useKafilLanguage();
   return useMemo(
     () => [
       {
         type: "text",
         name: "search",
-        placeholder: "Search product name...",
+        placeholder: t("operator.products.searchName"),
         value: filters.search ?? "",
         onChange: (search: string) => setFilters((current) => ({ ...current, search: search || undefined })),
       },
@@ -28,7 +30,7 @@ export function useProductsTableFilters(
         type: "combobox",
         showIcon: false,
         name: "categoryId",
-        placeholder: "Filter by category",
+        placeholder: t("operator.products.filterCategory"),
         value: filters.categoryId ?? "",
         onChange: (categoryId: string) => setFilters((current) => ({ ...current, categoryId: categoryId || undefined })),
         options: categories.map((category) => ({
@@ -40,15 +42,15 @@ export function useProductsTableFilters(
         type: "select",
         showIcon: false,
         name: PRODUCT_TABLE_COLUMN_IDS.status,
-        placeholder: "Filter by status",
+        placeholder: t("operator.products.filterStatus"),
         value: filters.status ?? "",
         onChange: (status: ProductsWorkspaceFilters["status"] | "") => setFilters((current) => ({ ...current, status: status || undefined })),
         options: [
-          { value: "active", label: "Active" },
-          { value: "inactive", label: "Inactive" },
+          { value: "active", label: t("status.active") },
+          { value: "inactive", label: t("status.inactive") },
         ],
       },
     ],
-    [categories, filters.categoryId, filters.search, filters.status, setFilters],
+    [categories, filters.categoryId, filters.search, filters.status, setFilters, t],
   );
 }

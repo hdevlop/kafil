@@ -77,9 +77,9 @@ function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
       <NCard title={data.orderNumber}>
         <NDetailList
           items={[
-            { label: "Status", value: <NBadge status={data.status} /> },
-            { label: "Total", value: fmt.money(data.actualTotalMinor ?? data.totalMinor) },
-            { label: "Placed", value: fmt.date(data.placedAt) },
+            { label: t("operator.orders.status"), value: <NBadge status={data.status} /> },
+            { label: t("operator.orders.total"), value: fmt.money(data.actualTotalMinor ?? data.totalMinor) },
+            { label: t("common.orderPlaced"), value: fmt.date(data.placedAt) },
             {
               label: t("operator.orders.delivery.column"),
               value: data.deliveryName ?? formatStatusLabel(data.deliveryStatus ?? "not_assigned", language),
@@ -87,7 +87,7 @@ function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
           ]}
         />
       </NCard>
-      <NCard title={`${data.items.length} ${data.items.length === 1 ? "article" : "articles"}`}>
+      <NCard title={`${data.items.length} ${t("common.orderArticles")}`}>
         <div className="space-y-3">
           {data.items.map((item) => (
             <div className="flex items-start justify-between gap-4 border-t border-border pt-3 first:border-t-0 first:pt-0" key={`${item.sku}-${item.productName}`}>

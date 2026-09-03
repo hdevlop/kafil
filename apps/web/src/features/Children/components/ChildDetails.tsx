@@ -51,7 +51,7 @@ export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
 
       <Operator>
         <NSection icon={House} title={t("operator.families.profile")}>
-          <NDetailList items={[{ label: "Household ID", value: child.familyProfileId }]} />
+          <NDetailList items={[{ label: t("operator.children.householdId"), value: child.familyProfileId }]} />
         </NSection>
         {!isExactFamily && child.notes !== undefined ? (
           <NSection icon={NotebookPen} title={t("operator.families.notes")}>

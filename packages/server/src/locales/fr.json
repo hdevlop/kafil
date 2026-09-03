@@ -561,6 +561,20 @@
   },
   "ui": {
     "common": {
+      "table": {
+        "settings": "Réglages du tableau",
+        "view": "Affichage",
+        "columns": "Colonnes",
+        "modeTable": "Tableau",
+        "modeCards": "Cartes",
+        "modeJson": "JSON",
+        "modeFiles": "Fichiers",
+        "modeOption": "Affichage {{mode}}",
+        "filters": "Filtres",
+        "filterRegion": "Filtres du tableau",
+        "allOption": "Tous",
+        "create": "Créer"
+      },
       "loadMore": "Charger plus",
       "loadingMore": "Chargement en cours...",
       "pagination": {
@@ -1024,6 +1038,8 @@
     },
     "operator": {
       "categories": {
+        "searchName": "Rechercher une catégorie...",
+        "filterStatus": "Filtrer par statut",
         "sectionTitle": "Catégorie du catalogue",
         "detailsTitle": "Détails de la catégorie",
         "name": "Nom",
@@ -1215,6 +1231,11 @@
         "noAssignmentOpen": "Aucune attribution n'est ouverte pour les contributions pour le moment."
       },
       "orders": {
+        "status": "Statut",
+        "total": "Total",
+        "searchOrderOrRecipient": "Rechercher une commande ou un destinataire...",
+        "searchOrderNumber": "Rechercher un numéro de commande...",
+        "filterStatus": "Filtrer par statut",
         "title": "Commandes",
         "subtitle": "Examinez les commandes envoyées et exécutez le processus d’exécution audité.",
         "emptyTitle": "Aucune commande",
@@ -1448,6 +1469,10 @@
         "childrenCanBeAddedLater": "Aucun enfant ajouté. Des enfants pourront être ajoutés plus tard."
       },
       "children": {
+        "householdId": "Identifiant du foyer",
+        "searchName": "Rechercher un enfant...",
+        "filterGender": "Filtrer par genre",
+        "filterStatus": "Filtrer par statut",
         "title": "Enfants",
         "subtitle": "Gérez les dossiers des enfants et leur cycle de vie audité.",
         "create": "Créer un enfant",
@@ -1906,6 +1931,9 @@
         "accessInitialPassword": "Mot de passe initial"
       },
       "products": {
+        "searchName": "Rechercher un produit...",
+        "filterCategory": "Filtrer par catégorie",
+        "filterStatus": "Filtrer par statut",
         "activeCategory": "Catégorie active",
         "loadingCategories": "Chargement des catégories...",
         "chooseCategory": "Choisir une catégorie",

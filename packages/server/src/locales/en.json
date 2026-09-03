@@ -574,6 +574,20 @@
   },
   "ui": {
     "common": {
+      "table": {
+        "settings": "Table settings",
+        "view": "View",
+        "columns": "Columns",
+        "modeTable": "Table",
+        "modeCards": "Cards",
+        "modeJson": "JSON",
+        "modeFiles": "Files",
+        "modeOption": "{{mode}} view",
+        "filters": "Filters",
+        "filterRegion": "Table filters",
+        "allOption": "All",
+        "create": "Create"
+      },
       "loadMore": "Load more",
       "loadingMore": "Loading more...",
       "pagination": {
@@ -1038,6 +1052,8 @@
     },
     "operator": {
       "categories": {
+        "searchName": "Search category name...",
+        "filterStatus": "Filter by status",
         "sectionTitle": "Catalog category",
         "detailsTitle": "Category details",
         "name": "Name",
@@ -1244,6 +1260,11 @@
         "noAssignmentOpen": "No assignments are open for contributions right now."
       },
       "orders": {
+        "status": "Status",
+        "total": "Total",
+        "searchOrderOrRecipient": "Search order or recipient...",
+        "searchOrderNumber": "Search order number...",
+        "filterStatus": "Filter by status",
         "title": "Orders",
         "subtitle": "Review submitted orders and run the audited fulfillment state machine.",
         "emptyTitle": "No orders yet",
@@ -1487,6 +1508,10 @@
         "childrenCanBeAddedLater": "No children added yet. Children can be added later."
       },
       "children": {
+        "householdId": "Household ID",
+        "searchName": "Search child name...",
+        "filterGender": "Filter by gender",
+        "filterStatus": "Filter by status",
         "title": "Children",
         "subtitle": "Manage family child records and their audited lifecycle.",
         "create": "Create child",
@@ -1977,6 +2002,9 @@
         "accessInitialPassword": "Initial password"
       },
       "products": {
+        "searchName": "Search product name...",
+        "filterCategory": "Filter by category",
+        "filterStatus": "Filter by status",
         "activeCategory": "Active category",
         "loadingCategories": "Loading categories...",
         "chooseCategory": "Choose a category",

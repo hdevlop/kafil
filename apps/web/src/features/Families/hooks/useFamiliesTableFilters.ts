@@ -32,8 +32,8 @@ export function useFamiliesTableFilters(
           status: status || undefined,
         })),
         options: [
-          { value: "active", label: "Active" },
-          { value: "inactive", label: "Inactive" },
+          { value: "active", label: t("status.active") },
+          { value: "inactive", label: t("status.inactive") },
         ],
       },
     ],

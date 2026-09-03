@@ -555,6 +555,20 @@
   },
   "ui": {
     "common": {
+      "table": {
+        "settings": "Ajustes de la tabla",
+        "view": "Vista",
+        "columns": "Columnas",
+        "modeTable": "Tabla",
+        "modeCards": "Tarjetas",
+        "modeJson": "JSON",
+        "modeFiles": "Archivos",
+        "modeOption": "Vista {{mode}}",
+        "filters": "Filtros",
+        "filterRegion": "Filtros de la tabla",
+        "allOption": "Todos",
+        "create": "Crear"
+      },
       "loadMore": "Cargar más",
       "loadingMore": "Cargando más...",
       "pagination": {
@@ -998,6 +1012,8 @@
     },
     "operator": {
       "categories": {
+        "searchName": "Buscar nombre de categoría...",
+        "filterStatus": "Filtrar por estado",
         "sectionTitle": "Categoría del catálogo",
         "detailsTitle": "Detalles de la categoría",
         "name": "Nombre",
@@ -1189,6 +1205,11 @@
         "noAssignmentOpen": "No hay asignaciones abiertas para contribuciones en este momento."
       },
       "orders": {
+        "status": "Estado",
+        "total": "Total",
+        "searchOrderOrRecipient": "Buscar pedido o destinatario...",
+        "searchOrderNumber": "Buscar número de pedido...",
+        "filterStatus": "Filtrar por estado",
         "title": "Pedidos",
         "subtitle": "Revisa los pedidos enviados y ejecuta la máquina de estados de entrega auditada.",
         "emptyTitle": "Aún no hay pedidos",
@@ -1422,6 +1443,10 @@
         "childrenCanBeAddedLater": "Aún no se han añadido hijos. Se pueden añadir más adelante."
       },
       "children": {
+        "householdId": "Identificador del hogar",
+        "searchName": "Buscar nombre del niño...",
+        "filterGender": "Filtrar por sexo",
+        "filterStatus": "Filtrar por estado",
         "title": "Niños",
         "subtitle": "Gestiona las fichas de los niños de cada familia y su ciclo de vida auditado.",
         "create": "Crear niño",
@@ -1810,6 +1835,9 @@
         "accessInitialPassword": "Contraseña inicial"
       },
       "products": {
+        "searchName": "Buscar nombre de producto...",
+        "filterCategory": "Filtrar por categoría",
+        "filterStatus": "Filtrar por estado",
         "activeCategory": "Categoría activa",
         "loadingCategories": "Cargando categorías...",
         "chooseCategory": "Elige una categoría",

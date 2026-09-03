@@ -559,6 +559,20 @@
   },
   "ui": {
     "common": {
+      "table": {
+        "settings": "إعدادات الجدول",
+        "view": "العرض",
+        "columns": "الأعمدة",
+        "modeTable": "جدول",
+        "modeCards": "بطاقات",
+        "modeJson": "JSON",
+        "modeFiles": "ملفات",
+        "modeOption": "عرض {{mode}}",
+        "filters": "عوامل التصفية",
+        "filterRegion": "عوامل تصفية الجدول",
+        "allOption": "الكل",
+        "create": "إنشاء"
+      },
       "loadMore": "تحميل المزيد",
       "loadingMore": "جارٍ تحميل المزيد...",
       "pagination": {
@@ -1021,6 +1035,8 @@
     },
     "operator": {
       "categories": {
+        "searchName": "البحث باسم الفئة...",
+        "filterStatus": "التصفية حسب الحالة",
         "sectionTitle": "فئة الكتالوج",
         "detailsTitle": "تفاصيل الفئة",
         "name": "الاسم",
@@ -1212,6 +1228,11 @@
         "noAssignmentOpen": "لا توجد تخصيصات مفتوحة للمساهمات في الوقت الحالي."
       },
       "orders": {
+        "status": "الحالة",
+        "total": "الإجمالي",
+        "searchOrderOrRecipient": "البحث عن طلب أو مستلم...",
+        "searchOrderNumber": "البحث برقم الطلب...",
+        "filterStatus": "التصفية حسب الحالة",
         "title": "الطلبات",
         "subtitle": "راجع الطلبات المرسلة ونفّذ دورة التلبية المدققة.",
         "emptyTitle": "لا توجد طلبات بعد",
@@ -1445,6 +1466,10 @@
         "childrenCanBeAddedLater": "لم تتم إضافة أطفال بعد. يمكن إضافة الأطفال لاحقًا."
       },
       "children": {
+        "householdId": "معرّف الأسرة",
+        "searchName": "البحث باسم الطفل...",
+        "filterGender": "التصفية حسب الجنس",
+        "filterStatus": "التصفية حسب الحالة",
         "title": "الأطفال",
         "subtitle": "أدر سجلات أطفال الأسر ودورة حياتها المدققة.",
         "create": "إنشاء طفل",
@@ -1903,6 +1928,9 @@
         "accessInitialPassword": "كلمة المرور الأولية"
       },
       "products": {
+        "searchName": "البحث باسم المنتج...",
+        "filterCategory": "التصفية حسب الفئة",
+        "filterStatus": "التصفية حسب الحالة",
         "activeCategory": "الفئة النشطة",
         "loadingCategories": "جارٍ تحميل الفئات...",
         "chooseCategory": "اختر فئة",
