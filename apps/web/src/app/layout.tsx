@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
 import { cookies } from "next/headers";
+import { NajmPwaRegistration } from "najm-next/pwa/react";
 import { NajmClientRoot } from "@/components/NajmClientRoot";
-import { PwaRegistration } from "@/components/PwaRegistration";
 import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
 import { loadServerAppearance, loadServerBranding } from "@/lib/serverTheme";
@@ -81,7 +81,7 @@ export default async function RootLayout({
         >
           {children}
           <NajmClientRoot />
-          <PwaRegistration />
+          <NajmPwaRegistration />
         </AppProviders>
       </body>
     </html>

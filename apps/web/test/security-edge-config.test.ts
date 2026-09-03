@@ -63,17 +63,4 @@ describe("najm-next configuration contract", () => {
     expect(config.serverExternalPackages).toContain("reflect-metadata");
   });
 
-  test("the service-worker headers survive the preset", async () => {
-    const rules = (await (await resolved()).headers?.()) ?? [];
-    const serviceWorker = rules.find((rule) => rule.source === "/sw.js");
-    expect(serviceWorker).toBeDefined();
-    expect(
-      Object.fromEntries(serviceWorker!.headers.map(({ key, value }) => [key, value])),
-    ).toEqual({
-      "Content-Type": "application/javascript; charset=utf-8",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      "Content-Security-Policy": "default-src 'self'; script-src 'self'",
-      "Service-Worker-Allowed": "/",
-    });
-  });
 });

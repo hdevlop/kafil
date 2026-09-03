@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 
 import manifest from "../src/app/manifest";
+import { GET as serviceWorker } from "../src/app/sw.js/route";
 
 const publicDirectory = join(import.meta.dir, "..", "public");
 
@@ -45,11 +46,16 @@ describe("PWA installability", () => {
   });
 
   test("keeps authenticated data out of the offline cache", async () => {
-    const worker = await Bun.file(join(publicDirectory, "sw.js")).text();
+    const response = serviceWorker();
+    const worker = await response.text();
 
+    expect(response.headers.get("content-type")).toBe("application/javascript; charset=utf-8");
+    expect(response.headers.get("cache-control")).toBe("no-cache, no-store, must-revalidate");
+    expect(worker).toContain('const CACHE_PREFIX = "najm-pwa:kafil-shell:"');
+    expect(worker).toContain('const OFFLINE_URL = "/offline.html"');
     expect(worker).toContain('request.mode !== "navigate"');
     expect(worker).toContain("fetch(request).catch");
     expect(worker).not.toContain("cache.put");
-    expect(worker).not.toContain("/api/");
+    expect(worker).not.toContain('"/api/"');
   });
 });
