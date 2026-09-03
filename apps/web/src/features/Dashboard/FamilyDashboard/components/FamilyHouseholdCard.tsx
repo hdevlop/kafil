@@ -10,13 +10,15 @@ import {
 } from "najm-kit";
 
 
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { FamilyDashboardProfile } from "../types";
 
 export function FamilyHouseholdCard({
   profile,
 }: Readonly<{ profile: FamilyDashboardProfile }>) {
+  const { t } = useKafilLanguage();
   return (
-    <NCard icon={House} title="Your family profile" description="Your protected family information.">
+    <NCard icon={House} title={t("dashboard.family.householdTitle")} description={t("dashboard.family.householdDescription")}>
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">
         <NAvatar src={profile.image ?? undefined} title={profile.name} size="lg" />
         <div className="min-w-0">
@@ -27,21 +29,21 @@ export function FamilyHouseholdCard({
       </div>
 
       <div className="mt-5 space-y-5">
-        <NSection icon={House} title="Household details">
+        <NSection icon={House} title={t("dashboard.family.householdDetails")}>
           <NDetailList
             items={[
-              { label: "Guardian", value: profile.guardianLegalName },
-              { label: "Address", value: profile.exactAddress },
-              { label: "Phone", value: profile.phone || "Not provided" },
+              { label: t("dashboard.family.guardianLabel"), value: profile.guardianLegalName },
+              { label: t("dashboard.family.addressLabel"), value: profile.exactAddress },
+              { label: t("dashboard.family.phoneLabel"), value: profile.phone || t("dashboard.family.notProvided") },
             ]}
           />
         </NSection>
-        <NSection icon={HeartHandshake} title="Family profile">
+        <NSection icon={HeartHandshake} title={t("dashboard.family.familyProfile")}>
           <NDetailList
             items={[
               {
-                label: "Relationship",
-                value: profile.relationshipToChildren || "Not provided",
+                label: t("dashboard.family.relationshipLabel"),
+                value: profile.relationshipToChildren || t("dashboard.family.notProvided"),
               },
             ]}
           />

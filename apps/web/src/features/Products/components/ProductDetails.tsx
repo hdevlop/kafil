@@ -17,9 +17,11 @@ import {
 
 import { NNextImage } from "najm-kit/next";
 
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { ProductRecord } from "../types";
 
 export function ProductDetails({ product }: Readonly<{ product: ProductRecord }>) {
+  const { t } = useKafilLanguage();
   const fmt = useNajmFormat();
   return (
     <div className="space-y-5">
@@ -44,36 +46,36 @@ export function ProductDetails({ product }: Readonly<{ product: ProductRecord }>
         </div>
       </div>
 
-      <NSection icon={FolderTree} title="Catalog placement">
+      <NSection icon={FolderTree} title={t("operator.products.catalogPlacement")}>
         <NDetailList
           items={[
-            { label: "Category", value: product.categoryName },
-            { label: "Category slug", value: product.categorySlug },
-            { label: "SKU", value: product.sku },
-            { label: "Current price", value: fmt.money(product.priceMinor) },
+            { label: t("operator.products.category"), value: product.categoryName },
+            { label: t("operator.products.categorySlug"), value: product.categorySlug },
+            { label: t("operator.products.sku"), value: product.sku },
+            { label: t("operator.products.currentPrice"), value: fmt.money(product.priceMinor) },
           ]}
         />
       </NSection>
 
-      <NSection icon={ReceiptText} title="Product details">
-        <NDetailList items={[{ label: "Description", value: product.description || "No description" }]} />
+      <NSection icon={ReceiptText} title={t("operator.products.productDetails")}>
+        <NDetailList items={[{ label: t("operator.products.description"), value: product.description || t("operator.products.noDescription") }]} />
       </NSection>
 
-      <NSection icon={ImageIcon} title="Image">
-        <NDetailList items={[{ label: "Image URL", value: product.imageUrl || "No image URL" }]} />
+      <NSection icon={ImageIcon} title={t("operator.products.image")}>
+        <NDetailList items={[{ label: t("operator.products.imageUrl"), value: product.imageUrl || t("operator.products.noImageUrl") }]} />
       </NSection>
 
-      <NSection icon={CalendarDays} title="History">
+      <NSection icon={CalendarDays} title={t("operator.products.history")}>
         <NDetailList
           items={[
-            { label: "Created", value: fmt.date(product.createdAt) },
-            { label: "Last updated", value: fmt.date(product.updatedAt) },
+            { label: t("operator.products.created"), value: fmt.date(product.createdAt) },
+            { label: t("operator.products.lastUpdated"), value: fmt.date(product.updatedAt) },
           ]}
         />
       </NSection>
 
-      <NSection icon={Barcode} title="Lifecycle">
-        <NDetailList items={[{ label: "Current status", value: product.status }]} />
+      <NSection icon={Barcode} title={t("operator.products.lifecycle")}>
+        <NDetailList items={[{ label: t("operator.products.currentStatus"), value: product.status }]} />
       </NSection>
     </div>
   );

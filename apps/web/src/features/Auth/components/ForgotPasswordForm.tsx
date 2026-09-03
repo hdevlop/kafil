@@ -7,11 +7,13 @@ import { FormInput, NButton, NForm, toast } from "najm-kit";
 import { forgotPasswordSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import type { ForgotPasswordValues } from "@/app/(auth)/types";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 
 export function ForgotPasswordForm() {
+  const { t } = useKafilLanguage();
   const { forgotPassword, isLoading, isSuccess } = useForgotPassword({
     onError: (error) =>
-      toast.error(getAuthErrorMessage(error, "Password reset request failed.")),
+      toast.error(getAuthErrorMessage(error, t("auth.resetRequestFailed"))),
   });
 
   async function handleSubmit(values: ForgotPasswordValues) {
@@ -21,12 +23,12 @@ export function ForgotPasswordForm() {
   return (
     <div className="flex flex-col w-full">
       <div className="text-center">
-        <p className="mt-1 text-4xl text-muted-foreground">Forgot your password?</p>
+        <p className="mt-1 text-4xl text-muted-foreground">{t("auth.forgotTitle")}</p>
       </div>
 
       {isSuccess ? (
         <p className="mt-6 rounded-2xl bg-muted px-5 py-4 text-sm leading-6 text-muted-foreground">
-          If the account exists, password reset instructions have been sent.
+          {t("auth.forgotSent")}
         </p>
       ) : (
         <NForm
@@ -39,28 +41,28 @@ export function ForgotPasswordForm() {
           <FormInput
             name="email"
             type="text"
-            formLabel="Email address"
-            placeholder="Enter your email address"
+            formLabel={t("auth.emailLabel")}
+            placeholder={t("auth.emailPlaceholder")}
             icon="Mail"
             required
           />
           <NButton
             fullWidth
             loading={isLoading}
-            loadingText="Sending..."
+            loadingText={t("auth.sending")}
             rounded="lg"
             size="xl"
             type="submit"
           >
-            Send reset instructions
+            {t("auth.sendResetInstructions")}
           </NButton>
         </NForm>
       )}
 
       <p className="mt-5 text-center text-sm text-muted-foreground">
-        Remember your password?{" "}
+        {t("auth.rememberPassword")}{" "}
         <Link className="cursor-pointer font-medium text-primary transition hover:text-primary/80 hover:underline" href="/login">
-          Log in
+          {t("auth.logIn")}
         </Link>
       </p>
     </div>

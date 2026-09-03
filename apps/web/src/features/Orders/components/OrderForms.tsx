@@ -64,6 +64,7 @@ export function OrderReasonDialogContent({
   order,
 }: Readonly<{ action: ReasonAction; order: OrderRecord }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const commands = useOrderCommands();
   const command = commands[action];
   const isCancellation = action === "cancel";
@@ -88,14 +89,14 @@ export function OrderReasonDialogContent({
       <FormInput
         name="reason"
         type="textarea"
-        formLabel="Reason"
-        placeholder={isCancellation ? "Why must this order be cancelled?" : "Why must this order be rejected?"}
+        formLabel={t("operator.orders.reasonLabel")}
+        placeholder={isCancellation ? t("operator.orders.cancelReasonPlaceholder") : t("operator.orders.rejectReasonPlaceholder")}
         icon="MessageSquareText"
         required
       />
       <div className="flex justify-end pt-5">
         <NButton type="submit" variant="destructive" disabled={command.isPending}>
-          {command.isPending ? "Saving..." : isCancellation ? "Cancel order" : "Reject order"}
+          {command.isPending ? t("operator.orders.saving") : isCancellation ? t("operator.orders.cancelOrder") : t("operator.orders.rejectOrder")}
         </NButton>
       </div>
     </NForm>

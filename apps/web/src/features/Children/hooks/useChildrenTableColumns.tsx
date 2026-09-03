@@ -11,15 +11,17 @@ import {
 
 import { getPersonImage } from "najm-kit/person-images";
 
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { ChildRecord } from "../types";
 
 export function useChildrenTableColumns() {
+  const { t } = useKafilLanguage();
   const fmt = useNajmFormat();
   return useMemo<NTableProps<ChildRecord>["columns"]>(() => {
     return [
       {
         accessorKey: "legalName",
-        header: "Child",
+        header: t("operator.children.record"),
         cell: ({ row }) => {
           const isDisabled =
             row.original.status === "inactive" ||
@@ -29,7 +31,7 @@ export function useChildrenTableColumns() {
             <NAvatar
             src={getPersonImage({ image: row.original.image, role: "child", gender: row.original.gender })}
             title={row.original.legalName}
-            subtitle={row.original.gender === "F" ? "Female" : "Male"}
+            subtitle={row.original.gender === "F" ? t("operator.families.female") : t("operator.families.male")}
             classNames={{
               avatar: isDisabled ? "bg-muted grayscale opacity-70" : "bg-muted",
             }}
@@ -46,7 +48,7 @@ export function useChildrenTableColumns() {
             <SimpleTooltip
               content={
                 row.original.familyStatus === null
-                  ? "This child's family account has been removed."
+                  ? t("operator.children.familyRemoved")
                   : "This child's family account is inactive."
               }
               side="top"
@@ -58,30 +60,30 @@ export function useChildrenTableColumns() {
       },
       {
         accessorKey: "dateOfBirth",
-        header: "Date of birth",
+        header: t("operator.families.dateOfBirth"),
         cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
       {
         accessorKey: "gender",
-        header: "Gender",
+        header: t("operator.families.gender"),
         cell: ({ getValue }) =>
-          getValue<string>() === "F" ? "Female" : "Male",
+          getValue<string>() === "F" ? t("operator.families.female") : t("operator.families.male"),
       },
       {
         accessorKey: "schoolLevel",
-        header: "School level",
+        header: t("operator.families.schoolLevel"),
         cell: ({ getValue }) => getValue<string | null>() || "\u2014",
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("operator.families.status"),
         cell: ({ getValue }) => <NBadge status={getValue<string>()} />,
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("operator.families.created"),
         cell: ({ getValue }) => fmt.date(getValue<string>()),
       },
     ];
-  }, [fmt]);
+  }, [fmt, t]);
 }

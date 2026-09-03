@@ -17,6 +17,7 @@ import {
   type ProductStatusFormValues,
   type UpdateProductFormValues,
 } from "../config/productSchemas";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { useProductCategories, useProductCommands } from "../hooks/useProducts";
 import type { ProductCategory, ProductRecord } from "../types";
 
@@ -67,6 +68,7 @@ function ProductFields({
   onImageChange: (file: File | null) => void;
   product?: ProductRecord;
 }>) {
+  const { t } = useKafilLanguage();
   const [categorySearch, setCategorySearch] = useState("");
   const categories = useProductCategories(useDebouncedValue(categorySearch, 250));
   const options = categoryOptions(categories.data ?? [], product);
@@ -91,12 +93,12 @@ function ProductFields({
           <FormInput
             name="categoryId"
             type="combobox"
-            formLabel="Active category"
-            placeholder={categories.isPending ? "Loading categories..." : "Choose a category"}
-            searchPlaceholder="Search categories..."
-            emptyMessage="No active category found. Create and activate one first."
+            formLabel={t("operator.products.activeCategory")}
+            placeholder={categories.isPending ? t("operator.products.loadingCategories") : t("operator.products.chooseCategory")}
+            searchPlaceholder={t("operator.products.searchCategories")}
+            emptyMessage={t("operator.products.noActiveCategory")}
             loading={categories.isFetching}
-            loadingMessage="Loading categories..."
+            loadingMessage={t("operator.products.loadingCategories")}
             onSearchChange={setCategorySearch}
             shouldFilter={false}
             items={options}
@@ -105,10 +107,10 @@ function ProductFields({
             required
           />
         </div>
-        <FormInput name="name" type="text" formLabel="Product name" placeholder="Rice 5 kg" icon={Package} required />
-        <FormInput name="priceMad" type="text" formLabel="Price (MAD)" placeholder="45.00" icon="Banknote" required />
+        <FormInput name="name" type="text" formLabel={t("operator.products.name")} placeholder={t("operator.products.namePlaceholder")} icon={Package} required />
+        <FormInput name="priceMad" type="text" formLabel={t("operator.products.price")} placeholder="45.00" icon="Banknote" required />
         <div className="md:col-span-2">
-          <FormInput name="description" type="textarea" formLabel="Description" placeholder="Optional product description" icon="ReceiptText" />
+          <FormInput name="description" type="textarea" formLabel={t("operator.products.description")} placeholder={t("operator.products.descriptionPlaceholder")} icon="ReceiptText" />
         </div>
       </div>
     </>
@@ -117,6 +119,7 @@ function ProductFields({
 
 export function CreateProductDialogContent() {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { create } = useProductCommands();
   const categories = useProductCategories();
   const [image, setImage] = useState<File | null>(null);
@@ -171,7 +174,7 @@ export function CreateProductDialogContent() {
         overrides: { categoryId: categoryOptions(categories.data ?? []) },
       }}
     >
-      <NFormSectionHeader icon={PackagePlus} title="Catalog product" />
+      <NFormSectionHeader icon={PackagePlus} title={t("operator.products.catalogProduct")} />
       <ProductFields
         disabled={isUploading || create.isPending}
         image={image}
@@ -181,7 +184,7 @@ export function CreateProductDialogContent() {
       />
       <div className="flex justify-end pt-5">
         <NButton type="submit" disabled={create.isPending || isUploading || categories.isPending}>
-          {isUploading ? "Uploading..." : create.isPending ? "Creating..." : "Create product"}
+          {isUploading ? t("operator.products.uploading") : create.isPending ? t("operator.products.creating") : t("operator.products.createProduct")}
         </NButton>
       </div>
     </NForm>
@@ -190,6 +193,7 @@ export function CreateProductDialogContent() {
 
 export function UpdateProductDialogContent({ product }: Readonly<{ product: ProductRecord }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { update } = useProductCommands();
   const categories = useProductCategories();
   const [image, setImage] = useState<File | string | null>(product.imageUrl);
@@ -269,7 +273,7 @@ export function UpdateProductDialogContent({ product }: Readonly<{ product: Prod
         },
       }}
     >
-      <NFormSectionHeader icon={FolderTree} title="Product details" />
+      <NFormSectionHeader icon={FolderTree} title={t("operator.products.productDetails")} />
       <ProductFields
         disabled={isUploading || update.isPending}
         image={image}
@@ -280,7 +284,7 @@ export function UpdateProductDialogContent({ product }: Readonly<{ product: Prod
       />
       <div className="flex justify-end pt-5">
         <NButton type="submit" disabled={update.isPending || isUploading || categories.isPending}>
-          {isUploading ? "Uploading..." : update.isPending ? "Saving..." : "Save product"}
+          {isUploading ? t("operator.products.uploading") : update.isPending ? t("operator.products.saving") : t("operator.products.saveProduct")}
         </NButton>
       </div>
     </NForm>
@@ -295,6 +299,7 @@ export function ProductStatusDialogContent({
   product: ProductRecord;
 }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const commands = useProductCommands();
   const command = commands[action];
 
@@ -313,13 +318,13 @@ export function ProductStatusDialogContent({
     >
       <p className="text-sm leading-6 text-muted-foreground">
         {action === "deactivate"
-          ? "Deactivation preserves product and order history while removing this product from the active catalog."
-          : "Activation requires the product's category to remain active."}
+          ? t("operator.products.deactivateHelp")
+          : t("operator.products.activateHelp")}
       </p>
-      <FormInput name="reason" type="textarea" formLabel="Reason" placeholder={`Why should this product be ${action}d?`} icon="MessageSquareText" required />
+      <FormInput name="reason" type="textarea" formLabel={t("operator.products.reason")} placeholder={action === "deactivate" ? t("operator.products.deactivateReasonPlaceholder") : t("operator.products.activateReasonPlaceholder")} icon="MessageSquareText" required />
       <div className="flex justify-end pt-5">
         <NButton type="submit" variant={action === "deactivate" ? "destructive" : "default"} disabled={command.isPending}>
-          {command.isPending ? "Saving..." : action === "deactivate" ? "Deactivate product" : "Activate product"}
+          {command.isPending ? t("operator.products.saving") : action === "deactivate" ? t("operator.products.deactivateProduct") : t("operator.products.activateProduct")}
         </NButton>
       </div>
     </NForm>
@@ -330,6 +335,7 @@ export function DeleteProductDialogContent({
   product,
 }: Readonly<{ product: ProductRecord }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { remove } = useProductCommands();
 
   async function handleDelete() {
@@ -356,7 +362,7 @@ export function DeleteProductDialogContent({
           disabled={remove.isPending}
           onClick={() => void handleDelete()}
         >
-          {remove.isPending ? "Deleting..." : "Delete product permanently"}
+          {remove.isPending ? t("operator.products.deleting") : t("operator.products.deleteProduct")}
         </NButton>
       </div>
     </div>

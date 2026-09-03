@@ -33,7 +33,7 @@ const applicantIdentityDto = z.object({
   cin: z
     .string()
     .trim()
-    .min(8, "CIN must be at least 8 characters")
+    .min(7, "CIN must be at least 7 characters")
     .max(20, "CIN must be at most 20 characters")
     .transform((value) => value.toUpperCase()),
   gender: z.enum(["M", "F", "male", "female"]).transform((value) =>

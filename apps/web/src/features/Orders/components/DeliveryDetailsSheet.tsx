@@ -90,7 +90,7 @@ export function DeliveryDetailsSheet({
       ) : detail.isError ? (
         <NErrorState
           message={getPublicApiErrorMessage(detail.error, t("state.retry"))}
-          title="We could not load delivery details"
+          title={t("operator.orders.workflow.loadDeliveryError")}
           onRetry={() => void detail.refetch()}
           surface="panel"
         />

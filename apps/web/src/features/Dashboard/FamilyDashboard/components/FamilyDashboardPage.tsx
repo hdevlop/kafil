@@ -192,7 +192,7 @@ export function FamilyDashboardPage() {
                   <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted text-muted-foreground">
                     {order.dominantCategoryImage ? (
                       <NNextImage unoptimized
-                        alt={order.dominantCategoryName ?? "Order category"}
+                        alt={order.dominantCategoryName ?? t("dashboard.family.orderCategoryAlt")}
                         className="object-cover"
                         fill
                         sizes="48px"

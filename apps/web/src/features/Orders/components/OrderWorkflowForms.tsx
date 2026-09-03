@@ -83,16 +83,17 @@ function AssistedOrderItemFields({
   onSearchChange: (query: string) => void;
   productOptions: Array<{ value: string; label: string }>;
 }>) {
+  const { t } = useKafilLanguage();
   return (
     <div className="grid gap-4 md:grid-cols-[1fr_10rem]">
       <FormInput
         name="productId"
         type="combobox"
-        formLabel="Product"
-        searchPlaceholder="Search active products"
-        emptyMessage="No active products found"
+        formLabel={t("operator.orders.workflow.product")}
+        searchPlaceholder={t("operator.orders.workflow.searchProducts")}
+        emptyMessage={t("operator.orders.workflow.noProducts")}
         loading={loading}
-        loadingMessage="Loading products..."
+        loadingMessage={t("operator.orders.workflow.loadingProducts")}
         onSearchChange={onSearchChange}
         shouldFilter={false}
         items={productOptions}
@@ -102,7 +103,7 @@ function AssistedOrderItemFields({
       <FormInput
         name="quantity"
         type="number"
-        formLabel="Quantity"
+        formLabel={t("operator.orders.workflow.quantity")}
         icon="Hash"
         required
       />
@@ -112,6 +113,7 @@ function AssistedOrderItemFields({
 
 export function CreateAssistedOrderDialogContent() {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const fmt = useNajmFormat();
   const [familySearch, setFamilySearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
@@ -161,16 +163,16 @@ export function CreateAssistedOrderDialogContent() {
       onSubmit={submit}
       className="space-y-6"
     >
-      <NFormSectionHeader icon={ClipboardPlus} title="Family request" />
+      <NFormSectionHeader icon={ClipboardPlus} title={t("operator.orders.workflow.familyRequest")} />
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput
           name="familyProfileId"
           type="combobox"
-          formLabel="Family"
-          searchPlaceholder="Search active families"
-          emptyMessage="No active family found"
+          formLabel={t("operator.orders.workflow.family")}
+          searchPlaceholder={t("operator.orders.workflow.searchFamilies")}
+          emptyMessage={t("operator.orders.workflow.noFamilies")}
           loading={families.isFetching}
-          loadingMessage="Loading families..."
+          loadingMessage={t("operator.orders.workflow.loadingFamilies")}
           onSearchChange={setFamilySearch}
           shouldFilter={false}
           items={familyOptions}
@@ -181,12 +183,12 @@ export function CreateAssistedOrderDialogContent() {
         <FormInput
           name="assistanceChannel"
           type="select"
-          formLabel="Request channel"
+          formLabel={t("operator.orders.workflow.requestChannel")}
           items={[
-            { value: "phone", label: "Phone" },
-            { value: "in_person", label: "In person" },
-            { value: "home_visit", label: "Home visit" },
-            { value: "other", label: "Other" },
+            { value: "phone", label: t("family.orderCart.channelPhone") },
+            { value: "in_person", label: t("family.orderCart.channelInPerson") },
+            { value: "home_visit", label: t("family.orderCart.channelHomeVisit") },
+            { value: "other", label: t("family.orderCart.channelOther") },
           ]}
           icon="MessagesSquare"
           required
@@ -195,16 +197,16 @@ export function CreateAssistedOrderDialogContent() {
       <FormInput
         name="assistanceNote"
         type="textarea"
-        formLabel="Private operational note"
-        formDescription="Do not enter CIN, medical details, addresses, or document information."
+        formLabel={t("family.orderCart.noteLabel")}
+        formDescription={t("family.orderCart.noteDescription")}
         icon="NotebookPen"
       />
-      <NFormSectionHeader icon={PackagePlus} title="Requested products" />
+      <NFormSectionHeader icon={PackagePlus} title={t("operator.orders.workflow.requestedProducts")} />
       <DynamicArray
         name="items"
-        title="Product"
-        addLabel="Add product"
-        emptyLabel="Add at least one active product."
+        title={t("operator.orders.workflow.product")}
+        addLabel={t("operator.orders.workflow.addProduct")}
+        emptyLabel={t("operator.orders.workflow.addAtLeastOneProduct")}
         onAdd={(append) => append({ productId: "", quantity: 1 })}
       >
         <AssistedOrderItemFields
@@ -214,8 +216,7 @@ export function CreateAssistedOrderDialogContent() {
         />
       </DynamicArray>
       <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-        Kafil recalculates current catalog prices and reserves the family budget.
-        The order remains pending until a separate approval.
+        {t("operator.orders.workflow.assistedNotice")}
       </p>
       <div className="flex justify-end">
         <NButton
@@ -224,7 +225,7 @@ export function CreateAssistedOrderDialogContent() {
             assisted.isPending || families.isPending || products.isPending
           }
         >
-          {assisted.isPending ? "Creating..." : "Order"}
+          {assisted.isPending ? t("operator.orders.workflow.creating") : t("operator.orders.workflow.createOrder")}
         </NButton>
       </div>
     </NForm>
@@ -236,6 +237,7 @@ export function PurchaseOrderDialogContent({
   replace = false,
 }: Readonly<{ order: OrderDetail; replace?: boolean }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const fmt = useNajmFormat();
   const commands = useOrderCommands();
   const command = replace ? commands.replacePurchase : commands.purchase;
@@ -244,7 +246,7 @@ export function PurchaseOrderDialogContent({
 
   async function submit(values: z.infer<typeof purchaseSchema>) {
     if (!receipt) {
-      setFileError("A protected receipt is required.");
+      setFileError(t("operator.orders.workflow.receiptRequired"));
       return;
     }
     const evidence = await uploadOrderEvidence("receipts", receipt);
@@ -293,16 +295,16 @@ export function PurchaseOrderDialogContent({
       onSubmit={submit}
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <FormInput name="merchantName" type="text" formLabel="Merchant" icon="Store" required />
-        <FormInput name="purchasedAt" type="date" formLabel="Purchase date" icon="CalendarDays" required />
-        <FormInput name="actualTotalMad" type="text" formLabel="Actual amount paid (MAD)" icon="ReceiptText" required />
-        <FormInput name="receiptNumber" type="text" formLabel="Receipt number" icon="Hash" />
+        <FormInput name="merchantName" type="text" formLabel={t("operator.orders.workflow.merchant")} icon="Store" required />
+        <FormInput name="purchasedAt" type="date" formLabel={t("operator.orders.workflow.purchaseDate")} icon="CalendarDays" required />
+        <FormInput name="actualTotalMad" type="text" formLabel={t("operator.orders.workflow.actualAmount")} icon="ReceiptText" required />
+        <FormInput name="receiptNumber" type="text" formLabel={t("operator.orders.workflow.receiptNumber")} icon="Hash" />
       </div>
       {replace ? (
         <FormInput
           name="reason"
           type="textarea"
-          formLabel="Replacement reason"
+          formLabel={t("operator.orders.workflow.replacementReason")}
           icon="MessageSquareText"
           required
         />
@@ -311,9 +313,9 @@ export function PurchaseOrderDialogContent({
         <FormInput
           name="receipt"
           type="file"
-          formLabel="Protected receipt"
-          formDescription="PDF, JPEG, PNG, or WebP. Maximum 10 MB. Operator/admin access only."
-          placeholder="Choose a receipt file"
+          formLabel={t("operator.orders.workflow.protectedReceipt")}
+          formDescription={t("operator.orders.workflow.receiptHint")}
+          placeholder={t("operator.orders.workflow.chooseReceipt")}
           onChange={(file) => {
             setReceipt(file as File | null);
             setFileError(null);
@@ -327,17 +329,15 @@ export function PurchaseOrderDialogContent({
         ) : null}
       </div>
       <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-        Requested: {fmt.money(order.totalMinor)}. A higher actual amount is
-        explicitly confirmed by this submission and still requires available
-        family capacity.
+        {t("operator.orders.workflow.purchaseNotice", { amount: fmt.money(order.totalMinor) })}
       </p>
       <div className="flex justify-end">
         <NButton type="submit" disabled={command.isPending}>
           {command.isPending
-            ? "Saving..."
+            ? t("operator.orders.workflow.saving")
             : replace
-              ? "Replace purchase"
-              : "Record purchase"}
+              ? t("operator.orders.workflow.replacePurchase")
+              : t("operator.orders.workflow.recordPurchase")}
         </NButton>
       </div>
     </NForm>
@@ -348,14 +348,15 @@ export function PurchaseOrderDialogLoader({
   orderId,
   replace = false,
 }: Readonly<{ orderId: string; replace?: boolean }>) {
+  const { t } = useKafilLanguage();
   const order = useOrder(orderId);
-  if (order.isPending) return <div className="py-8 text-center text-sm text-muted-foreground">Loading purchase details...</div>;
+  if (order.isPending) return <div className="py-8 text-center text-sm text-muted-foreground">{t("operator.orders.workflow.loadingPurchase")}</div>;
   if (order.isError || !order.data) {
     return (
       <div className="space-y-3 py-6 text-sm text-destructive">
-        <p>Could not load the order purchase details.</p>
+        <p>{t("operator.orders.workflow.purchaseLoadError")}</p>
         <NButton variant="outline" onClick={() => void order.refetch()}>
-          Try again
+          {t("action.retry")}
         </NButton>
       </div>
     );
@@ -412,8 +413,8 @@ export function AssignDeliveryDialogContent({
         name="staffProfileId"
         type="combobox"
         formLabel={t("operator.orders.delivery.selector")}
-        searchPlaceholder="Search active delivery staff"
-        emptyMessage="No active delivery staff found"
+        searchPlaceholder={t("operator.orders.workflow.searchDeliveryStaff")}
+        emptyMessage={t("operator.orders.workflow.noDeliveryStaff")}
         items={staffOptions}
         icon="Truck"
         disabled={options.isPending}
@@ -424,7 +425,7 @@ export function AssignDeliveryDialogContent({
           name="reason"
           type="textarea"
           formLabel={t("operator.orders.delivery.reasonForChange")}
-          placeholder="Why is this assignment changing?"
+          placeholder={t("operator.orders.workflow.reassignReasonPlaceholder")}
           icon="MessageSquareText"
           required
         />
@@ -468,15 +469,13 @@ export function FailDeliveryDialogContent({
     >
       <NFormSectionHeader icon={TriangleAlert} title={t("operator.orders.delivery.failed")} />
       <p className="rounded-xl bg-amber-500/10 p-4 text-sm text-muted-foreground">
-        This closes the active attempt and returns the order to Purchased so a
-        new delivery staff member can be assigned. It does not change the
-        family budget.
+        {t("operator.orders.workflow.failureNotice")}
       </p>
       <FormInput
         name="reason"
         type="textarea"
         formLabel={t("operator.orders.delivery.failureReason")}
-        placeholder="Why could this delivery not be completed?"
+        placeholder={t("operator.orders.workflow.failureReasonPlaceholder")}
         icon="MessageSquareText"
         required
       />
@@ -495,6 +494,7 @@ export function ConfirmDeliveryDialogContent({
   order,
 }: Readonly<{ order: OrderRecord }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { confirmDelivery } = useOrderCommands();
   const [proof, setProof] = useState<File | null>(null);
 
@@ -536,15 +536,15 @@ export function ConfirmDeliveryDialogContent({
       }}
       onSubmit={submit}
     >
-      <NFormSectionHeader icon={Truck} title="Delivery confirmation" />
+      <NFormSectionHeader icon={Truck} title={t("operator.orders.workflow.deliveryConfirmation")} />
       <FormInput
         name="confirmationMethod"
         type="select"
-        formLabel="Confirmation method"
+        formLabel={t("operator.orders.workflow.confirmationMethod")}
         items={[
-          { value: "operator_confirmation", label: "Operator confirmation" },
-          { value: "recipient_signature", label: "Recipient signature" },
-          { value: "photo", label: "Photo proof" },
+          { value: "operator_confirmation", label: t("operator.orders.workflow.methodOperator") },
+          { value: "recipient_signature", label: t("operator.orders.workflow.methodSignature") },
+          { value: "photo", label: t("operator.orders.workflow.methodPhoto") },
         ]}
         icon="BadgeCheck"
         required
@@ -552,24 +552,24 @@ export function ConfirmDeliveryDialogContent({
       <FormInput
         name="deliveryNote"
         type="textarea"
-        formLabel="Private delivery note"
-        formDescription="Do not enter names, CIN, phone numbers, medical details, or exact address."
+        formLabel={t("operator.orders.workflow.privateDeliveryNote")}
+        formDescription={t("operator.orders.workflow.deliveryNoteHint")}
         icon="NotebookPen"
       />
       <FormInput
         name="proof"
         type="image"
-        formLabel="Protected proof (optional for operator confirmation)"
+        formLabel={t("operator.orders.workflow.protectedProof")}
         accept="image/jpeg,image/png,image/webp"
         previewClassName="h-32 w-full"
-        title="Choose proof image"
-        subtitle="JPEG, PNG, or WebP"
+        title={t("operator.orders.workflow.chooseProofImage")}
+        subtitle={t("operator.orders.workflow.proofFormats")}
         value={proof}
         onChange={(file) => setProof(file as File | null)}
       />
       <div className="flex justify-end">
         <NButton type="submit" disabled={confirmDelivery.isPending}>
-          {confirmDelivery.isPending ? "Saving..." : "Confirm delivery"}
+          {confirmDelivery.isPending ? t("operator.orders.workflow.saving") : t("operator.orders.workflow.confirmDelivery")}
         </NButton>
       </div>
     </NForm>

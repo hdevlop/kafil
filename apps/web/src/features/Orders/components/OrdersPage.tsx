@@ -236,8 +236,8 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
           ? t("operator.orders.changeDeliveryStaff")
           : t("operator.orders.assignDelivery"),
       description: failed
-        ? "Close this attempt and make the purchased order available for reassignment."
-        : "Choose from active Staff records with the Delivery role.",
+        ? t("operator.orders.failAttemptDescription")
+        : t("operator.orders.chooseDeliveryStaffDescription"),
       children: failed ? (
         <FailDeliveryDialogContent order={order as unknown as OrderRecord} />
       ) : (

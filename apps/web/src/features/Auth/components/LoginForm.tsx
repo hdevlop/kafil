@@ -11,6 +11,7 @@ import { loginSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import { getPostLoginRoute } from "../lib/getPostLoginRoute";
 import type { LoginFormProps, LoginValues } from "@/app/(auth)/types";
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import { auth } from "@/lib/auth";
 
 function GoogleMark() {
@@ -30,6 +31,7 @@ export function LoginForm({
   redirectTo,
 }: LoginFormProps) {
   const router = useRouter();
+  const { t } = useKafilLanguage();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -42,12 +44,12 @@ export function LoginForm({
       // Najm normalizes the identifier and the temporary CIN server-side, and
       // applies tokens only for the authenticated branch.
       const result = await auth.client.login(values);
-      if (result.nextStep === "authenticated") toast.success("Welcome back.");
+      if (result.nextStep === "authenticated") toast.success(t("auth.loginSuccess"));
       window.location.replace(
         getPostLoginRoute(result.nextStep, redirectTo),
       );
     } catch (error) {
-      toast.error(getAuthErrorMessage(error, "Login failed."));
+      toast.error(getAuthErrorMessage(error, t("auth.loginFailed")));
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +58,7 @@ export function LoginForm({
   return (
     <div className="flex flex-col  w-full">
       <div className="text-center">
-        <p className="mt-1 text-4xl text-muted-foreground">Welcome Back</p>
+        <p className="mt-1 text-4xl text-muted-foreground">{t("auth.welcomeBack")}</p>
       </div>
 
         <NForm
@@ -69,16 +71,16 @@ export function LoginForm({
           <FormInput
             name="identifier"
             type="text"
-            formLabel="Email or phone"
-            placeholder="Email or +212 phone number"
+            formLabel={t("auth.identifierLabel")}
+            placeholder={t("auth.identifierPlaceholder")}
             icon="Phone"
             required
           />
           <FormInput
             name="password"
             type="password"
-            formLabel="Password"
-            placeholder="Enter your password"
+            formLabel={t("auth.passwordLabel")}
+            placeholder={t("auth.passwordPlaceholder")}
             icon="Lock"
             required
           />
@@ -87,24 +89,24 @@ export function LoginForm({
             <FormInput
               className="w-auto shrink-0"
               classNames={{ item: "w-auto shrink-0" }}
-              label="Remember me"
+              label={t("auth.rememberMe")}
               name="rememberMe"
               type="checkbox"
               variant="ghost"
             />
             <Link className="cursor-pointer font-medium text-primary transition hover:text-primary/80 hover:underline" href="/forgot-password">
-              Forgot password?
+              {t("auth.forgotPasswordLink")}
             </Link>
           </div>
           <NButton
             fullWidth
             loading={isLoading}
-            loadingText="Logging in..."
+            loadingText={t("auth.loggingIn")}
             rounded="lg"
             size="xl"
             type="submit"
           >
-            Log in
+            {t("auth.logIn")}
           </NButton>
         </NForm>
 
@@ -112,12 +114,12 @@ export function LoginForm({
           <>
             <div className="my-5 flex items-center gap-4 text-sm font-semibold text-muted-foreground">
               <span aria-hidden="true" className="h-px flex-1 bg-border" />
-              OR
+              {t("auth.or")}
               <span aria-hidden="true" className="h-px flex-1 bg-border" />
             </div>
 
             <GoogleLoginButton
-              onError={() => toast.error("Google sign-in could not start.")}
+              onError={() => toast.error(t("auth.googleStartError"))}
               returnTo={redirectTo}
             >
               <NButton
@@ -128,7 +130,7 @@ export function LoginForm({
                 type="button"
                 variant="outline"
               >
-                Continue with Google
+                {t("auth.continueWithGoogle")}
               </NButton>
             </GoogleLoginButton>
           </>
@@ -144,13 +146,23 @@ export function LoginForm({
           type="button"
           variant="outline"
         >
-          Create a new account
+          {t("auth.createAccount")}
         </NButton>
 
         <div className="mt-5 flex gap-4 rounded-2xl bg-muted px-5 py-4 text-sm leading-6 text-muted-foreground">
           <ShieldCheck aria-hidden="true" className="mt-0.5 size-9 shrink-0 text-primary" />
           <p>
-            By logging in, you accept our <span className="font-medium text-primary underline underline-offset-2">Terms of Service</span> and our <span className="font-medium text-primary underline underline-offset-2">Privacy Policy</span>.
+            {t("auth.termsNotice")
+              .split(/(\{terms\}|\{privacy\})/)
+              .map((part, index) =>
+                part === "{terms}" || part === "{privacy}" ? (
+                  <span key={index} className="font-medium text-primary underline underline-offset-2">
+                    {t(part === "{terms}" ? "auth.termsOfService" : "auth.privacyPolicy")}
+                  </span>
+                ) : (
+                  part
+                ),
+              )}
           </p>
         </div>
     </div>

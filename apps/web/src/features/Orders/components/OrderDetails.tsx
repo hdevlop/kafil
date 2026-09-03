@@ -191,12 +191,12 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
   const { language, t } = useKafilLanguage();
   const order = useOrder(orderId);
 
-  if (order.isPending) return <NCard title="Loading order details" loading />;
+  if (order.isPending) return <NCard title={t("operator.orders.workflow.loadingOrderDetails")} loading />;
   if (order.isError) {
     return (
       <NErrorState
         message={getPublicApiErrorMessage(order.error, t("state.retry"))}
-        title="We could not load this order"
+        title={t("operator.orders.workflow.loadOrderError")}
         onRetry={() => void order.refetch()}
         surface="panel"
       />

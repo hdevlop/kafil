@@ -27,10 +27,12 @@ export function ChildCard({
   const isDisabled = isInactive || isFamilyUnavailable;
   const familyUnavailableMessage =
     data.familyStatus === null
-      ? "This child's family account has been removed."
-      : "This child's family account is inactive.";
+      ? t("operator.children.familyRemoved")
+      : t("operator.children.familyInactive");
   const guardianFirstName = data.guardianLegalName?.trim().split(/\s+/)[0];
-  const familyName = guardianFirstName ? `${guardianFirstName} Family` : "Family";
+  const familyName = guardianFirstName
+    ? t("operator.children.familySuffix", { name: guardianFirstName })
+    : t("operator.children.familyFallback");
 
   const card = (
     <NCard

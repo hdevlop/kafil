@@ -98,8 +98,11 @@ export function ChildrenPage() {
   function openStatus(child: ChildRecord) {
     const action = child.status === "active" ? "deactivate" : "reactivate";
     void dialog.openDialog({
-      title: `${action === "deactivate" ? "Deactivate" : "Reactivate"} ${child.legalName}`,
-      description: "This lifecycle command is audited by the backend.",
+      title: t("operator.children.statusDialogTitle", {
+        action: action === "deactivate" ? t("common.deactivate") : t("common.activate"),
+        name: child.legalName,
+      }),
+      description: t("operator.children.lifecycleDescription"),
       children: <ChildStatusDialogContent action={action} child={child} />,
       showButtons: false,
       size: "sm",

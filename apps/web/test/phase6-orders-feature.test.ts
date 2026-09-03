@@ -204,7 +204,9 @@ describe("Phase 6D order command contracts", () => {
     expect(page).not.toContain('height: action === "confirmDelivery"');
     expect(forms).toContain('name="receipt"');
     expect(forms).toContain('type="file"');
-    expect(forms).toContain('placeholder="Choose a receipt file"');
+    expect(forms).toContain(
+      'placeholder={t("operator.orders.workflow.chooseReceipt")}',
+    );
     expect(forms).not.toMatch(/<input\s+type="file"/);
   });
 

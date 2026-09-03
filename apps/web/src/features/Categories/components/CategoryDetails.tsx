@@ -15,9 +15,11 @@ import {
 
 import { NNextImage } from "najm-kit/next";
 
+import { useKafilLanguage } from "@/i18n/useKafilLanguage";
 import type { CategoryRecord } from "../types";
 
 export function CategoryDetails({ category }: Readonly<{ category: CategoryRecord }>) {
+  const { t } = useKafilLanguage();
   const fmt = useNajmFormat();
   return (
     <div className="space-y-5">
@@ -42,27 +44,27 @@ export function CategoryDetails({ category }: Readonly<{ category: CategoryRecor
         </div>
       </div>
 
-      <NSection icon={AlignJustify} title="Catalog category">
+      <NSection icon={AlignJustify} title={t("operator.categories.catalogCategory")}>
         <NDetailList
           items={[
-            { label: "Description", value: category.description || "No description" },
-            { label: "Slug", value: category.slug },
-            { label: "Display order", value: String(category.sortOrder) },
+            { label: t("operator.categories.description"), value: category.description || t("operator.categories.noDescription") },
+            { label: t("operator.categories.slug"), value: category.slug },
+            { label: t("operator.categories.displayOrderLabel"), value: String(category.sortOrder) },
           ]}
         />
       </NSection>
 
-      <NSection icon={CalendarDays} title="History">
+      <NSection icon={CalendarDays} title={t("operator.categories.history")}>
         <NDetailList
           items={[
-            { label: "Created", value: fmt.date(category.createdAt) },
-            { label: "Last updated", value: fmt.date(category.updatedAt) },
+            { label: t("operator.categories.created"), value: fmt.date(category.createdAt) },
+            { label: t("operator.categories.lastUpdated"), value: fmt.date(category.updatedAt) },
           ]}
         />
       </NSection>
 
-      <NSection icon={ListOrdered} title="Lifecycle">
-        <NDetailList items={[{ label: "Current status", value: category.status }]} />
+      <NSection icon={ListOrdered} title={t("operator.categories.lifecycle")}>
+        <NDetailList items={[{ label: t("operator.categories.currentStatus"), value: category.status }]} />
       </NSection>
     </div>
   );

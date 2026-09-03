@@ -294,7 +294,7 @@ export function UpdateChildDialogContent({
       }}
       onSubmit={handleSubmit}
     >
-      <NFormSectionHeader icon={Baby} title="Child profile" />
+      <NFormSectionHeader icon={Baby} title={t("operator.children.profileSection")} />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
         <ChildAvatarBlock
           disabled={isSubmitting}
@@ -327,7 +327,7 @@ export function UpdateChildDialogContent({
       <FormInput name="notes" type="textarea" formLabel={t("operator.children.operatorNotes")} placeholder={t("operator.children.optionalNotes")} icon="NotebookPen" />
       <div className="flex justify-end pt-5">
         <NButton type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save child record"}
+          {isSubmitting ? t("operator.children.saving") : t("operator.children.saveRecord")}
         </NButton>
       </div>
     </NForm>
@@ -342,6 +342,7 @@ export function ChildStatusDialogContent({
   child: ChildRecord;
 }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const commands = useChildCommands();
   const command = commands[action];
 
@@ -359,13 +360,13 @@ export function ChildStatusDialogContent({
       className="space-y-5"
     >
       <p className="text-sm leading-6 text-muted-foreground">
-        This preserves child history and records the operator reason in the audit log.
+        {t("operator.children.lifecycleHelp")}
       </p>
       <FormInput
         name="reason"
         type="textarea"
-        formLabel="Reason"
-        placeholder={`Why should this child be ${action}d?`}
+        formLabel={t("operator.children.reason")}
+        placeholder={action === "deactivate" ? t("operator.children.deactivateReasonPlaceholder") : t("operator.children.activateReasonPlaceholder")}
         icon="MessageSquareText"
         required
       />
@@ -376,10 +377,10 @@ export function ChildStatusDialogContent({
           disabled={command.isPending}
         >
           {command.isPending
-            ? "Saving..."
+            ? t("operator.children.saving")
             : action === "deactivate"
-              ? "Deactivate child"
-              : "Reactivate child"}
+              ? t("operator.children.deactivateChild")
+              : t("operator.children.reactivateChild")}
         </NButton>
       </div>
     </NForm>
@@ -390,6 +391,7 @@ export function DeleteChildDialogContent({
   child,
 }: Readonly<{ child: ChildRecord }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { remove } = useChildCommands();
 
   async function handleDelete() {
@@ -410,7 +412,7 @@ export function DeleteChildDialogContent({
           disabled={remove.isPending}
           onClick={() => void handleDelete()}
         >
-          {remove.isPending ? "Deleting..." : "Permanently delete child"}
+          {remove.isPending ? t("operator.children.deleting") : t("operator.children.deleteChild")}
         </NButton>
       </div>
     </div>
@@ -422,6 +424,7 @@ export function BulkDeleteChildrenDialogContent({
   onDeleted,
 }: Readonly<{ childIds: string[]; onDeleted: () => void }>) {
   const { pop } = useDialog();
+  const { t } = useKafilLanguage();
   const { bulkRemove } = useChildCommands();
   const submittingRef = useRef(false);
 
@@ -453,8 +456,8 @@ export function BulkDeleteChildrenDialogContent({
           onClick={() => void handleDelete()}
         >
           {bulkRemove.isPending
-            ? "Deleting selected children..."
-            : "Permanently delete selected children"}
+            ? t("operator.children.bulkDeleting")
+            : t("operator.children.bulkDeleteChildren")}
         </NButton>
       </div>
     </div>

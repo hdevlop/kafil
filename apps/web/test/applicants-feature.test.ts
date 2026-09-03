@@ -292,7 +292,7 @@ describe("admin applicant queue", () => {
   });
 });
 
-describe("applicant form CIN boundary (8..20, aligned with server)", () => {
+describe("applicant form CIN boundary (7..20, aligned with server)", () => {
   const validCinForm = {
     name: "Amina Tazi",
     email: "amina.tazi@example.com",
@@ -302,9 +302,9 @@ describe("applicant form CIN boundary (8..20, aligned with server)", () => {
     password: "KafilDev123",
   };
 
-  test("accepts an 8-character CIN (lower boundary)", () => {
+  test("accepts a 7-character CIN (lower boundary)", () => {
     expect(
-      applicantFormSchema.safeParse({ ...validCinForm, cin: "AB123456" }).success,
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "BC10110" }).success,
     ).toBe(true);
   });
 
@@ -315,15 +315,15 @@ describe("applicant form CIN boundary (8..20, aligned with server)", () => {
     ).toBe(true);
   });
 
-  test("rejects a 7-character CIN before submission", () => {
+  test("rejects a 6-character CIN before submission", () => {
     const result = applicantFormSchema.safeParse({
       ...validCinForm,
-      cin: "A".repeat(7),
+      cin: "A".repeat(6),
     });
     expect(result.success).toBe(false);
     if (!result.success) {
       const cinIssue = result.error.issues.find((i) => i.path.includes("cin"));
-      expect(cinIssue?.message).toBe("Enter your national identity number");
+      expect(cinIssue?.message).toBe("CIN must be at least 7 characters");
     }
   });
 
@@ -335,15 +335,15 @@ describe("applicant form CIN boundary (8..20, aligned with server)", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       const cinIssue = result.error.issues.find((i) => i.path.includes("cin"));
-      expect(cinIssue?.message).toBe("Enter your national identity number");
+      expect(cinIssue?.message).toBe("CIN must be at most 20 characters");
     }
   });
 
-  test("client CIN boundary (8..20) matches the server authoritative rule", () => {
-    // The client and server share the same 8..20 CIN range so a seven-character
-    // value is rejected before submission; server validation stays authoritative.
+  test("client CIN boundary (7..20) matches the server authoritative rule", () => {
+    // The client and server share the same 7..20 CIN range; server validation
+    // stays authoritative when the request reaches the API.
     expect(
-      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(7) })
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(6) })
         .success,
     ).toBe(false);
     expect(
@@ -351,7 +351,7 @@ describe("applicant form CIN boundary (8..20, aligned with server)", () => {
         .success,
     ).toBe(false);
     expect(
-      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(8) })
+      applicantFormSchema.safeParse({ ...validCinForm, cin: "A".repeat(7) })
         .success,
     ).toBe(true);
     expect(

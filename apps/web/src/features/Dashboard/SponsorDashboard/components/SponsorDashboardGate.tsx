@@ -27,7 +27,7 @@ export function SponsorDashboardGate() {
     return (
       <NErrorState
         message={getPublicApiErrorMessage(profile.error, t("state.retry"))}
-        title="We could not load your sponsor workspace"
+        title={t("dashboard.sponsor.workspaceLoadError")}
         onRetry={() => void profile.refetch()}
         surface="panel"
       />

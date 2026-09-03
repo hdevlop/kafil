@@ -50,11 +50,11 @@ export function useOrdersTableColumns(
       },
       {
         accessorKey: "placementSource",
-        header: "Source",
+        header: t("operator.orders.sourceColumn"),
         cell: ({ getValue }) =>
           getValue<string>() === "operator_assisted"
-            ? "Assisted"
-            : "Self-service",
+            ? t("operator.orders.sourceAssisted")
+            : t("operator.orders.sourceSelfService"),
       },
       {
         accessorKey: "totalMinor",

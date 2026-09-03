@@ -31,8 +31,8 @@ const phone = z
 const cin = z
   .string()
   .trim()
-  .min(8, "Enter your national identity number")
-  .max(20, "Enter your national identity number");
+  .min(7, "CIN must be at least 7 characters")
+  .max(20, "CIN must be at most 20 characters");
 
 const gender = z.enum(["female", "male"], {
   message: "Choose your gender",
