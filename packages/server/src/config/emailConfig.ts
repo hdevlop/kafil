@@ -1,5 +1,7 @@
+import { Inject, LoggerService, Meta, Service, plugin } from "najm-core";
 import {
   email,
+  EmailService,
   type EmailPluginConfig,
   type ProviderConfig,
 } from "najm-email";
@@ -78,3 +80,33 @@ function resolveEmailConfig(): EmailPluginConfig {
     },
   };
 }
+
+/**
+ * najm-email reports a delivery failure only through the `email:failed` event:
+ * `EmailService.send` folds the provider's message into `SendResult.error`, and
+ * every caller here and in najm-auth reads `success` alone. Without this
+ * listener a rejected Resend or SMTP send leaves no trace in the logs.
+ */
+@Service()
+@Meta({ layer: "plugin" })
+export class EmailDeliveryLogger {
+  @Inject(LoggerService) private readonly logger!: LoggerService;
+
+  constructor(private readonly emails: EmailService) {}
+
+  async onReady() {
+    this.emails.on("email:failed", ({ message, error }) => {
+      // Recipients stay out of the log; the provider message carries the cause.
+      this.logger.error("Email delivery failed", error, {
+        provider: this.emails.getProviderName(),
+        subject: message.subject,
+      });
+    });
+  }
+}
+
+export const emailDiagnosticsConfig = () =>
+  plugin("kafil-email-diagnostics")
+    .requires("email")
+    .services(EmailDeliveryLogger)
+    .build();

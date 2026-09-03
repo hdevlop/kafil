@@ -4,6 +4,7 @@ import {
   authConfig,
   db,
   emailConfig,
+  emailDiagnosticsConfig,
   i18nConfig,
   mcpConfig,
   storageConfig,
@@ -44,6 +45,7 @@ function createServer() {
     .use(database({ default: db }))
     .use(i18nConfig())
     .use(emailConfig())
+    .use(emailDiagnosticsConfig())
     .use(authConfig())
     .use(mcpConfig())
     // Plugin services boot before application services. Register exact image
