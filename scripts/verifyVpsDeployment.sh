@@ -57,3 +57,71 @@ case "${redirect_status}" in
   301|302|307|308) printf 'HTTP redirect: %s\n' "${redirect_status}" ;;
   *) echo "HTTP redirect: unexpected HTTP ${redirect_status}" >&2; exit 1 ;;
 esac
+
+# ---------------------------------------------------------------------------
+# Runtime topology
+#
+# Rate limiting is only as strong as the assumptions behind its key: Redis must
+# be the shared counter store, and every request must arrive through the edge
+# proxy. Both are asserted here so a drifted deployment fails the gate instead
+# of silently weakening login throttling.
+# ---------------------------------------------------------------------------
+readonly release_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly compose_file="${release_root}/compose.production.yml"
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker is required to verify the runtime topology." >&2
+  exit 1
+fi
+
+compose=(docker compose --env-file "${infra_env}" -f "${compose_file}")
+
+container_id() {
+  "${compose[@]}" ps -q "$1" 2>/dev/null || true
+}
+
+redis_id="$(container_id redis)"
+if [[ -z "${redis_id}" ]]; then
+  echo "Redis: not running; rate-limit counters would not survive a restart." >&2
+  exit 1
+fi
+
+redis_health="$(docker inspect --format '{{.State.Health.Status}}' "${redis_id}" 2>/dev/null || echo unknown)"
+if [[ "${redis_health}" != "healthy" ]]; then
+  echo "Redis: unexpected health '${redis_health}'." >&2
+  exit 1
+fi
+printf 'Redis health: %s\n' "${redis_health}"
+
+# Redis must stay on the internal network with no host binding at all.
+redis_ports="$(docker inspect --format '{{json .NetworkSettings.Ports}}' "${redis_id}")"
+if [[ "${redis_ports}" != "{}" && "${redis_ports}" != *'":null'* ]]; then
+  if grep -q 'HostPort' <<<"${redis_ports}"; then
+    echo "Redis: refusing a published host port; it must remain internal." >&2
+    exit 1
+  fi
+fi
+printf 'Redis binding: internal only\n'
+
+# The application must never be reachable except through the edge proxy, or a
+# client could bypass the proxy and present its own forwarding headers.
+app_id="$(container_id app)"
+if [[ -z "${app_id}" ]]; then
+  echo "Application: not running." >&2
+  exit 1
+fi
+
+app_bindings="$(docker inspect \
+  --format '{{range $p, $conf := .NetworkSettings.Ports}}{{range $conf}}{{$p}}={{.HostIp}} {{end}}{{end}}' \
+  "${app_id}")"
+for binding in ${app_bindings}; do
+  host_ip="${binding#*=}"
+  case "${host_ip}" in
+    127.0.0.1|::1|localhost) ;;
+    *)
+      echo "Application: published on non-loopback address '${host_ip}'; the edge proxy must be the only ingress." >&2
+      exit 1
+      ;;
+  esac
+done
+printf 'Application binding: loopback only\n'

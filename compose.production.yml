@@ -30,6 +30,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Loopback only: the public edge proxy is the sole ingress. Never publish
+    # this on 0.0.0.0 — the trusted-proxy hop count assumes every request
+    # arrives through that edge.
     ports:
       - 127.0.0.1:${KAFIL_LOOPBACK_PORT:-3300}:3000
     healthcheck:
@@ -72,9 +77,11 @@ services:
         max-size: 10m
         max-file: "5"
 
+  # Rate-limit counters live here. Redis is required in production: a
+  # per-process memory bucket would reset on every deploy and would not be
+  # shared between application instances.
   redis:
     image: redis:7.4.5-bookworm
-    profiles: [redis]
     restart: unless-stopped
     env_file:
       - path: /opt/kafil/env/infrastructure.env
