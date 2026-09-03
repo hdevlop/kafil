@@ -53,3 +53,27 @@ describe("production security header contracts", () => {
     expect(verifier).toContain('require_absent "X-Powered-By"');
   });
 });
+
+describe("najm-next configuration contract", () => {
+  const resolved = async () => (await import("najm-next/config")).default;
+
+  test("the preset owns the app-layer security and runtime keys", async () => {
+    const config = await resolved();
+    expect(config.poweredByHeader).toBe(false);
+    expect(config.serverExternalPackages).toContain("reflect-metadata");
+  });
+
+  test("the service-worker headers survive the preset", async () => {
+    const rules = (await (await resolved()).headers?.()) ?? [];
+    const serviceWorker = rules.find((rule) => rule.source === "/sw.js");
+    expect(serviceWorker).toBeDefined();
+    expect(
+      Object.fromEntries(serviceWorker!.headers.map(({ key, value }) => [key, value])),
+    ).toEqual({
+      "Content-Type": "application/javascript; charset=utf-8",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self'",
+      "Service-Worker-Allowed": "/",
+    });
+  });
+});

@@ -39,3 +39,12 @@ domain owner's explicit approval.
 The optional Caddy deployment carries the same enforced baseline and response
 header removals. Caddy is not the production routing owner while Dokploy
 Traefik owns ports 80 and 443.
+
+## Deployment gate
+
+`scripts/deployVps.sh` runs the same verifier against `https://$KAFIL_HOSTNAME`
+after the readiness check and records the result as `security_headers` in the
+deployment state file. A non-compliant origin fails the deployment with exit
+code `8` and does **not** roll back the application image: the header policy
+belongs to the proxy, so the previous image would be equally non-compliant.
+Reattach `kafil-security@file` to the Kafil HTTPS router and redeploy.

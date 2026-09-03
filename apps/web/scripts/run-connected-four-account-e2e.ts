@@ -107,7 +107,7 @@ const serverEnvAllowlist = {
   KAFIL_E2E_BASE_URL: baseUrl,
   KAFIL_E2E_USE_PRODUCTION: useProductionServer ? "1" : "0",
   KAFIL_E2E_MANAGED_SERVER: "1",
-  KAFIL_NEXT_DIST_DIR: ".next-connected-acceptance-webpack",
+  NAJM_NEXT_DIST_DIR: ".next-connected-acceptance-webpack",
   KAFIL_E2E_DATABASE_MODE: readEnv("KAFIL_E2E_DATABASE_MODE"),
   KAFIL_E2E_ALLOW_DEFAULT_DATABASE: readEnv("KAFIL_E2E_ALLOW_DEFAULT_DATABASE"),
   KAFIL_E2E_MAILBOX_API_URL: readEnv("KAFIL_E2E_MAILBOX_API_URL"),

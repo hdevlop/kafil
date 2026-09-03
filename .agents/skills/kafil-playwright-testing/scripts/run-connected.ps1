@@ -129,7 +129,7 @@ if (-not $SkipDiagnostics -and -not [string]::IsNullOrWhiteSpace($Grep) -and $Gr
 if ($UseProduction) {
   $buildId = Join-Path $repoRoot "apps\web\.next-connected-acceptance-webpack\BUILD_ID"
   if (-not (Test-Path -LiteralPath $buildId -PathType Leaf)) {
-    throw "Production discriminator requires the connected acceptance build. Build KAFIL_NEXT_DIST_DIR=.next-connected-acceptance-webpack first."
+    throw "Production discriminator requires the connected acceptance build. Build NAJM_NEXT_DIST_DIR=.next-connected-acceptance-webpack first."
   }
 }
 

@@ -4,7 +4,7 @@ const webRoot = resolve(import.meta.dir, "..");
 const childEnvironment: Record<string, string | undefined> = {
   ...process.env,
   KAFIL_E2E_MANAGED_SERVER: "1",
-  KAFIL_NEXT_DIST_DIR: ".next-form-fill-e2e",
+  NAJM_NEXT_DIST_DIR: ".next-form-fill-e2e",
 };
 
 let exitCode = 1;

@@ -446,9 +446,9 @@ compilation or a missing lifecycle event after a successful route response.
 Build the exact dist directory expected by the connected runner once:
 
 ```powershell
-$env:KAFIL_NEXT_DIST_DIR='.next-connected-acceptance-webpack'
+$env:NAJM_NEXT_DIST_DIR='.next-connected-acceptance-webpack'
 bun run --cwd apps/web build
-Remove-Item Env:KAFIL_NEXT_DIST_DIR -ErrorAction SilentlyContinue
+Remove-Item Env:NAJM_NEXT_DIST_DIR -ErrorAction SilentlyContinue
 powershell -NoProfile -ExecutionPolicy Bypass -File `
   .agents/skills/kafil-playwright-testing/scripts/run-connected.ps1 `
   -Grep 'work unit C' -UseProduction

@@ -17,7 +17,7 @@ if [[ ! "${expected_digest}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
   echo "Expected a sha256 image digest." >&2
   exit 2
 fi
-for required in compose.production.yml deploy/Caddyfile scripts/verifyVpsDeployment.sh release.sha256; do
+for required in compose.production.yml deploy/Caddyfile scripts/verifyVpsDeployment.sh scripts/verifySecurityHeaders.sh release.sha256; do
   if [[ ! -f "${release_dir}/${required}" ]]; then
     echo "Missing release file: ${release_dir}/${required}" >&2
     exit 2
@@ -113,6 +113,18 @@ if [[ "${healthy}" != true ]]; then
   exit 6
 fi
 
+# The application image is live, but the browser security headers are owned by
+# the edge proxy rather than this release. Verify the public origin so a missing
+# or reverted edge middleware fails the deployment instead of passing silently.
+if [[ -z "${KAFIL_HOSTNAME:-}" ]]; then
+  echo "KAFIL_HOSTNAME is unset; the public security headers cannot be verified." >&2
+  exit 8
+fi
+security_headers=passed
+if ! bash "${release_dir}/scripts/verifySecurityHeaders.sh" "https://${KAFIL_HOSTNAME}"; then
+  security_headers=failed
+fi
+
 app_id="$("${compose[@]}" ps -q app)"
 running_image="$(docker inspect --format '{{.Config.Image}}' "${app_id}")"
 running_digest="$(docker image inspect "${running_image}" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
@@ -125,8 +137,16 @@ record="${state_dir}/deployment-${git_sha}.txt"
   printf 'migration_log_sha256=%s\n' "$(sha256sum "${migration_log}" | cut -d' ' -f1)"
   printf 'auth_seed_log_sha256=%s\n' "$(sha256sum "${auth_seed_log}" | cut -d' ' -f1)"
   printf 'health=passed\n'
+  printf 'security_headers=%s\n' "${security_headers}"
   printf 'rollback_image=%s\n' "${previous_image:-none}"
   printf 'rollback_release=%s\n' "${previous_release:-none}"
 } >"${record}"
+if [[ "${security_headers}" != passed ]]; then
+  echo "Deployment ${git_sha} is live but the public security headers are non-compliant." >&2
+  echo "The application image was not rolled back; edge header policy is owned by the proxy, not this release." >&2
+  echo "Reattach the kafil-security middleware to the Kafil HTTPS router, then rerun:" >&2
+  echo "  bash scripts/verifySecurityHeaders.sh https://${KAFIL_HOSTNAME}" >&2
+  exit 8
+fi
 ln -sfn "${record}" "${state_dir}/last-successful.txt"
 printf 'Deployment %s passed with digest %s.\n' "${git_sha}" "${running_digest}"
