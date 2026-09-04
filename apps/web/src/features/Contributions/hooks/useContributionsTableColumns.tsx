@@ -9,7 +9,7 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { ContributionAudience, ContributionListRecord } from "../types";
 
@@ -18,7 +18,7 @@ type Column = NTableProps<ContributionListRecord>["columns"][number];
 export function useContributionsTableColumns(
   audience: ContributionAudience,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   return useMemo<NTableProps<ContributionListRecord>["columns"]>(() => {
     const columns: Column[] = [];

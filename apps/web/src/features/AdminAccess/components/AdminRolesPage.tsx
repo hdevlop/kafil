@@ -3,14 +3,14 @@
 import { ShieldCheck } from "lucide-react";
 import { NEmptyState, NErrorState, NPageHeader, NCard, NPageLayout } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useAccessRoles } from "../hooks/useAdminAccess";
 
 export function AdminRolesPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const roles = useAccessRoles();
   return (
     <NPageLayout className="flex h-full min-h-0 flex-col gap-4">

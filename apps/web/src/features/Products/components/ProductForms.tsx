@@ -17,7 +17,7 @@ import {
   type ProductStatusFormValues,
   type UpdateProductFormValues,
 } from "../config/productSchemas";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useProductCategories, useProductCommands } from "../hooks/useProducts";
 import type { ProductCategory, ProductRecord } from "../types";
 
@@ -68,7 +68,7 @@ function ProductFields({
   onImageChange: (file: File | null) => void;
   product?: ProductRecord;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [categorySearch, setCategorySearch] = useState("");
   const categories = useProductCategories(useDebouncedValue(categorySearch, 250));
   const options = categoryOptions(categories.data ?? [], product);
@@ -119,7 +119,7 @@ function ProductFields({
 
 export function CreateProductDialogContent() {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { create } = useProductCommands();
   const categories = useProductCategories();
   const [image, setImage] = useState<File | null>(null);
@@ -193,7 +193,7 @@ export function CreateProductDialogContent() {
 
 export function UpdateProductDialogContent({ product }: Readonly<{ product: ProductRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { update } = useProductCommands();
   const categories = useProductCategories();
   const [image, setImage] = useState<File | string | null>(product.imageUrl);
@@ -299,7 +299,7 @@ export function ProductStatusDialogContent({
   product: ProductRecord;
 }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const commands = useProductCommands();
   const command = commands[action];
 
@@ -335,7 +335,7 @@ export function DeleteProductDialogContent({
   product,
 }: Readonly<{ product: ProductRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { remove } = useProductCommands();
 
   async function handleDelete() {

@@ -11,13 +11,13 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useNajmFormat } from "najm-kit";
 
 import type { ApplicantRecord } from "../types";
 
 export function ApplicantCard({ data }: Readonly<{ data: ApplicantRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   return (

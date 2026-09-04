@@ -5,7 +5,7 @@ import { useUser } from "najm-auth/client/react";
 import { useState } from "react";
 import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
@@ -25,7 +25,7 @@ import type { ApplicantRecord } from "../types";
 import type { ListApplicantsParams } from "../services/api";
 
 export function ApplicantsPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const user = useUser();
   const tableMode = useDesktopTableMode();

@@ -16,7 +16,7 @@ import {
 } from "najm-kit";
 import { z } from "zod";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useKafilRole } from "@/shared/Authorization";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 
@@ -62,7 +62,7 @@ function PlanReasonDialogContent({
   action,
   plan,
 }: Readonly<{ action: PlanAction; plan: SponsorContributionPlan }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { isExactSponsor } = useKafilRole();
   const workspace = useSponsorContributionWorkspace(isExactSponsor);
@@ -112,7 +112,7 @@ export function SponsorContributionWorkspace({
   onCompleted?: () => void;
   showPlans?: boolean;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const dialog = useDialog();
   const { isExactSponsor } = useKafilRole();

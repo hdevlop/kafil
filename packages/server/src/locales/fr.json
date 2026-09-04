@@ -561,6 +561,17 @@
   },
   "ui": {
     "common": {
+      "feedback": {
+        "loadingLabel": "Chargement...",
+        "emptyTitle": "Rien pour le moment",
+        "errorTitle": "Impossible de charger cette page",
+        "errorMessage": "Veuillez réessayer dans un instant.",
+        "retryLabel": "Réessayer",
+        "forbiddenTitle": "Accès refusé",
+        "forbiddenDescription": "Votre rôle Kafil ne vous permet pas d’accéder à cette page.",
+        "notFoundTitle": "Page introuvable",
+        "notFoundDescription": "La page a peut-être été déplacée ou n’est pas disponible pour votre rôle."
+      },
       "table": {
         "settings": "Réglages du tableau",
         "view": "Affichage",

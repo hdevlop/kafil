@@ -3,7 +3,7 @@
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { entityKeys } from "@/hooks/queryKeys";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getSettings, updateSettings } from "@/services/settingApi";
 
 export const settingKeys = {
@@ -18,7 +18,7 @@ export function usePlatformSettings() {
 }
 
 export function useSettingCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return {
     updateSettings: useEntityCommand({
       mutationFn: updateSettings,

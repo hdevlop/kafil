@@ -4,7 +4,7 @@ import { UserRoundPlus } from "lucide-react";
 import { AvatarFormInput, FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 import { useRef, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
   deleteSponsorImage,
   uploadSponsorImage,
@@ -50,7 +50,7 @@ function selectSponsorImage(
 }
 
 export function CreateSponsorDialogContent() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { create } = useSponsorCommands();
   const [sponsorImage, setSponsorImage] = useState<File | null>(null);
@@ -126,7 +126,7 @@ export function CreateSponsorDialogContent() {
 }
 
 export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: SponsorRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { update } = useSponsorCommands();
   const [sponsorImage, setSponsorImage] = useState<File | null>(null);
@@ -247,7 +247,7 @@ export function SponsorStatusDialogContent({
   action: "deactivate" | "reactivate";
   sponsor: SponsorRecord;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const commands = useSponsorCommands();
   const command = commands[action];
@@ -281,7 +281,7 @@ export function SponsorStatusDialogContent({
 export function DeleteSponsorDialogContent({
   sponsor,
 }: Readonly<{ sponsor: SponsorRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { remove } = useSponsorCommands();
 
@@ -313,7 +313,7 @@ export function BulkDeleteSponsorsDialogContent({
   sponsorIds,
   onDeleted,
 }: Readonly<{ sponsorIds: string[]; onDeleted: () => void }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { bulkRemove } = useSponsorCommands();
   const submittingRef = useRef(false);

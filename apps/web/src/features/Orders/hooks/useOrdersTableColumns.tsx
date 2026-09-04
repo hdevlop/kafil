@@ -9,14 +9,14 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { OrderRecord } from "../types";
 
 export function useOrdersTableColumns(
   onDelivery?: (order: OrderRecord) => void,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   return useMemo<NTableProps<OrderRecord>["columns"]>(() => {
     return [

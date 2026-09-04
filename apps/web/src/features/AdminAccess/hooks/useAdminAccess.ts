@@ -4,7 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useCardViewport } from "najm-kit";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
   deactivateAccessUser,
   createAccessPermission,
@@ -108,7 +108,7 @@ export function useAccessPermissions() {
 }
 
 export function useAccessUserCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const invalidate = [adminAccessKeys.all];
   const deactivate = useEntityCommand({
     mutationFn: deactivateAccessUser,
@@ -132,7 +132,7 @@ export function useAccessUserCommands() {
 }
 
 export function useAdminAccessCreateCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const invalidate = [adminAccessKeys.all];
   const createPermission = useEntityCommand({
     mutationFn: createAccessPermission,

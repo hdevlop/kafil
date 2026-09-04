@@ -1,3 +1,5 @@
+import { defineI18n, type TranslationKeys } from "najm-i18n/define";
+
 import ar from "./ar.json";
 import en from "./en.json";
 import es from "./es.json";
@@ -7,7 +9,7 @@ interface JsonObject {
   [key: string]: JsonObject | string;
 }
 
-function mergeLocale<Default extends JsonObject>(
+function completeLocale<Default extends JsonObject>(
   defaults: Default,
   overrides: JsonObject,
 ): Default {
@@ -18,43 +20,38 @@ function mergeLocale<Default extends JsonObject>(
     result[key] =
       typeof current === "object" && current !== null &&
       typeof value === "object" && value !== null
-        ? mergeLocale(current, value)
+        ? completeLocale(current, value)
         : value;
   }
 
   return result as Default;
 }
 
-export const translations = {
-  en,
-  fr: mergeLocale(en, fr),
-  ar: mergeLocale(en, ar),
-  es: mergeLocale(en, es),
-} as const;
+export const kafilI18n = defineI18n({
+  translations: {
+    en,
+    fr: completeLocale(en, fr),
+    ar: completeLocale(en, ar),
+    es: completeLocale(en, es),
+  },
+  defaultLanguage: "en",
+  fallbackToDefaultLanguage: true,
+  languageMetadata: {
+    en: { locale: "en-MA", direction: "ltr" },
+    fr: { locale: "fr-MA", direction: "ltr" },
+    ar: { locale: "ar-MA", direction: "rtl" },
+    es: { locale: "es-MA", direction: "ltr" },
+  },
+});
 
-export const uiTranslations = {
-  en: translations.en.ui,
-  fr: translations.fr.ui,
-  ar: translations.ar.ui,
-  es: translations.es.ui,
-} as const;
+export const translations = kafilI18n.translations;
+export const kafilUiI18n = kafilI18n.scope("ui");
+export const uiTranslations = kafilUiI18n.translations;
 
-export type KafilLocale = keyof typeof translations;
+export type KafilLocale = (typeof kafilI18n.supportedLanguages)[number];
 export type LocaleDictionary = (typeof translations)[KafilLocale];
-
-type Join<Key extends string, Suffix> = Suffix extends string
-  ? `${Key}.${Suffix}`
-  : never;
-type LeafPaths<Value> = Value extends string
-  ? never
-  : {
-      [Key in Extract<keyof Value, string>]: Value[Key] extends string
-        ? Key
-        : Join<Key, LeafPaths<Value[Key]>>;
-    }[Extract<keyof Value, string>];
-
-export type TranslationKey = LeafPaths<typeof en>;
-export type UiTranslationKey = LeafPaths<typeof en.ui>;
+export type TranslationKey = TranslationKeys<typeof en>;
+export type UiTranslationKey = TranslationKeys<typeof en.ui>;
 
 export { ar, en, es, fr };
 export default translations;

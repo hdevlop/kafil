@@ -22,7 +22,7 @@ import {
 } from "najm-kit";
 import { useSearchParams } from "next/navigation";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useOrderCart, useOrderCartStore } from "@/features/OrderCart";
 import { CategoryFilterSheet } from "@/features/Categories/components/CategoryBar";
@@ -49,7 +49,7 @@ const productsPagination = createOffsetPagination(0, 25);
 
 export function ProductsPage() {
   const dialog = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { isExactAdmin } = useKafilRole();
   const orderCart = useOrderCart();
   const setCartOpen = useOrderCartStore((state) => state.setDialogOpen);

@@ -11,11 +11,11 @@ import {
 
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { ChildRecord } from "../types";
 
 export function useChildrenTableColumns() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   return useMemo<NTableProps<ChildRecord>["columns"]>(() => {
     return [

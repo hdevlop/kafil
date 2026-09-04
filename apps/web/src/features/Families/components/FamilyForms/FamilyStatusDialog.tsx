@@ -2,7 +2,7 @@
 
 import { NButton, NForm, FormInput, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   familyStatusFormSchema,
@@ -18,7 +18,7 @@ export function FamilyStatusDialogContent({
   action: "deactivate" | "reactivate";
   family: FamilyRecord;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const commands = useFamilyCommands();
   const command = commands[action];

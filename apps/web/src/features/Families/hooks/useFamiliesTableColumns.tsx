@@ -10,13 +10,13 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { Operator } from "@/shared/Authorization";
 
 import type { FamilyRecord } from "../types";
 
 export function useFamiliesTableColumns() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   return useMemo<NTableProps<FamilyRecord>["columns"]>(() => {
     return [

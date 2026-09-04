@@ -2,14 +2,14 @@
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { ListSupportAssignmentFilters } from "@/services/supportAssignmentApi";
 
 export function useSupportAssignmentsTableFilters(
   filters: ListSupportAssignmentFilters,
   setFilters: Dispatch<SetStateAction<ListSupportAssignmentFilters>>,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return useMemo(
     () => [
       {

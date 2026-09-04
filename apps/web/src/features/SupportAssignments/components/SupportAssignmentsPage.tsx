@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
@@ -38,7 +38,7 @@ function SupportAssignmentsIcon({ className }: Readonly<{ className?: string }>)
 }
 
 export function SupportAssignmentsPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const tableMode = useDesktopTableMode();
   const [listFilters, setListFilters] = useState<ListSupportAssignmentFilters>({});

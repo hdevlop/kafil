@@ -3,7 +3,7 @@
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useResponsiveOffsetList } from "najm-kit/query";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { sponsorKeys } from "@/features/Sponsors/hooks/sponsorKeys";
 
 import {
@@ -52,7 +52,7 @@ export function useApplicantPendingReviewCount(enabled = true) {
 }
 
 export function useApplicantDecisionCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const invalidate = [applicantKeys.all, sponsorKeys.all];
 
   const approve = useEntityCommand({

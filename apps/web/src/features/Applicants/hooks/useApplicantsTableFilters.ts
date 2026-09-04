@@ -2,7 +2,7 @@
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { ListApplicantsParams } from "../services/api";
 
@@ -12,7 +12,7 @@ export function useApplicantsTableFilters(
   query: ApplicantFilters,
   setQuery: Dispatch<SetStateAction<ApplicantFilters>>,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return useMemo(
     () => [

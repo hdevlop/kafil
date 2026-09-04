@@ -2,14 +2,14 @@
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { StaffFilters } from "./useStaff";
 
 export function useStaffTableFilters(
   filters: StaffFilters,
   setFilters: Dispatch<SetStateAction<StaffFilters>>,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return useMemo(
     () => [
       {

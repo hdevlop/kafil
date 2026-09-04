@@ -4,13 +4,13 @@ import { NErrorState, NLoadingState } from "najm-kit";
 
 import { useOwnSponsorProfile } from "@/features/Sponsors/hooks/useSponsorProfile";
 import { isSponsorProfileMissing } from "@/features/Sponsors/lib/isSponsorProfileMissing";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { SponsorDashboardPage } from "./SponsorDashboardPage";
 
 export function SponsorDashboardGate() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const profile = useOwnSponsorProfile();
   const profileMissing = profile.isError && isSponsorProfileMissing(profile.error);
 

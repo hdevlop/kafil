@@ -9,14 +9,14 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 import { getPersonImage } from "najm-kit/person-images";
 
 import type { ChildRecord } from "../types";
 
 export function ChildDetails({ child }: Readonly<{ child: ChildRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const { isExactFamily } = useKafilRole();
   return (

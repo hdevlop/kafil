@@ -3,10 +3,10 @@
 import { Baby } from "lucide-react";
 import { DynamicArray, FormInput, NFormSectionHeader } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 function InitialChildFields() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <FormInput
@@ -72,7 +72,7 @@ function InitialChildFields() {
 export function FamilyChildrenFields({
   showSectionHeader = true,
 }: Readonly<{ showSectionHeader?: boolean }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-4">

@@ -8,12 +8,12 @@ import { FormInput, NButton, NForm, toast } from "najm-kit";
 import { resetPasswordSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import type { ResetPasswordFormProps, ResetPasswordValues } from "@/app/(auth)/types";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { AuthCard } from "./AuthCard";
 
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const router = useRouter();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { isLoading, resetPassword } = useResetPassword({
     onError: (error) =>
       toast.error(getAuthErrorMessage(error, t("auth.resetLinkInvalid"))),

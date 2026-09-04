@@ -2,14 +2,14 @@
 
 import { useMemo } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { AccessPermissionView } from "../types";
 
 export function useAdminPermissionsTableFilters(
   permissions: AccessPermissionView[],
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return useMemo(
     () => [

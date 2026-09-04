@@ -13,6 +13,7 @@ import {
   type KafilTheme,
 } from "@/preferences";
 import { APP_NAME } from "@/types/branding";
+import { kafilI18n } from "@kafil/server/locales";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -64,7 +65,7 @@ export default async function RootLayout({
 
   return (
     <html
-      dir={language === "ar" ? "rtl" : "ltr"}
+      dir={kafilI18n.direction(language)}
       lang={language}
       data-time-zone={timeZone}
       className={`${cairo.className} ${cairo.variable} ${theme === "dark" ? "dark " : ""}h-full antialiased`}

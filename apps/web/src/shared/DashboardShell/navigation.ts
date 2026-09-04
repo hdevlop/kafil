@@ -16,7 +16,7 @@ import {  Baby,  ClipboardCheck,  ClipboardList,  HandCoins,
 import type { NavItem } from "najm-kit";
 import type { ComponentType } from "react";
 
-import type { TranslationKey } from "@/i18n/translations";
+import type { UiTranslationKey } from "@kafil/server/locales";
 import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";
 
 export type DashboardRole = "admin" | "operator" | "family" | "sponsor";
@@ -34,7 +34,7 @@ const NAV_SECTIONS = {
    theme: { labelKey: "nav.theme", icon: Palette },
    settings: { labelKey: "nav.settings", icon: Settings2 },
    sponsorAll: { labelKey: "nav.supportAndFinance", icon: HeartHandshake },
-} satisfies Record<string, { labelKey: TranslationKey; icon: NavIcon }>;
+} satisfies Record<string, { labelKey: UiTranslationKey; icon: NavIcon }>;
 
 type SectionId = keyof typeof NAV_SECTIONS;
 
@@ -45,7 +45,7 @@ export const THEME_NAV_GROUP_ID = "navigation:theme";
 
 interface DashboardNavRow {
    href: string;
-   labelKey: TranslationKey;
+   labelKey: UiTranslationKey;
    icon: NavIcon;
    roles: readonly DashboardRole[];
    section?: SectionId | Partial<Record<DashboardRole, SectionId>>;
@@ -231,16 +231,16 @@ export function getDashboardNavigation(
 
 export function translateDashboardNavigation(
    items: NavItem[],
-   t: (key: TranslationKey) => string,
+   t: (key: UiTranslationKey) => string,
 ): NavItem[] {
    return items.map((item) => ({
       ...item,
-      label: t(item.label as TranslationKey),
+      label: t(item.label as UiTranslationKey),
       ...(item.children
          ? { children: translateDashboardNavigation(item.children, t) }
          : {}),
       ...(item.sectionLabel
-         ? { sectionLabel: t(item.sectionLabel as TranslationKey) }
+         ? { sectionLabel: t(item.sectionLabel as UiTranslationKey) }
          : {}),
    }));
 }

@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { getUiTranslation } from "../src/i18n/translations";
+import { kafilUiI18n } from "@kafil/server/locales";
+
+const getUiTranslation = kafilUiI18n.translate;
 import { getDashboardNavigation } from "../src/shared/DashboardShell";
 
 describe("admin access management feature", () => {

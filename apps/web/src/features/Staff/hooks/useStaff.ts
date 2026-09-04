@@ -3,7 +3,7 @@
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useResponsiveOffsetList } from "najm-kit/query";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { OffsetPagination } from "najm-kit/pagination";
 import {
   bulkDeleteStaff,
@@ -69,7 +69,7 @@ export function useResponsiveStaff(filters: StaffFilters = {}) {
 }
 
 export function useStaffCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const invalidate = [staffKeys.all];
 
   const create = useEntityCommand({

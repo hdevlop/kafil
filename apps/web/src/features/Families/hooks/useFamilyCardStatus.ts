@@ -1,10 +1,10 @@
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { fundingProgressPercent } from "@/shared/FundingProgressCard";
 
 import type { FamilyRecord, SponsorFamilyView } from "../types";
 
 export function useFamilyCardStatus(data: FamilyRecord | SponsorFamilyView) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   const fundingStatus = data.funding?.status === "active" ? "active" : "pending";
   const capacityStatus = data.funding?.capacityStatus ?? "open";

@@ -17,7 +17,7 @@ import {
 
 import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
 import { formatStatusLabel } from "@/features/StatusLabels";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useOrder } from "../hooks/useOrders";
@@ -33,7 +33,7 @@ export function OrderDetailsSheet({ open, order, sponsor = false, onOpenChange }
   sponsor?: boolean;
   onOpenChange: (open: boolean) => void;
 }>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
 
   return (
     <NSheet
@@ -54,7 +54,7 @@ export function OrderDetailsSheet({ open, order, sponsor = false, onOpenChange }
 }
 
 function SponsorOrderDetails({ orderId }: Readonly<{ orderId: string }>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const fmt = useNajmFormat();
   const order = useSponsorOrder(orderId);
 
@@ -115,7 +115,7 @@ export function FamilyOrderDetailsSheet({
   orderNumber: string | null;
   onOpenChange: (open: boolean) => void;
 }>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const order = useFamilyOrder(orderId);
 
   return (
@@ -144,7 +144,7 @@ export function FamilyOrderDetailsSheet({
 }
 
 function FamilyOrderDetails({ data }: Readonly<{ data: FamilyOrderDetail }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return (
     <OrderConfirmationStep
@@ -188,7 +188,7 @@ function FamilyOrderDetails({ data }: Readonly<{ data: FamilyOrderDetail }>) {
 }
 
 export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const order = useOrder(orderId);
 
   if (order.isPending) return <NCard title={t("operator.orders.workflow.loadingOrderDetails")} loading />;

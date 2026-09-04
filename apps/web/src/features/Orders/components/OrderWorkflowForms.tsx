@@ -16,7 +16,7 @@ import { ClipboardPlus, PackagePlus, TriangleAlert, Truck, UserRoundCheck } from
 
 import { useFamilies } from "@/features/Families/hooks/useFamilies";
 import { useProducts } from "@/features/Products/hooks/useProducts";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
   deleteOrderEvidenceCandidate,
   uploadOrderEvidence,
@@ -83,7 +83,7 @@ function AssistedOrderItemFields({
   onSearchChange: (query: string) => void;
   productOptions: Array<{ value: string; label: string }>;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return (
     <div className="grid gap-4 md:grid-cols-[1fr_10rem]">
       <FormInput
@@ -113,7 +113,7 @@ function AssistedOrderItemFields({
 
 export function CreateAssistedOrderDialogContent() {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const [familySearch, setFamilySearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
@@ -237,7 +237,7 @@ export function PurchaseOrderDialogContent({
   replace = false,
 }: Readonly<{ order: OrderDetail; replace?: boolean }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const commands = useOrderCommands();
   const command = replace ? commands.replacePurchase : commands.purchase;
@@ -348,7 +348,7 @@ export function PurchaseOrderDialogLoader({
   orderId,
   replace = false,
 }: Readonly<{ orderId: string; replace?: boolean }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const order = useOrder(orderId);
   if (order.isPending) return <div className="py-8 text-center text-sm text-muted-foreground">{t("operator.orders.workflow.loadingPurchase")}</div>;
   if (order.isError || !order.data) {
@@ -369,7 +369,7 @@ export function AssignDeliveryDialogContent({
   reassign = false,
 }: Readonly<{ order: OrderRecord; reassign?: boolean }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const options = useDeliveryStaffOptions();
   const commands = useOrderCommands();
   const command = reassign ? commands.reassignDelivery : commands.assignDelivery;
@@ -447,7 +447,7 @@ export function FailDeliveryDialogContent({
   order,
 }: Readonly<{ order: OrderRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { failDelivery } = useOrderCommands();
 
   async function submit(values: z.infer<typeof deliveryFailureSchema>) {
@@ -494,7 +494,7 @@ export function ConfirmDeliveryDialogContent({
   order,
 }: Readonly<{ order: OrderRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { confirmDelivery } = useOrderCommands();
   const [proof, setProof] = useState<File | null>(null);
 

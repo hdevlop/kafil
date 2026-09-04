@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { normalizeKafilLanguage } from "@/preferences";
+import { kafilI18n } from "@kafil/server/locales";
 
 const languageCookieName = "kafil-ui-language";
-const supportedLanguages = ["en", "fr", "ar", "es"] as const;
 
 export async function POST(request: Request) {
   const body: unknown = await request.json().catch(() => null);
@@ -11,11 +10,11 @@ export async function POST(request: Request) {
     ? (body as { language?: unknown }).language
     : undefined;
 
-  if (typeof language !== "string" || !(supportedLanguages as readonly string[]).includes(language)) {
+  if (!kafilI18n.isLanguage(language)) {
     return NextResponse.json({ message: "Unsupported language." }, { status: 400 });
   }
 
-  const normalized = normalizeKafilLanguage(language);
+  const normalized = kafilI18n.normalizeLanguage(language);
   const response = NextResponse.json({ language: normalized });
   response.cookies.set(languageCookieName, normalized, {
     httpOnly: true,

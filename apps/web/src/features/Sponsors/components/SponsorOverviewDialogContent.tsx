@@ -3,7 +3,7 @@
 import { HandCoins, WalletCards } from "lucide-react";
 import { NCard, NGrid, NGridItem, useNajmFormat } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import { ContributionOverviewCard } from "@/features/Sponsors/components/overview/ContributionOverviewCard";
 import { RecentContributionsCard } from "@/features/Sponsors/components/overview/RecentContributionsCard";
@@ -22,7 +22,7 @@ export function SponsorOverviewDialogContent({
   sponsorId: string;
 }>) {
   const overview = useSponsorOverview(sponsorId);
-  const { t: originalT } = useKafilLanguage();
+  const { t: originalT } = useTranslation();
   const fmt = useNajmFormat();
   const t = (key: string, params?: Record<string, string>) => originalT(key as Parameters<typeof originalT>[0], params);
 

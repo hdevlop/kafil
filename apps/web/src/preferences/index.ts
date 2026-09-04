@@ -1,4 +1,6 @@
-export type KafilLanguage = "ar" | "en" | "es" | "fr";
+import { kafilI18n, type KafilLocale } from "@kafil/server/locales";
+
+export type KafilLanguage = KafilLocale;
 
 export type KafilTheme = "light" | "dark";
 
@@ -21,12 +23,8 @@ export const KAFIL_SUPPORTED_TIME_ZONES = [
 
 export type KafilTimeZone = (typeof KAFIL_SUPPORTED_TIME_ZONES)[number];
 
-const kafilLanguageSet: ReadonlySet<string> = new Set(["ar", "en", "es", "fr"]);
-
 export function normalizeKafilLanguage(value: unknown): KafilLanguage {
-  return typeof value === "string" && kafilLanguageSet.has(value)
-    ? (value as KafilLanguage)
-    : "en";
+  return kafilI18n.normalizeLanguage(value);
 }
 
 const kafilTimeZoneSet: ReadonlySet<string> = new Set(KAFIL_SUPPORTED_TIME_ZONES);
@@ -41,21 +39,16 @@ export function isKafilTheme(value: unknown): value is KafilTheme {
   return value === "light" || value === "dark";
 }
 
-export const KAFIL_DEFAULT_LANGUAGE: KafilLanguage = "en";
+export const KAFIL_DEFAULT_LANGUAGE = kafilI18n.defaultLanguage;
 
 export const KAFIL_DEFAULT_THEME: KafilTheme = "light";
 
 export const KAFIL_CURRENCY = "MAD" as const;
 
-const localeByLanguage: Record<KafilLanguage, string> = {
-  ar: "ar-MA",
-  en: "en-MA",
-  es: "es-MA",
-  fr: "fr-MA",
-};
-
-export const KAFIL_LOCALES: Record<KafilLanguage, string> = localeByLanguage;
+export const KAFIL_LOCALES = Object.fromEntries(
+  kafilI18n.supportedLanguages.map((language) => [language, kafilI18n.locale(language)]),
+) as Record<KafilLanguage, string>;
 
 export function localeForKafilLanguage(language: KafilLanguage): string {
-  return localeByLanguage[language];
+  return kafilI18n.locale(language);
 }

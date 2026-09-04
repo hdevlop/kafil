@@ -4,8 +4,7 @@ import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NEmptyState, NErrorState } from "najm-kit";
 
-import { KAFIL_FEEDBACK_DEFAULTS } from "../src/i18n/feedbackDefaults";
-import { getNestedTranslation, uiTranslations } from "../src/i18n/translations";
+import { kafilUiI18n } from "@kafil/server/locales";
 import {
   KafilApiError,
   getPublicApiErrorMessage,
@@ -15,33 +14,35 @@ const webRoot = join(import.meta.dir, "..");
 const sourceRoot = join(webRoot, "src");
 
 describe("Najm Kit page-state adoption", () => {
-  test("maps every shared feedback field to a translated Kafil catalog key", () => {
-    expect(KAFIL_FEEDBACK_DEFAULTS.labelKeys).toEqual({
-      loadingLabel: "state.loading",
-      emptyTitle: "state.empty",
-      errorTitle: "state.error",
-      errorMessage: "state.retry",
-      retryLabel: "action.retry",
-      forbiddenTitle: "state.forbiddenTitle",
-      forbiddenDescription: "state.forbiddenDescription",
-      notFoundTitle: "state.notFoundTitle",
-      notFoundDescription: "state.notFoundDescription",
-    });
+  test("provides every shared feedback field through the package convention", () => {
+    const fields = [
+      "loadingLabel",
+      "emptyTitle",
+      "errorTitle",
+      "errorMessage",
+      "retryLabel",
+      "forbiddenTitle",
+      "forbiddenDescription",
+      "notFoundTitle",
+      "notFoundDescription",
+    ] as const;
 
-    for (const catalog of Object.values(uiTranslations)) {
-      for (const key of Object.values(KAFIL_FEEDBACK_DEFAULTS.labelKeys)) {
-        expect(getNestedTranslation(catalog, key)).toBeTruthy();
+    for (const language of kafilUiI18n.supportedLanguages) {
+      for (const field of fields) {
+        const key = `common.feedback.${field}` as const;
+        expect(kafilUiI18n.translate(language, key)).not.toBe(key);
       }
     }
   });
 
-  test("mounts the stable defaults once on NajmAppProvider", () => {
+  test("needs no application feedback-default mapping", () => {
     const provider = readFileSync(
       join(sourceRoot, "providers/AppProviders.tsx"),
       "utf8",
     );
 
-    expect(provider).toContain("feedbackDefaults={KAFIL_FEEDBACK_DEFAULTS}");
+    expect(provider).not.toContain("feedbackDefaults=");
+    expect(existsSync(join(sourceRoot, "i18n/feedbackDefaults.ts"))).toBe(false);
   });
 
   test("uses direct package states and removes the generic Kafil wrapper", () => {

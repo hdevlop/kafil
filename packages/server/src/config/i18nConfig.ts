@@ -1,13 +1,8 @@
 import { i18n } from "najm-i18n";
 
-import translations from "../locales";
+import { kafilI18n } from "../locales";
 
-export const KAFIL_SUPPORTED_LANGUAGES = ["en", "fr", "ar", "es"] as const;
-export const KAFIL_DEFAULT_LANGUAGE = "en";
+export const KAFIL_SUPPORTED_LANGUAGES = kafilI18n.supportedLanguages;
+export const KAFIL_DEFAULT_LANGUAGE = kafilI18n.defaultLanguage;
 
-export const i18nConfig = () =>
-  i18n({
-    defaultLanguage: KAFIL_DEFAULT_LANGUAGE,
-    supportedLanguages: [...KAFIL_SUPPORTED_LANGUAGES],
-    translations,
-  });
+export const i18nConfig = () => i18n(kafilI18n.options);

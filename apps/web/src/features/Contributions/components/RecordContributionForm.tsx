@@ -14,7 +14,7 @@ import { useState } from "react";
 import { useWatch } from "react-hook-form";
 
 import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   currentContributionDate,
@@ -34,7 +34,7 @@ import {
 function ContributionCapacityNotice({
   options,
 }: Readonly<{ options: RecordingOptionView[] }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const assignmentId = useWatch({ name: "supportAssignmentId" });
   const selected = options.find((option) => option.value === assignmentId);
@@ -63,7 +63,7 @@ function ContributionSubmitButton({
   options,
   pending,
 }: Readonly<{ options: RecordingOptionView[]; pending: boolean }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const assignmentId = useWatch({ name: "supportAssignmentId" });
   const amountMad = useWatch({ name: "amountMad" });
@@ -105,7 +105,7 @@ function ContributionSubmitButton({
 export function RecordContributionDialogContent({
   familyProfileId,
 }: Readonly<{ familyProfileId?: string }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { record } = useContributionCommands();
   const [assignmentSearch, setAssignmentSearch] = useState("");

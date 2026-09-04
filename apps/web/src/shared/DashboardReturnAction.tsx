@@ -3,11 +3,11 @@
 import { buttonVariants } from "najm-kit";
 import Link from "next/link";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 /** Kafil-owned localized navigation for generic route feedback states. */
 export function DashboardReturnAction() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return (
     <Link className={buttonVariants()} href="/dashboard">

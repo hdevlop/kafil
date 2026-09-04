@@ -13,7 +13,7 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useAccessUser, useAccessUserCommands } from "../hooks/useAdminAccess";
@@ -26,7 +26,7 @@ const reasonSchema = z.object({
 export function AdminAccessUserDetails({
   userId,
 }: Readonly<{ userId: string }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const user = useAccessUser(userId);
   if (user.isPending) return <NCard title={t("adminAccess.dialogs.loadingAccount")} loading />;
@@ -90,7 +90,7 @@ export function AdminAccessReasonDialog({
   action: "deactivate" | "reactivate";
   user: AccessUser;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const commands = useAccessUserCommands();
   const command = commands[action];
@@ -140,7 +140,7 @@ export function AdminAccessReasonDialog({
 export function RevokeSessionsDialog({
   user,
 }: Readonly<{ user: AccessUser }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { revokeSessions } = useAccessUserCommands();
   async function revoke() {

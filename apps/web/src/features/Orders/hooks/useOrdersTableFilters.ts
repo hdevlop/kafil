@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { OrderListQuery } from "../types";
 
 type OrderFilters = Omit<OrderListQuery, "limit" | "offset">;
@@ -11,7 +11,7 @@ export function useOrdersTableFilters(
   filters: OrderFilters,
   setFilters: Dispatch<SetStateAction<OrderFilters>>,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return useMemo(
     () => [
       {

@@ -2,7 +2,7 @@
 
 import { FormInput } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 export const SPONSOR_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
 export const MAX_SPONSOR_IMAGE_SIZE = 5_000_000;
@@ -30,7 +30,7 @@ export function SponsorDemographicFields({
   includeNotes?: boolean;
   required?: boolean;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">

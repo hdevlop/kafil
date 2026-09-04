@@ -7,8 +7,7 @@ import { NThemeBrandingProvider } from "najm-theme/react";
 import { AuthProvider, useAuth } from "najm-auth/client/react";
 import { NajmAppProvider } from "najm-kit/app";
 import type { NajmDesignConfig } from "najm-kit";
-import { KAFIL_FEEDBACK_DEFAULTS } from "@/i18n/feedbackDefaults";
-import { uiTranslations } from "@/i18n/translations";
+import { kafilUiI18n } from "@kafil/server/locales";
 import { KAFIL_BADGE_DEFAULTS } from "@/features/StatusLabels";
 import { auth } from "@/lib/auth";
 import { APP_NAME } from "@/types/branding";
@@ -52,7 +51,6 @@ function NajmProviders({
       appName={APP_NAME}
       badgeDefaults={KAFIL_BADGE_DEFAULTS}
       currency={KAFIL_CURRENCY}
-      feedbackDefaults={KAFIL_FEEDBACK_DEFAULTS}
       formDevTools={formFillSetting.data?.enabled === true}
       initialBranding={{
         sidebarLogoExpandedPath: initialBranding.slots.sidebarLogoExpanded,
@@ -63,7 +61,12 @@ function NajmProviders({
       initialTheme={initialTheme}
       initialTimeZone={initialTimeZone}
       locales={KAFIL_LOCALES}
-      translations={uiTranslations}
+      translations={kafilUiI18n.translations}
+      defaultLanguage={kafilUiI18n.defaultLanguage}
+      fallbackToDefaultLanguage={kafilUiI18n.fallbackToDefaultLanguage}
+      getLanguageDirection={(language) =>
+        kafilUiI18n.direction(kafilUiI18n.normalizeLanguage(language))
+      }
     >
       {/*
         Carries the resolved slots *and* the factory paths into the client, so

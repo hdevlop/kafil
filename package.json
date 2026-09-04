@@ -13,8 +13,8 @@
     "najm-auth": "3.3.0",
     "najm-cache": "2.1.2",
     "najm-database": "2.0.3",
-    "najm-i18n": "2.0.3",
-    "najm-kit": "2.11.12",
+    "najm-i18n": "2.1.1",
+    "najm-kit": "2.11.13",
     "najm-mcp": "2.1.1",
     "najm-next": "0.2.0",
     "najm-rate": "2.1.0",
@@ -73,6 +73,6 @@
     "@clack/prompts": "^1.7.0",
     "ioredis": "5.11.1",
     "najm-core": "^2.0.5",
-    "najm-kit": "2.11.12"
+    "najm-kit": "2.11.13"
   }
 }

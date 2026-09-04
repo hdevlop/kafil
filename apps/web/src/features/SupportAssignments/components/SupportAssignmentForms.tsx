@@ -4,7 +4,7 @@ import { HeartHandshake } from "lucide-react";
 import { FormInput, NButton, NForm, NFormSectionHeader, useDebouncedValue, useDialog } from "najm-kit";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   createSupportAssignmentFormSchema,
@@ -25,7 +25,7 @@ import type { SupportAssignmentView } from "../types";
 export function CreateSupportAssignmentDialogContent({
   familyProfileId = "",
 }: Readonly<{ familyProfileId?: string }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { create } = useSupportAssignmentCommands();
   const [sponsorSearch, setSponsorSearch] = useState("");
@@ -119,7 +119,7 @@ export function CreateSupportAssignmentDialogContent({
 export function EndSupportAssignmentDialogContent({
   assignment,
 }: Readonly<{ assignment: SupportAssignmentView }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { end } = useSupportAssignmentCommands();
 
@@ -152,7 +152,7 @@ export function EndSupportAssignmentDialogContent({
 export function EditSupportAssignmentDialogContent({
   assignment,
 }: Readonly<{ assignment: SupportAssignmentView }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { updateNotes } = useSupportAssignmentCommands();
 

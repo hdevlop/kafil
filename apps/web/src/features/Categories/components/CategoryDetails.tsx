@@ -15,11 +15,11 @@ import {
 
 import { NNextImage } from "najm-kit/next";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { CategoryRecord } from "../types";
 
 export function CategoryDetails({ category }: Readonly<{ category: CategoryRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   return (
     <div className="space-y-5">

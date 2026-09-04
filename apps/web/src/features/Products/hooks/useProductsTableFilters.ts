@@ -2,7 +2,7 @@
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { PRODUCT_TABLE_COLUMN_IDS } from "./useProductsTableColumns";
 import type { ProductsWorkspaceFilters } from "./useProductsWorkspace";
 
@@ -16,7 +16,7 @@ export function useProductsTableFilters(
   filters: ProductsWorkspaceFilters,
   setFilters: Dispatch<SetStateAction<ProductsWorkspaceFilters>>,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return useMemo(
     () => [
       {

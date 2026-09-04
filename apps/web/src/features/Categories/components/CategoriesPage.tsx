@@ -15,7 +15,7 @@ import {
 } from "najm-kit";
 import { useRouter } from "next/navigation";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useCategoryCommands } from "@/features/Categories/hooks/useCategories";
 import { useCategoriesWorkspace } from "@/features/Categories/hooks/useCategoriesWorkspace";
@@ -40,7 +40,7 @@ const pagination = createOffsetPagination(0, 25);
 export function CategoriesPage() {
   const dialog = useDialog();
   const router = useRouter();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { isExactFamily, isExactAdmin } = useKafilRole();
   const columns = useCategoriesTableColumns();
   useCategoryCommands();

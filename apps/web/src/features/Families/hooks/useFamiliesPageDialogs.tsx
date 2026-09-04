@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import { FamilyDetails } from "../components/FamilyDetails";
 import {
@@ -14,7 +14,7 @@ import {
 import type { FamilyRecord } from "../types";
 
 export function useFamiliesPageDialogs() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const bulkDeleteDialogOpenRef = useRef(false);
 

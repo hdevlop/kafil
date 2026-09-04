@@ -16,7 +16,7 @@ import {
 } from "najm-kit";
 
 import { getPersonImage } from "najm-kit/person-images";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { NNextImage } from "najm-kit/next";
 import { useKafilRole } from "@/shared/Authorization";
 
@@ -35,7 +35,7 @@ export function ContributionDetailsSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const { isExactSponsor } = useKafilRole();
   const management = contribution ? isManagement(contribution) : false;
   const viewTitleKey = management
@@ -70,7 +70,7 @@ export function ContributionDetailsSheet({
 }
 
 export function ContributionDetails({ contribution }: Readonly<{ contribution: ContributionListRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const { isExactSponsor } = useKafilRole();
   const [nowMs, setNowMs] = useState<number | null>(null);

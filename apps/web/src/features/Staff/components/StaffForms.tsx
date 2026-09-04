@@ -12,7 +12,7 @@ import {
 import { KeyRound, Phone } from "lucide-react";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
   deleteStaffImage,
   STAFF_IMAGE_SERVE_ROUTE,
@@ -74,7 +74,7 @@ function selectStaffImage(
 }
 
 export function CreateStaffDialogContent() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { create } = useStaffCommands();
   const [staffImage, setStaffImage] = useState<File | null>(null);
@@ -255,7 +255,7 @@ export function CreateStaffDialogContent() {
 export function UpdateStaffDialogContent({
   staff,
 }: Readonly<{ staff: StaffRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { update } = useStaffCommands();
   const [staffImage, setStaffImage] = useState<File | null>(null);
@@ -464,7 +464,7 @@ export function StaffStatusDialogContent({
   action: "deactivate" | "reactivate";
   staff: StaffRecord;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const commands = useStaffCommands();
   const command = commands[action];
@@ -516,7 +516,7 @@ export function StaffStatusDialogContent({
 export function DeleteStaffDialogContent({
   staff,
 }: Readonly<{ staff: StaffRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { remove } = useStaffCommands();
 
@@ -550,7 +550,7 @@ export function BulkDeleteStaffDialogContent({
   staffIds,
   onDeleted,
 }: Readonly<{ staffIds: string[]; onDeleted: () => void }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { bulkRemove } = useStaffCommands();
 
@@ -584,7 +584,7 @@ export function BulkDeleteStaffDialogContent({
 export function ProvisionStaffAccessDialogContent({
   staff,
 }: Readonly<{ staff: StaffRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { provisionAccess } = useStaffCommands();
   const [credentials, setCredentials] = useState<{

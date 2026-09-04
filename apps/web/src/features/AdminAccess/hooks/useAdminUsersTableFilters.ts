@@ -2,7 +2,7 @@
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type {
   AccessRoleName,
@@ -14,7 +14,7 @@ export function useAdminUsersTableFilters(
   query: AccessUserListQuery,
   setQuery: Dispatch<SetStateAction<AccessUserListQuery>>,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return useMemo(
     () => [

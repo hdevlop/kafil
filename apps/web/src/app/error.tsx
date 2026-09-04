@@ -3,13 +3,13 @@
 import { NErrorState } from "najm-kit";
 import { useEffect } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 export default function GlobalError({
   error,
   reset,
 }: Readonly<{ error: Error & { digest?: string }; reset: () => void }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   useEffect(() => {
     console.error(error);

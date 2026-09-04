@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { createCardPagination, NEmptyState, NErrorState, type NTableProps } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { FamilyCard } from "../components/FamilyCard";
@@ -15,7 +15,7 @@ import { useResponsiveSponsorFamilyCatalog } from "./useFamilies";
 export function useSponsorFamiliesTableProps(
   onContribute: (family: SponsorFamilyView, assignmentId: string) => void,
 ): NTableProps<SponsorFamilyView> {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const families = useResponsiveSponsorFamilyCatalog();
   const rows = useMemo(
     () => buildSponsorFamilyViews(families.data),

@@ -3,14 +3,14 @@ import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { useContributions } from "@/features/Contributions/hooks/useContributions";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { FamilyRecord } from "../../types";
 
 export function FamilyDetailsContributions({
   family,
 }: Readonly<{ family: FamilyRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const contributions = useContributions({
     familyProfileId: family.id,

@@ -2,14 +2,14 @@
 
 import { NButton, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useFamilyCommands } from "../../hooks/useFamilies";
 import type { FamilyRecord } from "../../types";
 
 export function DeleteFamilyDialogContent({
   family,
 }: Readonly<{ family: FamilyRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { remove } = useFamilyCommands();
 

@@ -10,7 +10,7 @@ import {
 } from "najm-kit";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { deleteSponsorImage, uploadSponsorImage } from "@/services/sponsorApi";
 
 import {
@@ -30,7 +30,7 @@ import {
 } from "../SponsorProfileFields";
 
 function SponsorProfileFields({ required }: Readonly<{ required?: boolean }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -69,7 +69,7 @@ function ProfileAvatar({
   onChange: (file: File | null) => void;
   value: File | string | null;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <AvatarFormInput
@@ -93,7 +93,7 @@ function ProfileAvatar({
 export function CreateOwnSponsorProfileForm({
   onSuccess,
 }: Readonly<{ onSuccess?: () => void }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { create } = useOwnSponsorProfileCommands();
   const [image, setImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -153,7 +153,7 @@ export function UpdateOwnSponsorProfileForm({
   onSuccess,
   profile,
 }: Readonly<{ profile: OwnSponsorProfile; onSuccess?: () => void }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { update } = useOwnSponsorProfileCommands();
   const [image, setImage] = useState<File | null>(null);
   const [removeImage, setRemoveImage] = useState(false);

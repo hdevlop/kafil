@@ -19,7 +19,9 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import type { TFn } from "najm-i18n";
+import { useTranslation } from "najm-i18n/react";
+import type { UiTranslationKey } from "@kafil/server/locales";
 import type { KafilLanguage } from "@/preferences";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
@@ -40,7 +42,7 @@ export function DeliveryDetailsSheet({
   onOpenChange,
   onAction,
 }: Readonly<DeliveryDetailsSheetProps>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const detail = useOrder(open ? order?.id ?? "" : "");
   const deliveryActions = order
     ? getOrderActions(order).filter((action) =>
@@ -104,7 +106,7 @@ export function DeliveryDetailsSheet({
 export function DeliveryAssignmentCard({
   order,
 }: Readonly<{ order: NonNullable<ReturnType<typeof useOrder>["data"]> }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const featured = getFeaturedDeliveryAttempt(order);
 
   return (
@@ -194,7 +196,7 @@ function getFeaturedDeliveryAttempt(
 function DeliveryDetailsBody({
   order,
 }: Readonly<{ order: NonNullable<ReturnType<typeof useOrder>["data"]> }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const featured = getFeaturedDeliveryAttempt(order);
   const history = order.deliveryAttempts.filter((attempt) => attempt.id !== featured?.id);
@@ -281,7 +283,7 @@ function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>
 function deliveryActionLabel(
   command: OrderCommand,
   language: KafilLanguage,
-  t: ReturnType<typeof useKafilLanguage>["t"],
+  t: TFn<UiTranslationKey>,
 ) {
   switch (command) {
     case "assignDelivery":

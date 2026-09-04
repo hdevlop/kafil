@@ -23,7 +23,7 @@ import {
 } from "najm-kit";
 
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
@@ -36,7 +36,7 @@ import { AdminUserCard } from "./AdminAccessCards";
 
 export function AdminUsersPage() {
   const dialog = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const tableMode = useDesktopTableMode();
   const [query, setQuery] = useState<AccessUserListQuery>(() => ({

@@ -12,7 +12,7 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { NNextImage } from "najm-kit/next";
 
 import type { ProductRecord } from "../types";
@@ -41,7 +41,7 @@ export function ProductCard({
   quantityInCart = 0,
   adding = false,
 }: Readonly<ProductCardProps>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const isInactive = data.status !== "active";
   const busy = adding;

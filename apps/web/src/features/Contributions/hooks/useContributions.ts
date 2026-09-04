@@ -5,7 +5,7 @@ import { useUser } from "najm-auth/client/react";
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useResponsiveOffsetList } from "najm-kit/query";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
   bulkDeleteContributions,
   deleteContribution,
@@ -81,7 +81,7 @@ export function useContributionRecordingOptions(query: {
 }
 
 export function useContributionCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   const validate = useEntityCommand({
     mutationFn: validateContribution,

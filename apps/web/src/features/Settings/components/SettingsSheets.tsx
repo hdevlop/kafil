@@ -13,7 +13,7 @@ import {
   useNThemeSettingsOptional,
 } from "najm-theme/react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { authorizationHeaders } from "@/services/http";
 
 import { APP_SETTINGS_FORM_ID, AppSettingsPanel } from "./AppSettingsPanel";
@@ -51,7 +51,7 @@ export function AppSettingsSheet({
   onOpenChange,
   role,
 }: Readonly<SheetProps & { role: string | null | undefined }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [appState, setAppState] = useState({ dirty: false, saving: false });
   const [confirmClose, setConfirmClose] = useState(false);
 
@@ -117,7 +117,7 @@ export function AppSettingsSheet({
 }
 
 function ThemeSettingsSheet({ open, onOpenChange }: Readonly<SheetProps>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const themeCustomizerLabels = useMemo(
     () => ({
       themeTab: t("operator.settings.themeTab"),
@@ -168,7 +168,7 @@ function ThemeSettingsSheet({ open, onOpenChange }: Readonly<SheetProps>) {
 }
 
 function BrandingSettingsSheet({ open, onOpenChange }: Readonly<SheetProps>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const theme = useNThemeSettingsOptional();
   const [confirmClose, setConfirmClose] = useState(false);
 
@@ -242,7 +242,7 @@ export function AdminThemeSettingsSheets({
   onActiveSheetChange: (sheet: SettingsSheetKind | null) => void;
   role: string | null | undefined;
 }>) {
-  const { language } = useKafilLanguage();
+  const { language } = useTranslation();
   const router = useRouter();
 
   if (

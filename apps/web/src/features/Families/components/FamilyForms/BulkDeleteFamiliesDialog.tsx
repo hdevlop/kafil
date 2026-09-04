@@ -3,14 +3,14 @@
 import { useRef } from "react";
 import { NButton, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useFamilyCommands } from "../../hooks/useFamilies";
 
 export function BulkDeleteFamiliesDialogContent({
   familyIds,
   onDeleted,
 }: Readonly<{ familyIds: string[]; onDeleted: () => void }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { bulkRemove } = useFamilyCommands();
   const submittingRef = useRef(false);

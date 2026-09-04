@@ -4,7 +4,7 @@ import { UserRound } from "lucide-react";
 import { NCard, NErrorState, NSheet } from "najm-kit";
 import { useEffect, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useOwnSponsorProfile } from "../../hooks/useSponsorProfile";
@@ -21,7 +21,7 @@ export function openSponsorProfileSheet() {
 }
 
 export function SponsorProfileSheet() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const profile = useOwnSponsorProfile();
   const required = profile.isError && isSponsorProfileMissing(profile.error);

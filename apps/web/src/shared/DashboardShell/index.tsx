@@ -6,7 +6,7 @@ import { NButton, NajmScroll, NSidebar, NSidebarProvider, useNSidebar } from "na
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useMemo, useState, type ComponentType, type ReactNode } from "react";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
    AdminThemeSettingsSheets,
    AppSettingsSheet,
@@ -51,7 +51,7 @@ function SidebarAction({ icon: Icon, label, onClick }: Readonly<{ icon: Componen
 
 function DashboardShellBody({ children, user }: Readonly<{ children: React.ReactNode; user: DashboardUser }>) {
    const pathname = usePathname();
-   const { t } = useKafilLanguage();
+   const { t } = useTranslation();
    const sidebar = useNSidebar();
    const navItems = useMemo(() => translateDashboardNavigation(getDashboardNavigation(user.role), t), [t, user.role],);
    const [activeSettingsSheet, setActiveSettingsSheet] = useState<SettingsSheetKind | null>(null);

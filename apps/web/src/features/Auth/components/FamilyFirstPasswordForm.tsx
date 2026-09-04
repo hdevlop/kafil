@@ -4,7 +4,7 @@ import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import { FormInput, NButton, NForm, toast } from "najm-kit";
 import { useEffect, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
   cancelCredentialSetup,
   getCredentialSetupStatus,
@@ -17,7 +17,7 @@ import {
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 
 export function FamilyFirstPasswordForm() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [checking, setChecking] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);

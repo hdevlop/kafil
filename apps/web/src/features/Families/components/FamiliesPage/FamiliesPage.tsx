@@ -4,7 +4,7 @@ import { useState } from "react";
 import { NPageHeader, NPageLayout, NTable } from "najm-kit";
 
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useKafilRole } from "@/shared/Authorization";
 
 import { useFamiliesTableProps } from "../../hooks/useFamiliesTableProps";
@@ -22,7 +22,7 @@ export function FamiliesPage() {
 }
 
 function SponsorFamiliesPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [contribution, setContribution] =
     useState<SponsorContributionSelection | null>(null);
   const tableProps = useSponsorFamiliesTableProps((family, assignmentId) => {
@@ -51,7 +51,7 @@ function SponsorFamiliesPage() {
 }
 
 function ManagedFamiliesPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const tableProps = useFamiliesTableProps();
 
   return (

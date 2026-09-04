@@ -15,12 +15,12 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { SponsorRecord } from "../types";
 
 export function SponsorDetails({ sponsor }: Readonly<{ sponsor: SponsorRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   return (
     <div className="space-y-5">

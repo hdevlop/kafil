@@ -10,7 +10,9 @@ import {
   updateCategoryFormSchema,
 } from "../src/features/Categories/config/categorySchemas";
 import { categoryKeys } from "../src/features/Categories/hooks/categoryKeys";
-import { getUiTranslation } from "../src/i18n/translations";
+import { kafilUiI18n } from "@kafil/server/locales";
+
+const getUiTranslation = kafilUiI18n.translate;
 
 const categoriesPage = readFileSync(
   new URL("../src/features/Categories/components/CategoriesPage.tsx", import.meta.url),

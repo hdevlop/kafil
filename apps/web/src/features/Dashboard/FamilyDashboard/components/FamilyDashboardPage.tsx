@@ -30,7 +30,7 @@ import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { NNextImage } from "najm-kit/next";
@@ -45,7 +45,7 @@ export function FamilyDashboardPage() {
   const dashboard = useFamilyDashboard();
   const children = useOwnFamilyChildren();
   const profile = useOwnFamilyProfile();
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const fmt = useNajmFormat();
 
   if (dashboard.isError) {

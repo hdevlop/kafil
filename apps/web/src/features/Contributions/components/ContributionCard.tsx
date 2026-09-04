@@ -17,7 +17,7 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useKafilRole } from "@/shared/Authorization";
 
 export interface ContributionCardData {
@@ -38,7 +38,7 @@ export interface ContributionCardData {
 export function ContributionCard({
   data,
 }: Readonly<{ data: ContributionCardData }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const { isExactSponsor } = useKafilRole();
   const isPending = data.status === "pending";

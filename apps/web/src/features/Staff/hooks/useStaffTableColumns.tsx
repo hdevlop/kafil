@@ -9,7 +9,7 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { StaffRecord } from "../types";
 
@@ -29,7 +29,7 @@ export function matchesStaffFunction(
 }
 
 export function useStaffTableColumns() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   return useMemo<NTableProps<StaffRecord>["columns"]>(() => {
     return [

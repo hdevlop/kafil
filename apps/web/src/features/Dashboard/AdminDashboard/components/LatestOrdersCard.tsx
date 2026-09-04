@@ -1,7 +1,7 @@
 "use client";
 
 import type { LatestOrdersCardProps } from "@/features/Dashboard";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { ArrowRight, ClipboardList } from "lucide-react";
 import {
   NAvatar,
@@ -17,7 +17,7 @@ import Link from "next/link";
 
 export function LatestOrdersCard({ recentOrders }: Readonly<LatestOrdersCardProps>) {
 
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   return (

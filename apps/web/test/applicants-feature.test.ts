@@ -12,7 +12,9 @@ import {
   getApplicantEmailOtpSetup,
   resendApplicantEmailOtp,
 } from "../src/features/Applicants";
-import { getUiTranslation } from "../src/i18n/translations";
+import { kafilUiI18n } from "@kafil/server/locales";
+
+const getUiTranslation = kafilUiI18n.translate;
 
 function source(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");

@@ -23,7 +23,7 @@ import { CreateSupportAssignmentDialogContent } from "@/features/SupportAssignme
 import { useSponsorFamilySupportCommand } from "@/features/SupportAssignments/hooks/useSponsorSupport";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { NNextImage } from "najm-kit/next";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import { useFamilyCardStatus } from "../../hooks/useFamilyCardStatus";
 import type { FamilyRecord, SponsorFamilyView } from "../../types";
@@ -57,7 +57,7 @@ function SponsorFamilyAction({
   isClosed: boolean;
   onContribute?: (family: SponsorFamilyView, assignmentId: string) => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const selectFamily = useSponsorFamilySupportCommand();
   const closedLabel = data.funding?.capacityStatus === "reserved"
     ? t("sponsor.directory.coveredByPending")
@@ -106,7 +106,7 @@ export function FamilyCard({
   data: FamilyCardData;
   onContribute?: (family: SponsorFamilyView, assignmentId: string) => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const sponsorFamily = isSponsorFamily(data) ? data : null;
   const { fundingStatus, isClosed, disabledReason, supportPriorityLabel } =

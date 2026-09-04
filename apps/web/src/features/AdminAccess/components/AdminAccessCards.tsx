@@ -16,12 +16,12 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { AccessPermissionView, AccessUser } from "../types";
 
 export function AdminUserCard({ data, onClick }: Readonly<{ data: AccessUser; onClick?: () => void }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   return (
@@ -43,7 +43,7 @@ export function AdminUserCard({ data, onClick }: Readonly<{ data: AccessUser; on
 }
 
 export function AdminPermissionCard({ data }: Readonly<{ data: AccessPermissionView }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const canonicalState = data.drift === "in_sync"
     ? t("adminAccess.common.inSync")
     : data.drift === "custom"

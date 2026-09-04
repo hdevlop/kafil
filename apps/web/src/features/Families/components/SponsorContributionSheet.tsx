@@ -5,7 +5,7 @@ import { NSheet } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
 import { SponsorContributionWorkspace } from "@/features/Contributions/components/SponsorContributionWorkspace";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { NNextImage } from "najm-kit/next";
 
@@ -23,7 +23,7 @@ export function SponsorContributionSheet({
   onOpenChange: (open: boolean) => void;
   selection: SponsorContributionSelection | null;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const family = selection?.family;
 
   return (

@@ -7,10 +7,10 @@ import { FormInput, NButton, NForm, toast } from "najm-kit";
 import { forgotPasswordSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import type { ForgotPasswordValues } from "@/app/(auth)/types";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 export function ForgotPasswordForm() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { forgotPassword, isLoading, isSuccess } = useForgotPassword({
     onError: (error) =>
       toast.error(getAuthErrorMessage(error, t("auth.resetRequestFailed"))),

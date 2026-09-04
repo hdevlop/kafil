@@ -2,12 +2,12 @@
 
 import { NButton } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 export function PendingReview({
   destination,
 }: Readonly<{ destination: string }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return (
     <div className="flex w-full flex-col text-center">

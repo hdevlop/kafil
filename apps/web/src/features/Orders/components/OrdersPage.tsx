@@ -33,7 +33,7 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useKafilRole } from "@/shared/Authorization/useKafilRole";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { createOffsetPagination, getPageIndex } from "najm-kit/pagination";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -98,7 +98,7 @@ export interface OrdersPageProps {
 
 export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps>) {
   const dialog = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const { isExactAdmin, isExactFamily, isExactSponsor } = useKafilRole();
   const tableMode = useDesktopTableMode();

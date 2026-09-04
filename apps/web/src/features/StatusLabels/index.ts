@@ -1,10 +1,10 @@
 import { normalizeStatusToken, type NBadgeDefaults } from "najm-kit";
 import { humanizeToken } from "najm-kit/format";
 
-import { getUiTranslation, type TranslationKey } from "@/i18n/translations";
+import { kafilUiI18n, type UiTranslationKey } from "@kafil/server/locales";
 import type { KafilLanguage } from "@/preferences";
 
-export const statusTranslationKeys: Record<string, TranslationKey> = {
+export const statusTranslationKeys: Record<string, UiTranslationKey> = {
   active: "status.active",
   approved: "status.approved",
   cancelled: "status.cancelled",
@@ -29,7 +29,7 @@ export const KAFIL_BADGE_DEFAULTS = {
   statusLabelKeys: statusTranslationKeys,
 } satisfies NBadgeDefaults;
 
-export function getStatusTranslationKey(status: string): TranslationKey | null {
+export function getStatusTranslationKey(status: string): UiTranslationKey | null {
   return statusTranslationKeys[normalizeStatusToken(status)] ?? null;
 }
 
@@ -38,7 +38,7 @@ export function formatStatusLabel(
   language: KafilLanguage = "en",
 ): string {
   const translationKey = getStatusTranslationKey(status);
-  if (translationKey) return getUiTranslation(language, translationKey);
+  if (translationKey) return kafilUiI18n.translate(language, translationKey);
 
   return humanizeToken(status);
 }

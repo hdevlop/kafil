@@ -8,7 +8,7 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { FamilyFundingProgress } from "@/types/funding";
 
 
@@ -57,7 +57,7 @@ export function FundingProgressBar({
   compact?: boolean;
   inline?: boolean;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const percent = fundingProgressPercent(progress);
   const hasReachedTarget = percent >= 100;
@@ -161,7 +161,7 @@ export function FundingProgressCard({
   progress: FamilyFundingProgress;
   title?: string;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const percent = fundingProgressPercent(progress);
   const isFunded = progress.capacityStatus === "funded";

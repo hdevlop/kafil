@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import { createCardPagination, NButton, NSheet, NTable, type NTableProps } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { ResolvedListMode } from "najm-kit/query";
 
 import { CategoryCard } from "./CategoryCard";
@@ -45,7 +45,7 @@ export function CategoryFilterSheet({
 }: Readonly<CategoryBarProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const activeId = searchParams.get(queryParam) ?? "";
 

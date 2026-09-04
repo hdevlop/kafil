@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { KeyRound } from "lucide-react";
 import { NEmptyState, NErrorState, NPageHeader, NPageLayout, NTable, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
@@ -15,7 +15,7 @@ import { CreateAccessPermissionDialogContent } from "./AdminAccessCreateDialogs"
 import { AdminPermissionCard } from "./AdminAccessCards";
 
 export function AdminPermissionsPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const tableMode = useDesktopTableMode();
   const permissions = useAccessPermissions();

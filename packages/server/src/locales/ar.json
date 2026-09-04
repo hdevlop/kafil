@@ -559,6 +559,17 @@
   },
   "ui": {
     "common": {
+      "feedback": {
+        "loadingLabel": "جارٍ التحميل...",
+        "emptyTitle": "لا يوجد شيء هنا بعد",
+        "errorTitle": "تعذر تحميل هذه الصفحة",
+        "errorMessage": "يرجى إعادة المحاولة بعد قليل.",
+        "retryLabel": "إعادة المحاولة",
+        "forbiddenTitle": "تم رفض الوصول",
+        "forbiddenDescription": "دورك في كفيل لا يسمح بالوصول إلى هذه الصفحة.",
+        "notFoundTitle": "الصفحة غير موجودة",
+        "notFoundDescription": "ربما نُقلت الصفحة أو أنها غير متاحة لدورك."
+      },
       "table": {
         "settings": "إعدادات الجدول",
         "view": "العرض",

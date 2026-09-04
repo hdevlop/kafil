@@ -10,7 +10,7 @@ import {
   toast,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { KafilLanguage } from "@/preferences";
 
 const languageOptions = [
@@ -21,11 +21,11 @@ const languageOptions = [
 ] as const;
 
 export function AuthLanguageSelector() {
-  const { language, setLanguage } = useKafilLanguage();
+  const { language, changeLanguage } = useTranslation();
 
   async function handleLanguageChange(nextLanguage: KafilLanguage) {
     try {
-      await setLanguage(nextLanguage);
+      await changeLanguage(nextLanguage);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not update language preference.",

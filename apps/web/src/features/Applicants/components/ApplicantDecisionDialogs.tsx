@@ -2,7 +2,7 @@
 
 import { FormInput, NButton, NForm, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   applicantRejectReasonSchema,
@@ -14,7 +14,7 @@ import type { ApplicantRecord } from "../types";
 export function ApproveApplicantDialogContent({
   applicant,
 }: Readonly<{ applicant: ApplicantRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { approve } = useApplicantDecisionCommands();
 
@@ -49,7 +49,7 @@ export function ApproveApplicantDialogContent({
 export function RejectApplicantDialogContent({
   applicant,
 }: Readonly<{ applicant: ApplicantRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { reject } = useApplicantDecisionCommands();
   const schema = applicantRejectReasonSchema({
@@ -103,7 +103,7 @@ export function RejectApplicantDialogContent({
 export function DeleteApplicantDialogContent({
   applicant,
 }: Readonly<{ applicant: ApplicantRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { remove } = useApplicantDecisionCommands();
 

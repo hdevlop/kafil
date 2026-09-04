@@ -12,7 +12,7 @@ import {
 } from "najm-kit";
 import { useRef, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { deleteChildImage, uploadChildImage } from "@/services/childApi";
 
 import {
@@ -77,7 +77,7 @@ function ChildAvatarBlock({
   imageVersion?: string | null;
   onImageChange: (file: File | null) => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <AvatarFormInput
@@ -101,7 +101,7 @@ function ChildAvatarBlock({
 }
 
 export function CreateChildDialogContent() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { create } = useChildCommands();
   const [familySearch, setFamilySearch] = useState("");
@@ -218,7 +218,7 @@ export function CreateChildDialogContent() {
 export function UpdateChildDialogContent({
   child,
 }: Readonly<{ child: ChildRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { update } = useChildCommands();
   const [childImage, setChildImage] = useState<File | null>(null);
@@ -342,7 +342,7 @@ export function ChildStatusDialogContent({
   child: ChildRecord;
 }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const commands = useChildCommands();
   const command = commands[action];
 
@@ -391,7 +391,7 @@ export function DeleteChildDialogContent({
   child,
 }: Readonly<{ child: ChildRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { remove } = useChildCommands();
 
   async function handleDelete() {
@@ -424,7 +424,7 @@ export function BulkDeleteChildrenDialogContent({
   onDeleted,
 }: Readonly<{ childIds: string[]; onDeleted: () => void }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { bulkRemove } = useChildCommands();
   const submittingRef = useRef(false);
 

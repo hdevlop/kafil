@@ -12,11 +12,11 @@ import {
 } from "najm-kit";
 
 import { getPersonImage } from "najm-kit/person-images";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { SponsorRecord } from "../types";
 
 export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const isInactive = data.status === "inactive";
 

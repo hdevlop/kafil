@@ -12,7 +12,7 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPersonImage } from "najm-kit/person-images";
 import type { ChildRecord } from "../types";
 
@@ -20,7 +20,7 @@ export function ChildCard({
   data,
   embedded = true,
 }: Readonly<{ data: ChildRecord; embedded?: boolean }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const isInactive = data.status === "inactive";
   const isFamilyUnavailable = data.familyStatus !== undefined && data.familyStatus !== "active";

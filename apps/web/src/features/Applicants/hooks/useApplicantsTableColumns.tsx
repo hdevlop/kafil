@@ -9,12 +9,12 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import type { ApplicantRecord } from "../types";
 
 export function useApplicantsTableColumns() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   return useMemo<NTableProps<ApplicantRecord>["columns"]>(() => {

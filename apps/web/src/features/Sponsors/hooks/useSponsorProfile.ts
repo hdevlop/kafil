@@ -9,7 +9,7 @@ import {
 } from "@/services/sponsorProfileApi";
 
 import { sponsorProfileKeys } from "./sponsorProfileKeys";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 export function useOwnSponsorProfile() {
   return useEntityQuery({
@@ -19,7 +19,7 @@ export function useOwnSponsorProfile() {
 }
 
 export function useOwnSponsorProfileCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const invalidate = [sponsorProfileKeys.all];
 
   const create = useEntityCommand({

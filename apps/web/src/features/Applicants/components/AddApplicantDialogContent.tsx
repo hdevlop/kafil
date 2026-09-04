@@ -3,10 +3,10 @@
 import { ClipboardCopy } from "lucide-react";
 import { NButton, NCard, NCardSection, toast } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 export function AddApplicantDialogContent() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   async function copyApplicationLink() {
     const applicationUrl = new URL("/apply", window.location.origin).toString();

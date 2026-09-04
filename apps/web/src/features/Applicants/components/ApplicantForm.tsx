@@ -3,7 +3,7 @@
 import { NButton, NForm, FormInput, toast } from "najm-kit";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   applicantFormSchema,
@@ -18,7 +18,7 @@ export function ApplicantForm({
 }: Readonly<{
   onSubmitted: (result: ApplicantSubmissionResponse) => void;
 }>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   async function handleSubmit(values: ApplicantFormValues) {
     setIsLoading(true);

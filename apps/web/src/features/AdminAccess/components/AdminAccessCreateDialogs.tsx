@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { CreateFamilyDialogContent } from "@/features/Families/components/FamilyForms";
 import { CreateSponsorDialogContent } from "@/features/Sponsors/components/SponsorForms";
 
@@ -26,7 +26,7 @@ import { useAdminAccessCreateCommands } from "../hooks/useAdminAccess";
 type AccountKind = "family" | "staff" | "sponsor";
 
 export function CreateAccessUserDialogContent() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [kind, setKind] = useState<AccountKind | null>(null);
 
   if (kind === "family") return <CreateFamilyDialogContent />;
@@ -51,7 +51,7 @@ export function CreateAccessUserDialogContent() {
 }
 
 function StaffRedirectCard() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <p className="text-sm leading-6 text-muted-foreground">
@@ -67,7 +67,7 @@ function StaffRedirectCard() {
 }
 
 export function CreateAccessPermissionDialogContent() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { createPermission } = useAdminAccessCreateCommands();
 

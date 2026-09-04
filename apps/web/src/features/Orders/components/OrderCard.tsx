@@ -18,7 +18,7 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { NNextImage } from "najm-kit/next";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 
@@ -49,7 +49,7 @@ export function OrderCard({ data, highlighted = false, actions }: Readonly<{
   highlighted?: boolean;
   actions?: React.ReactNode;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const { isExactFamily, isExactSponsor } = useKafilRole();
   const placedAt = data.createdAt ?? data.placedAt;

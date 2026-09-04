@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { createCardPagination, type ContextMenuItem, NButton, NEmptyState, NErrorState, type NTableProps } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 
@@ -24,7 +24,7 @@ import { useFamiliesTableFilters } from "./useFamiliesTableFilters";
 import type { ListFamiliesFilters } from "@/services/familyApi";
 
 export function useFamiliesTableProps() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { isExactAdmin } = useKafilRole();
   const [listFilters, setListFilters] = useState<ListFamiliesFilters>({});
   const operatorFamilies = useResponsiveFamilies(listFilters);

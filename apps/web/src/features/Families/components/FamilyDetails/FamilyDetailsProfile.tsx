@@ -3,7 +3,7 @@
 import { House } from "lucide-react";
 import { NDetailItem, NSection, useNajmFormat } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { OnlySponsor, Operator } from "@/shared/Authorization";
 
 import type { FamilyRecord } from "../../types";
@@ -16,7 +16,7 @@ import {
 export function FamilyDetailsProfile({
   family,
 }: Readonly<{ family: FamilyRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const notProvided = t("operator.families.notProvided");
 

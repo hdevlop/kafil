@@ -4,7 +4,7 @@ import { HandCoins, WalletCards } from "lucide-react";
 import { NErrorState, NGrid, NGridItem, NPageLayout, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import { ContributionOverviewCard } from "@/features/Sponsors/components/overview/ContributionOverviewCard";
 import { RecentContributionsCard } from "@/features/Sponsors/components/overview/RecentContributionsCard";
@@ -22,7 +22,7 @@ import { UpcomingContributionsCard } from "./UpcomingContributionsCard";
 
 export function SponsorDashboardPage() {
   const dashboard = useSponsorDashboard();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   if (dashboard.isError) {

@@ -5,7 +5,7 @@ import { Eye, Pencil, Trash2, UserRoundCheck, UserRoundX } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
@@ -33,7 +33,7 @@ function SponsorsIcon({ className }: Readonly<{ className?: string }>) {
 }
 
 export function SponsorsPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const user = useUser();
   const [listFilters, setListFilters] = useState<ListSponsorsFilters>({});

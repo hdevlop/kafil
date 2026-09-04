@@ -10,7 +10,7 @@ import {
 } from "../config/orderSchemas";
 import { useOrderCommands } from "../hooks/useOrders";
 import { useFamilyOrderingCommands } from "../hooks/useFamilyOrdering";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { OrderRecord } from "../types";
 
 type ConfirmAction = "approve" | "startDelivery" | "deliver";
@@ -21,7 +21,7 @@ export function ConfirmOrderCommandDialogContent({
   order,
 }: Readonly<{ action: ConfirmAction; order: OrderRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const commands = useOrderCommands();
   const command = commands[action];
   const copy = {
@@ -64,7 +64,7 @@ export function OrderReasonDialogContent({
   order,
 }: Readonly<{ action: ReasonAction; order: OrderRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const commands = useOrderCommands();
   const command = commands[action];
   const isCancellation = action === "cancel";
@@ -107,7 +107,7 @@ export function FamilyCancelOrderDialogContent({
   orderId,
 }: Readonly<{ orderId: string }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { cancel } = useFamilyOrderingCommands();
 
   async function handleSubmit(values: OrderReasonFormValues) {
@@ -143,7 +143,7 @@ export function DeleteOrderDialogContent({
   order,
 }: Readonly<{ order: OrderRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { remove } = useOrderCommands();
 
   async function handleDelete() {

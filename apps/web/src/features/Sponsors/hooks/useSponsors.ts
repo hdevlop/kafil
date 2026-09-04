@@ -3,7 +3,7 @@
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { useResponsiveOffsetList } from "najm-kit/query";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { OffsetPagination } from "najm-kit/pagination";
 import { bulkDeleteSponsors, createSponsor, deactivateSponsor, deleteSponsor, listSponsors, reactivateSponsor, updateSponsor, type ListSponsorsFilters } from "@/services/sponsorApi";
 
@@ -29,7 +29,7 @@ export function useResponsiveSponsors(
 }
 
 export function useSponsorCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const invalidate = [sponsorKeys.all];
 
   const create = useEntityCommand({

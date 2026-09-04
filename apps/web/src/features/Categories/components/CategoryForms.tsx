@@ -4,7 +4,9 @@ import { ListOrdered, Tags } from "lucide-react";
 import { FormInput, ImageInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
 import { useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
+import type { TFn } from "najm-i18n";
+import type { UiTranslationKey } from "@kafil/server/locales";
 
 import {
   categoryStatusFormSchema,
@@ -31,7 +33,7 @@ const CATEGORY_IMAGE_TYPES = new Set([
 
 function categoryImageError(
   file: File,
-  t: ReturnType<typeof useKafilLanguage>["t"],
+  t: TFn<UiTranslationKey>,
 ) {
   if (!CATEGORY_IMAGE_TYPES.has(file.type)) {
     return t("operator.categories.imageTypeError");
@@ -55,7 +57,7 @@ function CategoryFields({
   imageVersion?: number;
   onImageChange: (file: File | null) => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -90,7 +92,7 @@ function CategoryFields({
 
 export function CreateCategoryDialogContent() {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { create } = useCategoryCommands();
   const [image, setImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -164,7 +166,7 @@ export function CreateCategoryDialogContent() {
 
 export function UpdateCategoryDialogContent({ category }: Readonly<{ category: CategoryRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { update } = useCategoryCommands();
   const [image, setImage] = useState<File | string | null>(category.image);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -265,7 +267,7 @@ export function CategoryStatusDialogContent({
   category: CategoryRecord;
 }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const commands = useCategoryCommands();
   const command = commands[action];
 
@@ -318,7 +320,7 @@ export function DeleteCategoryDialogContent({
   category,
 }: Readonly<{ category: CategoryRecord }>) {
   const { pop } = useDialog();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { remove } = useCategoryCommands();
 
   async function handleDelete() {

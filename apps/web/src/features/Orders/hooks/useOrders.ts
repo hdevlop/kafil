@@ -27,7 +27,7 @@ import {
 import { orderKeys } from "./orderKeys";
 import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 export function useOrders(
   query: OrderListQuery,
@@ -69,7 +69,7 @@ export function useOperatorStaffOptions(
 }
 
 export function useOrderCommands() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const invalidate = [orderKeys.all];
 
   const approve = useEntityCommand({

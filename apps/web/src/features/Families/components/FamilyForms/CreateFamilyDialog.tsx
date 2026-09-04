@@ -11,7 +11,7 @@ import {
   WizardForm,
 } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import {
   deleteFamilyImage,
   uploadFamilyImage,
@@ -32,7 +32,7 @@ import { FamilyHouseholdFields } from "./HouseholdFields";
 import { createFamilyDefaultValues, familyImageError } from "./helpers";
 
 export function CreateFamilyDialogContent() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { create } = useFamilyCommands();
   const [familyImage, setFamilyImage] = useState<File | null>(null);

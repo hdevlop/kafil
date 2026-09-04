@@ -2,13 +2,13 @@
 
 import { BadgeCheck, Check, HandCoins, HandHeart, PackageSearch, ShoppingBasket, Truck, UserPlus, } from "lucide-react";
 import type { DashboardStatusCount, AttentionCardProps } from "../../types";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { NCard, useNajmFormat } from "najm-kit";
 import Link from "next/link";
 
 export function AttentionCard({ orderStatuses, pendingContributions, pendingApplicants, familiesWithoutSponsorship, }: Readonly<AttentionCardProps>) {
 
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   function getStatusCount(statuses: DashboardStatusCount[], status: string) {

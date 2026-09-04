@@ -5,7 +5,7 @@ import { BadgeCheck, CircleX, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { useKafilRole } from "@/shared/Authorization";
@@ -37,7 +37,7 @@ function isManagement(record: ContributionListRecord): record is ContributionRec
 }
 
 export function ContributionsPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const user = useUser();
   const { exact } = useKafilRole();

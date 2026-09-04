@@ -3,7 +3,7 @@
 import { FormInput, NButton, NForm, NLoadingState, toast } from "najm-kit";
 import { useEffect, useMemo, useState } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   applicantEmailOtpSchema,
@@ -23,7 +23,7 @@ export function OtpStep({
   setup: ApplicantEmailOtpSetup;
   onVerified: (destination: string) => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [current, setCurrent] = useState<ApplicantEmailOtpSetup>(setup);
   const [checking, setChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);

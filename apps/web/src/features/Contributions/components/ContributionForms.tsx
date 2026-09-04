@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 import { FormInput, NButton, NForm, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   contributionReasonFormSchema,
@@ -17,7 +17,7 @@ import type { ContributionRecord } from "../types";
 export function ValidateContributionDialogContent({
   contribution,
 }: Readonly<{ contribution: ContributionRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { validate } = useContributionCommands();
 
@@ -50,7 +50,7 @@ export function ContributionReasonDialogContent({
   action: "reject" | "refund";
   contribution: ContributionRecord;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const commands = useContributionCommands();
   const command = commands[action];
@@ -108,7 +108,7 @@ export function ContributionReasonDialogContent({
 export function DeleteContributionDialogContent({
   contribution,
 }: Readonly<{ contribution: ContributionRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { remove } = useContributionCommands();
 
@@ -145,7 +145,7 @@ export function BulkDeleteContributionsDialogContent({
   contributionIds: string[];
   onDeleted: () => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { bulkRemove } = useContributionCommands();
   const submittingRef = useRef(false);

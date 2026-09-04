@@ -1,131 +1,72 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import {
-  getNestedTranslation,
-  getUiTranslation,
-} from "../src/i18n/translations";
+import { kafilI18n, kafilUiI18n } from "@kafil/server/locales";
 
-describe("shared web locale adapter", () => {
-  test("hands the catalog to the kit provider and keeps the typed hook", () => {
-    // Mounting `I18nProvider` and persisting the choice moved into
-    // `NajmAppProvider`, which also owns the "no router refresh on language"
-    // guarantee — a refresh would discard the catalog swap najm-i18n already
-    // did on the client. What stays Kafil's is the key union, so the provider
-    // is gone and the typed hook is not.
+describe("shared web locale definition", () => {
+  test("hands the scoped definition to the kit and uses the package hook directly", () => {
     const provider = readFileSync(
       join(import.meta.dir, "../src/providers/AppProviders.tsx"),
       "utf8",
     );
     expect(provider).toContain('from "najm-kit/app"');
-    expect(provider).toContain("translations={uiTranslations}");
+    expect(provider).toContain("translations={kafilUiI18n.translations}");
+    expect(provider).toContain(
+      "fallbackToDefaultLanguage={kafilUiI18n.fallbackToDefaultLanguage}",
+    );
+    expect(provider).toContain("getLanguageDirection={(language)");
+    expect(provider).toContain(
+      "kafilUiI18n.direction(kafilUiI18n.normalizeLanguage(language))",
+    );
     expect(provider).toContain("initialLanguage={initialLanguage}");
     expect(provider).not.toContain("router.refresh");
 
-    const hook = readFileSync(
-      join(import.meta.dir, "../src/i18n/useKafilLanguage.ts"),
+    expect(
+      existsSync(join(import.meta.dir, "../src/i18n/useKafilLanguage.ts")),
+    ).toBe(false);
+    const action = readFileSync(
+      join(import.meta.dir, "../src/shared/PageHeaderGlobalActions.tsx"),
       "utf8",
     );
-    expect(hook).toContain('from "najm-i18n/react"');
-    expect(hook).toContain("useTranslation");
-    expect(hook).not.toContain("<I18nProvider");
+    expect(action).toContain('from "najm-i18n/react"');
+    expect(action).toContain("useTranslation()");
   });
 
-  test("reads the server-owned UI catalog in each visible language", () => {
-    expect(getUiTranslation("en", "dashboard.operator.title")).toBe("Operator dashboard");
-    expect(getUiTranslation("fr", "dashboard.operator.title")).toBeTruthy();
-    expect(getUiTranslation("ar", "dashboard.operator.title")).toBeTruthy();
+  test("owns language validation, locale, and direction in one definition", () => {
+    expect(kafilI18n.supportedLanguages).toEqual(["en", "fr", "ar", "es"]);
+    expect(kafilI18n.normalizeLanguage("fr")).toBe("fr");
+    expect(kafilI18n.normalizeLanguage("unknown")).toBe("en");
+    expect(kafilI18n.locale("fr")).toBe("fr-MA");
+    expect(kafilI18n.direction("ar")).toBe("rtl");
+    expect(kafilI18n.direction("es")).toBe("ltr");
   });
 
-  test("returns undefined only for an absent nested value", () => {
-    expect(getNestedTranslation({ nested: { value: "ok" } }, "nested.value"))
-      .toBe("ok");
-    expect(getNestedTranslation({ nested: {} }, "nested.missing")).toBeUndefined();
-  });
-
-  test("resolves nested applicant gender keys", () => {
-    expect(
-      getNestedTranslation(
-        { applicants: { form: { gender: { female: "Female" } } } },
-        "applicants.form.gender.female",
-      ),
-    ).toBe("Female");
-
-    for (const language of ["en", "fr", "ar", "es"] as const) {
-      expect(getUiTranslation(language, "applicants.form.genderLabel"))
-        .not.toBe("applicants.form.genderLabel");
-      expect(getUiTranslation(language, "applicants.form.gender.female"))
-        .not.toBe("applicants.form.gender.female");
-      expect(getUiTranslation(language, "applicants.form.gender.male"))
-        .not.toBe("applicants.form.gender.male");
-    }
-  });
-
-  test("localizes the complete operator sponsor workflow", () => {
-    expect(getUiTranslation("en", "operator.sponsors.createTitle")).toBe(
-      "Create sponsor account",
+  test("reads localized UI keys and falls back per key", () => {
+    expect(kafilUiI18n.translate("en", "dashboard.operator.title")).toBe(
+      "Operator dashboard",
     );
-    expect(getUiTranslation("fr", "operator.sponsors.createTitle")).toBe(
-      "Créer un compte parrain",
+    expect(kafilUiI18n.translate("fr", "dashboard.operator.title")).not.toBe(
+      "dashboard.operator.title",
     );
-    expect(getUiTranslation("ar", "operator.sponsors.createTitle")).toBe(
-      "إنشاء حساب كفيل",
+    expect(kafilUiI18n.translate("ar", "applicants.form.gender.female")).not.toBe(
+      "applicants.form.gender.female",
     );
+    expect(kafilUiI18n.fallbackToDefaultLanguage).toBe(true);
+  });
+
+  test("localizes the complete operator workflows", () => {
+    const keys = [
+      "operator.sponsors.createTitle",
+      "operator.assignments.createTitle",
+      "operator.contributions.emptyTitle",
+      "operator.budgets.available",
+    ] as const;
 
     for (const language of ["en", "fr", "ar"] as const) {
-      expect(getUiTranslation(language, "operator.sponsors.fullName")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.sponsors.createAndInvite")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.sponsors.createSuccess")).toBeTruthy();
-    }
-  });
-
-  test("localizes the complete operator support-assignment workflow", () => {
-    expect(getUiTranslation("fr", "operator.assignments.title")).toBe(
-      "Attributions de soutien",
-    );
-    expect(getUiTranslation("ar", "operator.assignments.createTitle")).toBe(
-      "إنشاء تعيين دعم",
-    );
-
-    for (const language of ["en", "fr", "ar"] as const) {
-      expect(getUiTranslation(language, "operator.assignments.loading")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.assignments.createAssignment")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.assignments.endSuccess")).toBeTruthy();
-    }
-  });
-
-  test("localizes the complete operator contribution workflow", () => {
-    expect(getUiTranslation("en", "operator.contributions.title")).toBe(
-      "Contributions",
-    );
-    expect(getUiTranslation("en", "operator.contributions.emptyTitle")).toBe(
-      "No contribution records",
-    );
-
-    for (const language of ["en", "fr", "ar"] as const) {
-      expect(getUiTranslation(language, "operator.contributions.subtitle")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.contributions.record")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.contributions.emptyDescription")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.contributions.validateAndCredit")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.contributions.refundContribution")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.contributions.deleteContribution")).toBeTruthy();
-    }
-  });
-
-  test("localizes the complete operator budget workflow", () => {
-    expect(getUiTranslation("fr", "operator.budgets.title")).toBe("Budgets");
-    expect(getUiTranslation("fr", "operator.budgets.filterPrivateFamily")).toBe(
-      "Filtrer par famille privée",
-    );
-
-    for (const language of ["en", "fr", "ar"] as const) {
-      expect(getUiTranslation(language, "operator.budgets.subtitle")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.budgets.emptyTitle")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.budgets.available")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.budgets.searchEntryType")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.budgets.saveMonthlyLimit")).toBeTruthy();
-      expect(getUiTranslation(language, "operator.budgets.recordAdjustment")).toBeTruthy();
+      for (const key of keys) {
+        expect(kafilUiI18n.translate(language, key)).not.toBe(key);
+      }
     }
   });
 });

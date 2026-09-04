@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, type Dispatch, type SetStateAction } from "react";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { ListSponsorsFilters } from "@/services/sponsorApi";
 
 export function useSponsorsTableFilters(
   filters: ListSponsorsFilters,
   setFilters: Dispatch<SetStateAction<ListSponsorsFilters>>,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return useMemo(
     () => [
       {

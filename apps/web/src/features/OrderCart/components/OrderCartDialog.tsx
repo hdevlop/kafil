@@ -41,7 +41,7 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useKafilRole } from "@/shared/Authorization";
 import { productKeys } from "@/features/Products/hooks/productKeys";
 import { getProduct } from "@/services/productApi";
@@ -218,7 +218,7 @@ function AssignmentPlanningSection({
   onDeliveryStaffChange: (value: string) => void;
   onSameStaffChange: (value: boolean) => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const selectedPurchasingStaff = operatorOptions.find(
     ({ id }) => id === purchasingStaffId,
   );
@@ -315,7 +315,7 @@ export function OrderConfirmationStep({
   familyStatus?: ReactNode;
   children?: ReactNode;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   return (
@@ -423,7 +423,7 @@ export function OrderCartSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const { isExactFamily } = useKafilRole();
   const queryClient = useQueryClient();

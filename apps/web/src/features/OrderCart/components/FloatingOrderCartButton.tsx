@@ -3,13 +3,13 @@
 import { ShoppingCart } from "lucide-react";
 import { NBadge, NButton } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useOrderCartStore } from "../store/orderCartStore";
 
 import { useOrderCart } from "../hooks/useOrderCart";
 
 export function FloatingOrderCartButton() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const orderCart = useOrderCart();
   const setDialogOpen = useOrderCartStore((state) => state.setDialogOpen);
 

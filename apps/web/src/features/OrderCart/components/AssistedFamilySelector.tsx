@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarRange, Wallet } from "lucide-react";
 import { ComboboxInput, NCard, useNajmFormat } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { listFamilies } from "@/services/familyApi";
 import { getBudgetSummary } from "@/services/budgetApi";
 import { createOffsetPagination } from "najm-kit/pagination";
@@ -36,7 +36,7 @@ export function AssistedFamilySelector({
   onSelectionChange,
   disabled = false,
 }: Readonly<AssistedFamilySelectorProps>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const families = useQuery({
     queryKey: ["assisted-family-selector", "families", { status: "active" }] as const,

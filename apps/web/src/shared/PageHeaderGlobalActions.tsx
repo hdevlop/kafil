@@ -13,7 +13,7 @@ import {
 } from "najm-kit";
 import screenfull from "screenfull";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { KafilLanguage } from "@/preferences";
 
 const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";
@@ -26,7 +26,7 @@ const languageFlags: Record<KafilLanguage, { country: string; label: string }> =
 };
 
 export default function PageHeaderGlobalActions() {
-  const { language, setLanguage, t } = useKafilLanguage();
+  const { language, changeLanguage, t } = useTranslation();
   const { theme, setTheme } = useNajmTheme();
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
 
@@ -40,7 +40,7 @@ export default function PageHeaderGlobalActions() {
   async function handleLanguageChange(nextLanguage: KafilLanguage) {
     setIsChangingLanguage(true);
     try {
-      await setLanguage(nextLanguage);
+      await changeLanguage(nextLanguage);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update language preference.");
     } finally {

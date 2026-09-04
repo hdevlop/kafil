@@ -10,13 +10,13 @@ import {
 } from "najm-kit";
 
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { FamilyDashboardProfile } from "../types";
 
 export function FamilyHouseholdCard({
   profile,
 }: Readonly<{ profile: FamilyDashboardProfile }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return (
     <NCard icon={House} title={t("dashboard.family.householdTitle")} description={t("dashboard.family.householdDescription")}>
       <div className="flex items-center gap-4 rounded-2xl bg-muted/60 p-4">

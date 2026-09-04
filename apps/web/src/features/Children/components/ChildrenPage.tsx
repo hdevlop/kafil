@@ -24,7 +24,7 @@ import {
 
 import { getPublicApiErrorMessage } from "@/services/apiError";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { Operator, useKafilRole } from "@/shared/Authorization";
 
 import { ChildCard } from "./ChildCard";
@@ -43,7 +43,7 @@ import type { ChildRecord } from "../types";
 import type { ListChildrenFilters } from "@/services/childApi";
 
 export function ChildrenPage() {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const dialog = useDialog();
   const { isExactAdmin, isExactFamily } = useKafilRole();
   const [listFilters, setListFilters] = useState<ListChildrenFilters>({});

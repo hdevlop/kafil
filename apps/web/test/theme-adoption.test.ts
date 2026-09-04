@@ -12,7 +12,9 @@ import {
   getDashboardNavigation,
   THEME_SETTINGS_NAV_ID,
 } from "../src/shared/DashboardShell";
-import { getUiTranslation } from "../src/i18n/translations";
+import { kafilUiI18n } from "@kafil/server/locales";
+
+const getUiTranslation = kafilUiI18n.translate;
 
 function readSource(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");

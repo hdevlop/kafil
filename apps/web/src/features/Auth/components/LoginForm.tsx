@@ -11,7 +11,7 @@ import { loginSchema } from "../config/authSchemas";
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import { getPostLoginRoute } from "../lib/getPostLoginRoute";
 import type { LoginFormProps, LoginValues } from "@/app/(auth)/types";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { auth } from "@/lib/auth";
 
 function GoogleMark() {
@@ -31,7 +31,7 @@ export function LoginForm({
   redirectTo,
 }: LoginFormProps) {
   const router = useRouter();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {

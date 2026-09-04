@@ -6,7 +6,9 @@ import {
   ACTIVE_ORDER_PIPELINE_STAGES,
   retainOrderPipelineStages,
 } from "../src/features/Dashboard/shared/orderPipeline";
-import { getUiTranslation } from "../src/i18n/translations";
+import { kafilUiI18n } from "@kafil/server/locales";
+
+const getUiTranslation = kafilUiI18n.translate;
 import { formatStatusLabel } from "../src/features/StatusLabels";
 import {
   getDashboardNavigation,

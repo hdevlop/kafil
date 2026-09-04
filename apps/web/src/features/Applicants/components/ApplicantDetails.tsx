@@ -25,7 +25,7 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import { ApproveApplicantDialogContent, RejectApplicantDialogContent } from "./ApplicantDecisionDialogs";
 import type { ApplicantRecord } from "../types";
@@ -40,7 +40,7 @@ export function ApplicantDetailsSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }>) {
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   return (
     <NSheet
       open={open}
@@ -62,7 +62,7 @@ export function ApplicantDetailsSheet({
 }
 
 export function ApplicantDetails({ initialApplicant }: Readonly<{ initialApplicant: ApplicantRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
   const dialog = useDialog();
   const applicantQuery = useApplicant(initialApplicant.id, initialApplicant);

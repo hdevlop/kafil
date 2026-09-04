@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import type { CategoriesWorkspaceFilters } from "./useCategoriesWorkspace";
 
 export function useCategoriesTableFilters(
   filters: CategoriesWorkspaceFilters,
   setFilters: (next: CategoriesWorkspaceFilters) => void,
 ) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   return useMemo(
     () => [
       {

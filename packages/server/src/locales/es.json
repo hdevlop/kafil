@@ -555,6 +555,17 @@
   },
   "ui": {
     "common": {
+      "feedback": {
+        "loadingLabel": "Cargando...",
+        "emptyTitle": "Aún no hay nada aquí",
+        "errorTitle": "No pudimos cargar esta página",
+        "errorMessage": "Vuelve a intentarlo en un momento.",
+        "retryLabel": "Intentar de nuevo",
+        "forbiddenTitle": "Acceso denegado",
+        "forbiddenDescription": "Tu rol en Kafil no permite acceder a esta página.",
+        "notFoundTitle": "Página no encontrada",
+        "notFoundDescription": "Es posible que la página se haya movido o que no esté disponible para tu rol."
+      },
       "table": {
         "settings": "Ajustes de la tabla",
         "view": "Vista",

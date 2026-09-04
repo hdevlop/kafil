@@ -11,7 +11,7 @@ import {
 } from "najm-kit";
 import { useEffect } from "react";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import {
   settingsFormDefault,
@@ -39,7 +39,7 @@ export function AppSettingsPanel({
 }>) {
   const setting = usePlatformSettings();
   const { updateSettings } = useSettingCommands();
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { timeZone, setTimeZone } = useNajmTimeZone();
   const form = useNForm({ schema: settingsFormSchema });
 

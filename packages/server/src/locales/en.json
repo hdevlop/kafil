@@ -574,6 +574,17 @@
   },
   "ui": {
     "common": {
+      "feedback": {
+        "loadingLabel": "Loading...",
+        "emptyTitle": "Nothing here yet",
+        "errorTitle": "We could not load this page",
+        "errorMessage": "Please try again in a moment.",
+        "retryLabel": "Try again",
+        "forbiddenTitle": "Access denied",
+        "forbiddenDescription": "Your Kafil role does not allow access to this page.",
+        "notFoundTitle": "Page not found",
+        "notFoundDescription": "The page may have moved or may not be available to your role."
+      },
       "table": {
         "settings": "Table settings",
         "view": "View",

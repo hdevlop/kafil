@@ -7,7 +7,7 @@ import { AdminDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import { retainOrderPipelineStages } from "../../shared/orderPipeline";
 import { formatStatusLabel } from "@/features/StatusLabels";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
 import { LatestOrdersCard } from "./LatestOrdersCard";
 import { QuickActionsCard } from "./QuickActionsCard";
@@ -17,7 +17,7 @@ import { AttentionCard } from "./AttentionCard";
 export function AdminDashboardPage() {
 
   const dashboard = useAdminDashboard();
-  const { language, t } = useKafilLanguage();
+  const { language, t } = useTranslation();
   const fmt = useNajmFormat();
 
   if (dashboard.isError) {

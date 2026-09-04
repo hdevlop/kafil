@@ -12,7 +12,7 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 
 import { parentGenderFromRelationship } from "../lib/parentGenderFromRelationship";
 import type { FamilyChildRecord, FamilyDashboardProfile } from "../types";
@@ -36,7 +36,7 @@ export function MyFamilyCard({
   familyChildren: FamilyChildRecord[];
   profile: FamilyDashboardProfile;
 }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const fmt = useNajmFormat();
 
   return (

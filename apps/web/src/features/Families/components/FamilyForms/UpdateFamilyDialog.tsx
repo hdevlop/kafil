@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { NButton, NForm, useDialog } from "najm-kit";
 
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { minorUnitsToMadInput } from "@/features/Budgets/config/budgetSchemas";
 import {
   deleteFamilyImage,
@@ -24,7 +24,7 @@ import { familyImageError } from "./helpers";
 export function UpdateFamilyDialogContent({
   family,
 }: Readonly<{ family: FamilyRecord }>) {
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
   const { pop } = useDialog();
   const { update } = useFamilyCommands();
   const [familyImage, setFamilyImage] = useState<File | null>(null);

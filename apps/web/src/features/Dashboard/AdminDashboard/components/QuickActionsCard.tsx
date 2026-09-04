@@ -1,13 +1,13 @@
 "use client";
 
 import { ArrowRight, BadgeCheck, HandCoins, ShoppingBasket, Truck, UserCheck, Zap, } from "lucide-react";
-import { useKafilLanguage } from "@/i18n/useKafilLanguage";
+import { useTranslation } from "najm-i18n/react";
 import { NButton, NCard } from "najm-kit";
 import Link from "next/link";
 
 export function QuickActionsCard() {
 
-  const { t } = useKafilLanguage();
+  const { t } = useTranslation();
 
   const actions = [
     {
