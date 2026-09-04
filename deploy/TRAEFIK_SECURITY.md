@@ -11,16 +11,22 @@ and `apps/web/next.config.ts` does not need a production-only header branch.
    configured for Traefik's dynamic-file provider.
 3. Validate the installed Traefik configuration using the VPS's existing
    Dokploy/Traefik validation path.
-4. Attach `kafil-security@file` to Kafil's **existing HTTPS router**. Do not
-   define a competing router for the same hostname. When attachment is managed
-   as a Docker label, the router label has this shape:
+4. Attach `kafil-security@file` to every Kafil HTTPS domain through Dokploy's
+   persisted domain `middlewares` setting. For the current apex and `www`
+   domains, both domain records must list `kafil-security@file`. Dokploy then
+   emits the corresponding Docker label on each existing HTTPS router:
 
    ```text
    traefik.http.routers.<existing-kafil-router>.middlewares=kafil-security@file
    ```
 
-   Preserve any middleware already on the router by listing both names.
-5. Reload Traefik, then verify the public origin from a separate machine:
+   Preserve any middleware already configured for the domain. Do not edit the
+   generated file under `/etc/dokploy/compose/<app>/code/docker-compose.yml` as
+   the source of truth: Dokploy rewrites that file during deployment.
+5. Trigger a normal Dokploy deployment and confirm the regenerated Compose file
+   still contains one middleware label for each HTTPS domain.
+6. Reload Traefik if the dynamic middleware definition changed, then verify the
+   public origin from a separate machine:
 
    ```bash
    bash scripts/verifySecurityHeaders.sh https://kafala360.ma
