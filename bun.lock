@@ -7,6 +7,7 @@
       "dependencies": {
         "@clack/core": "^1.4.3",
         "@clack/prompts": "^1.7.0",
+        "ioredis": "5.11.1",
         "najm-core": "^2.0.5",
         "najm-kit": "2.11.12",
       },
@@ -105,6 +106,7 @@
   ],
   "overrides": {
     "diject": "0.1.8",
+    "ioredis": "5.11.1",
     "najm-auth": "3.3.0",
     "najm-cache": "2.1.2",
     "najm-core": "2.0.5",
