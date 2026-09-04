@@ -30,3 +30,23 @@ export const rateProxyAcceptanceServer = new Server({ isolated: true })
   .use(rateLimit({ trustedProxyHops: 1 }))
   .base("/api")
   .load({ RateProxyAcceptanceController });
+
+@Controller("/rate-probe")
+class ZeroHopAcceptanceController {
+  @Get("/peer")
+  @RateLimit({ limit: 2, window: "1m" })
+  peer() {
+    return { status: "ok" };
+  }
+}
+
+// Zero hops refuses forwarded headers outright. Next.js route handlers are
+// handed a Request and never the connection, so no socket peer exists here at
+// all and the resolver fails closed: every request shares one bounded bucket
+// regardless of the chain or client address supplied. Coarse, but not
+// attacker-partitionable, which is the property under test.
+export const zeroHopAcceptanceServer = new Server({ isolated: true })
+  .use(cache({ driver: "memory" }))
+  .use(rateLimit({ trustedProxyHops: 0 }))
+  .base("/zero")
+  .load({ ZeroHopAcceptanceController });

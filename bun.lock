@@ -8,7 +8,7 @@
         "@clack/core": "^1.4.3",
         "@clack/prompts": "^1.7.0",
         "ioredis": "5.11.1",
-        "najm-core": "^2.0.5",
+        "najm-core": "^2.0.6",
         "najm-kit": "2.11.13",
       },
       "devDependencies": {
@@ -30,7 +30,7 @@
         "flag-icons": "^7.5.0",
         "lucide-react": "0.474.0",
         "najm-auth": "3.3.0",
-        "najm-core": "2.0.5",
+        "najm-core": "2.0.6",
         "najm-i18n": "2.1.1",
         "najm-kit": "2.11.13",
         "najm-next": "0.2.0",
@@ -78,13 +78,13 @@
         "ioredis": "5.11.1",
         "najm-auth": "3.3.0",
         "najm-cache": "2.1.2",
-        "najm-core": "2.0.5",
+        "najm-core": "2.0.6",
         "najm-database": "2.0.3",
         "najm-email": "2.0.2",
         "najm-guard": "2.0.2",
         "najm-i18n": "2.1.1",
         "najm-mcp": "2.1.1",
-        "najm-rate": "2.1.0",
+        "najm-rate": "2.1.1",
         "najm-storage": "2.2.0",
         "najm-theme": "0.2.1",
         "najm-validation": "2.0.2",
@@ -109,13 +109,13 @@
     "ioredis": "5.11.1",
     "najm-auth": "3.3.0",
     "najm-cache": "2.1.2",
-    "najm-core": "2.0.5",
+    "najm-core": "2.0.6",
     "najm-database": "2.0.3",
     "najm-i18n": "2.1.1",
     "najm-kit": "2.11.13",
     "najm-mcp": "2.1.1",
     "najm-next": "0.2.0",
-    "najm-rate": "2.1.0",
+    "najm-rate": "2.1.1",
     "najm-storage": "2.2.0",
     "najm-theme": "0.2.1",
   },
@@ -1186,7 +1186,7 @@
 
     "najm-cookies": ["najm-cookies@2.0.2", "", { "peerDependencies": { "hono": "^4.0.0", "najm-core": "^2.0.3", "reflect-metadata": "^0.2.0" } }, "sha512-urNMF4w+0GRbOk/IhYcStNmxZOCEajFbxNa2Mnol8n8wnh6MfnKfXk3wDZpyMXSJO8qqiL9FvbugTOJMtjd49g=="],
 
-    "najm-core": ["najm-core@2.0.5", "", { "dependencies": { "diject": "^0.1.8", "hono": "^4.12.31", "reflect-metadata": "^0.2.2" }, "peerDependencies": { "@hono/node-server": "^2.0.11" }, "optionalPeers": ["@hono/node-server"] }, "sha512-GmWPSSgyPJEm7K+6tbmcknX3lD8MIw9MYJICHZrzBuPyKqPB0wjMqExCiL8NZfuRe4kd+hqwrZPT/a5g0fWidw=="],
+    "najm-core": ["najm-core@2.0.6", "", { "dependencies": { "diject": "^0.1.8", "hono": "^4.12.31", "reflect-metadata": "^0.2.2" }, "peerDependencies": { "@hono/node-server": "^2.0.11" }, "optionalPeers": ["@hono/node-server"] }, "sha512-h4TMhbQnpHYmDz5yV8DEg5lY8ChxNSHMMBotG+cetZRCE8gvZUJcC2Inm0MTx3Xy3dEGdXIrnvr4KaVV9OGnTg=="],
 
     "najm-database": ["najm-database@2.0.3", "", { "peerDependencies": { "drizzle-orm": ">=0.36.0", "najm-core": "^2.0.4", "reflect-metadata": "^0.2.0", "zod": "^3.0.0" } }, "sha512-iLHfP9UvlYveg2356f2pY4yXClELzvXjop6OzkPWIoxHTzrvsg5Rvx/QTQOV0ANDyP3+IOe5906ffnpVKUgaUw=="],
 
@@ -1204,7 +1204,7 @@
 
     "najm-next": ["najm-next@0.2.0", "", { "peerDependencies": { "next": ">=15.3.0 <17", "react": ">=18.2.0 <20" } }, "sha512-wHThsZp5jMH2SjbNMWTJa5E9Pcncus3KQxCVU5QCwqXtPL222C9rlzpAmODbAFw7vq78bca74F4jnoH00+RRrA=="],
 
-    "najm-rate": ["najm-rate@2.1.0", "", { "dependencies": { "najm-cache": "^2.1.0", "najm-core": "^2.0.5", "najm-guard": "^2.0.2" }, "peerDependencies": { "hono": "^4.0.0" } }, "sha512-7ckZIFX1RU+QOgZ5uc848737Z8LfundT/M/fp9gDuR8HhFwfeAoVkJJJ8zZFprOx2CH40XGzZQceB8YTAitONw=="],
+    "najm-rate": ["najm-rate@2.1.1", "", { "dependencies": { "najm-cache": "^2.1.2", "najm-core": "^2.0.6", "najm-guard": "^2.0.2" }, "peerDependencies": { "hono": "^4.0.0" } }, "sha512-uLFdZkIF7sH03b+qECo0ur6xsklVr/h8ksuL/od3DkJhQbEqbNrf2FqWMaJrISzLupuZq4GTUWW2Nsemp2GYuw=="],
 
     "najm-storage": ["najm-storage@2.2.0", "", { "dependencies": { "@tanstack/react-router": "^1.170.8", "clsx": "^2.1.1", "lucide-react": "^0.474.0", "najm-core": "^2.0.5", "najm-database": "^2.0.3", "najm-event": "^2.0.2", "najm-kit": "^2.9.0", "recharts": "^2.15.0", "sonner": "^2", "swr": "^2.3.0", "tailwind-merge": "^2.6.0" }, "optionalDependencies": { "sharp": "^0.35.3" }, "peerDependencies": { "@electric-sql/pglite": ">=0.5.0", "drizzle-orm": ">=0.45.2", "hono": "^4.12.18", "najm-mcp": "^2.1.0", "react": ">=18", "react-dom": ">=18", "reflect-metadata": "^0.2.0", "zod": "^4.0.0" }, "optionalPeers": ["@electric-sql/pglite", "najm-mcp"] }, "sha512-44LFOYhKuaQTEcE96rBcdROUrgXXIg98J9FYXEDHXUjQYLrhgZG3i50YS23MPbFxz+DOVkGOBL8QRd3bpa/B8w=="],
 

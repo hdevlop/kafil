@@ -9,7 +9,7 @@
   ],
   "overrides": {
     "ioredis": "5.11.1",
-    "najm-core": "2.0.5",
+    "najm-core": "2.0.6",
     "najm-auth": "3.3.0",
     "najm-cache": "2.1.2",
     "najm-database": "2.0.3",
@@ -17,7 +17,7 @@
     "najm-kit": "2.11.13",
     "najm-mcp": "2.1.1",
     "najm-next": "0.2.0",
-    "najm-rate": "2.1.0",
+    "najm-rate": "2.1.1",
     "najm-storage": "2.2.0",
     "najm-theme": "0.2.1",
     "diject": "0.1.8"
@@ -72,7 +72,7 @@
     "@clack/core": "^1.4.3",
     "@clack/prompts": "^1.7.0",
     "ioredis": "5.11.1",
-    "najm-core": "^2.0.5",
+    "najm-core": "^2.0.6",
     "najm-kit": "2.11.13"
   }
 }

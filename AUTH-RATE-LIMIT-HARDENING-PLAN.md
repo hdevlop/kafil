@@ -521,13 +521,63 @@ configurations, which is Kafil's local default.
   asserting it is always an integer, so the deprecated unconfigured path stays
   unreachable from Kafil.
 
-### Outstanding
+### There is no socket peer under Next.js
 
-- [ ] Publish `najm-core` and `najm-rate` together, then raise both `overrides`
-      pins in Kafil. The fix requires both packages; neither is published, so
-      Kafil's runtime still carries the zero-hop defect locally.
-- [ ] Refresh the vendored `najm-rate` under
-      `apps/web/test/fixtures/rate-proxy-app` after publication. That fixture
-      exercises one hop only, so its current assertions are unaffected.
-- [ ] Consider a zero-hop case in the local proxy acceptance runner, which
-      would have caught this defect at the Kafil level.
+Adding the zero-hop acceptance case surfaced a second fact. `handle()` returns
+`server.fetch`, and a Next.js route handler is given a `Request` and never the
+connection, so no runtime binding exists to read. Zero hops therefore resolves
+to `UNRESOLVED_CLIENT_ADDRESS` in Kafil's runtime and every request shares one
+bounded bucket, announced once by the new diagnostic.
+
+This is the correct outcome, not a further defect. Before the fix that same
+configuration keyed on the leftmost forwarded value and was freely
+partitionable by any caller. It is now coarse instead of spoofable.
+
+Consequences for Kafil:
+
+- Production runs one hop and is unaffected; it keys on the forwarded boundary
+  and never consults a peer.
+- Local development runs zero hops and now shares a single login bucket. That
+  is acceptable for a single developer, and the warning makes it visible.
+- Do not adopt zero hops for any deployment that needs per-client limits while
+  the runtime is a Next.js route handler. Use an explicit hop count matching
+  the real proxy chain.
+
+### Bumping `najm-core` requires a clean install
+
+Raising the pins in place produced ten failures, all of them server boot:
+`Invalid route configuration for "@Transaction": Duplicate transaction
+injection detected`, naming the same constructor as both expected and actual.
+
+The stack trace resolved `validateInjections` inside a `najm-database` copy
+linked against `najm-core@2.0.5` while the application ran `2.0.6`. Two copies
+of the framework were loaded at once, so decorator metadata was registered in
+one registry and validated against the other.
+
+The cause is peer fan-out, not either release. `najm-database` takes
+`najm-core` as a peer, so Bun stores one variant per peer resolution, and an
+in-place bump left the previous variant linked. Diffing the two published
+bundles confirmed `2.0.6` contains exactly the two-line binding change and
+nothing else. Deleting `node_modules` in the root and each workspace and
+reinstalling collapsed the tree to a single `najm-core@2.0.6` and a single
+`najm-database` entry, and the suite returned to green.
+
+A stale `apps/web/node_modules/najm-rate` symlink still pointing at 2.1.0 was
+found the same way. The lockfile was correct throughout; only the extracted
+tree was stale.
+
+Docker builds install from scratch, so this affects local and CI upgrades
+rather than the deployed image.
+
+### Closed
+
+- [x] Publish `najm-core@2.0.6` and `najm-rate@2.1.1` together and raise the
+      Kafil `overrides` pins. Both published in dependency order; the registry
+      resolves `najm-rate@2.1.1` against `najm-core@^2.0.6`.
+- [x] Refresh the vendored copies under
+      `apps/web/test/fixtures/rate-proxy-app`. A stale
+      `apps/web/node_modules/najm-rate` symlink pointing at 2.1.0 was also
+      removed; the lockfile had always held a single 2.1.1 entry.
+- [x] Add a zero-hop case to the local proxy acceptance runner. It rotates both
+      the spoofed chain and the client address across three requests and
+      requires them to share one bucket.

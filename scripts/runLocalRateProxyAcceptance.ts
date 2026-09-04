@@ -148,8 +148,24 @@ try {
     [200, 200, 429],
   );
 
+  // Zero hops refuses the forwarded chain outright. Under Next.js no socket
+  // peer is reachable, so the resolver fails closed and rotating both the
+  // spoofed chain and the client address stays inside one bounded bucket.
+  // The pre-fix resolver keyed zero hops on the leftmost forwarded value, so a
+  // rotating chain minted a fresh bucket per request; najm-rate's middleware
+  // tests cover that regression directly.
+  await expectStatuses(
+    "/zero/rate-probe/peer",
+    [
+      { client: "203.0.113.7", forwarded: "198.51.100.10" },
+      { client: "203.0.113.8", forwarded: "192.0.2.44" },
+      { client: "203.0.113.9", forwarded: "198.18.0.1" },
+    ],
+    [200, 200, 429],
+  );
+
   console.log(
-    "Local proxy acceptance passed: spoof rotation stayed limited, trusted clients separated, malformed and short chains failed closed.",
+    "Local proxy acceptance passed: spoof rotation stayed limited, trusted clients separated, malformed and short chains failed closed, and zero hops refused the chain.",
   );
 } finally {
   proxy?.stop(true);
