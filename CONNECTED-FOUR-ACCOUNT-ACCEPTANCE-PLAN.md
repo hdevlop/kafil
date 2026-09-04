@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **COMPLETE - THE COMPLETE 18-TEST REMOTE ATTEMPT PASSED ON DEPLOYED REVISION `1a30370d`; EVIDENCE IS PUBLISHED UNDER SECTION 8; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`**
+Status: **COMPLETE - THE COMPLETE 18-TEST REMOTE ATTEMPT PASSED AGAIN ON 2026-09-04 WITH NATIVE EXIT `0`; EVIDENCE IS PUBLISHED UNDER SECTION 8; THE RUNNING CONTAINER REVISION IS `NOT CONFIRMED` FOR THAT ATTEMPT AND DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`**
 
 Target: exactly `https://kafala360.ma`
 
@@ -41,11 +41,20 @@ Not verified without database access:
 
 ## 2. Current checkpoint
 
-The authoritative checkpoint is section 11.16: the complete 18-test attempt
-passed on deployed revision `1a30370d`, and its evidence is published by the
-commit containing section 11.16 under section 8. Sections 11.1-11.15 and the
-rest of this section are historical evidence leading to it and are not the
-current state.
+The authoritative checkpoint is section 11.16, the most recent complete 18-test
+attempt whose deployed container revision was actually confirmed:
+`1a30370d`.
+
+Section 11.17 records a later complete 18-test attempt that passed on
+2026-09-04 with native exit `0`. It is supplemental, not authoritative. It did
+not repeat the value-free container revision check, so the running container's
+revision is `NOT CONFIRMED` and its deployment-revision acceptance is
+outstanding. Its command and work-unit results stand on their own; its claim
+about which revision was exercised does not. Promotion to authoritative
+requires a confirmed container revision, not a further passing run.
+
+Sections 11.1-11.15 and the rest of this section are historical evidence
+leading to the current checkpoint and are not the current state.
 
 The complete 18-test attempt that preceded the standalone-hub migration reached
 and passed steps 01-04 before the runner-owned SSH transport reset a second
@@ -2070,3 +2079,106 @@ This satisfies every browser condition in section 10. Database-only guarantees
 remain explicitly `NOT VERIFIED`. The commit containing this section publishes
 the accepted evidence under section 8; no application deployment is required
 for the browser verdict.
+
+### 11.17 Repeat complete 18-test remote attempt (2026-09-04)
+
+A fresh user instruction authorized one complete attempt. It passed.
+
+Root `.env` state changed materially since section 11.16. Activation step 6 of
+section 11.15 is now done: the ignored root `.env` carries
+`KAFIL_E2E_MAILBOX_API_HOST`, `KAFIL_E2E_MAILBOX_API_URL`, and
+`KAFIL_E2E_MAILBOX_TOKEN`, and carries none of the retired
+`KAFIL_E2E_SSH_HOST`, `KAFIL_E2E_SSH_USER`, `KAFIL_E2E_SSH_PORT`,
+`KAFIL_E2E_MAILBOX_LOCAL_PORT`, or `KAFIL_E2E_MAILBOX_REMOTE_PORT` names.
+`LEGACY_MANAGED_TRANSPORT_CONFIG_ABSENT` therefore passed against the file
+itself rather than against an explicitly unset process environment, and the
+committed root package script was invoked directly. Presence and value length
+were checked without printing any secret.
+
+No `KAFIL_E2E_REMOTE_GREP` was set, so the runner selected the full declared
+set. Expected selected-test count `18`; actual `18`. Playwright reported
+`Running 18 tests using 1 worker` with zero retries, and
+`playwright.remote.config.ts` retained `retries: 0`, `workers: 1`, and
+screenshot/trace/video `off`.
+
+The attempt:
+
+- guarded preflight passed all seven booleans, including
+  `LEGACY_MANAGED_TRANSPORT_CONFIG_ABSENT` and `MAILBOX_API_HTTPS_EXACT`, plus
+  system Chrome, the app-scoped HTTPS mail-test gateway, `/login`, `/apply`,
+  health, and readiness;
+- steps 01-15, the responsive unit, step 16, and diagnostics all passed in
+  serial order; no unit was `NOT RUN` and none was `EXCLUDED BY GREP`;
+- terminal: `18 passed (2.0m)`, native exit `0`;
+- the runner reported `NO MANAGED MAILBOX TRANSPORT`; it started and stopped no
+  SSH, Tailscale, Docker, Mailpit, or local forward;
+- the only artifact this run wrote was the value-free
+  `apps/web/test-results/connected-four-account-remote/.last-run.json` marker,
+  dated 2026-09-04, with `status: passed` and an empty `failedTests` array.
+
+Step 16 populated `cleanupSummary`, so the guarded diagnostics assertions
+executed rather than being skipped: `applicationRowsRetained` `0`,
+`evidenceFilesRetained` `0`, `mailboxMessagesRetained` `0`,
+`evidenceFilesDeleted` exactly `2`, `mailboxMessagesDeleted` a safe
+non-negative integer, `reporting` `counts-only`, and `databaseOnlyGuarantees`
+`NOT VERIFIED`. All four attached contexts had empty page-error,
+console-error, failed-request, and unexplained-response collections. There were
+no unexpected HTTP errors; the run did intentionally assert exact negative-path
+responses.
+
+Artifact audit of the run output and the retained marker returned zero matches
+for email-address, bearer, JWT, Moroccan-phone, six-digit-OTP, and
+credential-word patterns. The same two unrelated stale artifacts dated
+2026-08-13 remain under `apps/web/test-results/` from the local connected suite
+(`.last-run.json` and one `error-context.md`); they predate and are unaffected
+by this attempt.
+
+**Deployed revision is `NOT CONFIRMED` for this attempt.** Unlike section
+11.16, this attempt did not repeat the value-free read-only container check.
+Reading the VPS SSH target from the ignored root `.env` was blocked in the
+session that ran the attempt, so no `docker ps` observation was made and no
+container revision is recorded. Bounded behavioral evidence was collected
+instead, and it is explicitly weaker than container evidence:
+
+- `/api/system/readiness` returned `checks.cache` `ok` and `checks.database`
+  `ok` at HTTP `200`;
+- the `cache` key did not exist before `75528da3`, whose predecessor exported
+  `databaseReadinessResponse` and emitted only `{database}`, so the running
+  image contains that change;
+- `SystemController.readiness()` overrides the permissive default probe with
+  `() => this.cache.verifyReady()`, so `cache: "ok"` reflects a real probe
+  against the injected `CacheService`, not the `async () => undefined` default
+  in `systemReadinessResponse`;
+- that probe requires the Redis runtime driver from `77130715` and the explicit
+  client injection from `27c07fd`, without which readiness answers
+  `cache: "unavailable"` and `503`.
+
+This establishes only that the running image contains the cache-readiness
+behavior those commits introduced. Feature presence is not Git ancestry: any
+build whose tree carries those changes answers identically, whether or not it
+descends from them or from `origin/main` at all. This evidence therefore cannot
+identify the deployed revision and cannot bound it at `27c07fd`; the earlier
+wording that it did was withdrawn. Deployment-revision acceptance for this
+attempt is outstanding, and the value-free container revision check must be
+restored before any checkpoint claim rests on it. Local `HEAD` at the time of
+the attempt was `17c41db`, which is `origin/main` plus a docs-only change to
+`AUTH-RATE-LIMIT-HARDENING-PLAN.md`.
+
+Complete-attempt traceability:
+
+| Checked plan item | Exact acceptance assertion | Retained artifact |
+| --- | --- | --- |
+| Steps 01-15 | Each numbered step passed its section 5 contract in serial order | `apps/web/test/e2e/connected-four-account.remote.ts:1256`-`:3527`; passed runner marker |
+| Responsive | Tablet Admin Staff, phone Family Products, protected-image decode, keyboard-only View dialog, phone Sponsor RTL Orders, and no horizontal overflow | `apps/web/test/e2e/connected-four-account.remote.ts:3561`; passed runner marker |
+| Step 16 | Desktop viewports restored, four real logouts, supported deletion of the Family graph, two evidence files, two Staff profiles, and exact-recipient mailbox messages | `apps/web/test/e2e/connected-four-account.remote.ts:3653`; passed runner marker |
+| Diagnostics | Counts-only cleanup summary with `NOT VERIFIED` database boundary, and clean page-error/console-error/failed-request/unexplained-response collections for all four contexts | `apps/web/test/e2e/connected-four-account.remote.ts:3792`; passed runner marker |
+
+Three verdicts:
+
+1. **Command result** — `18 passed (2.0m)`, native exit `0`, transport
+   postcondition `NO MANAGED MAILBOX TRANSPORT` reported.
+2. **Work-unit result** — all 18 declared units `PASS`, each traceable to the
+   assertions above.
+3. **Plan result** — the browser conditions in section 10 are satisfied again.
+   Database-only guarantees remain explicitly `NOT VERIFIED`, and the running
+   container revision is `NOT CONFIRMED` for this attempt.

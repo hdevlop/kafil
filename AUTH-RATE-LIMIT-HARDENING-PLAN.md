@@ -202,6 +202,7 @@ Acceptance:
 Acceptance:
 
 - No secure configured path selects `split(",")[0]` directly.
+  **Not met at zero hops until 2026-09-04; see section 9.**
 - With Kafil's one-hop contract, attacker-supplied values to the left of the
   trusted boundary cannot rotate rate-limit buckets.
 - An invalid chain fails closed with a bounded, non-attacker-controlled key or
@@ -457,3 +458,76 @@ Production evidence (2026-09-04):
       pass with exact evidence.
 - [x] Package publication, Kafil push, image publication, Dokploy configuration,
       deployment, and live acceptance are reported as distinct outcomes.
+
+
+## 9. Post-acceptance defect: the zero-hop peer boundary (2026-09-04)
+
+Found in review after section 6 acceptance. Section 3.1 states that
+`trustedProxyHops: 0` means forwarded headers are not trusted. The
+implementation did not honour that.
+
+### What was wrong
+
+`RateLimitService.extractClientIP` passed `HRequest.ip` as the socket peer.
+`RequestParser.extractClientIP` in `najm-core` derives that value by scanning
+seven client-settable headers and returning `split(',')[0]` of the first one
+present. At zero hops the resolver therefore keyed on attacker-chosen input
+while appearing to refuse forwarded headers entirely. Reproduced through the
+real middleware: two requests from one client presenting different
+`X-Forwarded-For` values were placed in two different buckets.
+
+The underlying cause was that no socket peer existed to pass. `Server`'s fetch
+handler was `(req) => this.app.fetch(req)`, which discarded the runtime's
+second argument, so Hono's `c.env` was undefined and no connection information
+was reachable anywhere in `najm-core`.
+
+Kafil production runs `trustedProxyHops=1`, which never consults the peer, so
+the production topology was not exposed. The broken contract affected zero-hop
+configurations, which is Kafil's local default.
+
+### Why the existing gates passed
+
+- The work unit B parser tests supplied a peer address as a function argument.
+  The runtime never provided one, so the tests asserted a contract that did not
+  exist in the integrated system.
+- No middleware-level test covered zero hops; the middleware tests all used one
+  hop, where the peer is never read.
+- `najm-core` had no coverage of `c.env` at all, so the binding could be
+  dropped without any owning package failing.
+
+### Fix
+
+- `najm-core` forwards the runtime binding into `app.fetch`, making the
+  connection peer reachable. No najm package reads `c.env` for anything else.
+- `najm-rate` adds `peerAddress.ts`, which reads the peer from the Bun,
+  `@hono/node-server`, and Deno bindings, and uses it instead of `HRequest.ip`.
+  A runtime exposing no peer yields `undefined` and zero hops fails closed to
+  `UNRESOLVED_CLIENT_ADDRESS` rather than falling back to header input.
+- `najm-rate` also emits value-free, warn-once diagnostics when the legacy
+  unconfigured path is taken or when a resolution collapses to the fail-closed
+  token, so a hop count that does not match the real chain is visible instead
+  of silently sharing one bucket.
+
+### Evidence
+
+- Reproduction failed before the fix and passes after it, through the real
+  middleware, promoted into `packages/najm-rate/test/trustedHops.test.ts`.
+- `packages/najm-core/test/connection-binding.test.ts` pins the binding in the
+  package that owns it. Reverting the forwarding line fails two of its three
+  tests.
+- Suites after the fix: `najm-core` 66 pass, `najm-rate` 79 pass, `najm-auth`
+  334 pass, all zero fail. Kafil's full root gate green with 346 server tests.
+- Kafil's `authInfrastructureConfig` hop contract is pinned by a regression test
+  asserting it is always an integer, so the deprecated unconfigured path stays
+  unreachable from Kafil.
+
+### Outstanding
+
+- [ ] Publish `najm-core` and `najm-rate` together, then raise both `overrides`
+      pins in Kafil. The fix requires both packages; neither is published, so
+      Kafil's runtime still carries the zero-hop defect locally.
+- [ ] Refresh the vendored `najm-rate` under
+      `apps/web/test/fixtures/rate-proxy-app` after publication. That fixture
+      exercises one hop only, so its current assertions are unaffected.
+- [ ] Consider a zero-hop case in the local proxy acceptance runner, which
+      would have caught this defect at the Kafil level.
