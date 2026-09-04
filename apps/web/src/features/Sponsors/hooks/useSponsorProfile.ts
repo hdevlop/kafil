@@ -8,6 +8,8 @@ import {
   updateOwnSponsorProfile,
 } from "@/services/sponsorProfileApi";
 
+import { sponsorDashboardKeys } from "@/features/Dashboard/SponsorDashboard/hooks/sponsorDashboardKeys";
+
 import { sponsorProfileKeys } from "./sponsorProfileKeys";
 import { useTranslation } from "najm-i18n/react";
 
@@ -20,7 +22,7 @@ export function useOwnSponsorProfile() {
 
 export function useOwnSponsorProfileCommands() {
   const { t } = useTranslation();
-  const invalidate = [sponsorProfileKeys.all];
+  const invalidate = [sponsorProfileKeys.all, sponsorDashboardKeys.all];
 
   const create = useEntityCommand({
     mutationFn: createOwnSponsorProfile,

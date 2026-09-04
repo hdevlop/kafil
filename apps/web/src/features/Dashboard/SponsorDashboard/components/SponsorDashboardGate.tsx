@@ -1,24 +1,27 @@
 "use client";
 
-import { NErrorState, NLoadingState } from "najm-kit";
+import { NErrorState } from "najm-kit";
 
 import { useOwnSponsorProfile } from "@/features/Sponsors/hooks/useSponsorProfile";
 import { isSponsorProfileMissing } from "@/features/Sponsors/lib/isSponsorProfileMissing";
 import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
+import { SponsorDashboardSkeleton } from "@/features/Dashboard/shared/DashboardSkeletons";
 
+import { useSponsorDashboard } from "../hooks/useSponsorDashboard";
 import { SponsorDashboardPage } from "./SponsorDashboardPage";
 
 export function SponsorDashboardGate() {
   const { t } = useTranslation();
   const profile = useOwnSponsorProfile();
+  useSponsorDashboard(); // start in parallel; the page reuses this cache entry
   const profileMissing = profile.isError && isSponsorProfileMissing(profile.error);
 
   if (profile.isPending || profileMissing) {
     return (
-      <NLoadingState
-        label={t(profileMissing ? "sponsor.profile.completeDescription" : "sponsor.profile.loading")}
-        surface="panel"
+      <SponsorDashboardSkeleton
+        loadingLabel={t("state.loading")}
+        title={t("dashboard.sponsor.loading")}
       />
     );
   }
