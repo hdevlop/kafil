@@ -2196,6 +2196,8 @@
       "or": "O",
       "continueWithGoogle": "Continuar con Google",
       "googleStartError": "No se pudo iniciar el acceso con Google.",
+      "continueWithGitHub": "Continuar con GitHub",
+      "githubStartError": "No se pudo iniciar el acceso con GitHub.",
       "createAccount": "Crear una cuenta nueva",
       "termsNotice": "Al iniciar sesión, aceptas nuestros {terms} y nuestra {privacy}.",
       "termsOfService": "Términos del servicio",

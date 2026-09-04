@@ -263,21 +263,16 @@ describe("najm-theme adoption — Kafil boundary", () => {
     expect(firstLogin).toContain('slot="authLogo"');
   });
 
-  test("the slot-to-chrome adapter translates two marks and nothing else", () => {
+  test("the kit receives the package branding registry without an app adapter", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
 
     expect(provider).toContain("NajmAppProvider");
     expect(provider).toContain("appName={APP_NAME}");
-    // The kit's chrome payload names two marks; the package publishes a slot
-    // map. This is the one place the two contracts meet, and it must stay a
-    // rename — no resolution, no inheritance, no fallback.
-    expect(provider).toContain(
-      "sidebarLogoExpandedPath: initialBranding.slots.sidebarLogoExpanded",
-    );
-    expect(provider).toContain(
-      "sidebarLogoCollapsedPath: initialBranding.slots.sidebarLogoCollapsed",
-    );
-    expect(provider).not.toContain("authLogo");
+    // Najm Kit owns slot selection. Kafil forwards the package payload without
+    // renaming, resolving, inheriting, or dropping consumer-defined slots.
+    expect(provider).toContain("initialBranding={initialBranding}");
+    expect(provider).not.toContain("sidebarLogoExpandedPath:");
+    expect(provider).not.toContain("sidebarLogoCollapsedPath:");
     expect(provider).not.toContain("??");
 
     const shell = readSource("../src/shared/DashboardShell/index.tsx");

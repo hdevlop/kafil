@@ -16,6 +16,7 @@ export type AuthCardProps = Readonly<{
 
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 export type LoginFormProps = Readonly<{
+  githubEnabled: boolean;
   googleEnabled: boolean;
   oauthErrorMessage?: string;
   redirectTo: string;

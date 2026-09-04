@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, UserRoundPlus } from "lucide-react";
-import { GoogleLoginButton } from "najm-auth/client/react";
+import { Github, ShieldCheck, UserRoundPlus } from "lucide-react";
+import { GitHubLoginButton, GoogleLoginButton } from "najm-auth/client/react";
 import { FormInput, NButton, NForm, toast } from "najm-kit";
 import { useEffect, useState } from "react";
 
@@ -26,6 +26,7 @@ function GoogleMark() {
 }
 
 export function LoginForm({
+  githubEnabled,
   googleEnabled,
   oauthErrorMessage,
   redirectTo,
@@ -110,7 +111,7 @@ export function LoginForm({
           </NButton>
         </NForm>
 
-        {googleEnabled ? (
+        {googleEnabled || githubEnabled ? (
           <>
             <div className="my-5 flex items-center gap-4 text-sm font-semibold text-muted-foreground">
               <span aria-hidden="true" className="h-px flex-1 bg-border" />
@@ -118,21 +119,42 @@ export function LoginForm({
               <span aria-hidden="true" className="h-px flex-1 bg-border" />
             </div>
 
-            <GoogleLoginButton
-              onError={() => toast.error(t("auth.googleStartError"))}
-              returnTo={redirectTo}
-            >
-              <NButton
-                fullWidth
-                leftIcon={<GoogleMark />}
-                rounded="lg"
-                size="xl"
-                type="button"
-                variant="outline"
-              >
-                {t("auth.continueWithGoogle")}
-              </NButton>
-            </GoogleLoginButton>
+            <div className="space-y-3">
+              {googleEnabled ? (
+                <GoogleLoginButton
+                  onError={() => toast.error(t("auth.googleStartError"))}
+                  returnTo={redirectTo}
+                >
+                  <NButton
+                    fullWidth
+                    leftIcon={<GoogleMark />}
+                    rounded="lg"
+                    size="xl"
+                    type="button"
+                    variant="outline"
+                  >
+                    {t("auth.continueWithGoogle")}
+                  </NButton>
+                </GoogleLoginButton>
+              ) : null}
+              {githubEnabled ? (
+                <GitHubLoginButton
+                  onError={() => toast.error(t("auth.githubStartError"))}
+                  returnTo={redirectTo}
+                >
+                  <NButton
+                    fullWidth
+                    leftIcon={Github}
+                    rounded="lg"
+                    size="xl"
+                    type="button"
+                    variant="outline"
+                  >
+                    {t("auth.continueWithGitHub")}
+                  </NButton>
+                </GitHubLoginButton>
+              ) : null}
+            </div>
           </>
         ) : null}
 

@@ -151,7 +151,7 @@ describe("Phase 6A authentication schemas", () => {
     );
   });
 
-  test("wires Google OAuth through Najm without bypassing sponsor onboarding", () => {
+  test("wires Google and GitHub OAuth through Najm without bypassing sponsor onboarding", () => {
     const loginSource = readFileSync(
       new URL(
         "../src/features/Auth/components/LoginForm.tsx",
@@ -163,12 +163,20 @@ describe("Phase 6A authentication schemas", () => {
       new URL("../src/app/auth/oauth/callback/page.tsx", import.meta.url),
       "utf8",
     );
+    const loginPageSource = readFileSync(
+      new URL("../src/app/(auth)/login/page.tsx", import.meta.url),
+      "utf8",
+    );
 
     expect(loginSource).toContain("GoogleLoginButton");
+    expect(loginSource).toContain("GitHubLoginButton");
     expect(loginSource).toContain("<GoogleMark />");
+    expect(loginSource).toContain("leftIcon={Github}");
     expect(loginSource).toContain("returnTo={redirectTo}");
     expect(callbackSource).toContain("OAuthCallback");
     expect(callbackSource).toContain('defaultRedirect="/dashboard"');
+    expect(loginPageSource).toContain("await connection()");
+    expect(loginPageSource).toContain("process.env.GITHUB_CLIENT_ID");
   });
 
   test("uses client router navigation after auth cookies change", () => {

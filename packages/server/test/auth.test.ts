@@ -237,14 +237,19 @@ describe("Kafil auth definitions", () => {
     }
   });
 
-  it("enables Google only with complete credentials and links existing accounts", () => {
+  it("enables OAuth providers only with complete credentials and links existing accounts", () => {
     const originalClientId = process.env.GOOGLE_CLIENT_ID;
     const originalClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const originalGitHubClientId = process.env.GITHUB_CLIENT_ID;
+    const originalGitHubClientSecret = process.env.GITHUB_CLIENT_SECRET;
 
     try {
       delete process.env.GOOGLE_CLIENT_ID;
       delete process.env.GOOGLE_CLIENT_SECRET;
+      delete process.env.GITHUB_CLIENT_ID;
+      delete process.env.GITHUB_CLIENT_SECRET;
       expect(authConfig().config.oauth?.google).toBeUndefined();
+      expect(authConfig().config.oauth?.github).toBeUndefined();
 
       process.env.GOOGLE_CLIENT_ID = "test-client-id";
       process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
@@ -254,11 +259,24 @@ describe("Kafil auth definitions", () => {
           autoLinkVerifiedEmail: true,
         },
       });
+
+      process.env.GITHUB_CLIENT_ID = "test-github-client-id";
+      process.env.GITHUB_CLIENT_SECRET = "test-github-client-secret";
+      expect(authConfig().config.oauth).toMatchObject({
+        github: {
+          allowSignup: false,
+          autoLinkVerifiedEmail: true,
+        },
+      });
     } finally {
       if (originalClientId === undefined) delete process.env.GOOGLE_CLIENT_ID;
       else process.env.GOOGLE_CLIENT_ID = originalClientId;
       if (originalClientSecret === undefined) delete process.env.GOOGLE_CLIENT_SECRET;
       else process.env.GOOGLE_CLIENT_SECRET = originalClientSecret;
+      if (originalGitHubClientId === undefined) delete process.env.GITHUB_CLIENT_ID;
+      else process.env.GITHUB_CLIENT_ID = originalGitHubClientId;
+      if (originalGitHubClientSecret === undefined) delete process.env.GITHUB_CLIENT_SECRET;
+      else process.env.GITHUB_CLIENT_SECRET = originalGitHubClientSecret;
     }
   });
 

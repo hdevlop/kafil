@@ -28,18 +28,26 @@ export {
   Policy,
 };
 
-function googleOAuthConfig() {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    return undefined;
-  }
-
-  return {
-    google: {
+function oauthConfig() {
+  const google = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ? {
       // Kafil domain profiles are created by the app onboarding workflows.
       // OAuth may link an active account, but must not create a bare auth user.
       allowSignup: false,
       autoLinkVerifiedEmail: true,
-    },
+    } as const
+    : undefined;
+  const github = process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+    ? {
+      allowSignup: false,
+      autoLinkVerifiedEmail: true,
+    } as const
+    : undefined;
+
+  if (!google && !github) return undefined;
+  return {
+    google,
+    github,
   } as const;
 }
 
@@ -89,7 +97,7 @@ export const authConfig = () => {
     dialect: "pg",
     encryptionKey: envConfig.auth.encryptionKey,
     frontendUrl: envConfig.auth.frontendUrl,
-    oauth: googleOAuthConfig(),
+    oauth: oauthConfig(),
     publicRegistration: false,
     registrationMode: "pending",
     rateLimit: infrastructure.rateLimit,

@@ -2366,6 +2366,8 @@
       "or": "OR",
       "continueWithGoogle": "Continue with Google",
       "googleStartError": "Google sign-in could not start.",
+      "continueWithGitHub": "Continue with GitHub",
+      "githubStartError": "GitHub sign-in could not start.",
       "createAccount": "Create a new account",
       "termsNotice": "By logging in, you accept our {terms} and our {privacy}.",
       "termsOfService": "Terms of Service",

@@ -2292,6 +2292,8 @@
       "or": "OU",
       "continueWithGoogle": "Continuer avec Google",
       "googleStartError": "La connexion Google n'a pas pu démarrer.",
+      "continueWithGitHub": "Continuer avec GitHub",
+      "githubStartError": "La connexion GitHub n'a pas pu démarrer.",
       "createAccount": "Créer un nouveau compte",
       "termsNotice": "En vous connectant, vous acceptez nos {terms} et notre {privacy}.",
       "termsOfService": "Conditions d'utilisation",

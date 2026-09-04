@@ -2289,6 +2289,8 @@
       "or": "أو",
       "continueWithGoogle": "المتابعة باستخدام Google",
       "googleStartError": "تعذّر بدء تسجيل الدخول عبر Google.",
+      "continueWithGitHub": "المتابعة باستخدام GitHub",
+      "githubStartError": "تعذّر بدء تسجيل الدخول عبر GitHub.",
       "createAccount": "إنشاء حساب جديد",
       "termsNotice": "بتسجيل الدخول، فإنك توافق على {terms} و{privacy}.",
       "termsOfService": "شروط الخدمة",

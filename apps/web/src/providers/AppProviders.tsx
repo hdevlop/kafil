@@ -33,6 +33,7 @@ function NajmProviders({
   initialTimeZone: NajmPreferenceTimeZone<typeof kafilPreferences>;
 }>) {
   const { isAuthenticated } = useAuth();
+
   const formFillSetting = useEntityQuery({
     queryKey: ["settings", "form-fill"] as const,
     queryFn: getFormFillSetting,
@@ -48,10 +49,7 @@ function NajmProviders({
       badgeDefaults={KAFIL_BADGE_DEFAULTS}
       currency={KAFIL_CURRENCY}
       formDevTools={formFillSetting.data?.enabled === true}
-      initialBranding={{
-        sidebarLogoExpandedPath: initialBranding.slots.sidebarLogoExpanded,
-        sidebarLogoCollapsedPath: initialBranding.slots.sidebarLogoCollapsed,
-      }}
+      initialBranding={initialBranding}
       initialDesign={initialDesign}
       initialLanguage={initialLanguage}
       initialTheme={initialTheme}
