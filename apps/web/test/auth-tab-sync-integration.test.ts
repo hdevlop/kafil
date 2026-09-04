@@ -13,11 +13,28 @@ const settingsSheets = readFileSync(
 describe("dashboard auth tab-sync integration", () => {
   test("redirects a mounted protected shell when Najm broadcasts logout", () => {
     expect(dashboardShell).toContain(
-      'import { Protected, SignOutButton } from "najm-auth/client/react"',
+      'import { Protected, useLogout } from "najm-auth/client/react"',
     );
     expect(dashboardShell).toContain(
-      '<Protected redirectTo="/login">',
+      "onUnauthenticated={beginLogout}",
     );
+    expect(dashboardShell).toContain('router.replace("/login")');
+    expect(dashboardShell).not.toContain("window.location");
+  });
+
+  test("keeps a themed transition visible while logout completes", () => {
+    expect(dashboardShell).toContain(
+      "fallback={<DashboardAuthTransition />}",
+    );
+    expect(dashboardShell).toContain(
+      '<NLoadingState fullScreen label={t("common.processing")} />',
+    );
+    expect(dashboardShell.indexOf("queryClient.clear()"))
+      .toBeLessThan(dashboardShell.indexOf("void logout()"));
+    expect(dashboardShell.indexOf("bindSession(null)"))
+      .toBeLessThan(dashboardShell.indexOf("void logout()"));
+    expect(dashboardShell.indexOf("void logout()"))
+      .toBeLessThan(dashboardShell.indexOf('router.replace("/login")'));
   });
 
   test("does not keep admin theme queries mounted while both sheets are closed", () => {

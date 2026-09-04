@@ -45,7 +45,7 @@ export function LoginForm({
       // applies tokens only for the authenticated branch.
       const result = await auth.client.login(values);
       if (result.nextStep === "authenticated") toast.success(t("auth.loginSuccess"));
-      window.location.replace(
+      router.replace(
         getPostLoginRoute(result.nextStep, redirectTo),
       );
     } catch (error) {

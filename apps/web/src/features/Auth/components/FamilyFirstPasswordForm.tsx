@@ -2,6 +2,7 @@
 
 import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import { FormInput, NButton, NForm, toast } from "najm-kit";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useTranslation } from "najm-i18n/react";
@@ -17,6 +18,7 @@ import {
 import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 
 export function FamilyFirstPasswordForm() {
+  const router = useRouter();
   const { t } = useTranslation();
   const [checking, setChecking] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,12 +32,12 @@ export function FamilyFirstPasswordForm() {
         if (setupRequired) setChecking(false);
       })
       .catch(() => {
-        if (active) window.location.replace("/login");
+        if (active) router.replace("/login");
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [router]);
 
   async function handleSubmit(values: FamilyFirstPasswordValues) {
     setIsLoading(true);
@@ -44,7 +46,7 @@ export function FamilyFirstPasswordForm() {
         newPassword: values.newPassword,
       });
       toast.success(t("access.firstLogin.changed"));
-      window.location.replace("/login");
+      router.replace("/login");
     } catch (error) {
       toast.error(
         getAuthErrorMessage(error, t("access.firstLogin.changeFailed")),
@@ -57,7 +59,7 @@ export function FamilyFirstPasswordForm() {
   async function handleSignOut() {
     setIsSigningOut(true);
     await cancelCredentialSetup().catch(() => undefined);
-    window.location.replace("/login");
+    router.replace("/login");
   }
 
   if (checking) {

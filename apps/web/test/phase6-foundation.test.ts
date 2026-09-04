@@ -115,7 +115,8 @@ describe("Phase 6A authentication schemas", () => {
 
     expect(source).toContain("async function handleSignOut()");
     expect(source).toContain("await cancelCredentialSetup()");
-    expect(source).toContain('window.location.replace("/login")');
+    expect(source).toContain('router.replace("/login")');
+    expect(source).not.toContain("window.location");
     expect(source).not.toContain("auth.client.logout()");
     expect(source).toContain('t("action.signOut")');
   });
@@ -170,7 +171,7 @@ describe("Phase 6A authentication schemas", () => {
     expect(callbackSource).toContain('defaultRedirect="/dashboard"');
   });
 
-  test("uses a document navigation after login changes auth cookies", () => {
+  test("uses client router navigation after auth cookies change", () => {
     const loginSource = readFileSync(
       new URL(
         "../src/features/Auth/components/LoginForm.tsx",
@@ -183,11 +184,11 @@ describe("Phase 6A authentication schemas", () => {
       "utf8",
     );
 
-    expect(loginSource).toContain("window.location.replace(");
+    expect(loginSource).toContain("router.replace(");
+    expect(loginSource).not.toContain("window.location");
     expect(loginSource).not.toContain("router.refresh()");
-    expect(dashboardShellSource).toContain(
-      'window.location.replace("/login")',
-    );
+    expect(dashboardShellSource).toContain('router.replace("/login")');
+    expect(dashboardShellSource).not.toContain("window.location");
   });
 
   test("uses the themed Najm select for the auth language menu", () => {
