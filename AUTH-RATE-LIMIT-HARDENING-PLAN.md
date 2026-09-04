@@ -29,7 +29,7 @@ authorization boundaries.
 
 ## 2. Proven starting point
 
-- [ ] Reconfirm this baseline immediately before implementation; versions and
+- [x] Reconfirm this baseline immediately before implementation; versions and
       live infrastructure can drift.
 - Kafil pins `najm-auth@3.2.1`. Its installed
   `authIdentityRateLimitKey`, cookie fingerprint, and OAuth callback key read
@@ -160,17 +160,17 @@ Application hop selection does not authorize bypassing the edge:
 
 ### Work unit A - Fix `najm-cache`
 
-- [ ] Start from a clean Najm worktree and add red tests for strict Redis
+- [x] Start from a clean Najm worktree and add red tests for strict Redis
       selection, value-free failures, connection readiness, and no fallback.
-- [ ] Add red tests for a new counter receiving its TTL atomically and for an
+- [x] Add red tests for a new counter receiving its TTL atomically and for an
       existing counter retaining the original window rather than becoming a
       sliding window.
-- [ ] Implement required Redis mode, `PING` readiness, and the atomic counter
+- [x] Implement required Redis mode, `PING` readiness, and the atomic counter
       operation.
-- [ ] Test IPv4/IPv6-independent cache keys only at the rate layer; keep cache
+- [x] Test IPv4/IPv6-independent cache keys only at the rate layer; keep cache
       concerned with opaque keys.
-- [ ] Run `bun test packages/najm-cache` and its build.
-- [ ] Record the candidate version and exact commit. A compatible additive
+- [x] Run `bun test packages/najm-cache` and its build.
+- [x] Record the candidate version and exact commit. A compatible additive
       release is expected to be `najm-cache@2.1.x`; choose the actual version
       only after reviewing the final public API.
 
@@ -184,19 +184,19 @@ Acceptance:
 
 ### Work unit B - Fix client-address handling in `najm-rate`
 
-- [ ] Add table-driven parser tests for zero, one, and two trusted hops;
+- [x] Add table-driven parser tests for zero, one, and two trusted hops;
       left-side spoofed values; malformed/empty entries; too-short chains;
       IPv4; and IPv6.
-- [ ] Add middleware tests proving `ip`, `user+ip`, and a custom key callback
+- [x] Add middleware tests proving `ip`, `user+ip`, and a custom key callback
       all use the identical resolved address.
-- [ ] Add a regression proving changing only an untrusted left-side value does
+- [x] Add a regression proving changing only an untrusted left-side value does
       not create a fresh bucket.
-- [ ] Add the typed resolver/configuration and `RateLimitKeyContext` export.
-- [ ] Keep old one-argument custom callbacks source-compatible.
-- [ ] Update `najm-api` aggregate exports if the new public types are expected
+- [x] Add the typed resolver/configuration and `RateLimitKeyContext` export.
+- [x] Keep old one-argument custom callbacks source-compatible.
+- [x] Update `najm-api` aggregate exports if the new public types are expected
       from that surface.
-- [ ] Run `bun test packages/najm-rate`, affected core/API tests, and builds.
-- [ ] Record the candidate version and exact commit. An additive release is
+- [x] Run `bun test packages/najm-rate`, affected core/API tests, and builds.
+- [x] Record the candidate version and exact commit. An additive release is
       expected to be `najm-rate@2.1.x`.
 
 Acceptance:
@@ -209,20 +209,20 @@ Acceptance:
 
 ### Work unit C - Update `najm-auth`
 
-- [ ] Add red tests showing login, registration, forgot-password, refresh,
+- [x] Add red tests showing login, registration, forgot-password, refresh,
       session recovery, profile, credential setup, and OAuth rate keys do not
       parse forwarding headers independently.
-- [ ] Update every auth custom key to consume `RateLimitKeyContext.clientIp`.
-- [ ] Add the cache configuration pass-through and prove it wins over the
+- [x] Update every auth custom key to consume `RateLimitKeyContext.clientIp`.
+- [x] Add the cache configuration pass-through and prove it wins over the
       package's default cache dependency.
-- [ ] Preserve normalized Moroccan email/phone identity equivalence and hashed
+- [x] Preserve normalized Moroccan email/phone identity equivalence and hashed
       key material.
-- [ ] Retain and regression-test DB account lockout, including reset after a
+- [x] Retain and regression-test DB account lockout, including reset after a
       successful login and expiry after the configured duration.
-- [ ] Run `bun run test:auth`, `bun run build:auth`, the React-server suite, and
+- [x] Run `bun run test:auth`, `bun run build:auth`, the React-server suite, and
       `bun run --cwd packages/najm-auth test:next16`.
-- [ ] Run the full sequential Najm suite after focused gates pass.
-- [ ] Record the candidate version and exact commit. An additive release is
+- [x] Run the full sequential Najm suite after focused gates pass.
+- [x] Record the candidate version and exact commit. An additive release is
       expected to be `najm-auth@3.3.x`.
 
 Acceptance:
@@ -234,13 +234,13 @@ Acceptance:
 
 ### Release boundary - publish shared packages
 
-- [ ] Review the complete Najm diff, public declarations, package manifests,
+- [x] Review the complete Najm diff, public declarations, package manifests,
       lockfile, changelog/release notes, and `git diff --check`.
-- [ ] Commit the versioned candidates before packing.
-- [ ] With explicit publication authorization, publish in dependency order:
+- [x] Commit the versioned candidates before packing.
+- [x] With explicit publication authorization, publish in dependency order:
       `najm-cache`, then `najm-rate`, then `najm-auth` (and `najm-api` only if
       its export surface changed).
-- [ ] Verify registry versions, integrity, and imports from clean packed
+- [x] Verify registry versions, integrity, and imports from clean packed
       artifacts. A source test pass is not publication evidence.
 
 Do not update Kafil to an unpublished checkout, file dependency, or temporary
@@ -248,61 +248,61 @@ tarball for the final consumer acceptance.
 
 ### Work unit D - Configure Kafil
 
-- [ ] Pin the verified published Najm versions in root overrides and direct
+- [x] Pin the verified published Najm versions in root overrides and direct
       package manifests. Remove the current `najm-rate` `2.0.2`/`2.0.3`
       declaration mismatch and regenerate `bun.lock` with Bun.
-- [ ] Add `ioredis` as an explicit runtime dependency if the final
+- [x] Add `ioredis` as an explicit runtime dependency if the final
       `najm-cache` package still treats it as optional; do not rely on an
       incidental transitive install in the production image.
-- [ ] Extend `packages/server/src/config/envConfig.ts` and
+- [x] Extend `packages/server/src/config/envConfig.ts` and
       `packages/server/src/config/authConfig.ts` with typed, validated settings
       for:
       - the Redis URL;
       - required Redis in production;
       - Kafil's exact `trustedProxyHops=1` production topology;
       - an explicit local/test override where necessary.
-- [ ] Reject a missing/invalid production Redis URL and invalid hop counts at
+- [x] Reject a missing/invalid production Redis URL and invalid hop counts at
       startup without echoing values.
-- [ ] Configure the package-owned cache through `auth()`; do not create a
+- [x] Configure the package-owned cache through `auth()`; do not create a
       Kafil cache service or rate-limit store.
-- [ ] Extend `/api/system/readiness` to report `database` and `cache` as
+- [x] Extend `/api/system/readiness` to report `database` and `cache` as
       `ok`/`unavailable`, return `503` when either required dependency is down,
       and keep all connection details private. Liveness remains independent.
-- [ ] Update README wording so the proxy-hop and durable-store requirements are
+- [x] Update README wording so the proxy-hop and durable-store requirements are
       explicit.
 
 Focused tests:
 
-- [ ] Configuration tests: production Redis required, development memory
+- [x] Configuration tests: production Redis required, development memory
       allowed, malformed URL rejected, hop count bounded.
-- [ ] Installed-contract test: the server resolves `CacheService.type` as
+- [x] Installed-contract test: the server resolves `CacheService.type` as
       `redis` under production configuration.
-- [ ] Readiness tests: database down, Redis down, and both healthy, with no
+- [x] Readiness tests: database down, Redis down, and both healthy, with no
       secret-bearing errors.
-- [ ] Rate tests: rotating a spoofed leftmost XFF value stays in one bucket;
+- [x] Rate tests: rotating a spoofed leftmost XFF value stays in one bucket;
       different trusted-boundary client addresses use distinct buckets.
-- [ ] Account-lockout tests remain green.
+- [x] Account-lockout tests remain green.
 
 ### Work unit E - Make Redis part of production
 
-- [ ] Remove Redis from the optional Compose profile and make the application
+- [x] Remove Redis from the optional Compose profile and make the application
       depend on Redis health as well as PostgreSQL health. Do not make migration
       or seed jobs depend on Redis unless their boot path genuinely initializes
       the full application server.
-- [ ] Keep Redis only on the internal backend network, with no host port.
-- [ ] Retain AOF, the named volume, password authentication, restart policy,
+- [x] Keep Redis only on the internal backend network, with no host port.
+- [x] Retain AOF, the named volume, password authentication, restart policy,
       health check, resource-safe logging, and `no-new-privileges`.
-- [ ] Add `REDIS_URL` to `deploy/env/app.env.example` using a placeholder; keep
+- [x] Add `REDIS_URL` to `deploy/env/app.env.example` using a placeholder; keep
       `REDIS_PASSWORD` in the infrastructure template. Document that both
       values must agree without duplicating a real secret in the repository.
-- [ ] Update `scripts/bootstrapVpsSecrets.sh` so a new installation writes the
+- [x] Update `scripts/bootstrapVpsSecrets.sh` so a new installation writes the
       generated hex Redis password into both protected environment contracts
       without printing it.
-- [ ] Provide a guarded, value-preserving existing-VPS activation procedure.
+- [x] Provide a guarded, value-preserving existing-VPS activation procedure.
       It must back up both environment files, add the URL without displaying
       it, validate Compose, start Redis, verify `PING`, and only then recreate
       the app.
-- [ ] Update `scripts/verifyVpsDeployment.sh` to require cache-aware readiness,
+- [x] Update `scripts/verifyVpsDeployment.sh` to require cache-aware readiness,
       verify Redis is healthy/internal/unpublished, and confirm the application
       is not publicly host-bound.
 - [ ] Update the Dokploy raw Compose definition as a separate operational step.
@@ -348,15 +348,35 @@ test namespace, reaches the configured limit, recreates the app/cache process,
 and proves the same bucket remains limited until TTL expiry. It must delete only
 its exact test keys and must not use `FLUSHDB`.
 
+Status: not run locally. This workstation has neither Docker nor a local Redis
+server, so this remains an explicit environment-backed acceptance gate.
+
 ### Local proxy acceptance
 
-- [ ] Put a disposable echo/test controller behind the same proxy chain only in
+- [x] Put a disposable echo/test controller behind the same proxy chain only in
       the test harness; do not ship an endpoint that reveals client addressing.
-- [ ] Send requests with distinct spoofed left-side XFF values and prove the
+- [x] Send requests with distinct spoofed left-side XFF values and prove the
       resolved bucket address is unchanged.
-- [ ] Prove malformed and short chains fail closed.
-- [ ] Verify the real Next.js 16 production handler, not only direct Hono unit
+- [x] Prove malformed and short chains fail closed.
+- [x] Verify the real Next.js 16 production handler, not only direct Hono unit
       tests.
+
+### Evidence recorded 2026-09-04
+
+- Published and clean-pack verified: `najm-cache@2.1.2`, `najm-rate@2.1.0`,
+  `najm-auth@3.3.0`, and `najm-api@2.0.5`.
+- Final Najm commits: cache `b981620`, rate `cd4f5a3`, API `16d3f9d`, and auth
+  `0163bb8`. The Najm branch is pushed through `b981620`.
+- Najm gates: 24/24 build tasks, 23/23 package suites, current public API
+  snapshot, and the Next.js 16 production proxy recovery suite passed.
+- Kafil gates: lint, typecheck, all workspace tests, production build, and
+  `db:generate` passed with no new migration.
+- Local proxy acceptance passed through the real Next.js production handler:
+  spoof rotation stayed limited, trusted clients separated, and malformed and
+  short chains failed closed.
+- The Dokploy raw Compose update, real-Redis persistence acceptance, image
+  publication, production deployment, and live acceptance remain separate and
+  unperformed.
 
 ## 6. Production rollout and acceptance
 
@@ -402,16 +422,16 @@ Production work requires explicit deployment authorization.
 
 ## 8. Definition of done
 
-- [ ] Kafil has no direct forwarding-header parser for rate limiting.
-- [ ] `najm-auth` has no direct forwarding-header parser for its custom keys.
-- [ ] All Najm rate-limit strategies use one tested trusted-hop resolver.
+- [x] Kafil has no direct forwarding-header parser for rate limiting.
+- [x] `najm-auth` has no direct forwarding-header parser for its custom keys.
+- [x] All Najm rate-limit strategies use one tested trusted-hop resolver.
 - [ ] Public spoofed left-side XFF values cannot rotate Kafil login buckets.
-- [ ] Production starts only with authenticated, reachable Redis and reports
+- [x] Production starts only with authenticated, reachable Redis and reports
       Redis failure through readiness without exposing details.
 - [ ] Rate-limit counters survive app restart/redeployment and are shared by
       multiple app instances.
-- [ ] Redis counter creation and TTL attachment are atomic.
-- [ ] PostgreSQL account lockout remains green and durable.
+- [x] Redis counter creation and TTL attachment are atomic.
+- [x] PostgreSQL account lockout remains green and durable.
 - [ ] Redis and the application have no unintended public host binding.
 - [ ] Najm package gates, registry verification, Kafil's full gate, real Redis
       integration, local proxy acceptance, and authorized live acceptance all

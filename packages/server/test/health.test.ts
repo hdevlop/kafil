@@ -9,7 +9,7 @@ import {
   server,
   translations,
 } from "../src";
-import { databaseReadinessResponse } from "../src/modules/system/systemController";
+import { systemReadinessResponse } from "../src/modules/system/systemController";
 
 describe("Kafil server", () => {
   it("uses readable logs unless structured JSON is explicitly requested", async () => {
@@ -34,27 +34,51 @@ describe("Kafil server", () => {
     });
   });
 
-  it("reports database-aware readiness without exposing connection errors", async () => {
-    const ready = await databaseReadinessResponse(async () => ({ rows: [{ "?column?": 1 }] }));
+  it("reports database and cache readiness without exposing connection errors", async () => {
+    const ready = await systemReadinessResponse({
+      cache: async () => "PONG",
+      database: async () => ({ rows: [{ "?column?": 1 }] }),
+    });
     expect(ready.status).toBe(200);
     expect(ready.headers.get("cache-control")).toBe("no-store");
     expect(await ready.json()).toEqual({
-      checks: { database: "ok" },
+      checks: { cache: "ok", database: "ok" },
       service: "kafil",
       status: "ready",
       version: "0.1.0",
     });
 
-    const unavailable = await databaseReadinessResponse(async () => {
-      throw new Error("postgresql://secret@database/kafil");
+    const databaseUnavailable = await systemReadinessResponse({
+      cache: async () => "PONG",
+      database: async () => {
+        throw new Error("postgresql://secret@database/kafil");
+      },
     });
-    expect(unavailable.status).toBe(503);
-    expect(await unavailable.json()).toEqual({
-      checks: { database: "unavailable" },
+    expect(databaseUnavailable.status).toBe(503);
+    const databaseBody = await databaseUnavailable.json();
+    expect(databaseBody).toEqual({
+      checks: { cache: "ok", database: "unavailable" },
       service: "kafil",
       status: "not_ready",
       version: "0.1.0",
     });
+    expect(JSON.stringify(databaseBody)).not.toContain("secret");
+
+    const cacheUnavailable = await systemReadinessResponse({
+      cache: async () => {
+        throw new Error("redis://:secret@redis:6379/0");
+      },
+      database: async () => ({ rows: [{ "?column?": 1 }] }),
+    });
+    expect(cacheUnavailable.status).toBe(503);
+    const cacheBody = await cacheUnavailable.json();
+    expect(cacheBody).toEqual({
+      checks: { cache: "unavailable", database: "ok" },
+      service: "kafil",
+      status: "not_ready",
+      version: "0.1.0",
+    });
+    expect(JSON.stringify(cacheBody)).not.toContain("secret");
   });
 
   it("requires authentication before disclosing the MCP catalog", async () => {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import { cache as cachePlugin, type CachePluginConfig, CacheService } from "najm-cache";
+import { Server } from "najm-core";
 import { getGuardMetadata } from "najm-guard";
+import { resolveClientAddress } from "najm-rate";
 
 import {
   DashboardController,
@@ -15,11 +18,36 @@ import {
 } from "../src/modules";
 import {
   authConfig,
+  authInfrastructureConfig,
   hasRole,
   isInGroup,
   KafilRoleGuard,
   ROLES,
 } from "../src/config/authConfig";
+import { envConfig } from "../src/config/envConfig";
+
+function withAuthEnvironment(
+  values: Partial<Record<"KAFIL_TRUSTED_PROXY_HOPS" | "NODE_ENV" | "REDIS_URL", string>>,
+  run: () => void,
+) {
+  const names = Object.keys(values) as (keyof typeof values)[];
+  const originals = new Map(names.map((name) => [name, process.env[name]]));
+
+  try {
+    for (const name of names) {
+      const value = values[name];
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+    run();
+  } finally {
+    for (const name of names) {
+      const value = originals.get(name);
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+}
 
 describe("Kafil auth definitions", () => {
   it("defines the four product roles with admin as the super role", () => {
@@ -46,6 +74,127 @@ describe("Kafil auth definitions", () => {
       publicRegistration: false,
       registrationMode: "pending",
     });
+  });
+
+  it("requires Redis and the exact proxy topology in production", () => {
+    withAuthEnvironment(
+      {
+        KAFIL_TRUSTED_PROXY_HOPS: undefined,
+        NODE_ENV: "production",
+        REDIS_URL: "rediss://:test-password@redis.internal:6379/0",
+      },
+      () => {
+        expect(authInfrastructureConfig()).toMatchObject({
+          cache: {
+            driver: "redis",
+            required: true,
+            redis: {
+              keyPrefix: "kafil:",
+              url: "rediss://:test-password@redis.internal:6379/0",
+            },
+          },
+          rateLimit: { trustedProxyHops: 1 },
+        });
+      },
+    );
+  });
+
+  it("allows explicit local memory while trusting no forwarded address", () => {
+    withAuthEnvironment(
+      {
+        KAFIL_TRUSTED_PROXY_HOPS: undefined,
+        NODE_ENV: "development",
+        REDIS_URL: undefined,
+      },
+      () => {
+        expect(authInfrastructureConfig()).toMatchObject({
+          cache: { driver: "memory", required: false },
+          rateLimit: { trustedProxyHops: 0 },
+        });
+      },
+    );
+  });
+
+  it("rejects malformed Redis URLs and bounded proxy-hop violations without echoing values", () => {
+    const secret = "redis-password-must-not-leak";
+    withAuthEnvironment(
+      {
+        KAFIL_TRUSTED_PROXY_HOPS: "9",
+        NODE_ENV: "production",
+        REDIS_URL: `https://:${secret}@redis.internal/0`,
+      },
+      () => {
+        let message = "";
+        try {
+          void envConfig.auth.cache;
+        } catch (error) {
+          message = String(error);
+        }
+        expect(message).toContain("REDIS_URL");
+        expect(message).not.toContain(secret);
+
+        process.env.REDIS_URL = "redis://redis.internal:6379/0";
+        expect(() => envConfig.auth.trustedProxyHops).toThrow("from 0 to 8");
+      },
+    );
+  });
+
+  it("rejects a missing production Redis URL during server initialization", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalRedisUrl = process.env.REDIS_URL;
+
+    try {
+      process.env.NODE_ENV = "production";
+      delete process.env.REDIS_URL;
+      const isolated = new Server({ isolated: true }).use(
+        cachePlugin(authInfrastructureConfig().cache),
+      );
+
+      let message = "";
+      try {
+        await isolated.init();
+      } catch (error) {
+        message = String(error);
+      }
+      expect(message).toContain("requires a Redis URL");
+      expect(message).not.toContain("redis://");
+    } finally {
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = originalNodeEnv;
+      if (originalRedisUrl === undefined) delete process.env.REDIS_URL;
+      else process.env.REDIS_URL = originalRedisUrl;
+    }
+  });
+
+  it("selects the installed Redis CacheService contract for production", () => {
+    withAuthEnvironment(
+      {
+        NODE_ENV: "production",
+        REDIS_URL: "redis://:test-password@redis.internal:6379/0",
+      },
+      () => {
+        const config = authInfrastructureConfig().cache as CachePluginConfig;
+        const cache = new CacheService({
+          driver: config.driver ?? "auto",
+          memory: config.memory ?? {},
+          redis: config.redis,
+          required: config.required ?? false,
+        });
+        expect(cache.type).toBe("redis");
+      },
+    );
+  });
+
+  it("keeps spoofed left-side addresses in one bucket and separates trusted clients", () => {
+    const address = (forwarded: string) =>
+      resolveClientAddress({ "x-forwarded-for": forwarded }, 1);
+
+    const firstBucket = address("198.51.100.10, 203.0.113.7");
+    const rotatedSpoofBucket = address("192.0.2.44, 203.0.113.7");
+    const otherClientBucket = address("198.51.100.10, 203.0.113.8");
+
+    expect(rotatedSpoofBucket).toBe(firstBucket);
+    expect(otherClientBucket).not.toBe(firstBucket);
   });
 
   it("enables Google only with complete credentials and links existing accounts", () => {

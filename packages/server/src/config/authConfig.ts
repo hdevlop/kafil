@@ -41,8 +41,33 @@ function googleOAuthConfig() {
   } as const;
 }
 
-export const authConfig = () =>
-  auth({
+export const authInfrastructureConfig = () => {
+  const cacheConfig = envConfig.auth.cache;
+
+  return {
+    cache: {
+      driver: cacheConfig.driver,
+      required: cacheConfig.required,
+      ...(cacheConfig.url
+        ? {
+            redis: {
+              keyPrefix: cacheConfig.keyPrefix,
+              url: cacheConfig.url,
+            },
+          }
+        : {}),
+    },
+    rateLimit: {
+      trustedProxyHops: envConfig.auth.trustedProxyHops,
+    },
+  } as const;
+};
+
+export const authConfig = () => {
+  const infrastructure = authInfrastructureConfig();
+
+  return auth({
+    cache: infrastructure.cache,
     defaultRole: "sponsor",
     dialect: "pg",
     encryptionKey: envConfig.auth.encryptionKey,
@@ -50,11 +75,13 @@ export const authConfig = () =>
     oauth: googleOAuthConfig(),
     publicRegistration: false,
     registrationMode: "pending",
+    rateLimit: infrastructure.rateLimit,
     jwt: {
       accessSecret: envConfig.auth.jwtAccessSecret!,
       refreshSecret: envConfig.auth.jwtRefreshSecret!,
     },
   });
+};
 
 export const ROLES = {
   ADMIN: "admin",

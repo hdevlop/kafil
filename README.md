@@ -150,6 +150,13 @@ The command requires `DATABASE_URL`, `KAFIL_ADMIN_EMAIL`, and
 data, and seed the Najm bootstrap administrator, product roles, and permissions.
 For automation, run `bun run seed -- setup --yes`.
 
+Production authentication requires a reachable, authenticated Redis backend;
+the process fails closed at startup and readiness reports the cache separately
+from PostgreSQL. `KAFIL_TRUSTED_PROXY_HOPS` must equal the exact number of known
+proxies between clients and Kafil (`1` for the current direct Traefik topology).
+Local development defaults to an in-process cache and trusts no forwarded
+addresses when `REDIS_URL` and the hop override are left empty.
+
 Seed repeatable demo data with 10 families, 20 sponsors, 6 operators, 4
 delivery staff, 20 contributions, 18 image-backed products, and 24
 repeat-family orders across the trailing 12 months:
