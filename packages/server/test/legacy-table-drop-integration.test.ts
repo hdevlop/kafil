@@ -18,8 +18,8 @@ async function tableExists(name: string) {
   return rows[0]?.n === 1;
 }
 
-// AUTH-COOKIE-PLAN.md Move 6 upgrade check: the legacy table is gone and the
-// Najm one is untouched and still authoritative.
+// Upgrade check: the legacy table is gone and the Najm table is untouched and
+// still authoritative.
 databaseDescribe("Move 6 legacy table drop", () => {
   const userId = `legacy-drop-${crypto.randomUUID()}`;
 

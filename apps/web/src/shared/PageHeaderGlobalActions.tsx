@@ -14,11 +14,11 @@ import {
 import screenfull from "screenfull";
 
 import { useTranslation } from "najm-i18n/react";
-import type { KafilLanguage } from "@/preferences";
+import type { KafilLocale } from "@kafil/server/locales";
 
 const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";
 
-const languageFlags: Record<KafilLanguage, { country: string; label: string }> = {
+const languageFlags: Record<KafilLocale, { country: string; label: string }> = {
   ar: { country: "ma", label: "Morocco" },
   en: { country: "us", label: "United States" },
   es: { country: "es", label: "Spain" },
@@ -30,14 +30,14 @@ export default function PageHeaderGlobalActions() {
   const { theme, setTheme } = useNajmTheme();
   const [isChangingLanguage, setIsChangingLanguage] = useState(false);
 
-  const languages: Array<{ label: string; value: KafilLanguage }> = [
+  const languages: Array<{ label: string; value: KafilLocale }> = [
     { label: t("language.english"), value: "en" },
     { label: t("language.french"), value: "fr" },
     { label: t("language.arabic"), value: "ar" },
     { label: t("language.spanish"), value: "es" },
   ];
 
-  async function handleLanguageChange(nextLanguage: KafilLanguage) {
+  async function handleLanguageChange(nextLanguage: KafilLocale) {
     setIsChangingLanguage(true);
     try {
       await changeLanguage(nextLanguage);

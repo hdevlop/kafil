@@ -7,17 +7,13 @@ import { NThemeBrandingProvider } from "najm-theme/react";
 import { AuthProvider, useAuth } from "najm-auth/client/react";
 import { NajmAppProvider } from "najm-kit/app";
 import type { NajmDesignConfig } from "najm-kit";
-import { kafilUiI18n } from "@kafil/server/locales";
+import type { NajmMode, NajmPreferenceTimeZone } from "najm-kit/server";
+import { kafilLocales, kafilUiI18n, type KafilLocale } from "@kafil/server/locales";
+import { KAFIL_CURRENCY } from "@kafil/server/money";
 import { KAFIL_BADGE_DEFAULTS } from "@/features/StatusLabels";
 import { auth } from "@/lib/auth";
 import { APP_NAME } from "@/types/branding";
-import {
-  KAFIL_CURRENCY,
-  KAFIL_LOCALES,
-  type KafilLanguage,
-  type KafilTheme,
-  type KafilTimeZone,
-} from "@/preferences";
+import type { kafilPreferences } from "@/lib/preferences";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { getFormFillSetting } from "@/services/settingApi";
 
@@ -32,9 +28,9 @@ function NajmProviders({
   children: React.ReactNode;
   initialBranding: PublicBranding;
   initialDesign: NajmDesignConfig;
-  initialLanguage: KafilLanguage;
-  initialTheme: KafilTheme;
-  initialTimeZone: KafilTimeZone;
+  initialLanguage: KafilLocale;
+  initialTheme: NajmMode;
+  initialTimeZone: NajmPreferenceTimeZone<typeof kafilPreferences>;
 }>) {
   const { isAuthenticated } = useAuth();
   const formFillSetting = useEntityQuery({
@@ -60,7 +56,7 @@ function NajmProviders({
       initialLanguage={initialLanguage}
       initialTheme={initialTheme}
       initialTimeZone={initialTimeZone}
-      locales={KAFIL_LOCALES}
+      locales={kafilLocales}
       translations={kafilUiI18n.translations}
       defaultLanguage={kafilUiI18n.defaultLanguage}
       fallbackToDefaultLanguage={kafilUiI18n.fallbackToDefaultLanguage}
@@ -68,13 +64,6 @@ function NajmProviders({
         kafilUiI18n.direction(kafilUiI18n.normalizeLanguage(language))
       }
     >
-      {/*
-        Carries the resolved slots *and* the factory paths into the client, so
-        `NThemeImage` can fall back without Kafil hard-coding a public path. It
-        sits inside `NajmAppProvider` rather than outside because the sidebar
-        marks above still come from the kit's own branding prop; both read the
-        same server snapshot, so they cannot disagree.
-      */}
       <NThemeBrandingProvider branding={initialBranding}>
         {children}
       </NThemeBrandingProvider>
@@ -94,10 +83,10 @@ export function AppProviders({
   children: React.ReactNode;
   initialBranding: PublicBranding;
   initialDesign: NajmDesignConfig;
-  initialLanguage: KafilLanguage;
+  initialLanguage: KafilLocale;
   initialSession: ServerSession | null;
-  initialTheme: KafilTheme;
-  initialTimeZone: KafilTimeZone;
+  initialTheme: NajmMode;
+  initialTimeZone: NajmPreferenceTimeZone<typeof kafilPreferences>;
 }>) {
   return (
     <AuthProvider client={auth.client} initialSession={initialSession}>

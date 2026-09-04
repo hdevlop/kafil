@@ -18,11 +18,22 @@
 import { spawn, type Subprocess } from "bun";
 import { resolve } from "node:path";
 
+const localAcceptanceOverrides: Readonly<Record<string, string>> = {
+  EMAIL_PROVIDER: "smtp",
+  KAFIL_E2E_MAILBOX_API_URL: "http://127.0.0.1:8025",
+  SMTP_HOST: "127.0.0.1",
+  SMTP_PASS: "",
+  SMTP_PORT: "1025",
+  SMTP_SECURE: "false",
+  SMTP_USER: "",
+};
 const useProductionServer = Bun.env.KAFIL_E2E_USE_PRODUCTION === "1";
 const baseUrl = "http://127.0.0.1:3210";
 
 function readEnv(name: string): string | undefined {
-  const value = Bun.env[name];
+  const value = Object.hasOwn(localAcceptanceOverrides, name)
+    ? localAcceptanceOverrides[name]
+    : Bun.env[name];
   return value && value.length > 0 ? value : undefined;
 }
 

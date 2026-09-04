@@ -5,9 +5,8 @@ import { generateInitialPassword } from "../src/initialPassword";
 import { normalizePhone } from "../src/phone";
 
 // Login-identity normalization, the CIN temporary credential, and the
-// first-login replacement flow are najm-auth's as of AUTH-COOKIE-PLAN.md
-// Move 4 and are covered by its own suite. What remains here is the profile
-// and provisioning helpers Kafil still owns.
+// first-login replacement flow are owned and tested by najm-auth. What remains
+// here is the profile and provisioning helpers Kafil still owns.
 describe("Kafil credential helpers", () => {
   it("normalizes Moroccan local numbers and preserves international numbers", () => {
     expect(normalizePhone("06 12-34-56-78")).toBe("+212612345678");

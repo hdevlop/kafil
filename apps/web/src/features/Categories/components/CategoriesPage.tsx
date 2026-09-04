@@ -45,8 +45,7 @@ export function CategoriesPage() {
   const columns = useCategoriesTableColumns();
   useCategoryCommands();
   // The card grid continues on scroll on every viewport. The table view keeps
-  // numbered pages: rows there are unvirtualized, and infinite table scroll is
-  // out of scope (see PAGINATION-PLAN.md).
+  // numbered pages because its rows are unvirtualized.
   const [tableView, setTableView] = useState(false);
   const workspace = useCategoriesWorkspace(
     pagination,

@@ -2161,8 +2161,8 @@ identify the deployed revision and cannot bound it at `27c07fd`; the earlier
 wording that it did was withdrawn. Deployment-revision acceptance for this
 attempt is outstanding, and the value-free container revision check must be
 restored before any checkpoint claim rests on it. Local `HEAD` at the time of
-the attempt was `17c41db`, which is `origin/main` plus a docs-only change to
-`AUTH-RATE-LIMIT-HARDENING-PLAN.md`.
+the attempt was `17c41db`, which is `origin/main` plus a docs-only planning
+change that was later removed.
 
 Complete-attempt traceability:
 

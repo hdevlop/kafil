@@ -173,7 +173,8 @@ Run a read-only fail-fast preflight before starting Next.js or Playwright:
 1. Confirm the configured PostgreSQL target accepts a connection.
 2. Confirm Mailpit's HTTP and SMTP endpoints accept loopback connections when
    the journey sends or reads mail.
-3. Confirm the intended ignored environment overlays are loaded after `.env`.
+3. Confirm the local runner applies its fixed loopback Mailpit overrides after
+   loading the single ignored root `.env`.
 4. Confirm the database mode and target are explicitly authorized.
 5. Confirm live email delivery is disabled and SMTP/mailbox hosts are loopback.
 6. Confirm the runner's fixed port is free. For connected acceptance this is

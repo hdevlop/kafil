@@ -11,7 +11,7 @@ import {
 } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
-import type { KafilLanguage } from "@/preferences";
+import type { KafilLocale } from "@kafil/server/locales";
 
 const languageOptions = [
   { country: "us", label: "English", value: "en" },
@@ -23,7 +23,7 @@ const languageOptions = [
 export function AuthLanguageSelector() {
   const { language, changeLanguage } = useTranslation();
 
-  async function handleLanguageChange(nextLanguage: KafilLanguage) {
+  async function handleLanguageChange(nextLanguage: KafilLocale) {
     try {
       await changeLanguage(nextLanguage);
     } catch (error) {
@@ -35,7 +35,7 @@ export function AuthLanguageSelector() {
 
   return (
     <Select
-      onValueChange={(value) => void handleLanguageChange(value as KafilLanguage)}
+      onValueChange={(value) => void handleLanguageChange(value as KafilLocale)}
       value={language}
     >
       <SelectTrigger

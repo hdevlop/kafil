@@ -5,8 +5,20 @@ const requireFromServer = createRequire(
 );
 const { Client } = requireFromServer("pg");
 
+const localAcceptanceOverrides = {
+  EMAIL_PROVIDER: "smtp",
+  KAFIL_E2E_MAILBOX_API_URL: "http://127.0.0.1:8025",
+  SMTP_HOST: "127.0.0.1",
+  SMTP_PASS: "",
+  SMTP_PORT: "1025",
+  SMTP_SECURE: "false",
+  SMTP_USER: "",
+};
+
 function value(name) {
-  const current = process.env[name];
+  const current = Object.hasOwn(localAcceptanceOverrides, name)
+    ? localAcceptanceOverrides[name]
+    : process.env[name];
   return current && current.length > 0 ? current : undefined;
 }
 

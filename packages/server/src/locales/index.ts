@@ -49,6 +49,18 @@ export const kafilUiI18n = kafilI18n.scope("ui");
 export const uiTranslations = kafilUiI18n.translations;
 
 export type KafilLocale = (typeof kafilI18n.supportedLanguages)[number];
+
+/**
+ * BCP 47 tag per language, derived from the definition's own metadata.
+ *
+ * Morocco-specific on purpose: `en-MA`, `fr-MA`, `ar-MA`, `es-MA` decide how
+ * dates, numbers, and MAD amounts format for every surface. Built here rather
+ * than hand-listed so it cannot drift from `languageMetadata` above.
+ */
+export const kafilLocales = Object.fromEntries(
+  kafilI18n.supportedLanguages.map((language) => [language, kafilI18n.locale(language)]),
+) as Record<KafilLocale, string>;
+
 export type LocaleDictionary = (typeof translations)[KafilLocale];
 export type TranslationKey = TranslationKeys<typeof en>;
 export type UiTranslationKey = TranslationKeys<typeof en.ui>;

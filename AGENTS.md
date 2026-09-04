@@ -331,19 +331,12 @@ real environment. Never treat those values as valid at runtime.
 
 ## Roadmap
 
-There is **no root `PLAN.md`** and no root `PAGINATION-PLAN.md`. Both were
-deleted in `b60f493`. Do not recreate either one, infer a phase status from a
+There is **no root `PLAN.md`**. Do not recreate it, infer phase status from a
 document that is not present, or claim root-roadmap completion.
 
-The only plan at the root is
-**`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`**, the active guarded remote VPS
-acceptance journey. Do not add a second root plan or companion sub-plan; keep
-current status, recovery instructions, and browser evidence boundaries in that
-one document.
-
-`docs/plans/` holds only `NAJM-STACK.md` and a `README.md` index. That index
-still links `docs/PLAN.md`, the root `PLAN.md`, `DECISIONS.md`, and
-`sections/*.md`, none of which exist — treat every one of those links as dead.
+Root plans are task-specific. Use `docs/plans/README.md` to identify the plan
+that owns the current slice, and keep implementation, publication, deployment,
+and acceptance evidence scoped to that plan.
 
 Screenshot and browser evidence for completed work lives in `docs/evidence/`.
 

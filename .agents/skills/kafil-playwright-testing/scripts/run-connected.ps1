@@ -13,7 +13,6 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..\..")).Path
 $envFile = Join-Path $repoRoot ".env"
-$acceptanceEnvFile = Join-Path $repoRoot ".env.acceptance"
 $connectedPort = 3210
 $connectTimeoutMs = 1500
 $mailpitSmtpPort = 1025
@@ -33,14 +32,11 @@ function Test-LoopbackPort {
   }
 }
 
-function Assert-EnvironmentFiles {
+function Assert-EnvironmentFile {
   if (-not (Test-Path -LiteralPath $envFile -PathType Leaf)) {
     throw "Connected acceptance requires the ignored root .env file."
   }
-  if (-not (Test-Path -LiteralPath $acceptanceEnvFile -PathType Leaf)) {
-    throw "Connected acceptance requires the ignored root .env.acceptance overlay."
-  }
-  Write-Output "PREFLIGHT OK environment files present"
+  Write-Output "PREFLIGHT OK root environment file present"
 }
 
 function Assert-ConnectedPortFree {
@@ -102,7 +98,7 @@ function Assert-AcceptanceConfigurationAndDatabase {
 
   Push-Location $repoRoot
   try {
-    & bun --env-file=$envFile --env-file=$acceptanceEnvFile $probeScript
+    & bun --env-file=$envFile $probeScript
     if ($LASTEXITCODE -ne 0) {
       throw "Acceptance configuration or PostgreSQL preflight failed."
     }
@@ -111,7 +107,7 @@ function Assert-AcceptanceConfigurationAndDatabase {
   }
 }
 
-Assert-EnvironmentFiles
+Assert-EnvironmentFile
 Assert-ConnectedPortFree
 Assert-Mailpit
 Assert-AcceptanceConfigurationAndDatabase

@@ -6,7 +6,6 @@ import type {
   loginSchema,
   resetPasswordSchema,
 } from "@/features/Auth/config/authSchemas";
-import type { KafilLanguage } from "@/preferences";
 
 export type AuthCardProps = Readonly<{
   children: ReactNode;
@@ -24,5 +23,3 @@ export type LoginFormProps = Readonly<{
 export type LoginValues = z.infer<typeof loginSchema>;
 export type ResetPasswordFormProps = Readonly<{ token: string }>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
-
-export type { KafilLanguage };

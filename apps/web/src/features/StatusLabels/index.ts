@@ -2,7 +2,7 @@ import { normalizeStatusToken, type NBadgeDefaults } from "najm-kit";
 import { humanizeToken } from "najm-kit/format";
 
 import { kafilUiI18n, type UiTranslationKey } from "@kafil/server/locales";
-import type { KafilLanguage } from "@/preferences";
+import type { KafilLocale } from "@kafil/server/locales";
 
 export const statusTranslationKeys: Record<string, UiTranslationKey> = {
   active: "status.active",
@@ -35,7 +35,7 @@ export function getStatusTranslationKey(status: string): UiTranslationKey | null
 
 export function formatStatusLabel(
   status: string,
-  language: KafilLanguage = "en",
+  language: KafilLocale = "en",
 ): string {
   const translationKey = getStatusTranslationKey(status);
   if (translationKey) return kafilUiI18n.translate(language, translationKey);

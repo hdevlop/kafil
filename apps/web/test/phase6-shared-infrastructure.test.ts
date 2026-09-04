@@ -10,12 +10,9 @@ import {
 import { formatCurrency, formatDate, formatNumber } from "najm-kit/format";
 import { resolveStatusColor } from "najm-kit";
 import { formatStatusLabel } from "../src/features/StatusLabels";
-import {
-  KAFIL_CURRENCY,
-  KAFIL_DEFAULT_TIME_ZONE,
-  localeForKafilLanguage,
-  type KafilLanguage,
-} from "../src/preferences";
+import { kafilLocales, type KafilLocale } from "@kafil/server/locales";
+import { KAFIL_CURRENCY } from "@kafil/server/money";
+import { kafilPreferences } from "../src/lib/preferences";
 import {
   getApiErrorMessage,
   getApiErrorStatus,
@@ -76,10 +73,11 @@ describe("Phase 6B API infrastructure", () => {
   });
 });
 
-// Mirrors what NajmAppProvider builds from KAFIL_LOCALES + KAFIL_CURRENCY.
-const configFor = (language: KafilLanguage) => ({
-  locale: localeForKafilLanguage(language),
-  timeZone: KAFIL_DEFAULT_TIME_ZONE,
+// Mirrors what NajmAppProvider builds from the locale map, the resolved
+// default time zone, and the server currency.
+const configFor = (language: KafilLocale) => ({
+  locale: kafilLocales[language],
+  timeZone: kafilPreferences.defaultTimeZone,
   currency: KAFIL_CURRENCY,
 });
 

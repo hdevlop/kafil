@@ -15,8 +15,8 @@ afterEach(() => {
 });
 
 // Identifier and CIN normalization, the setup session, and the cookie rewriting
-// all moved into najm-auth in AUTH-COOKIE-PLAN.md Move 4 and are covered there.
-// What stays Kafil's is which endpoints it calls and how it is wired.
+// are owned and tested by najm-auth. Kafil owns only the endpoint selection and
+// client wiring verified here.
 describe("credential setup client", () => {
   test("calls Najm's standard credential-setup endpoints", async () => {
     const get = spyOn(auth.api, "get").mockResolvedValue({

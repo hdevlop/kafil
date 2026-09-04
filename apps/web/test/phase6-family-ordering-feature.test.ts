@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { QueryClient } from "@tanstack/react-query";
 
-import { normalizeKafilLanguage } from "../src/preferences";
+import { kafilI18n } from "@kafil/server/locales";
 import { familyOrderingKeys } from "../src/features/Orders/hooks/familyOrderingKeys";
 import { orderKeys } from "../src/features/Orders/hooks/orderKeys";
 
@@ -17,9 +17,9 @@ describe("Phase 6E family ordering contracts", () => {
   });
 
   test("normalizes the supported document languages for formatting and direction", () => {
-    expect(normalizeKafilLanguage("ar")).toBe("ar");
-    expect(normalizeKafilLanguage("fr")).toBe("fr");
-    expect(normalizeKafilLanguage("unknown")).toBe("en");
+    expect(kafilI18n.normalizeLanguage("ar")).toBe("ar");
+    expect(kafilI18n.normalizeLanguage("fr")).toBe("fr");
+    expect(kafilI18n.normalizeLanguage("unknown")).toBe("en");
   });
 
   test("renders the privacy-safe delivery person and refreshes order details", () => {

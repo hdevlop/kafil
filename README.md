@@ -188,4 +188,5 @@ Optional demo images live together in `packages/seed/images` as files such as
 the library. The full organization and assignment rules are documented in
 [`packages/seed/README.md`](packages/seed/README.md).
 
-The active roadmap is [PLAN.md](PLAN.md).
+Kafil uses task-specific plans rather than a single root `PLAN.md`. See the
+[plan index](docs/plans/README.md) for the plans currently present.

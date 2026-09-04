@@ -58,8 +58,7 @@ export function ProductsPage() {
   const activeCategoryId = searchParams.get("category") ?? "";
   const [listFilters, setListFilters] = useState<ProductsWorkspaceFilters>({});
   // The card grid continues on scroll on every viewport. The table view keeps
-  // numbered pages: rows there are unvirtualized, and infinite table scroll is
-  // out of scope (see PAGINATION-PLAN.md).
+  // numbered pages because its rows are unvirtualized.
   const [tableView, setTableView] = useState(false);
   const workspace = useProductsWorkspace(
     productsPagination,

@@ -14,8 +14,8 @@ function statements(tag: string) {
   );
 }
 
-// AUTH-COOKIE-PLAN.md §6: each move's DDL is pinned, because anything beyond
-// what the move declares is unexplained drift and blocks the deployment.
+// Each migration's DDL is pinned because anything beyond its declared scope is
+// unexplained drift and blocks deployment.
 describe("credential-setup migration content", () => {
   it("creates only credential_setup_requirements in Move 3", () => {
     const sql = statements("0040_credential_setup_requirements_bridge").join("\n");

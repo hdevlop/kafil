@@ -22,7 +22,7 @@ import { formatStatusLabel } from "@/features/StatusLabels";
 import type { TFn } from "najm-i18n";
 import { useTranslation } from "najm-i18n/react";
 import type { UiTranslationKey } from "@kafil/server/locales";
-import type { KafilLanguage } from "@/preferences";
+import type { KafilLocale } from "@kafil/server/locales";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { getOrderActions, type OrderCommand } from "../config/orderActions";
@@ -282,7 +282,7 @@ function DeliveryAttemptCard({ attempt }: Readonly<{ attempt: DeliveryAttempt }>
 
 function deliveryActionLabel(
   command: OrderCommand,
-  language: KafilLanguage,
+  language: KafilLocale,
   t: TFn<UiTranslationKey>,
 ) {
   switch (command) {
