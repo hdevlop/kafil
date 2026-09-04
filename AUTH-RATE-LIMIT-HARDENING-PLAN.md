@@ -305,7 +305,7 @@ Focused tests:
 - [x] Update `scripts/verifyVpsDeployment.sh` to require cache-aware readiness,
       verify Redis is healthy/internal/unpublished, and confirm the application
       is not publicly host-bound.
-- [ ] Update the Dokploy raw Compose definition as a separate operational step.
+- [x] Update the Dokploy raw Compose definition as a separate operational step.
       The live Kafil deployment is raw-Compose managed, so a repository push or
       webhook response alone is not proof that the Redis topology changed.
 
@@ -374,9 +374,9 @@ server, so this remains an explicit environment-backed acceptance gate.
 - Local proxy acceptance passed through the real Next.js production handler:
   spoof rotation stayed limited, trusted clients separated, and malformed and
   short chains failed closed.
-- The Dokploy raw Compose update, real-Redis persistence acceptance, image
-  publication, production deployment, and live acceptance remain separate and
-  unperformed.
+- The Dokploy raw Compose update, image publication, production deployment, and
+  live real-Redis persistence acceptance were completed as separate operations
+  on 2026-09-04.
 
 ## 6. Production rollout and acceptance
 
@@ -406,6 +406,25 @@ Production work requires explicit deployment authorization.
     the relevant guarded browser preflight. Do not rerun the destructive
     four-account journey unless separately authorized.
 
+Production evidence (2026-09-04):
+
+- Protected Kafil environment files and the Dokploy raw Compose definition were
+  backed up before activation. Redis started healthy with authenticated access,
+  AOF persistence, a named volume, and no host port.
+- Image revision `27c07fdd925034f064a91c2e7eb070c71d286e11` served with both
+  the application and Redis healthy and public cache-aware readiness returning
+  `200`.
+- Nine requests using one `example.invalid` identity and nine different
+  user-supplied left-side XFF values returned eight `401` responses followed by
+  `429`. The probe created one namespaced Redis key.
+- Recreating only the application while Redis remained running preserved the
+  limit: the next request returned `429`. The exact synthetic key retained a
+  positive bounded TTL of 45,786 ms and was then deleted without clearing other
+  Redis data.
+- The live Traefik audit found neither `forwardedHeaders.insecure=true` nor a
+  broad trusted-IP range. Redis and the application had no unintended public
+  host binding.
+
 ## 7. Rollback
 
 - Keep the previous application image and protected environment backups until
@@ -425,16 +444,16 @@ Production work requires explicit deployment authorization.
 - [x] Kafil has no direct forwarding-header parser for rate limiting.
 - [x] `najm-auth` has no direct forwarding-header parser for its custom keys.
 - [x] All Najm rate-limit strategies use one tested trusted-hop resolver.
-- [ ] Public spoofed left-side XFF values cannot rotate Kafil login buckets.
+- [x] Public spoofed left-side XFF values cannot rotate Kafil login buckets.
 - [x] Production starts only with authenticated, reachable Redis and reports
       Redis failure through readiness without exposing details.
 - [ ] Rate-limit counters survive app restart/redeployment and are shared by
       multiple app instances.
 - [x] Redis counter creation and TTL attachment are atomic.
 - [x] PostgreSQL account lockout remains green and durable.
-- [ ] Redis and the application have no unintended public host binding.
+- [x] Redis and the application have no unintended public host binding.
 - [ ] Najm package gates, registry verification, Kafil's full gate, real Redis
       integration, local proxy acceptance, and authorized live acceptance all
       pass with exact evidence.
-- [ ] Package publication, Kafil push, image publication, Dokploy configuration,
+- [x] Package publication, Kafil push, image publication, Dokploy configuration,
       deployment, and live acceptance are reported as distinct outcomes.
