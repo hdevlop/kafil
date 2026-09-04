@@ -11,6 +11,8 @@ import {
   type OwnershipToken,
   Policy,
 } from "najm-auth";
+import Redis from "ioredis";
+import type { CachePluginConfig } from "najm-cache";
 import { Ctx, Service, User } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
 
@@ -41,6 +43,20 @@ function googleOAuthConfig() {
   } as const;
 }
 
+function redisClient(
+  url: string,
+  keyPrefix: string,
+): NonNullable<CachePluginConfig["redis"]>["client"] {
+  const client = new Redis(url, {
+    keyPrefix,
+    lazyConnect: true,
+    maxRetriesPerRequest: 3,
+    retryStrategy: (times) => (times > 3 ? null : Math.min(times * 100, 2_000)),
+  });
+  client.on("error", () => void 0);
+  return client as unknown as NonNullable<CachePluginConfig["redis"]>["client"];
+}
+
 export const authInfrastructureConfig = () => {
   const cacheConfig = envConfig.auth.cache;
 
@@ -51,6 +67,7 @@ export const authInfrastructureConfig = () => {
       ...(cacheConfig.url
         ? {
             redis: {
+              client: redisClient(cacheConfig.url, cacheConfig.keyPrefix),
               keyPrefix: cacheConfig.keyPrefix,
               url: cacheConfig.url,
             },
