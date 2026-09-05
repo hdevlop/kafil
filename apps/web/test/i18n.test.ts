@@ -11,15 +11,17 @@ describe("shared web locale definition", () => {
       "utf8",
     );
     expect(provider).toContain('from "najm-kit/app"');
-    expect(provider).toContain("translations={kafilUiI18n.translations}");
-    expect(provider).toContain(
-      "fallbackToDefaultLanguage={kafilUiI18n.fallbackToDefaultLanguage}",
-    );
-    expect(provider).toContain("getLanguageDirection={(language)");
-    expect(provider).toContain(
-      "kafilUiI18n.direction(kafilUiI18n.normalizeLanguage(language))",
-    );
+    expect(provider).toContain("i18n={kafilUiI18n}");
+    // The active language is the one facet no definition can know.
     expect(provider).toContain("initialLanguage={initialLanguage}");
+
+    // Catalogs, fallback policy, writing direction, and formatting tags are all
+    // declared in the definition. Re-passing any of them here is the drift this
+    // pins against — two sources of truth for the same fact.
+    expect(provider).not.toContain("translations={");
+    expect(provider).not.toContain("fallbackToDefaultLanguage={");
+    expect(provider).not.toContain("getLanguageDirection");
+    expect(provider).not.toContain("locales={");
     expect(provider).not.toContain("router.refresh");
 
     expect(

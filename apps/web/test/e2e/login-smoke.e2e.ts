@@ -3,10 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const BASE_URL =
   process.env.KAFIL_E2E_BASE_URL ?? "https://127.0.0.1:3210";
 
-const ANONYMOUS_401_ENDPOINTS = [
-  "/api/auth/refresh",
-  "/api/settings/form-fill",
-];
+const ANONYMOUS_401_ENDPOINTS = ["/api/auth/refresh"];
 
 type FailedResponse = {
   method: string;
@@ -145,11 +142,55 @@ async function logoDecoded(page: Page) {
     );
 }
 
+async function expectMatchingScriptNonces(page: Page, csp: string | undefined) {
+  expect(csp, "the document response must enforce CSP").toBeTruthy();
+  const nonce = csp?.match(/'nonce-([^']+)'/)?.[1];
+  const scriptSrc = csp
+    ?.split(";")
+    .find((directive) => directive.trim().startsWith("script-src"));
+
+  expect(nonce, "script-src must carry a request nonce").toBeTruthy();
+  expect(scriptSrc).toContain("'strict-dynamic'");
+  expect(scriptSrc).not.toContain("'unsafe-inline'");
+
+  const scripts = await page.locator("script").evaluateAll((elements) =>
+    elements.map((script) => ({
+      nonce: (script as HTMLScriptElement).nonce,
+      nextDevOverlay: script.hasAttribute("data-nextjs-dev-overlay"),
+      nextDevRuntime: (script as HTMLScriptElement).src.includes(
+        "%5Bturbopack%5D_browser_dev_hmr-client",
+      ),
+      src: (script as HTMLScriptElement).src,
+      type: (script as HTMLScriptElement).type,
+      dataAttributes: [...script.attributes]
+        .map((attribute) => attribute.name)
+        .filter((name) => name.startsWith("data-")),
+    })),
+  );
+  const scriptNonces = scripts
+    .filter((script) => !script.nextDevOverlay && !script.nextDevRuntime)
+    .map((script) => script.nonce);
+  expect(scriptNonces.length, "Next.js must render framework scripts").toBeGreaterThan(0);
+  expect(
+    new Set(scriptNonces),
+    `every rendered script must use the response nonce: ${JSON.stringify(scripts)}`,
+  ).toEqual(
+    new Set([nonce]),
+  );
+
+  return nonce;
+}
+
 test.describe("login smoke", () => {
   test("desktop login renders a decoded logo", async ({ page }) => {
     const w = watch(page);
-    await page.goto("/login");
+    const firstResponse = await page.goto("/login");
     await expect(page.getByRole("button", { name: "Log in" })).toBeVisible();
+
+    const firstNonce = await expectMatchingScriptNonces(
+      page,
+      firstResponse?.headers()["content-security-policy"],
+    );
 
     const logo = page.getByAltText("Kafil platform", { exact: true });
     await expect(logo).toBeVisible();
@@ -160,6 +201,13 @@ test.describe("login smoke", () => {
         timeout: 10_000,
       })
       .toBe(true);
+
+    const secondResponse = await page.reload();
+    const secondNonce = await expectMatchingScriptNonces(
+      page,
+      secondResponse?.headers()["content-security-policy"],
+    );
+    expect(secondNonce, "a reload must receive a fresh nonce").not.toBe(firstNonce);
 
     expectClean(w, "desktop login", false);
   });

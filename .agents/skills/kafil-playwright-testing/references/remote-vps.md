@@ -59,14 +59,30 @@ rg -n 'test\("remote (unit|diagnostics)' `
   apps/web/test/e2e/connected-four-account.remote.ts
 ```
 
-Use `KAFIL_E2E_REMOTE_GREP`, never local `KAFIL_E2E_GREP` and never a trailing
-`--grep`. Include the exact diagnostics title. For A-F:
+The connected-account runner uses `KAFIL_E2E_REMOTE_GREP`. The dedicated auth
+lifecycle runner uses `KAFIL_E2E_REMOTE_AUTH_GREP` and rejects the connected
+variable so one suite cannot accidentally select the other. Never use local
+`KAFIL_E2E_GREP` or append `--grep` to a package script. Include the exact
+diagnostics title. For connected A-F:
 
 ```powershell
 $env:KAFIL_E2E_REMOTE_GREP='remote unit [A-F]|remote diagnostics'
 bun run --cwd apps/web test:e2e:connected:remote
 Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
 ```
+
+The auth lifecycle spec is serial and later tests depend on identities created
+by earlier tests. Its normal acceptance command therefore runs all ten tests
+without a grep:
+
+```powershell
+bun run --cwd apps/web test:e2e:auth:remote
+```
+
+Use `KAFIL_E2E_REMOTE_AUTH_GREP` only for a separately authorized diagnostic
+attempt after inspecting the exact titles and their prerequisite range. A
+focused range that omits `remote auth 09 - supported cleanup and closure` can
+leave disposable fixtures behind, so it is not a normal acceptance command.
 
 Restore a previous variable value in `finally` when one existed. At startup,
 compare Playwright's selected-test count with the intended units plus

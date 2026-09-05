@@ -8,14 +8,21 @@
     "packages/*"
   ],
   "overrides": {
+    "esbuild": "0.25.12",
+    "fast-uri": "3.1.7",
+    "hono": "4.12.34",
     "ioredis": "5.11.1",
+    "nodemailer": "9.1.1",
+    "postcss": "8.5.28",
+    "qs": "6.16.0",
+    "sharp": "0.35.3",
     "najm-core": "2.0.6",
-    "najm-auth": "3.4.0",
-    "najm-cache": "2.1.2",
+    "najm-auth": "4.0.0",
+    "najm-cache": "2.2.0",
     "najm-database": "2.0.4",
-    "najm-i18n": "2.1.1",
-    "najm-kit": "2.11.16",
-    "najm-mcp": "2.1.1",
+    "najm-i18n": "2.1.2",
+    "najm-kit": "2.11.17",
+    "najm-mcp": "2.1.2",
     "najm-next": "0.2.0",
     "najm-rate": "2.1.1",
     "najm-storage": "2.2.0",
@@ -56,7 +63,7 @@
     "@types/bun": "1.3.14",
     "@types/node": "20.19.14",
     "eslint": "9.36.0",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.2.12",
     "typescript-eslint": "8.64.0",
     "typescript": "5.9.2"
   },
@@ -73,6 +80,6 @@
     "@clack/prompts": "^1.7.0",
     "ioredis": "5.11.1",
     "najm-core": "^2.0.6",
-    "najm-kit": "2.11.16"
+    "najm-kit": "2.11.17"
   }
 }

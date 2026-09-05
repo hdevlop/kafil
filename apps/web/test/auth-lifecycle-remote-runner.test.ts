@@ -105,6 +105,7 @@ describe("dedicated remote auth lifecycle runner", () => {
     expect(runner).not.toContain("buildRemotePlaywrightArgs");
     expect(runner).not.toContain("KAFIL_E2E_REMOTE_GREP");
     expect(runner).toContain("rejectRemoteGrep: true");
+    expect(buildRemoteAuthPlaywrightArgs()).not.toContain("--grep");
     expect(buildRemoteAuthPlaywrightArgs("remote auth 0[1-2]").slice(-2)).toEqual([
       "--grep",
       "remote auth 0[1-2]",
@@ -119,6 +120,11 @@ describe("dedicated remote auth lifecycle runner", () => {
     expect(sharedRunner).toContain('"--preflight-only"');
     expect(sharedRunner).toContain("await waitForMailbox");
     expect(config).toContain("ignoreHTTPSErrors: false");
+    expect(config).toContain("retries: 0");
+    expect(config).toContain("workers: 1");
+    expect(config).toContain('screenshot: "off"');
+    expect(config).toContain('trace: "off"');
+    expect(config).toContain('video: "off"');
     expect(packageJson.scripts["test:e2e:auth:remote"]).toContain(
       "run-auth-lifecycle-remote-e2e.ts",
     );

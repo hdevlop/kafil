@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import Script from "next/script";
 import { NajmPwaRegistration } from "najm-next/pwa/react";
 import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
 import { loadServerAppearance, loadServerBranding } from "@/lib/serverTheme";
+import { loadFormFillSetting } from "@/lib/serverSettings";
 import { kafilPreferences } from "@/lib/preferences";
 import { APP_NAME } from "@/types/branding";
 import { kafilI18n } from "@kafil/server/locales";
@@ -42,12 +44,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [session, cookieStore, appearance, branding] = await Promise.all([
+  const [session, cookieStore, requestHeaders, appearance, branding, formFill] = await Promise.all([
     getSession().catch(() => null),
     cookies(),
+    headers(),
     loadServerAppearance(),
     loadServerBranding(),
+    loadFormFillSetting(),
   ]);
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   const { language, theme, timeZone } = kafilPreferences.resolve(cookieStore, {
     languageFallback: (session?.user as { language?: unknown } | undefined)?.language,
@@ -61,10 +66,14 @@ export default async function RootLayout({
       className={`${cairo.className} ${cairo.variable} ${theme === "dark" ? "dark " : ""}h-full antialiased`}
       suppressHydrationWarning
     >
+      <Script id="zod-strict-csp" nonce={nonce} strategy="beforeInteractive">
+        {`globalThis.__zod_globalConfig ??= {}; globalThis.__zod_globalConfig.jitless = true;`}
+      </Script>
       <body className="h-screen w-screen">
         <AppProviders
           initialBranding={branding}
           initialDesign={appearance.designConfig}
+          initialFormFill={formFill}
           initialLanguage={language}
           initialSession={session}
           initialTheme={theme}

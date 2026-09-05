@@ -110,7 +110,21 @@ function Assert-AcceptanceConfigurationAndDatabase {
 Assert-EnvironmentFile
 Assert-ConnectedPortFree
 Assert-Mailpit
-Assert-AcceptanceConfigurationAndDatabase
+$previousPreflightProduction = [Environment]::GetEnvironmentVariable("KAFIL_E2E_USE_PRODUCTION", "Process")
+try {
+  if ($UseProduction) {
+    $env:KAFIL_E2E_USE_PRODUCTION = "1"
+  } else {
+    Remove-Item Env:KAFIL_E2E_USE_PRODUCTION -ErrorAction SilentlyContinue
+  }
+  Assert-AcceptanceConfigurationAndDatabase
+} finally {
+  if ($null -eq $previousPreflightProduction) {
+    Remove-Item Env:KAFIL_E2E_USE_PRODUCTION -ErrorAction SilentlyContinue
+  } else {
+    $env:KAFIL_E2E_USE_PRODUCTION = $previousPreflightProduction
+  }
+}
 
 if ($PreflightOnly) {
   Write-Output "PREFLIGHT PASS connected acceptance"

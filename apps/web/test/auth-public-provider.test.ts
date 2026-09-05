@@ -6,14 +6,18 @@ function readSource(relativePath: string) {
 }
 
 describe("public auth page provider boundaries", () => {
-  test("loads the protected form-fill setting only for an authenticated session", () => {
+  test("keeps the public form-fill setting live on public forms", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
+    const serverSettings = readSource("../src/lib/serverSettings.ts");
 
-    expect(provider).toContain(
-      'import { AuthProvider, useAuth } from "najm-auth/client/react";',
+    expect(provider).toContain('import { AuthProvider } from "najm-auth/client/react";');
+    expect(provider).toContain("initialData: initialFormFill,");
+    expect(provider).not.toContain("enabled: isAuthenticated,");
+    expect(serverSettings).toContain(
+      '"@kafil/server/settings-bootstrap"',
     );
-    expect(provider).toContain("const { isAuthenticated } = useAuth();");
-    expect(provider).toContain("enabled: isAuthenticated,");
+    expect(serverSettings).not.toContain('import("@kafil/server")');
+    expect(serverSettings).toContain("console.warn(");
   });
 
   test("submits password reset through the real form instead of an external button", () => {

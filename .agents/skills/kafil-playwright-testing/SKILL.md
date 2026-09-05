@@ -76,7 +76,9 @@ Set any outer command timeout longer than the Playwright test timeout. A 120-sec
 Keep local connected and remote VPS selection separate:
 
 - local connected uses `KAFIL_E2E_GREP`;
-- guarded remote uses `KAFIL_E2E_REMOTE_GREP`;
+- connected-account remote uses `KAFIL_E2E_REMOTE_GREP`;
+- dedicated auth-lifecycle remote uses `KAFIL_E2E_REMOTE_AUTH_GREP` and
+  deliberately rejects `KAFIL_E2E_REMOTE_GREP`;
 - copy exact test titles from the current spec; never guess a grep fragment;
 - include the exact passive diagnostics title and verify the Playwright header
   reports the expected selected-test count before interpreting results.

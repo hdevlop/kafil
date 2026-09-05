@@ -22,6 +22,7 @@ import {
 import {
   DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS,
 } from "../src/modules/settings/settingSchema";
+import { requireFormFillEnabled } from "../src/modules/settings/settingBootstrap";
 
 const householdId = "00000000-0000-4000-8000-000000000091";
 const familyId = "00000000-0000-4000-8000-000000000092";
@@ -95,6 +96,14 @@ describe("configurable family funding contracts", () => {
         (guard) => guard.guardClass.name,
       ),
     ).toContain("OperatorRoleGuard");
+  });
+
+  it("fails loudly when the bootstrap setting row is missing", () => {
+    expect(requireFormFillEnabled({ formFillEnabled: true })).toBe(true);
+    expect(requireFormFillEnabled({ formFillEnabled: false })).toBe(false);
+    expect(() => requireFormFillEnabled(undefined)).toThrow(
+      "Platform settings not found",
+    );
   });
 });
 

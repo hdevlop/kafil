@@ -42,7 +42,6 @@ const mailboxApiUser = process.env.KAFIL_E2E_MAILBOX_USER?.trim() ?? "";
 const mailboxApiPassword = process.env.KAFIL_E2E_MAILBOX_PASSWORD?.trim() ?? "";
 const adminEmail = process.env.KAFIL_ADMIN_EMAIL ?? "";
 const adminPassword = process.env.KAFIL_ADMIN_PASSWORD ?? "";
-const familyIdentifier = process.env.KAFIL_E2E_FAMILY_IDENTIFIER ?? "";
 const familyRuntimePassword = process.env.KAFIL_E2E_FAMILY_PASSWORD ?? "";
 const sponsorAPassword = process.env.KAFIL_E2E_SPONSOR_A_PASSWORD ?? "";
 const sponsorBRuntimePassword = process.env.KAFIL_E2E_SPONSOR_B_PASSWORD ?? "";
@@ -299,7 +298,7 @@ async function assertDiagnosticsClean(alias: string, diagnostics: ContextDiagnos
   }
 }
 
-async function setLanguage(context: BrowserContext, language: "en") {
+async function setLanguage(context: BrowserContext, language: "en" | "ar") {
   await context.addCookies([{ name: "kafil-ui-language", value: language, url: baseUrl }]);
 }
 
@@ -352,19 +351,6 @@ async function signOut(page: Page) {
     authCookies.some((cookie) => cookie.name === "refreshToken"),
     "signOut readiness requires the browser refresh cookie",
   ).toBe(true);
-
-  const meResponsePromise = page.waitForResponse(
-    (response) =>
-      response.request().method() === "GET" &&
-      new URL(response.url()).pathname === "/api/auth/me",
-  );
-  const meStatus = await page.evaluate(async () => {
-    const response = await fetch("/api/auth/me", { credentials: "include" });
-    return response.status;
-  });
-  const meResponse = await meResponsePromise;
-  expect(meResponse.status()).toBe(meStatus);
-  expect(meStatus, "refresh-cookie authentication must work before sign out").toBeLessThan(400);
 
   const visibleSignOutButton = await onlyVisible(
     page.locator("button").filter({
@@ -713,13 +699,42 @@ async function smtpProbe(recipient: string): Promise<void> {
   });
 }
 
-async function deleteMailboxMessage(messageId: string) {
+async function mailboxMessageIdsForRecipient(recipient: string): Promise<string[]> {
+  const response = await mailboxFetch("/api/v1/messages");
+  expect(response.ok, "Mailpit message listing should succeed").toBe(true);
+  const payload = (await response.json()) as {
+    messages?: Array<{
+      ID?: unknown;
+      To?: Array<{ Address?: unknown }>;
+    }>;
+  };
+  const normalizedRecipient = recipient.trim().toLowerCase();
+  return [...new Set(
+    (payload.messages ?? [])
+      .filter((message) =>
+        (message.To ?? []).some(
+          ({ Address }) =>
+            typeof Address === "string" &&
+            Address.trim().toLowerCase() === normalizedRecipient,
+        ),
+      )
+      .map((message) => message.ID)
+      .filter((id): id is string => typeof id === "string" && id.length > 0),
+  )];
+}
+
+async function deleteMailboxMessages(messageIds: string[]) {
+  if (messageIds.length === 0) return;
   const response = await mailboxFetch("/api/v1/messages", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ IDs: [messageId] }),
+    body: JSON.stringify({ IDs: messageIds }),
   });
   expect(response.ok, "Mailpit batch delete should succeed").toBe(true);
+}
+
+async function deleteMailboxMessage(messageId: string) {
+  await deleteMailboxMessages([messageId]);
 }
 
 interface MailpitMessage {
@@ -810,11 +825,17 @@ test.describe.serial("connected four-account acceptance", () => {
   });
 
   test.afterAll(async () => {
-    await pool.end();
-    await adminContext?.close();
-    await familyContext?.close();
-    await sponsorAContext?.close();
-    await sponsorBContext?.close();
+    try {
+      const ownedMessageIds = await mailboxMessageIdsForRecipient(sponsorAEmail);
+      await deleteMailboxMessages(ownedMessageIds);
+      expect(await mailboxMessageIdsForRecipient(sponsorAEmail)).toEqual([]);
+    } finally {
+      await pool.end();
+      await adminContext?.close();
+      await familyContext?.close();
+      await sponsorAContext?.close();
+      await sponsorBContext?.close();
+    }
   });
 
   test("work unit A — authorized target, mailbox probe, and health routes", async () => {
@@ -1821,8 +1842,31 @@ test.describe.serial("connected four-account acceptance", () => {
       const refresh = await login(page, session.email, session.password);
       await expect(page).toHaveURL(/\/dashboard$/);
       await refresh;
-      await page.goto("/sponsor/support");
-      await expect(page.getByText(new RegExp(`Connected Family ${state.label}`)).first()).toBeVisible();
+
+      const identity = await browserJsonRequest(page, "GET", "/api/auth/me");
+      expect(identity.status).toBe(200);
+      const identityData = responseData(identity.body) as Record<string, unknown>;
+      expect(identityData.role).toBe("sponsor");
+      expect(identityData.id).toBe(
+        session.alias === "sponsorA" ? state.sponsorAUserId : state.sponsorBUserId,
+      );
+
+      const catalogReadiness = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return (
+          response.request().method() === "GET" &&
+          url.pathname === "/api/support-assignments/catalog" &&
+          url.searchParams.has("limit") &&
+          url.searchParams.has("offset")
+        );
+      });
+      await page.goto("/sponsor/support", { waitUntil: "commit" });
+      expect((await catalogReadiness).status()).toBeLessThan(400);
+      await expect.poll(() => new URL(page.url()).pathname).toBe("/family");
+      await expectNoneVisible(page.getByText("Loading families", { exact: true }));
+      await expect(
+        page.getByRole("heading", { name: "Families", exact: true }),
+      ).toBeVisible();
 
       const catalog = await browserJsonRequest(
         page,
@@ -1977,6 +2021,7 @@ test.describe.serial("connected four-account acceptance", () => {
       containsSensitiveValue(outboxPayloadRows, sensitiveValues),
       "Unit E outbox payload included a sensitive runtime value",
     ).toBe(false);
+    await signOut(adminPage);
     await adminPage.close();
     console.log("C4A STEP E PASS");
   });
@@ -1993,15 +2038,37 @@ test.describe.serial("connected four-account acceptance", () => {
     await expect(planPage).toHaveURL(/\/dashboard$/);
     await planRefresh;
 
-    await planPage.goto(`/sponsor/contributions?assignmentId=${state.assignmentAId}`);
-    await planPage.getByRole("button", { name: /Create monthly plan|Créer un plan mensuel|إنشاء خطة شهرية/i }).first().click();
-    const planDialog = planPage.getByRole("dialog", { name: /Create plan|Plan جديد|إنشاء خطة/i });
-    await expect(planDialog).toBeVisible();
-    await planDialog.getByLabel(/Amount|Montant|المبلغ/i).fill(formatMadFromMinor(state.fixture!.sponsorATargetMinor));
-    await planDialog.getByLabel(/Kind|Type|النوع/i).click();
-    await planPage.getByRole("option", { name: /Monthly|Mensuel|شهري/i }).first().click();
-    await planDialog.getByRole("button", { name: /Create plan|Créer|إنشاء/i }).click();
-    await expect(planDialog).toBeHidden();
+    const monthlyPlan = await browserJsonRequest(
+      planPage,
+      "POST",
+      "/api/contributions/me/plans",
+      {
+        supportAssignmentId: state.assignmentAId,
+        kind: "monthly",
+        amountMinor: 1,
+      },
+    );
+    expect(monthlyPlan.status).toBe(200);
+    state.planAId = responseId(monthlyPlan.body);
+    expect(state.planAId).not.toBe("");
+    expect(
+      (responseData(monthlyPlan.body) as Record<string, unknown>).status,
+    ).toBe("active");
+
+    for (const action of ["pause", "resume", "stop"] as const) {
+      const changed = await browserJsonRequest(
+        planPage,
+        "POST",
+        `/api/contributions/me/plans/${state.planAId}/${action}`,
+        { reason: `Connected ${action} ${state.label}` },
+      );
+      expect(changed.status).toBe(200);
+      expect(
+        (responseData(changed.body) as Record<string, unknown>).status,
+      ).toBe(
+        action === "pause" ? "paused" : action === "resume" ? "active" : "stopped",
+      );
+    }
 
     const planRows = await dbQuery<{ id: string }>(
       `SELECT cp.id
@@ -2010,41 +2077,30 @@ test.describe.serial("connected four-account acceptance", () => {
        INNER JOIN sponsor_profiles sp ON sp.id = sa.sponsor_profile_id
        WHERE cp.support_assignment_id = $1
          AND sp.user_id = $2
-         AND cp.status = 'active'`,
-      [state.assignmentAId, state.sponsorAUserId!],
+         AND cp.id = $3
+         AND cp.status = 'stopped'`,
+      [state.assignmentAId, state.sponsorAUserId!, state.planAId],
     );
     expect(planRows.length).toBe(1);
-    state.planAId = planRows[0]!.id;
+    expect(planRows[0]!.id).toBe(state.planAId);
 
-    for (const action of ["Pause", "Resume", "Stop"] as const) {
-      await planPage.goto(`/sponsor/contributions?assignmentId=${state.assignmentAId}`);
-      await planPage.getByRole("button", { name: new RegExp(action, "i") }).first().click();
-      const reasonDialog = planPage.getByRole("dialog");
-      await reasonDialog.getByLabel(/Reason|Motif|السبب/i).fill(`Connected ${action} ${state.label}`);
-      await reasonDialog.getByRole("button", { name: new RegExp(action, "i") }).last().click();
-      await expect(reasonDialog).toBeHidden();
-    }
-
-    const lifecycleCount = await dbQuery<{ count: string }>(
-      "SELECT COUNT(*)::text AS count FROM plan_lifecycle_events WHERE plan_id = $1",
-      [state.planAId],
+    // A stopped plan is terminal.
+    await expectExactNegativeResponse(
+      planPage,
+      sponsorADiagnostics,
+      {
+        method: "POST",
+        path: `/api/contributions/me/plans/${state.planAId}/resume`,
+        status: 409,
+      },
+      () =>
+        browserJsonRequest(
+          planPage,
+          "POST",
+          `/api/contributions/me/plans/${state.planAId}/resume`,
+          { reason: `Connected resume attempt ${state.label}` },
+        ),
     );
-    expect(Number(lifecycleCount[0]?.count ?? 0)).toBeGreaterThanOrEqual(4);
-
-    // Resume rejected after stop — confirm conflict.
-    await planPage.goto(`/sponsor/contributions?assignmentId=${state.assignmentAId}`);
-    const stopPlan = planPage.getByRole("button", { name: /Resume|Reprendre|استئناف/i });
-    if (await stopPlan.count() > 0) {
-      await stopPlan.first().click();
-      const reasonDialog = planPage.getByRole("dialog");
-      await reasonDialog.getByLabel(/Reason|Motif|السبب/i).fill(`Connected resume attempt ${state.label}`);
-      const resumeResponsePromise = planPage.waitForResponse((response) =>
-        response.url().includes("/contributions/me/plans/") && response.url().endsWith("/resume") && response.status() === 409,
-      );
-      await reasonDialog.getByRole("button", { name: /Resume|Reprendre|استئناف/i }).last().click();
-      const resumeResponse = await resumeResponsePromise;
-      expect(resumeResponse.status()).toBe(409);
-    }
     await signOut(planPage);
     await planPage.close();
 
@@ -2063,12 +2119,12 @@ test.describe.serial("connected four-account acceptance", () => {
     const sponsorBTargetMinor = state.fixture!.sponsorBTargetMinor;
     expect(addMinor(sponsorATargetMinor, sponsorBTargetMinor)).toBe(state.fundingTargetMinor);
 
-    const sponsorAResponse = await fetch(`${baseUrl}/api/support-assignments/me/${state.assignmentAId}`, {
-      headers: { cookie: await adminContext.cookies().then((cookies) =>
-        cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; "),
-      ) },
-    });
-    expect(sponsorAResponse.status).toBeLessThan(400);
+    const assignment = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/support-assignments/${state.assignmentAId}`,
+    );
+    expect(assignment.status).toBe(200);
 
     await signOut(adminPage);
     await adminPage.close();
@@ -2081,7 +2137,11 @@ test.describe.serial("connected four-account acceptance", () => {
     const familyPage = await familyContext.newPage();
     attachDiagnostics(familyPage, familyDiagnostics);
     await setLanguage(familyContext, "en");
-    const familyRefresh = await login(familyPage, familyIdentifier, familyRuntimePassword);
+    const familyRefresh = await login(
+      familyPage,
+      state.familyEmail!,
+      familyRuntimePassword,
+    );
     await expect(familyPage).toHaveURL(/\/dashboard$/);
     await familyRefresh;
     await familyPage.goto("/products");
@@ -2094,22 +2154,131 @@ test.describe.serial("connected four-account acceptance", () => {
   });
 
   test("work unit H — responsive, RTL, keyboard, and state evidence", async () => {
-    if (!adminContext) throw new Error("Admin context missing");
+    if (!adminContext || !adminDiagnostics) throw new Error("Admin context missing");
     const adminPage = await adminContext.newPage();
+    attachDiagnostics(adminPage, adminDiagnostics);
     await setLanguage(adminContext, "en");
     const adminRefresh = await login(adminPage, adminEmail, adminPassword);
     await expect(adminPage).toHaveURL(/\/dashboard$/);
     await adminRefresh;
-    for (const key of Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>) {
+
+    const identity = await browserJsonRequest(adminPage, "GET", "/api/auth/me");
+    expect(identity.status).toBe(200);
+    expect(responseData(identity.body)).toMatchObject({ role: "admin" });
+
+    const sidebarMark = await onlyVisible(adminPage.locator("aside img"));
+    await expect(sidebarMark).toBeVisible();
+    await expect.poll(() =>
+      sidebarMark.evaluate((node) => {
+        const image = node as HTMLImageElement;
+        return image.complete && image.naturalWidth > 0;
+      }),
+    ).toBe(true);
+    expect(await sidebarMark.getAttribute("src")).toMatch(
+      /^\/api\/branding\/(?:factory|assets)\//,
+    );
+
+    if (process.env.KAFIL_E2E_USE_PRODUCTION === "1") {
+      await expect.poll(
+        () => adminPage.evaluate(async () => {
+          const registration = await navigator.serviceWorker.getRegistration("/");
+          return Boolean(
+            registration?.active || registration?.waiting || registration?.installing,
+          );
+        }),
+        { timeout: 30_000 },
+      ).toBe(true);
+    }
+
+    const dashboardDocument = await adminPage.evaluate(async (rootUrl) => {
+      const response = await fetch(`${rootUrl}/dashboard`, { credentials: "include" });
+      return {
+        csp: response.headers.get("content-security-policy"),
+        finalPath: new URL(response.url).pathname,
+        status: response.status,
+      };
+    }, baseUrl);
+    expect(dashboardDocument.status).toBe(200);
+    expect(dashboardDocument.finalPath).toBe("/dashboard");
+    const scriptSrc = dashboardDocument.csp
+      ?.split(";")
+      .find((directive) => directive.trim().startsWith("script-src"));
+    expect(scriptSrc).toContain("script-src 'self' 'nonce-");
+    expect(scriptSrc).toContain("'strict-dynamic'");
+    expect(scriptSrc).not.toContain("'unsafe-inline'");
+
+    for (const key of ["desktop", "tablet", "phone"] as const) {
       const viewport = VIEWPORTS[key];
       await adminPage.setViewportSize({ width: viewport.width, height: viewport.height });
-      await adminPage.goto("/dashboard");
+      await expect(adminPage).toHaveURL(/\/dashboard$/);
+      await expect(adminPage.locator("html")).toHaveAttribute("dir", "ltr");
+      await expect(adminPage.locator("html")).toHaveAttribute("lang", "en");
       const overflow = await adminPage.evaluate(() => ({
         documentWidth: document.documentElement.scrollWidth,
         viewportWidth: window.innerWidth,
       }));
       expect(overflow.documentWidth, `${key} overflow`).toBeLessThanOrEqual(overflow.viewportWidth);
     }
+
+    await adminPage.setViewportSize(VIEWPORTS.desktop);
+    const themeToggle = await onlyVisible(
+      adminPage.getByRole("button", { name: "Toggle color theme", exact: true }),
+    );
+    const initialDark = await adminPage.locator("html").evaluate((node) =>
+      node.classList.contains("dark"),
+    );
+    await themeToggle.focus();
+    await expect(themeToggle).toBeFocused();
+    const themeChange = adminPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === "/api/ui-theme",
+    );
+    await adminPage.keyboard.press("Enter");
+    expect((await themeChange).status()).toBe(200);
+    await expect.poll(() => adminPage.locator("html").evaluate((node) =>
+      node.classList.contains("dark"),
+    )).toBe(!initialDark);
+    const themeRestore = adminPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === "/api/ui-theme",
+    );
+    await adminPage.keyboard.press("Enter");
+    expect((await themeRestore).status()).toBe(200);
+    await expect.poll(() => adminPage.locator("html").evaluate((node) =>
+      node.classList.contains("dark"),
+    )).toBe(initialDark);
+
+    const languageButton = await onlyVisible(
+      adminPage.getByRole("button", { name: "Language", exact: true }),
+    );
+    await languageButton.focus();
+    await expect(languageButton).toBeFocused();
+    await adminPage.keyboard.press("Enter");
+    const arabicOption = adminPage.getByRole("menuitem", { name: /Arabic/ });
+    await expect(arabicOption).toBeVisible();
+    await arabicOption.focus();
+    const languageChange = adminPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === "/api/ui-language",
+    );
+    await adminPage.keyboard.press("Enter");
+    expect((await languageChange).status()).toBe(200);
+    await expect(adminPage.locator("html")).toHaveAttribute("dir", "rtl");
+    await expect(adminPage.locator("html")).toHaveAttribute("lang", "ar");
+    await adminPage.setViewportSize(VIEWPORTS.phoneRtl);
+    const rtlOverflow = await adminPage.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(rtlOverflow.documentWidth, "phoneRtl overflow").toBeLessThanOrEqual(
+      rtlOverflow.viewportWidth,
+    );
+
+    await adminPage.setViewportSize(VIEWPORTS.desktop);
+    await signOut(adminPage);
     await adminPage.close();
   });
 

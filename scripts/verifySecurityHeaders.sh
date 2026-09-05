@@ -57,13 +57,19 @@ require_absent() {
 
 verify_path() {
   local path="$1"
+  local require_csp="${2:-no}"
   curl --silent --show-error --dump-header "$headers_file" --output /dev/null \
     --max-redirs 0 "$public_origin$path"
 
   require_contains "Strict-Transport-Security" "max-age=31536000"
   require_contains "Strict-Transport-Security" "includeSubDomains"
-  require_contains "Content-Security-Policy" "frame-ancestors 'none'"
-  require_contains "Content-Security-Policy" "object-src 'none'"
+  if [[ "$require_csp" == "yes" ]]; then
+    require_contains "Content-Security-Policy" "frame-ancestors 'none'"
+    require_contains "Content-Security-Policy" "object-src 'none'"
+    require_contains "Content-Security-Policy" "script-src 'self' 'nonce-"
+    require_contains "Content-Security-Policy" "'strict-dynamic'"
+    require_absent "Content-Security-Policy-Report-Only"
+  fi
   require_exact "X-Content-Type-Options" "nosniff"
   require_exact "X-Frame-Options" "DENY"
   require_exact "Referrer-Policy" "strict-origin-when-cross-origin"
@@ -73,5 +79,5 @@ verify_path() {
   echo "PASS $public_origin$path"
 }
 
-verify_path "/"
+verify_path "/" "yes"
 verify_path "/api/system/health"

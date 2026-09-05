@@ -75,7 +75,8 @@ describe("the proxy stays free of React-server code", () => {
     // after logout.
     expect(proxy).not.toContain("next-router-prefetch");
     expect(proxy).not.toContain("next-router-state-tree");
-    expect(proxy).toContain("return auth.proxy(request)");
+    expect(proxy).toContain("await auth.proxy(request, {");
+    expect(proxy).toContain("requestHeaders: {");
   });
 });
 

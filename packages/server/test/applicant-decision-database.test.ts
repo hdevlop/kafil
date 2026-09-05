@@ -377,7 +377,16 @@ databaseDescribe("applicant decision PostgreSQL integration", () => {
       status: "sent",
     });
     const [tokens, setup, challenge] = await Promise.all([
-      pool.query(`SELECT id FROM tokens WHERE user_id = $1`, [seeded.userId]),
+      pool.query<{
+        status: string;
+        previous_hash: string | null;
+        previous_valid_until: Date | null;
+        previous_used_at: Date | null;
+      }>(
+        `SELECT status, previous_hash, previous_valid_until, previous_used_at
+         FROM tokens WHERE user_id = $1`,
+        [seeded.userId],
+      ),
       pool.query<{ revoked_at: Date | null }>(
         `SELECT revoked_at FROM credential_setup_sessions WHERE user_id = $1`,
         [seeded.userId],
@@ -387,7 +396,14 @@ databaseDescribe("applicant decision PostgreSQL integration", () => {
         [seeded.applicantId],
       ),
     ]);
-    expect(tokens.rows).toHaveLength(0);
+    expect(tokens.rows).toEqual([
+      {
+        status: "revoked",
+        previous_hash: null,
+        previous_valid_until: null,
+        previous_used_at: null,
+      },
+    ]);
     expect(setup.rows[0]?.revoked_at).not.toBeNull();
     expect(challenge.rows[0]?.consumed_at).not.toBeNull();
     const auth = server.container.get(AuthService);

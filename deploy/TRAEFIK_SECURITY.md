@@ -1,8 +1,10 @@
 # Kafil security headers at the Dokploy edge
 
-Production traffic reaches Kafil through Dokploy Traefik, so the authoritative
-header policy belongs on that HTTPS router. Local development stays unchanged,
-and `apps/web/next.config.ts` does not need a production-only header branch.
+Production traffic reaches Kafil through Dokploy Traefik, so shared non-CSP
+security headers belong on that HTTPS router. The Next.js proxy owns CSP because
+its script nonce must be unique per navigation. Local development follows the
+same application policy, and `apps/web/next.config.ts` does not need a
+production-only header branch.
 
 ## Install
 
@@ -32,19 +34,20 @@ and `apps/web/next.config.ts` does not need a production-only header branch.
    bash scripts/verifySecurityHeaders.sh https://kafala360.ma
    ```
 
-The middleware enforces a small CSP baseline that blocks framing, plugins, base
-URL injection, and cross-origin form submission without constraining Next.js
-scripts or styles. A stricter policy is emitted as report-only for browser
-iteration before enforcement.
+The middleware intentionally does not emit CSP. The application emits an
+enforced, request-scoped policy on browser documents, including framing,
+plugin, base-URL, form-action, and nonce-bound script restrictions. Adding CSP
+to the middleware would overwrite the request nonce and block the framework
+scripts it authorizes.
 
 HSTS covers subdomains for one year but does not request browser preload.
 Preload is a separate operational decision: audit every present and future
 subdomain for permanent HTTPS first, then change `stsPreload` only with the
 domain owner's explicit approval.
 
-The optional Caddy deployment carries the same enforced baseline and response
-header removals. Caddy is not the production routing owner while Dokploy
-Traefik owns ports 80 and 443.
+The optional Caddy deployment carries the same non-CSP security headers and
+response-header removals. Caddy is not the production routing owner while
+Dokploy Traefik owns ports 80 and 443.
 
 ## Deployment gate
 
@@ -54,3 +57,7 @@ deployment state file. A non-compliant origin fails the deployment with exit
 code `8` and does **not** roll back the application image: the header policy
 belongs to the proxy, so the previous image would be equally non-compliant.
 Reattach `kafil-security@file` to the Kafil HTTPS router and redeploy.
+
+The verifier requires the nonce CSP on `/`, where the Next.js proxy applies it,
+and checks the shared edge headers on both `/` and `/api/system/health`. API
+health responses are not HTML documents and are excluded from the nonce proxy.

@@ -24,20 +24,18 @@ describe("production security header contracts", () => {
       "stsSeconds: 31536000",
       "stsIncludeSubdomains: true",
       "stsPreload: false",
-      "frame-ancestors 'none'",
-      "object-src 'none'",
       'X-Powered-By: ""',
     ]) {
       expect(traefik).toContain(contract);
     }
-    expect(traefik).toContain("contentSecurityPolicyReportOnly:");
+    expect(traefik).not.toContain("contentSecurityPolicy:");
+    expect(traefik).not.toContain("contentSecurityPolicyReportOnly:");
   });
 
   test("the optional Caddy edge keeps the enforceable policy in parity", () => {
     for (const contract of [
       "-X-Powered-By",
       "Strict-Transport-Security",
-      "Content-Security-Policy",
       "X-Content-Type-Options",
       "X-Frame-Options",
       "Referrer-Policy",
@@ -45,11 +43,16 @@ describe("production security header contracts", () => {
     ]) {
       expect(caddy).toContain(contract);
     }
+    expect(caddy).not.toContain("\n\t\tContent-Security-Policy ");
+    expect(caddy).not.toContain("Content-Security-Policy-Report-Only");
   });
 
   test("the public verifier checks pages and API responses", () => {
-    expect(verifier).toContain('verify_path "/"');
+    expect(verifier).toContain('verify_path "/" "yes"');
     expect(verifier).toContain('verify_path "/api/system/health"');
+    expect(verifier).toContain('local require_csp="${2:-no}"');
+    expect(verifier).toContain('"script-src \'self\' \'nonce-"');
+    expect(verifier).toContain('require_absent "Content-Security-Policy-Report-Only"');
     expect(verifier).toContain('require_absent "X-Powered-By"');
   });
 });
@@ -62,5 +65,4 @@ describe("najm-next configuration contract", () => {
     expect(config.poweredByHeader).toBe(false);
     expect(config.serverExternalPackages).toContain("reflect-metadata");
   });
-
 });

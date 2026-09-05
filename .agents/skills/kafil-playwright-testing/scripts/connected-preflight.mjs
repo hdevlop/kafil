@@ -1,7 +1,11 @@
 import { createRequire } from "node:module";
+import { connect } from "node:net";
 
 const requireFromServer = createRequire(
   new URL("../../../../packages/server/package.json", import.meta.url),
+);
+const requireFromWeb = createRequire(
+  new URL("../../../../apps/web/package.json", import.meta.url),
 );
 const { Client } = requireFromServer("pg");
 
@@ -34,8 +38,115 @@ function isMailboxLoopback() {
   }
 }
 
+function redisTarget() {
+  try {
+    const url = new URL(value("REDIS_URL"));
+    const port = Number(url.port || "6379");
+    if (
+      url.protocol !== "redis:" ||
+      !isLoopback(url.hostname) ||
+      !Number.isInteger(port) ||
+      port < 1 ||
+      port > 65535
+    ) {
+      return undefined;
+    }
+    return {
+      host: url.hostname,
+      password: decodeURIComponent(url.password),
+      port,
+      username: decodeURIComponent(url.username),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function isRedisLoopback() {
+  return Boolean(redisTarget());
+}
+
+function isSharpRuntimeLoadable() {
+  try {
+    const sharp = requireFromWeb("sharp");
+    return typeof sharp === "function" && Boolean(sharp.versions?.sharp);
+  } catch {
+    return false;
+  }
+}
+
+function redisCommand(parts) {
+  const encoded = parts.map((part) => {
+    const value = Buffer.from(part);
+    return Buffer.concat([
+      Buffer.from(`$${value.byteLength}\r\n`),
+      value,
+      Buffer.from("\r\n"),
+    ]);
+  });
+  return Buffer.concat([
+    Buffer.from(`*${encoded.length}\r\n`),
+    ...encoded,
+  ]);
+}
+
+async function probeRedis() {
+  const target = redisTarget();
+  if (!target) throw new Error("Redis acceptance target is invalid");
+
+  const commands = [];
+  if (target.password) {
+    commands.push(
+      redisCommand(
+        target.username
+          ? ["AUTH", target.username, target.password]
+          : ["AUTH", target.password],
+      ),
+    );
+  }
+  commands.push(redisCommand(["PING"]));
+
+  await new Promise((resolve, reject) => {
+    const socket = connect({ host: target.host, port: target.port });
+    let response = "";
+    let settled = false;
+
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      if (error) reject(error);
+      else resolve();
+    };
+
+    socket.setEncoding("utf8");
+    socket.setTimeout(1500);
+    socket.once("connect", () => socket.write(Buffer.concat(commands)));
+    socket.on("data", (chunk) => {
+      response += chunk;
+      if (response.includes("\r\n-") || response.startsWith("-")) {
+        finish(new Error("Redis rejected the readiness command"));
+      } else if (response.includes("+PONG\r\n")) {
+        finish();
+      }
+    });
+    socket.once("error", () => finish(new Error("Redis connection failed")));
+    socket.once("timeout", () => finish(new Error("Redis readiness timed out")));
+    socket.once("close", () => {
+      if (!settled) finish(new Error("Redis closed before PONG"));
+    });
+  });
+}
+
 const checks = [
   ["DATABASE_CONFIGURATION_PRESENT", Boolean(value("DATABASE_URL"))],
+  ["REDIS_CONFIGURATION_PRESENT", Boolean(value("REDIS_URL"))],
+  ["REDIS_HOST_IS_LOOPBACK", isRedisLoopback()],
+  [
+    "REDIS_AUTHENTICATION_PRESENT_FOR_PRODUCTION",
+    value("KAFIL_E2E_USE_PRODUCTION") !== "1" || Boolean(redisTarget()?.password),
+  ],
+  ["SHARP_RUNTIME_LOADABLE", isSharpRuntimeLoadable()],
   [
     "DATABASE_MODE_AUTHORIZED",
     ["authorized_local_demo", "existing-local-demo", "dedicated_disposable"].includes(
@@ -82,9 +193,10 @@ if (failedChecks.length > 0) {
   try {
     await client.connect();
     await client.query("select 1");
-    console.log("PREFLIGHT OK acceptance configuration and PostgreSQL query");
+    await probeRedis();
+    console.log("PREFLIGHT OK acceptance configuration, PostgreSQL query, and Redis PING");
   } catch {
-    console.error("PREFLIGHT FAIL PostgreSQL readiness query");
+    console.error("PREFLIGHT FAIL PostgreSQL or Redis readiness query");
     process.exitCode = 1;
   } finally {
     await client.end().catch(() => undefined);

@@ -19,6 +19,7 @@ interface SessionClaims {
   roles: string[];
   permissions: string[];
   sessionVersion: number;
+  tokenFamily: string;
   iat: number;
 }
 
@@ -52,6 +53,7 @@ async function signSession(iat = Date.now()): Promise<string> {
     roles: ["sponsor"],
     permissions: [],
     sessionVersion: 0,
+    tokenFamily: "synthetic-family",
     iat,
   };
   const payload = JSON.stringify(claims);

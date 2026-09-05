@@ -69,16 +69,15 @@ const UPLOAD_PNG = Buffer.from(
  * The only console noise this suite tolerates, and only for an anonymous
  * visitor on the sign-in page.
  *
- * Both are the app asking "is anyone signed in?" and being told no. They
- * predate this migration and have nothing to do with theming — but the
- * exemption is by *endpoint*, so a 401 from anywhere else still fails, and a
- * third endpoint appearing here would fail too.
+ * The auth refresh is the app asking "is anyone signed in?" and being told no.
+ * It predates this migration and has nothing to do with theming, but the
+ * exemption is by *endpoint*, so a 401 from anywhere else still fails.
  *
- * 429 is exempted on the same two endpoints for the same reason: Kafil rate
- * limits auth by identity, and a suite that signs in repeatedly trips it. That
- * is the harness making noise about itself, not the product failing.
+ * 429 is exempted on that endpoint for the same reason: Kafil rate limits auth
+ * by identity, and a suite that signs in repeatedly trips it. That is the
+ * harness making noise about itself, not the product failing.
  */
-const ANONYMOUS_401_ENDPOINTS = ["/api/auth/refresh", "/api/settings/form-fill"];
+const ANONYMOUS_401_ENDPOINTS = ["/api/auth/refresh"];
 
 type Watched = {
   errors: string[];

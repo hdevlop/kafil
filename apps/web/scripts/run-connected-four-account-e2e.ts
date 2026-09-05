@@ -2,7 +2,7 @@
  * Runner for the connected four-account acceptance harness.
  *
  * Lifecycle mirrors `apps/web/scripts/run-phase6-e2e.ts`:
- *   1. Validate fail-closed boolean contracts (database mode, SMTP, mailbox API, secrets)
+ *   1. Validate fail-closed boolean contracts (database, Redis, SMTP, mailbox API, secrets)
  *   2. Boot a Next.js server on 127.0.0.1:3210 (dev unless KAFIL_E2E_USE_PRODUCTION=1)
  *   3. Wait for `/login` to return 200
  *   4. Run only `connected-four-account.e2e.ts` via the project-installed Playwright
@@ -42,6 +42,20 @@ function isLoopbackHost(host: string | undefined): boolean {
   return host === "127.0.0.1" || host === "localhost" || host === "::1";
 }
 
+function redisUrl(): URL | undefined {
+  const raw = readEnv("REDIS_URL");
+  if (!raw) return undefined;
+
+  try {
+    const url = new URL(raw);
+    return url.protocol === "redis:" && isLoopbackHost(url.hostname)
+      ? url
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function isAuthorizedDatabaseMode(): boolean {
   const mode = readEnv("KAFIL_E2E_DATABASE_MODE");
   if (!mode) return false;
@@ -57,6 +71,12 @@ function isAuthorizedDatabaseMode(): boolean {
 function assertRunnerBooleans(): void {
   const checks: Array<{ name: string; ok: boolean }> = [
     { name: "DATABASE_CONFIGURATION_PRESENT", ok: Boolean(readEnv("DATABASE_URL")) },
+    { name: "REDIS_CONFIGURATION_PRESENT", ok: Boolean(readEnv("REDIS_URL")) },
+    { name: "REDIS_HOST_IS_LOOPBACK", ok: Boolean(redisUrl()) },
+    {
+      name: "REDIS_AUTHENTICATION_PRESENT_FOR_PRODUCTION",
+      ok: !useProductionServer || Boolean(redisUrl()?.password),
+    },
     { name: "DATABASE_MODE_AUTHORIZED", ok: isAuthorizedDatabaseMode() },
     {
       name: "DATABASE_AUTHORIZED_OVERLAY",
@@ -103,6 +123,7 @@ function assertRunnerBooleans(): void {
 
 const serverEnvAllowlist = {
   DATABASE_URL: readEnv("DATABASE_URL"),
+  REDIS_URL: readEnv("REDIS_URL"),
   EMAIL_DEFAULT_FROM: readEnv("EMAIL_DEFAULT_FROM"),
   EMAIL_LOG_LEVEL: readEnv("EMAIL_LOG_LEVEL"),
   EMAIL_PROVIDER: readEnv("EMAIL_PROVIDER"),
@@ -128,6 +149,27 @@ const serverEnvAllowlist = {
   SMTP_USER: readEnv("SMTP_USER"),
   SMTP_PASS: readEnv("SMTP_PASS"),
 };
+
+// Keep acceptance secrets on an explicit allowlist while retaining the small
+// OS environment surface required by Bun, native modules, and Playwright.
+// In particular, Windows native addons such as Sharp cannot load when a child
+// process is started without SystemRoot.
+const runtimeEnvironmentAllowlist = [
+  "APPDATA",
+  "COMSPEC",
+  "HOME",
+  "LOCALAPPDATA",
+  "PATH",
+  "PATHEXT",
+  "SystemRoot",
+  "TEMP",
+  "TMP",
+  "TMPDIR",
+  "USERPROFILE",
+  "WINDIR",
+  "XDG_CACHE_HOME",
+  "XDG_CONFIG_HOME",
+] as const;
 
 function generateRuntimeSecret(): string {
   // Must satisfy Kafil's password schema: 8–72 chars, at least one
@@ -191,6 +233,11 @@ const childEnv: Record<string, string> = {
   KAFIL_E2E_SPONSOR_B_PASSWORD: sponsorBRuntimePassword,
 };
 
+for (const key of runtimeEnvironmentAllowlist) {
+  const value = process.env[key];
+  if (value) childEnv[key] = value;
+}
+
 for (const [key, value] of Object.entries(serverEnvAllowlist)) {
   if (value !== undefined && value !== null && value !== "") {
     childEnv[key] = value as string;
@@ -203,17 +250,32 @@ async function waitForWebServer(server: Subprocess): Promise<void> {
     if (server.exitCode !== null) {
       throw new Error(`Next.js server exited with code ${server.exitCode} before readiness.`);
     }
-    try {
-      if (!loginReady) {
+    if (!loginReady) {
+      try {
         const response = await fetch(`${baseUrl}/login`);
         loginReady = response.ok;
+      } catch {
+        // The server is still starting.
       }
-      if (loginReady) {
+    }
+    if (loginReady) {
+      try {
         const response = await fetch(`${baseUrl}/api/system/health`);
-        if (response.status < 500) return;
+        if (response.status >= 500) {
+          throw new Error(
+            `Connected acceptance health check returned ${response.status}`,
+          );
+        }
+        return;
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Connected acceptance health check returned ")
+        ) {
+          throw error;
+        }
+        // The API route is still starting.
       }
-    } catch {
-      // The server is still starting.
     }
     await Bun.sleep(250);
   }
@@ -311,7 +373,12 @@ try {
   webServer?.kill();
   await Promise.allSettled(serverOutputTasks);
   for (const key of Object.keys(childEnv)) {
-    if (key.startsWith("KAFIL_E2E_") || key.startsWith("SMTP_") || key.startsWith("NAJM_")) {
+    if (
+      key.startsWith("KAFIL_E2E_") ||
+      key.startsWith("SMTP_") ||
+      key.startsWith("NAJM_") ||
+      key.startsWith("REDIS_")
+    ) {
       // Best-effort scrub of forwarded values for any inspection that survives the
       // process tree; the process exits immediately afterwards anyway.
       delete (Bun.env as Record<string, string | undefined>)[key];

@@ -4,6 +4,10 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
 
 ## Root plans
 
+- [`AUTH-SECURITY-REMEDIATION-PLAN.md`](../../AUTH-SECURITY-REMEDIATION-PLAN.md)
+  - September 5 auth security review. Source fixes, dependency remediation,
+    package publication, CSP enforcement, and local connected-account acceptance
+    are complete; deployment and production acceptance remain open.
 - [`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`](../../CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md)
   - completed guarded VPS browser-acceptance contract and evidence record.
 
