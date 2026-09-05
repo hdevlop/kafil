@@ -441,7 +441,6 @@ function mailboxFetch(path: string, init: RequestInit = {}): Promise<globalThis.
 
 async function findMailboxMessages(input: {
   recipient: string;
-  since: number;
   subjectKeyword?: string;
   signal?: AbortSignal;
 }): Promise<MailpitMessage[]> {
@@ -455,7 +454,6 @@ async function findMailboxMessages(input: {
   const payload = (await search.json()) as { messages?: MailpitMessageSummary[] };
   const matches: MailpitMessage[] = [];
   for (const summary of payload.messages ?? []) {
-    if (new Date(summary.Created).getTime() < input.since - 1_000) continue;
     const detail = await mailboxFetch(`/api/v1/message/${summary.ID}`, {
       signal: input.signal,
     });
@@ -494,13 +492,15 @@ async function findDisposableAuthMailboxMessages(): Promise<MailpitMessage[]> {
 
 async function pollExactlyOneOtpMessage(input: {
   recipient: string;
-  since: number;
   subjectKeyword: string;
+  excludedMessageIds: ReadonlySet<string>;
   signal: AbortSignal;
 }): Promise<MailpitMessage> {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     if (input.signal.aborted) throw new Error("Mailpit OTP polling was cancelled.");
-    const matches = await findMailboxMessages(input);
+    const matches = (await findMailboxMessages(input)).filter(
+      (message) => !input.excludedMessageIds.has(message.ID),
+    );
     if (matches.length > 1) throw new Error("Mailpit returned multiple matching OTP messages.");
     if (matches.length === 1) return matches[0]!;
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -700,14 +700,19 @@ test.describe.serial("remote auth lifecycle", () => {
     await sponsorSetup.page.getByPlaceholder("For example: AB123456", { exact: true }).fill(sponsorCin);
     await sponsorSetup.page.getByRole("textbox", { name: "Password *" }).fill(sponsorPassword);
 
-    const otpStartedAt = Date.now();
     const otpSubject = "Verify your Kafil sponsor application";
+    const existingOtpMessageIds = new Set(
+      (await findMailboxMessages({
+        recipient: sponsorEmail,
+        subjectKeyword: otpSubject,
+      })).map((message) => message.ID),
+    );
     const otpAbort = new AbortController();
     const otpPromise = handleConcurrentPromise(
       pollExactlyOneOtpMessage({
         recipient: sponsorEmail,
-        since: otpStartedAt,
         subjectKeyword: otpSubject,
+        excludedMessageIds: existingOtpMessageIds,
         signal: otpAbort.signal,
       }),
     );

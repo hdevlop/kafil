@@ -50,6 +50,11 @@ describe("dedicated remote auth lifecycle runner", () => {
     expect(source).not.toContain("waitForTimeout(");
     expect(source).not.toContain("force: true");
     expect(source).toContain('await page.waitForLoadState("domcontentloaded")');
+    expect(source).toContain("excludedMessageIds: ReadonlySet<string>");
+    expect(source).toContain("const existingOtpMessageIds = new Set(");
+    expect(source).toContain("excludedMessageIds: existingOtpMessageIds");
+    expect(source).not.toContain("input.since - 1_000");
+    expect(source).not.toContain("const otpStartedAt = Date.now()");
   });
 
   test("keeps cookie-writer observation active through protected denial", () => {
