@@ -2,10 +2,10 @@
 
 Date: 2026-09-05
 
-Status: shared fixes are published and adopted by Kafil with local package,
-application, database, and focused production-browser verification. Kafil Git
-publication, deployment, and production acceptance have not been performed.
-See the implementation log and closure record below.
+Status: shared fixes are published and adopted by Kafil. The Kafil integration
+is published and deployed, and the guarded production auth lifecycle passed all
+ten tests with cleanup and passive diagnostics. The remaining unchecked items
+below are narrower OAuth, upload, public-probe, and Redis-restart evidence.
 
 ## Objective and ownership
 
@@ -23,10 +23,9 @@ running application at `https://kafala360.ma`.
 
 This is a task-specific root plan, not a replacement for the completed
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md` or a project-wide roadmap.
-The original request authorized writing the plan only. Subsequent continuation
-and fix requests authorized the implementation, package publication, and local
-consumer verification recorded below, but not Kafil Git publication,
-deployment, or production acceptance.
+The original request authorized writing the plan only. Subsequent continuation,
+fix, publication, deployment, and production-check instructions authorized the
+implementation and acceptance evidence recorded below.
 
 ## Review baseline
 
@@ -82,7 +81,7 @@ anti-framing headers, and non-exposure of `.env` and `.git` over HTTP.
   seed commands against production.
 - [x] Capture fresh audit reports and trace each advisory to the installed
   version, dependency owner, runtime/build/test use, and affected code path.
-- [ ] Store sanitized evidence under `docs/evidence/auth-security/<run>/` in
+- [x] Store sanitized evidence under `docs/evidence/auth-security/<run>/` in
   Kafil, with package-side artifacts linked by exact revision.
 
 Suggested execution order: fix the live limiter mismatch first; implement the
@@ -259,11 +258,11 @@ in this plan until its own enforcement and browser evidence are recorded.
   `bun run typecheck`, `bun run test`, `bun run build`, and `bun run db:generate`.
   Run `bun run test:db` for database/concurrency-sensitive behavior. Investigate
   unexpected schema output instead of accepting drift.
-- [ ] Run focused local browser units with real APIs and fixture identities, then
+- [x] Run focused browser units with real APIs and fixture identities, then
   the affected complete spec and a production-build run. Preserve Mailpit isolation,
   exact negative-response assertions, and passive diagnostics. The production
   login/CSP smoke, form-fill, and connected-account journeys are green; the
-  separate complete auth lifecycle coverage remains outstanding.
+  separate complete guarded production auth lifecycle passed all ten tests.
 - [x] Run the complete connected four-account spec for the shared-auth consumer
   regression gate. Inspect current runner controls before choosing a production
   mode; do not invent flags or treat a previously completed plan as new evidence.
@@ -273,13 +272,13 @@ in this plan until its own enforcement and browser evidence are recorded.
 
 ## 9. Deployment, production acceptance, and recovery
 
-- [ ] Before rollout, record the current image digest/revision, intended new
+- [x] Before rollout, record the current image digest/revision, intended new
   revision, dependency versions, persisted deployment source, and any migration
   compatibility requirements. Prepare the restoration procedure and identify
   any security regression it would reintroduce.
-- [ ] Deploy through the actual production owner. Record Git publication, image
+- [x] Deploy through the actual production owner. Record Git publication, image
   publication, deployment trigger, and running-container verification separately.
-- [ ] Verify the intended image is healthy, PostgreSQL/cache readiness is good,
+- [x] Verify the intended image is healthy, PostgreSQL/cache readiness is good,
   Redis is required and internal, and trusted proxy hops match the real ingress.
   Report secret presence/validation only; never copy `.env` values into evidence.
 - [ ] Repeat bounded public HTTP checks for protected routes, forged cookies,
@@ -289,7 +288,7 @@ in this plan until its own enforcement and browser evidence are recorded.
 - [ ] Prove Redis counters survive an application restart using the reviewed
   deployment window. Exercise cache failure and concurrency stress in isolation;
   do not disrupt production Redis to manufacture evidence.
-- [ ] Use designated disposable accounts for production logout replay and role
+- [x] Use designated disposable accounts for production logout replay and role
   isolation. Confirm exact identities and the mailbox destination before any
   password reset, deactivation, or permission mutation. Keep race/stress tests
   in isolated infrastructure.
@@ -297,7 +296,7 @@ in this plan until its own enforcement and browser evidence are recorded.
   before choosing remote test titles. Read the browser skill's remote reference;
   use zero retries, passive diagnostics, and the applicable one-attempt contract.
   Existing completed acceptance is not proof of this release.
-- [ ] Confirm the mail transport's declared postcondition, fixture cleanup, intact
+- [x] Confirm the mail transport's declared postcondition, fixture cleanup, intact
   unrelated accounts, no unexpected HTTP errors, and stable service readiness.
 - [ ] If rollout fails, classify app/package/edge ownership. Restore only the
   affected compatible component; do not blindly roll back the app for an edge
@@ -307,8 +306,8 @@ in this plan until its own enforcement and browser evidence are recorded.
 ## Implementation log - 2026-09-05
 
 Source changes are complete and verified, the affected Najm packages are
-published, and Kafil has adopted the exact releases locally. Kafil has not been
-committed or pushed, and no deployment has been performed.
+published, and Kafil has adopted, published, and deployed the exact releases.
+Production acceptance evidence and its remaining boundaries are recorded below.
 
 Baseline: Kafil `27364e0`, Najm `0ff3e09` (both worktrees dirty; the Kafil
 `AppProviders`/`i18n.test.ts` and Najm `najm-kit`/`najm-i18n` edits present
@@ -624,13 +623,13 @@ evidence, and deployed digest where applicable. A skipped check remains open.
 | --- | --- | --- |
 | AUTH-01, AUTH-03, AUTH-04 implemented | Red/green regressions, API behavior, real concurrency tests | **Published and locally adopted** - `najm-cache@2.2.0` and `najm-auth@4.0.0`; PostgreSQL 18 plus a Redis 7-compatible server proved one reset winner and the delayed refresh/logout race; a separate real HTTP/Redis/Mailpit run proved the ignored-field and spoofed-forwarding variants stopped at three emitted reset messages |
 | AUTH-02 and cache-loss behaviour | Real Redis/PostgreSQL concurrency acceptance | **Published and locally adopted** - local PostgreSQL 18 plus a Redis 7-compatible server proved cache-loss fallback, revocation ordering, and durable revocation after physical deletion is unavailable. Production Linux Redis OSS remains a rollout acceptance item |
-| Dependency remediation | Fresh audits, affected-path dispositions, native/runtime checks | **Done except the Linux image** - both audits clean; Sharp's native load inside the production image is unverified |
+| Dependency remediation | Fresh audits, affected-path dispositions, native/runtime checks | **Done except upload acceptance** - both audits clean; Sharp loaded and processed an image inside the production Linux container, while an actual production upload remains open |
 | OAuth behavior | Correct error statuses and enabled/disabled provider acceptance | **Statuses done** - deployed GitHub enablement still unestablished |
-| CSP enforcement | Persisted edge policy and complete affected-browser evidence | **Implemented and focused-local green; broader acceptance open** - Kafil generates a fresh nonce policy per request, forwards it through the published auth proxy seam, bootstraps Zod in jitless mode, and prevents edge sources from overwriting it. The production build passed desktop/mobile/Arabic login, nonce rotation/script matching, and form-fill journeys. OAuth, authenticated dashboards, theme/upload, PWA, deployment, and production evidence remain open |
+| CSP enforcement | Persisted edge policy and complete affected-browser evidence | **Implemented, deployed, and partially accepted** - Kafil generates a fresh nonce policy per request, forwards it through the published auth proxy seam, bootstraps Zod in jitless mode, and the persisted Traefik source no longer overwrites it. Public header checks and authenticated lifecycle pages pass. OAuth, theme/upload, and the broader locale/route matrix remain open |
 | Package publication | Reviewed tarballs, exact registry versions and integrity | **Done** - exact versions, release commits, SHA-256 values, registry shasums, integrity metadata, packed exports, and consumer resolution are recorded for cache 2.2.0, email 2.0.3, auth 4.0.0, and MCP 2.1.2 |
-| Kafil integration | Exact pins, installed-artifact regressions, full root/DB/browser gates | **Locally integrated; broader browser gate open** - all declarations and overrides resolve auth 4.0.0, cache 2.2.0, email 2.0.3, and MCP 2.1.2; the full root gate, 35 database tests, production login/CSP smoke, persisted form-fill journey, and complete connected four-account journey pass. The separate complete auth lifecycle and broader CSP route suites remain open |
-| Production deployment | Intended running image and validated configuration | **Not started** - awaiting authorization |
-| Production acceptance | Bounded live probes, fixture checks, persistence, cleanup | **Not started** - awaiting authorization |
+| Kafil integration | Exact pins, installed-artifact regressions, full root/DB/browser gates | **Published and deployed** - all declarations and overrides resolve auth 4.0.0, cache 2.2.0, email 2.0.3, and MCP 2.1.2; the full root gate, 35 database tests, production login/CSP smoke, persisted form-fill journey, complete connected-account journey, and ten-test guarded production auth lifecycle pass. Broader CSP/OAuth/upload evidence remains open |
+| Production deployment | Intended running image and validated configuration | **Done for the accepted auth integration** - Git, CI verification, GHCR image publication, Dokploy trigger, and the exact healthy VPS revision were verified separately; the clock-independent runner correction is deployed as `939e8c8` at digest `sha256:3f3165ac993400394cb67e896dbd118a021236dee1bd4e51205ada17baccb5a9` |
+| Production acceptance | Bounded live probes, fixture checks, persistence, cleanup | **Auth lifecycle passed; broader probes open** - all ten guarded lifecycle tests passed with zero retries, passive diagnostics clean, zero retained application rows and mailbox messages, and `NO MANAGED MAILBOX TRANSPORT`; AUTH-03 live probing, Redis restart persistence, OAuth round-trip, uploads, and the broader public matrix remain open |
 
 Only mark the plan complete when every required boundary has evidence. This
 document's creation and whitespace validation close the planning request only.
@@ -1042,3 +1041,31 @@ and response-envelope test files pass 9 tests with 70 assertions. No remote
 preflight, browser request, fixture mutation, deployment, push, or production
 acceptance was performed. The auth-lifecycle execution checkbox in section 8
 and all remaining deployment/production items stay open.
+
+## Production publication and auth acceptance - 2026-09-06
+
+The later authorized publication and production run supersedes the pre-execution
+status in the inspection record immediately above. Its sanitized evidence is in
+`docs/evidence/auth-security/2026-09-06-production/README.md`.
+
+Kafil integration commit `4a584d8` was published, built, and deployed through
+the repository GitHub Actions and Dokploy path. The initial guarded lifecycle
+attempt proved Admin and Family work, then exposed a test-only clock assumption:
+SMTP had delivered exactly one Sponsor OTP, but the local poller rejected its
+VPS timestamp because the hosts differed by more than the one-second allowance.
+
+The runner now snapshots existing matching message IDs before submission and
+waits for one new ID, avoiding all cross-host clock comparison. The focused
+source regression was red before and green after. With a fresh instruction, the
+focused production prerequisite range passed 4/4 and the complete serial auth
+lifecycle passed 10/10 in 53.9 seconds with one worker, zero retries, clean
+passive diagnostics, supported application/mailbox cleanup, and
+`NO MANAGED MAILBOX TRANSPORT`.
+
+The correction is published as `939e8c8`. GitHub Actions run `33997710457`
+passed verification and image publication and triggered Dokploy. The VPS then
+reported that exact healthy revision at digest
+`sha256:3f3165ac993400394cb67e896dbd118a021236dee1bd4e51205ada17baccb5a9`.
+Post-replacement checks kept Redis healthy and internal, the isolated SMTP test
+route reachable, readiness healthy, public security headers passing, and the
+disposable auth mailbox count at zero.
