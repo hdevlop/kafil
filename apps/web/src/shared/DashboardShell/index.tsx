@@ -39,13 +39,11 @@ interface DashboardUser {
    role?: string | null;
 }
 
-const SIDEBAR_ACTION_CLASS = "w-full justify-start gap-2 lg:justify-center lg:px-0 xl:justify-start xl:px-3";
-
-function SidebarAction({ icon: Icon, label, onClick, disabled }: Readonly<{ icon: ComponentType<{ className?: string }>; label: string; onClick?: () => void; disabled?: boolean; }>) {
+function SidebarAction({ icon: Icon, label, onClick, disabled, collapsed }: Readonly<{ icon: ComponentType<{ className?: string }>; label: string; onClick?: () => void; disabled?: boolean; collapsed: boolean; }>) {
    return (
-      <NButton className={SIDEBAR_ACTION_CLASS} disabled={disabled} size="sm" variant="ghost" onClick={onClick}>
+      <NButton className={`w-full gap-2 ${collapsed ? "justify-center" : "justify-start"}`} disabled={disabled} size="sm" variant="ghost" onClick={onClick}>
          <Icon className="size-4" />
-         <span className="lg:hidden xl:inline">{label}</span>
+         {!collapsed ? <span>{label}</span> : null}
       </NButton>
    );
 }
@@ -111,13 +109,13 @@ function DashboardShellBody({ children, user, onSignOut, signingOut }: Readonly<
                closeLabel={t("sidebar.close")}
                collapseLabel={t("sidebar.collapse")}
                expandLabel={t("sidebar.expand")}
-               footer={
+               footer={({ collapsed }) => (
                   <div className="space-y-1">
                      {footerActions.map(({ id, icon, label, onClick, disabled }) => (
-                        <SidebarAction key={id} icon={icon} label={label} onClick={onClick} disabled={disabled} />
+                        <SidebarAction key={id} icon={icon} label={label} onClick={onClick} disabled={disabled} collapsed={collapsed} />
                      ))}
                   </div>
-               }
+               )}
             />
 
             <div className="flex h-full min-h-0 w-full flex-col">
