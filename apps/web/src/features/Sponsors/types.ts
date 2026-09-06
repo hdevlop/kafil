@@ -36,7 +36,6 @@ export interface CreateSponsorInput extends SponsorProfileInput {
 
 export interface UpdateSponsorInput {
   name: string;
-  email: string;
   image?: string | null;
   phone?: string;
   cin?: string;
@@ -52,7 +51,7 @@ export interface SponsorStatusInput {
 }
 
 export interface CreatedSponsorRecord extends SponsorRecord {
-  initialPassword: string;
+  emailSent: boolean;
 }
 
 export interface OperatorSponsorOverviewData {

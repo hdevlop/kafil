@@ -11,7 +11,7 @@ import type {
 
 export interface ListSponsorsFilters {
   search?: string;
-  status?: "active" | "inactive";
+  status?: "active" | "inactive" | "pending";
 }
 
 export function listSponsors(

@@ -59,6 +59,7 @@ describe("account module DTOs", () => {
   it("strips password, verification, and role changes from updates", () => {
     expect(
       updateSponsorDto.parse({
+        email: "attacker-controlled@example.test",
         emailVerified: true,
         name: "Updated sponsor",
         password: "CallerChosen1",
@@ -80,6 +81,7 @@ describe("account module DTOs", () => {
       limit: 25,
       offset: 5,
     });
+    expect(sponsorListQuery.parse({ status: "pending" }).status).toBe("pending");
     expect(sponsorListQuery.safeParse({ limit: "101" }).success).toBe(false);
   });
 });
@@ -230,14 +232,17 @@ describe("account module services", () => {
     });
   });
 
-  it("creates a sponsor account with sponsor-owned identity fields", async () => {
-    const accountCreates: Record<string, unknown>[] = [];
+  it("creates a pending sponsor account and sends a passwordless invitation", async () => {
+    const accountInvites: Record<string, unknown>[] = [];
     const profileCreates: Record<string, unknown>[] = [];
     const service = new SponsorService(
       authService({
-        provisionUser: async (input) => {
-          accountCreates.push(input);
-          return authAccount("sponsor-user", "sponsor");
+        inviteUser: async (input) => {
+          accountInvites.push(input);
+          return {
+            ...authAccount("sponsor-user", "sponsor"),
+            emailSent: true,
+          };
         },
       }),
       userService({}),
@@ -258,7 +263,7 @@ describe("account module services", () => {
       {} as unknown as DashboardService,
     );
 
-    await service.create({
+    const created = await service.create({
       ...validAccount,
       phone: "+212611111111",
       cin: "ab123456",
@@ -275,13 +280,18 @@ describe("account module services", () => {
         dateOfBirth: "1988-10-12",
       }),
     ]);
-    expect(accountCreates).toEqual([
+    expect(accountInvites).toEqual([
       expect.objectContaining({
         email: validAccount.email,
+        phone: "+212611111111",
         role: "sponsor",
-        password: expect.stringMatching(/^[A-Za-z]+1988!\d{4}$/),
+        status: "pending",
       }),
     ]);
+    expect(accountInvites[0]).not.toHaveProperty("password");
+    expect(created).toMatchObject({
+      emailSent: true,
+    });
   });
 
   it("rejects a profile whose joined auth role does not match the module", () => {
@@ -335,6 +345,9 @@ function sponsorProfile(overrides: Record<string, unknown> = {}) {
 
 function authService(
   overrides: Partial<{
+    inviteUser: (
+      input: Record<string, unknown>,
+    ) => Promise<SanitizedUser & { emailSent: boolean }>;
     provisionUser: (
       input: Record<string, unknown>,
     ) => Promise<SanitizedUser>;

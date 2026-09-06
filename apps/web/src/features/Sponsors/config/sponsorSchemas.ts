@@ -95,7 +95,6 @@ export function toUpdateSponsorInput(
 
   return {
     name: values.name.trim(),
-    email: values.email.trim(),
     image,
     ...(phone ? { phone } : {}),
     ...(cin ? { cin: cin.toUpperCase() } : {}),

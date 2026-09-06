@@ -27,7 +27,7 @@
   "dependencies": {
     "drizzle-orm": "0.45.2",
     "ioredis": "5.11.1",
-    "najm-auth": "4.0.0",
+    "najm-auth": "4.0.1",
     "najm-cache": "2.2.0",
     "najm-core": "2.0.6",
     "najm-database": "2.0.4",

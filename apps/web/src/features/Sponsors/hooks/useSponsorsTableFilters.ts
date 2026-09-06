@@ -27,6 +27,7 @@ export function useSponsorsTableFilters(
         onChange: (status: ListSponsorsFilters["status"] | "") => setFilters((current) => ({ ...current, status: status || undefined })),
         options: [
           { value: "active", label: t("status.active") },
+          { value: "pending", label: t("status.pending") },
           { value: "inactive", label: t("status.inactive") },
         ],
       },

@@ -72,7 +72,6 @@ describe("Phase 6C sponsor update and lifecycle contracts", () => {
 
     expect(input).toEqual({
       name: "Amina Sponsor",
-      email: "amina@example.com",
       image: null,
       cin: "AB123456",
       gender: "F",
@@ -81,6 +80,7 @@ describe("Phase 6C sponsor update and lifecycle contracts", () => {
       notes: null,
     });
     expect(input).not.toHaveProperty("password");
+    expect(input).not.toHaveProperty("email");
     expect(input).not.toHaveProperty("role");
     expect(input).not.toHaveProperty("status");
   });

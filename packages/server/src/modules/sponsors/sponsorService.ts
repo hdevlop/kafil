@@ -10,7 +10,6 @@ import { Transaction } from "najm-database";
 import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { DashboardService } from "../dashboard/dashboardService";
-import { generateInitialPassword } from "../../initialPassword";
 import { removeManagedImage } from "../../storage/managedImageController";
 import {
   type CreateOwnSponsorProfileDto,
@@ -124,20 +123,16 @@ export class SponsorService {
     await this.validator.ensurePhoneUnique(phone);
     await this.validator.ensureCinUnique(cin);
 
-    const initialPassword = generateInitialPassword(
-      account.name || account.email,
-      dateOfBirth,
-    );
-    const user = await this.auth.provisionUser({
+    const user = await this.auth.inviteUser({
       ...(userId ? { id: userId } : {}),
       ...account,
+      phone,
       role: SPONSOR_ROLE,
-      password: initialPassword,
+      status: "pending",
     });
     await this.userRecords?.update(user.id, {
-      phone,
       phoneVerified: false,
-      emailVerified: true,
+      emailVerified: false,
     });
     const sponsor = await this.sponsors.create({
       id,
@@ -149,7 +144,7 @@ export class SponsorService {
       dateOfBirth,
       notes: notes ?? null,
     });
-    return { ...sponsor!, initialPassword };
+    return { ...sponsor!, emailSent: user.emailSent };
   }
 
   @Transaction({ retries: 2 })
@@ -222,7 +217,6 @@ export class SponsorService {
       notes,
       ...account
     } = updateSponsorDto.parse(data);
-    await this.validator.ensureEmailUnique(account.email, sponsor.userId);
     await this.validator.ensurePhoneUnique(phone, id, sponsor.userId);
     await this.validator.ensureCinUnique(cin, id);
 

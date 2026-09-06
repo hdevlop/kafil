@@ -11,8 +11,8 @@ function passwordNamePart(fullName: string) {
 }
 
 /**
- * Produces an initial credential for operator-created sponsors and staff
- * without relying only on public identity data.
+ * Produces an initial credential for operator-created staff accounts without
+ * relying only on public identity data.
  *
  * Families do not use this. Their first credential is the guardian CIN, which
  * `najm-auth` hashes as a temporary credential during provisioning and forces

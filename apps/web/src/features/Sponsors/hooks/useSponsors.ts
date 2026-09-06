@@ -35,7 +35,6 @@ export function useSponsorCommands() {
   const create = useEntityCommand({
     mutationFn: createSponsor,
     invalidate,
-    successMessage: t("operator.sponsors.createSuccess"),
     errorMessage: t("operator.sponsors.createError"),
   });
 

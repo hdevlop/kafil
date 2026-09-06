@@ -100,6 +100,7 @@ export const authConfig = () => {
     oauth: oauthConfig(),
     publicRegistration: false,
     registrationMode: "pending",
+    requireVerifiedEmail: true,
     rateLimit: infrastructure.rateLimit,
     jwt: {
       accessSecret: envConfig.auth.jwtAccessSecret!,

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Mail, Phone } from "lucide-react";
+import { CalendarDays, CircleDotDashed, Mail, Phone } from "lucide-react";
 import {
   NAvatar,
   cn,
@@ -13,10 +13,11 @@ import {
 
 import { getPersonImage } from "najm-kit/person-images";
 import { useTranslation } from "najm-i18n/react";
+import { formatStatusLabel } from "@/features/StatusLabels";
 import type { SponsorRecord } from "../types";
 
 export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
-  const { t } = useTranslation();
+  const { language, t } = useTranslation();
   const fmt = useNajmFormat();
   const isInactive = data.status === "inactive";
 
@@ -70,6 +71,11 @@ export function SponsorCard({ data }: Readonly<{ data: SponsorRecord }>) {
           icon={CalendarDays}
           label={t("operator.sponsors.dateOfBirth")}
           value={fmt.date(data.dateOfBirth)}
+        />
+        <NCardInfo
+          icon={CircleDotDashed}
+          label={t("operator.sponsors.status")}
+          value={formatStatusLabel(data.status, language)}
         />
       </NCardSection>
     </NCard>

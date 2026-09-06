@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Eye, Pencil, Trash2, UserRoundCheck, UserRoundX } from "lucide-react";
+import { Eye, Pencil, Trash2, UserRoundCheck, UserRoundX, type LucideIcon } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
 
@@ -78,6 +78,7 @@ export function SponsorsPage() {
   }
 
   function openStatus(sponsor: SponsorRecord) {
+    if (sponsor.status === "pending") return;
     const action = sponsor.status === "active" ? "deactivate" : "reactivate";
     void dialog.openDialog({
       title: t(action === "deactivate" ? "operator.sponsors.deactivateTitle" : "operator.sponsors.reactivateTitle", { name: sponsor.name }),
@@ -138,7 +139,13 @@ export function SponsorsPage() {
       row: (sponsor) => {
         const isActive = sponsor.status === "active";
 
-        const actions = [
+        const actions: Array<{
+          label: string;
+          icon: LucideIcon;
+          danger?: boolean;
+          separatorBefore?: boolean;
+          onSelect: () => void;
+        }> = [
           {
             label: t("operator.sponsors.view"),
             icon: Eye,
@@ -149,14 +156,17 @@ export function SponsorsPage() {
             icon: Pencil,
             onSelect: () => openEdit(sponsor),
           },
-          {
+        ];
+
+        if (sponsor.status !== "pending") {
+          actions.push({
             label: t(isActive ? "operator.sponsors.deactivate" : "operator.sponsors.reactivate"),
             icon: isActive ? UserRoundX : UserRoundCheck,
             danger: isActive,
             separatorBefore: true,
             onSelect: () => openStatus(sponsor),
-          },
-        ];
+          });
+        }
 
         if (isAdmin) {
           actions.push({

@@ -1,7 +1,7 @@
 "use client";
 
 import { UserRoundPlus } from "lucide-react";
-import { AvatarFormInput, FormInput, NButton, NForm, NFormSectionHeader, useDialog } from "najm-kit";
+import { AvatarFormInput, FormInput, NButton, NForm, NFormSectionHeader, toast, useDialog } from "najm-kit";
 import { useRef, useState } from "react";
 
 import { useTranslation } from "najm-i18n/react";
@@ -68,9 +68,14 @@ export function CreateSponsorDialogContent() {
       uploadedImagePath = sponsorImage
         ? await uploadSponsorImage(sponsorImage)
         : null;
-      await create.mutateAsync(
+      const created = await create.mutateAsync(
         toCreateSponsorInput(values, uploadedImagePath),
       );
+      if (created.emailSent) {
+        toast.success(t("operator.sponsors.createSuccess"));
+      } else {
+        toast.error(t("operator.sponsors.createEmailFailed"));
+      }
       await pop();
     } catch (error) {
       if (uploadedImagePath) {
@@ -225,7 +230,7 @@ export function UpdateSponsorDialogContent({ sponsor }: Readonly<{ sponsor: Spon
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormInput name="name" type="text" formLabel={t("operator.sponsors.fullName")} placeholder={t("operator.sponsors.fullNamePlaceholder")} icon="User" required />
-          <FormInput name="email" type="text" formLabel={t("operator.sponsors.email")} placeholder="sponsor@example.com" icon="Mail" required />
+          <FormInput name="email" type="text" formLabel={t("operator.sponsors.email")} placeholder="sponsor@example.com" icon="Mail" disabled required />
           <FormInput name="phone" type="text" formLabel={t("operator.sponsors.phone")} placeholder="+212..." icon="Phone" />
           <FormInput name="cin" type="text" formLabel={t("operator.sponsors.cin")} placeholder={t("operator.sponsors.cinPlaceholder")} icon="FileKey2" />
         </div>

@@ -32,7 +32,7 @@ const sponsorSelection = {
 
 export interface SponsorListFilters {
   search?: string;
-  status?: "active" | "inactive";
+  status?: "active" | "inactive" | "pending";
 }
 
 /** The one place the sponsor list decides which rows it is about. */

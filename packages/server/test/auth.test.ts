@@ -73,6 +73,7 @@ describe("Kafil auth definitions", () => {
       defaultRole: "sponsor",
       publicRegistration: false,
       registrationMode: "pending",
+      requireVerifiedEmail: true,
     });
   });
 
