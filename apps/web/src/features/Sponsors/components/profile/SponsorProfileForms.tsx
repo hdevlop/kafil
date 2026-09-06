@@ -33,7 +33,7 @@ function SponsorProfileFields({ required }: Readonly<{ required?: boolean }>) {
   const { t } = useTranslation();
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4">
         <FormInput
           name="phone"
           type="text"
@@ -51,7 +51,7 @@ function SponsorProfileFields({ required }: Readonly<{ required?: boolean }>) {
           required={required}
         />
       </div>
-      <SponsorDemographicFields required={required} />
+      <SponsorDemographicFields required={required} stacked />
     </>
   );
 }
@@ -130,7 +130,7 @@ export function CreateOwnSponsorProfileForm({
       onSubmit={handleSubmit}
     >
       <NFormSectionHeader icon={Contact} title={t("sponsor.profile.completeTitle")} />
-      <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4">
         <ProfileAvatar disabled={submitting} error={imageError} onChange={handleImage} value={image} />
         <div className="space-y-4">
           <SponsorProfileFields required />
@@ -207,7 +207,7 @@ export function UpdateOwnSponsorProfileForm({
       onSubmit={handleSubmit}
     >
       <NFormSectionHeader icon={Contact} title={t("sponsor.profile.editTitle")} />
-      <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4">
         <ProfileAvatar
           disabled={submitting}
           error={imageError}

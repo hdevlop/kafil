@@ -26,14 +26,16 @@ export function getSponsorImageError(file: File) {
 export function SponsorDemographicFields({
   includeNotes = false,
   required = false,
+  stacked = false,
 }: Readonly<{
   includeNotes?: boolean;
   required?: boolean;
+  stacked?: boolean;
 }>) {
   const { t } = useTranslation();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={stacked ? "grid grid-cols-1 gap-4" : "grid gap-4 lg:grid-cols-2"}>
       <FormInput
         name="gender"
         type="select"
