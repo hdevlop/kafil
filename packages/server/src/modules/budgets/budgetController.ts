@@ -11,6 +11,10 @@ import {
   budgetLedgerListQuery,
   type ManualBudgetAdjustmentDto,
   manualBudgetAdjustmentDto,
+  type ResetMonthlyBudgetLimitDto,
+  resetMonthlyBudgetLimitDto,
+  type SetFamilyOrderPolicyDto,
+  setFamilyOrderPolicyDto,
   type SetMonthlyBudgetLimitDto,
   setMonthlyBudgetLimitDto,
 } from "./budgetDto";
@@ -118,6 +122,54 @@ export class BudgetController {
       body,
       actorUserId,
     );
+  }
+
+  @Post("/:familyProfileId/monthly-limit/reset")
+  @isOperator()
+  @CanUpdate()
+  @Validate({
+    body: resetMonthlyBudgetLimitDto,
+    params: budgetFamilyIdParams,
+  })
+  @McpTool({
+    description:
+      "Reset a household monthly budget override to inherit the global default",
+    confirm: {
+      level: "warning",
+      message: "Reset this household's monthly budget override?",
+    },
+  })
+  @ResMsg("budgets.success.monthlyLimitReset")
+  resetMonthlyLimit(
+    @Params("familyProfileId") familyProfileId: string,
+    @Body() body: ResetMonthlyBudgetLimitDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.budgets.resetMonthlyLimit(familyProfileId, body, actorUserId);
+  }
+
+  @Put("/:familyProfileId/order-policy")
+  @isOperator()
+  @CanUpdate()
+  @Validate({
+    body: setFamilyOrderPolicyDto,
+    params: budgetFamilyIdParams,
+  })
+  @McpTool({
+    description:
+      "Set per-family order count and per-order ceiling overrides (null inherits global)",
+    confirm: {
+      level: "warning",
+      message: "Set this household's order policy overrides?",
+    },
+  })
+  @ResMsg("budgets.success.orderPolicyUpdated")
+  setOrderPolicy(
+    @Params("familyProfileId") familyProfileId: string,
+    @Body() body: SetFamilyOrderPolicyDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.budgets.setOrderPolicy(familyProfileId, body, actorUserId);
   }
 
   @Post("/:familyProfileId/adjustments")

@@ -1,5 +1,8 @@
 "use client";
 
+import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
+import { familyBudgetKeys } from "@/features/Budgets/hooks/familyBudgetKeys";
+import { familyOrderingKeys } from "@/features/Orders/hooks/familyOrderingKeys";
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
 import {
@@ -28,6 +31,7 @@ import { orderKeys } from "./orderKeys";
 import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
 import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 import { useTranslation } from "najm-i18n/react";
+import { getLocalizedOrderLimitError } from "@/features/Budgets/lib/orderLimitErrors";
 
 export function useOrders(
   query: OrderListQuery,
@@ -71,6 +75,18 @@ export function useOperatorStaffOptions(
 export function useOrderCommands() {
   const { t } = useTranslation();
   const invalidate = [orderKeys.all];
+  const invalidateWithQuota = [
+    orderKeys.all,
+    familyOrderingKeys.all,
+    budgetKeys.all,
+    familyBudgetKeys.all,
+  ];
+  const invalidateFinancial = [
+    orderKeys.all,
+    familyOrderingKeys.all,
+    budgetKeys.all,
+    familyBudgetKeys.all,
+  ];
 
   const approve = useEntityCommand({
     mutationFn: approveOrder,
@@ -80,27 +96,42 @@ export function useOrderCommands() {
   });
   const reject = useEntityCommand({
     mutationFn: rejectOrder,
-    invalidate,
+    invalidate: invalidateWithQuota,
     successMessage: "Order rejected and budget released.",
     errorMessage: "Could not reject this order.",
   });
   const assisted = useEntityCommand({
     mutationFn: createAssistedOrder,
-    invalidate,
+    invalidate: invalidateWithQuota,
     successMessage: "Assisted family order created and budget reserved.",
-    errorMessage: "Could not create the assisted family order.",
+    errorMessage: (error) =>
+      getLocalizedOrderLimitError(
+        error,
+        (key) => t(key),
+        "Could not create the assisted family order.",
+      ),
   });
   const purchase = useEntityCommand({
     mutationFn: recordOrderPurchase,
-    invalidate,
+    invalidate: invalidateFinancial,
     successMessage: "Purchase recorded and actual cost settled.",
-    errorMessage: "Could not record this purchase.",
+    errorMessage: (error) =>
+      getLocalizedOrderLimitError(
+        error,
+        (key) => t(key),
+        "Could not record this purchase.",
+      ),
   });
   const replacePurchase = useEntityCommand({
     mutationFn: replaceOrderPurchase,
-    invalidate,
+    invalidate: invalidateFinancial,
     successMessage: "Purchase replaced and budget difference settled.",
-    errorMessage: "Could not replace this purchase.",
+    errorMessage: (error) =>
+      getLocalizedOrderLimitError(
+        error,
+        (key) => t(key),
+        "Could not replace this purchase.",
+      ),
   });
   const assignDelivery = useEntityCommand({
     mutationFn: assignOrderDelivery,
@@ -140,13 +171,13 @@ export function useOrderCommands() {
   });
   const cancel = useEntityCommand({
     mutationFn: cancelOrder,
-    invalidate,
+    invalidate: invalidateWithQuota,
     successMessage: "Order cancelled and its financial effects reversed.",
     errorMessage: "Could not cancel this order.",
   });
   const remove = useEntityCommand({
     mutationFn: deleteOrder,
-    invalidate,
+    invalidate: invalidateWithQuota,
     successMessage: t("operator.orders.deleteSuccess"),
     errorMessage: t("operator.orders.deleteError"),
   });

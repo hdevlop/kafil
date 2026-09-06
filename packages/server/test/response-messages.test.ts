@@ -56,9 +56,9 @@ it("assigns a direct, domain-specific response key to every controller endpoint"
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    // 181 = the previous 180 routes plus the admin-only applicant cleanup
-    // command.
-    expect(routes).toHaveLength(181);
+    // 183 = the previous 181 routes plus the two family order-limit
+    // commands (order-policy PUT and monthly-limit reset POST).
+    expect(routes).toHaveLength(183);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

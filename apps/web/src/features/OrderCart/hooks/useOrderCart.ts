@@ -19,8 +19,11 @@ import { familyOrderingKeys } from "@/features/Orders/hooks/familyOrderingKeys";
 import { useOrderCommands } from "@/features/Orders/hooks/useOrders";
 import { catalogWriteKeys } from "@/hooks/catalogWriteKeys";
 import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
+import { familyBudgetKeys } from "@/features/Budgets/hooks/familyBudgetKeys";
 import type { FamilyCartItem } from "@/features/Orders/familyTypes";
 import { useKafilRole } from "@/shared/Authorization";
+import { useTranslation } from "najm-i18n/react";
+import { getLocalizedOrderLimitError } from "@/features/Budgets/lib/orderLimitErrors";
 
 export interface OrderCartAddInput {
   productId: string;
@@ -57,6 +60,7 @@ export interface UseOrderCart {
   estimatedTotalMinor: number;
   loading: boolean;
   saving: boolean;
+  saveError: string | null;
   add: (input: OrderCartAddInput) => Promise<void>;
   setQuantity: (productId: string, quantity: number) => void;
   remove: (productId: string) => void;
@@ -98,6 +102,7 @@ function familyCartToViewModel(cart: {
 }
 
 export function useOrderCart(): UseOrderCart {
+  const { t } = useTranslation();
   const { exact, isExactFamily } = useKafilRole();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -146,6 +151,18 @@ export function useOrderCart(): UseOrderCart {
   const saving = isExactFamily
     ? familyCommands.submit.isPending
     : isAssisted && operatorCommands.assisted.isPending;
+  const saveMutationError = isExactFamily
+    ? familyCommands.submit.error
+    : operatorCommands.assisted.error;
+  const saveError = saveMutationError
+    ? getLocalizedOrderLimitError(
+        saveMutationError,
+        (key) => t(key),
+        isExactFamily
+          ? "Could not submit your order."
+          : "Could not create the assisted family order.",
+      )
+    : null;
 
   async function add(input: OrderCartAddInput): Promise<void> {
     if (isExactFamily) {
@@ -209,6 +226,7 @@ export function useOrderCart(): UseOrderCart {
         queryClient.invalidateQueries({ queryKey: familyOrderingKeys.all }),
         queryClient.invalidateQueries({ queryKey: orderKeys.all }),
         queryClient.invalidateQueries({ queryKey: budgetKeys.all }),
+        queryClient.invalidateQueries({ queryKey: familyBudgetKeys.all }),
       ]);
       router.push(`/orders?created=${encodeURIComponent(result.id)}`);
       return { orderId: result.id, orderNumber: result.orderNumber };
@@ -240,6 +258,7 @@ export function useOrderCart(): UseOrderCart {
         queryClient.invalidateQueries({ queryKey }),
       ),
       queryClient.invalidateQueries({ queryKey: budgetKeys.all }),
+      queryClient.invalidateQueries({ queryKey: familyBudgetKeys.all }),
       queryClient.invalidateQueries({ queryKey: familyOrderingKeys.all }),
     ]);
     router.push(`/orders?created=${encodeURIComponent(result.id)}`);
@@ -254,6 +273,7 @@ export function useOrderCart(): UseOrderCart {
     estimatedTotalMinor: viewModel.estimatedTotalMinor,
     loading: isExactFamily ? familyCart.isPending : false,
     saving,
+    saveError,
     add,
     setQuantity: setQuantityFor,
     remove,
@@ -266,6 +286,7 @@ export function useOrderCart(): UseOrderCart {
 export const orderCartInvalidationKeys = [
   orderKeys.all,
   budgetKeys.all,
+  familyBudgetKeys.all,
   familyOrderingKeys.all,
   ...catalogWriteKeys,
 ] as const;

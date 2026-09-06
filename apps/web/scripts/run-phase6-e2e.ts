@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 const useProductionServer = Bun.env.KAFIL_E2E_USE_PRODUCTION === "1";
 const externalBaseUrl = Bun.env.KAFIL_E2E_EXTERNAL_BASE_URL?.replace(/\/$/, "");
 const baseUrl = externalBaseUrl ?? "http://127.0.0.1:3210";
+const distDirectoryName = ".next-phase6-e2e";
 
 const phase6E2eEnvironment = {
   ...process.env,
@@ -18,7 +19,10 @@ const phase6E2eEnvironment = {
   KAFIL_ADMIN_EMAIL: Bun.env.KAFIL_ADMIN_EMAIL,
   KAFIL_ADMIN_PASSWORD: Bun.env.KAFIL_ADMIN_PASSWORD,
   NAJM_ENCRYPTION_KEY: Bun.env.NAJM_ENCRYPTION_KEY,
+  REDIS_URL: Bun.env.REDIS_URL,
+  KAFIL_TRUSTED_PROXY_HOPS: Bun.env.KAFIL_TRUSTED_PROXY_HOPS,
   NAJM_AUTH_INTERNAL_URL: `${baseUrl}/api/auth/session/recover`,
+  NAJM_NEXT_DIST_DIR: distDirectoryName,
   KAFIL_E2E_BASE_URL: baseUrl,
 };
 
@@ -71,6 +75,7 @@ try {
             process.execPath,
             "node_modules/next/dist/bin/next",
             "dev",
+            "--webpack",
             "-p",
             "3210",
           ],
@@ -100,6 +105,7 @@ try {
           "test/e2e/preferences.e2e.ts",
           "test/e2e/plan-acceptance.e2e.ts",
           "test/e2e/applicant-decision.e2e.ts",
+          "test/e2e/family-order-limits.e2e.ts",
         ]),
   ];
   if (Bun.env.KAFIL_E2E_GREP) {

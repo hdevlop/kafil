@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarRange, Wallet } from "lucide-react";
 import { ComboboxInput, NCard, useNajmFormat } from "najm-kit";
+import { QuotaText } from "@/features/Budgets/components/QuotaText";
 
 import { useTranslation } from "najm-i18n/react";
 import { listFamilies } from "@/services/familyApi";
@@ -76,7 +77,10 @@ export function AssistedFamilySelector({
   const fundingTargetReached =
     !summary.isFetching && summary.data?.funding?.status === "active";
   const availableMinor = summary.data?.availableMinor ?? 0;
-  const monthlyLimitMinor = summary.data?.monthlyLimit?.limitMinor ?? null;
+  const monthlyLimitMinor =
+    summary.data?.monthlyLimitMinor ??
+    summary.data?.monthlyLimit?.limitMinor ??
+    null;
 
   useEffect(() => {
     onFundingEligibilityChange?.(fundingTargetReached);
@@ -143,6 +147,14 @@ export function AssistedFamilySelector({
                   : fmt.money(monthlyLimitMinor)}
               </span>
             </span>
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            <QuotaText
+              ordersUsed={summary.data?.ordersUsed}
+              ordersLimit={summary.data?.ordersLimit}
+              ordersRemaining={summary.data?.ordersRemaining}
+              maxPerOrderMinor={summary.data?.maxPerOrderMinor}
+            />
           </div>
         </NCard>
       ) : null}

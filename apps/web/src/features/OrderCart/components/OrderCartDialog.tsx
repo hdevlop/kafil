@@ -31,6 +31,7 @@ import {
   ComboboxInput,
   Label,
   NBadge,
+  NAlert,
   NButton,
   NCard,
   NEmptyState,
@@ -46,6 +47,7 @@ import { useKafilRole } from "@/shared/Authorization";
 import { productKeys } from "@/features/Products/hooks/productKeys";
 import { getProduct } from "@/services/productApi";
 import { getFamilyCatalogProduct } from "@/services/familyCatalogApi";
+import { FamilyQuotaText } from "@/features/Budgets/components/QuotaText";
 import { useOwnFamilyBudgetSummary } from "@/features/Budgets/hooks/useFamilyBudget";
 import { useOwnFamilyProfile } from "@/features/Dashboard/FamilyDashboard";
 import { NNextImage } from "najm-kit/next";
@@ -711,6 +713,14 @@ export function OrderCartSheet({
       title={showReview ? reviewLabel : t("nav.cart")}
       width={440}
     >
+      {orderCart.saveError ? (
+        <NAlert
+          className="mb-3"
+          description={orderCart.saveError}
+          role="alert"
+          tone="error"
+        />
+      ) : null}
       {!hasAnyItems ? (
         <NEmptyState
           className="py-8"
@@ -751,19 +761,29 @@ export function OrderCartSheet({
           ) : null}
 
           {isExactFamily && familyBudget.data ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              <NCard
-                embedded
-                icon={Wallet}
-                title={t("operator.budgets.available")}
-                description={fmt.money(familyBudget.data.availableMinor)}
-              />
-              <NCard
-                embedded
-                icon={Wallet}
-                title={t("operator.budgets.reserved")}
-                description={fmt.money(familyBudget.data.reservedMinor)}
-              />
+            <div className="space-y-2">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <NCard
+                  embedded
+                  icon={Wallet}
+                  title={t("operator.budgets.available")}
+                  description={fmt.money(familyBudget.data.availableMinor)}
+                />
+                <NCard
+                  embedded
+                  icon={Wallet}
+                  title={t("operator.budgets.reserved")}
+                  description={fmt.money(familyBudget.data.reservedMinor)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <FamilyQuotaText
+                  ordersUsed={familyBudget.data.ordersUsed}
+                  ordersLimit={familyBudget.data.ordersLimit}
+                  ordersRemaining={familyBudget.data.ordersRemaining}
+                  maxPerOrderMinor={familyBudget.data.maxPerOrderMinor}
+                />
+              </p>
             </div>
           ) : null}
 

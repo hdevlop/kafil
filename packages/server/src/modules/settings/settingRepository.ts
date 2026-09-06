@@ -11,6 +11,9 @@ export interface PlatformSettingsPatch {
   pendingContributionExpiryHours: number;
   formFillEnabled: boolean;
   updatedByUserId: string;
+  defaultMaxOrdersPerMonth?: number | null;
+  defaultMaxBudgetPerOrderMinor?: number | null;
+  defaultMonthlyBudgetMinor?: number | null;
 }
 
 export interface PlatformSettingRow {
@@ -18,6 +21,9 @@ export interface PlatformSettingRow {
   familyFundingTargetMinor: number;
   pendingContributionExpiryHours: number;
   formFillEnabled: boolean;
+  defaultMaxOrdersPerMonth: number | null;
+  defaultMaxBudgetPerOrderMinor: number | null;
+  defaultMonthlyBudgetMinor: number | null;
   designConfig: NajmDesignConfig | null;
   appearanceRevision: number;
   currency: string;
@@ -46,6 +52,18 @@ export class SettingRepository {
         familyFundingTargetMinor: patch.familyFundingTargetMinor,
         pendingContributionExpiryHours: patch.pendingContributionExpiryHours,
         formFillEnabled: patch.formFillEnabled,
+        ...(patch.defaultMaxOrdersPerMonth !== undefined
+          ? { defaultMaxOrdersPerMonth: patch.defaultMaxOrdersPerMonth }
+          : {}),
+        ...(patch.defaultMaxBudgetPerOrderMinor !== undefined
+          ? {
+              defaultMaxBudgetPerOrderMinor:
+                patch.defaultMaxBudgetPerOrderMinor,
+            }
+          : {}),
+        ...(patch.defaultMonthlyBudgetMinor !== undefined
+          ? { defaultMonthlyBudgetMinor: patch.defaultMonthlyBudgetMinor }
+          : {}),
         updatedByUserId: patch.updatedByUserId,
         updatedAt: new Date(),
       })

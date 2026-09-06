@@ -554,7 +554,9 @@
       "retrieved": "????????? : ?? ????????? ?????",
       "reconciled": "????????? : ??? ??????? ?????",
       "monthlyLimitUpdated": "????????? : ??? ??????? ?????",
-      "adjusted": "????????? : ??? ??????? ?????"
+      "adjusted": "????????? : ??? ??????? ?????",
+      "monthlyLimitReset": "تمت إعادة تعيين الحد الشهري إلى القيمة العامة",
+      "orderPolicyUpdated": "تم تحديث سياسة طلبات الأسرة بنجاح"
     }
   },
   "ui": {
@@ -1139,7 +1141,20 @@
         "inputSection": "حقول الإدخال",
         "discardTitle": "تجاهل التغييرات غير المحفوظة؟",
         "discardDescription": "سيؤدي إغلاق الإعدادات إلى تجاهل تغييراتك غير المحفوظة.",
-        "discard": "تجاهل التغييرات"
+        "discard": "تجاهل التغييرات",
+        "orderLimitsTitle": "حدود طلبات الأسر",
+        "orderLimitsDescription": "القيم العامة الافتراضية. فارغ يعني غير محدود.",
+        "defaultMaxOrdersLabel": "الحد الأقصى الافتراضي للطلبات شهريا",
+        "defaultMaxOrdersPlaceholder": "مثال: 4",
+        "defaultMaxOrdersHelp": "عدد الطلبات المقبولة لكل أسرة كل شهر. فارغ يعني غير محدود.",
+        "defaultPerOrderLabel": "الحد الأقصى الافتراضي لكل طلب (درهم)",
+        "defaultPerOrderPlaceholder": "مثال: 3000.00",
+        "defaultPerOrderHelp": "إجمالي السلة الأقصى لكل طلب. فارغ يعني غير محدود.",
+        "defaultMonthlyLabel": "الميزانية الشهرية الافتراضية (درهم)",
+        "defaultMonthlyPlaceholder": "مثال: 6000.00",
+        "defaultMonthlyHelp": "إجمالي الاستخدام الشهري لكل أسرة. فارغ يعني غير محدود.",
+        "evenSplitHint": "≈ {amount}/طلب عند التقسيم بالتساوي",
+        "evenSplitRemainder": " + {remainder} متبق"
       },
       "contributions": {
         "title": "المساهمات",
@@ -1474,7 +1489,11 @@
         "notRecorded": "غير مسجل",
         "chooseHousingSituation": "اختر وضع السكن",
         "chooseSupportPriority": "اختر الأولوية",
-        "childrenCanBeAddedLater": "لم تتم إضافة أطفال بعد. يمكن إضافة الأطفال لاحقًا."
+        "childrenCanBeAddedLater": "لم تتم إضافة أطفال بعد. يمكن إضافة الأطفال لاحقًا.",
+        "maxOrdersLabel": "الحد الأقصى للطلبات شهريا (اختياري)",
+        "maxOrdersPlaceholder": "تطبق القيمة العامة عند الفراغ",
+        "maxPerOrderLabel": "الحد الأقصى لكل طلب بالدرهم (اختياري)",
+        "monthlyBudgetLabel": "الميزانية الشهرية بالدرهم (اختياري)"
       },
       "children": {
         "householdId": "معرّف الأسرة",
@@ -1814,7 +1833,38 @@
         "saveLimitSuccess": "تم حفظ حد الميزانية الشهري.",
         "saveLimitError": "تعذر حفظ حد الميزانية الشهري.",
         "adjustmentSuccess": "تم تسجيل تعديل الميزانية.",
-        "adjustmentError": "تعذر تسجيل تعديل الميزانية."
+        "adjustmentError": "تعذر تسجيل تعديل الميزانية.",
+        "orderPolicyTitle": "سياسة الطلبات",
+        "orderPolicyDescription": "تجاوزات لكل أسرة. فارغ يرث العام.",
+        "maxOrdersLabel": "الحد الأقصى للطلبات شهريا",
+        "maxOrdersPlaceholder": "عام: {value}",
+        "maxOrdersHelp": "من 1 إلى 31. فارغ يرث العام.",
+        "maxPerOrderLabel": "الحد الأقصى لكل طلب (درهم)",
+        "maxPerOrderPlaceholder": "عام: {value}",
+        "maxPerOrderHelp": "إجمالي السلة الأقصى. فارغ يرث العام.",
+        "monthlyAmountLabel": "المبلغ الشهري (درهم)",
+        "monthlyAmountPlaceholder": "عام: {value}",
+        "effectiveLabel": "الفعلي",
+        "sourceFamily": "تجاوز الأسرة",
+        "sourceGlobal": "عام",
+        "sourceUnlimited": "غير محدود",
+        "ordersPerMonthValue": "{value}/شهر",
+        "reasonPlaceholder": "لماذا تتغير هذه السياسة؟",
+        "savePolicy": "حفظ السياسة",
+        "savePolicySuccess": "تم حفظ السياسة.",
+        "savePolicyError": "تعذر حفظ السياسة.",
+        "resetMonthly": "إعادة تعيين إلى العام",
+        "resetMonthlyConfirm": "إعادة تعيين هذا الشهر ليرث العام؟",
+        "resetMonthlySuccess": "تمت إعادة تعيين التجاوز الشهري.",
+        "resetMonthlyError": "تعذر إعادة التعيين.",
+        "quotaRemaining": "{remaining} من {limit} طلبات متبقية",
+        "quotaUsed": "{used} من {limit} طلبات مستخدمة",
+        "quotaUnlimited": "طلبات غير محدودة",
+        "perOrderUpTo": "حتى {amount}/طلب",
+        "denialAvailable": "إجمالي الطلب يتجاوز الميزانية المتاحة",
+        "denialMonthly": "الإجمالي يتجاوز الحد الشهري المتبقي",
+        "denialCount": "تم بلوغ حد عدد الطلبات الشهري",
+        "denialPerOrder": "الإجمالي يتجاوز حد الطلب الواحد"
       },
       "staff": {
         "title": "الموظفون",
@@ -2083,7 +2133,10 @@
         "noteLabel": "ملاحظة تشغيلية خاصة",
         "noteDescription": "لا تدخل رقم البطاقة الوطنية أو التفاصيل الطبية أو العناوين أو معلومات المستندات.",
         "saveSuccess": "تم إنشاء الطلب وحجز الميزانية.",
-        "saveError": "تعذر حفظ هذا الطلب."
+        "saveError": "تعذر حفظ هذا الطلب.",
+        "quotaRemaining": "{remaining} من {limit} طلبات متبقية · حتى {amount}/طلب",
+        "quotaUnlimitedOrders": "طلبات غير محدودة",
+        "quotaMonthly": "{used} من {limit} درهم مستخدم هذا الشهر"
       }
     },
     "sponsor": {

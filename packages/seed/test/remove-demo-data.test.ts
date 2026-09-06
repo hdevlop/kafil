@@ -9,6 +9,7 @@ import {
   managedDemoFilePath,
   REMOVE_DEMO_SQL,
   RESET_DEMO_CATALOG_SQL,
+  RESET_DEMO_ORDER_LIMITS_SQL,
   removeDemoData,
   removeManagedDemoFiles,
   removeOrphanedManagedFiles,
@@ -90,6 +91,16 @@ describe("managed demo cleanup", () => {
     expect(catalogReset).toContain("DELETE FROM cart_items");
     expect(catalogReset).toContain("DELETE FROM inventory_ledger_entries");
     expect(catalogReset).toContain("order_items");
+
+    expect(RESET_DEMO_ORDER_LIMITS_SQL).toContain(
+      "default_max_orders_per_month = NULL",
+    );
+    expect(RESET_DEMO_ORDER_LIMITS_SQL).toContain(
+      "default_max_orders_per_month = 4",
+    );
+    expect(RESET_DEMO_ORDER_LIMITS_SQL).toContain(
+      "updated_by_user_id IN (SELECT id FROM kafil_demo_users)",
+    );
   });
 
   it("removes the scoped graph transactionally, then its managed files", async () => {
@@ -108,6 +119,7 @@ describe("managed demo cleanup", () => {
       ...DEMO_SCOPE_SQL,
       DEMO_SUMMARY_SQL,
       DEMO_STORAGE_SQL,
+      RESET_DEMO_ORDER_LIMITS_SQL,
       ...REMOVE_DEMO_SQL,
       ...RESET_DEMO_CATALOG_SQL,
       MANAGED_STORAGE_REFERENCES_SQL,

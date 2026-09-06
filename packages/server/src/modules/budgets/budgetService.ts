@@ -4,11 +4,17 @@ import { Transaction } from "najm-database";
 import { AuditService } from "../audit/auditService";
 import { FamilyRepository } from "../families/familyRepository";
 import { FundingService } from "../settings/fundingService";
+import { SettingRepository } from "../settings/settingRepository";
+import { OrderRepository } from "../orders/orderRepository";
 import {
   type BudgetLedgerListQuery,
   budgetLedgerListQuery,
   type ManualBudgetAdjustmentDto,
   manualBudgetAdjustmentDto,
+  type ResetMonthlyBudgetLimitDto,
+  resetMonthlyBudgetLimitDto,
+  type SetFamilyOrderPolicyDto,
+  setFamilyOrderPolicyDto,
   type SetMonthlyBudgetLimitDto,
   setMonthlyBudgetLimitDto,
 } from "./budgetDto";
@@ -17,9 +23,17 @@ import {
   BudgetLedgerRepository,
   MonthlyBudgetLimitRepository,
 } from "./budgetRepository";
-import type { BudgetLedgerEntry } from "./budgetSchema";
+import type { BudgetAccount, BudgetLedgerEntry } from "./budgetSchema";
 import { applyBudgetBalanceDelta } from "./money";
 import { BudgetValidator } from "./budgetValidator";
+import {
+  currentMonth,
+  monthBounds,
+  resolveOrderPolicy,
+  type ResolvedOrderPolicy,
+} from "./orderPolicy";
+
+export type { ResolvedOrderPolicy };
 
 @Service()
 export class BudgetService {
@@ -31,27 +45,174 @@ export class BudgetService {
     private readonly audits: AuditService,
     private readonly validator: BudgetValidator,
     private readonly funding: FundingService,
+    private readonly settings?: SettingRepository,
+    private readonly orderRepo?: OrderRepository,
   ) {}
 
+  private requireSettingsRepository() {
+    if (!this.settings) {
+      throw new Error("SettingRepository is required for order-policy resolution");
+    }
+    return this.settings;
+  }
+
+  private requireOrderRepository() {
+    if (!this.orderRepo) {
+      throw new Error("OrderRepository is required for order-policy resolution");
+    }
+    return this.orderRepo;
+  }
+
+  async resolvePolicyForLockedAccount(
+    lockedAccount: Pick<
+      BudgetAccount,
+      "id" | "maxOrdersPerMonth" | "maxBudgetPerOrderMinor"
+    >,
+    month: string,
+  ): Promise<ResolvedOrderPolicy> {
+    const [monthlyOverride, globalSettings] = await Promise.all([
+      this.limits.findByAccountAndMonth(lockedAccount.id, month),
+      this.requireSettingsRepository().find(),
+    ]);
+    return resolveOrderPolicy(
+      {
+        id: lockedAccount.id,
+        maxOrdersPerMonth: lockedAccount.maxOrdersPerMonth ?? null,
+        maxBudgetPerOrderMinor: lockedAccount.maxBudgetPerOrderMinor ?? null,
+      },
+      monthlyOverride ? { limitMinor: monthlyOverride.limitMinor } : null,
+      globalSettings
+        ? {
+            defaultMaxOrdersPerMonth:
+              (globalSettings as { defaultMaxOrdersPerMonth?: number | null })
+                .defaultMaxOrdersPerMonth ?? null,
+            defaultMaxBudgetPerOrderMinor:
+              (
+                globalSettings as {
+                  defaultMaxBudgetPerOrderMinor?: number | null;
+                }
+              ).defaultMaxBudgetPerOrderMinor ?? null,
+            defaultMonthlyBudgetMinor:
+              (
+                globalSettings as { defaultMonthlyBudgetMinor?: number | null }
+              ).defaultMonthlyBudgetMinor ?? null,
+          }
+        : null,
+    );
+  }
+
+  private async buildPolicyContext(
+    account: Pick<
+      BudgetAccount,
+      | "id"
+      | "currency"
+      | "availableMinor"
+      | "reservedMinor"
+      | "spentMinor"
+      | "version"
+      | "familyProfileId"
+      | "maxOrdersPerMonth"
+      | "maxBudgetPerOrderMinor"
+    >,
+    month: string,
+  ) {
+    const [monthlyOverride, globalSettings, monthlyUsedMinor] =
+      await Promise.all([
+        this.limits.findByAccountAndMonth(account.id, month),
+        this.requireSettingsRepository().find(),
+        this.ledger.monthlyOrderUsage(account.id, month),
+      ]);
+    const policy = resolveOrderPolicy(
+      {
+        id: account.id,
+        maxOrdersPerMonth: account.maxOrdersPerMonth ?? null,
+        maxBudgetPerOrderMinor: account.maxBudgetPerOrderMinor ?? null,
+      },
+      monthlyOverride ? { limitMinor: monthlyOverride.limitMinor } : null,
+      globalSettings
+        ? {
+            defaultMaxOrdersPerMonth:
+              (globalSettings as { defaultMaxOrdersPerMonth?: number | null })
+                .defaultMaxOrdersPerMonth ?? null,
+            defaultMaxBudgetPerOrderMinor:
+              (
+                globalSettings as {
+                  defaultMaxBudgetPerOrderMinor?: number | null;
+                }
+              ).defaultMaxBudgetPerOrderMinor ?? null,
+            defaultMonthlyBudgetMinor:
+              (
+                globalSettings as { defaultMonthlyBudgetMinor?: number | null }
+              ).defaultMonthlyBudgetMinor ?? null,
+          }
+        : null,
+    );
+    const { start, nextStart } = monthBounds(month);
+    const ordersUsed = await this.requireOrderRepository().countActiveInRange(
+      account.familyProfileId,
+      start,
+      nextStart,
+    );
+    const ordersLimit = policy.maxOrders;
+    const ordersRemaining =
+      ordersLimit === null ? null : Math.max(0, ordersLimit - ordersUsed);
+    return {
+      monthlyOverride,
+      globalSettings,
+      monthlyUsedMinor,
+      policy,
+      ordersUsed,
+      ordersLimit,
+      ordersRemaining,
+    };
+  }
+
   async getSummary(familyProfileId: string) {
+    const month = currentMonth();
     const account = await this.validator.ensureAccountForFamily(
       familyProfileId,
     );
-    const monthlyLimit = await this.limits.findByAccountAndMonth(
-      account.id,
-      currentMonth(),
-    );
     const funding = await this.funding.getProgress(familyProfileId);
+    const ctx = await this.buildPolicyContext(account, month);
+    const monthlyLimit = ctx.monthlyOverride
+      ? { month: ctx.monthlyOverride.month, limitMinor: ctx.monthlyOverride.limitMinor }
+      : null;
     return {
       currency: account.currency,
       availableMinor: account.availableMinor,
       reservedMinor: account.reservedMinor,
       spentMinor: account.spentMinor,
       version: account.version,
-      monthlyLimit: monthlyLimit
-        ? { month: monthlyLimit.month, limitMinor: monthlyLimit.limitMinor }
-        : null,
+      monthlyLimit,
       funding,
+      month,
+      monthlyUsedMinor: ctx.monthlyUsedMinor,
+      monthlyLimitMinor: ctx.policy.monthlyLimitMinor,
+      ordersUsed: ctx.ordersUsed,
+      ordersLimit: ctx.ordersLimit,
+      ordersRemaining: ctx.ordersRemaining,
+      maxPerOrderMinor: ctx.policy.maxPerOrderMinor,
+      monthly: {
+        override: ctx.policy.monthlyOverrideMinor,
+        default: ctx.policy.monthlyDefaultMinor,
+        effective: ctx.policy.monthlyLimitMinor,
+        source: ctx.policy.monthlySource,
+        usedMinor: ctx.monthlyUsedMinor,
+      },
+      orders: {
+        override: ctx.policy.maxOrdersOverride,
+        default: ctx.policy.maxOrdersDefault,
+        effective: ctx.policy.maxOrders,
+        source: ctx.policy.maxOrdersSource,
+        used: ctx.ordersUsed,
+        remaining: ctx.ordersRemaining,
+      },
+      maxPerOrder: {
+        override: ctx.policy.maxPerOrderOverride,
+        default: ctx.policy.maxPerOrderDefault,
+        effective: ctx.policy.maxPerOrderMinor,
+        source: ctx.policy.maxPerOrderSource,
+      },
     };
   }
 
@@ -60,7 +221,29 @@ export class BudgetService {
     if (!family || family.role !== "family") {
       HttpError.notFound("Family budget not found");
     }
-    return this.getSummary(family.id);
+    const month = currentMonth();
+    const account = await this.validator.ensureAccountForFamily(family.id);
+    const funding = await this.funding.getProgress(family.id);
+    const ctx = await this.buildPolicyContext(account, month);
+    const monthlyLimit = ctx.monthlyOverride
+      ? { month: ctx.monthlyOverride.month, limitMinor: ctx.monthlyOverride.limitMinor }
+      : null;
+    return {
+      currency: account.currency,
+      availableMinor: account.availableMinor,
+      reservedMinor: account.reservedMinor,
+      spentMinor: account.spentMinor,
+      version: account.version,
+      monthlyLimit,
+      funding,
+      month,
+      monthlyUsedMinor: ctx.monthlyUsedMinor,
+      monthlyLimitMinor: ctx.policy.monthlyLimitMinor,
+      ordersUsed: ctx.ordersUsed,
+      ordersLimit: ctx.policy.maxOrders,
+      ordersRemaining: ctx.ordersRemaining,
+      maxPerOrderMinor: ctx.policy.maxPerOrderMinor,
+    };
   }
 
   async listLedger(familyProfileId: string, query: BudgetLedgerListQuery) {
@@ -123,9 +306,10 @@ export class BudgetService {
     actorUserId: string,
   ) {
     const input = setMonthlyBudgetLimitDto.parse(data);
-    const account = await this.validator.ensureAccountForFamily(
-      familyProfileId,
-    );
+    const account = await this.accounts.lockByFamilyId(familyProfileId);
+    if (!account) {
+      HttpError.notFound("Budget account not found");
+    }
     const limit = await this.limits.set({
       budgetAccountId: account.id,
       limitMinor: input.limitMinor,
@@ -141,6 +325,96 @@ export class BudgetService {
       resourceId: limit.id,
     });
     return limit;
+  }
+
+  @Transaction({ retries: 2 })
+  async resetMonthlyLimit(
+    familyProfileId: string,
+    data: ResetMonthlyBudgetLimitDto,
+    actorUserId: string,
+  ) {
+    const input = resetMonthlyBudgetLimitDto.parse(data);
+    const account = await this.accounts.lockByFamilyId(familyProfileId);
+    if (!account) {
+      HttpError.notFound("Budget account not found");
+    }
+    const deleted = await this.limits.reset({
+      budgetAccountId: account.id,
+      month: input.month,
+    });
+    await this.audits.record({
+      action: "budget.monthlyLimitReset",
+      actorUserId,
+      metadata: {
+        month: input.month,
+        reason: input.reason,
+        removed: Boolean(deleted),
+      },
+      resource: "monthlyBudgetLimits",
+      resourceId: deleted?.id ?? account.id,
+    });
+    const policy = await this.resolvePolicyForLockedAccount(
+      {
+        id: account.id,
+        maxOrdersPerMonth: account.maxOrdersPerMonth ?? null,
+        maxBudgetPerOrderMinor: account.maxBudgetPerOrderMinor ?? null,
+      },
+      input.month,
+    );
+    return {
+      reset: true,
+      removed: Boolean(deleted),
+      month: input.month,
+      effectiveMonthlyLimitMinor: policy.monthlyLimitMinor,
+      source: policy.monthlySource,
+    };
+  }
+
+  @Transaction({ retries: 2 })
+  async setOrderPolicy(
+    familyProfileId: string,
+    data: SetFamilyOrderPolicyDto,
+    actorUserId: string,
+  ) {
+    const input = setFamilyOrderPolicyDto.parse(data);
+    const locked = await this.accounts.lockByFamilyId(familyProfileId);
+    if (!locked) {
+      HttpError.notFound("Budget account not found");
+    }
+    const before = {
+      maxOrdersPerMonth: locked.maxOrdersPerMonth ?? null,
+      maxBudgetPerOrderMinor: locked.maxBudgetPerOrderMinor ?? null,
+    };
+    const patch: {
+      maxOrdersPerMonth?: number | null;
+      maxBudgetPerOrderMinor?: number | null;
+    } = {};
+    if (input.maxOrdersPerMonth !== undefined) {
+      patch.maxOrdersPerMonth = input.maxOrdersPerMonth ?? null;
+    }
+    if (input.maxBudgetPerOrderMinor !== undefined) {
+      patch.maxBudgetPerOrderMinor = input.maxBudgetPerOrderMinor ?? null;
+    }
+    const updated = await this.accounts.updatePolicy(locked.id, patch);
+    if (!updated) {
+      HttpError.notFound("Budget account not found");
+    }
+    const after = {
+      maxOrdersPerMonth: updated.maxOrdersPerMonth ?? null,
+      maxBudgetPerOrderMinor: updated.maxBudgetPerOrderMinor ?? null,
+    };
+    await this.audits.record({
+      action: "budget.orderPolicyUpdated",
+      actorUserId,
+      metadata: {
+        before,
+        after,
+        reason: input.reason,
+      },
+      resource: "budgetAccounts",
+      resourceId: updated.id,
+    });
+    return updated;
   }
 
   @Transaction({ retries: 2 })
@@ -219,9 +493,4 @@ function toFamilyBudgetLedgerProjection(entry: BudgetLedgerEntry) {
     sourceType: entry.sourceType,
     createdAt: entry.createdAt,
   };
-}
-
-function currentMonth() {
-  const now = new Date();
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-01`;
 }

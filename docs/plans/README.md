@@ -4,12 +4,18 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
 
 ## Root plans
 
+- [`FAMILY-ORDER-LIMITS-PLAN.md`](../../FAMILY-ORDER-LIMITS-PLAN.md)
+  - implemented nullable global defaults, per-family order policy overrides,
+    monthly inheritance/reset, and enforcement; browser acceptance is deferred.
 - [`AUTH-SECURITY-REMEDIATION-PLAN.md`](../../AUTH-SECURITY-REMEDIATION-PLAN.md)
   - September 5 auth security review. Source fixes, dependency remediation,
     package publication, CSP enforcement, and local connected-account acceptance
     are complete; deployment and production acceptance remain open.
 - [`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`](../../CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md)
   - completed guarded VPS browser-acceptance contract and evidence record.
+- [`NOTIFICATION-SYSTEM-PLAN.md`](../../NOTIFICATION-SYSTEM-PLAN.md)
+  - implementation-ready draft for the in-app + email + push notification
+    system (polling freshness, all outbox topics, read/unread only).
 
 ## Supporting documents
 

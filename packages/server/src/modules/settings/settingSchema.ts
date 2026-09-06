@@ -20,6 +20,9 @@ export const DEFAULT_BRANDING_REVISION = 1;
 export const DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS = 72;
 export const MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS = 1;
 export const MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS = 720;
+export const MIN_ORDERS_PER_MONTH = 1;
+export const MAX_ORDERS_PER_MONTH = 31;
+export const MAX_ORDER_MINOR_UNITS = Number.MAX_SAFE_INTEGER;
 
 export const platformSettings = pgTable(
   "platform_settings",
@@ -46,6 +49,13 @@ export const platformSettings = pgTable(
       .default(DEFAULT_BRANDING_REVISION)
       .notNull(),
     currency: varchar("currency", { length: 3 }).default("MAD").notNull(),
+    defaultMaxOrdersPerMonth: integer("default_max_orders_per_month"),
+    defaultMaxBudgetPerOrderMinor: bigint("default_max_budget_per_order_minor", {
+      mode: "number",
+    }),
+    defaultMonthlyBudgetMinor: bigint("default_monthly_budget_minor", {
+      mode: "number",
+    }),
     updatedByUserId: text("updated_by_user_id").references(() => usersTable.id, {
       onDelete: "set null",
     }),
@@ -68,7 +78,19 @@ export const platformSettings = pgTable(
     ),
     check(
       "platform_settings_pending_expiry_hours_check",
-      sql`${table.pendingContributionExpiryHours} BETWEEN ${MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS} AND ${MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS}`,
+      sql`${table.pendingContributionExpiryHours} BETWEEN 1 AND 720`,
+    ),
+    check(
+      "platform_settings_default_max_orders_check",
+      sql`${table.defaultMaxOrdersPerMonth} IS NULL OR ${table.defaultMaxOrdersPerMonth} BETWEEN 1 AND 31`,
+    ),
+    check(
+      "platform_settings_default_max_per_order_check",
+      sql`${table.defaultMaxBudgetPerOrderMinor} IS NULL OR ${table.defaultMaxBudgetPerOrderMinor} BETWEEN 1 AND 9007199254740991`,
+    ),
+    check(
+      "platform_settings_default_monthly_budget_check",
+      sql`${table.defaultMonthlyBudgetMinor} IS NULL OR ${table.defaultMonthlyBudgetMinor} BETWEEN 1 AND 9007199254740991`,
     ),
   ],
 );

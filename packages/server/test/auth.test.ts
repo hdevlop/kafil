@@ -70,6 +70,7 @@ describe("Kafil auth definitions", () => {
 
   it("keeps generic public registration closed while applicants remain app-owned", () => {
     expect(authConfig().config).toMatchObject({
+      appName: "Kafil",
       defaultRole: "sponsor",
       publicRegistration: false,
       registrationMode: "pending",

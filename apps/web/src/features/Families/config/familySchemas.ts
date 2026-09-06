@@ -51,11 +51,34 @@ const guardianFieldsSchema = z.object({
   phone: z.string().trim().min(1, "Enter a phone number").max(40),
 });
 
+const optionalMadAmountInput = z
+  .string()
+  .trim()
+  .refine((value) => {
+    // F8 form-fill generates "Test <field>" placeholders for unknown strings;
+    // treat them as empty (inherit global) so dev fills stay schema-valid.
+    if (value === "" || value.startsWith("Test ")) return true;
+    const minor = parseMadAmount(value);
+    return minor !== null && minor > 0 && Number.isSafeInteger(minor);
+  }, "Enter a positive MAD amount or leave empty for the global default");
+
+const optionalOrderCountInput = z
+  .string()
+  .trim()
+  .refine((value) => {
+    if (value === "" || value.startsWith("Test ")) return true;
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= 31;
+  }, "Enter 1 to 31 or leave empty for the global default");
+
 const householdFieldsSchema = z.object({
   housingSituation: z.enum(FAMILY_HOUSING_SITUATIONS),
   registrationDate,
   supportPriority: z.enum(FAMILY_SUPPORT_PRIORITIES),
   activationTargetMad: positiveMadAmount,
+  maxOrdersPerMonthInput: optionalOrderCountInput.default(""),
+  maxBudgetPerOrderMadInput: optionalMadAmountInput.default(""),
+  monthlyBudgetMadInput: optionalMadAmountInput.default(""),
   notes: optionalText(2_000),
   exactAddress: z
     .string()
@@ -104,6 +127,22 @@ function toInitialChild(child: InitialChildInput): InitialChildInput {
   };
 }
 
+function parseOptionalCount(value: string | undefined): number | null {
+  const trimmed = (value ?? "").trim();
+  if (trimmed === "" || trimmed.startsWith("Test ")) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 31) return null;
+  return parsed;
+}
+
+function parseOptionalMad(value: string | undefined): number | null {
+  const trimmed = (value ?? "").trim();
+  if (trimmed === "" || trimmed.startsWith("Test ")) return null;
+  const minor = parseMadAmount(trimmed);
+  if (minor === null || minor <= 0) return null;
+  return minor;
+}
+
 export function toCreateFamilyInput(
   values: CreateFamilyFormValues,
 ): CreateFamilyInput {
@@ -111,6 +150,16 @@ export function toCreateFamilyInput(
   if (fundingTargetMinor === null || fundingTargetMinor <= 0) {
     throw new Error("Invalid family funding target");
   }
+
+  const maxOrdersPerMonth = parseOptionalCount(
+    (values as { maxOrdersPerMonthInput?: string }).maxOrdersPerMonthInput,
+  );
+  const maxBudgetPerOrderMinor = parseOptionalMad(
+    (values as { maxBudgetPerOrderMadInput?: string }).maxBudgetPerOrderMadInput,
+  );
+  const monthlyBudgetMinor = parseOptionalMad(
+    (values as { monthlyBudgetMadInput?: string }).monthlyBudgetMadInput,
+  );
 
   return {
     name: values.name.trim(),
@@ -123,6 +172,9 @@ export function toCreateFamilyInput(
     supportPriority: values.supportPriority,
     phone: values.phone.trim(),
     fundingTargetMinor,
+    ...(maxOrdersPerMonth !== null ? { maxOrdersPerMonth } : {}),
+    ...(maxBudgetPerOrderMinor !== null ? { maxBudgetPerOrderMinor } : {}),
+    ...(monthlyBudgetMinor !== null ? { monthlyBudgetMinor } : {}),
     initialChildren: values.initialChildren.map(toInitialChild),
     relationshipToChildren: nullable(values.relationshipToChildren),
     notes: nullable(values.notes),

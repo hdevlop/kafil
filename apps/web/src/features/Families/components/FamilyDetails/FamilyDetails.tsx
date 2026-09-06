@@ -1,3 +1,4 @@
+import { FamilyOrderPolicyCard } from "@/features/Budgets/components/FamilyOrderPolicyCard";
 import { Operator } from "@/shared/Authorization";
 
 import type { FamilyRecord } from "../../types";
@@ -13,6 +14,9 @@ export function FamilyDetails({ family }: Readonly<{ family: FamilyRecord }>) {
         <FamilyDetailsHero family={family} />
         <Operator>
           <FamilyDetailsContributions family={family} />
+        </Operator>
+        <Operator>
+          <FamilyOrderPolicyCard familyProfileId={family.id} />
         </Operator>
       </div>
       <div className="space-y-3 lg:pl-4">

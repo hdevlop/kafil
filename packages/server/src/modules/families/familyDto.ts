@@ -2,6 +2,10 @@ import { createUserDto, updateUserDto } from "najm-auth";
 import { z } from "zod";
 
 import { positiveMinorAmountDto } from "../budgets/money";
+import {
+  nullableMaxOrdersPerMonthDto,
+  nullableMinorAmountDto,
+} from "../settings/settingDto";
 import { FAMILY_IMAGE_SERVE_PREFIX } from "./familyImageController";
 import { createInitialChildDto } from "../children/childDto";
 import { phoneDto } from "../../phone";
@@ -92,6 +96,9 @@ export const createFamilyDto = createUserDto
     name: z.string().trim().min(2).max(200),
     image: familyImage.nullish(),
     fundingTargetMinor: positiveMinorAmountDto.optional(),
+    maxOrdersPerMonth: nullableMaxOrdersPerMonthDto,
+    maxBudgetPerOrderMinor: nullableMinorAmountDto,
+    monthlyBudgetMinor: nullableMinorAmountDto,
     initialChildren: z.array(createInitialChildDto).max(20).default([]),
     housingSituation: createFamilyHousingSituationDto,
     registrationDate: familyRegistrationDateDto,

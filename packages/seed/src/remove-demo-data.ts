@@ -112,6 +112,16 @@ export const MANAGED_STORAGE_REFERENCES_SQL = `
   UNION
   SELECT image_url AS reference FROM products WHERE image_url IS NOT NULL`;
 
+export const RESET_DEMO_ORDER_LIMITS_SQL = `UPDATE platform_settings
+  SET default_max_orders_per_month = NULL,
+      default_max_budget_per_order_minor = NULL,
+      default_monthly_budget_minor = NULL
+  WHERE id = 'platform'
+    AND default_max_orders_per_month = 4
+    AND default_max_budget_per_order_minor = 300000
+    AND default_monthly_budget_minor = 600000
+    AND updated_by_user_id IN (SELECT id FROM kafil_demo_users)`;
+
 export const REMOVE_DEMO_SQL = [
   `DELETE FROM outbox_events
    WHERE aggregate_id IN (SELECT id FROM kafil_demo_resources)`,
@@ -272,6 +282,7 @@ export async function removeDemoData(
     };
     summary = summaryResult.rows[0] ?? emptySummary();
     references = storageResult.rows.map((row) => row.reference);
+    await client.query(RESET_DEMO_ORDER_LIMITS_SQL);
     for (const sql of REMOVE_DEMO_SQL) await client.query(sql);
     for (const sql of RESET_DEMO_CATALOG_SQL) {
       const result = (await client.query(sql)) as { rows?: unknown[] };

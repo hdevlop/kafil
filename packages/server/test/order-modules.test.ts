@@ -11,7 +11,7 @@ import {
 } from "../src/modules/budgets";
 import { ProductRepository } from "../src/modules/catalog";
 import { OutboxService } from "../src/modules/outbox";
-import { FundingService } from "../src/modules/settings";
+import { FundingService, SettingRepository } from "../src/modules/settings";
 import { StaffRepository } from "../src/modules/staff";
 import {
   cartItemDto,
@@ -1154,6 +1154,13 @@ function orderService(options: {
     {
       ensureManagedReference: async () => undefined,
     } as unknown as OrderEvidenceService,
+    {
+      find: async () => ({
+        defaultMaxOrdersPerMonth: null,
+        defaultMaxBudgetPerOrderMinor: null,
+        defaultMonthlyBudgetMinor: null,
+      }),
+    } as unknown as SettingRepository,
   );
   return { service, state };
 }

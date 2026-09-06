@@ -10,10 +10,15 @@ import {
   useNajmTimeZone,
 } from "najm-kit";
 import { useEffect } from "react";
+import { useWatch } from "react-hook-form";
 
 import { useTranslation } from "najm-i18n/react";
+import { useNajmFormat } from "najm-kit";
 
 import {
+  evenSplitHint,
+  parseOptionalCountInput,
+  parseOptionalMadInput,
   settingsFormDefault,
   settingsFormSchema,
   toSettingsInput,
@@ -108,6 +113,28 @@ export function AppSettingsPanel({
           icon="Clock"
           required
         />
+        <FormInput
+          name="defaultMaxOrders"
+          type="text"
+          formLabel={t("operator.settings.defaultMaxOrdersLabel")}
+          placeholder={t("operator.settings.defaultMaxOrdersPlaceholder")}
+          icon="Hash"
+        />
+        <FormInput
+          name="defaultMaxPerOrderMad"
+          type="text"
+          formLabel={t("operator.settings.defaultPerOrderLabel")}
+          placeholder={t("operator.settings.defaultPerOrderPlaceholder")}
+          icon="CircleDollarSign"
+        />
+        <FormInput
+          name="defaultMonthlyMad"
+          type="text"
+          formLabel={t("operator.settings.defaultMonthlyLabel")}
+          placeholder={t("operator.settings.defaultMonthlyPlaceholder")}
+          icon="CircleDollarSign"
+        />
+        <EvenSplitHint />
 
         <FormInput
           name="timeZone"
@@ -116,5 +143,30 @@ export function AppSettingsPanel({
         />
       </NForm>
     </div>
+  );
+}
+
+function EvenSplitHint() {
+  const { t } = useTranslation();
+  const fmt = useNajmFormat();
+  const monthlyRaw = useWatch({ name: "defaultMonthlyMad" }) as
+    | string
+    | undefined;
+  const countRaw = useWatch({ name: "defaultMaxOrders" }) as string | undefined;
+  const monthly = parseOptionalMadInput(monthlyRaw ?? "");
+  const count = parseOptionalCountInput(countRaw ?? "");
+  const hint = evenSplitHint(monthly, count);
+  if (!hint) return null;
+  return (
+    <p className="text-sm text-muted-foreground" aria-live="polite">
+      {t("operator.settings.evenSplitHint", {
+        amount: fmt.money(hint.quotientMinor),
+      })}
+      {hint.remainderMinor > 0
+        ? t("operator.settings.evenSplitRemainder", {
+            remainder: fmt.money(hint.remainderMinor),
+          })
+        : null}
+    </p>
   );
 }

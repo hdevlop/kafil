@@ -18,7 +18,7 @@ interface EntityCommandOptions<TData, TVariables, TContext>
   mutationFn: (variables: TVariables) => Promise<TData>;
   invalidate?: QueryKey[];
   successMessage?: string;
-  errorMessage?: string;
+  errorMessage?: string | ((error: Error) => string);
   onSuccess?: (data: TData, variables: TVariables, context: TContext) => void;
   onError?: (error: Error, variables: TVariables, context?: TContext) => void;
 }
@@ -52,7 +52,11 @@ export function useEntityCommand<
       onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(getApiErrorMessage(error, errorMessage));
+      toast.error(
+        typeof errorMessage === "function"
+          ? errorMessage(error)
+          : getApiErrorMessage(error, errorMessage),
+      );
       onError?.(error, variables, context);
     },
   });

@@ -23,6 +23,9 @@ describe("configurable family funding web contracts", () => {
       familyFundingTargetMinor: 350050,
       pendingContributionExpiryHours: 96,
       formFillEnabled: true,
+      defaultMaxOrdersPerMonth: null,
+      defaultMaxBudgetPerOrderMinor: null,
+      defaultMonthlyBudgetMinor: null,
     });
     const defaults = settingsFormDefault({
       familyFundingTargetMinor: 350050,

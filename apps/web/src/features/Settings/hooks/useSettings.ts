@@ -5,6 +5,8 @@ import { useEntityQuery } from "@/hooks/useEntityQuery";
 import { entityKeys } from "@/hooks/queryKeys";
 import { useTranslation } from "najm-i18n/react";
 import { getSettings, updateSettings } from "@/services/settingApi";
+import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
+import { familyBudgetKeys } from "@/features/Budgets/hooks/familyBudgetKeys";
 
 export const settingKeys = {
   all: entityKeys.all("settings"),
@@ -22,7 +24,7 @@ export function useSettingCommands() {
   return {
     updateSettings: useEntityCommand({
       mutationFn: updateSettings,
-      invalidate: [settingKeys.all],
+      invalidate: [settingKeys.all, budgetKeys.all, familyBudgetKeys.all],
       successMessage: t("operator.settings.saveSuccess"),
       errorMessage: t("operator.settings.saveError"),
     }),

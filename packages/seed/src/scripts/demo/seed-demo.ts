@@ -13,6 +13,7 @@ import {
 import { seedCatalogCategories } from "../../category-seed";
 import { seedDemoCatalogProducts } from "../../demo-catalog";
 import { prepareDemoProfileImages } from "../../demo-images";
+import { verifyDemoOrderLimits } from "../../demo-order-limits";
 import { seedDemoOrders } from "../../demo-orders";
 import { seedDemoData } from "../../demo-seed";
 import { runSeedCommand } from "../../run-seed";
@@ -65,6 +66,7 @@ await runSeedCommand("Kafil demo data seed", async () => {
     operators: server.container.get(StaffService),
     sponsors: server.container.get(SponsorService),
   });
+  await verifyDemoOrderLimits(data.families.map((family) => family.id));
   const orderSummary = await seedDemoOrders(
     data.orders,
     data.deliveries.map((delivery) => delivery.id),

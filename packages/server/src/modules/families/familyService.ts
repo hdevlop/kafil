@@ -13,8 +13,12 @@ import { Transaction } from "najm-database";
 
 import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
-import { BudgetAccountRepository } from "../budgets/budgetRepository";
+import {
+  BudgetAccountRepository,
+  MonthlyBudgetLimitRepository,
+} from "../budgets/budgetRepository";
 import { BudgetService } from "../budgets/budgetService";
+import { currentMonth } from "../budgets/orderPolicy";
 import { ChildRepository } from "../children/childRepository";
 import { FundingService } from "../settings/fundingService";
 import { SettingRepository } from "../settings/settingRepository";
@@ -48,6 +52,7 @@ export class FamilyService {
     private readonly settings: SettingRepository,
     private readonly userRecords?: UserRepository,
     private readonly tokens?: TokenService,
+    private readonly monthlyLimits?: MonthlyBudgetLimitRepository,
   ) {}
 
   async list(query: FamilyListQuery) {
@@ -131,6 +136,9 @@ export class FamilyService {
       registrationDate,
       supportPriority,
       fundingTargetMinor: requestedFundingTargetMinor,
+      maxOrdersPerMonth,
+      maxBudgetPerOrderMinor,
+      monthlyBudgetMinor,
       initialChildren,
       relationshipToChildren,
       notes,
@@ -183,6 +191,55 @@ export class FamilyService {
       notes: notes ?? null,
     });
     await this.budgets.ensureForFamily(family!.id);
+    if (
+      maxOrdersPerMonth !== undefined ||
+      maxBudgetPerOrderMinor !== undefined ||
+      monthlyBudgetMinor != null
+    ) {
+      const locked = await this.accounts.lockByFamilyId(family!.id);
+      if (!locked) {
+        HttpError.notFound("Budget account not found");
+      }
+      if (maxOrdersPerMonth !== undefined || maxBudgetPerOrderMinor !== undefined) {
+        const updated = await this.accounts.updatePolicy(locked.id, {
+          ...(maxOrdersPerMonth !== undefined
+            ? { maxOrdersPerMonth: maxOrdersPerMonth ?? null }
+            : {}),
+          ...(maxBudgetPerOrderMinor !== undefined
+            ? { maxBudgetPerOrderMinor: maxBudgetPerOrderMinor ?? null }
+            : {}),
+        });
+        if (!updated) {
+          HttpError.notFound("Budget account not found");
+        }
+      }
+      if (monthlyBudgetMinor != null) {
+        if (!this.monthlyLimits) {
+          throw new Error(
+            "MonthlyBudgetLimitRepository is required when creating a family with a monthly limit",
+          );
+        }
+        const month = currentMonth();
+        const created = await this.monthlyLimits.set({
+          budgetAccountId: locked.id,
+          limitMinor: monthlyBudgetMinor,
+          month,
+          reason: "Set during family creation",
+          setByUserId: actorUserId,
+        });
+        await this.audits.record({
+          action: "budget.monthlyLimitSet",
+          actorUserId,
+          metadata: {
+            limitMinor: monthlyBudgetMinor,
+            month,
+            duringFamilyCreation: true,
+          },
+          resource: "monthlyBudgetLimits",
+          resourceId: created.id,
+        });
+      }
+    }
 
     for (const child of initialChildren) {
       await this.children.create({

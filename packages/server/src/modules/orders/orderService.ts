@@ -10,9 +10,15 @@ import {
   MonthlyBudgetLimitRepository,
 } from "../budgets/budgetRepository";
 import { applyBudgetBalanceDelta } from "../budgets/money";
+import {
+  monthBounds,
+  resolveOrderPolicy,
+  type ResolvedOrderPolicy,
+} from "../budgets/orderPolicy";
 import { ProductRepository } from "../catalog";
 import { OutboxService } from "../outbox/outboxService";
 import { FundingService } from "../settings/fundingService";
+import { SettingRepository } from "../settings/settingRepository";
 import {
   StaffRepository,
   type StaffRecord,
@@ -103,7 +109,15 @@ export class OrderService {
     private readonly validator: OrderValidator,
     private readonly funding: FundingService,
     private readonly evidence: OrderEvidenceService,
+    private readonly settings?: SettingRepository,
   ) {}
+
+  private requireSettingsRepository() {
+    if (!this.settings) {
+      throw new Error("SettingRepository is required for order-policy enforcement");
+    }
+    return this.settings;
+  }
 
   async getOwnCart(userId: string) {
     const family = await this.validator.ensureFamily(userId);
@@ -1113,9 +1127,67 @@ export class OrderService {
     return valuedItems;
   }
 
+  private async resolvePolicyFromLockedAccount(
+    lockedAccount: {
+      id: string;
+      maxOrdersPerMonth: number | null;
+      maxBudgetPerOrderMinor: number | null;
+    },
+    month: string,
+  ): Promise<ResolvedOrderPolicy> {
+    const [monthlyOverride, globalSettings] = await Promise.all([
+      this.limits.findByAccountAndMonth(lockedAccount.id, month),
+      this.requireSettingsRepository().find(),
+    ]);
+    return resolveOrderPolicy(
+      {
+        id: lockedAccount.id,
+        maxOrdersPerMonth: lockedAccount.maxOrdersPerMonth ?? null,
+        maxBudgetPerOrderMinor: lockedAccount.maxBudgetPerOrderMinor ?? null,
+      },
+      monthlyOverride ? { limitMinor: monthlyOverride.limitMinor } : null,
+      globalSettings
+        ? {
+            defaultMaxOrdersPerMonth:
+              (globalSettings as { defaultMaxOrdersPerMonth?: number | null })
+                .defaultMaxOrdersPerMonth ?? null,
+            defaultMaxBudgetPerOrderMinor:
+              (
+                globalSettings as {
+                  defaultMaxBudgetPerOrderMinor?: number | null;
+                }
+              ).defaultMaxBudgetPerOrderMinor ?? null,
+            defaultMonthlyBudgetMinor:
+              (
+                globalSettings as { defaultMonthlyBudgetMinor?: number | null }
+              ).defaultMonthlyBudgetMinor ?? null,
+          }
+        : null,
+    );
+  }
+
   private async reserveRequestedBudget(order: Order, actorUserId: string) {
     const account = await this.requireBudgetAccount(order.familyProfileId);
-    await this.ensureCapacity(account, order.totalMinor);
+    const month = currentMonth();
+    const policy = await this.resolvePolicyFromLockedAccount(
+      {
+        id: account.id,
+        maxOrdersPerMonth: (account as { maxOrdersPerMonth?: number | null })
+          .maxOrdersPerMonth ?? null,
+        maxBudgetPerOrderMinor: (
+          account as { maxBudgetPerOrderMinor?: number | null }
+        ).maxBudgetPerOrderMinor ?? null,
+      },
+      month,
+    );
+    await this.ensureAvailableAndMonthlyCapacity(
+      account,
+      order.totalMinor,
+      policy,
+      month,
+    );
+    await this.ensurePerOrderCapacity(order.totalMinor, policy);
+    await this.ensureNewOrderCountCapacity(order.familyProfileId, month, policy);
     const balance = applyBudgetBalanceDelta(account, {
       availableMinor: -order.totalMinor,
       reservedMinor: order.totalMinor,
@@ -1155,7 +1227,25 @@ export class OrderService {
       if (!confirmHigherAmount) {
         HttpError.conflict("Higher purchase amount requires confirmation");
       }
-      await this.ensureCapacity(account, difference);
+      const month = currentMonth();
+      const policy = await this.resolvePolicyFromLockedAccount(
+        {
+          id: account.id,
+          maxOrdersPerMonth: (account as { maxOrdersPerMonth?: number | null })
+            .maxOrdersPerMonth ?? null,
+          maxBudgetPerOrderMinor: (
+            account as { maxBudgetPerOrderMinor?: number | null }
+          ).maxBudgetPerOrderMinor ?? null,
+        },
+        month,
+      );
+      await this.ensureAvailableAndMonthlyCapacity(
+        account,
+        difference,
+        policy,
+        month,
+      );
+      await this.ensurePerOrderCapacity(actualTotalMinor, policy);
       account = await this.applyLedgerDelta({
         account,
         delta: {
@@ -1217,7 +1307,25 @@ export class OrderService {
       if (!confirmHigherAmount) {
         HttpError.conflict("Higher replacement amount requires confirmation");
       }
-      await this.ensureCapacity(account, difference);
+      const month = currentMonth();
+      const policy = await this.resolvePolicyFromLockedAccount(
+        {
+          id: account.id,
+          maxOrdersPerMonth: (account as { maxOrdersPerMonth?: number | null })
+            .maxOrdersPerMonth ?? null,
+          maxBudgetPerOrderMinor: (
+            account as { maxBudgetPerOrderMinor?: number | null }
+          ).maxBudgetPerOrderMinor ?? null,
+        },
+        month,
+      );
+      await this.ensureAvailableAndMonthlyCapacity(
+        account,
+        difference,
+        policy,
+        month,
+      );
+      await this.ensurePerOrderCapacity(replacementTotalMinor, policy);
       account = await this.applyLedgerDelta({
         account,
         delta: { availableMinor: -difference, reservedMinor: difference },
@@ -1371,6 +1479,55 @@ export class OrderService {
     });
   }
 
+  private async ensureAvailableAndMonthlyCapacity(
+    account: {
+      id: string;
+      availableMinor: number;
+    },
+    additionalMinor: number,
+    policy: ResolvedOrderPolicy,
+    month: string,
+  ) {
+    if (account.availableMinor < additionalMinor) {
+      HttpError.conflict("Order total exceeds the available budget");
+    }
+    if (policy.monthlyLimitMinor !== null) {
+      const used = await this.ledger.monthlyOrderUsage(account.id, month);
+      if (additionalMinor > policy.monthlyLimitMinor - used) {
+        HttpError.conflict("Order total exceeds the remaining monthly limit");
+      }
+    }
+  }
+
+  private async ensurePerOrderCapacity(
+    resultingOrderTotalMinor: number,
+    policy: ResolvedOrderPolicy,
+  ) {
+    if (
+      policy.maxPerOrderMinor !== null &&
+      resultingOrderTotalMinor > policy.maxPerOrderMinor
+    ) {
+      HttpError.conflict("Order total exceeds the per-order limit");
+    }
+  }
+
+  private async ensureNewOrderCountCapacity(
+    familyProfileId: string,
+    month: string,
+    policy: ResolvedOrderPolicy,
+  ) {
+    if (policy.maxOrders === null) return;
+    const { start, nextStart } = monthBounds(month);
+    const count = await this.orders.countActiveInRange(
+      familyProfileId,
+      start,
+      nextStart,
+    );
+    if (count > policy.maxOrders) {
+      HttpError.conflict("Monthly order count limit reached");
+    }
+  }
+
   private async ensureCapacity(
     account: {
       id: string;
@@ -1378,17 +1535,25 @@ export class OrderService {
     },
     amountMinor: number,
   ) {
-    if (account.availableMinor < amountMinor) {
-      HttpError.conflict("Order total exceeds the available budget");
-    }
     const month = currentMonth();
-    const limit = await this.limits.findByAccountAndMonth(account.id, month);
-    if (limit) {
-      const used = await this.ledger.monthlyOrderUsage(account.id, month);
-      if (amountMinor > limit.limitMinor - used) {
-        HttpError.conflict("Order total exceeds the remaining monthly limit");
-      }
-    }
+    const locked = (account as {
+      maxOrdersPerMonth?: number | null;
+      maxBudgetPerOrderMinor?: number | null;
+    });
+    const policy = await this.resolvePolicyFromLockedAccount(
+      {
+        id: account.id,
+        maxOrdersPerMonth: locked.maxOrdersPerMonth ?? null,
+        maxBudgetPerOrderMinor: locked.maxBudgetPerOrderMinor ?? null,
+      },
+      month,
+    );
+    await this.ensureAvailableAndMonthlyCapacity(
+      account,
+      amountMinor,
+      policy,
+      month,
+    );
   }
 
   private async requireBudgetAccount(familyProfileId: string) {

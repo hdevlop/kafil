@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import {
+  nullableMaxOrdersPerMonthDto,
+  nullableMinorAmountDto,
+} from "../settings/settingDto";
 import { positiveMinorAmountDto, signedMinorAmountDto } from "./money";
 
 export const budgetFamilyIdParams = z.object({
@@ -25,8 +29,25 @@ export const manualBudgetAdjustmentDto = z.object({
   reason: z.string().trim().min(3).max(500),
 });
 
+export const setFamilyOrderPolicyDto = z.object({
+  maxOrdersPerMonth: nullableMaxOrdersPerMonthDto,
+  maxBudgetPerOrderMinor: nullableMinorAmountDto,
+  reason: z.string().trim().min(3).max(500),
+});
+
+export const resetMonthlyBudgetLimitDto = z.object({
+  month: z.iso.date().refine((month) => month.endsWith("-01"), {
+    message: "Month must be the first day of its month.",
+  }),
+  reason: z.string().trim().min(3).max(500),
+});
+
 export type BudgetLedgerListQuery = z.input<typeof budgetLedgerListQuery>;
 export type SetMonthlyBudgetLimitDto = z.input<typeof setMonthlyBudgetLimitDto>;
 export type ManualBudgetAdjustmentDto = z.input<
   typeof manualBudgetAdjustmentDto
+>;
+export type SetFamilyOrderPolicyDto = z.input<typeof setFamilyOrderPolicyDto>;
+export type ResetMonthlyBudgetLimitDto = z.input<
+  typeof resetMonthlyBudgetLimitDto
 >;

@@ -569,6 +569,8 @@
       "retrieved": "Budget retrieved successfully",
       "reconciled": "Budget reconciled successfully",
       "monthlyLimitUpdated": "Budget monthly limit updated successfully",
+      "monthlyLimitReset": "Budget monthly limit reset to the global default",
+      "orderPolicyUpdated": "Family order policy updated successfully",
       "adjusted": "Budget adjusted successfully"
     }
   },
@@ -1156,7 +1158,20 @@
         "inputSection": "Inputs",
         "discardTitle": "Discard unsaved changes?",
         "discardDescription": "Closing settings will discard your unsaved changes.",
-        "discard": "Discard changes"
+        "discard": "Discard changes",
+        "orderLimitsTitle": "Family order limits",
+        "orderLimitsDescription": "Nullable global defaults. Empty means unlimited.",
+        "defaultMaxOrdersLabel": "Default max orders per month",
+        "defaultMaxOrdersPlaceholder": "For example: 4",
+        "defaultMaxOrdersHelp": "Number of accepted submissions per family each UTC month. Empty means unlimited.",
+        "defaultPerOrderLabel": "Default max budget per order (MAD)",
+        "defaultPerOrderPlaceholder": "For example: 3000.00",
+        "defaultPerOrderHelp": "Maximum resulting basket total per order. Empty means unlimited.",
+        "defaultMonthlyLabel": "Default monthly budget (MAD)",
+        "defaultMonthlyPlaceholder": "For example: 6000.00",
+        "defaultMonthlyHelp": "Total monthly order usage per family. Empty means unlimited.",
+        "evenSplitHint": "≈ {amount}/order if split evenly",
+        "evenSplitRemainder": " + {remainder} remainder"
       },
       "contributions": {
         "title": "Contributions",
@@ -1516,7 +1531,11 @@
         "notRecorded": "Not recorded",
         "chooseHousingSituation": "Choose a housing situation",
         "chooseSupportPriority": "Choose a priority",
-        "childrenCanBeAddedLater": "No children added yet. Children can be added later."
+        "childrenCanBeAddedLater": "No children added yet. Children can be added later.",
+        "maxOrdersLabel": "Max orders per month (optional)",
+        "maxOrdersPlaceholder": "Global default applies when empty",
+        "maxPerOrderLabel": "Max budget per order in MAD (optional)",
+        "monthlyBudgetLabel": "Monthly budget in MAD (optional)"
       },
       "children": {
         "householdId": "Household ID",
@@ -1863,7 +1882,38 @@
         "saveLimitSuccess": "Monthly budget limit saved.",
         "saveLimitError": "Could not save the monthly budget limit.",
         "adjustmentSuccess": "Budget adjustment recorded.",
-        "adjustmentError": "Could not record the budget adjustment."
+        "adjustmentError": "Could not record the budget adjustment.",
+        "orderPolicyTitle": "Order policy",
+        "orderPolicyDescription": "Per-family overrides. Empty inherits the global default.",
+        "maxOrdersLabel": "Max orders per month",
+        "maxOrdersPlaceholder": "Global: {value}",
+        "maxOrdersHelp": "1 to 31. Empty inherits the global default.",
+        "maxPerOrderLabel": "Max budget per order (MAD)",
+        "maxPerOrderPlaceholder": "Global: {value}",
+        "maxPerOrderHelp": "Maximum resulting basket total. Empty inherits the global default.",
+        "monthlyAmountLabel": "Monthly amount (MAD)",
+        "monthlyAmountPlaceholder": "Global: {value}",
+        "effectiveLabel": "Effective",
+        "sourceFamily": "family override",
+        "sourceGlobal": "global",
+        "sourceUnlimited": "unlimited",
+        "ordersPerMonthValue": "{value}/month",
+        "reasonPlaceholder": "Why is this policy changing?",
+        "savePolicy": "Save order policy",
+        "savePolicySuccess": "Order policy saved.",
+        "savePolicyError": "Could not save the order policy.",
+        "resetMonthly": "Reset to global",
+        "resetMonthlyConfirm": "Reset this month to inherit the global default?",
+        "resetMonthlySuccess": "Monthly override reset.",
+        "resetMonthlyError": "Could not reset the monthly override.",
+        "quotaRemaining": "{remaining} of {limit} orders remaining",
+        "quotaUsed": "{used} of {limit} orders used",
+        "quotaUnlimited": "Unlimited orders",
+        "perOrderUpTo": "up to {amount}/order",
+        "denialAvailable": "Order total exceeds the available budget",
+        "denialMonthly": "Order total exceeds the remaining monthly limit",
+        "denialCount": "Monthly order count limit reached",
+        "denialPerOrder": "Order total exceeds the per-order limit"
       },
       "staff": {
         "title": "Staff",
@@ -2157,7 +2207,10 @@
         "noteLabel": "Private operational note",
         "noteDescription": "Do not enter CIN, medical details, addresses, or document information.",
         "saveSuccess": "Order created and budget reserved.",
-        "saveError": "Could not save this order."
+        "saveError": "Could not save this order.",
+        "quotaRemaining": "{remaining} of {limit} orders remaining · up to {amount}/order",
+        "quotaUnlimitedOrders": "Unlimited orders",
+        "quotaMonthly": "{used} of {limit} MAD used this month"
       }
     },
     "sponsor": {

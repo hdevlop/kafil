@@ -33,6 +33,8 @@ export const budgetAccounts = pgTable(
     reservedMinor: minorUnit("reserved_minor").default(0).notNull(),
     spentMinor: minorUnit("spent_minor").default(0).notNull(),
     version: integer("version").default(0).notNull(),
+    maxOrdersPerMonth: integer("max_orders_per_month"),
+    maxBudgetPerOrderMinor: minorUnit("max_budget_per_order_minor"),
     ...timestamps(),
   },
   (table) => [
@@ -40,6 +42,14 @@ export const budgetAccounts = pgTable(
     check(
       "budget_accounts_non_negative_check",
       sql`${table.availableMinor} >= 0 AND ${table.reservedMinor} >= 0 AND ${table.spentMinor} >= 0`,
+    ),
+    check(
+      "budget_accounts_max_orders_check",
+      sql`${table.maxOrdersPerMonth} IS NULL OR ${table.maxOrdersPerMonth} BETWEEN 1 AND 31`,
+    ),
+    check(
+      "budget_accounts_max_per_order_check",
+      sql`${table.maxBudgetPerOrderMinor} IS NULL OR ${table.maxBudgetPerOrderMinor} BETWEEN 1 AND 9007199254740991`,
     ),
   ],
 );

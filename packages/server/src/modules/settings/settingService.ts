@@ -37,12 +37,23 @@ export class SettingService {
   async update(data: UpdateSettingsDto, actorUserId: string) {
     const input = updateSettingsDto.parse(data);
     const previous = await this.settings.find();
-    const setting = await this.settings.update({
+    const patch: PlatformSettingsPatch = {
       familyFundingTargetMinor: input.familyFundingTargetMinor,
       pendingContributionExpiryHours: input.pendingContributionExpiryHours,
       formFillEnabled: input.formFillEnabled,
       updatedByUserId: actorUserId,
-    });
+    };
+    if (input.defaultMaxOrdersPerMonth !== undefined) {
+      patch.defaultMaxOrdersPerMonth = input.defaultMaxOrdersPerMonth ?? null;
+    }
+    if (input.defaultMaxBudgetPerOrderMinor !== undefined) {
+      patch.defaultMaxBudgetPerOrderMinor =
+        input.defaultMaxBudgetPerOrderMinor ?? null;
+    }
+    if (input.defaultMonthlyBudgetMinor !== undefined) {
+      patch.defaultMonthlyBudgetMinor = input.defaultMonthlyBudgetMinor ?? null;
+    }
+    const setting = await this.settings.update(patch);
     if (!setting) HttpError.notFound("Platform settings not found");
     if (
       previous &&
@@ -54,6 +65,35 @@ export class SettingService {
         metadata: {
           previousHours: previous.pendingContributionExpiryHours,
           expiryHours: input.pendingContributionExpiryHours,
+        },
+        resource: "platformSettings",
+        resourceId: PLATFORM_SETTINGS_REFERENCE,
+      });
+    }
+    const previousLimits = {
+      defaultMaxOrdersPerMonth: (previous as { defaultMaxOrdersPerMonth?: number | null } | null)?.defaultMaxOrdersPerMonth ?? null,
+      defaultMaxBudgetPerOrderMinor: (previous as { defaultMaxBudgetPerOrderMinor?: number | null } | null)?.defaultMaxBudgetPerOrderMinor ?? null,
+      defaultMonthlyBudgetMinor: (previous as { defaultMonthlyBudgetMinor?: number | null } | null)?.defaultMonthlyBudgetMinor ?? null,
+    };
+    const nextLimits = {
+      defaultMaxOrdersPerMonth: (setting as { defaultMaxOrdersPerMonth?: number | null }).defaultMaxOrdersPerMonth ?? null,
+      defaultMaxBudgetPerOrderMinor: (setting as { defaultMaxBudgetPerOrderMinor?: number | null }).defaultMaxBudgetPerOrderMinor ?? null,
+      defaultMonthlyBudgetMinor: (setting as { defaultMonthlyBudgetMinor?: number | null }).defaultMonthlyBudgetMinor ?? null,
+    };
+    if (
+      previous &&
+      (previousLimits.defaultMaxOrdersPerMonth !== nextLimits.defaultMaxOrdersPerMonth ||
+        previousLimits.defaultMaxBudgetPerOrderMinor !==
+          nextLimits.defaultMaxBudgetPerOrderMinor ||
+        previousLimits.defaultMonthlyBudgetMinor !==
+          nextLimits.defaultMonthlyBudgetMinor)
+    ) {
+      await this.audits.record({
+        action: "settings.orderLimitsUpdated",
+        actorUserId,
+        metadata: {
+          previous: previousLimits,
+          updated: nextLimits,
         },
         resource: "platformSettings",
         resourceId: PLATFORM_SETTINGS_REFERENCE,

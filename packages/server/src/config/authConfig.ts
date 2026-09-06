@@ -92,6 +92,7 @@ export const authConfig = () => {
   const infrastructure = authInfrastructureConfig();
 
   return auth({
+    appName: "Kafil",
     cache: infrastructure.cache,
     defaultRole: "sponsor",
     dialect: "pg",

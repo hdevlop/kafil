@@ -55,6 +55,8 @@ import {
   FailDeliveryDialogContent,
   PurchaseOrderDialogLoader,
 } from "./OrderWorkflowForms";
+import { FamilyQuotaText } from "@/features/Budgets/components/QuotaText";
+import { useOwnFamilyBudgetSummary } from "@/features/Budgets/hooks/useFamilyBudget";
 import { useOrdersWorkspace } from "../hooks/useOrdersWorkspace";
 import { useOrderCommands } from "../hooks/useOrders";
 import { useOrdersTableFilters } from "../hooks/useOrdersTableFilters";
@@ -494,6 +496,10 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
     ? orders.find((o) => o.id === viewOrderId) ?? null
     : null;
 
+  const familyBudget = useOwnFamilyBudgetSummary({
+    enabled: isExactFamily,
+  });
+
   return (
     <NPageLayout className="flex h-full min-h-0 flex-col gap-4">
       <NPageHeader
@@ -502,6 +508,16 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
         subtitle={headerSubtitle}
         actions={<PageHeaderGlobalActions />}
       />
+      {isExactFamily && familyBudget.data ? (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          <FamilyQuotaText
+            ordersUsed={familyBudget.data.ordersUsed}
+            ordersLimit={familyBudget.data.ordersLimit}
+            ordersRemaining={familyBudget.data.ordersRemaining}
+            maxPerOrderMinor={familyBudget.data.maxPerOrderMinor}
+          />
+        </p>
+      ) : null}
 
       <div className="min-h-0 flex-1">
         <NTable {...tableProps} />

@@ -65,6 +65,8 @@ describe("Phase 3 budget route boundaries", () => {
       "listLedger",
       "reconcile",
       "setMonthlyLimit",
+      "resetMonthlyLimit",
+      "setOrderPolicy",
       "adjust",
     ]);
     expect(
@@ -268,8 +270,14 @@ describe("Phase 3 budget mutation workflow", () => {
   it("records a monthly limit with operator identity and a required reason", async () => {
     const limits: Record<string, unknown>[] = [];
     const audits: Record<string, unknown>[] = [];
+    let locks = 0;
     const service = new BudgetService(
-      {} as BudgetAccountRepository,
+      {
+        lockByFamilyId: async () => {
+          locks += 1;
+          return accountRecord();
+        },
+      } as unknown as BudgetAccountRepository,
       {} as BudgetLedgerRepository,
       {
         set: async (input: Record<string, unknown>) => {
@@ -284,9 +292,7 @@ describe("Phase 3 budget mutation workflow", () => {
           return event;
         },
       } as unknown as AuditService,
-      {
-        ensureAccountForFamily: async () => accountRecord(),
-      } as unknown as BudgetValidator,
+      {} as BudgetValidator,
       {} as FundingService,
     );
 
@@ -315,6 +321,56 @@ describe("Phase 3 budget mutation workflow", () => {
         resource: "monthlyBudgetLimits",
       }),
     ]);
+    expect(locks).toBe(1);
+  });
+
+  it("locks the budget account before an idempotent monthly reset", async () => {
+    const calls: string[] = [];
+    const service = new BudgetService(
+      {
+        lockByFamilyId: async () => {
+          calls.push("lock");
+          return accountRecord();
+        },
+      } as unknown as BudgetAccountRepository,
+      {} as BudgetLedgerRepository,
+      {
+        reset: async () => {
+          calls.push("reset");
+          return null;
+        },
+        findByAccountAndMonth: async () => null,
+      } as unknown as MonthlyBudgetLimitRepository,
+      {} as FamilyRepository,
+      {
+        record: async () => {
+          calls.push("audit");
+          return {} as never;
+        },
+      } as unknown as AuditService,
+      {} as BudgetValidator,
+      {} as FundingService,
+      {
+        find: async () => ({
+          defaultMaxOrdersPerMonth: 4,
+          defaultMaxBudgetPerOrderMinor: 300_000,
+          defaultMonthlyBudgetMinor: 600_000,
+        }),
+      } as never,
+    );
+
+    const result = await service.resetMonthlyLimit(
+      householdId,
+      { month: "2026-08-01", reason: "Return to the global policy" },
+      "operator-user",
+    );
+
+    expect(calls).toEqual(["lock", "reset", "audit"]);
+    expect(result).toMatchObject({
+      removed: false,
+      effectiveMonthlyLimitMinor: 600_000,
+      source: "global",
+    });
   });
 });
 

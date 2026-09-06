@@ -12,4 +12,11 @@ export interface FamilyBudgetSummary {
   spentMinor: number;
   monthlyLimit: FamilyMonthlyBudgetLimit | null;
   funding: FamilyFundingProgress;
+  month?: string;
+  monthlyUsedMinor?: number;
+  monthlyLimitMinor?: number | null;
+  ordersUsed?: number;
+  ordersLimit?: number | null;
+  ordersRemaining?: number | null;
+  maxPerOrderMinor?: number | null;
 }

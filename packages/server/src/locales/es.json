@@ -550,7 +550,9 @@
       "retrieved": "Presupuesto : recuperado correctamente",
       "reconciled": "Presupuesto : operaci?n realizada correctamente",
       "monthlyLimitUpdated": "Presupuesto : operaci?n realizada correctamente",
-      "adjusted": "Presupuesto : operaci?n realizada correctamente"
+      "adjusted": "Presupuesto : operaci?n realizada correctamente",
+      "monthlyLimitReset": "Límite mensual restablecido al valor global",
+      "orderPolicyUpdated": "Política de pedidos actualizada correctamente"
     }
   },
   "ui": {
@@ -1116,7 +1118,20 @@
         "inputSection": "Campos",
         "discardTitle": "¿Descartar cambios sin guardar?",
         "discardDescription": "Al cerrar los ajustes se descartarán los cambios sin guardar.",
-        "discard": "Descartar cambios"
+        "discard": "Descartar cambios",
+        "orderLimitsTitle": "Límites de pedidos familiares",
+        "orderLimitsDescription": "Valores globales por defecto. Vacío significa ilimitado.",
+        "defaultMaxOrdersLabel": "Máx. pedidos por mes por defecto",
+        "defaultMaxOrdersPlaceholder": "Por ejemplo: 4",
+        "defaultMaxOrdersHelp": "Número de envíos aceptados por familia cada mes UTC. Vacío significa ilimitado.",
+        "defaultPerOrderLabel": "Presupuesto máx. por pedido por defecto (MAD)",
+        "defaultPerOrderPlaceholder": "Por ejemplo: 3000.00",
+        "defaultPerOrderHelp": "Total máximo de la cesta por pedido. Vacío significa ilimitado.",
+        "defaultMonthlyLabel": "Presupuesto mensual por defecto (MAD)",
+        "defaultMonthlyPlaceholder": "Por ejemplo: 6000.00",
+        "defaultMonthlyHelp": "Uso mensual total por familia. Vacío significa ilimitado.",
+        "evenSplitHint": "≈ {amount}/pedido si se reparte por igual",
+        "evenSplitRemainder": " + {remainder} restantes"
       },
       "contributions": {
         "title": "Contribuciones",
@@ -1451,7 +1466,11 @@
         "notRecorded": "No registrado",
         "chooseHousingSituation": "Elige una situación de vivienda",
         "chooseSupportPriority": "Elige una prioridad",
-        "childrenCanBeAddedLater": "Aún no se han añadido hijos. Se pueden añadir más adelante."
+        "childrenCanBeAddedLater": "Aún no se han añadido hijos. Se pueden añadir más adelante.",
+        "maxOrdersLabel": "Máx. pedidos por mes (opcional)",
+        "maxOrdersPlaceholder": "Se aplica el valor global si está vacío",
+        "maxPerOrderLabel": "Presupuesto máx. por pedido en MAD (opcional)",
+        "monthlyBudgetLabel": "Presupuesto mensual en MAD (opcional)"
       },
       "children": {
         "householdId": "Identificador del hogar",
@@ -1890,6 +1909,39 @@
         "saveProduct": "Guardar producto",
         "deleting": "Eliminando...",
         "deleteProduct": "Eliminar el producto permanentemente"
+      },
+      "budgets": {
+        "orderPolicyTitle": "Política de pedidos",
+        "orderPolicyDescription": "Excepciones por familia. Vacío hereda el global.",
+        "maxOrdersLabel": "Máx. pedidos por mes",
+        "maxOrdersPlaceholder": "Valor global: {value}",
+        "maxOrdersHelp": "1 a 31. Vacío hereda el global.",
+        "maxPerOrderLabel": "Presupuesto máx. por pedido (MAD)",
+        "maxPerOrderPlaceholder": "Valor global: {value}",
+        "maxPerOrderHelp": "Total máximo de la cesta. Vacío hereda el global.",
+        "monthlyAmountLabel": "Importe mensual (MAD)",
+        "monthlyAmountPlaceholder": "Valor global: {value}",
+        "effectiveLabel": "Efectivo",
+        "sourceFamily": "excepción familiar",
+        "sourceGlobal": "valor global",
+        "sourceUnlimited": "ilimitado",
+        "ordersPerMonthValue": "{value}/mes",
+        "reasonPlaceholder": "¿Por qué cambia esta política?",
+        "savePolicy": "Guardar política",
+        "savePolicySuccess": "Política guardada.",
+        "savePolicyError": "No se pudo guardar la política.",
+        "resetMonthly": "Restablecer al global",
+        "resetMonthlyConfirm": "¿Restablecer este mes para heredar el global?",
+        "resetMonthlySuccess": "Excepción mensual restablecida.",
+        "resetMonthlyError": "No se pudo restablecer.",
+        "quotaRemaining": "{remaining} de {limit} pedidos restantes",
+        "quotaUsed": "{used} de {limit} pedidos usados",
+        "quotaUnlimited": "Pedidos ilimitados",
+        "perOrderUpTo": "hasta {amount}/pedido",
+        "denialAvailable": "El total supera el presupuesto disponible",
+        "denialMonthly": "El total supera el límite mensual restante",
+        "denialCount": "Límite mensual de pedidos alcanzado",
+        "denialPerOrder": "El total supera el límite por pedido"
       }
     },
     "family": {
@@ -1990,7 +2042,10 @@
         "noteLabel": "Nota operativa privada",
         "noteDescription": "No introduzcas el CIN, datos médicos, direcciones ni información de documentos.",
         "saveSuccess": "Pedido creado y presupuesto reservado.",
-        "saveError": "No se pudo guardar este pedido."
+        "saveError": "No se pudo guardar este pedido.",
+        "quotaRemaining": "{remaining} de {limit} pedidos restantes · hasta {amount}/pedido",
+        "quotaUnlimitedOrders": "Pedidos ilimitados",
+        "quotaMonthly": "{used} de {limit} MAD usados este mes"
       }
     },
     "sponsor": {

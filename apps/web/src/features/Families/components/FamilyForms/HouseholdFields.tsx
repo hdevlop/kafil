@@ -84,6 +84,30 @@ export function FamilyHouseholdFields({
           required
         />
         <FormInput
+          name="maxOrdersPerMonthInput"
+          type="text"
+          formLabel={t("operator.families.maxOrdersLabel")}
+          placeholder={t("operator.families.maxOrdersPlaceholder")}
+          icon="Hash"
+          disabled={disabled}
+        />
+        <FormInput
+          name="maxBudgetPerOrderMadInput"
+          type="text"
+          formLabel={t("operator.families.maxPerOrderLabel")}
+          placeholder={t("operator.families.targetExample")}
+          icon="CircleDollarSign"
+          disabled={disabled}
+        />
+        <FormInput
+          name="monthlyBudgetMadInput"
+          type="text"
+          formLabel={t("operator.families.monthlyBudgetLabel")}
+          placeholder={t("operator.families.targetExample")}
+          icon="CircleDollarSign"
+          disabled={disabled}
+        />
+        <FormInput
           name="notes"
           type="textarea"
           formLabel={t("operator.families.familyNotes")}

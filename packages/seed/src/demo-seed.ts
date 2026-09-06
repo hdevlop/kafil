@@ -30,6 +30,10 @@ import type {
   DemoSupportAssignment,
 } from "./scripts/demo/generator";
 import { rebuildDemoBudgetSnapshots } from "./demo-budget";
+import {
+  seedDemoOrderLimits,
+  verifyDemoOrderLimits,
+} from "./demo-order-limits";
 import { familyIntakeNeedsRepair } from "./scripts/demo/familyRepair";
 
 type DemoKind = "family" | "operator" | "sponsor";
@@ -137,7 +141,12 @@ export async function seedDemoData(
     expiresAt,
   );
   await rebuildDemoBudgetSnapshots(data.families.map((family) => family.id));
+  await seedDemoOrderLimits({
+    demoOperatorUserId: data.operators[0]?.userId ?? actorUserId,
+    demoFamilyIds: data.families.map((family) => family.id),
+  });
   await verifyDemoData(identities, data.families, data.contributions, assignments);
+  await verifyDemoOrderLimits(data.families.map((family) => family.id));
   await verifyDemoDeliveries(data.deliveries);
   return summary;
 }

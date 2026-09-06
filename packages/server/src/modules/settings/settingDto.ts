@@ -12,10 +12,23 @@ export const pendingContributionExpiryHoursDto = z.coerce
   .min(MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS)
   .max(MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS);
 
+export const maxOrdersPerMonthDto = z.coerce
+  .number()
+  .int()
+  .min(1)
+  .max(31);
+
+export const nullableMaxOrdersPerMonthDto = maxOrdersPerMonthDto.nullish();
+
+export const nullableMinorAmountDto = positiveMinorAmountDto.nullish();
+
 export const updateSettingsDto = z.object({
   familyFundingTargetMinor: positiveMinorAmountDto,
   pendingContributionExpiryHours: pendingContributionExpiryHoursDto,
   formFillEnabled: z.boolean(),
+  defaultMaxOrdersPerMonth: nullableMaxOrdersPerMonthDto,
+  defaultMaxBudgetPerOrderMinor: nullableMinorAmountDto,
+  defaultMonthlyBudgetMinor: nullableMinorAmountDto,
 });
 
 export type UpdateSettingsDto = z.input<typeof updateSettingsDto>;

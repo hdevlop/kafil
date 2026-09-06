@@ -66,6 +66,9 @@ export interface CreateFamilyInput {
   supportPriority: FamilySupportPriority;
   phone: string;
   fundingTargetMinor: number;
+  maxOrdersPerMonth?: number | null;
+  maxBudgetPerOrderMinor?: number | null;
+  monthlyBudgetMinor?: number | null;
   initialChildren: InitialChildInput[];
   relationshipToChildren?: string | null;
   notes?: string | null;

@@ -113,6 +113,8 @@ describe("Kafil server", () => {
       "budgets_get_summary",
       "budgets_list_ledger",
       "budgets_set_monthly_limit",
+      "budgets_reset_monthly_limit",
+      "budgets_set_order_policy",
       "budgets_adjust",
       "budgets_reconcile",
       "catalog_list_active_categories",

@@ -471,6 +471,25 @@ export class OrderRepository {
     await this.db.delete(orders).where(eq(orders.id, id));
     return order;
   }
+
+  async countActiveInRange(
+    familyProfileId: string,
+    monthStartUtc: Date,
+    nextMonthStartUtc: Date,
+  ) {
+    const [row] = await this.db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.familyProfileId, familyProfileId),
+          gte(orders.createdAt, monthStartUtc),
+          sql`${orders.createdAt} < ${nextMonthStartUtc}`,
+          sql`${orders.status} NOT IN ('cancelled', 'rejected')`,
+        ),
+      );
+    return row?.total ?? 0;
+  }
 }
 
 @Repository("default")

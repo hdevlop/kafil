@@ -99,6 +99,31 @@ export class BudgetAccountRepository {
       .returning();
     return account;
   }
+
+  async updatePolicy(
+    id: string,
+    policy: {
+      maxOrdersPerMonth?: number | null;
+      maxBudgetPerOrderMinor?: number | null;
+    },
+  ) {
+    const patch: Record<string, unknown> = {
+      version: sql`${budgetAccounts.version} + 1`,
+      updatedAt: new Date(),
+    };
+    if (policy.maxOrdersPerMonth !== undefined) {
+      patch["maxOrdersPerMonth"] = policy.maxOrdersPerMonth;
+    }
+    if (policy.maxBudgetPerOrderMinor !== undefined) {
+      patch["maxBudgetPerOrderMinor"] = policy.maxBudgetPerOrderMinor;
+    }
+    const [account] = await this.db
+      .update(budgetAccounts)
+      .set(patch as typeof budgetAccounts.$inferInsert)
+      .where(eq(budgetAccounts.id, id))
+      .returning();
+    return account;
+  }
 }
 
 @Repository("default")
@@ -428,5 +453,15 @@ export class MonthlyBudgetLimitRepository {
       })
       .returning();
     return limit as MonthlyBudgetLimit;
+  }
+
+  async reset(input: { budgetAccountId: string; month: string }) {
+    const [deleted] = await this.db
+      .delete(monthlyBudgetLimits)
+      .where(
+        sql`${monthlyBudgetLimits.budgetAccountId} = ${input.budgetAccountId} AND ${monthlyBudgetLimits.month} = ${input.month}`,
+      )
+      .returning({ id: monthlyBudgetLimits.id });
+    return deleted ?? null;
   }
 }

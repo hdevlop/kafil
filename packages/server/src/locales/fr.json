@@ -556,7 +556,9 @@
       "retrieved": "Budget : r?cup?r? avec succ?s",
       "reconciled": "Budget : op?ration effectu?e avec succ?s",
       "monthlyLimitUpdated": "Budget : op?ration effectu?e avec succ?s",
-      "adjusted": "Budget : op?ration effectu?e avec succ?s"
+      "adjusted": "Budget : op?ration effectu?e avec succ?s",
+      "monthlyLimitReset": "Limite mensuelle réinitialisée vers la valeur globale",
+      "orderPolicyUpdated": "Politique de commandes mise à jour avec succès"
     }
   },
   "ui": {
@@ -1142,7 +1144,20 @@
         "inputSection": "Champs",
         "discardTitle": "Ignorer les modifications non enregistrées ?",
         "discardDescription": "La fermeture des paramètres annulera vos modifications non enregistrées.",
-        "discard": "Ignorer les modifications"
+        "discard": "Ignorer les modifications",
+        "orderLimitsTitle": "Limites de commandes familiales",
+        "orderLimitsDescription": "Valeurs globales par défaut. Vide signifie illimité.",
+        "defaultMaxOrdersLabel": "Max. commandes par mois par défaut",
+        "defaultMaxOrdersPlaceholder": "Par exemple : 4",
+        "defaultMaxOrdersHelp": "Nombre de soumissions acceptées par famille chaque mois UTC. Vide signifie illimité.",
+        "defaultPerOrderLabel": "Budget max par commande par défaut (MAD)",
+        "defaultPerOrderPlaceholder": "Par exemple : 3000.00",
+        "defaultPerOrderHelp": "Total maximum du panier par commande. Vide signifie illimité.",
+        "defaultMonthlyLabel": "Budget mensuel par défaut (MAD)",
+        "defaultMonthlyPlaceholder": "Par exemple : 6000.00",
+        "defaultMonthlyHelp": "Utilisation mensuelle totale par famille. Vide signifie illimité.",
+        "evenSplitHint": "≈ {amount}/commande si réparti également",
+        "evenSplitRemainder": " + {remainder} de reste"
       },
       "contributions": {
         "title": "Contributions",
@@ -1477,7 +1492,11 @@
         "notRecorded": "Non renseigné",
         "chooseHousingSituation": "Choisir une situation de logement",
         "chooseSupportPriority": "Choisir une priorité",
-        "childrenCanBeAddedLater": "Aucun enfant ajouté. Des enfants pourront être ajoutés plus tard."
+        "childrenCanBeAddedLater": "Aucun enfant ajouté. Des enfants pourront être ajoutés plus tard.",
+        "maxOrdersLabel": "Max commandes par mois (optionnel)",
+        "maxOrdersPlaceholder": "La valeur globale s’applique si vide",
+        "maxPerOrderLabel": "Budget max par commande en MAD (optionnel)",
+        "monthlyBudgetLabel": "Budget mensuel en MAD (optionnel)"
       },
       "children": {
         "householdId": "Identifiant du foyer",
@@ -1817,7 +1836,38 @@
         "saveLimitSuccess": "Limite budgétaire mensuelle enregistrée.",
         "saveLimitError": "Impossible d'enregistrer la limite budgétaire mensuelle.",
         "adjustmentSuccess": "Ajustement budgétaire enregistré.",
-        "adjustmentError": "Impossible d'enregistrer l'ajustement budgétaire."
+        "adjustmentError": "Impossible d'enregistrer l'ajustement budgétaire.",
+        "orderPolicyTitle": "Politique de commandes",
+        "orderPolicyDescription": "Dérogations par famille. Vide hérite du global.",
+        "maxOrdersLabel": "Max commandes par mois",
+        "maxOrdersPlaceholder": "Global : {value}",
+        "maxOrdersHelp": "1 à 31. Vide hérite du global.",
+        "maxPerOrderLabel": "Budget max par commande (MAD)",
+        "maxPerOrderPlaceholder": "Global : {value}",
+        "maxPerOrderHelp": "Total maximum du panier. Vide hérite du global.",
+        "monthlyAmountLabel": "Montant mensuel (MAD)",
+        "monthlyAmountPlaceholder": "Global : {value}",
+        "effectiveLabel": "Effectif",
+        "sourceFamily": "dérogation famille",
+        "sourceGlobal": "globale",
+        "sourceUnlimited": "illimité",
+        "ordersPerMonthValue": "{value}/mois",
+        "reasonPlaceholder": "Pourquoi cette politique change-t-elle ?",
+        "savePolicy": "Enregistrer la politique",
+        "savePolicySuccess": "Politique enregistrée.",
+        "savePolicyError": "Impossible d’enregistrer la politique.",
+        "resetMonthly": "Réinitialiser au global",
+        "resetMonthlyConfirm": "Réinitialiser ce mois pour hériter du global ?",
+        "resetMonthlySuccess": "Dérogation mensuelle réinitialisée.",
+        "resetMonthlyError": "Impossible de réinitialiser.",
+        "quotaRemaining": "{remaining} sur {limit} commandes restantes",
+        "quotaUsed": "{used} sur {limit} commandes utilisées",
+        "quotaUnlimited": "Commandes illimitées",
+        "perOrderUpTo": "jusqu’à {amount}/commande",
+        "denialAvailable": "Le total dépasse le budget disponible",
+        "denialMonthly": "Le total dépasse la limite mensuelle restante",
+        "denialCount": "Limite mensuelle du nombre de commandes atteinte",
+        "denialPerOrder": "Le total dépasse la limite par commande"
       },
       "staff": {
         "title": "Personnel",
@@ -2086,7 +2136,10 @@
         "noteLabel": "Note opérationnelle privée",
         "noteDescription": "Ne saisissez pas de CIN, détails médicaux, adresses ou informations sur des documents.",
         "saveSuccess": "Commande créée et budget réservé.",
-        "saveError": "Impossible d’enregistrer cette commande."
+        "saveError": "Impossible d’enregistrer cette commande.",
+        "quotaRemaining": "{remaining} sur {limit} commandes restantes · jusqu’à {amount}/commande",
+        "quotaUnlimitedOrders": "Commandes illimitées",
+        "quotaMonthly": "{used} sur {limit} MAD utilisés ce mois"
       }
     },
     "sponsor": {
