@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **BASELINE COMPLETE - THE RECORDED 18-TEST REMOTE ATTEMPT PASSED ON 2026-09-04; THE CURRENT 20-TEST SELECTION INCLUDES THE LATER UPLOAD/CSP UNITS AND THE FAMILY ORDER-LIMIT EXTENSION, AND AWAITS A FRESHLY AUTHORIZED REMOTE ATTEMPT; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`**
+Status: **COMPLETE - THE AUTHORIZED 20-TEST REMOTE ATTEMPT PASSED ON 2026-09-06 WITH NATIVE EXIT `0` ON CONFIRMED CONTAINER REVISION `adee9c9d`; UPLOAD, CSP, ALL 16 NUMBERED STEPS, RESPONSIVE, SUPPORTED CLEANUP, AND DIAGNOSTICS ARE BROWSER-PROVEN; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`**
 
 Target: exactly `https://kafala360.ma`
 
@@ -44,20 +44,20 @@ Not verified without database access:
 
 ## 2. Current checkpoint
 
-The authoritative checkpoint is section 11.16, the most recent complete 18-test
-attempt whose deployed container revision was actually confirmed:
-`1a30370d`.
+The authoritative checkpoint is section 11.19, the authorized complete 20-test
+attempt that passed on 2026-09-06 with native exit `0` on the value-free
+confirmed container revision `adee9c9d` (`adee9c9d5c0276e3871ace6c142f6f1a229e4aac`).
 
-Section 11.17 records a later complete 18-test baseline attempt that passed on
-2026-09-04 with native exit `0`. It is supplemental, not authoritative. It did
-not repeat the value-free container revision check, so the running container's
-revision is `NOT CONFIRMED` and its deployment-revision acceptance is
-outstanding. Its command and work-unit results stand on their own; its claim
-about which revision was exercised does not. Promotion to authoritative
-requires a confirmed container revision, not a further passing run. Section
-11.18 records the locally implemented Family order-limit extension. Those new
-assertions have no production-browser verdict until the entire current 20-test
-journey passes again under a fresh remote-run instruction.
+Section 11.16 records the earlier authoritative complete 18-test attempt on
+confirmed revision `1a30370d`; it is superseded but remains historical
+evidence. Section 11.17 records a later complete 18-test baseline attempt that
+passed on 2026-09-04 with native exit `0`. It is supplemental, not
+authoritative. It did not repeat the value-free container revision check, so
+the running container's revision is `NOT CONFIRMED` for that attempt and its
+deployment-revision acceptance is outstanding. Its command and work-unit
+results stand on their own; its claim about which revision was exercised does
+not. Section 11.18 records the Family order-limit extension implementation;
+section 11.19 supplies its production-browser verdict.
 
 Sections 11.1-11.15 and the rest of this section are historical evidence
 leading to the current checkpoint and are not the current state.
@@ -2243,3 +2243,149 @@ unfiltered 20-test remote attempt against a confirmed healthy revision; the
 runner must stop and classify after that attempt whether it passes or fails.
 Database concurrency and constraint guarantees remain owned by the opt-in
 PostgreSQL suite and are not claimed by this black-box plan.
+
+### 11.19 Authorized complete 20-test remote attempt (2026-09-06)
+
+A fresh user instruction authorized exactly one complete unfiltered guarded
+production attempt. It passed. No local/dev Playwright ran under this
+authorization, and the browser journey was not repeated afterward.
+
+Source verification (before commit, value-free):
+
+- `bun run --cwd apps/web test test/connected-four-account-remote-runner.test.ts`:
+  `22 pass, 0 fail, 498 expect() calls`;
+- `bun run check` (lint, typecheck, test, build): green — web `370 passed`,
+  server `357 passed` with `59` opt-in database integrations skipped, seed
+  `88 passed`, production build green;
+- `bun run db:generate`: `No schema changes, nothing to migrate`;
+- `git diff --check`: clean; value-free secret/scope audit of the three
+  acceptance files: zero sensitive-pattern matches; no untracked files;
+- connected spec declares exactly 20 tests: 16 numbered steps plus upload,
+  CSP, responsive, and diagnostics. The Family order-limit coverage adds
+  assertions inside steps 02, 07, and 08 and adds no test title.
+
+Publication:
+
+- committed only the three acceptance files as
+  `adee9c9d5c0276e3871ace6c142f6f1a229e4aac` with message
+  `test(e2e): connected four-account 20-test selection with family
+  order-limit coverage`; two unrelated Sponsor responsive-layout files were
+  left uncommitted and preserved;
+- pushed `0ceb0b5..adee9c9` to `origin/main`;
+- GitHub Actions run `34046517949` (`Verify, publish, and deploy demo`):
+  Verify passed in `2m20s`, Build and publish image passed in `2m27s`, Deploy
+  through Dokploy passed in `3s` with
+  `{"message":"Compose deployed successfully"}`. The webhook response alone
+  was not treated as deployment proof.
+
+Deployed-revision confirmation (value-free, no values printed):
+
+- running container `kafil-demo-vdadlv-app-1`: `Up healthy`, inspect
+  `healthy`/`running`, created `2026-09-06T16:53:07Z`, after the
+  `16:46:27Z` push and the `16:49:15Z` image build;
+- its `org.opencontainers.image.revision` label is exactly the pushed commit
+  `adee9c9d5c0276e3871ace6c142f6f1a229e4aac`. Tested commit SHA and confirmed
+  container SHA are therefore identical;
+- `kafil-demo-vdadlv-migrate-1` and `kafil-demo-vdadlv-storage-init-1` both
+  `Exited (0)`; redis, postgres, and the retained legacy Mailpit all
+  `healthy`;
+- public `GET /login` `200`, `GET /apply` `200`,
+  `GET /api/system/health` `200` (`status: ok`),
+  `GET /api/system/readiness` `200` with `checks.cache: ok` and
+  `checks.database: ok`;
+- ignored root `.env` carries all seven required remote names (presence and
+  lengths only, exact-URL/destructive/token-strength booleans true) and none
+  of the nine retired SSH/Tailscale/local-forward names;
+- the Windows OpenSSH host config pins a `RemoteCommand` for the VPS address,
+  which rejects any command-line remote command; read-only `docker` checks
+  used `-o RemoteCommand=none` and printed no secret or identity value.
+
+Production browser command (the single authorized attempt):
+
+```powershell
+Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
+bun run --cwd apps/web test:e2e:connected:remote
+```
+
+- guarded preflight: all seven booleans plus system Chrome, app-scoped HTTPS
+  mail-test gateway, `/login`, `/apply`, health, and readiness passed;
+- Playwright header: `Running 20 tests using 1 worker`, zero retries;
+  `playwright.remote.config.ts` retains `retries: 0`, `workers: 1`,
+  screenshot/trace/video `off`, and `webServer: undefined`, so no local
+  Next.js server launched;
+- runner reported `NO MANAGED MAILBOX TRANSPORT`; it started and stopped no
+  SSH, Tailscale, Docker, Mailpit, or forwarding lifecycle;
+- terminal: `20 passed (2.9m)`, native exit `0`.
+
+Per-unit verdict (all `PASS`, serial order, no unit `NOT RUN`):
+
+| Unit | Result and duration |
+| --- | --- |
+| remote upload - generated product image round trip and cleanup | PASS (`5.8s`) |
+| remote CSP matrix - authenticated routes, locales, branding, PWA, and hydration | PASS (`23.5s`) |
+| remote step 01 - guarded admin smoke | PASS (`5.0s`) |
+| remote step 02 - Family provisioning and first login (explicit `2`-orders/month cap, monthly budget, operator source projection, Family effective-only projection, per-order fallback) | PASS (`20.8s`) |
+| remote step 03 - Sponsor A application and approval | PASS (`18.1s`) |
+| remote step 04 - Sponsor B application and approval | PASS (`15.7s`) |
+| remote step 05 - assignments and sponsor privacy | PASS (`22.5s`) |
+| remote step 06 - contributions and exact funding | PASS (`18.9s`) |
+| remote step 07 - delivery staff and reversible orders (count-limit and monthly-limit `409` denials, no denied-command side effects, slot recovery after cancellation/rejection) | PASS (`24.2s`) |
+| remote step 08 - purchase and delivery lifecycle (resulting-total per-order `409` denial with no mutation, then success after raising the ceiling) | PASS (`5.6s`) |
+| remote step 09 - Family order projection | PASS (`185ms`) |
+| remote step 10 - Sponsor A order privacy | PASS (`273ms`) |
+| remote step 11 - Sponsor B order privacy | PASS (`191ms`) |
+| remote step 12 - Admin order projection | PASS (`142ms`) |
+| remote step 13 - Family delivery assignment denial (one exact `401`) | PASS (`86ms`) |
+| remote step 14 - Sponsor A approval denial (one exact `401`) | PASS (`173ms`) |
+| remote step 15 - Sponsor B delivery confirmation denial (one exact `401`) | PASS (`82ms`) |
+| remote responsive - phone, tablet, RTL, keyboard, and protected images | PASS (`6.7s`) |
+| remote step 16 - supported cleanup, role logout, and closure | PASS (`5.8s`) |
+| remote diagnostics - final context assertions | PASS (`46ms`) |
+
+Cleanup and sanitized artifact audit:
+
+- step 16 passed: supported deletion of the disposable Family graph, two
+  evidence files, two Staff profiles, two approved applicants, and
+  exact-recipient mailbox messages; all four roles completed real logout with
+  recognized auth cookies absent and pages closed;
+- diagnostics passed: counts-only cleanup summary with zero retained
+  API-visible runtime rows, evidence files, and mailbox messages; every
+  attached context had empty unexpected page-error, console-error,
+  failed-request, and unexplained-response collections; all expected negative
+  `401`/`404`/`409` responses were consumed exactly once; there were no
+  unexpected HTTP errors;
+- sole retained artifact is the value-free
+  `apps/web/test-results/connected-four-account-remote/.last-run.json`
+  marker with `status: passed` and an empty `failedTests` array; zero
+  screenshot, video, trace, or error-context files were written;
+- value-free scan of the retained marker: zero matches across email-address,
+  bearer/JWT, Moroccan-phone, six-digit-OTP, and credential-word patterns;
+  the run transcript contains only test titles, durations, and the
+  `NO MANAGED MAILBOX TRANSPORT` postcondition — no environment values,
+  credentials, OTPs, tokens, emails, phone numbers, or sensitive response
+  data.
+
+Three verdicts:
+
+1. **Command result** — `20 passed (2.9m)`, native exit `0`, transport
+   postcondition `NO MANAGED MAILBOX TRANSPORT` reported.
+2. **Work-unit result** — all 20 declared units `PASS`, each traceable to the
+   assertions above, including the Family order-limit denials and recovery in
+   steps 02, 07, and 08.
+3. **Plan result** — every browser condition in section 10 is satisfied again
+   on the confirmed revision, now with upload, CSP, responsive, supported
+   cleanup, and the order-limit extension browser-proven.
+
+Browser-proven versus database-only boundary:
+
+- browser-proven: deployed UI/API behavior; role and ownership boundaries;
+  sponsor-safe projections; visible/API integer-minor aggregates; effective
+  Family order-count/per-order/monthly-budget projections; exact `409`
+  denials with no denied-command side effects and slot recovery; order,
+  purchase, and delivery lifecycle; real logout, cookie removal, diagnostics,
+  and mailbox-transport isolation;
+- explicitly `NOT VERIFIED` by this black-box journey: physical row counts or
+  uniqueness constraints; password hashes or seed idempotency; transaction
+  locks and append-only storage; audit/outbox payloads; migration state on
+  the VPS. Those guarantees remain owned by the opt-in PostgreSQL suite and
+  server tests, not claimed here.
