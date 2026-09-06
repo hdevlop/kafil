@@ -1,6 +1,6 @@
-# Family order limits plan (v2 — per-family with global default)
+# Family order limits plan (v3 — per-family with global default)
 
-Status: **DRAFT - not implemented**
+Status: **DRAFT - not implemented (v3: roles clarified with walkthrough)**
 
 This is a task-specific root plan. It does not replace any other plan and
 claims no project-wide phase status. There is no root `PLAN.md`.
@@ -16,13 +16,16 @@ effective = familyOverride ?? globalDefault ?? unlimited (null)
 
 Control family purchase pace with three AND-combined caps:
 
-- `monthlyLimitMinor` (MAD/month, existing per-family, kept) — spend ceiling.
-- `maxOrdersPerMonth` (count/month, NEW) — logistics/anti-abuse throttle.
-- `maxBudgetPerOrderMinor` (MAD/order, NEW) — single-basket cap.
+- `monthlyLimitMinor` (MAD/month, existing per-family, kept) — how much total.
+- `maxOrdersPerMonth` (count/month, NEW) — how many trips.
+- `maxBudgetPerOrderMinor` (MAD/order, NEW) — biggest single basket
+  (abuse/risk ceiling, set ~50-60% of monthly, NOT at the average).
 
-Example: monthly 6,000 + 3 orders + 3,000/order allows
-2,800 + 2,200 + 900, blocks a 4th order by count even with 100 left.
-Derived `monthly / count ≈ 2,000` is display hint only, never enforced.
+Average `monthly / count` is friendly advice only and never blocks.
+
+Example: monthly 6,000 + 4 trips + 3,000 ceiling allows
+2,800 + 2,200 + 900 + 100, blocks a 5th trip by count even with money left.
+A 5,500 single basket is blocked by the ceiling even with monthly room left.
 
 Out of scope: funding targets, contributions, catalog, delivery, `najm-theme`.
 
@@ -111,8 +114,26 @@ caching (month rollover must take effect immediately).
   Seasons, household size, emergencies differ. Use `target/12` as placeholder
   hint at most.
 - Per-order from `monthly/count`: even-split guide only. Uneven baskets
-  (2,800 + 2,200 + 900 against 6,000/3) must pass; enforcing the 2,000 average
+  (2,800 + 2,200 + 900 against 6,000/4) must pass; enforcing the 1,500 average
   would wrongly block order 1.
+
+### 3.5 Slow walkthrough (seed values: 6,000 / 4 trips / 3,000 ceiling)
+
+Average hint: 6,000 / 4 = 1,500. Advice only, blocks nothing.
+
+1. Week 1, basket 2,800 (oil + flour + sugar): 2,800 <= 3,000 yes;
+   0 + 2,800 <= 6,000 yes; trips 0 < 4 yes. Passes.
+   Left: 3,200 MAD, 3 trips. Above-average is fine.
+2. Week 2, basket 2,200: 2,200 <= 3,000 yes; spent 5,000 <= 6,000 yes;
+   trips 1 < 4 yes. Passes. Left: 1,000 MAD, 2 trips.
+3. Week 3, basket 900: passes. Left: 100 MAD, 1 trip.
+4. Week 4, basket 100: 4th trip, passes. Left: 0 MAD, 0 trips.
+5. 5th attempt (even 50 MAD): trips used 4 = limit 4.
+   Blocked by count, even if money existed.
+6. Thief tries one 5,500 basket on a fresh month: monthly and count have room,
+   but 5,500 > 3,000 ceiling. Blocked. Without the ceiling the whole month
+   drains in one go. That is why the ceiling stays and stays high
+   (~50-60% of monthly), not at the 1,500 average.
 
 ## 4. Backend tasks (`packages/server`)
 
@@ -226,3 +247,6 @@ bun run lint && bun run typecheck && bun run test && bun run build && bun run db
 - [x] Exclude `cancelled`/`rejected` from the order count.
 - [x] Seed example values (see section 7): 4 orders/month,
   3,000 MAD/order, 6,000 MAD/month default.
+- [x] Family create wizard carries the same 3 optional inputs (section 4.3b/5).
+- [x] Per-order cap is a high risk ceiling (~50-60% of monthly), average
+  `monthly/count` is hint-only (section 3.5 walkthrough).
