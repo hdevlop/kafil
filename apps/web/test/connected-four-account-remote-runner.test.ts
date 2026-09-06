@@ -315,6 +315,7 @@ describe("connected four-account remote runner", () => {
     );
     expect(specSource).toContain('test("remote diagnostics - final context assertions"');
     expect(specSource.match(/test\("remote step /g)).toHaveLength(16);
+    expect(specSource.match(/test\("remote /g)).toHaveLength(20);
     expect(specSource).toContain("browser.newContext()");
     expect(step01).toContain('"/api/dashboard/operator"');
     expect(step01).toContain('"Operator dashboard"');
@@ -395,6 +396,18 @@ describe("connected four-account remote runner", () => {
     expect(specSource).toContain("const OTP_POLL_ATTEMPTS = 120;");
     expect(specSource).toContain("attempt < OTP_POLL_ATTEMPTS");
     expect(specSource).toContain("setTimeout(resolve, OTP_POLL_INTERVAL_MS)");
+    expect(step02).toContain('getByLabel(/^Max orders per month \\(optional\\)$/)');
+    expect(step02).toContain('getByLabel(/^Monthly budget in MAD \\(optional\\)$/)');
+    expect(step02).toContain('`/api/budgets/${state.familyProfileId}`');
+    expect(step02).toContain('expect(createdOrdersPolicy.source).toBe("family")');
+    expect(step02).toContain('expect(createdMonthlyPolicy.source).toBe("family")');
+    expect(step02).toContain('expect(createdMaxPerOrderPolicy.override).toBeNull()');
+    expect(step02).toContain(
+      "expect(createdMaxPerOrderPolicy.effective).toBe(inheritedMaxPerOrder)",
+    );
+    expect(step02).toContain(
+      "expect(ownBudget.maxPerOrderMinor).toBe(inheritedMaxPerOrder)",
+    );
   });
 
   test("pins Sponsor A OTP, approval replay, identifiers, and logout boundaries", () => {
@@ -768,9 +781,28 @@ describe("connected four-account remote runner", () => {
     expect(step07).toContain("expect(deliveryStaff).toHaveLength(2)");
     expect(step07).toContain("expect(staffA.id).toBe(createdDeliveryStaff[0]!.id)");
     expect(step07).toContain("expect(staffB.id).toBe(createdDeliveryStaff[1]!.id)");
+    expect(step07).toContain('path: "/api/orders/submit", status: 409');
+    expect(step07).toContain('"Monthly order count limit reached"');
+    expect(step07).toContain('`/api/budgets/${state.familyProfileId}/monthly-limit`');
+    expect(step07).toContain('"Order total exceeds the remaining monthly limit"');
+    expect(step07).toContain('"/api/orders/cart/clear"');
+    expect(step07).toContain("expect(activeLimitSummary.ordersUsed).toBe(2)");
+    expect(step07).toContain("expect(afterCancellationPolicy.ordersUsed).toBe(1)");
+    expect(step07).toContain("expect(afterRejectionPolicy.ordersUsed).toBe(0)");
+    expect(step07).toContain("expect(afterRejectionPolicy.monthlyUsedMinor).toBe(0)");
     expect(step07).toContain('phase: "reversible-orders-complete"');
     expect(step08).toContain("requireReversibleOrdersComplete(orderJourneyState)");
     expect(step08).toContain("uploadGeneratedPdfEvidence(adminPage, \"receipts\")");
+    expect(step08).toContain('`/api/budgets/${state.familyProfileId}/order-policy`');
+    expect(step08).toContain("const actualTotalMinor = order3TotalMinor + 1");
+    expect(step08).toMatch(
+      /path:\s*`\/api\/orders\/\$\{order3Id\}\/purchase`,\s*status:\s*409,/,
+    );
+    expect(step08).toContain('"Order total exceeds the per-order limit"');
+    expect(step08).toContain(
+      "expect(responseRows(afterCeilingDenial.purchases)).toHaveLength(",
+    );
+    expect(step08).toContain("maxBudgetPerOrderMinor: actualTotalMinor");
     expect(step08).toContain('phase: "delivery-complete"');
     expect(step09).toContain('requireDeliveredOrderPhase(\n      orderJourneyState,\n      "delivery-complete"');
     expect(step09).toContain('phase: "family-projection-complete"');

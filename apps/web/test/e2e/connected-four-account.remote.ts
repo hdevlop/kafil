@@ -560,7 +560,7 @@ async function assertNoAuthCookies(
 
 async function browserJsonRequest(
   page: Page,
-  method: "DELETE" | "GET" | "POST",
+  method: "DELETE" | "GET" | "POST" | "PUT",
   path: string,
   body?: Record<string, unknown>,
 ): Promise<BrowserJsonResult> {
@@ -1597,6 +1597,12 @@ test.describe.serial("connected VPS acceptance", () => {
       .getByLabel(/^Activation target \(MAD\)\s*\*?$/)
       .fill(formatMadFromMinor(CONNECTED_RUN_FIXTURE.fundingTargetMinor));
     await dialog
+      .getByLabel(/^Max orders per month \(optional\)$/)
+      .fill("2");
+    await dialog
+      .getByLabel(/^Monthly budget in MAD \(optional\)$/)
+      .fill(formatMadFromMinor(CONNECTED_RUN_FIXTURE.fundingTargetMinor));
+    await dialog
       .getByPlaceholder("Full household address", { exact: true })
       .fill(familyAddress);
     await dialog.getByRole("button", { name: "Next", exact: true }).click();
@@ -1644,6 +1650,35 @@ test.describe.serial("connected VPS acceptance", () => {
     state.familyUserId = typeof createdFamily.userId === "string" ? createdFamily.userId : "";
     expect(Boolean(state.familyProfileId && state.familyUserId)).toBe(true);
     expect(createdFamily.status).toBe("active");
+    const createdBudgetResult = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/budgets/${state.familyProfileId}`,
+    );
+    expect(createdBudgetResult.status).toBe(200);
+    const createdBudget = responseRecord(createdBudgetResult.body);
+    const createdOrdersPolicy = responseRecord(createdBudget.orders);
+    expect(createdOrdersPolicy.override).toBe(2);
+    expect(createdOrdersPolicy.effective).toBe(2);
+    expect(createdOrdersPolicy.source).toBe("family");
+    expect(createdOrdersPolicy.used).toBe(0);
+    expect(createdOrdersPolicy.remaining).toBe(2);
+    const createdMonthlyPolicy = responseRecord(createdBudget.monthly);
+    expect(createdMonthlyPolicy.override).toBe(
+      CONNECTED_RUN_FIXTURE.fundingTargetMinor,
+    );
+    expect(createdMonthlyPolicy.effective).toBe(
+      CONNECTED_RUN_FIXTURE.fundingTargetMinor,
+    );
+    expect(createdMonthlyPolicy.source).toBe("family");
+    expect(createdMonthlyPolicy.usedMinor).toBe(0);
+    const createdMaxPerOrderPolicy = responseRecord(createdBudget.maxPerOrder);
+    expect(createdMaxPerOrderPolicy.override).toBeNull();
+    const inheritedMaxPerOrder = createdMaxPerOrderPolicy.default ?? null;
+    expect(createdMaxPerOrderPolicy.effective).toBe(inheritedMaxPerOrder);
+    expect(createdMaxPerOrderPolicy.source).toBe(
+      inheritedMaxPerOrder === null ? "unlimited" : "global",
+    );
     await signOut(adminPage);
     await adminPage.close();
 
@@ -1714,6 +1749,25 @@ test.describe.serial("connected VPS acceptance", () => {
       familyPage.getByText("Loading your family dashboard", { exact: true }),
     );
     await expect(familyPage.getByRole("heading", { name: /^Welcome,/i })).toBeVisible();
+
+    const ownBudgetResult = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/budgets/me",
+    );
+    expect(ownBudgetResult.status).toBe(200);
+    const ownBudget = responseRecord(ownBudgetResult.body);
+    expect(ownBudget.ordersLimit).toBe(2);
+    expect(ownBudget.ordersUsed).toBe(0);
+    expect(ownBudget.ordersRemaining).toBe(2);
+    expect(ownBudget.monthlyLimitMinor).toBe(
+      CONNECTED_RUN_FIXTURE.fundingTargetMinor,
+    );
+    expect(ownBudget.monthlyUsedMinor).toBe(0);
+    expect(ownBudget.maxPerOrderMinor).toBe(inheritedMaxPerOrder);
+    expect(ownBudget).not.toHaveProperty("orders");
+    expect(ownBudget).not.toHaveProperty("monthly");
+    expect(ownBudget).not.toHaveProperty("maxPerOrder");
 
     const familyNavigation = familyPage.getByRole("navigation");
     await onlyVisible(familyNavigation.locator('a[href="/children"]'));
@@ -3131,9 +3185,9 @@ test.describe.serial("connected VPS acceptance", () => {
           typeof product.name === "string" &&
           Number.isSafeInteger(priceMinor) &&
           priceMinor > 0 &&
-          (priceMinor > 1
-            ? priceMinor <= initialBudget.availableMinor
-            : initialBudget.availableMinor >= 2)
+          Number.isSafeInteger(priceMinor * 2) &&
+          priceMinor * 2 <= initialBudget.availableMinor &&
+          priceMinor + 1 <= initialBudget.availableMinor
         );
       })
       .sort((left, right) => Number(left.priceMinor) - Number(right.priceMinor));
@@ -3213,6 +3267,75 @@ test.describe.serial("connected VPS acceptance", () => {
       afterOrder1Submit,
     );
 
+    // Keep two accepted orders active at once so the disposable Family's
+    // explicit 2/month cap can be proved before either reversible transition.
+    const order2 = (
+      await submitFamilyOrder(familyPage, product, "step-07-order-2")
+    ).order;
+    const order2Id = String(order2.id);
+    const order2TotalMinor = Number(order2.requestedTotalMinor);
+    const afterOrder2Submit = {
+      availableMinor:
+        initialBudget.availableMinor - order1TotalMinor - order2TotalMinor,
+      reservedMinor:
+        initialBudget.reservedMinor + order1TotalMinor + order2TotalMinor,
+      spentMinor: initialBudget.spentMinor,
+    };
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      afterOrder2Submit,
+    );
+    const activeLimitResult = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/budgets/me",
+    );
+    expect(activeLimitResult.status).toBe(200);
+    const activeLimitSummary = responseRecord(activeLimitResult.body);
+    expect(activeLimitSummary.ordersLimit).toBe(2);
+    expect(activeLimitSummary.ordersUsed).toBe(2);
+    expect(activeLimitSummary.ordersRemaining).toBe(0);
+
+    const blockedCart = await browserJsonRequest(
+      familyPage,
+      "POST",
+      "/api/orders/cart/items",
+      { productId: product.id, quantity: 1 },
+    );
+    expect(blockedCart.status).toBeLessThan(400);
+    expect(Number(responseRecord(blockedCart.body).totalMinor)).toBe(
+      product.priceMinor,
+    );
+    const countDenial = await expectExactNegativeResponse(
+      familyPage,
+      familyDiagnostics,
+      { method: "POST", path: "/api/orders/submit", status: 409 },
+      () =>
+        browserJsonRequest(familyPage, "POST", "/api/orders/submit", {
+          idempotencyKey: `step-07-count-denial-${crypto.randomUUID()}`,
+        }),
+    );
+    expect(responseMessage(countDenial.body)).toBe(
+      "Monthly order count limit reached",
+    );
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      afterOrder2Submit,
+    );
+    const ordersAfterCountDenial = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/orders/me?limit=100&offset=0",
+    );
+    expect(ordersAfterCountDenial.status).toBe(200);
+    expect(responseRows(ordersAfterCountDenial.body)).toHaveLength(2);
+    const clearBlockedCart = await browserJsonRequest(
+      familyPage,
+      "POST",
+      "/api/orders/cart/clear",
+    );
+    expect(clearBlockedCart.status).toBeLessThan(400);
+
     const familyOrdersResponse = familyPage.waitForResponse((response) => {
       const url = new URL(response.url());
       return (
@@ -3270,7 +3393,22 @@ test.describe.serial("connected VPS acceptance", () => {
     expect((await cancelResponse).status()).toBeLessThan(400);
     await expect(order1Row.getByText("Cancelled", { exact: true })).toBeVisible();
     const afterOrder1Cancel = await readBudgetSnapshot(familyPage, "/api/budgets/me");
-    expectBudgetSnapshot(afterOrder1Cancel, initialBudget);
+    expectBudgetSnapshot(afterOrder1Cancel, {
+      availableMinor: initialBudget.availableMinor - order2TotalMinor,
+      reservedMinor: initialBudget.reservedMinor + order2TotalMinor,
+      spentMinor: initialBudget.spentMinor,
+    });
+    const afterCancellationPolicyResult = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/budgets/me",
+    );
+    expect(afterCancellationPolicyResult.status).toBe(200);
+    const afterCancellationPolicy = responseRecord(
+      afterCancellationPolicyResult.body,
+    );
+    expect(afterCancellationPolicy.ordersUsed).toBe(1);
+    expect(afterCancellationPolicy.ordersRemaining).toBe(1);
     const cancelledOrder1 = await browserJsonRequest(
       familyPage,
       "GET",
@@ -3296,24 +3434,76 @@ test.describe.serial("connected VPS acceptance", () => {
     );
     expectBudgetSnapshot(
       await readBudgetSnapshot(familyPage, "/api/budgets/me"),
-      initialBudget,
+      afterOrder1Cancel,
     );
+
+    // With one count slot now free, tighten the monthly limit to the current
+    // active usage so the next submission can fail only on monthly capacity.
+    const policyMonth = String(afterCancellationPolicy.month ?? "");
+    expect(policyMonth).toMatch(/^\d{4}-\d{2}-01$/);
+    const tightMonthlyLimit = await browserJsonRequest(
+      adminPage,
+      "PUT",
+      `/api/budgets/${state.familyProfileId}/monthly-limit`,
+      {
+        month: policyMonth,
+        limitMinor: order2TotalMinor,
+        reason: "Acceptance monthly capacity boundary",
+      },
+    );
+    expect(tightMonthlyLimit.status).toBeLessThan(400);
+    const tightMonthlySummaryResult = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/budgets/${state.familyProfileId}`,
+    );
+    expect(tightMonthlySummaryResult.status).toBe(200);
+    const tightMonthlySummary = responseRecord(tightMonthlySummaryResult.body);
+    const tightMonthlyPolicy = responseRecord(tightMonthlySummary.monthly);
+    expect(tightMonthlyPolicy.override).toBe(order2TotalMinor);
+    expect(tightMonthlyPolicy.effective).toBe(order2TotalMinor);
+    expect(tightMonthlyPolicy.usedMinor).toBe(order2TotalMinor);
+    expect(tightMonthlyPolicy.source).toBe("family");
+
+    const monthlyBlockedCart = await browserJsonRequest(
+      familyPage,
+      "POST",
+      "/api/orders/cart/items",
+      { productId: product.id, quantity: 1 },
+    );
+    expect(monthlyBlockedCart.status).toBeLessThan(400);
+    const monthlyDenial = await expectExactNegativeResponse(
+      familyPage,
+      familyDiagnostics,
+      { method: "POST", path: "/api/orders/submit", status: 409 },
+      () =>
+        browserJsonRequest(familyPage, "POST", "/api/orders/submit", {
+          idempotencyKey: `step-07-monthly-denial-${crypto.randomUUID()}`,
+        }),
+    );
+    expect(responseMessage(monthlyDenial.body)).toBe(
+      "Order total exceeds the remaining monthly limit",
+    );
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      afterOrder1Cancel,
+    );
+    const ordersAfterMonthlyDenial = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/orders/me?limit=100&offset=0",
+    );
+    expect(ordersAfterMonthlyDenial.status).toBe(200);
+    expect(responseRows(ordersAfterMonthlyDenial.body)).toHaveLength(2);
+    const clearMonthlyBlockedCart = await browserJsonRequest(
+      familyPage,
+      "POST",
+      "/api/orders/cart/clear",
+    );
+    expect(clearMonthlyBlockedCart.status).toBeLessThan(400);
 
     // Order 2: Admin rejection releases the reserve exactly once and both
     // operational and owner projections retain only the permitted reason.
-    const order2 = (
-      await submitFamilyOrder(familyPage, product, "step-07-order-2")
-    ).order;
-    const order2Id = String(order2.id);
-    const order2TotalMinor = Number(order2.requestedTotalMinor);
-    expectBudgetSnapshot(
-      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
-      {
-        availableMinor: initialBudget.availableMinor - order2TotalMinor,
-        reservedMinor: initialBudget.reservedMinor + order2TotalMinor,
-        spentMinor: initialBudget.spentMinor,
-      },
-    );
     const order2RejectionReason = "Acceptance order rejection";
     const rejectedOrder2 = await browserJsonRequest(
       adminPage,
@@ -3340,6 +3530,27 @@ test.describe.serial("connected VPS acceptance", () => {
       await readBudgetSnapshot(familyPage, "/api/budgets/me"),
       initialBudget,
     );
+    const afterRejectionPolicyResult = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/budgets/me",
+    );
+    expect(afterRejectionPolicyResult.status).toBe(200);
+    const afterRejectionPolicy = responseRecord(afterRejectionPolicyResult.body);
+    expect(afterRejectionPolicy.ordersUsed).toBe(0);
+    expect(afterRejectionPolicy.ordersRemaining).toBe(2);
+    expect(afterRejectionPolicy.monthlyUsedMinor).toBe(0);
+    const restoredMonthlyLimit = await browserJsonRequest(
+      adminPage,
+      "PUT",
+      `/api/budgets/${state.familyProfileId}/monthly-limit`,
+      {
+        month: policyMonth,
+        limitMinor: CONNECTED_RUN_FIXTURE.fundingTargetMinor,
+        reason: "Acceptance restore monthly capacity",
+      },
+    );
+    expect(restoredMonthlyLimit.status).toBeLessThan(400);
 
     orderJourneyState = {
       phase: "reversible-orders-complete",
@@ -3371,6 +3582,36 @@ test.describe.serial("connected VPS acceptance", () => {
     expect(approval.status).toBeLessThan(400);
     expect(responseRecord(approval.body).status).toBe("approved");
 
+    const initialCeilingPolicy = await browserJsonRequest(
+      adminPage,
+      "PUT",
+      `/api/budgets/${state.familyProfileId}/order-policy`,
+      {
+        maxOrdersPerMonth: 2,
+        maxBudgetPerOrderMinor: order3TotalMinor,
+        reason: "Acceptance resulting-total ceiling",
+      },
+    );
+    expect(initialCeilingPolicy.status).toBeLessThan(400);
+    const initialCeilingSummaryResult = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/budgets/${state.familyProfileId}`,
+    );
+    expect(initialCeilingSummaryResult.status).toBe(200);
+    const initialCeilingSummary = responseRecord(
+      initialCeilingSummaryResult.body,
+    );
+    expect(responseRecord(initialCeilingSummary.maxPerOrder).override).toBe(
+      order3TotalMinor,
+    );
+    expect(responseRecord(initialCeilingSummary.maxPerOrder).effective).toBe(
+      order3TotalMinor,
+    );
+    expect(responseRecord(initialCeilingSummary.maxPerOrder).source).toBe(
+      "family",
+    );
+
     const receiptUpload = await uploadGeneratedPdfEvidence(adminPage, "receipts");
     expect(receiptUpload.status).toBeLessThan(400);
     const receipt = responseRecord(receiptUpload.body);
@@ -3378,24 +3619,90 @@ test.describe.serial("connected VPS acceptance", () => {
     expect(Number(receipt.byteSize)).toBeGreaterThan(0);
     const receiptPath = String(receipt.path ?? "");
     expect(receiptPath).not.toBe("");
-    const actualTotalMinor =
-      order3TotalMinor > 1 ? order3TotalMinor - 1 : order3TotalMinor + 1;
-    expect(actualTotalMinor).not.toBe(order3TotalMinor);
+    const actualTotalMinor = order3TotalMinor + 1;
+    expect(Number.isSafeInteger(actualTotalMinor)).toBe(true);
+    expect(actualTotalMinor).toBeLessThanOrEqual(initialBudget.availableMinor);
     const purchaseIdempotencyKey = `step-08-purchase-${crypto.randomUUID()}`;
+    const purchaseInput = {
+      merchantName: "Acceptance merchant",
+      purchasedAt: new Date().toISOString(),
+      actualTotalMinor,
+      receiptStoragePath: receiptPath,
+      receiptMediaType: receipt.mediaType,
+      receiptByteSize: receipt.byteSize,
+      confirmHigherAmount: true,
+      idempotencyKey: purchaseIdempotencyKey,
+    };
+    const beforeCeilingDenialResult = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/orders/${order3Id}`,
+    );
+    expect(beforeCeilingDenialResult.status).toBe(200);
+    const beforeCeilingDenial = responseRecord(beforeCeilingDenialResult.body);
+    const purchasesBeforeCeilingDenial = responseRows(
+      beforeCeilingDenial.purchases,
+    ).length;
+    const eventsBeforeCeilingDenial = responseRows(
+      beforeCeilingDenial.statusEvents,
+    ).length;
+    const budgetBeforeCeilingDenial = await readBudgetSnapshot(
+      familyPage,
+      "/api/budgets/me",
+    );
+    const ceilingDenial = await expectExactNegativeResponse(
+      adminPage,
+      adminDiagnostics,
+      {
+        method: "POST",
+        path: `/api/orders/${order3Id}/purchase`,
+        status: 409,
+      },
+      () =>
+        browserJsonRequest(
+          adminPage,
+          "POST",
+          `/api/orders/${order3Id}/purchase`,
+          purchaseInput,
+        ),
+    );
+    expect(responseMessage(ceilingDenial.body)).toBe(
+      "Order total exceeds the per-order limit",
+    );
+    const afterCeilingDenialResult = await browserJsonRequest(
+      adminPage,
+      "GET",
+      `/api/orders/${order3Id}`,
+    );
+    expect(afterCeilingDenialResult.status).toBe(200);
+    const afterCeilingDenial = responseRecord(afterCeilingDenialResult.body);
+    expect(responseRows(afterCeilingDenial.purchases)).toHaveLength(
+      purchasesBeforeCeilingDenial,
+    );
+    expect(responseRows(afterCeilingDenial.statusEvents)).toHaveLength(
+      eventsBeforeCeilingDenial,
+    );
+    expectBudgetSnapshot(
+      await readBudgetSnapshot(familyPage, "/api/budgets/me"),
+      budgetBeforeCeilingDenial,
+    );
+
+    const raisedCeilingPolicy = await browserJsonRequest(
+      adminPage,
+      "PUT",
+      `/api/budgets/${state.familyProfileId}/order-policy`,
+      {
+        maxOrdersPerMonth: 2,
+        maxBudgetPerOrderMinor: actualTotalMinor,
+        reason: "Acceptance allow exact resulting total",
+      },
+    );
+    expect(raisedCeilingPolicy.status).toBeLessThan(400);
     const purchase = await browserJsonRequest(
       adminPage,
       "POST",
       `/api/orders/${order3Id}/purchase`,
-      {
-        merchantName: "Acceptance merchant",
-        purchasedAt: new Date().toISOString(),
-        actualTotalMinor,
-        receiptStoragePath: receiptPath,
-        receiptMediaType: receipt.mediaType,
-        receiptByteSize: receipt.byteSize,
-        confirmHigherAmount: actualTotalMinor > order3TotalMinor,
-        idempotencyKey: purchaseIdempotencyKey,
-      },
+      purchaseInput,
     );
     expect(purchase.status).toBeLessThan(400);
     const purchasedOrder3 = responseRecord(purchase.body);
@@ -3415,6 +3722,21 @@ test.describe.serial("connected VPS acceptance", () => {
       reservedMinor: initialBudget.reservedMinor,
       spentMinor: initialBudget.spentMinor + actualTotalMinor,
     });
+    const policyAfterPurchaseResult = await browserJsonRequest(
+      familyPage,
+      "GET",
+      "/api/budgets/me",
+    );
+    expect(policyAfterPurchaseResult.status).toBe(200);
+    const policyAfterPurchase = responseRecord(policyAfterPurchaseResult.body);
+    expect(policyAfterPurchase.ordersLimit).toBe(2);
+    expect(policyAfterPurchase.ordersUsed).toBe(1);
+    expect(policyAfterPurchase.ordersRemaining).toBe(1);
+    expect(policyAfterPurchase.monthlyLimitMinor).toBe(
+      CONNECTED_RUN_FIXTURE.fundingTargetMinor,
+    );
+    expect(policyAfterPurchase.monthlyUsedMinor).toBe(actualTotalMinor);
+    expect(policyAfterPurchase.maxPerOrderMinor).toBe(actualTotalMinor);
     const purchasesBeforeReplay = responseRows(purchasedOrder3.purchases).length;
     const eventsBeforePurchaseReplay = responseRows(
       purchasedOrder3.statusEvents,
@@ -3423,16 +3745,7 @@ test.describe.serial("connected VPS acceptance", () => {
       adminPage,
       "POST",
       `/api/orders/${order3Id}/purchase`,
-      {
-        merchantName: "Acceptance merchant",
-        purchasedAt: new Date().toISOString(),
-        actualTotalMinor,
-        receiptStoragePath: receiptPath,
-        receiptMediaType: receipt.mediaType,
-        receiptByteSize: receipt.byteSize,
-        confirmHigherAmount: actualTotalMinor > order3TotalMinor,
-        idempotencyKey: purchaseIdempotencyKey,
-      },
+      purchaseInput,
     );
     expect(purchaseReplay.status).toBeLessThan(400);
     const purchaseReplayRecord = responseRecord(purchaseReplay.body);

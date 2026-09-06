@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **COMPLETE - THE COMPLETE 18-TEST REMOTE ATTEMPT PASSED AGAIN ON 2026-09-04 WITH NATIVE EXIT `0`; EVIDENCE IS PUBLISHED UNDER SECTION 8; THE RUNNING CONTAINER REVISION IS `NOT CONFIRMED` FOR THAT ATTEMPT AND DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`**
+Status: **BASELINE COMPLETE - THE RECORDED 18-TEST REMOTE ATTEMPT PASSED ON 2026-09-04; THE CURRENT 20-TEST SELECTION INCLUDES THE LATER UPLOAD/CSP UNITS AND THE FAMILY ORDER-LIMIT EXTENSION, AND AWAITS A FRESHLY AUTHORIZED REMOTE ATTEMPT; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`**
 
 Target: exactly `https://kafala360.ma`
 
@@ -28,6 +28,9 @@ Verified by this plan:
 - role and ownership boundaries;
 - sponsor-safe projections;
 - visible/API integer-minor financial aggregates;
+- effective Family order-count, per-order, and monthly-budget policy projections;
+- exact order-count and per-order denials, absence of denied-command side
+  effects, and order-slot recovery after cancellation/rejection;
 - order, purchase, and delivery lifecycle behavior;
 - real logout, cookie removal, diagnostics, and mailbox-transport isolation.
 
@@ -45,13 +48,16 @@ The authoritative checkpoint is section 11.16, the most recent complete 18-test
 attempt whose deployed container revision was actually confirmed:
 `1a30370d`.
 
-Section 11.17 records a later complete 18-test attempt that passed on
+Section 11.17 records a later complete 18-test baseline attempt that passed on
 2026-09-04 with native exit `0`. It is supplemental, not authoritative. It did
 not repeat the value-free container revision check, so the running container's
 revision is `NOT CONFIRMED` and its deployment-revision acceptance is
 outstanding. Its command and work-unit results stand on their own; its claim
 about which revision was exercised does not. Promotion to authoritative
-requires a confirmed container revision, not a further passing run.
+requires a confirmed container revision, not a further passing run. Section
+11.18 records the locally implemented Family order-limit extension. Those new
+assertions have no production-browser verdict until the entire current 20-test
+journey passes again under a fresh remote-run instruction.
 
 Sections 11.1-11.15 and the rest of this section are historical evidence
 leading to the current checkpoint and are not the current state.
@@ -714,6 +720,8 @@ adds a local timeout.
 Exact titles:
 
 ```text
+remote upload - generated product image round trip and cleanup
+remote CSP matrix - authenticated routes, locales, branding, PWA, and hydration
 remote step 01 - guarded admin smoke
 remote step 02 - Family provisioning and first login
 remote step 03 - Sponsor A application and approval
@@ -739,22 +747,25 @@ earlier complete-range attempt selected exactly **17 tests** but failed in step
 03. After the Najm package correction was released, consumed, deployed, and
 confirmed healthy, the smallest prerequisite range—steps 01-03 plus
 diagnostics, exactly **4 tests**—passed. The promoted 17-test range then passed
-once on the same healthy revision after a fresh user instruction. The locally
-implemented complete range now selects exactly **18 tests** and awaits its own
-freshly authorized remote attempt.
+once on the same healthy revision after a fresh user instruction. The accepted
+historical baseline then selected **18 tests**. The later independently
+selectable upload and CSP units bring the current unfiltered selection to
+exactly **20 tests**. The Family order-limit checks are embedded in steps 02,
+07, and 08, so they add no further test title or authenticated context. This
+current selection awaits its own freshly authorized remote attempt.
 
 ### Step contracts
 
 | Step | Contract | Current organized code |
 | --- | --- | --- |
 | 01 | Admin login, dashboard/assignment readiness, real logout, cookie absence, protected `401` | Complete-range remote pass on `4ef0d03` |
-| 02 | Family UI creation, first-login password setup, temporary-credential denial, role boundary | Passed on `4ef0d03`; corrected 3-test range on `8334f4c` passed real logout, cookie absence, and protected `401`; intermittent complete-run symptom remains unclassified |
+| 02 | Family UI creation with an explicit `2`-orders/month cap and explicit monthly budget, inherited/unlimited per-order fallback, operator policy-source projection, Family effective-only projection, first-login password setup, temporary-credential denial, role boundary | Historical identity and role boundary passed remotely; policy extension implemented locally and awaits a fresh complete remote attempt |
 | 03 | Sponsor A application, exact OTP/delete, pending denial, approval/replay, email/phone login | Bounded collection observer and complete step contract passed in the corrected four-test range on healthy revision `8334f4c` |
 | 04 | Independent Sponsor B application, OTP/delete, approval/replay, login/logout | Corrected five-test prerequisite range passed remotely on healthy revision `8334f4c`, including passive diagnostics |
 | 05 | Two assignments, duplicate `409`, safe sponsor projections, cross-sponsor `404` boundaries | Complete-range remote pass on `4ef0d03` |
 | 06 | Plan lifecycle, contribution validation/refund replays, exact target funding | Complete-range remote pass on `4ef0d03` |
-| 07 | Two Delivery Staff profiles, Order 1 cancellation, Order 2 rejection, reserve restoration | Complete-range remote pass on `4ef0d03` |
-| 08 | Order 3 approval, purchase variance/replay, failed delivery, reassignment, confirmation/replay | Complete-range remote pass on `4ef0d03` |
+| 07 | Two Delivery Staff profiles; two simultaneous accepted orders consume the `2`-order cap; a third submit returns exact count-limit `409` with no extra order or budget effect; cancellation frees one count slot; tightening the monthly limit to current usage makes the next submit return exact monthly-limit `409` with no side effect; rejection releases the last count/usage and the monthly limit is restored | Historical lifecycle passed remotely; count/monthly-limit extension implemented locally and awaits a fresh complete remote attempt |
+| 08 | Order 3 approval; a `+1` top-up above the resulting-total ceiling returns exact `409` with no purchase, status, or budget mutation; raising the ceiling to the exact resulting total permits the same purchase; effective Family quota/usage, replay, failed delivery, reassignment, and confirmation/replay remain asserted | Historical lifecycle passed remotely; per-order extension implemented locally and awaits a fresh complete remote attempt |
 | 09 | Family delivered-order projection and private operational-key exclusion | Complete-range remote pass on `4ef0d03` |
 | 10 | Sponsor A order list/detail exact allowlist and sensitive-value exclusion | Complete-range remote pass on `4ef0d03` |
 | 11 | Sponsor B order list/detail exact allowlist and sensitive-value exclusion | Complete-range remote pass on `4ef0d03` |
@@ -874,7 +885,7 @@ Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
 bun run --cwd apps/web test:e2e:connected:remote
 ```
 
-Verify the header reports exactly 18 tests before interpreting results. This is
+Verify the header reports exactly 20 tests before interpreting results. This is
 one attempt only; a failure must follow the stop-and-classify rule below without
 an edit or rerun in the same authorization.
 
@@ -1055,7 +1066,7 @@ Implement a separate serial remote auth spec rather than embedding these
 diagnostics in the financial journey. Reuse the guarded runner's exact-origin,
 one-worker, zero-retry, verified-TLS, no-artifact, and owned-tunnel contracts.
 The runner must select this spec explicitly and fail closed if it would also
-select the 18-test financial spec.
+select the connected financial spec.
 
 The planned exact titles are:
 
@@ -1185,7 +1196,7 @@ remote execution.
 The remote auth lifecycle is now a separate serial spec with the exact ten
 titles in section 11.4. Its dedicated command can select only
 `test/e2e/auth-lifecycle.remote.ts`; it accepts no grep and cannot co-select the
-18-test financial spec. Both remote commands reuse one guarded preflight and
+connected financial spec. Both remote commands reuse one guarded preflight and
 owned-tunnel implementation, preserving the exact origin, verified TLS, system
 Chrome, one worker, zero retries, disabled browser artifacts, authenticated
 loopback Mailpit, and tunnel cleanup contracts.
@@ -2182,3 +2193,53 @@ Three verdicts:
 3. **Plan result** — the browser conditions in section 10 are satisfied again.
    Database-only guarantees remain explicitly `NOT VERIFIED`, and the running
    container revision is `NOT CONFIRMED` for this attempt.
+
+### 11.18 Family order-limit extension (2026-09-06)
+
+The Family order-limit acceptance is part of the existing connected journey,
+not a second disposable graph or another authenticated login sequence:
+
+- step 02 creates the disposable Family with an explicit `2`-orders/month cap
+  and a monthly budget equal to the connected funding target. It proves the
+  operator's override/default/effective/source projection, the Family's
+  effective-only projection, and the inherited-or-unlimited per-order fallback;
+- step 07 keeps two submitted orders active simultaneously, proves
+  `ordersUsed = 2` and `ordersRemaining = 0`, then requires the third exact
+  `POST /api/orders/submit` to return `409` with
+  `Monthly order count limit reached`. It proves no third order or budget
+  mutation occurred, then proves cancellation releases one count slot. With
+  that slot free, it tightens the monthly limit to current usage and requires
+  the next submit to return exact `409` with
+  `Order total exceeds the remaining monthly limit`, again without an order or
+  budget mutation. Rejection releases the active count from `1` to `0`, monthly
+  usage returns to `0`, and the original monthly limit is restored;
+- step 08 sets the Family per-order ceiling to Order 3's requested total, then
+  requires a `+1` purchase top-up to return exact `409` with
+  `Order total exceeds the per-order limit`. It proves the denied command added
+  no purchase or status event and changed no budget aggregate, raises the
+  ceiling to the exact resulting total, reuses the same purchase command
+  successfully, and verifies the Family's effective count, per-order, monthly
+  limit, and monthly-used values.
+
+The source-contract test was first observed red with `20 passed, 2 failed` and
+the missing step 02/07 assertions. After implementing the journey and correcting
+two whitespace-brittle source assertions, it passed after the final count,
+monthly, fallback, and per-order coverage with `22 passed, 0 failed` and `498`
+assertions. The full local verification gate then passed: lint,
+typecheck, web `370 passed`, server `357 passed` with `59` opt-in database tests
+skipped, seed `88 passed`, and the production build. `bun run db:generate`
+reported `No schema changes, nothing to migrate`.
+
+A discovery-only Playwright listing used non-secret placeholders, opened no
+browser, contacted no VPS endpoint, and reported exactly `20 tests in 1 file`.
+That count is the 16 numbered steps, upload, CSP, responsive, and diagnostics.
+The Family order-limit coverage adds assertions inside steps 02, 07, and 08 and
+does not increase the count.
+
+No local or production browser journey was run under this implementation
+instruction. The historical 18-test evidence in sections 11.16 and 11.17 does
+not prove these new assertions. One fresh instruction must authorize a single
+unfiltered 20-test remote attempt against a confirmed healthy revision; the
+runner must stop and classify after that attempt whether it passes or fails.
+Database concurrency and constraint guarantees remain owned by the opt-in
+PostgreSQL suite and are not claimed by this black-box plan.
