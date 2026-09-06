@@ -4,8 +4,11 @@ Date: 2026-09-05
 
 Status: shared fixes are published and adopted by Kafil. The Kafil integration
 is published and deployed, and the guarded production auth lifecycle passed all
-ten tests with cleanup and passive diagnostics. The remaining unchecked items
-below are narrower OAuth, upload, public-probe, and Redis-restart evidence.
+ten tests with cleanup and passive diagnostics. Bounded public probes and
+application-restart rate-limit persistence, the authenticated locale/CSP route
+matrix, and the user-performed Google OAuth round trip also passed. GitHub is
+intentionally unavailable in the current production configuration. All required
+boundaries in this plan are complete.
 
 ## Objective and ownership
 
@@ -199,7 +202,7 @@ effect; a hidden button or a changed frontend session does not prove revocation.
 - [x] Re-run audits in both repositories. Every remaining advisory needs an
   explicit affected-path assessment and disposition. An affected high-severity
   runtime path cannot be accepted merely because existing tests pass.
-- [ ] Verify image uploads, native Sharp loading, mail generation, auth/session
+- [x] Verify image uploads, native Sharp loading, mail generation, auth/session
   flows, PWA behavior, and production builds after dependency updates.
 
 Authoritative references used in the review:
@@ -212,11 +215,16 @@ Authoritative references used in the review:
 - [x] Translate expected OAuth start errors into intentional HTTP responses:
   invalid return paths are `400`; a disabled provider is `404`. Preserve the
   callback's safe redirect contract and redact provider secrets/state/code.
-- [ ] Verify whether GitHub is intended to be enabled in production. Inspect only
-  configuration presence and public callback configuration, never secret values.
-  When disabled, present the provider as unavailable; when enabled, prove a
-  successful round trip using an authorized test identity. Do not enable signup
-  or bypass Kafil's profile/approval requirements to make OAuth work.
+- [x] Verify the production GitHub posture without inspecting secret values.
+  GitHub is intentionally unavailable in the current production configuration:
+  the conditional login UI omits it, its start route returns the intentional
+  `404 oauth_provider_disabled`, and anonymous linking remains `401`. A later
+  product decision to enable it requires a separately authorized identity test.
+- [x] Prove the configured Google provider through a successful round trip using
+  an authorized, pre-linked test identity. Do not enable signup or bypass
+  Kafil's profile/approval requirements to make OAuth work. The user completed
+  the manual production flow and reported that Google authentication and the
+  return to the authenticated Kafil application worked normally.
 - [x] Preserve Google PKCE, state validation, verified-email handling, safe return
   paths, and Kafil's `allowSignup: false` behavior.
 - [x] Inventory actual script, style, image, font, connection, and PWA requirements
@@ -229,8 +237,9 @@ Authoritative references used in the review:
 - [x] Keep the persisted Dokploy/Traefik and Caddy edge sources from overwriting
   the application-generated nonce policy while preserving their other security
   headers. Do not patch generated Compose alone.
-- [ ] Verify login, OAuth, dashboards, theme assets, uploads, PWA registration,
-  hydration, and Arabic RTL before enforcing the stricter policy.
+- [x] Verify login, dashboards, theme assets, uploads, PWA registration,
+  hydration, all four locales, and Arabic RTL under the enforced policy. OAuth
+  has its separate authorized round-trip gate above.
 
 This edge work may deploy separately from urgent auth fixes, but remains open
 in this plan until its own enforcement and browser evidence are recorded.
@@ -281,11 +290,11 @@ in this plan until its own enforcement and browser evidence are recorded.
 - [x] Verify the intended image is healthy, PostgreSQL/cache readiness is good,
   Redis is required and internal, and trusted proxy hops match the real ingress.
   Report secret presence/validation only; never copy `.env` values into evidence.
-- [ ] Repeat bounded public HTTP checks for protected routes, forged cookies,
+- [x] Repeat bounded public HTTP checks for protected routes, forged cookies,
   HTTPS/security headers, OAuth errors, and both normal and spoofed-XFF throttling.
-- [ ] Repeat AUTH-03 with one synthetic non-deliverable recipient: unknown identity
+- [x] Repeat AUTH-03 with one synthetic non-deliverable recipient: unknown identity
   fields must not restore its allowance. Do not send test mail to real users.
-- [ ] Prove Redis counters survive an application restart using the reviewed
+- [x] Prove Redis counters survive an application restart using the reviewed
   deployment window. Exercise cache failure and concurrency stress in isolation;
   do not disrupt production Redis to manufacture evidence.
 - [x] Use designated disposable accounts for production logout replay and role
@@ -298,7 +307,8 @@ in this plan until its own enforcement and browser evidence are recorded.
   Existing completed acceptance is not proof of this release.
 - [x] Confirm the mail transport's declared postcondition, fixture cleanup, intact
   unrelated accounts, no unexpected HTTP errors, and stable service readiness.
-- [ ] If rollout fails, classify app/package/edge ownership. Restore only the
+- Recovery contingency (not invoked because the rollout succeeded): if a future
+  rollout fails, classify app/package/edge ownership. Restore only the
   affected compatible component; do not blindly roll back the app for an edge
   header failure. Document any reverted security fix and keep its finding open.
   Never reverse a data migration without a verified compatible recovery path.
@@ -622,17 +632,18 @@ evidence, and deployed digest where applicable. A skipped check remains open.
 | Boundary | Required evidence | Status |
 | --- | --- | --- |
 | AUTH-01, AUTH-03, AUTH-04 implemented | Red/green regressions, API behavior, real concurrency tests | **Published and locally adopted** - `najm-cache@2.2.0` and `najm-auth@4.0.0`; PostgreSQL 18 plus a Redis 7-compatible server proved one reset winner and the delayed refresh/logout race; a separate real HTTP/Redis/Mailpit run proved the ignored-field and spoofed-forwarding variants stopped at three emitted reset messages |
-| AUTH-02 and cache-loss behaviour | Real Redis/PostgreSQL concurrency acceptance | **Published and locally adopted** - local PostgreSQL 18 plus a Redis 7-compatible server proved cache-loss fallback, revocation ordering, and durable revocation after physical deletion is unavailable. Production Linux Redis OSS remains a rollout acceptance item |
-| Dependency remediation | Fresh audits, affected-path dispositions, native/runtime checks | **Done except upload acceptance** - both audits clean; Sharp loaded and processed an image inside the production Linux container, while an actual production upload remains open |
-| OAuth behavior | Correct error statuses and enabled/disabled provider acceptance | **Statuses done** - deployed GitHub enablement still unestablished |
-| CSP enforcement | Persisted edge policy and complete affected-browser evidence | **Implemented, deployed, and partially accepted** - Kafil generates a fresh nonce policy per request, forwards it through the published auth proxy seam, bootstraps Zod in jitless mode, and the persisted Traefik source no longer overwrites it. Public header checks and authenticated lifecycle pages pass. OAuth, theme/upload, and the broader locale/route matrix remain open |
+| AUTH-02 and cache-loss behaviour | Real Redis/PostgreSQL concurrency acceptance | **Published, adopted, and accepted against local real infrastructure** - PostgreSQL 18 plus a Redis 7-compatible server proved cache-loss fallback, revocation ordering, and durable revocation after physical deletion is unavailable. The guarded production lifecycle separately proved logout propagation and stale-snapshot denial; destructive production cache-loss testing was intentionally not performed |
+| Dependency remediation | Fresh audits, affected-path dispositions, native/runtime checks | **Done** - both audits are clean; Sharp loaded inside the production Linux container, and a guarded browser round trip uploaded a generated PNG, received and served the normalized non-empty WebP, and deleted the exact generated file |
+| OAuth behavior | Correct error statuses and enabled/disabled provider acceptance | **Accepted** - GitHub is intentionally absent from the deployed runtime, omitted from the login UI, and returns `404 oauth_provider_disabled`; anonymous linking remains `401`. Google starts only at Google's HTTPS origin, rejects external return paths with `400`, safely redirects invalid callback state, and the user completed a successful authorized manual production sign-in and return to Kafil |
+| CSP enforcement | Persisted edge policy and complete affected-browser evidence | **Implemented, deployed, and accepted for the application surfaces** - Kafil generates a fresh nonce policy per request, forwards it through the published auth proxy seam, bootstraps Zod in jitless mode, and the persisted Traefik source no longer overwrites it. Public headers, authenticated lifecycle pages, the managed-image upload, branding, service worker, hydration, all four locales, and Arabic phone RTL pass with matching script nonces. The user-performed Google OAuth round trip completed successfully under the enforced policy |
 | Package publication | Reviewed tarballs, exact registry versions and integrity | **Done** - exact versions, release commits, SHA-256 values, registry shasums, integrity metadata, packed exports, and consumer resolution are recorded for cache 2.2.0, email 2.0.3, auth 4.0.0, and MCP 2.1.2 |
-| Kafil integration | Exact pins, installed-artifact regressions, full root/DB/browser gates | **Published and deployed** - all declarations and overrides resolve auth 4.0.0, cache 2.2.0, email 2.0.3, and MCP 2.1.2; the full root gate, 35 database tests, production login/CSP smoke, persisted form-fill journey, complete connected-account journey, and ten-test guarded production auth lifecycle pass. Broader CSP/OAuth/upload evidence remains open |
-| Production deployment | Intended running image and validated configuration | **Done for the accepted auth integration** - Git, CI verification, GHCR image publication, Dokploy trigger, and the exact healthy VPS revision were verified separately; the clock-independent runner correction is deployed as `939e8c8` at digest `sha256:3f3165ac993400394cb67e896dbd118a021236dee1bd4e51205ada17baccb5a9` |
-| Production acceptance | Bounded live probes, fixture checks, persistence, cleanup | **Auth lifecycle passed; broader probes open** - all ten guarded lifecycle tests passed with zero retries, passive diagnostics clean, zero retained application rows and mailbox messages, and `NO MANAGED MAILBOX TRANSPORT`; AUTH-03 live probing, Redis restart persistence, OAuth round-trip, uploads, and the broader public matrix remain open |
+| Kafil integration | Exact pins, installed-artifact regressions, full root/DB/browser gates | **Published, deployed, and accepted** - all declarations and overrides resolve auth 4.0.0, cache 2.2.0, email 2.0.3, and MCP 2.1.2; the full root gate, 35 database tests, production login/CSP smoke, persisted form-fill journey, complete connected-account journey, ten-test guarded production auth lifecycle, focused production image upload, authenticated locale/CSP matrix, and user-performed Google OAuth round trip pass |
+| Production deployment | Intended running image and validated configuration | **Done for the accepted auth integration** - Git, CI verification, GHCR image publication, Dokploy trigger, and running revisions were verified separately. The behavior-owning auth and clock-independent runner build was `939e8c8` at digest `sha256:3f3165ac993400394cb67e896dbd118a021236dee1bd4e51205ada17baccb5a9`; the later documentation-only revision actually used for the fresh bounded probes and application-restart check was `43e2ad4` at digest `sha256:6c8ce3e199cc030912fad5c5f80c336ee59658e1a244d8be5a577761976581e5` |
+| Production acceptance | Bounded live probes, fixture checks, persistence, cleanup | **Complete** - all ten guarded lifecycle tests passed with zero retries, passive diagnostics clean, zero retained application rows and mailbox messages, and `NO MANAGED MAILBOX TRANSPORT`. Fresh public checks passed protected-route, forged-credential, hidden-path, security-header, OAuth-error, spoofed-XFF login-throttle, and AUTH-03 ignored-field assertions. A partially consumed login bucket survived an application-only restart while Redis remained unchanged. The focused production upload cleaned up its exact file, the corrected matrix passed all locale, route, branding, PWA, hydration, RTL, and nonce assertions with passive diagnostics, and the user reported a successful authorized manual Google OAuth sign-in and return to Kafil |
 
-Only mark the plan complete when every required boundary has evidence. This
-document's creation and whitespace validation close the planning request only.
+All required boundaries now have evidence. The Google OAuth closure is explicitly
+user-performed manual acceptance; it is not represented as an automated
+Playwright run or passive-diagnostics result.
 
 ## Revoked refresh fallback correction - 2026-09-05
 
@@ -1069,3 +1080,106 @@ reported that exact healthy revision at digest
 Post-replacement checks kept Redis healthy and internal, the isolated SMTP test
 route reachable, readiness healthy, public security headers passing, and the
 disposable auth mailbox count at zero.
+
+## Focused production upload acceptance - 2026-09-06
+
+The production image-upload check is now independently selectable instead of
+being embedded in remote order step 08. The state-neutral test logs in through
+the real Admin UI, generates a PNG in the browser, uploads it through the
+operator-guarded product-image endpoint, verifies the returned protected path
+serves non-empty WebP bytes, deletes that exact generated file, signs out, and
+closes its page. It does not depend on or create the connected Family, Sponsor,
+assignment, contribution, or order graph.
+
+The exact focused selection `remote upload|remote diagnostics` lists two tests:
+the upload round trip and passive final diagnostics. Source-contract validation
+passed 24 tests with 521 assertions across the connected and auth remote-runner
+tests. Web lint and typecheck passed, followed by the full root lint, typecheck,
+test, and production-build gate. `bun run db:generate` reported no schema
+changes.
+
+After separate authorization, one guarded production invocation passed its
+fail-closed preflight and selected exactly those two tests with one worker and
+zero retries. The upload round trip passed in 3.6 seconds, passive diagnostics
+passed, and Playwright reported `2 passed (5.3s)` with native exit code 0. The
+runner reported `NO MANAGED MAILBOX TRANSPORT`.
+
+The browser uploaded only its generated PNG, asserted the canonical protected
+path, received `200` non-empty `image/webp` bytes, and deleted that exact file
+with `deleted: true` before signing out. Passive diagnostics found no unexpected
+HTTP, page, console, or request failures. No Family, Sponsor, assignment,
+contribution, order, or mailbox fixture was created. The runner source was an
+uncommitted worktree based on Kafil `030f3c4`; no Git publication or deployment
+was performed for this test-only preparation.
+
+## Focused authenticated CSP matrix preparation - 2026-09-06
+
+A second independently selectable, state-neutral production test now covers the
+remaining authenticated CSP/browser surfaces without requiring the connected
+Family, Sponsor, contribution, or order graph. It uses one designated Admin
+session and performs no application-data or theme mutation.
+
+The matrix navigates `/dashboard`, `/products`, `/applicants`, and `/settings`
+under each of `en`, `fr`, `ar`, and `es`. For every full document navigation it
+requires the route's real API read to succeed, verifies the expected `lang` and
+`dir`, and proves the enforced response `script-src` contains a nonce plus
+`strict-dynamic`, omits `unsafe-inline`, and matches every rendered framework
+script nonce. It separately proves an interactive hydrated language menu, a
+decoded and readable protected branding image, active production service-worker
+registration, and a phone-width Arabic dashboard with no horizontal overflow.
+The test restores English and desktop viewport state, signs out through the UI,
+and closes its page.
+
+The exact focused selection for the matrix plus passive diagnostics lists two
+tests and no serial lifecycle prerequisites. Its source-contract test passed 22
+tests with 470 assertions; web lint and typecheck passed. The full root lint,
+typecheck, test, and production-build gate also passed, and
+`bun run db:generate` reported no schema changes.
+
+No remote preflight or browser request was made for this matrix preparation.
+The CSP/browser checkbox remains open until a separately authorized one-shot
+production run passes the matrix and passive diagnostics.
+
+## Focused authenticated CSP matrix correction - 2026-09-06
+
+The first authorized production matrix attempt passed the guarded preflight and
+selected exactly the matrix plus passive diagnostics with one worker and zero
+retries. It failed after 38.4 seconds because the test helper required a generic
+`main` element that the authenticated document did not render. The document
+status, final route, route API status, language, and direction assertions before
+that check had passed. Passive diagnostics did not run, the command exited 1,
+and the runner reported `NO MANAGED MAILBOX TRANSPORT`. This is retained as a
+test-contract failure, not product or acceptance evidence.
+
+The corrected helper removes the unproven element assumption. Route readiness
+continues to require the exact successful document and route-owned API response,
+while every document, API, locale, direction, framework-script, and nonce
+assertion now carries a value-free locale/route label. A source regression pins
+the absence of the generic `main` selector and the presence of those labels.
+The focused source suite passes 22 tests with 474 assertions; web lint and
+typecheck also pass. The CSP/browser checkbox remains open pending a successful
+guarded production matrix with passive diagnostics.
+
+The fresh corrected invocation passed the guarded preflight, selected exactly
+the matrix and passive diagnostics, and used one worker with zero retries. The
+matrix passed in 22.8 seconds, diagnostics passed in 10 milliseconds, and
+Playwright reported `2 passed (24.3s)` with native exit code 0. Diagnostics
+recorded no unexpected HTTP, page, console, or request failures, and the runner
+reported `NO MANAGED MAILBOX TRANSPORT`. The matrix made no application-data or
+theme mutation and retained no fixture. The full root lint, typecheck, test, and
+production-build gate passed after the correction, and `bun run db:generate`
+reported no schema changes. This closes the authenticated locale/CSP matrix;
+at that checkpoint, only the authorized Google OAuth round trip remained open.
+
+## Manual Google OAuth production acceptance - 2026-09-06
+
+Following the documented manual checklist, the user reported that production
+Google authentication completed easily and returned successfully to the
+authenticated Kafil application. No credentials, OAuth codes, state values,
+cookies, identity values, or callback query parameters were collected.
+
+This is user-performed manual acceptance, not an automated Playwright command:
+there is no terminal summary or passive browser-diagnostics artifact to claim.
+Combined with the prior automated provider-origin, invalid-return, invalid-state,
+login/CSP, authenticated route, logout-lifecycle, and protected-route evidence,
+it closes the final Google OAuth round-trip gate and completes this plan.

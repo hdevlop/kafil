@@ -172,7 +172,7 @@ export function LoginForm({
         </NButton>
 
         <div className="mt-5 flex gap-4 rounded-2xl bg-muted px-5 py-4 text-sm leading-6 text-muted-foreground">
-          <ShieldCheck aria-hidden="true" className="mt-0.5 size-9 shrink-0 text-primary" />
+          <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
           <p>
             {t("auth.termsNotice")
               .split(/(\{terms\}|\{privacy\})/)

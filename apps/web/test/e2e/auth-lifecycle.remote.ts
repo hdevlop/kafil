@@ -37,6 +37,8 @@ const adminEmail = process.env.KAFIL_ADMIN_EMAIL ?? "";
 const adminPassword = process.env.KAFIL_ADMIN_PASSWORD ?? "";
 const mailboxApiUrl = process.env.KAFIL_E2E_MAILBOX_API_URL ?? "";
 const mailboxApiToken = process.env.KAFIL_E2E_MAILBOX_TOKEN ?? "";
+const OTP_POLL_ATTEMPTS = 120;
+const OTP_POLL_INTERVAL_MS = 500;
 
 if (baseUrl !== "https://kafala360.ma") {
   throw new Error("Remote auth acceptance requires the exact guarded demo origin.");
@@ -496,14 +498,14 @@ async function pollExactlyOneOtpMessage(input: {
   excludedMessageIds: ReadonlySet<string>;
   signal: AbortSignal;
 }): Promise<MailpitMessage> {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < OTP_POLL_ATTEMPTS; attempt += 1) {
     if (input.signal.aborted) throw new Error("Mailpit OTP polling was cancelled.");
     const matches = (await findMailboxMessages(input)).filter(
       (message) => !input.excludedMessageIds.has(message.ID),
     );
     if (matches.length > 1) throw new Error("Mailpit returned multiple matching OTP messages.");
     if (matches.length === 1) return matches[0]!;
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, OTP_POLL_INTERVAL_MS));
   }
   throw new Error("Mailpit did not return exactly one matching OTP message in time.");
 }

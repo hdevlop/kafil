@@ -31,6 +31,8 @@ const adminEmail = process.env.KAFIL_ADMIN_EMAIL ?? "";
 const adminPassword = process.env.KAFIL_ADMIN_PASSWORD ?? "";
 const mailboxApiUrl = process.env.KAFIL_E2E_MAILBOX_API_URL ?? "";
 const mailboxApiToken = process.env.KAFIL_E2E_MAILBOX_TOKEN ?? "";
+const OTP_POLL_ATTEMPTS = 120;
+const OTP_POLL_INTERVAL_MS = 500;
 
 if (baseUrl !== "https://kafala360.ma") {
   throw new Error("Remote connected acceptance requires the exact guarded demo origin.");
@@ -335,7 +337,7 @@ async function expectNoneVisible(locator: Locator): Promise<void> {
 
 async function setLanguage(
   context: BrowserContext,
-  language: "ar" | "en",
+  language: "ar" | "en" | "es" | "fr",
 ): Promise<void> {
   await context.addCookies([
     { name: "kafil-ui-language", value: language, url: baseUrl },
@@ -369,6 +371,74 @@ async function waitForLoginHydration(page: Page): Promise<Locator> {
     }),
   ).toBe(true);
   return identifier;
+}
+
+async function expectMatchingScriptNonces(
+  page: Page,
+  csp: string | undefined,
+  assertionLabel: string,
+): Promise<void> {
+  expect(csp, `${assertionLabel}: authenticated document must enforce CSP`).toBeTruthy();
+  const nonce = csp?.match(/'nonce-([^']+)'/)?.[1];
+  const scriptSrc = csp
+    ?.split(";")
+    .find((directive) => directive.trim().startsWith("script-src"));
+
+  expect(nonce, `${assertionLabel}: script-src must carry a request nonce`).toBeTruthy();
+  expect(scriptSrc, `${assertionLabel}: script-src must require strict-dynamic`).toContain(
+    "'strict-dynamic'",
+  );
+  expect(scriptSrc, `${assertionLabel}: script-src must omit unsafe-inline`).not.toContain(
+    "'unsafe-inline'",
+  );
+
+  await expect
+    .poll(() => page.locator("script").count(), {
+      message: `${assertionLabel}: Next.js must render framework scripts`,
+    })
+    .toBeGreaterThan(0);
+  const scriptNonces = await page.locator("script").evaluateAll((elements) =>
+    elements.map((script) => (script as HTMLScriptElement).nonce),
+  );
+  expect(
+    new Set(scriptNonces),
+    `${assertionLabel}: every rendered script must use the response nonce`,
+  ).toEqual(new Set([nonce]));
+}
+
+async function navigateAuthenticatedCspRoute(
+  page: Page,
+  input: {
+    apiPath: string;
+    direction: "ltr" | "rtl";
+    language: "ar" | "en" | "es" | "fr";
+    route: string;
+  },
+): Promise<void> {
+  const assertionLabel = `${input.language} ${input.route}`;
+  const dataResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === "GET" &&
+      new URL(response.url()).pathname === input.apiPath,
+  );
+  const documentResponse = await page.goto(input.route, { waitUntil: "commit" });
+  expect(documentResponse?.status(), `${assertionLabel}: document status`).toBe(200);
+  expect(new URL(page.url()).pathname, `${assertionLabel}: final pathname`).toBe(input.route);
+  expect((await dataResponse).status(), `${assertionLabel}: route data status`).toBeLessThan(400);
+  await page.waitForLoadState("domcontentloaded");
+  await expect(page.locator("html"), `${assertionLabel}: document language`).toHaveAttribute(
+    "lang",
+    input.language,
+  );
+  await expect(page.locator("html"), `${assertionLabel}: document direction`).toHaveAttribute(
+    "dir",
+    input.direction,
+  );
+  await expectMatchingScriptNonces(
+    page,
+    documentResponse?.headers()["content-security-policy"],
+    assertionLabel,
+  );
 }
 
 async function prepareLogin(page: Page, identifier: string, password: string): Promise<void> {
@@ -555,6 +625,54 @@ async function uploadGeneratedPdfEvidence(
     },
     { evidenceKind: kind, rootUrl: baseUrl },
   );
+}
+
+async function verifyGeneratedProductImageRoundTrip(page: Page): Promise<void> {
+  const upload = await page.evaluate(async ({ rootUrl }) => {
+    const id = crypto.randomUUID();
+    const canvas = document.createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 24;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas 2D context is unavailable");
+    context.fillStyle = "#2563eb";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const image = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error("PNG generation failed")),
+        "image/png",
+      );
+    });
+    const response = await fetch(`${rootUrl}/api/product-images/files/${id}.png`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "image/png" },
+      body: image,
+    });
+    return {
+      status: response.status,
+      body: await response.json().catch(() => null),
+      fileName: `${id}.webp`,
+    };
+  }, { rootUrl: baseUrl });
+
+  const expectedPath = `/api/product-images/files/serve/${upload.fileName}`;
+  try {
+    expect(upload.status).toBeLessThan(400);
+    expect(responseRecord(upload.body).path).toBe(expectedPath);
+    const served = await browserResourceRequest(page, expectedPath);
+    expect(served.status).toBe(200);
+    expect(served.contentType).toBe("image/webp");
+    expect(served.byteLength).toBeGreaterThan(0);
+  } finally {
+    const removal = await browserJsonRequest(
+      page,
+      "DELETE",
+      `/api/product-images/files/${upload.fileName}`,
+    );
+    expect(removal.status).toBeLessThan(400);
+    expect(responseRecord(removal.body).deleted).toBe(true);
+  }
 }
 
 async function readBudgetSnapshot(
@@ -1145,14 +1263,14 @@ async function pollExactlyOneOtpMessage(input: {
   subjectKeyword: string;
   signal: AbortSignal;
 }): Promise<MailpitMessage> {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < OTP_POLL_ATTEMPTS; attempt += 1) {
     if (input.signal.aborted) throw new Error("Mailpit OTP polling was cancelled.");
     const matches = await findOtpMailboxMessages(input);
     if (matches.length > 1) {
       throw new Error("Mailpit returned more than one matching OTP message.");
     }
     if (matches.length === 1) return matches[0]!;
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, OTP_POLL_INTERVAL_MS));
   }
   throw new Error("Mailpit did not return exactly one matching OTP message in time.");
 }
@@ -1251,6 +1369,117 @@ test.describe.serial("connected VPS acceptance", () => {
       sponsorAContext?.close(),
       sponsorBContext?.close(),
     ]);
+  });
+
+  test("remote upload - generated product image round trip and cleanup", async () => {
+    const page = await adminContext.newPage();
+    attachDiagnostics(page, adminDiagnostics);
+
+    try {
+      await prepareLogin(page, adminEmail, adminPassword);
+      const dashboardResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === "GET" &&
+          new URL(response.url()).pathname === "/api/dashboard/operator",
+      );
+      await submitPreparedLogin(page);
+      await expect(page).toHaveURL(/\/dashboard$/);
+      expect((await dashboardResponse).status()).toBeLessThan(400);
+
+      await verifyGeneratedProductImageRoundTrip(page);
+      await signOut(page);
+    } finally {
+      await page.close();
+    }
+  });
+
+  test("remote CSP matrix - authenticated routes, locales, branding, PWA, and hydration", async () => {
+    const page = await adminContext.newPage();
+    attachDiagnostics(page, adminDiagnostics);
+
+    try {
+      await prepareLogin(page, adminEmail, adminPassword);
+      const dashboardResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === "GET" &&
+          new URL(response.url()).pathname === "/api/dashboard/operator",
+      );
+      await submitPreparedLogin(page);
+      await expect(page).toHaveURL(/\/dashboard$/);
+      expect((await dashboardResponse).status()).toBeLessThan(400);
+
+      const languageButton = await onlyVisible(
+        page.getByRole("button", { name: "Language", exact: true }),
+      );
+      await languageButton.click({ trial: true, timeout: 5_000 });
+      await languageButton.click();
+      await expect(page.getByRole("menu")).toBeVisible();
+      await page.keyboard.press("Escape");
+
+      const sidebarMark = await onlyVisible(page.locator("aside img"));
+      await sidebarMark.scrollIntoViewIfNeeded();
+      await expect.poll(() =>
+        sidebarMark.evaluate((node) => {
+          const image = node as HTMLImageElement;
+          return image.complete && image.naturalWidth > 0;
+        }),
+      ).toBe(true);
+      const brandingSource = (await sidebarMark.getAttribute("src")) ?? "";
+      expect(brandingSource).toMatch(/^\/api\/branding\/(?:factory|assets)\//);
+      const brandingResponse = await browserResourceRequest(
+        page,
+        new URL(brandingSource, baseUrl).pathname,
+      );
+      expect(brandingResponse.status).toBe(200);
+      expect(brandingResponse.contentType.startsWith("image/")).toBe(true);
+      expect(brandingResponse.byteLength).toBeGreaterThan(0);
+
+      await expect.poll(
+        () => page.evaluate(async () => {
+          const registration = await navigator.serviceWorker.getRegistration("/");
+          return Boolean(
+            registration?.active || registration?.waiting || registration?.installing,
+          );
+        }),
+        { timeout: 30_000 },
+      ).toBe(true);
+
+      const locales = [
+        { language: "en", direction: "ltr" },
+        { language: "fr", direction: "ltr" },
+        { language: "ar", direction: "rtl" },
+        { language: "es", direction: "ltr" },
+      ] as const;
+      const routes = [
+        { route: "/dashboard", apiPath: "/api/dashboard/operator" },
+        { route: "/products", apiPath: "/api/catalog/products" },
+        { route: "/applicants", apiPath: "/api/applicants" },
+        { route: "/settings", apiPath: "/api/settings" },
+      ] as const;
+
+      for (const locale of locales) {
+        await setLanguage(page.context(), locale.language);
+        for (const route of routes) {
+          await navigateAuthenticatedCspRoute(page, { ...locale, ...route });
+        }
+      }
+
+      await setLanguage(page.context(), "ar");
+      await page.setViewportSize({ width: 390, height: 844 });
+      await navigateAuthenticatedCspRoute(page, {
+        apiPath: "/api/dashboard/operator",
+        direction: "rtl",
+        language: "ar",
+        route: "/dashboard",
+      });
+      await expectNoHorizontalOverflow(page);
+
+      await setEnglish(page.context());
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await signOut(page);
+    } finally {
+      await page.close();
+    }
   });
 
   test("remote step 01 - guarded admin smoke", async () => {

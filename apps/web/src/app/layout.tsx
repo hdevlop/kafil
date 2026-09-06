@@ -66,10 +66,10 @@ export default async function RootLayout({
       className={`${cairo.className} ${cairo.variable} ${theme === "dark" ? "dark " : ""}h-full antialiased`}
       suppressHydrationWarning
     >
-      <Script id="zod-strict-csp" nonce={nonce} strategy="beforeInteractive">
-        {`globalThis.__zod_globalConfig ??= {}; globalThis.__zod_globalConfig.jitless = true;`}
-      </Script>
       <body className="h-screen w-screen">
+        <Script id="zod-strict-csp" nonce={nonce} strategy="beforeInteractive">
+          {`globalThis.__zod_globalConfig ??= {}; globalThis.__zod_globalConfig.jitless = true;`}
+        </Script>
         <AppProviders
           initialBranding={branding}
           initialDesign={appearance.designConfig}

@@ -277,7 +277,7 @@ describe("connected four-account remote runner", () => {
     expect(configSource).toContain('trace: "off"');
   });
 
-  test("defines 16 numbered serial remote steps, one state-neutral responsive unit, and passive diagnostics", () => {
+  test("defines 16 numbered serial remote steps, three state-neutral units, and passive diagnostics", () => {
     const step01 = specSource.slice(
       specSource.indexOf('test("remote step 01 - guarded admin smoke"'),
       specSource.indexOf('test("remote step 02 - Family provisioning and first login"'),
@@ -304,6 +304,12 @@ describe("connected four-account remote runner", () => {
       expect(specSource).toContain(`test("${title}"`);
     }
     expect(specSource).not.toContain('test("remote unit ');
+    expect(specSource).toContain(
+      'test("remote upload - generated product image round trip and cleanup"',
+    );
+    expect(specSource).toContain(
+      'test("remote CSP matrix - authenticated routes, locales, branding, PWA, and hydration"',
+    );
     expect(specSource).toContain(
       'test("remote responsive - phone, tablet, RTL, keyboard, and protected images"',
     );
@@ -386,6 +392,9 @@ describe("connected four-account remote runner", () => {
     expect(specSource).not.toContain("page.route(");
     expect(specSource).not.toContain("clearCookies(");
     expect(specSource).not.toContain("force: true");
+    expect(specSource).toContain("const OTP_POLL_ATTEMPTS = 120;");
+    expect(specSource).toContain("attempt < OTP_POLL_ATTEMPTS");
+    expect(specSource).toContain("setTimeout(resolve, OTP_POLL_INTERVAL_MS)");
   });
 
   test("pins Sponsor A OTP, approval replay, identifiers, and logout boundaries", () => {
@@ -860,6 +869,65 @@ describe("connected four-account remote runner", () => {
     expect(specSource).toContain("async function assertSponsorOrderProjection(");
     expect(orderSteps).not.toContain("dbQuery(");
     expect(orderSteps).not.toContain("console.log");
+  });
+
+  test("keeps production image upload independently selectable and self-cleaning", () => {
+    const uploadUnit = specSource.slice(
+      specSource.indexOf(
+        'test("remote upload - generated product image round trip and cleanup"',
+      ),
+      specSource.indexOf('test("remote step 01 - guarded admin smoke"'),
+    );
+
+    expect(uploadUnit).toContain("prepareLogin(page, adminEmail, adminPassword)");
+    expect(uploadUnit).toContain("verifyGeneratedProductImageRoundTrip(page)");
+    expect(uploadUnit).toContain("await signOut(page)");
+    expect(uploadUnit).toContain("await page.close()");
+    expect(uploadUnit).not.toContain("orderJourneyState");
+    expect(uploadUnit).not.toContain("state.familyProfileId");
+    expect(specSource).toContain("async function verifyGeneratedProductImageRoundTrip(");
+    expect(specSource).toContain('headers: { "content-type": "image/png" }');
+    expect(specSource).toContain('expect(served.contentType).toBe("image/webp")');
+    expect(specSource).toContain('`/api/product-images/files/${upload.fileName}`');
+    expect(specSource).toContain("expect(responseRecord(removal.body).deleted).toBe(true)");
+  });
+
+  test("keeps the authenticated CSP matrix state-neutral and independently selectable", () => {
+    const matrixUnit = specSource.slice(
+      specSource.indexOf(
+        'test("remote CSP matrix - authenticated routes, locales, branding, PWA, and hydration"',
+      ),
+      specSource.indexOf('test("remote step 01 - guarded admin smoke"'),
+    );
+
+    for (const language of ["en", "fr", "ar", "es"]) {
+      expect(matrixUnit).toContain(`language: "${language}"`);
+    }
+    for (const route of ["/dashboard", "/products", "/applicants", "/settings"]) {
+      expect(matrixUnit).toContain(`route: "${route}"`);
+    }
+    expect(matrixUnit).toContain("navigateAuthenticatedCspRoute(page");
+    expect(matrixUnit).toContain("navigator.serviceWorker.getRegistration");
+    expect(matrixUnit).toContain('page.locator("aside img")');
+    expect(matrixUnit).toContain("image.complete && image.naturalWidth > 0");
+    expect(matrixUnit).toContain("expectNoHorizontalOverflow(page)");
+    expect(matrixUnit).toContain("await signOut(page)");
+    expect(matrixUnit).not.toContain("orderJourneyState");
+    expect(matrixUnit).not.toContain("browserJsonRequest(");
+    expect(specSource).toContain("async function expectMatchingScriptNonces(");
+    expect(specSource).toContain("every rendered script must use the response nonce");
+    expect(specSource).toContain("'strict-dynamic'");
+    expect(specSource).toContain("'unsafe-inline'");
+    const navigationHelper = specSource.slice(
+      specSource.indexOf("async function navigateAuthenticatedCspRoute("),
+      specSource.indexOf("async function prepareLogin("),
+    );
+    expect(navigationHelper).toContain(
+      "const assertionLabel = `${input.language} ${input.route}`",
+    );
+    expect(navigationHelper).toContain("`${assertionLabel}: route data status`");
+    expect(navigationHelper).toContain("assertionLabel,");
+    expect(navigationHelper).not.toContain('locator("main")');
   });
 
   test("matches required Najm form labels without exact-name timeouts", () => {

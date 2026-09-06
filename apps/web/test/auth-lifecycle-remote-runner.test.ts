@@ -48,6 +48,9 @@ describe("dedicated remote auth lifecycle runner", () => {
     expect(source).not.toContain("page.route(");
     expect(source).not.toContain("clearCookies(");
     expect(source).not.toContain("waitForTimeout(");
+    expect(source).toContain("const OTP_POLL_ATTEMPTS = 120;");
+    expect(source).toContain("attempt < OTP_POLL_ATTEMPTS");
+    expect(source).toContain("setTimeout(resolve, OTP_POLL_INTERVAL_MS)");
     expect(source).not.toContain("force: true");
     expect(source).toContain('await page.waitForLoadState("domcontentloaded")');
     expect(source).toContain("excludedMessageIds: ReadonlySet<string>");
