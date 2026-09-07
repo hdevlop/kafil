@@ -2830,9 +2830,33 @@ covers both Unit 02 opens and both Arabic keyboard opens in Unit 07, so an
 unhydrated trigger or failed list fetch produces the owning request failure
 instead of a misleading missing-card timeout. The source regression failed on
 the old contract (`4 passed, 1 failed, 95 assertions`) and passes after the
-correction (`5 passed, 0 failed, 102 assertions`). Publication, exact deployment
 correction (`5 passed, 0 failed, 102 assertions`). Web lint/typecheck, the full
 root lint/typecheck/test/build gate, and `db:generate` with no schema drift also
 pass. Publication, exact deployment proof, and a separately authorized focused
 Unit 02 prerequisite range plus passive diagnostics remain required before
 another complete attempt.
+
+### 12.12 Focused popover-request attempt and hydration correction
+
+The request-observation correction was published and deployed as exact healthy
+app and worker revision `553024620b90acc479faf0e0cdfe4ac709500360`; CI, image
+publication, Dokploy deployment, auth reconciliation, and dedicated preflight
+passed. A fresh instruction authorized exactly Units 01-02 plus passive
+diagnostics. Playwright selected `3 tests using 1 worker`, with zero retries.
+Unit 01 passed in `21.3s`; Unit 02 reached its first popover open but no
+`GET /api/notifications?limit=5` occurred, and the test timed out at `180s`.
+Diagnostics did not run, native exit was `1`, and the runner reported
+`NO MANAGED MAILBOX TRANSPORT`. Cleanup did not run, so disposable records or
+mailbox messages may remain. The retained 96-byte value-free marker had no
+sensitive-pattern matches; error context was removed by the runner.
+
+The missing request confirms a test hydration race: the bell's server-rendered
+markup was actionable before its client React handler was attached. The helper
+now polls the exact visible trigger until its React `onClick` is callable, then
+registers the exact list response before performing the single mouse or keyboard
+action. The source regression failed against the old helper (`4 passed,
+1 failed, 97 assertions`) and passes after correction (`5 passed, 0 failed,
+105 assertions`); web typecheck/lint, the full root lint/typecheck/test/build
+gate, and `db:generate` with no schema drift pass. Publication, exact
+deployment, and a separately authorized Units 01-02 plus
+diagnostics attempt remain required.

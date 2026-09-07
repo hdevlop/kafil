@@ -39,6 +39,12 @@ newly navigated shell. The test now registers and requires the exact successful
 popover list response before card assertions; local verification is green, but
 publication, deployment, focused Unit 02 acceptance, and a later complete
 attempt remain pending.
+The first focused verification of that observer proved no list request occurred
+after the server-rendered bell click, isolating a hydration race. The test now
+requires the visible bell's React `onClick` handler before registering the list
+response and activating it; local source/typecheck/lint evidence is green, while
+full verification, publication, deployment, and focused browser acceptance are
+pending.
 The connected
 acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
