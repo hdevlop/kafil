@@ -25,7 +25,10 @@ function value(env: Environment, name: string): string {
 
 function readBoundedGrep(
   env: Environment,
-  name: "KAFIL_E2E_REMOTE_GREP" | "KAFIL_E2E_REMOTE_AUTH_GREP",
+  name:
+    | "KAFIL_E2E_REMOTE_GREP"
+    | "KAFIL_E2E_REMOTE_AUTH_GREP"
+    | "KAFIL_E2E_REMOTE_NOTIFICATIONS_GREP",
 ): string | undefined {
   const raw = env[name]?.trim();
   if (!raw) return undefined;
@@ -46,6 +49,12 @@ export function readRemoteGrep(env: Environment): string | undefined {
 
 export function readRemoteAuthGrep(env: Environment): string | undefined {
   return readBoundedGrep(env, "KAFIL_E2E_REMOTE_AUTH_GREP");
+}
+
+export function readRemoteNotificationsGrep(
+  env: Environment,
+): string | undefined {
+  return readBoundedGrep(env, "KAFIL_E2E_REMOTE_NOTIFICATIONS_GREP");
 }
 
 function isConnectionReset(error: unknown): boolean {
@@ -210,6 +219,20 @@ export function buildRemoteAuthPlaywrightArgs(grep?: string): string[] {
     "test/e2e/auth-lifecycle.remote.ts",
     "--config",
     "playwright.remote.config.ts",
+  ];
+  if (grep) args.push("--grep", grep);
+  return args;
+}
+
+export function buildRemoteNotificationsPlaywrightArgs(
+  grep?: string,
+): string[] {
+  const args = [
+    "playwright",
+    "test",
+    "test/e2e/notification-system.remote.ts",
+    "--config",
+    "playwright.notifications.remote.config.ts",
   ];
   if (grep) args.push("--grep", grep);
   return args;

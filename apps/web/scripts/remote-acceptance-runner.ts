@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import {
   mailboxAuthorization,
   readRemoteAcceptanceConfig,
+  readRemoteAuthGrep,
   readRemoteGrep,
   remoteAcceptanceChecks,
   type RemoteAcceptanceConfig,
@@ -12,7 +13,9 @@ import {
 
 export interface RemoteAcceptanceRunnerOptions {
   buildPlaywrightArgs: () => string[];
+  extraReadinessPaths?: readonly string[];
   passLabel: string;
+  rejectRemoteAuthGrep?: boolean;
   rejectRemoteGrep?: boolean;
 }
 
@@ -133,7 +136,10 @@ export async function runRemoteAcceptance(
       throw new Error("Remote acceptance received an unsupported command argument.");
     }
     if (options.rejectRemoteGrep && readRemoteGrep(Bun.env)) {
-      throw new Error("Remote auth acceptance does not allow a grep selection.");
+      throw new Error("This remote acceptance suite rejects the financial grep variable.");
+    }
+    if (options.rejectRemoteAuthGrep && readRemoteAuthGrep(Bun.env)) {
+      throw new Error("This remote acceptance suite rejects the auth grep variable.");
     }
     const checks = remoteAcceptanceChecks(Bun.env);
     for (const check of checks) {
@@ -150,7 +156,14 @@ export async function runRemoteAcceptance(
     await waitForMailbox(config);
     console.log("PREFLIGHT OK app-scoped HTTPS mail-test gateway");
 
-    for (const path of ["/login", "/apply", "/api/system/health", "/api/system/readiness"]) {
+    const readinessPaths = [
+      "/login",
+      "/apply",
+      ...(options.extraReadinessPaths ?? []),
+      "/api/system/health",
+      "/api/system/readiness",
+    ];
+    for (const path of readinessPaths) {
       await assertRemoteEndpoint(config, path);
       console.log(`PREFLIGHT OK remote ${path}`);
     }

@@ -2397,9 +2397,9 @@ Browser-proven versus database-only boundary:
 
 ## 12. Notification system connected acceptance extension
 
-Status: **PLANNED - THE DEDICATED SPEC/RUNNER ARE NOT IMPLEMENTED; THE
-NOTIFICATION REVISION IS NOT DEPLOYED OR RUN THROUGH THIS EXTENSION, SO IT IS
-NOT ACCEPTED.**
+Status: **SOURCE COMPLETE - THE DEDICATED SPEC/RUNNER, SOURCE CONTRACTS, AND
+EXACT 9-TEST DISCOVERY ARE GREEN; ACCEPTANCE STILL REQUIRES THE EXACT
+APP/WORKER REVISION TO BE DEPLOYED AND THE CONNECTED EXTENSION TO PASS.**
 
 This section is the sole owner of the notification system's real connected
 acceptance. `NOTIFICATION-SYSTEM-PLAN.md` owns implementation, source tests,
@@ -2481,6 +2481,20 @@ remote notifications diagnostics - final contexts and delivery assertions
 Discovery-only listing must report exactly **9 tests in one file** before the
 first connected attempt is requested. Discovery may use non-secret placeholder
 configuration and must not launch a browser or contact the target.
+
+Local implementation evidence (2026-09-07):
+
+- `bun test test/notification-system-remote-runner.test.ts` passed all 3 focused
+  source/runner contracts; the combined notification, financial, and auth
+  guarded-runner regression selection passed all 28 tests;
+- targeted ESLint and the web typecheck passed for the final spec, runner,
+  configuration, shared runtime, and source-contract test;
+- placeholder-only Playwright discovery listed exactly `9 tests in 1 file`;
+- the root lint, typecheck, test, production build, and `db:generate` gates
+  passed with no schema drift, and `bun run test:db` passed all 55 PostgreSQL
+  tests, including the notification integration suite;
+- no remote preflight, browser launch, target request, publication, deployment,
+  or production acceptance attempt was made.
 
 ### 12.4 Work-unit contracts
 
@@ -2604,7 +2618,7 @@ and must remain `NOT VERIFIED` when it is not performed.
 
 ### 12.6 Final notification acceptance checklist
 
-- [ ] Dedicated notification spec/runner and exact 9-test discovery are green.
+- [x] Dedicated notification spec/runner and exact 9-test discovery are green.
 - [ ] Exact app/worker revision, migration, heartbeat, activation, and isolated
   Mailpit route are verified value-free.
 - [ ] Four-account inbox fan-out, polling, read persistence, and isolation pass.

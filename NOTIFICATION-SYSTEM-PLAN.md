@@ -9,10 +9,11 @@ Phase D complete with the typed shared push worker published as
 `najm-next@0.3.0`, registry artifact verified, and exactly pinned in Kafil;
 Phase E deployment wiring is implemented and source-verified, including
 dedicated worker egress, load-independent heartbeat, first-rollout rollback,
-exact image identity, and migration-journal checks; production rollout,
-connected real-service acceptance (including Mailpit decision delivery), and
-real-device push delivery remain pending, so external delivery is NOT yet
-accepted. The connected acceptance journey is owned by section 12 of
+exact image identity, and migration-journal checks; the dedicated connected
+spec/runner and exact nine-test discovery are green locally, but production
+rollout, connected real-service execution (including Mailpit decision
+delivery), and real-device push delivery remain pending, so external delivery
+is NOT yet accepted. The connected acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
 source, PostgreSQL integration, build, and schema gates.**
 
