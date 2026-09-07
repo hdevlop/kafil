@@ -58,7 +58,7 @@ if [[ -L /opt/kafil/current ]]; then
   previous_release="$(readlink -f /opt/kafil/current)"
 fi
 
-  "${compose[@]}" pull app migrate notifications-worker
+  "${compose[@]}" pull app migrate auth-reconcile notifications-worker
   pulled_digest="$(docker image inspect "${KAFIL_IMAGE}" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
 if [[ "${pulled_digest}" != "${expected_digest}" ]]; then
   echo "Pulled digest ${pulled_digest} does not match expected ${expected_digest}." >&2
@@ -72,13 +72,12 @@ if ! "${compose[@]}" --profile tools run --rm migrate 2>&1 | tee "${migration_lo
   exit 5
 fi
 
-# Permissions are code-managed data, not schema. Reconcile them from the same
-# candidate image after migrations and before replacing the running app. Keep
-# the seed's value-bearing output in a protected log rather than deployment
-# stdout; seed:admin performs its own exact role/permission verification.
+# Permissions are code-managed data, not schema. Reconcile and verify them from
+# the same candidate image after migrations and before replacing the running
+# app. Keep even the value-free command output in the protected deployment log.
 auth_seed_log="${state_dir}/auth-seed-${git_sha}.log"
-if ! "${compose[@]}" --profile tools run --rm --no-deps app \
-  bun run seed:admin >"${auth_seed_log}" 2>&1; then
+if ! "${compose[@]}" --profile tools run --rm auth-reconcile \
+  >"${auth_seed_log}" 2>&1; then
   echo "Auth seed reconciliation failed; the running application was not replaced." >&2
   exit 7
 fi

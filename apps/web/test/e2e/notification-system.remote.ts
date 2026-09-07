@@ -293,6 +293,28 @@ async function login(page: Page, identifier: string, password: string): Promise<
   await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
 }
 
+async function assertNotificationAccess(
+  page: Page,
+  alias: string,
+  expectedRole: "admin" | "family" | "sponsor",
+): Promise<void> {
+  const identity = await browserJsonRequest(page, "GET", "/api/auth/me");
+  expect(identity.status, `${alias} authenticated identity`).toBe(200);
+  expect(responseRecord(identity.body).role, `${alias} authenticated role`).toBe(
+    expectedRole,
+  );
+
+  const unread = await browserJsonRequest(
+    page,
+    "GET",
+    "/api/notifications/unread-count",
+  );
+  expect(unread.status, `${alias} notification read grant`).toBe(200);
+  const count = Number(responseRecord(unread.body).count);
+  expect(Number.isSafeInteger(count), `${alias} unread count shape`).toBe(true);
+  expect(count, `${alias} empty unread count`).toBe(0);
+}
+
 async function assertNoAuthCookies(context: BrowserContext): Promise<void> {
   const names = (await context.cookies())
     .map((cookie) => cookie.name)
@@ -626,9 +648,7 @@ test.describe.serial("remote notification system acceptance", () => {
 
   test("remote notifications 01 - four-account setup and empty inbox ownership", async () => {
     await login(adminPage, adminEmail, adminPassword);
-    const identity = await browserJsonRequest(adminPage, "GET", "/api/auth/me");
-    expect(identity.status).toBe(200);
-    expect(responseRecord(identity.body).role).toBe("admin");
+    await assertNotificationAccess(adminPage, "admin", "admin");
 
     const family = await browserJsonRequest(adminPage, "POST", "/api/families", {
       name: familyName,
@@ -677,6 +697,7 @@ test.describe.serial("remote notification system acceptance", () => {
     expect((await passwordResponse).status()).toBeLessThan(400);
     await expect.poll(() => new URL(familyPage.url()).pathname).toBe("/login");
     await login(familyPage, familyEmail, familyPassword);
+    await assertNotificationAccess(familyPage, "family", "family");
 
     const sponsorFixtures = [
       {
@@ -733,6 +754,11 @@ test.describe.serial("remote notification system acceptance", () => {
         throw error;
       }
       await acceptSponsorInvitation(sponsor.page, sponsor.email, sponsor.password, invitation);
+      await assertNotificationAccess(
+        sponsor.page,
+        `sponsor-${sponsor.alias}`,
+        "sponsor",
+      );
     }
 
     expect(Boolean(state.sponsorAProfileId && state.sponsorBProfileId)).toBe(true);
@@ -743,7 +769,6 @@ test.describe.serial("remote notification system acceptance", () => {
       { alias: "sponsor-a", page: sponsorAPage },
       { alias: "sponsor-b", page: sponsorBPage },
     ]) {
-      expect(await readUnreadCount(principal.page), `${principal.alias} empty unread count`).toBe(0);
       expect(await readNotifications(principal.page, "?limit=100"), `${principal.alias} empty inbox`).toEqual([]);
       await principal.page.goto("/notifications", { waitUntil: "commit" });
       await expect.poll(() => new URL(principal.page.url()).pathname).toBe("/notifications");

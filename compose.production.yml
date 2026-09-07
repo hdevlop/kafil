@@ -53,6 +53,21 @@ services:
         condition: service_healthy
     command: ["bun", "run", "db:migrate"]
 
+  # Code-managed roles and permissions are deployment data, not schema. Run
+  # this after migrations and before replacing the app/worker image. The
+  # command verifies the complete grant matrix and emits no identity values.
+  auth-reconcile:
+    <<: *app
+    profiles: [tools]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["bun", "run", "seed:reconcile-auth"]
+    volumes: []
+    networks:
+      - backend
+
   # Durable notification delivery. Same immutable image as the web app, no
   # second API server, no published ports. Safe with more than one replica:
   # claiming uses FOR UPDATE SKIP LOCKED with bounded batches.

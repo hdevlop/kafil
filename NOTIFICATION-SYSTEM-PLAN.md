@@ -11,9 +11,13 @@ Phase E deployment wiring is implemented and source-verified, including
 dedicated worker egress, load-independent heartbeat, first-rollout rollback,
 exact image identity, and migration-journal checks; the dedicated connected
 spec/runner and exact nine-test discovery are green locally, but production
-rollout, connected real-service execution (including Mailpit decision
+rollout, connected real-service completion (including Mailpit decision
 delivery), and real-device push delivery remain pending, so external delivery
-is NOT yet accepted. The connected acceptance journey is owned by section 12 of
+is NOT yet accepted. The first authorized focused production attempt reached
+Unit 01 and exposed unreconciled code-managed notification permissions in the
+active Dokploy raw deployment; the source/deployment correction is locally
+green and awaits publication plus corrected deployment. The connected
+acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
 source, PostgreSQL integration, build, and schema gates.**
 

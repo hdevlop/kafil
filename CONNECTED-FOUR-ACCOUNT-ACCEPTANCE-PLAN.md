@@ -1,6 +1,6 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **BASELINE COMPLETE - THE AUTHORIZED 20-TEST REMOTE ATTEMPT PASSED ON 2026-09-06 WITH NATIVE EXIT `0` ON CONFIRMED CONTAINER REVISION `adee9c9d`; UPLOAD, CSP, ALL 16 NUMBERED STEPS, RESPONSIVE, SUPPORTED CLEANUP, AND DIAGNOSTICS ARE BROWSER-PROVEN; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`. THE NOTIFICATION EXTENSION IN SECTION 12 IS PLANNED BUT NOT IMPLEMENTED OR RUN, SO NOTIFICATION DELIVERY IS NOT YET ACCEPTED.**
+Status: **BASELINE COMPLETE - THE AUTHORIZED 20-TEST REMOTE ATTEMPT PASSED ON 2026-09-06 WITH NATIVE EXIT `0` ON CONFIRMED CONTAINER REVISION `adee9c9d`; UPLOAD, CSP, ALL 16 NUMBERED STEPS, RESPONSIVE, SUPPORTED CLEANUP, AND DIAGNOSTICS ARE BROWSER-PROVEN; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`. THE NOTIFICATION EXTENSION'S FIRST AUTHORIZED FOCUSED ATTEMPT FAILED IN UNIT 01 BECAUSE THE DOKPLOY RAW DEPLOYMENT HAD NOT RECONCILED THE NEW CODE-MANAGED NOTIFICATION PERMISSIONS; THE NARROW SOURCE/DEPLOYMENT CORRECTION IS LOCALLY GREEN, BUT A CORRECTED DEPLOYMENT AND FRESHLY AUTHORIZED ATTEMPT ARE STILL REQUIRED.**
 
 Target: exactly `https://kafala360.ma`
 
@@ -2452,6 +2452,10 @@ Before requesting a browser attempt, record value-free evidence that:
 - [ ] the worker heartbeat is present without exposing its key or value;
 - [ ] staged rollout completed in order: in-app, email, then push, with the
   intended notification activation variables enabled for this final journey;
+- [ ] code-managed `read:notifications` and `update:notifications` permissions
+  exist and are granted exactly as defined to Admin, Operator, Family, and
+  Sponsor after a quiet, fail-closed auth reconciliation from the deployed
+  image;
 - [ ] Kafil uses the isolated SMTP provider and the unique
   `najmstack-mailpit:1025` route, with live email delivery disabled;
 - [ ] the scoped HTTPS mailbox gateway passes exact TLS, unauthenticated `401`,
@@ -2633,3 +2637,69 @@ and must remain `NOT VERIFIED` when it is not performed.
 - [ ] Complete command result, work-unit result, and extension result are
   reported separately with native exit and selected-test count.
 - [ ] Real-device push display is proved separately or reported `NOT VERIFIED`.
+
+### 12.7 First authorized focused attempt and auth-grant correction
+
+The first freshly authorized production notification attempt ran once on
+2026-09-07 and stopped at the first failure without an edit or retry:
+
+- guarded preflight passed;
+- Playwright selected exactly `9 tests using 1 worker`, with zero retries;
+- Unit 01 failed after `16.1s` because authenticated
+  `GET /api/notifications/unread-count` returned `401` instead of `200`;
+- Units 02-08 and diagnostics were `NOT RUN` after the serial failure;
+- native exit was `1`, and the runner reported
+  `NO MANAGED MAILBOX TRANSPORT`;
+- supported cleanup did not run, so this attempt's disposable records or
+  mailbox messages may remain;
+- only the value-free failed `.last-run.json` marker remained, and its
+  sensitive-pattern scan was clean;
+- real-device push display remained `NOT VERIFIED`.
+
+The failing assertion did not retain the principal alias, so browser evidence
+alone could not distinguish a stale session from authorization drift. A
+value-free read-only deployment inspection resolved that ambiguity without
+another browser attempt:
+
+- the app and `notifications-worker` were both healthy on exact revision
+  `8a453bfb45045266a88461d0fc1c216cbc7a31d9`;
+- the active Dokploy deployment remained `sourceType=raw` and its managed
+  Compose source had a migration service but no auth-reconciliation service;
+- production contained zero rows for the new `read:notifications` and
+  `update:notifications` permission names, and Admin, Operator, Family, and
+  Sponsor each had zero matching grants;
+- Unit 01 uses the Admin context first, immediately after the same context
+  successfully reads `/api/auth/me` and creates protected records. The `401`
+  is therefore a deployed code-managed grant defect, not a notification
+  controller or browser-cookie defect.
+
+The narrow correction:
+
+- adds a quiet `seed:reconcile-auth` image command that runs the existing
+  idempotent role/permission reconciliation and complete verification without
+  printing the Admin identity or error details;
+- adds an isolated `auth-reconcile` Compose service and makes the release
+  deploy script run it after migrations and before replacing app/worker;
+- requires the managed Dokploy raw Compose source to run the same service and
+  gate app/worker start on its successful completion;
+- makes Unit 01 assert `/api/auth/me`, the expected role, and unread-count
+  access immediately after each principal login, retaining only the alias and
+  status contract if a future failure recurs.
+
+Red/green and local correction evidence:
+
+- notification runner source contract: red `4 passed, 1 failed`, then green
+  `5 passed, 0 failed, 90 assertions`;
+- deployment auth-reconciliation source contract: red `2 passed, 1 failed`,
+  then green `3 passed, 0 failed, 25 assertions`;
+- targeted ESLint and web/seed typechecks passed;
+- the complete root lint, typecheck, standard test, and production build gate
+  passed with web `396`, server `400` plus `77` opt-in skips, and seed `89`;
+- `bun run db:generate` reported `No schema changes, nothing to migrate`;
+- `bun run test:db` passed all `55` PostgreSQL tests.
+
+No production browser rerun occurred during diagnosis or correction. The next
+boundary is publication, managed-source update, auth reconciliation, exact
+healthy app/worker revision proof, and preflight preparation. A fresh user
+instruction is still required before one corrected Unit 01 plus passive
+diagnostics attempt.

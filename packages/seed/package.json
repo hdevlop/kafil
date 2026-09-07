@@ -14,6 +14,7 @@
     "seed:remove": "bun src/cli.ts remove --yes",
     "seed:migrate": "bun src/cli.ts migrate",
     "seed:admin": "bun src/cli.ts admin",
+    "seed:reconcile-auth": "bun src/scripts/reconcile-auth.ts",
     "seed:categories": "bun src/cli.ts categories",
     "seed:products": "bun src/cli.ts products",
     "seed:themes": "bun src/cli.ts themes",

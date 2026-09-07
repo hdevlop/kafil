@@ -113,6 +113,49 @@ describe("dedicated remote notification system runner", () => {
     );
   });
 
+  test("attributes authenticated notification access before inbox assertions", () => {
+    expect(existsSync(specUrl)).toBe(true);
+    if (!existsSync(specUrl)) return;
+
+    const source = readFileSync(specUrl, "utf8");
+    const helperStart = source.indexOf(
+      "async function assertNotificationAccess(",
+    );
+    const helperEnd = source.indexOf(
+      "\nasync function assertNoAuthCookies(",
+      helperStart,
+    );
+    expect(helperStart).toBeGreaterThanOrEqual(0);
+    expect(helperEnd).toBeGreaterThan(helperStart);
+
+    const helper = source.slice(helperStart, helperEnd);
+    expect(helper).toContain('browserJsonRequest(page, "GET", "/api/auth/me")');
+    expect(helper).toContain('"/api/notifications/unread-count"');
+    expect(helper).toContain("`${alias} authenticated identity`");
+    expect(helper).toContain("`${alias} notification read grant`");
+
+    const unitStart = source.indexOf(
+      'test("remote notifications 01 - four-account setup and empty inbox ownership"',
+    );
+    const unitEnd = source.indexOf(
+      '\n  test("remote notifications 02 -',
+      unitStart,
+    );
+    expect(unitStart).toBeGreaterThanOrEqual(0);
+    expect(unitEnd).toBeGreaterThan(unitStart);
+    const unit = source.slice(unitStart, unitEnd);
+
+    expect(unit).toContain(
+      'await assertNotificationAccess(adminPage, "admin", "admin")',
+    );
+    expect(unit).toContain(
+      'await assertNotificationAccess(familyPage, "family", "family")',
+    );
+    expect(unit.match(/await assertNotificationAccess\(/g)).toHaveLength(3);
+    expect(unit).toContain("sponsor.page,");
+    expect(unit).toContain("`sponsor-${sponsor.alias}`,");
+  });
+
   test("selects only the notification spec and rejects other suite greps", () => {
     expect(existsSync(runnerUrl)).toBe(true);
     expect(existsSync(configUrl)).toBe(true);

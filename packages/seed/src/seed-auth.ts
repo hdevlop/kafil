@@ -35,6 +35,7 @@ export interface AuthSeedVerification {
 export async function seedAuthentication(
   adminEmail: string,
   adminPassword: string,
+  options: { verbose?: boolean } = {},
 ) {
   const adminEmailChanged = await reconcileBootstrapAdminEmail(adminEmail);
   await clearManagedRolePermissions();
@@ -49,7 +50,7 @@ export async function seedAuthentication(
       ...permission,
     })),
     roles: AUTH_ROLES,
-    verbose: true,
+    verbose: options.verbose ?? true,
   });
 
   const adminPasswordChanged = await syncAdminCredentials(
