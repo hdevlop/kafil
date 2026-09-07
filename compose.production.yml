@@ -53,9 +53,8 @@ services:
         condition: service_healthy
     command: ["bun", "run", "db:migrate"]
 
-  # Code-managed roles and permissions are deployment data, not schema. Run
-  # this after migrations and before replacing the app/worker image. The
-  # command verifies the complete grant matrix and emits no identity values.
+  # Code-managed roles, permissions, and grants are deployment data, not
+  # schema. This intentionally does not read or mutate an admin identity.
   auth-reconcile:
     <<: *app
     profiles: [tools]

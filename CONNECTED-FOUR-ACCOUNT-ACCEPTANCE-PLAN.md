@@ -2673,11 +2673,11 @@ another browser attempt:
   is therefore a deployed code-managed grant defect, not a notification
   controller or browser-cookie defect.
 
-The narrow correction:
+The narrow correction now:
 
-- adds a quiet `seed:reconcile-auth` image command that runs the existing
-  idempotent role/permission reconciliation and complete verification without
-  printing the Admin identity or error details;
+- adds a quiet `seed:reconcile-auth` image command that reconciles and verifies
+  only code-managed roles, permissions, and grants, without reading or mutating
+  any user, Admin email, password, or token;
 - adds an isolated `auth-reconcile` Compose service and makes the release
   deploy script run it after migrations and before replacing app/worker;
 - requires the managed Dokploy raw Compose source to run the same service and
@@ -2698,8 +2698,19 @@ Red/green and local correction evidence:
 - `bun run db:generate` reported `No schema changes, nothing to migrate`;
 - `bun run test:db` passed all `55` PostgreSQL tests.
 
+The first publication of the deployment gate (`8664151`) exposed a second,
+separate deployment defect without running Playwright: the original command
+called the full bootstrap-Admin seed. Production intentionally had the
+configured seed email assigned to a non-Admin acceptance identity, so the job
+failed closed before app/worker replacement. The previous healthy Compose
+definition restored app and worker service on the published image; migrations
+had passed and no Admin identity was changed. The follow-up implementation
+uses a PostgreSQL-advisory-lock-protected transaction over authorization tables
+only. Its local command, full root gate, all `55` PostgreSQL tests, and schema
+drift check pass; publication and corrected deployment remain pending.
+
 No production browser rerun occurred during diagnosis or correction. The next
-boundary is publication, managed-source update, auth reconciliation, exact
-healthy app/worker revision proof, and preflight preparation. A fresh user
-instruction is still required before one corrected Unit 01 plus passive
-diagnostics attempt.
+boundary is follow-up publication, successful identity-free auth
+reconciliation, exact healthy app/worker revision proof, and preflight
+preparation. A fresh user instruction is still required before one corrected
+Unit 01 plus passive diagnostics attempt.

@@ -6,7 +6,7 @@ import {
   tokensTable,
   usersTable,
 } from "@kafil/server/database";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { EncryptionService, seedAuthData } from "najm-auth";
 
 import {
@@ -31,6 +31,11 @@ export interface AuthSeedVerification {
     permissionCount: number;
   }>;
 }
+
+export type AuthorizationSeedVerification = Pick<
+  AuthSeedVerification,
+  "permissionCount" | "roles"
+>;
 
 export async function seedAuthentication(
   adminEmail: string,
@@ -65,6 +70,115 @@ export async function seedAuthentication(
     result,
     verification: await verifyAuthenticationSeed(adminEmail),
   };
+}
+
+/**
+ * Reconcile only code-managed authorization data.
+ *
+ * Deployment must not infer or mutate the bootstrap administrator identity:
+ * production acceptance credentials may intentionally belong to a non-admin
+ * account. Full setup continues to use seedAuthentication(), while releases
+ * use this narrower, identity-free operation before replacing app processes.
+ */
+export async function reconcileAuthorizationSeed() {
+  await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext('kafil:authorization-seed'))`,
+    );
+
+    const existingRoles = await tx
+      .select({ id: rolesTable.id, name: rolesTable.name })
+      .from(rolesTable)
+      .where(inArray(rolesTable.name, AUTH_ROLES.map((role) => role.name)));
+
+    for (const role of AUTH_ROLES) {
+      const matches = existingRoles.filter((row) => row.name === role.name);
+      if (matches.length > 1) {
+        throw new Error(
+          `Expected at most one role named '${role.name}', found ${matches.length}.`,
+        );
+      }
+
+      if (matches.length === 0) {
+        await tx.insert(rolesTable).values(role);
+      } else {
+        await tx
+          .update(rolesTable)
+          .set({ description: role.description })
+          .where(eq(rolesTable.id, matches[0]!.id));
+      }
+    }
+
+    for (const permission of AUTH_PERMISSIONS) {
+      await tx
+        .insert(permissionsTable)
+        .values({
+          id: stableSeedId("permission", permission.name),
+          ...permission,
+        })
+        .onConflictDoUpdate({
+          target: permissionsTable.name,
+          set: {
+            action: permission.action,
+            description: permission.description,
+            resource: permission.resource,
+          },
+        });
+    }
+
+    const roleRows = await tx
+      .select({ id: rolesTable.id, name: rolesTable.name })
+      .from(rolesTable)
+      .where(inArray(rolesTable.name, AUTH_ROLES.map((role) => role.name)));
+    const permissionRows = await tx
+      .select({ id: permissionsTable.id, name: permissionsTable.name })
+      .from(permissionsTable)
+      .where(
+        inArray(
+          permissionsTable.name,
+          AUTH_PERMISSIONS.map((permission) => permission.name),
+        ),
+      );
+    const rolesByName = uniqueRowsByName(
+      roleRows,
+      AUTH_ROLES.map((role) => role.name),
+      "role",
+    );
+    const permissionsByName = uniqueRowsByName(
+      permissionRows,
+      AUTH_PERMISSIONS.map((permission) => permission.name),
+      "permission",
+    );
+
+    await tx.delete(rolePermissionsTable).where(
+      and(
+        inArray(
+          rolePermissionsTable.roleId,
+          roleRows.map((role) => role.id),
+        ),
+        inArray(
+          rolePermissionsTable.permissionId,
+          permissionRows.map((permission) => permission.id),
+        ),
+      ),
+    );
+
+    for (const roleName of Object.keys(
+      AUTH_ROLE_PERMISSIONS,
+    ) as AuthRoleName[]) {
+      const permissionNames = AUTH_ROLE_PERMISSIONS[roleName];
+      if (permissionNames.length === 0) continue;
+
+      await tx.insert(rolePermissionsTable).values(
+        permissionNames.map((permissionName) => ({
+          permissionId: permissionsByName.get(permissionName)!.id,
+          roleId: rolesByName.get(roleName)!.id,
+        })),
+      );
+    }
+  });
+
+  return verifyAuthorizationSeed();
 }
 
 async function reconcileBootstrapAdminEmail(desiredEmail: string) {
@@ -284,6 +398,47 @@ export async function syncRolePermissions() {
 export async function verifyAuthenticationSeed(
   adminEmail: string,
 ): Promise<AuthSeedVerification> {
+  const authorization = await verifyAuthorizationSeed();
+
+  const [admin] = await db
+    .select({
+      email: usersTable.email,
+      emailVerified: usersTable.emailVerified,
+      id: usersTable.id,
+      roleName: rolesTable.name,
+      status: usersTable.status,
+    })
+    .from(usersTable)
+    .innerJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
+    .where(eq(usersTable.email, adminEmail))
+    .limit(1);
+
+  if (!admin) {
+    throw new Error(`Seed admin '${adminEmail}' was not found.`);
+  }
+  if (
+    admin.roleName !== "admin" ||
+    admin.status !== "active" ||
+    admin.emailVerified !== true
+  ) {
+    throw new Error(
+      `Seed admin '${adminEmail}' is not an active, verified admin.`,
+    );
+  }
+
+  return {
+    admin: {
+      email: admin.email,
+      emailVerified: true,
+      id: admin.id,
+      role: "admin",
+      status: "active",
+    },
+    ...authorization,
+  };
+}
+
+export async function verifyAuthorizationSeed(): Promise<AuthorizationSeedVerification> {
   const requiredRoleNames = AUTH_ROLES.map((role) => role.name);
   const roleRows = await db
     .select({
@@ -314,32 +469,6 @@ export async function verifyAuthenticationSeed(
     AUTH_PERMISSIONS.map((permission) => permission.name),
     "permission",
   );
-
-  const [admin] = await db
-    .select({
-      email: usersTable.email,
-      emailVerified: usersTable.emailVerified,
-      id: usersTable.id,
-      roleName: rolesTable.name,
-      status: usersTable.status,
-    })
-    .from(usersTable)
-    .innerJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
-    .where(eq(usersTable.email, adminEmail))
-    .limit(1);
-
-  if (!admin) {
-    throw new Error(`Seed admin '${adminEmail}' was not found.`);
-  }
-  if (
-    admin.roleName !== "admin" ||
-    admin.status !== "active" ||
-    admin.emailVerified !== true
-  ) {
-    throw new Error(
-      `Seed admin '${adminEmail}' is not an active, verified admin.`,
-    );
-  }
 
   const assignments = await db
     .select({
@@ -390,13 +519,6 @@ export async function verifyAuthenticationSeed(
   });
 
   return {
-    admin: {
-      email: admin.email,
-      emailVerified: true,
-      id: admin.id,
-      role: "admin",
-      status: "active",
-    },
     permissionCount: permissionRows.length,
     roles,
   };

@@ -75,11 +75,33 @@ describe("VPS auth grant reconciliation", () => {
     expect(deploySource).toContain(
       '"${compose[@]}" --profile tools run --rm auth-reconcile',
     );
-    expect(seedAuthSource).toContain(
-      "options: { verbose?: boolean } = {}",
+    expect(seedAuthSource).toContain("reconcileAuthorizationSeed");
+    expect(seedAuthSource).toContain("pg_advisory_xact_lock");
+    expect(seedAuthSource).toContain("verifyAuthorizationSeed");
+    const authorizationStart = seedAuthSource.indexOf(
+      "export async function reconcileAuthorizationSeed",
     );
-    expect(seedAuthSource).toContain("verbose: options.verbose ?? true");
-    expect(reconciliationSource).toContain("verbose: false");
+    const authorizationEnd = seedAuthSource.indexOf(
+      "\nasync function reconcileBootstrapAdminEmail",
+      authorizationStart,
+    );
+    const authorizationReconciliation = seedAuthSource.slice(
+      authorizationStart,
+      authorizationEnd,
+    );
+    expect(authorizationStart).toBeGreaterThanOrEqual(0);
+    expect(authorizationEnd).toBeGreaterThan(authorizationStart);
+    expect(authorizationReconciliation).toContain("AUTH_ROLES");
+    expect(authorizationReconciliation).toContain("AUTH_PERMISSIONS");
+    expect(authorizationReconciliation).toContain("AUTH_ROLE_PERMISSIONS");
+    expect(authorizationReconciliation).not.toContain("usersTable");
+    expect(authorizationReconciliation).not.toContain("tokensTable");
+    expect(authorizationReconciliation).not.toContain("adminEmail");
+    expect(authorizationReconciliation).not.toContain("adminPassword");
+    expect(reconciliationSource).toContain("reconcileAuthorizationSeed");
+    expect(reconciliationSource).not.toContain("readSeedConfig");
+    expect(reconciliationSource).not.toContain("adminEmail");
+    expect(reconciliationSource).not.toContain("adminPassword");
     expect(reconciliationSource).toContain(
       'console.log("Auth seed reconciliation passed.")',
     );

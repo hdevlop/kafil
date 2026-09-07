@@ -15,8 +15,11 @@ rollout, connected real-service completion (including Mailpit decision
 delivery), and real-device push delivery remain pending, so external delivery
 is NOT yet accepted. The first authorized focused production attempt reached
 Unit 01 and exposed unreconciled code-managed notification permissions in the
-active Dokploy raw deployment; the source/deployment correction is locally
-green and awaits publication plus corrected deployment. The connected
+active Dokploy raw deployment. Its first deployment-gate revision failed
+closed because it coupled grant reconciliation to bootstrap-Admin identity;
+production service was recovered without a browser retry, and the corrected
+identity-free authorization reconciliation is locally green and awaits
+publication plus deployment. The connected
 acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
 source, PostgreSQL integration, build, and schema gates.**

@@ -1,13 +1,9 @@
 import { pool } from "@kafil/server/database";
 
-import { readSeedConfig } from "../seed-config";
-import { seedAuthentication } from "../seed-auth";
+import { reconcileAuthorizationSeed } from "../seed-auth";
 
 try {
-  const config = readSeedConfig();
-  await seedAuthentication(config.adminEmail, config.adminPassword, {
-    verbose: false,
-  });
+  await reconcileAuthorizationSeed();
   console.log("Auth seed reconciliation passed.");
 } catch {
   process.exitCode = 1;
