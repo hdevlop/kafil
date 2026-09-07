@@ -684,7 +684,7 @@ test.describe.serial("remote notification system acceptance", () => {
         pollExactlyOneMailboxMessage({
           recipient: sponsor.email,
           since: invitationStartedAt,
-          subjectKeyword: "invited",
+          subjectKeyword: "activate your sponsor account",
           signal: abort.signal,
         }),
       );

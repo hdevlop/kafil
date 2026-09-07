@@ -77,6 +77,10 @@ describe("dedicated remote notification system runner", () => {
     expect(source).toContain("expectWithinViewport");
     expect(source).toContain("X-Kafil-Delivery-Id");
     expect(source).toContain("&lt;Proof&gt;");
+    expect(source).toContain(
+      'subjectKeyword: "activate your sponsor account"',
+    );
+    expect(source).not.toContain('subjectKeyword: "invited"');
     expect(source).toContain("فتح الإشعارات");
     expect(source).toContain("تعيين كمقروء");
     expect(source).toContain("assertRunOwnedRecord");
