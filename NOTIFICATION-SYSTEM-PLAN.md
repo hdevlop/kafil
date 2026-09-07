@@ -23,9 +23,13 @@ and worker revision `9d71e999f6813e35e40e4e41ec8cd0fdb05a910f` with the
 one-shot job, exact grants, migration, heartbeat, activation flags, managed raw
 Compose structure, and dedicated preflight all green. The corrected browser
 attempt confirmed authenticated notification access for all four roles, then
-exposed a test-only hidden responsive text selection. The semantic-heading
-selector correction is locally green and awaits publication, deployment, and
-a fresh focused attempt. The connected
+exposed a test-only hidden responsive text selection. After that correction was
+deployed, the next focused attempt passed the semantic page-heading and bell
+assertions but exposed a second test-only assumption: both responsive shell
+links exist in the DOM even though exactly one is visible. The correction now
+uses the existing unique-visible locator contract and is locally green; full
+verification, publication, exact deployment, and a fresh focused attempt remain.
+The connected
 acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
 source, PostgreSQL integration, build, and schema gates.**

@@ -160,6 +160,12 @@ describe("dedicated remote notification system runner", () => {
     expect(unit).not.toContain(
       'getByText("Notifications", { exact: true }).first()',
     );
+    expect(unit).toContain(
+      'await onlyVisible(principal.page.locator(\'a[href="/notifications"]\'));',
+    );
+    expect(unit).not.toContain(
+      'locator(\'a[href="/notifications"]\')).toHaveCount(1)',
+    );
   });
 
   test("selects only the notification spec and rejects other suite greps", () => {

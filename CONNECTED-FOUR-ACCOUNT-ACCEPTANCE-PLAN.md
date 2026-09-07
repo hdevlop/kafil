@@ -2756,3 +2756,31 @@ passed after correction (`5 passed, 0 failed, 92 assertions`). Web lint and
 typecheck, the full root lint/typecheck/test/build gate, and `db:generate` with
 no schema drift all passed. Publication, exact deployment proof, and one fresh
 focused attempt remain required.
+
+### 12.9 Third focused attempt and visible-link correction
+
+The semantic-heading correction was committed, published, and deployed as exact
+healthy app and worker revision `c420e4fcefe539b3b6d5173f9673348a7fa741bd`.
+CI verification, image publication, the Dokploy trigger, the identity-free auth
+reconciliation job, and the eight notification grants all passed. A fresh
+instruction then authorized exactly Unit 01 plus passive diagnostics. Preflight
+passed and the runner selected exactly `2 tests using 1 worker`, with zero
+retries. Unit 01 progressed through four-account notification authorization,
+empty-inbox ownership, the semantic notifications-page heading, and dashboard
+bell assertions before failing after `53.1s`: the global
+`a[href="/notifications"]` locator correctly matched both responsive shell
+copies, while the test incorrectly required a total DOM count of one.
+Diagnostics did not run, Units 02-08 were excluded by the focused grep, native
+exit was `1`, and the runner reported `NO MANAGED MAILBOX TRANSPORT`. Cleanup
+did not run, so disposable records or mailbox messages may remain. The retained
+96-byte value-free marker had zero sensitive-pattern matches; no error-context
+artifact remained.
+
+The test-owned correction now applies the spec's existing `onlyVisible` helper,
+requiring exactly one visible notifications link while permitting the intended
+hidden responsive copy. Its source regression failed against the old assertion
+(`4 passed, 1 failed, 93 assertions`) and passed after correction
+(`5 passed, 0 failed, 94 assertions`). Web lint and typecheck, the full root
+lint/typecheck/test/build gate, and `db:generate` with no schema drift passed.
+Publication, exact deployment proof, and one corrected focused attempt remain
+required.

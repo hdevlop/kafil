@@ -783,7 +783,7 @@ test.describe.serial("remote notification system acceptance", () => {
       await expect(
         bell.locator("xpath=ancestor::*[@data-slot='indicator'][1]"),
       ).toHaveCount(0);
-      await expect(principal.page.locator('a[href="/notifications"]')).toHaveCount(1);
+      await onlyVisible(principal.page.locator('a[href="/notifications"]'));
     }
   });
 
