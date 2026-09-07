@@ -154,6 +154,12 @@ describe("dedicated remote notification system runner", () => {
     expect(unit.match(/await assertNotificationAccess\(/g)).toHaveLength(3);
     expect(unit).toContain("sponsor.page,");
     expect(unit).toContain("`sponsor-${sponsor.alias}`,");
+    expect(unit).toContain(
+      'principal.page.getByRole("heading", { name: "Notifications", exact: true, level: 2 })',
+    );
+    expect(unit).not.toContain(
+      'getByText("Notifications", { exact: true }).first()',
+    );
   });
 
   test("selects only the notification spec and rejects other suite greps", () => {

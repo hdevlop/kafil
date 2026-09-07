@@ -2732,3 +2732,27 @@ publication, and the Dokploy trigger passed. VPS postconditions then proved:
 No production browser rerun occurred during diagnosis, correction, deployment,
 or preflight preparation. A fresh user instruction is still required before
 one corrected Unit 01 plus passive diagnostics attempt.
+
+### 12.8 Second focused attempt and responsive-selector correction
+
+A fresh instruction authorized exactly Unit 01 plus passive diagnostics on
+deployed revision `ab03fe0ab1c5cc8d5528cc234681ac3dea6c60e7`. The runner
+preflight passed and selected exactly `2 tests using 1 worker`, with zero
+retries. All four principals passed the new `/api/auth/me` role and
+`GET /api/notifications/unread-count` access assertions, confirming the
+deployed grant correction. Unit 01 then failed after `48.5s` at the
+notifications-page readiness assertion because
+`getByText("Notifications", { exact: true }).first()` selected a hidden
+responsive navigation copy. Diagnostics did not run, Units 02-08 were excluded
+by the focused grep, native exit was `1`, and the runner reported
+`NO MANAGED MAILBOX TRANSPORT`. Cleanup did not run, so disposable records or
+mailbox messages may remain. The retained 96-byte value-free marker had zero
+sensitive-pattern matches; no error-context artifact remained.
+
+The test-owned correction selects the unique semantic level-2 page heading
+rendered by `NPageHeader` and removes the arbitrary `.first()` selection. Its
+source regression failed against the old selector (`4 passed, 1 failed`) and
+passed after correction (`5 passed, 0 failed, 92 assertions`). Web lint and
+typecheck, the full root lint/typecheck/test/build gate, and `db:generate` with
+no schema drift all passed. Publication, exact deployment proof, and one fresh
+focused attempt remain required.

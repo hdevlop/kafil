@@ -772,7 +772,7 @@ test.describe.serial("remote notification system acceptance", () => {
       expect(await readNotifications(principal.page, "?limit=100"), `${principal.alias} empty inbox`).toEqual([]);
       await principal.page.goto("/notifications", { waitUntil: "commit" });
       await expect.poll(() => new URL(principal.page.url()).pathname).toBe("/notifications");
-      await expect(principal.page.getByText("Notifications", { exact: true }).first()).toBeVisible();
+      await expect(principal.page.getByRole("heading", { name: "Notifications", exact: true, level: 2 })).toBeVisible();
       await principal.page.goto("/dashboard", { waitUntil: "commit" });
       const bell = principal.page.getByRole("button", {
         name: "Open notifications",
