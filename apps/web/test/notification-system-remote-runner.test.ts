@@ -88,6 +88,31 @@ describe("dedicated remote notification system runner", () => {
     expect(source).toContain('databaseOnlyGuarantees: "NOT VERIFIED"');
   });
 
+  test("waits for reset form hydration and rejects native form submission", () => {
+    expect(existsSync(specUrl)).toBe(true);
+    if (!existsSync(specUrl)) return;
+
+    const source = readFileSync(specUrl, "utf8");
+    const helperStart = source.indexOf("async function acceptSponsorInvitation(");
+    const helperEnd = source.indexOf("\nfunction assertRunOwnedRecord(", helperStart);
+    expect(helperStart).toBeGreaterThanOrEqual(0);
+    expect(helperEnd).toBeGreaterThan(helperStart);
+
+    const helper = source.slice(helperStart, helperEnd);
+    expect(helper).toContain(
+      'await waitForFormHydration(page, "reset-password-form")',
+    );
+    expect(helper).toContain("response.request().isNavigationRequest() &&");
+    expect(helper).toContain('requestPath === "/reset-password"');
+    expect(helper).toContain("{ timeout: 15_000 }");
+    expect(helper).toContain(
+      'expect(resetRequest.method()).toBe("POST")',
+    );
+    expect(helper).toContain(
+      'expect(new URL(resetOutcome.url()).pathname).toBe("/api/auth/reset-password")',
+    );
+  });
+
   test("selects only the notification spec and rejects other suite greps", () => {
     expect(existsSync(runnerUrl)).toBe(true);
     expect(existsSync(configUrl)).toBe(true);

@@ -259,15 +259,22 @@ async function onlyVisible(locator: Locator): Promise<Locator> {
   return locator.nth(visibleIndex);
 }
 
-async function waitForLoginHydration(page: Page): Promise<Locator> {
-  const identifier = page.getByLabel(/Email or phone/i);
-  await expect(identifier).toBeVisible();
-  await expect.poll(() => page.locator("#login-form").evaluate((form) => {
-    const propsKey = Object.keys(form).find((key) => key.startsWith("__reactProps$"));
+async function waitForFormHydration(page: Page, formId: string): Promise<Locator> {
+  const form = page.locator(`#${formId}`);
+  await expect(form).toBeVisible();
+  await expect.poll(() => form.evaluate((element) => {
+    const propsKey = Object.keys(element).find((key) => key.startsWith("__reactProps$"));
     if (!propsKey) return false;
-    const props = (form as unknown as Record<string, { onSubmit?: unknown }>)[propsKey];
+    const props = (element as unknown as Record<string, { onSubmit?: unknown }>)[propsKey];
     return typeof props?.onSubmit === "function";
   })).toBe(true);
+  return form;
+}
+
+async function waitForLoginHydration(page: Page): Promise<Locator> {
+  await waitForFormHydration(page, "login-form");
+  const identifier = page.getByLabel(/Email or phone/i);
+  await expect(identifier).toBeVisible();
   return identifier;
 }
 
@@ -518,15 +525,30 @@ async function acceptSponsorInvitation(
   invitation: MailpitMessage,
 ): Promise<void> {
   await page.goto(extractResetLink(invitation), { waitUntil: "commit" });
+  await waitForFormHydration(page, "reset-password-form");
   await page.getByPlaceholder("At least 8 characters", { exact: true }).fill(password);
   await page.getByPlaceholder("Repeat the new password", { exact: true }).fill(password);
-  const resetResponse = page.waitForResponse(
-    (response) =>
-      response.request().method() === "POST" &&
-      new URL(response.url()).pathname === "/api/auth/reset-password",
+  const resetOutcomePromise = page.waitForResponse(
+    (response) => {
+      const requestPath = new URL(response.url()).pathname;
+      return (
+        (response.request().method() === "POST" &&
+          requestPath === "/api/auth/reset-password") ||
+        (response.request().isNavigationRequest() &&
+          response.request().method() === "GET" &&
+          requestPath === "/reset-password")
+      );
+    },
+    { timeout: 15_000 },
   );
-  await page.getByRole("button", { name: "Save password", exact: true }).click();
-  expect((await resetResponse).status()).toBeLessThan(400);
+  const savePassword = page.getByRole("button", { name: "Save password", exact: true });
+  await savePassword.click({ trial: true, timeout: 5_000 });
+  await savePassword.click();
+  const resetOutcome = await resetOutcomePromise;
+  const resetRequest = resetOutcome.request();
+  expect(resetRequest.method()).toBe("POST");
+  expect(new URL(resetOutcome.url()).pathname).toBe("/api/auth/reset-password");
+  expect(resetOutcome.status()).toBeLessThan(400);
   await expect.poll(() => new URL(page.url()).pathname).toBe("/login");
   await login(page, email, password);
 }
