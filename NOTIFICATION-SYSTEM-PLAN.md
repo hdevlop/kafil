@@ -26,9 +26,13 @@ attempt confirmed authenticated notification access for all four roles, then
 exposed a test-only hidden responsive text selection. After that correction was
 deployed, the next focused attempt passed the semantic page-heading and bell
 assertions but exposed a second test-only assumption: both responsive shell
-links exist in the DOM even though exactly one is visible. The correction now
-uses the existing unique-visible locator contract and is locally green; full
-verification, publication, exact deployment, and a fresh focused attempt remain.
+links exist in the DOM even though exactly one is visible. The unique-visible
+correction passed full local and CI verification, was deployed on exact healthy
+app/worker revision `0b0173fda266a46c2f6cd9f082b7baf8d747c203`, and the
+corrected focused Unit 01 plus passive diagnostics attempt passed `2 tests`
+with one worker, zero retries, native exit `0`, and a clean value-free marker.
+The complete unfiltered nine-test production attempt still requires separate
+fresh authorization, so external notification delivery is not yet accepted.
 The connected
 acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses

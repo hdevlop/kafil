@@ -2504,11 +2504,11 @@ Local implementation evidence (2026-09-07):
 
 #### Unit 01 - setup and empty ownership
 
-- [ ] Create only the minimum disposable Family and Sponsor A/B identities
+- [x] Create only the minimum disposable Family and Sponsor A/B identities
   through supported UI/application flows and retain four isolated contexts.
-- [ ] Prove `/notifications` is available to every role and each inbox initially
+- [x] Prove `/notifications` is available to every role and each inbox initially
   contains no row from another principal.
-- [ ] Prove exactly one shell notification bell is visible and its zero-count
+- [x] Prove exactly one shell notification bell is visible and its zero-count
   badge is hidden.
 
 #### Unit 02 - contribution fan-out and read persistence
@@ -2784,3 +2784,26 @@ hidden responsive copy. Its source regression failed against the old assertion
 lint/typecheck/test/build gate, and `db:generate` with no schema drift passed.
 Publication, exact deployment proof, and one corrected focused attempt remain
 required.
+
+### 12.10 Corrected focused Unit 01 result
+
+Revision `0b0173fda266a46c2f6cd9f082b7baf8d747c203` passed GitHub Actions
+verification, image publication, and the Dokploy trigger. The live app and
+notifications worker were independently confirmed healthy on that exact
+revision, and its identity-free auth reconciliation job exited `0`. The
+dedicated preflight passed immediately before execution.
+
+The single authorized attempt selected exactly `2 tests using 1 worker`, with
+zero retries. Unit 01 passed in `40.5s`, proving supported creation of the
+disposable Family and Sponsor A/B principals, isolated authenticated access for
+all four roles, empty owned inboxes, semantic notifications-page readiness, and
+the unique visible zero-state shell bell/link contract. Passive diagnostics
+passed in `59ms`; the complete command passed `2 tests` in `45.7s`, returned
+native exit `0`, and reported `NO MANAGED MAILBOX TRANSPORT`.
+
+The notification result directory retained only its 45-byte value-free passed
+`.last-run.json` marker. Its sensitive-pattern scan was clean. Units 02-08 were
+excluded by the focused grep, so event fan-out, read behavior, Mailpit decision
+delivery, isolation, push lifecycle, Arabic interaction, supported cleanup, and
+real-device display remain unverified. Per section 12.5, a separate fresh user
+instruction is required before the one complete unfiltered nine-test attempt.
