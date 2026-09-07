@@ -18,8 +18,11 @@ Unit 01 and exposed unreconciled code-managed notification permissions in the
 active Dokploy raw deployment. Its first deployment-gate revision failed
 closed because it coupled grant reconciliation to bootstrap-Admin identity;
 production service was recovered without a browser retry, and the corrected
-identity-free authorization reconciliation is locally green and awaits
-publication plus deployment. The connected
+identity-free authorization reconciliation is deployed on exact healthy app
+and worker revision `9d71e999f6813e35e40e4e41ec8cd0fdb05a910f` with the
+one-shot job, exact grants, migration, heartbeat, activation flags, managed raw
+Compose structure, and dedicated preflight all green. The corrected browser
+attempt still requires fresh authorization. The connected
 acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
 source, PostgreSQL integration, build, and schema gates.**

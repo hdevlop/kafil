@@ -2623,7 +2623,7 @@ and must remain `NOT VERIFIED` when it is not performed.
 ### 12.6 Final notification acceptance checklist
 
 - [x] Dedicated notification spec/runner and exact 9-test discovery are green.
-- [ ] Exact app/worker revision, migration, heartbeat, activation, and isolated
+- [x] Exact app/worker revision, migration, heartbeat, activation, and isolated
   Mailpit route are verified value-free.
 - [ ] Four-account inbox fan-out, polling, read persistence, and isolation pass.
 - [ ] Applicant approval produces one inbox row and one normal-path Mailpit
@@ -2691,7 +2691,8 @@ Red/green and local correction evidence:
 - notification runner source contract: red `4 passed, 1 failed`, then green
   `5 passed, 0 failed, 90 assertions`;
 - deployment auth-reconciliation source contract: red `2 passed, 1 failed`,
-  then green `3 passed, 0 failed, 25 assertions`;
+then green `3 passed, 0 failed, 38 assertions` after the identity-free
+deployment boundary was pinned;
 - targeted ESLint and web/seed typechecks passed;
 - the complete root lint, typecheck, standard test, and production build gate
   passed with web `396`, server `400` plus `77` opt-in skips, and seed `89`;
@@ -2707,10 +2708,27 @@ definition restored app and worker service on the published image; migrations
 had passed and no Admin identity was changed. The follow-up implementation
 uses a PostgreSQL-advisory-lock-protected transaction over authorization tables
 only. Its local command, full root gate, all `55` PostgreSQL tests, and schema
-drift check pass; publication and corrected deployment remain pending.
+drift check passed.
 
-No production browser rerun occurred during diagnosis or correction. The next
-boundary is follow-up publication, successful identity-free auth
-reconciliation, exact healthy app/worker revision proof, and preflight
-preparation. A fresh user instruction is still required before one corrected
-Unit 01 plus passive diagnostics attempt.
+The follow-up was published and deployed as exact revision
+`9d71e999f6813e35e40e4e41ec8cd0fdb05a910f`. GitHub verification, image
+publication, and the Dokploy trigger passed. VPS postconditions then proved:
+
+- migration and identity-free auth reconciliation both exited `0` on the exact
+  revision, while app and `notifications-worker` became healthy on that same
+  revision;
+- the managed raw Compose source and rendered Compose each contained one
+  `auth-reconcile` service and exactly two app/worker completion dependencies;
+- the service had one backend network and no published ports, and its bounded
+  log had no sensitive-pattern matches;
+- both notification permissions existed exactly once, and Admin, Operator,
+  Family, and Sponsor each had exactly two matching grants;
+- migration `0045` was journaled, the worker heartbeat existed, and dispatch,
+  email, and push activation flags were all true;
+- the dedicated preflight-only command passed Chrome, app-scoped HTTPS
+  mail-test gateway, `/login`, `/apply`, `/notifications`, health, and readiness,
+  ending with `NO MANAGED MAILBOX TRANSPORT`.
+
+No production browser rerun occurred during diagnosis, correction, deployment,
+or preflight preparation. A fresh user instruction is still required before
+one corrected Unit 01 plus passive diagnostics attempt.
