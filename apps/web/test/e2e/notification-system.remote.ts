@@ -259,6 +259,22 @@ async function onlyVisible(locator: Locator): Promise<Locator> {
   return locator.nth(visibleIndex);
 }
 
+async function openNotificationsPopover(
+  page: Page,
+  action: () => Promise<void>,
+): Promise<void> {
+  const listResponse = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      response.request().method() === "GET" &&
+      url.pathname === "/api/notifications" &&
+      url.searchParams.get("limit") === "5"
+    );
+  });
+  await action();
+  expect((await listResponse).status()).toBe(200);
+}
+
 async function waitForFormHydration(page: Page, formId: string): Promise<Locator> {
   const form = page.locator(`#${formId}`);
   await expect(form).toBeVisible();
@@ -883,7 +899,7 @@ test.describe.serial("remote notification system acceptance", () => {
       name: "Open notifications",
       exact: true,
     });
-    await bell.click();
+    await openNotificationsPopover(sponsorAPage, () => bell.click());
     const card = sponsorAPage.locator(
       `[data-notification-id="${state.sponsorAValidatedNotificationId}"]`,
     );
@@ -897,7 +913,7 @@ test.describe.serial("remote notification system acceptance", () => {
     );
     expect(beforeOpen.find((row) => row.id === state.sponsorAValidatedNotificationId)?.readAt).toBeNull();
 
-    await bell.click();
+    await openNotificationsPopover(sponsorAPage, () => bell.click());
     const markResponse = sponsorAPage.waitForResponse(
       (response) =>
         response.request().method() === "PATCH" &&
@@ -1258,7 +1274,9 @@ test.describe.serial("remote notification system acceptance", () => {
     await expect(bell).toHaveCount(1);
     await expect(bell.locator('[aria-live="polite"]')).toContainText("إشعار");
     await bell.focus();
-    await sponsorAPage.keyboard.press("Enter");
+    await openNotificationsPopover(sponsorAPage, () =>
+      sponsorAPage.keyboard.press("Enter"),
+    );
     await expect(sponsorAPage.getByText("الإشعارات", { exact: true }).first()).toBeVisible();
     const card = sponsorAPage.locator(
       `[data-notification-id="${state.sponsorALaterNotificationId}"]`,
@@ -1284,7 +1302,9 @@ test.describe.serial("remote notification system acceptance", () => {
     await sponsorAPage.keyboard.press("Enter");
     expect((await markResponse).status()).toBe(200);
     await expect(bell).toBeFocused();
-    await sponsorAPage.keyboard.press("Enter");
+    await openNotificationsPopover(sponsorAPage, () =>
+      sponsorAPage.keyboard.press("Enter"),
+    );
     await expect(sponsorAPage.getByText("الإشعارات", { exact: true }).first()).toBeVisible();
     await sponsorAPage.keyboard.press("Escape");
     await expect(bell).toBeFocused();

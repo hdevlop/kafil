@@ -2807,3 +2807,32 @@ excluded by the focused grep, so event fan-out, read behavior, Mailpit decision
 delivery, isolation, push lifecycle, Arabic interaction, supported cleanup, and
 real-device display remain unverified. Per section 12.5, a separate fresh user
 instruction is required before the one complete unfiltered nine-test attempt.
+
+### 12.11 First complete attempt and popover-readiness correction
+
+A fresh instruction authorized one complete unfiltered attempt on exact healthy
+app and worker revision `84a6a6b69185a5512ba586707cc953195ffb1c06` after CI,
+the isolated SMTP boundary, and dedicated preflight passed. Playwright selected
+exactly `9 tests using 1 worker`, with zero retries. Unit 01 passed in `1.3m`.
+Unit 02 then failed after `35.0s`: the deployed API and unread-count polling had
+already returned Sponsor A's new notification, but the test immediately clicked
+the newly navigated server-rendered bell and never observed the popover list
+request; its notification-ID card was absent for the 30-second assertion.
+Units 03-08 and diagnostics did not run, native exit was `1`, and the runner
+reported `NO MANAGED MAILBOX TRANSPORT`. Cleanup did not run, so disposable
+records or mailbox messages may remain. The retained 96-byte value-free failed
+marker had no sensitive-pattern matches; the runner removed error context.
+
+This is a test-readiness defect. The correction registers the exact
+`GET /api/notifications?limit=5` response before every mouse or keyboard open,
+performs the action once, and requires exact `200` before asserting cards. It
+covers both Unit 02 opens and both Arabic keyboard opens in Unit 07, so an
+unhydrated trigger or failed list fetch produces the owning request failure
+instead of a misleading missing-card timeout. The source regression failed on
+the old contract (`4 passed, 1 failed, 95 assertions`) and passes after the
+correction (`5 passed, 0 failed, 102 assertions`). Publication, exact deployment
+correction (`5 passed, 0 failed, 102 assertions`). Web lint/typecheck, the full
+root lint/typecheck/test/build gate, and `db:generate` with no schema drift also
+pass. Publication, exact deployment proof, and a separately authorized focused
+Unit 02 prerequisite range plus passive diagnostics remain required before
+another complete attempt.

@@ -144,6 +144,13 @@ describe("dedicated remote notification system runner", () => {
     expect(unitStart).toBeGreaterThanOrEqual(0);
     expect(unitEnd).toBeGreaterThan(unitStart);
     const unit = source.slice(unitStart, unitEnd);
+    const unitTwoStart = unitEnd;
+    const unitTwoEnd = source.indexOf(
+      '\n  test("remote notifications 03 -',
+      unitTwoStart,
+    );
+    expect(unitTwoEnd).toBeGreaterThan(unitTwoStart);
+    const unitTwo = source.slice(unitTwoStart, unitTwoEnd);
 
     expect(unit).toContain(
       'await assertNotificationAccess(adminPage, "admin", "admin")',
@@ -166,6 +173,13 @@ describe("dedicated remote notification system runner", () => {
     expect(unit).not.toContain(
       'locator(\'a[href="/notifications"]\')).toHaveCount(1)',
     );
+    expect(source).toContain("async function openNotificationsPopover(");
+    expect(source).toContain('url.pathname === "/api/notifications"');
+    expect(source).toContain('url.searchParams.get("limit") === "5"');
+    expect(source).toContain("expect((await listResponse).status()).toBe(200)");
+    expect(unitTwo).toContain("await openNotificationsPopover(sponsorAPage, () => bell.click())");
+    expect(unitTwo).not.toContain("await bell.click();\n    const card");
+    expect(source.match(/await openNotificationsPopover\(/g)).toHaveLength(4);
   });
 
   test("selects only the notification spec and rejects other suite greps", () => {

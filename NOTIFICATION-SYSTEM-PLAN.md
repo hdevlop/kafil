@@ -33,6 +33,12 @@ corrected focused Unit 01 plus passive diagnostics attempt passed `2 tests`
 with one worker, zero retries, native exit `0`, and a clean value-free marker.
 The complete unfiltered nine-test production attempt still requires separate
 fresh authorization, so external notification delivery is not yet accepted.
+That first complete attempt passed Unit 01 and then exposed a test-only popover
+readiness gap in Unit 02: it did not observe the list request after opening a
+newly navigated shell. The test now registers and requires the exact successful
+popover list response before card assertions; local verification is green, but
+publication, deployment, focused Unit 02 acceptance, and a later complete
+attempt remain pending.
 The connected
 acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
