@@ -44,8 +44,16 @@ redis_password="$(openssl rand -hex 32)"
   printf 'LOG_FORMAT=json\nLOG_LEVEL=info\nNO_COLOR=1\n'
   printf 'REDIS_URL=redis://:%s@redis:6379/0\n' "${redis_password}"
   printf 'KAFIL_TRUSTED_PROXY_HOPS=1\n'
-  printf 'EMAIL_PROVIDER=console\n'
-  printf 'EMAIL_DEFAULT_FROM=Kafil Demo <%s>\n' "${contact_email}"
+    printf 'EMAIL_PROVIDER=console\n'
+    printf 'EMAIL_DEFAULT_FROM=Kafil Demo <%s>\n' "${contact_email}"
+    printf '# Notification rollout: in-app first, then email, then push. All\n'
+    printf '# default off; enable each only after its phase is verified.\n'
+    printf 'NOTIFICATIONS_DISPATCH_ENABLED=false\n'
+    printf 'NOTIFICATIONS_EMAIL_ENABLED=false\n'
+    printf 'NOTIFICATIONS_PUSH_ENABLED=false\n'
+    printf '# Generate production VAPID keys with `bunx web-push generate-vapid-keys`.\n'
+    printf 'VAPID_PUBLIC_KEY=\nVAPID_PRIVATE_KEY=\n'
+    printf 'VAPID_CONTACT_EMAIL=%s\n' "${contact_email}"
 } >"${app_env}"
 
 {

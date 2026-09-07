@@ -27,6 +27,7 @@ import { catalogSchema } from "../modules/catalog/catalogSchema";
 import { contributionSchema } from "../modules/contributions/contributionSchema";
 import { documentSchema } from "../modules/documents/documentSchema";
 import { familySchema } from "../modules/families/familySchema";
+import { notificationSchema } from "../modules/notifications/notificationSchema";
 import { operatorSchema } from "../modules/operators/operatorSchema";
 import { orderSchema } from "../modules/orders/orderSchema";
 import { outboxSchema } from "../modules/outbox/outboxSchema";
@@ -108,6 +109,7 @@ export * from "../modules/children/childSchema";
 export * from "../modules/contributions/contributionSchema";
 export * from "../modules/documents/documentSchema";
 export * from "../modules/families/familySchema";
+export * from "../modules/notifications/notificationSchema";
 export * from "../modules/operators/operatorSchema";
 export * from "../modules/orders/orderSchema";
 export * from "../modules/outbox/outboxSchema";
@@ -125,6 +127,7 @@ export const kafilSchema = {
   ...childSchema,
   ...contributionSchema,
   ...familySchema,
+  ...notificationSchema,
   ...operatorSchema,
   ...orderSchema,
   ...outboxSchema,

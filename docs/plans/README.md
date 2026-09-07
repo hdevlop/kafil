@@ -7,18 +7,21 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
 - [`FAMILY-ORDER-LIMITS-PLAN.md`](../../FAMILY-ORDER-LIMITS-PLAN.md)
   - implemented nullable global defaults, per-family order policy overrides,
     monthly inheritance/reset, and enforcement; browser acceptance is deferred.
-- [`AUTH-SECURITY-REMEDIATION-PLAN.md`](../../AUTH-SECURITY-REMEDIATION-PLAN.md)
-  - September 5 auth security review. Source fixes, dependency remediation,
-    package publication, CSP enforcement, and local connected-account acceptance
-    are complete; deployment and production acceptance remain open.
 - [`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`](../../CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md)
-  - completed guarded VPS browser-acceptance contract and evidence record.
+  - completed guarded VPS four-account baseline and evidence record, plus the
+    pending dedicated notification connected-acceptance extension.
 - [`NOTIFICATION-SYSTEM-PLAN.md`](../../NOTIFICATION-SYSTEM-PLAN.md)
-  - implementation-ready draft for the in-app + email + push notification
-    system (polling freshness, all outbox topics, read/unread only).
+  - implemented in-app + email + push source/database contract; production
+    rollout is pending and real-service acceptance is delegated to the
+    connected four-account plan.
 
 ## Supporting documents
 
+- [`Auth security evidence`](../evidence/auth-security/2026-09-05-local/README.md)
+  - completed Auth 4 remediation, publication, deployment, connected lifecycle,
+    CSP matrix, and manual Google OAuth acceptance record. The completed root
+    implementation plan was removed after School adopted the same shared Auth
+    and CSP contracts.
 - [`NAJM-STACK.md`](NAJM-STACK.md) - installed framework contracts to reuse.
   Treat its version list as indicative only; the workspace `package.json` files
   and the installed declarations under `node_modules/` are authoritative.

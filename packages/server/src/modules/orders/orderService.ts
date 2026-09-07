@@ -653,6 +653,7 @@ export class OrderService {
       topic: "order.purchase_replaced",
       aggregateType: "order",
       aggregateId: order.id,
+      actorUserId,
       payload: {
         orderNumber: order.orderNumber,
         actualTotalMinor: replacement.actualTotalMinor,
@@ -1088,6 +1089,7 @@ export class OrderService {
       topic: input.auditAction,
       aggregateType: "order",
       aggregateId: order.id,
+      actorUserId: input.placedByUserId,
       payload: {
         orderNumber: order.orderNumber,
         totalMinor,
@@ -1645,6 +1647,7 @@ export class OrderService {
       topic: `order.${action}`,
       aggregateType: "order",
       aggregateId: after.id,
+      actorUserId,
       payload: {
         orderNumber: after.orderNumber,
         status: after.status,
@@ -1739,6 +1742,7 @@ export class OrderService {
       topic: `order.delivery_${action}`,
       aggregateType: "order",
       aggregateId: order.id,
+      actorUserId,
       payload: {
         orderNumber: order.orderNumber,
         ...safeMetadata,

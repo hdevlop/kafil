@@ -530,6 +530,18 @@
       "refunded": "???????? : ?? ????????? ?????"
     }
   },
+  "notifications": {
+    "success": {
+      "retrieved": "تم استرداد الإشعارات بنجاح",
+      "markedRead": "تم وضع علامة مقروء على الإشعار بنجاح",
+      "markedAllRead": "تم وضع علامة مقروء على جميع الإشعارات بنجاح",
+      "settingsRetrieved": "تم استرداد إعدادات الإشعارات بنجاح",
+      "settingsUpdated": "تم تحديث إعدادات الإشعارات بنجاح",
+      "subscriptionSaved": "تم حفظ اشتراك الدفع بنجاح",
+      "subscriptionRemoved": "تمت إزالة اشتراك الدفع بنجاح",
+      "pushConfigRetrieved": "تم استرداد إعدادات الدفع بنجاح"
+    }
+  },
   "children": {
     "success": {
       "retrieved": "????? : ?? ????????? ?????",
@@ -839,13 +851,20 @@
       "household": "الأسرة",
       "shopping": "التسوق",
       "supportAndFinance": "الدعم",
-      "account": "الحساب"
+      "account": "الحساب",
+      "notifications": "الإشعارات"
     },
     "sidebar": {
       "open": "فتح القائمة الجانبية",
       "close": "إغلاق القائمة الجانبية",
       "collapse": "طي",
-      "expand": "توسيع"
+      "expand": "توسيع",
+      "impactTitle": "أنت تصنع أثرًا",
+      "impactDescription": "شكرًا لدعمك {count} من العائلات وبناء الثقة من خلال عطاء شفاف.",
+      "sponsorMore": "ادعم عائلات أخرى",
+      "supportTitle": "تحتاج إلى مساعدة؟",
+      "supportDescription": "نحن هنا لمساعدتك.",
+      "contactSupport": "اتصل بالدعم"
     },
     "action": {
       "signOut": "تسجيل الخروج",
@@ -2369,6 +2388,50 @@
       "saving": "جارٍ الحفظ...",
       "resetLinkInvalid": "رابط إعادة التعيين غير صالح أو منتهي الصلاحية.",
       "passwordSaved": "تم حفظ كلمة المرور. يمكنك الآن تسجيل الدخول."
+    },
+    "notifications": {
+      "navNotifications": "الإشعارات",
+      "bellLabel": "الإشعارات",
+      "inboxTitle": "الإشعارات",
+      "inboxSubtitle": "أحدث نشاطات حسابك في مكان واحد.",
+      "unreadBadge": "{count} إشعارات غير مقروءة",
+      "markAllRead": "تعيين الكل كمقروء",
+      "markingAll": "جارٍ التعيين…",
+      "markRead": "تعيين كمقروء",
+      "marking": "جارٍ التعيين…",
+      "openInbox": "فتح الإشعارات",
+      "viewAll": "عرض الكل",
+      "emptyTitle": "لا إشعارات بعد",
+      "emptyBody": "ستظهر هنا النشاطات الجديدة لحسابك.",
+      "loading": "جارٍ تحميل الإشعارات…",
+      "loadError": "تعذر تحميل الإشعارات.",
+      "retry": "إعادة المحاولة",
+      "unreadFilter": "غير المقروءة فقط",
+      "allFilter": "الكل",
+      "unknownTitle": "نشاط جديد",
+      "unknownBody": "حدث تغيير في حسابك. افتح البريد لمعرفة التفاصيل.",
+      "justNow": "الآن",
+      "pushTitle": "إشعارات الدفع",
+      "pushBody": "احصل على التنبيهات المهمة على هذا الجهاز حتى عند إغلاق التبويب.",
+      "pushEnable": "تفعيل الدفع",
+      "pushEnabling": "جارٍ التفعيل…",
+      "pushDisable": "إيقاف",
+      "pushDisabling": "جارٍ الإيقاف…",
+      "pushUnsupported": "هذا المتصفح لا يدعم الدفع عبر الويب.",
+      "pushDenied": "الإشعارات محظورة. اسمح بها في إعدادات الموقع ثم حاول مجددا.",
+      "pushGranted": "الدفع مفعّل على هذا الجهاز.",
+      "pushError": "تعذر تحديث إعدادات الدفع.",
+      "pushIosHint": "على iPhone، ثبّت التطبيق على الشاشة الرئيسية قبل تفعيل الدفع.",
+      "settingsTitle": "لغة الإشعارات",
+      "settingsBody": "تستخدم رسائل البريد والدفع الخارجية هذه اللغة. تتبع الصفوف الداخلية لغة الواجهة.",
+      "settingsSaved": "تم تحديث لغة الإشعارات.",
+      "settingsFailed": "تعذر تحديث اللغة الخارجية. تم تغيير لغة العرض رغم ذلك.",
+      "focusMissing": "هذا الإشعار لم يعد مدرجا.",
+      "columnsTitle": "الإشعار",
+      "columnsDate": "التاريخ",
+      "columnsStatus": "الحالة",
+      "stateUnread": "غير مقروء",
+      "stateRead": "مقروء"
     }
   }
 }

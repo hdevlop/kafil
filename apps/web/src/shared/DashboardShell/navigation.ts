@@ -1,4 +1,4 @@
-import {  Baby,  ClipboardCheck,  ClipboardList,  HandCoins,
+import {  Baby,  Bell,  ClipboardCheck,  ClipboardList,  HandCoins,
    HeartHandshake,
    House,
    KeyRound,
@@ -124,6 +124,12 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       href: "/orders",
       labelKey: "nav.orders",
       icon: ClipboardCheck,
+      roles: ALL_ROLES,
+   },
+   {
+      href: "/notifications",
+      labelKey: "nav.notifications",
+      icon: Bell,
       roles: ALL_ROLES,
    },
    {

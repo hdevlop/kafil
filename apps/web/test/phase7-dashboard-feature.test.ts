@@ -71,6 +71,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "/categories",
       "/products",
       "/orders",
+      "/notifications",
       "/users",
       "/roles",
       "/permissions",
@@ -103,6 +104,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "/family",
       "/contribution",
       "/orders",
+      "/notifications",
     ]);
     expect(
       getDashboardNavigation("sponsor")
@@ -126,6 +128,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "/categories",
       "/products",
       "/orders",
+      "/notifications",
     ]);
     expect(navigation.filter((item) => item.sectionLabel).map((item) => item.sectionLabel)).toEqual([
       "nav.supportOperations",
@@ -145,6 +148,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
       "/categories",
       "/products",
       "/orders",
+      "/notifications",
     ]);
     expect(navigation.filter((item) => item.sectionLabel).map((item) => item.sectionLabel)).toEqual([
       "nav.household",

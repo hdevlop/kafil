@@ -286,6 +286,18 @@ class OrderReaderRoleGuard {
 }
 
 @Service()
+class NotificationReaderRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR] },
+      user, context,
+    );
+  }
+}
+
+@Service()
 class SponsorImageManagerRoleGuard {
   constructor(private readonly guard: KafilRoleGuard) {}
 
@@ -302,6 +314,7 @@ const AdminRole = createGuard(AdminRoleGuard);
 const OperatorRole = createGuard(OperatorRoleGuard);
 const FamilyRole = createGuard(FamilyRoleGuard);
 const SponsorRole = createGuard(SponsorRoleGuard);
+const NotificationReaderRole = createGuard(NotificationReaderRoleGuard);
 const ContributionReaderRole = createGuard(ContributionReaderRoleGuard);
 const ChildReaderRole = createGuard(ChildReaderRoleGuard);
 const OrderReaderRole = createGuard(OrderReaderRoleGuard);
@@ -313,6 +326,7 @@ export const isAdmin = composeGuards(AdminRole());
 export const isOperator = composeGuards(OperatorRole());
 export const isFamily = composeGuards(FamilyRole());
 export const isSponsor = composeGuards(SponsorRole());
+export const isNotificationReader = composeGuards(NotificationReaderRole());
 export const isContributionReader = composeGuards(ContributionReaderRole());
 export const isChildReader = composeGuards(ChildReaderRole());
 export const isOrderReader = composeGuards(OrderReaderRole());

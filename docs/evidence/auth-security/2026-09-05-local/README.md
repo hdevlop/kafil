@@ -1,7 +1,9 @@
 # Auth security local evidence - 2026-09-05
 
-This directory contains sanitized local evidence for the unpublished Najm Auth
-security candidate described in `AUTH-SECURITY-REMEDIATION-PLAN.md`. It records
+This directory contains sanitized evidence for the completed Najm Auth security
+remediation adopted by Kafil. The completed implementation plan was removed
+after its package, deployment, connected-auth, CSP and OAuth gates closed and
+School adopted the same shared Auth and CSP contracts. This record contains
 commands and value-free assertions only; no credentials, generated identities,
 tokens, cookies, mailbox bodies, database URLs, or cache keys are retained.
 

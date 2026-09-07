@@ -28,6 +28,7 @@ export const auth = defineAuth({
     "/family",
     "/children",
     "/applicants",
+    "/notifications",
   ],
   roleRoutes: {
     "/operator/:path*": ["admin", "operator"],
@@ -40,6 +41,7 @@ export const auth = defineAuth({
     "/orders": ["admin", "operator", "family", "sponsor"],
     "/contribution": ["admin", "operator", "family", "sponsor"],
     "/applicants": ["admin"],
+    "/notifications": ["admin", "operator", "family", "sponsor"],
   },
   refreshThreshold: 0.8,
   tabSync: true,

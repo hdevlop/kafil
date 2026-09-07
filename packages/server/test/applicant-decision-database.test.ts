@@ -253,10 +253,24 @@ databaseDescribe("applicant decision PostgreSQL integration", () => {
     expect(persisted.profiles).toHaveLength(1);
     expect(persisted.audits).toEqual([{ action: "applicant.approved" }]);
     expect(persisted.outbox).toHaveLength(1);
+    // Phase C: the durable decision event stays pending for the notification
+    // worker (the dispatcher owns inbox fan-out and decision email), and
+    // exactly one notifications-v1 consumer job represents fan-out eligibility.
     expect(persisted.outbox[0]).toMatchObject({
       topic: "applicant.approved",
-      status: "sent",
+      status: "pending",
     });
+    const approvedJobs = await pool.query<{ consumer_key: string; status: string }>(
+      `SELECT consumer_key, status FROM outbox_consumer_jobs
+       WHERE outbox_event_id IN (
+         SELECT id FROM outbox_events
+         WHERE aggregate_type = 'applicant' AND aggregate_id = $1
+       )`,
+      [seeded.applicantId],
+    );
+    expect(approvedJobs.rows).toEqual([
+      { consumer_key: "notifications-v1", status: "pending" },
+    ]);
     expect(persisted.outbox[0]?.payload).not.toHaveProperty("email");
     expect(persisted.outbox[0]?.payload).not.toHaveProperty("phone");
     expect(persisted.outbox[0]?.payload).not.toHaveProperty("cin");
@@ -372,10 +386,24 @@ databaseDescribe("applicant decision PostgreSQL integration", () => {
     expect(persisted.user).toMatchObject({ status: "inactive", role: null });
     expect(persisted.profiles).toHaveLength(0);
     expect(persisted.audits).toEqual([{ action: "applicant.rejected" }]);
+    // Phase C: the durable decision event stays pending for the notification
+    // worker (dispatcher-owned inbox fan-out and decision email), with
+    // exactly one notifications-v1 consumer job.
     expect(persisted.outbox[0]).toMatchObject({
       topic: "applicant.rejected",
-      status: "sent",
+      status: "pending",
     });
+    const rejectedJobs = await pool.query<{ consumer_key: string; status: string }>(
+      `SELECT consumer_key, status FROM outbox_consumer_jobs
+       WHERE outbox_event_id IN (
+         SELECT id FROM outbox_events
+         WHERE aggregate_type = 'applicant' AND aggregate_id = $1
+       )`,
+      [seeded.applicantId],
+    );
+    expect(rejectedJobs.rows).toEqual([
+      { consumer_key: "notifications-v1", status: "pending" },
+    ]);
     const [tokens, setup, challenge] = await Promise.all([
       pool.query<{
         status: string;

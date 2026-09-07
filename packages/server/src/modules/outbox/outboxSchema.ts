@@ -1,4 +1,5 @@
 import { index, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { usersTable } from "najm-auth/pg";
 
 import { timestamps } from "../../database/columns";
 import { outboxEventStatusEnum } from "../../database/enums";
@@ -10,6 +11,9 @@ export const outboxEvents = pgTable(
     topic: varchar("topic", { length: 120 }).notNull(),
     aggregateType: varchar("aggregate_type", { length: 80 }).notNull(),
     aggregateId: text("aggregate_id").notNull(),
+    actorUserId: text("actor_user_id").references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
     payload: jsonb("payload").$type<Record<string, string | number | boolean | null>>().notNull(),
     status: outboxEventStatusEnum("status").default("pending").notNull(),
     attempts: integer("attempts").default(0).notNull(),

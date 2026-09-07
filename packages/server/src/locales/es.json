@@ -527,6 +527,18 @@
       "refunded": "Contribuci?n : reembolsado correctamente"
     }
   },
+  "notifications": {
+    "success": {
+      "retrieved": "Notificaciones recuperadas correctamente",
+      "markedRead": "Notificación marcada como leída correctamente",
+      "markedAllRead": "Todas las notificaciones marcadas como leídas correctamente",
+      "settingsRetrieved": "Ajustes de notificación recuperados correctamente",
+      "settingsUpdated": "Ajustes de notificación actualizados correctamente",
+      "subscriptionSaved": "Suscripción push guardada correctamente",
+      "subscriptionRemoved": "Suscripción push eliminada correctamente",
+      "pushConfigRetrieved": "Configuración push recuperada correctamente"
+    }
+  },
   "children": {
     "success": {
       "retrieved": "Ni?o : recuperado correctamente",
@@ -835,13 +847,20 @@
       "household": "Hogar",
       "shopping": "Compras",
       "supportAndFinance": "Apoyo",
-      "account": "Cuenta"
+      "account": "Cuenta",
+      "notifications": "Notificaciones"
     },
     "sidebar": {
       "open": "Abrir menú lateral",
       "close": "Cerrar menú lateral",
       "collapse": "Contraer",
-      "expand": "Expandir"
+      "expand": "Expandir",
+      "impactTitle": "Estás generando un impacto",
+      "impactDescription": "Gracias por apoyar a {count} familias y generar confianza con donaciones transparentes.",
+      "sponsorMore": "Apoyar a más familias",
+      "supportTitle": "¿Necesitas ayuda?",
+      "supportDescription": "Estamos aquí para ayudarte.",
+      "contactSupport": "Contactar con soporte"
     },
     "action": {
       "signOut": "Cerrar sesión",
@@ -2278,6 +2297,50 @@
       "saving": "Guardando...",
       "resetLinkInvalid": "El enlace de restablecimiento no es válido o ha caducado.",
       "passwordSaved": "Contraseña guardada. Ya puedes iniciar sesión."
+    },
+    "notifications": {
+      "navNotifications": "Notificaciones",
+      "bellLabel": "Notificaciones",
+      "inboxTitle": "Notificaciones",
+      "inboxSubtitle": "Tu actividad reciente en un solo lugar.",
+      "unreadBadge": "{count} notificaciones sin leer",
+      "markAllRead": "Marcar todo como leído",
+      "markingAll": "Marcando…",
+      "markRead": "Marcar como leído",
+      "marking": "Marcando…",
+      "openInbox": "Abrir notificaciones",
+      "viewAll": "Ver todo",
+      "emptyTitle": "Sin notificaciones",
+      "emptyBody": "La nueva actividad de tu cuenta aparecerá aquí.",
+      "loading": "Cargando notificaciones…",
+      "loadError": "No pudimos cargar las notificaciones.",
+      "retry": "Reintentar",
+      "unreadFilter": "Solo sin leer",
+      "allFilter": "Todas",
+      "unknownTitle": "Nueva actividad",
+      "unknownBody": "Algo cambió en tu cuenta. Abre la bandeja para más detalles.",
+      "justNow": "Ahora mismo",
+      "pushTitle": "Notificaciones push",
+      "pushBody": "Recibe avisos importantes en este dispositivo incluso con la pestaña cerrada.",
+      "pushEnable": "Activar push",
+      "pushEnabling": "Activando…",
+      "pushDisable": "Desactivar",
+      "pushDisabling": "Desactivando…",
+      "pushUnsupported": "Este navegador no admite push web.",
+      "pushDenied": "Las notificaciones están bloqueadas. Permítelas en los ajustes del sitio e inténtalo de nuevo.",
+      "pushGranted": "El push está activado en este dispositivo.",
+      "pushError": "No pudimos actualizar los ajustes push.",
+      "pushIosHint": "En iPhone, instala la app en la pantalla de inicio antes de activar el push.",
+      "settingsTitle": "Idioma de notificación",
+      "settingsBody": "Los correos y push externos usan este idioma. Las filas internas siguen el idioma de la interfaz.",
+      "settingsSaved": "Idioma de notificación actualizado.",
+      "settingsFailed": "No pudimos actualizar el idioma externo. El idioma visible sí cambió.",
+      "focusMissing": "Esa notificación ya no aparece.",
+      "columnsTitle": "Notificación",
+      "columnsDate": "Fecha",
+      "columnsStatus": "Estado",
+      "stateUnread": "Sin leer",
+      "stateRead": "Leída"
     }
   }
 }

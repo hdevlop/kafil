@@ -46,6 +46,8 @@ export const AUTH_PERMISSIONS = [
   ),
   permission("read", "settings", "Read platform product settings"),
   permission("update", "settings", "Update platform product settings"),
+  permission("read", "notifications", "Read own notification inbox"),
+  permission("update", "notifications", "Mark own notifications read and manage push subscriptions"),
   permission("read", "audit-events", "Read filtered audit events"),
   permission("read", "documents", "Read protected family documents"),
   permission("create", "documents", "Create protected family documents"),
@@ -66,7 +68,6 @@ export const AUTH_ROLE_PERMISSIONS: Record<
     "read:sponsors",
     "create:sponsors",
     "update:sponsors",
-    "delete:sponsors",
     "read:families",
     "create:families",
     "update:families",
@@ -89,8 +90,10 @@ export const AUTH_ROLE_PERMISSIONS: Record<
     "create:documents",
     "update:documents",
     "delete:documents",
+    "read:notifications",
+    "update:notifications",
   ],
-  family: ["read:families", "read:children", "read:budgets", "read:contributions"],
+  family: ["read:families", "read:children", "read:budgets", "read:contributions", "read:notifications", "update:notifications"],
   sponsor: [
     "read:sponsors",
     "create:sponsors",
@@ -100,6 +103,8 @@ export const AUTH_ROLE_PERMISSIONS: Record<
     "read:contributions",
     "create:contributions",
     "update:contributions",
+    "read:notifications",
+    "update:notifications",
   ],
 };
 

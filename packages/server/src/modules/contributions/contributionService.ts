@@ -347,6 +347,7 @@ async getForPrincipal(id: string, userId: string, role: string) {
       topic: "contribution.submitted",
       aggregateType: "contribution",
       aggregateId: contribution.id,
+      actorUserId: sponsorUserId,
       payload: { amountMinor: contribution.amountMinor },
     });
     return contribution;
@@ -401,6 +402,7 @@ async getForPrincipal(id: string, userId: string, role: string) {
       topic: "contribution.recorded",
       aggregateType: "contribution",
       aggregateId: contribution.id,
+      actorUserId,
       payload: { amountMinor: contribution.amountMinor },
     });
     return contribution;
@@ -480,6 +482,7 @@ async getForPrincipal(id: string, userId: string, role: string) {
       topic: "contribution.validated",
       aggregateType: "contribution",
       aggregateId: contribution.id,
+      actorUserId,
       payload: { amountMinor: contribution.amountMinor },
     });
     const funding = await this.funding.activateIfEligible(
@@ -517,6 +520,7 @@ async getForPrincipal(id: string, userId: string, role: string) {
       topic: "contribution.rejected",
       aggregateType: "contribution",
       aggregateId: id,
+      actorUserId,
     });
     return rejected;
   }
@@ -593,6 +597,7 @@ async getForPrincipal(id: string, userId: string, role: string) {
       topic: "contribution.refunded",
       aggregateType: "contribution",
       aggregateId: id,
+      actorUserId,
       payload: { amountMinor: contribution.amountMinor },
     });
     return { contribution: refunded, ledgerEntry: entry };
@@ -731,6 +736,7 @@ async getForPrincipal(id: string, userId: string, role: string) {
         topic: "contribution.expired",
         aggregateType: "contribution",
         aggregateId: due.id,
+        actorUserId: null,
         payload: { amountMinor: due.amountMinor },
       });
       expiredCount += 1;

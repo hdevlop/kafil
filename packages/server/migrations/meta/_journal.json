@@ -309,6 +309,13 @@
       "when": 1788700382171,
       "tag": "0044_sloppy_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1788721129026,
+      "tag": "0045_salty_hobgoblin",
+      "breakpoints": true
     }
   ]
 }

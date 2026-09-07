@@ -15,6 +15,7 @@ import screenfull from "screenfull";
 
 import { useTranslation } from "najm-i18n/react";
 import type { KafilLocale } from "@kafil/server/locales";
+import { updateNotificationSettings } from "@/services/notificationsApi";
 
 const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";
 
@@ -41,6 +42,14 @@ export default function PageHeaderGlobalActions() {
     setIsChangingLanguage(true);
     try {
       await changeLanguage(nextLanguage);
+      // External-channel locale follows the UI language as an explicit
+      // command. A sync failure never blocks the UI change; the
+      // notifications surface retries it on entry.
+      try {
+        await updateNotificationSettings(nextLanguage);
+      } catch {
+        // Surfaced again from the notifications inbox; see NotificationsPage.
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update language preference.");
     } finally {

@@ -53,6 +53,33 @@ services:
         condition: service_healthy
     command: ["bun", "run", "db:migrate"]
 
+  # Durable notification delivery. Same immutable image as the web app, no
+  # second API server, no published ports. Safe with more than one replica:
+  # claiming uses FOR UPDATE SKIP LOCKED with bounded batches.
+  # Least privilege: private backend access plus isolated outbound HTTPS. The
+  # worker never serves HTTP, so it must not join the frontend network.
+  # Restart, logging, init, and no-new-privileges come from the app anchor.
+  notifications-worker:
+    <<: *app
+    restart: unless-stopped
+    networks:
+      - backend
+      # A dedicated network supplies outbound HTTPS for Resend and Web Push.
+      # No other service joins it and the worker still publishes no ports.
+      - notifications-egress
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["bun", "run", "notifications:worker"]
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"const {Redis}=await import('ioredis'); const r=new Redis(process.env.REDIS_URL,{lazyConnect:true,maxRetriesPerRequest:1}); try{await r.connect(); const v=await r.get('kafil:notifications:worker:heartbeat'); await r.quit(); process.exit(v?0:1)}catch{process.exit(1)}\""]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
   postgres:
     image: postgres:17.6-bookworm
     restart: unless-stopped
@@ -137,6 +164,7 @@ services:
 networks:
   backend:
     internal: true
+  notifications-egress:
   frontend:
 
 volumes:

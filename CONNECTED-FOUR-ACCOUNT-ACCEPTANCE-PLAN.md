@@ -1,12 +1,13 @@
 # Kafil guarded VPS acceptance plan
 
-Status: **COMPLETE - THE AUTHORIZED 20-TEST REMOTE ATTEMPT PASSED ON 2026-09-06 WITH NATIVE EXIT `0` ON CONFIRMED CONTAINER REVISION `adee9c9d`; UPLOAD, CSP, ALL 16 NUMBERED STEPS, RESPONSIVE, SUPPORTED CLEANUP, AND DIAGNOSTICS ARE BROWSER-PROVEN; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`**
+Status: **BASELINE COMPLETE - THE AUTHORIZED 20-TEST REMOTE ATTEMPT PASSED ON 2026-09-06 WITH NATIVE EXIT `0` ON CONFIRMED CONTAINER REVISION `adee9c9d`; UPLOAD, CSP, ALL 16 NUMBERED STEPS, RESPONSIVE, SUPPORTED CLEANUP, AND DIAGNOSTICS ARE BROWSER-PROVEN; DATABASE-ONLY GUARANTEES REMAIN `NOT VERIFIED`. THE NOTIFICATION EXTENSION IN SECTION 12 IS PLANNED BUT NOT IMPLEMENTED OR RUN, SO NOTIFICATION DELIVERY IS NOT YET ACCEPTED.**
 
 Target: exactly `https://kafala360.ma`
 
-This is the only root planning document. It is the authoritative contract for
-the guarded four-account VPS journey. There is no root `PLAN.md`; do not create
-one or infer a broader roadmap from this acceptance plan.
+This is the authoritative contract for the guarded four-account VPS journey.
+It does not replace task-specific implementation plans. There is no root
+`PLAN.md`; do not create one or infer a broader roadmap from this acceptance
+plan.
 
 ## 1. Goal and evidence boundary
 
@@ -47,6 +48,10 @@ Not verified without database access:
 The authoritative checkpoint is section 11.19, the authorized complete 20-test
 attempt that passed on 2026-09-06 with native exit `0` on the value-free
 confirmed container revision `adee9c9d` (`adee9c9d5c0276e3871ace6c142f6f1a229e4aac`).
+That checkpoint predates the notification system. It remains accepted for its
+declared baseline, while the separate notification extension in section 12 is
+open and requires its own implementation, deployment proof, fresh instruction,
+and one-attempt evidence.
 
 Section 11.16 records the earlier authoritative complete 18-test attempt on
 confirmed revision `1a30370d`; it is superseded but remains historical
@@ -2389,3 +2394,228 @@ Browser-proven versus database-only boundary:
   locks and append-only storage; audit/outbox payloads; migration state on
   the VPS. Those guarantees remain owned by the opt-in PostgreSQL suite and
   server tests, not claimed here.
+
+## 12. Notification system connected acceptance extension
+
+Status: **PLANNED - THE DEDICATED SPEC/RUNNER ARE NOT IMPLEMENTED; THE
+NOTIFICATION REVISION IS NOT DEPLOYED OR RUN THROUGH THIS EXTENSION, SO IT IS
+NOT ACCEPTED.**
+
+This section is the sole owner of the notification system's real connected
+acceptance. `NOTIFICATION-SYSTEM-PLAN.md` owns implementation, source tests,
+PostgreSQL integration, migration, package publication, and deployment wiring;
+it deliberately contains no E2E scenarios. The historical 20-test result in
+section 11.19 remains valid for its original scope and does not prove any item
+in this section.
+
+### 12.1 Evidence boundary and suite isolation
+
+Implement a separate serial notification spec and guarded runner rather than
+changing the historical 20-test selection:
+
+```text
+spec    = apps/web/test/e2e/notification-system.remote.ts
+runner  = apps/web/scripts/run-notification-system-remote-e2e.ts
+command = bun run --cwd apps/web test:e2e:notifications:remote
+grep    = KAFIL_E2E_REMOTE_NOTIFICATIONS_GREP
+```
+
+The runner must select only the notification spec, reject the financial/auth
+grep variables, use exactly one worker and zero retries, retain normal TLS
+verification, disable screenshots/traces/video, and own no SSH, Tailscale,
+Docker, Mailpit, forwarding, or local-server lifecycle. It reuses the exact
+target-origin and app-scoped HTTPS mailbox-gateway safety contract in sections
+3-4 and must report `NO MANAGED MAILBOX TRANSPORT` after success or failure.
+
+The suite uses real deployed UI and application APIs, four isolated
+authenticated principals (Admin, Family, Sponsor A, Sponsor B), real
+PostgreSQL through the deployed application, the deployed notification worker,
+and the isolated Kafil Mailpit route. It must not use `page.route()`, mocks,
+direct SQL, seeds, direct browser-state mutation, `clearCookies()`, forced
+clicks, arbitrary sleeps, or live email recipients.
+
+Black-box acceptance proves observable UI/API and delivery behavior. It does
+not replace the completed PostgreSQL tests for transaction atomicity,
+`SKIP LOCKED`, exact snapshot concurrency, uniqueness constraints, encryption
+at rest, retry scheduling, or dead-letter thresholds.
+
+### 12.2 Mandatory preconditions
+
+Before requesting a browser attempt, record value-free evidence that:
+
+- [ ] the notification implementation and dedicated runner/spec are committed
+  and published, with their focused source contracts and the root local gate
+  green;
+- [ ] migration `0045_salty_hobgoblin` completed on the target;
+- [ ] the web app and `notifications-worker` run the same exact confirmed OCI
+  revision, and both are healthy;
+- [ ] the worker heartbeat is present without exposing its key or value;
+- [ ] staged rollout completed in order: in-app, email, then push, with the
+  intended notification activation variables enabled for this final journey;
+- [ ] Kafil uses the isolated SMTP provider and the unique
+  `najmstack-mailpit:1025` route, with live email delivery disabled;
+- [ ] the scoped HTTPS mailbox gateway passes exact TLS, unauthenticated `401`,
+  authenticated identity, and `kafil` scope checks;
+- [ ] `/login`, `/apply`, `/notifications`, health, and readiness succeed on
+  the exact authorized origin;
+- [ ] the target revision has not already been exercised under an unresolved
+  failed notification attempt.
+
+Preflight is configuration/readiness evidence only. It does not check any
+notification acceptance item and does not authorize a browser run.
+
+### 12.3 Planned exact test titles
+
+```text
+remote notifications 01 - four-account setup and empty inbox ownership
+remote notifications 02 - contribution fan-out, polling, and read persistence
+remote notifications 03 - mark-all boundary and later unread event
+remote notifications 04 - applicant inbox and single Mailpit decision email
+remote notifications 05 - cross-user inbox isolation and exact 404
+remote notifications 06 - push subscription persistence and account transfer
+remote notifications 07 - Arabic phone RTL, keyboard, and focus restoration
+remote notifications 08 - supported cleanup, logout, and closure
+remote notifications diagnostics - final contexts and delivery assertions
+```
+
+Discovery-only listing must report exactly **9 tests in one file** before the
+first connected attempt is requested. Discovery may use non-secret placeholder
+configuration and must not launch a browser or contact the target.
+
+### 12.4 Work-unit contracts
+
+#### Unit 01 - setup and empty ownership
+
+- [ ] Create only the minimum disposable Family and Sponsor A/B identities
+  through supported UI/application flows and retain four isolated contexts.
+- [ ] Prove `/notifications` is available to every role and each inbox initially
+  contains no row from another principal.
+- [ ] Prove exactly one shell notification bell is visible and its zero-count
+  badge is hidden.
+
+#### Unit 02 - contribution fan-out and read persistence
+
+- [ ] Trigger one contribution validation through the real workflow.
+- [ ] Within the bounded 30-second polling window, prove the Family and Sponsor A
+  counts advance and the Admin/Sponsor B counts do not.
+- [ ] Prove one safe contribution notification appears for each intended
+  recipient without raw payload, household-private, or external-link content.
+- [ ] Opening the popover alone leaves the row unread; opening its supported
+  focus/detail action marks only that row read, returns focus correctly, and
+  remains read after reload.
+
+#### Unit 03 - mark-all observable boundary
+
+- [ ] Create at least two unread rows, invoke the single mark-all command once,
+  and assert its exact successful response and affected count.
+- [ ] Trigger a later event from another context and prove the later row remains
+  unread while the earlier rows remain read after reload.
+- [ ] Report the exact concurrent PostgreSQL statement-snapshot guarantee only
+  from `bun run test:db`; this black-box unit proves the observable before/after
+  boundary and makes no database-locking claim.
+
+#### Unit 04 - applicant decision and Mailpit delivery
+
+- [ ] Start the exact-recipient Mailpit polling promise before the one approval
+  action; match recipient, run start, and decision purpose/subject exactly.
+- [ ] Prove applicant approval creates one inbox row and exactly one normal-path
+  decision email, with no legacy duplicate.
+- [ ] Prove the message contains both text and escaped HTML forms in the expected
+  locale and an `X-Kafil-Delivery-Id` header, without retaining the header value
+  or message body in evidence.
+- [ ] Delete only the exact matched message after the assertions pass.
+
+This proves single ownership on the normal path. It does not claim exactly-once
+transport across the documented provider-send/`sent`-mark crash window.
+
+#### Unit 05 - cross-user isolation
+
+- [ ] Use a notification ID obtained in Sponsor A's context and prove Sponsor B
+  receives exact `404` for both read and mark-read requests.
+- [ ] Prove Admin has no cross-user override and receives the same exact `404`.
+- [ ] Register every expected negative response by exact method, pathname, and
+  status before its one action, and consume it once.
+
+#### Unit 06 - push subscription lifecycle
+
+- [ ] On secure Chromium, request permission only after a real user gesture and
+  create a real `pushManager` subscription using the deployed public VAPID key.
+- [ ] Prove subscribe persistence across reload and authenticated unsubscribe.
+- [ ] In a dedicated same-browser transfer context, subscribe as Sponsor A,
+  perform real logout/login as Sponsor B, upsert the same endpoint, prove the
+  former owner can no longer remove it (`404`), and prove Sponsor B can.
+- [ ] Retain no endpoint, key material, subscription JSON, hash, or fingerprint
+  in output or artifacts.
+
+Provider success/retry and controlled `410` pruning remain source/PostgreSQL
+adapter evidence unless an explicitly approved non-live push harness exists.
+Actual notification display on an external device is a separate manual gate
+and must remain `NOT VERIFIED` when it is not performed.
+
+#### Unit 07 - Arabic phone and keyboard behavior
+
+- [ ] Switch to Arabic through the product UI and prove notification locale sync
+  succeeds without blocking the UI-language change.
+- [ ] At the supported phone viewport, prove the bell, popover, cards/page, badge,
+  and long copy are RTL-correct with no horizontal overflow or clipping.
+- [ ] Prove keyboard open, row activation, mark-read feedback, Escape dismissal,
+  and focus restoration to the bell using exact accessible names.
+
+#### Unit 08 - supported cleanup and closure
+
+- [ ] Delete only this run's disposable application records through supported
+  authenticated APIs and exact-recipient mailbox deletion.
+- [ ] Unsubscribe the run-owned push subscription before deleting its owner.
+- [ ] Report counts only for retained application rows and mailbox messages;
+  database-only guarantees remain `NOT VERIFIED`.
+- [ ] Perform real logout for every open principal, prove recognized auth cookies
+  absent and one protected endpoint denied, then close every page/context.
+
+#### Diagnostics
+
+- [ ] Attach diagnostics when every page is created and finish with no unexpected
+  page errors, console errors, failed requests, or unexplained HTTP responses.
+- [ ] Keep intentional `401`/`404` responses as separately counted one-shot
+  allowances; do not suppress unrelated console or response failures.
+- [ ] Retain only a value-free passed/failed marker. Artifacts and output must
+  contain no identities, emails, phones, OTPs, cookies, tokens, message bodies,
+  endpoints, keys, household data, or raw provider errors.
+
+### 12.5 Promotion and one-attempt rule
+
+1. Implement the spec, runner, source-contract tests, cleanup predicates, and
+   discovery count without contacting the production target.
+2. Pass the focused source/helper tests, targeted lint/typecheck, full root
+   gate, `bun run test:db`, and `bun run db:generate` with no schema drift.
+3. Publish and deploy the exact notification revision; satisfy every section
+   12.2 precondition and obtain a fresh explicit instruction.
+4. Run the smallest state-complete notification unit plus passive diagnostics.
+   Verify the selected-test count before interpreting the result.
+5. On failure, preserve the native exit and value-free fingerprint, classify
+   `TEST`, `PRODUCT`, `RUNNER`, or `ENVIRONMENT`, confirm
+   `NO MANAGED MAILBOX TRANSPORT`, and stop without editing or rerunning under
+   the same authorization.
+6. After a focused pass and any required publication/deployment cycle, obtain a
+   separate fresh instruction for one complete unfiltered 9-test attempt.
+7. Accept this extension only when all eight units plus diagnostics pass in one
+   serial run, supported cleanup reports zero retained API-visible run data,
+   the exact app/worker revision remains confirmed, and the artifact audit is
+   clean.
+
+### 12.6 Final notification acceptance checklist
+
+- [ ] Dedicated notification spec/runner and exact 9-test discovery are green.
+- [ ] Exact app/worker revision, migration, heartbeat, activation, and isolated
+  Mailpit route are verified value-free.
+- [ ] Four-account inbox fan-out, polling, read persistence, and isolation pass.
+- [ ] Applicant approval produces one inbox row and one normal-path Mailpit
+  decision email with no legacy duplicate.
+- [ ] Cross-user and Admin notification access return exact `404`.
+- [ ] Push subscription persistence, account transfer, and unsubscribe pass
+  without credential leakage.
+- [ ] Arabic phone RTL, keyboard operation, focus restoration, and diagnostics
+  pass.
+- [ ] Supported application/mailbox/subscription cleanup and real logout pass.
+- [ ] Complete command result, work-unit result, and extension result are
+  reported separately with native exit and selected-test count.
+- [ ] Real-device push display is proved separately or reported `NOT VERIFIED`.

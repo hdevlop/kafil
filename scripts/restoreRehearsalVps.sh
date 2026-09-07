@@ -42,9 +42,21 @@ tar --extract --gzip --file "${backup_dir}/storage.tar.gz" \
 table_count="$("${compose[@]}" exec -T postgres psql --tuples-only --no-align \
   --username "${POSTGRES_USER}" --dbname "${restore_db}" \
   --command "select count(*) from information_schema.tables where table_schema = 'public';")"
-if [[ ! "${table_count}" =~ ^[1-9][0-9]*$ ]]; then
-  echo "Restore rehearsal found no application tables." >&2
-  exit 1
-fi
-printf 'Isolated restore passed: database=%s tables=%s storage=%s\n' \
-  "${restore_db}" "${table_count}" "${restore_storage}"
+  if [[ ! "${table_count}" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Restore rehearsal found no application tables." >&2
+    exit 1
+  fi
+  # Notification coverage: inbox, deliveries, consumer jobs, settings, and push
+  # subscriptions must survive backup/restore. Push subscriptions carry endpoint
+  # and key ciphertext and receive the same restricted handling as other
+  # secrets (protected backup dir + restic repository, no values in output).
+  missing_tables="$("${compose[@]}" exec -T postgres psql --tuples-only --no-align \
+    --username "${POSTGRES_USER}" --dbname "${restore_db}" \
+    --command "select string_agg(missing, ',' order by missing) from (select unnest(array['notifications','notification_deliveries','notification_settings','outbox_consumer_jobs','push_subscriptions']) as missing except select tablename from pg_tables where schemaname = 'public') s;")"
+  if [[ -n "${missing_tables}" ]]; then
+    echo "Restore rehearsal is missing notification tables: ${missing_tables}." >&2
+    exit 1
+  fi
+  printf 'Isolated restore passed: database=%s tables=%s storage=%s\n' \
+    "${restore_db}" "${table_count}" "${restore_storage}"
+  printf 'Notification restore: inbox, deliveries, consumer jobs, settings, and subscriptions present\n'

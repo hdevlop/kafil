@@ -531,6 +531,18 @@
       "refunded": "Contribution : rembours? avec succ?s"
     }
   },
+  "notifications": {
+    "success": {
+      "retrieved": "Notifications récupérées avec succès",
+      "markedRead": "Notification marquée comme lue avec succès",
+      "markedAllRead": "Toutes les notifications marquées comme lues avec succès",
+      "settingsRetrieved": "Paramètres de notification récupérés avec succès",
+      "settingsUpdated": "Paramètres de notification mis à jour avec succès",
+      "subscriptionSaved": "Abonnement push enregistré avec succès",
+      "subscriptionRemoved": "Abonnement push supprimé avec succès",
+      "pushConfigRetrieved": "Configuration push récupérée avec succès"
+    }
+  },
   "children": {
     "success": {
       "retrieved": "Enfant : r?cup?r? avec succ?s",
@@ -841,13 +853,20 @@
       "household": "Foyer",
       "shopping": "Achats",
       "supportAndFinance": "Soutien",
-      "account": "Compte"
+      "account": "Compte",
+      "notifications": "Notifications"
     },
     "sidebar": {
       "open": "Ouvrir le menu",
       "close": "Fermer le menu",
       "collapse": "Réduire",
-      "expand": "Développer"
+      "expand": "Développer",
+      "impactTitle": "Vous avez un impact réel",
+      "impactDescription": "Merci de soutenir {count} familles et de bâtir la confiance grâce à un don transparent.",
+      "sponsorMore": "Soutenir d'autres familles",
+      "supportTitle": "Besoin d'aide ?",
+      "supportDescription": "Nous sommes là pour vous aider.",
+      "contactSupport": "Contacter le support"
     },
     "action": {
       "signOut": "Se déconnecter",
@@ -2372,6 +2391,50 @@
       "saving": "Enregistrement...",
       "resetLinkInvalid": "Le lien de réinitialisation est invalide ou expiré.",
       "passwordSaved": "Mot de passe enregistré. Vous pouvez maintenant vous connecter."
+    },
+    "notifications": {
+      "navNotifications": "Notifications",
+      "bellLabel": "Notifications",
+      "inboxTitle": "Notifications",
+      "inboxSubtitle": "Votre activité récente au même endroit.",
+      "unreadBadge": "{count} notifications non lues",
+      "markAllRead": "Tout marquer comme lu",
+      "markingAll": "Marquage…",
+      "markRead": "Marquer comme lu",
+      "marking": "Marquage…",
+      "openInbox": "Ouvrir les notifications",
+      "viewAll": "Tout voir",
+      "emptyTitle": "Aucune notification",
+      "emptyBody": "Les nouvelles activités de votre compte apparaîtront ici.",
+      "loading": "Chargement des notifications…",
+      "loadError": "Impossible de charger les notifications.",
+      "retry": "Réessayer",
+      "unreadFilter": "Non lues uniquement",
+      "allFilter": "Toutes",
+      "unknownTitle": "Nouvelle activité",
+      "unknownBody": "Votre compte a changé. Ouvrez la boîte pour en savoir plus.",
+      "justNow": "À l'instant",
+      "pushTitle": "Notifications push",
+      "pushBody": "Recevez les alertes importantes sur cet appareil même onglet fermé.",
+      "pushEnable": "Activer push",
+      "pushEnabling": "Activation…",
+      "pushDisable": "Désactiver",
+      "pushDisabling": "Désactivation…",
+      "pushUnsupported": "Ce navigateur ne prend pas en charge le push web.",
+      "pushDenied": "Les notifications sont bloquées. Autorisez-les dans les réglages du site, puis réessayez.",
+      "pushGranted": "Le push est activé sur cet appareil.",
+      "pushError": "Impossible de mettre à jour les réglages push.",
+      "pushIosHint": "Sur iPhone, installez l'app sur l'écran d'accueil avant d'activer le push.",
+      "settingsTitle": "Langue des notifications",
+      "settingsBody": "Les e-mails et push externes utilisent cette langue. Les lignes internes suivent la langue de l'interface.",
+      "settingsSaved": "Langue des notifications mise à jour.",
+      "settingsFailed": "Impossible de mettre à jour la langue externe. La langue d'affichage a bien été changée.",
+      "focusMissing": "Cette notification n'est plus listée.",
+      "columnsTitle": "Notification",
+      "columnsDate": "Date",
+      "columnsStatus": "Statut",
+      "stateUnread": "Non lue",
+      "stateRead": "Lue"
     }
   }
 }

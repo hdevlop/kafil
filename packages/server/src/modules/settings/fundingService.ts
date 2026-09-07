@@ -268,6 +268,7 @@ export class FundingService {
       topic: "family.fundingActivated",
       aggregateType: "family",
       aggregateId: family.id,
+      actorUserId,
       payload: {
         fundedMinor: progress.fundedMinor,
         targetMinor: progress.targetMinor,

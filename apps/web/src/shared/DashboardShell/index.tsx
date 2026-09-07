@@ -15,6 +15,7 @@ import {
    type SettingsSheetKind,
 } from "@/features/Settings/components/SettingsSheets";
 import { OrderCartOverlay, useOrderCartStore } from "@/features/OrderCart";
+import { NotificationsMenu } from "@/features/Notifications";
 import { openSponsorProfileSheet, SponsorProfileSheet, } from "@/features/Sponsors/components/profile/SponsorProfileSheet";
 import { KafilRoleProvider } from "@/shared/Authorization";
 import {
@@ -24,6 +25,8 @@ import {
    THEME_SETTINGS_NAV_ID,
    translateDashboardNavigation,
 } from "./navigation";
+import { SidebarImpactCard } from "./components/SidebarImpactCard";
+import { SidebarSupportCard } from "./components/SidebarSupportCard";
 export {
    BRANDING_SETTINGS_NAV_ID,
    getDashboardNavigation,
@@ -110,15 +113,22 @@ function DashboardShellBody({ children, user, onSignOut, signingOut }: Readonly<
                collapseLabel={t("sidebar.collapse")}
                expandLabel={t("sidebar.expand")}
                footer={({ collapsed }) => (
-                  <div className="space-y-1">
-                     {footerActions.map(({ id, icon, label, onClick, disabled }) => (
-                        <SidebarAction key={id} icon={icon} label={label} onClick={onClick} disabled={disabled} collapsed={collapsed} />
-                     ))}
+                  <div className="space-y-3">
+                     {user.role === "sponsor" ? <SidebarImpactCard collapsed={collapsed} /> : null}
+                     {user.role === "family" ? <SidebarSupportCard collapsed={collapsed} /> : null}
+                     <div className="space-y-1">
+                        {footerActions.map(({ id, icon, label, onClick, disabled }) => (
+                           <SidebarAction key={id} icon={icon} label={label} onClick={onClick} disabled={disabled} collapsed={collapsed} />
+                        ))}
+                     </div>
                   </div>
                )}
             />
 
             <div className="flex h-full min-h-0 w-full flex-col">
+               <div className="flex shrink-0 items-center justify-end border-b border-border/60 bg-background px-3 py-1.5 sm:px-4">
+                  <NotificationsMenu />
+               </div>
                <NajmScroll axis="y" className="min-h-0 flex-1">
                   {children}
                </NajmScroll>

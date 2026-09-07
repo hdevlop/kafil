@@ -58,8 +58,8 @@ if [[ -L /opt/kafil/current ]]; then
   previous_release="$(readlink -f /opt/kafil/current)"
 fi
 
-"${compose[@]}" pull app migrate
-pulled_digest="$(docker image inspect "${KAFIL_IMAGE}" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
+  "${compose[@]}" pull app migrate notifications-worker
+  pulled_digest="$(docker image inspect "${KAFIL_IMAGE}" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
 if [[ "${pulled_digest}" != "${expected_digest}" ]]; then
   echo "Pulled digest ${pulled_digest} does not match expected ${expected_digest}." >&2
   exit 4
@@ -84,21 +84,33 @@ if ! "${compose[@]}" --profile tools run --rm --no-deps app \
 fi
 echo "Auth seed reconciliation passed."
 
-ln -sfn "${release_dir}" /opt/kafil/current
-"${compose[@]}" up -d --no-deps app
+  ln -sfn "${release_dir}" /opt/kafil/current
+  # The web app and the notification worker must run the same immutable image
+  # revision. The worker is a non-HTTP process in the same image, so it is
+  # replaced atomically with the app; never leave the previous worker draining
+  # new-schema jobs or the new worker reading old code.
+  "${compose[@]}" up -d --no-deps app notifications-worker
 
-rollback() {
-  echo "Readiness failed; restoring the previous application image." >&2
-  if [[ -z "${previous_image}" || -z "${previous_release}" || ! -d "${previous_release}" ]]; then
-    echo "No previous application candidate is available." >&2
-    return 1
-  fi
-  export KAFIL_IMAGE="${previous_image}"
-  local previous_compose=(docker compose --env-file "${infra_env}" -f "${previous_release}/compose.production.yml")
-  "${previous_compose[@]}" up -d --no-deps app
-  ln -sfn "${previous_release}" /opt/kafil/current
-  KAFIL_INFRA_ENV="${infra_env}" "${previous_release}/scripts/verifyVpsDeployment.sh"
-}
+  rollback() {
+    echo "Readiness failed; restoring the previous application image." >&2
+    if [[ -z "${previous_image}" || -z "${previous_release}" || ! -d "${previous_release}" ]]; then
+      echo "No previous application candidate is available." >&2
+      return 1
+    fi
+    # A pre-Phase-E release has no notifications-worker service. Stop the
+    # failed candidate worker first, then restore every service the previous
+    # Compose definition actually owns.
+    "${compose[@]}" stop notifications-worker || true
+    export KAFIL_IMAGE="${previous_image}"
+    local previous_compose=(docker compose --env-file "${infra_env}" -f "${previous_release}/compose.production.yml")
+    local previous_services=(app)
+    if "${previous_compose[@]}" config --services | grep -qx 'notifications-worker'; then
+      previous_services+=(notifications-worker)
+    fi
+    "${previous_compose[@]}" up -d --no-deps "${previous_services[@]}"
+    ln -sfn "${previous_release}" /opt/kafil/current
+    KAFIL_INFRA_ENV="${infra_env}" "${previous_release}/scripts/verifyVpsDeployment.sh"
+  }
 
 healthy=false
 for _ in {1..24}; do
@@ -127,13 +139,41 @@ fi
 
 app_id="$("${compose[@]}" ps -q app)"
 running_image="$(docker inspect --format '{{.Config.Image}}' "${app_id}")"
-running_digest="$(docker image inspect "${running_image}" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
+worker_id="$("${compose[@]}" ps -q notifications-worker)"
+if [[ -z "${worker_id}" ]]; then
+  echo "Notifications worker is not running after deploy; app and worker must share the same revision." >&2
+  exit 6
+fi
+worker_image="$(docker inspect --format '{{.Config.Image}}' "${worker_id}")"
+if [[ "${worker_image}" != "${running_image}" ]]; then
+  echo "Application image ${running_image} does not match worker image ${worker_image}; both must run the same revision." >&2
+  exit 6
+fi
+running_image_id="$(docker inspect --format '{{.Image}}' "${app_id}")"
+worker_image_id="$(docker inspect --format '{{.Image}}' "${worker_id}")"
+if [[ "${worker_image_id}" != "${running_image_id}" ]]; then
+  echo "Application and notification worker tags match but their image content differs." >&2
+  exit 6
+fi
+running_digest="$(docker image inspect "${running_image_id}" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
+running_revision="$(docker image inspect "${running_image_id}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+if [[ "${running_revision}" != "${git_sha}" ]]; then
+  echo "Running image revision label does not match the requested Git SHA." >&2
+  exit 6
+fi
+if [[ "${running_digest}" != "${expected_digest}" ]]; then
+  echo "Running image digest does not match the verified release digest." >&2
+  exit 6
+fi
 record="${state_dir}/deployment-${git_sha}.txt"
 {
   printf 'deployed_at=%s\n' "$(date -u +%FT%TZ)"
   printf 'git_sha=%s\n' "${git_sha}"
   printf 'image=%s\n' "${running_image}"
   printf 'image_digest=%s\n' "${running_digest}"
+  printf 'worker_image=%s\n' "${worker_image}"
+  printf 'image_id=%s\n' "${running_image_id}"
+  printf 'image_revision=%s\n' "${running_revision}"
   printf 'migration_log_sha256=%s\n' "$(sha256sum "${migration_log}" | cut -d' ' -f1)"
   printf 'auth_seed_log_sha256=%s\n' "$(sha256sum "${auth_seed_log}" | cut -d' ' -f1)"
   printf 'health=passed\n'

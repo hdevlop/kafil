@@ -46,7 +46,7 @@ describe("PWA installability", () => {
   });
 
   test("keeps authenticated data out of the offline cache", async () => {
-    const response = serviceWorker();
+    const response = await serviceWorker();
     const worker = await response.text();
 
     expect(response.headers.get("content-type")).toBe("application/javascript; charset=utf-8");
@@ -57,5 +57,29 @@ describe("PWA installability", () => {
     expect(worker).toContain("fetch(request).catch");
     expect(worker).not.toContain("cache.put");
     expect(worker).not.toContain('"/api/"');
+  });
+
+  test("configures the bounded shared Najm push worker contract", async () => {
+    const response = await serviceWorker();
+    const worker = await response.text();
+
+    expect(worker).toContain('addEventListener("push"');
+    expect(worker).toContain('addEventListener("notificationclick"');
+    expect(worker).toContain('const PUSH_NOTIFICATION_PATH = "/notifications"');
+    expect(worker).toContain('const PUSH_DEFAULT_TITLE = "Kafil"');
+    expect(worker).toContain("data: { notificationId: payload.notificationId }");
+    // The package rejects overlong or extra fields instead of truncating and
+    // displaying a payload that did not satisfy the server contract.
+    expect(worker).toContain("payload.notificationId.length > 100");
+    expect(worker).toContain("payload.title.length > 120");
+    expect(worker).toContain("payload.body.length > 300");
+    expect(worker).toContain("Object.keys(payload).every((key) => PUSH_KEYS.has(key))");
+    // Same-origin click target: an existing client is focused, otherwise a
+    // new window opens on the fixed inbox route. Notification data carries
+    // only the id — title/body are parsed for display but never stored.
+    expect(worker).toContain("self.location.origin");
+    expect(worker).toContain("self.clients.openWindow");
+    expect(worker).toContain("client.focus()");
+    expect(worker).not.toContain("data: { notificationId: payload.notificationId, title");
   });
 });

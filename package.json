@@ -24,7 +24,7 @@
     "najm-i18n": "2.1.2",
     "najm-kit": "2.11.19",
     "najm-mcp": "2.1.2",
-    "najm-next": "0.2.0",
+    "najm-next": "0.3.0",
     "najm-rate": "2.1.1",
     "najm-storage": "2.2.0",
     "najm-theme": "0.2.1",
@@ -58,6 +58,8 @@
     "seed:themes": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:themes'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "seed:verify": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','seed:verify'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "contributions:expire": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/seed','src/scripts/expire-contributions.ts'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
+    "notifications:worker": "bun --cwd packages/server --env-file=../../.env src/workers/notificationsWorker.ts",
+    "notifications:dispatch": "bun --cwd packages/server --env-file=../../.env src/workers/notificationsDispatch.ts --once",
     "setup": "bun --cwd packages/seed --env-file=../../.env src/cli.ts setup --yes"
   },
   "devDependencies": {

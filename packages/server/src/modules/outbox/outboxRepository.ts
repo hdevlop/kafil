@@ -3,6 +3,10 @@ import { Repository } from "najm-core";
 import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
+import {
+  outboxConsumerJobs,
+  type NewOutboxConsumerJob,
+} from "../notifications/notificationSchema";
 import { outboxEvents, type NewOutboxEvent } from "./outboxSchema";
 
 @Repository("default")
@@ -12,6 +16,20 @@ export class OutboxRepository {
   async create(data: NewOutboxEvent) {
     const [event] = await this.db.insert(outboxEvents).values(data).returning();
     return event;
+  }
+
+  async createConsumerJob(data: NewOutboxConsumerJob) {
+    const [job] = await this.db
+      .insert(outboxConsumerJobs)
+      .values(data)
+      .onConflictDoNothing({
+        target: [
+          outboxConsumerJobs.outboxEventId,
+          outboxConsumerJobs.consumerKey,
+        ],
+      })
+      .returning();
+    return job;
   }
 
   async markDelivered(id: string, processedAt: Date) {

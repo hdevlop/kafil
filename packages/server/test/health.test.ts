@@ -181,6 +181,11 @@ describe("Kafil server", () => {
       "families_update",
       "families_deactivate",
       "families_reactivate",
+      // Phase A MCP surface is listMine, unreadCount, and confirmed
+      // markRead; bulk mark-all stays REST-only.
+      "notifications_list_mine",
+      "notifications_mark_read",
+      "notifications_unread_count",
       "staff_list_delivery_options",
       "staff_list_operator_options",
       "staff_list",

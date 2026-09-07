@@ -544,6 +544,18 @@
       "deleted": "Contribution permanently deleted successfully"
     }
   },
+  "notifications": {
+    "success": {
+      "retrieved": "Notifications retrieved successfully",
+      "markedRead": "Notification marked as read successfully",
+      "markedAllRead": "All notifications marked as read successfully",
+      "settingsRetrieved": "Notification settings retrieved successfully",
+      "settingsUpdated": "Notification settings updated successfully",
+      "subscriptionSaved": "Push subscription saved successfully",
+      "subscriptionRemoved": "Push subscription removed successfully",
+      "pushConfigRetrieved": "Push configuration retrieved successfully"
+    }
+  },
   "children": {
     "success": {
       "retrieved": "Child retrieved successfully",
@@ -855,13 +867,20 @@
       "household": "Household",
       "shopping": "Shopping",
       "supportAndFinance": "Support",
-      "account": "Account"
+      "account": "Account",
+      "notifications": "Notifications"
     },
     "sidebar": {
       "open": "Open sidebar",
       "close": "Close sidebar",
       "collapse": "Collapse",
-      "expand": "Expand"
+      "expand": "Expand",
+      "impactTitle": "You're making an impact",
+      "impactDescription": "Thank you for supporting {count} families and building trust through transparent giving.",
+      "sponsorMore": "Sponsor more families",
+      "supportTitle": "Need help?",
+      "supportDescription": "We're here to help you.",
+      "contactSupport": "Contact support"
     },
     "action": {
       "signOut": "Sign out",
@@ -2446,6 +2465,50 @@
       "saving": "Saving...",
       "resetLinkInvalid": "The reset link is invalid or expired.",
       "passwordSaved": "Password saved. You can now sign in."
+    },
+    "notifications": {
+      "navNotifications": "Notifications",
+      "bellLabel": "Notifications",
+      "inboxTitle": "Notifications",
+      "inboxSubtitle": "Your latest account activity in one place.",
+      "unreadBadge": "{count} unread notifications",
+      "markAllRead": "Mark all read",
+      "markingAll": "Marking…",
+      "markRead": "Mark read",
+      "marking": "Marking…",
+      "openInbox": "Open notifications",
+      "viewAll": "View all",
+      "emptyTitle": "No notifications yet",
+      "emptyBody": "New activity for your account will appear here.",
+      "loading": "Loading notifications…",
+      "loadError": "We could not load notifications.",
+      "retry": "Try again",
+      "unreadFilter": "Unread only",
+      "allFilter": "All",
+      "unknownTitle": "New activity",
+      "unknownBody": "Something changed on your account. Open the inbox for details.",
+      "justNow": "Just now",
+      "pushTitle": "Push notifications",
+      "pushBody": "Get high-value alerts on this device even when the tab is closed.",
+      "pushEnable": "Enable push",
+      "pushEnabling": "Enabling…",
+      "pushDisable": "Turn off",
+      "pushDisabling": "Turning off…",
+      "pushUnsupported": "This browser does not support web push.",
+      "pushDenied": "Notifications are blocked. Allow them in the browser site settings, then try again.",
+      "pushGranted": "Push is on for this device.",
+      "pushError": "We could not update push settings.",
+      "pushIosHint": "On iPhone, install this app to the Home Screen before enabling push.",
+      "settingsTitle": "Notification language",
+      "settingsBody": "External emails and push messages use this language. In-app rows follow the UI language.",
+      "settingsSaved": "Notification language updated.",
+      "settingsFailed": "We could not update the notification language. The display language was still changed.",
+      "focusMissing": "That notification is no longer listed.",
+      "columnsTitle": "Notification",
+      "columnsDate": "Date",
+      "columnsStatus": "Status",
+      "stateUnread": "Unread",
+      "stateRead": "Read"
     }
   }
 }

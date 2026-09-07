@@ -8,6 +8,7 @@ export * from "./contributions";
 export * from "./dashboard";
 export * from "./documents";
 export * from "./families";
+export * from "./notifications";
 export * from "./operators";
 export * from "./orders";
 export * from "./outbox";

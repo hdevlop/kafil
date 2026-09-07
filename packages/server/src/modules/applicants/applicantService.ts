@@ -65,15 +65,6 @@ interface OtpEmailCopy {
   warning: string;
 }
 
-interface DecisionEmailCopy {
-  approvedSubject: string;
-  approvedHeading: string;
-  approvedBody: string;
-  rejectedSubject: string;
-  rejectedHeading: string;
-  rejectedBody: string;
-}
-
 const otpEmailCopy: Record<SupportedApplicantLocale, OtpEmailCopy> = {
   en: {
     subject: "Verify your Kafil sponsor application",
@@ -103,53 +94,6 @@ const otpEmailCopy: Record<SupportedApplicantLocale, OtpEmailCopy> = {
     expiry: "Este código caduca en 10 minutos.",
     warning: "No compartas este código con nadie.",
   },
-};
-
-const decisionEmailCopy: Record<SupportedApplicantLocale, DecisionEmailCopy> = {
-  en: {
-    approvedSubject: "Your Kafil sponsor application was approved",
-    approvedHeading: "Welcome to Kafil",
-    approvedBody: "Your sponsor account is active. You can now sign in to your Kafil workspace.",
-    rejectedSubject: "Update on your Kafil sponsor application",
-    rejectedHeading: "Your application was reviewed",
-    rejectedBody: "Your sponsor application was not approved. Contact Kafil support if you need more information.",
-  },
-  fr: {
-    approvedSubject: "Votre candidature de parrainage Kafil a ete approuvee",
-    approvedHeading: "Bienvenue sur Kafil",
-    approvedBody: "Votre compte de parrain est actif. Vous pouvez maintenant vous connecter a votre espace Kafil.",
-    rejectedSubject: "Mise a jour de votre candidature Kafil",
-    rejectedHeading: "Votre candidature a ete examinee",
-    rejectedBody: "Votre candidature de parrainage n'a pas ete approuvee. Contactez l'assistance Kafil pour plus d'informations.",
-  },
-  ar: {
-    approvedSubject: "تمت الموافقة على طلب الرعاية في كافل",
-    approvedHeading: "مرحبا بك في كافل",
-    approvedBody: "تم تفعيل حساب الراعي. يمكنك الآن تسجيل الدخول إلى مساحة كافل الخاصة بك.",
-    rejectedSubject: "تحديث بشأن طلب الرعاية في كافل",
-    rejectedHeading: "تمت مراجعة طلبك",
-    rejectedBody: "لم تتم الموافقة على طلب الرعاية. تواصل مع دعم كافل إذا احتجت إلى مزيد من المعلومات.",
-  },
-  es: {
-    approvedSubject: "Tu solicitud de patrocinio de Kafil fue aprobada",
-    approvedHeading: "Te damos la bienvenida a Kafil",
-    approvedBody: "Tu cuenta de patrocinador esta activa. Ya puedes iniciar sesion en tu espacio de Kafil.",
-    rejectedSubject: "Actualizacion sobre tu solicitud de Kafil",
-    rejectedHeading: "Tu solicitud fue revisada",
-    rejectedBody: "Tu solicitud de patrocinio no fue aprobada. Contacta con el soporte de Kafil si necesitas mas informacion.",
-  },
-};
-
-type DecisionNotification = {
-  applicantId: string;
-  authUserId: string;
-  actorUserId: string;
-  email: string;
-  name: string;
-  locale: SupportedApplicantLocale;
-  topic: typeof APPLICANT_OUTBOX_TOPIC_APPROVED | typeof APPLICANT_OUTBOX_TOPIC_REJECTED;
-  transition: "pending_review->approved" | "pending_review->rejected" | "rejected->approved";
-  sponsorProfileId?: string;
 };
 
 function escapeHtml(value: string) {
@@ -319,9 +263,10 @@ export class ApplicantService {
   }
 
   async approve(applicantId: string, actorUserId: string) {
-    const result = await this.approveInTransaction(applicantId, actorUserId);
-    await this.deliverDecisionNotification(result.notification);
-    return result.applicant;
+    // Phase C: the notification dispatcher owns decision email through the
+    // durable outbox consumer. There is exactly one owner; this method never
+    // sends email directly.
+    return this.approveInTransaction(applicantId, actorUserId);
   }
 
   /**
@@ -427,22 +372,25 @@ export class ApplicantService {
       resourceId: applicant.id,
     });
 
-    return {
-      applicant: {
-        ...updatedApplicant,
-        sponsorProfileId: sponsor.id,
-      },
-      notification: {
+    // Durable decision event inside the same transaction: the notification
+    // worker owns inbox fan-out and dispatcher-owned decision email.
+    await this.outbox.enqueue({
+      topic: APPLICANT_OUTBOX_TOPIC_APPROVED,
+      aggregateType: "applicant",
+      aggregateId: applicant.id,
+      actorUserId,
+      payload: {
         applicantId: applicant.id,
         authUserId: applicant.authUserId,
-        actorUserId,
-        email: applicant.email,
-        name: applicant.name,
-        locale: (challenge?.locale ?? "en") as SupportedApplicantLocale,
-        topic: APPLICANT_OUTBOX_TOPIC_APPROVED,
         transition: approvalTransition,
         sponsorProfileId: sponsor.id,
+        locale: (challenge?.locale ?? "en") as SupportedApplicantLocale,
       },
+    });
+
+    return {
+      ...updatedApplicant,
+      sponsorProfileId: sponsor.id,
     };
   }
 
@@ -457,13 +405,8 @@ export class ApplicantService {
     actorUserId: string,
   ) {
     const { reason } = rejectApplicantDto.parse(input);
-    const result = await this.rejectInTransaction(
-      applicantId,
-      reason,
-      actorUserId,
-    );
-    await this.deliverDecisionNotification(result.notification);
-    return result.applicant;
+    // Phase C: dispatcher-owned decision email only; never send directly here.
+    return this.rejectInTransaction(applicantId, reason, actorUserId);
   }
 
   @Transaction({ retries: 2 })
@@ -524,62 +467,20 @@ export class ApplicantService {
       resourceId: applicant.id,
     });
 
-    return {
-      applicant: updatedApplicant,
-      notification: {
+    await this.outbox.enqueue({
+      topic: APPLICANT_OUTBOX_TOPIC_REJECTED,
+      aggregateType: "applicant",
+      aggregateId: applicant.id,
+      actorUserId,
+      payload: {
         applicantId: applicant.id,
         authUserId: applicant.authUserId,
-        actorUserId,
-        email: applicant.email,
-        name: applicant.name,
+        transition: "pending_review->rejected",
         locale: (challenge?.locale ?? "en") as SupportedApplicantLocale,
-        topic: APPLICANT_OUTBOX_TOPIC_REJECTED,
-        transition: "pending_review->rejected" as const,
       },
-    };
-  }
+    });
 
-  private async deliverDecisionNotification(notification: DecisionNotification) {
-    let event: Awaited<ReturnType<OutboxService["enqueue"]>> | undefined;
-    try {
-      event = await this.outbox.enqueue({
-        topic: notification.topic,
-        aggregateType: "applicant",
-        aggregateId: notification.applicantId,
-        payload: {
-          applicantId: notification.applicantId,
-          authUserId: notification.authUserId,
-          actorUserId: notification.actorUserId,
-          ...(notification.sponsorProfileId
-            ? { sponsorProfileId: notification.sponsorProfileId }
-            : {}),
-          transition: notification.transition,
-        },
-      });
-    } catch {
-      return;
-    }
-
-    const copy = decisionEmailCopy[notification.locale] ?? decisionEmailCopy.en;
-    const approved = notification.topic === APPLICANT_OUTBOX_TOPIC_APPROVED;
-    const heading = approved ? copy.approvedHeading : copy.rejectedHeading;
-    const body = approved ? copy.approvedBody : copy.rejectedBody;
-    const subject = approved ? copy.approvedSubject : copy.rejectedSubject;
-    const direction = notification.locale === "ar" ? "rtl" : "ltr";
-    const loginUrl = `${envConfig.auth.frontendUrl?.replace(/\/$/, "") ?? ""}/login`;
-    const html = `<!doctype html><html dir="${direction}"><body style="font-family:Arial,sans-serif;line-height:1.6"><h2>${escapeHtml(heading)}</h2><p>${escapeHtml(notification.name)},</p><p>${escapeHtml(body)}</p>${approved ? `<p><a href="${escapeHtml(loginUrl)}">${escapeHtml(copy.approvedHeading)}</a></p>` : ""}</body></html>`;
-
-    try {
-      const delivered = await this.email.sendHtml(
-        notification.email,
-        subject,
-        html,
-      );
-      if (!delivered.success) throw new Error("Email provider rejected the notification");
-      await this.outbox.markDelivered(event.id);
-    } catch (error) {
-      await this.outbox.markDeliveryFailed(event.id, error).catch(() => undefined);
-    }
+    return updatedApplicant;
   }
 
   /**

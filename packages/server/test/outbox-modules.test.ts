@@ -10,6 +10,7 @@ describe("durable outbox", () => {
         events.push(event);
         return { id: "outbox-1", ...event };
       },
+      createConsumerJob: async () => ({ id: "consumer-1" }),
     } as unknown as OutboxRepository);
 
     await service.enqueue({

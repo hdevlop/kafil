@@ -5,4 +5,10 @@ export const GET = createNajmServiceWorker({
   cacheVersion: "v1",
   offlineUrl: "/offline.html",
   precache: ["/icons/kafil-192.png"],
+  push: {
+    defaultTitle: "Kafil",
+    notificationPath: "/notifications",
+    icon: "/icons/kafil-192.png",
+    badge: "/icons/kafil-192.png",
+  },
 });

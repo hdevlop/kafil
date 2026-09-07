@@ -57,6 +57,8 @@ it("uses unique permission names with matching action/resource pairs", () => {
       "delete:orders",
       "read:settings",
       "update:settings",
+      "read:notifications",
+      "update:notifications",
       "read:audit-events",
       "read:documents",
       "create:documents",
@@ -98,11 +100,15 @@ expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:catalog");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("update:budgets");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("update:settings");
     expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("read:operators");
+    expect(AUTH_ROLE_PERMISSIONS.operator).toContain("read:notifications");
+    expect(AUTH_ROLE_PERMISSIONS.operator).toContain("update:notifications");
     expect(AUTH_ROLE_PERMISSIONS.family).toEqual([
       "read:families",
       "read:children",
       "read:budgets",
       "read:contributions",
+      "read:notifications",
+      "update:notifications",
     ]);
     expect(AUTH_ROLE_PERMISSIONS.sponsor).toEqual([
       "read:sponsors",
@@ -113,6 +119,8 @@ expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:catalog");
       "read:contributions",
       "create:contributions",
       "update:contributions",
+      "read:notifications",
+      "update:notifications",
     ]);
   });
 });

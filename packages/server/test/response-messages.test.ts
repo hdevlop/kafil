@@ -47,18 +47,19 @@ function controller(name: string) {
 
 describe("server response message contract", () => {
 it("assigns a direct, domain-specific response key to every controller endpoint", () => {
-    // 23 since najm-theme.md Move 8 retired the Appearance, Branding, and
-    // ThemePreset controllers. Their routes are the package's now, and its
-    // response keys ship in its own catalogs.
-    expect(controllers).toHaveLength(23);
+    // 24 = the previous 23 plus the notifications inbox controller. The
+    // najm-theme Move 8 retired the Appearance, Branding, and ThemePreset
+    // controllers; their routes are the package's now.
+    expect(controllers).toHaveLength(24);
 
     const routes = controllers.flatMap((current) =>
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    // 183 = the previous 181 routes plus the two family order-limit
-    // commands (order-policy PUT and monthly-limit reset POST).
-    expect(routes).toHaveLength(183);
+    // 192 = the previous 183 routes plus the nine notification inbox routes
+    // (list, unread-count, settings GET/PUT, push-config, subscribe,
+    // unsubscribe, read-all, mark-read).
+    expect(routes).toHaveLength(192);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));
