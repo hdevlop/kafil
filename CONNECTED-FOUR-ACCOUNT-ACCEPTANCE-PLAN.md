@@ -2860,3 +2860,32 @@ action. The source regression failed against the old helper (`4 passed,
 gate, and `db:generate` with no schema drift pass. Publication, exact
 deployment, and a separately authorized Units 01-02 plus
 diagnostics attempt remain required.
+
+### 12.13 Hydrated focused attempt and explicit open-time refetch fix
+
+The hydration correction was published and deployed as exact healthy app and
+worker revision `944641e3c73055ff63509596183d03b5b6302e1b`; CI and dedicated
+preflight passed. A fresh instruction authorized exactly Units 01-02 plus
+passive diagnostics. Playwright selected `3 tests using 1 worker`, with zero
+retries. Unit 01 passed in `28.5s`. Unit 02 then timed out at `180s` waiting for
+the first `GET /api/notifications?limit=5` even though the bell's React click
+handler was confirmed callable. Diagnostics did not run, native exit was `1`,
+and the runner reported `NO MANAGED MAILBOX TRANSPORT`. Cleanup did not run, so
+disposable records or mailbox messages may remain. The retained 96-byte
+value-free marker had no sensitive-pattern matches; error context was removed.
+
+This disproves the hydration hypothesis and confirms a frontend product defect:
+the popover body can remain mounted while closed, so its list query becomes
+cached before a later notification and `refetchOnMount: "always"` does not mean
+refetch on each controlled open. `NotificationsMenu` now mounts the query body
+only while `open` is true. Each open therefore mounts the list query and makes
+the documented open-time refetch contract real without polling the list while
+closed. The narrow feature regression failed before the fix (`19 passed,
+1 failed, 436 assertions`) and the combined feature/remote-runner tests pass
+after it (`25 passed, 0 failed, 546 assertions`); web typecheck/lint, all root
+tests, and an isolated-dist production build pass. The initial default-dist
+build collided with another active landing-page build and lost its generated
+`pages-manifest.json`; waiting for that unrelated process and rebuilding with
+`NAJM_NEXT_DIST_DIR=.next-notification-gate` passed. `db:generate` reports no
+schema drift. Publication, exact deployment, and a separately
+authorized Units 01-02 plus diagnostics attempt remain required.

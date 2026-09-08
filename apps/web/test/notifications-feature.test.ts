@@ -72,8 +72,12 @@ describe("Phase B notification query contracts", () => {
     const polling = queries.match(/refetchInterval:/g) ?? [];
     expect(polling).toHaveLength(1);
     expect(queries).toContain("refetchIntervalInBackground: false");
-    // List queries refetch on bell open / page entry / invalidation only.
+    // The controlled popover remounts its query body on every open, so
+    // refetchOnMount is an actual open-time contract instead of a stale cache.
     expect(popover).toContain('refetchOnMount: "always"');
+    expect(popover).toContain("{open ? (");
+    expect(popover).toContain("<NotificationPopoverBody");
+    expect(popover).toContain(") : null}");
     const page = readSource(
       "../src/features/Notifications/components/NotificationsPage.tsx",
     );

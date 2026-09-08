@@ -112,7 +112,9 @@ export function NotificationsMenu() {
         <NotificationBell />
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8}>
-        <NotificationPopoverBody onNavigate={() => setOpen(false)} />
+        {open ? (
+          <NotificationPopoverBody onNavigate={() => setOpen(false)} />
+        ) : null}
       </PopoverContent>
     </Popover>
   );

@@ -45,6 +45,12 @@ requires the visible bell's React `onClick` handler before registering the list
 response and activating it; local source/typecheck/lint evidence is green, while
 full verification, publication, deployment, and focused browser acceptance are
 pending.
+The hydrated focused attempt still emitted no list request, confirming the
+frontend popover body remained mounted and cached while closed. The product fix
+now mounts that query body only for the controlled open state, guaranteeing the
+documented open-time refetch while avoiding closed-state list polling. Narrow
+feature and runner tests plus web static gates pass; full verification,
+publication, deployment, and focused acceptance remain pending.
 The connected
 acceptance journey is owned by section 12 of
 `CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`; local verification here uses
