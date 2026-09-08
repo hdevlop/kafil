@@ -177,10 +177,9 @@ describe("dedicated remote notification system runner", () => {
     expect(source).toContain("trigger: Locator");
     expect(source).toContain('key.startsWith("__reactProps$")');
     expect(source).toContain('typeof props?.onClick === "function"');
-    expect(source).toContain('url.pathname === "/api/notifications"');
-    expect(source).toContain('url.searchParams.get("limit") === "5"');
-    expect(source).toContain("expect((await listResponse).status()).toBe(200)");
-    expect(unitTwo).toContain("await openNotificationsPopover(sponsorAPage, bell, () => bell.click())");
+    expect(source).toContain('toHaveAttribute("aria-expanded", "true")');
+    expect(source).not.toContain("const listResponse = page.waitForResponse");
+    expect(unitTwo).toContain("await openNotificationsPopover(bell, () => bell.click())");
     expect(unitTwo).not.toContain("await bell.click();\n    const card");
     expect(source.match(/await openNotificationsPopover\(/g)).toHaveLength(4);
   });

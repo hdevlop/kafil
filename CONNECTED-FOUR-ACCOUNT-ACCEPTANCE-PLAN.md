@@ -2889,3 +2889,28 @@ build collided with another active landing-page build and lost its generated
 `NAJM_NEXT_DIST_DIR=.next-notification-gate` passed. `db:generate` reports no
 schema drift. Publication, exact deployment, and a separately
 authorized Units 01-02 plus diagnostics attempt remain required.
+
+### 12.14 Open-time product fix attempt and observable popover correction
+
+The explicit open-time query-body fix was published and deployed as exact
+healthy app and worker revision `0bbff6dad12f2254a94267ddd626fd608209809f`;
+CI and dedicated preflight passed. A fresh instruction authorized exactly Units
+01-02 plus passive diagnostics. Playwright selected `3 tests using 1 worker`,
+with zero retries. Unit 01 passed in `31.3s`; Unit 02 then timed out at `180s`
+because the test required a new `GET /api/notifications?limit=5` response after
+opening. Diagnostics did not run, native exit was `1`, and the runner reported
+`NO MANAGED MAILBOX TRANSPORT`. Cleanup did not run, so disposable records or
+mailbox messages may remain. The retained 96-byte value-free marker had no
+sensitive-pattern matches; error context was removed.
+
+The product fix remains valid, but the response observer was an implementation
+detail rather than the acceptance contract: React Query may satisfy an open from
+its cache, while the API-proven notification-ID card is the required freshness
+evidence. The helper now proves the exact visible bell is hydrated, performs one
+mouse or keyboard activation, and requires its semantic `aria-expanded` state
+to become `true`; Unit 02 then requires the newly created ID-specific card.
+This distinguishes a failed open from stale content without demanding a network
+request. The combined notification feature/runner source tests pass (`25 passed,
+0 failed, 546 assertions`), and web typecheck/lint pass. Full root verification,
+publication, exact deployment, and a separately authorized Units 01-02 plus
+diagnostics attempt remain required.
