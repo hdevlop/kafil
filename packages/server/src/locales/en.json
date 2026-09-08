@@ -2541,9 +2541,9 @@
         "play": "Resume rotation",
         "position": "Slide {{current}} of {{total}}",
         "slide1Alt": "Illustration of a Kafil family receiving grocery support",
-        "slide2Alt": "Closer view of a Kafil family with grocery goods ready for delivery",
-        "esSlide1Alt": "Spanish headline artwork with a family-support checklist",
-        "esSlide2Alt": "Spanish headline artwork showing grocery goods"
+        "slide2Alt": "Illustration of a Moroccan family sharing groceries in a sunlit courtyard",
+        "esSlide1Alt": "Illustration of a Moroccan mother with her children in a sunlit courtyard",
+        "esSlide2Alt": "Illustration of a multigenerational Moroccan family sharing groceries"
       },
       "trust": {
         "title": "Why sponsors trust Kafil",

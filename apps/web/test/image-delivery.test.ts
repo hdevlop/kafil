@@ -52,7 +52,14 @@ describe("published media contract integration", () => {
           content.includes("landingHeroSlides") ||
           content.includes("buildLandingViewModel") ||
           content.includes("LANDING_CTA_MASCOT_SRC"));
-      if (servesPublicStatic && !content.includes("unoptimized")) {
+      const configurableDelivery =
+        content.includes("unoptimized={imageUnoptimized}") &&
+        content.includes("imageUnoptimized = false") &&
+        content.includes("imageUnoptimized");
+      if (configurableDelivery) {
+        expect(content).toContain("fallbackSrc={imageFallbackSrc}");
+        expect(content).toContain("imageUnoptimized");
+      } else if (servesPublicStatic && !content.includes("unoptimized")) {
         expect(content).toContain("fallbackSrc");
         expect(content.includes("fill") || content.includes("width={")).toBe(true);
       } else {

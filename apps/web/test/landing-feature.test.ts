@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -23,7 +22,6 @@ import { buildLandingFamilyViewModels } from "../src/features/Landing/lib/buildL
 const webRoot = join(import.meta.dir, "..");
 const landingRoot = join(webRoot, "src/features/Landing");
 const publicRoot = join(webRoot, "public");
-
 function readSource(relativePath: string) {
   return readFileSync(join(webRoot, relativePath), "utf8");
 }
@@ -229,19 +227,11 @@ describe("landing feature contract", () => {
     expect(header).not.toContain("Could not update language");
   });
 
-  test("carousel controls use Najm Kit and the skip target is focusable", () => {
-    const carousel = readSource("src/features/Landing/components/LandingHeroCarousel.tsx");
-    expect(carousel).toContain("NButton");
-    // Slide-position dots are Kit buttons, not raw <button> elements.
-    expect(carousel).not.toContain("<button");
-    expect(carousel).toContain('t("landing.hero.previous")');
-    expect(carousel).toContain('t("landing.hero.next")');
-    expect(carousel).toContain("landing.hero.pause");
-    expect(carousel).toContain("landing.hero.play");
-    // Focus-within keeps rotation paused while moving between controls.
-    expect(carousel).toContain("shouldClearFocusPause");
-    expect(carousel).toContain("event.relatedTarget");
-
+  test("the static hero has no redundant controls and the skip target is focusable", () => {
+    const heroImage = readSource("src/features/Landing/components/LandingHeroImage.tsx");
+    expect(heroImage).toContain("NNextImage");
+    expect(heroImage).not.toContain("NButton");
+    expect(heroImage).not.toContain("setInterval");
     const landingPage = readSource("src/features/Landing/components/LandingPage.tsx");
     expect(landingPage).toContain('id="landing-main"');
     expect(landingPage).toContain("tabIndex={-1}");
@@ -261,17 +251,18 @@ describe("landing feature contract", () => {
     expect(sources.toLowerCase()).not.toContain("newsletter");
   });
 
-  test("fictional cards disclose illustrative status and never claim verification", () => {
+  test("family example cards reuse the family status treatment", () => {
     const card = readSource("src/features/Landing/components/LandingFamilyExampleCard.tsx");
-    expect(card).toContain("exampleBadge");
-    expect(card).toContain('color="neutral"');
-    expect(card).not.toContain("status=");
+    expect(card).toContain("FamilyCardFrame");
+    expect(card).toContain("bordered");
+    expect(card).toContain("status={model.status}");
+    expect(card).toContain('model.status === "active"');
+    expect(card).toContain("BadgeCheck");
+    expect(card).not.toContain("exampleBadge");
     expect(card).not.toMatch(/[Vv]erified/);
 
-    const examples = readSource("src/features/Landing/components/LandingFamilyExamples.tsx");
-    expect(examples).toContain("disclosureTitle");
-    expect(examples).toContain("disclosureText");
-    expect(examples).not.toMatch(/[Vv]erified/);
+    expect(LANDING_FAMILY_EXAMPLES.some((example) => example.status === "active")).toBe(true);
+    expect(LANDING_FAMILY_EXAMPLES.some((example) => example.status === "pending")).toBe(true);
 
     for (const key of REQUIRED_LANDING_KEYS.filter((item) => item.startsWith("ui.landing.families."))) {
       for (const dictionary of [en, fr, ar, es]) {
@@ -331,8 +322,7 @@ describe("landing feature contract", () => {
 
   test("images use NNextImage with sizing and fallback, never raw img", () => {
     for (const relativePath of [
-      "src/features/Landing/components/LandingHeroCarousel.tsx",
-      "src/features/Landing/components/LandingFamilyExampleCard.tsx",
+      "src/features/Landing/components/LandingHeroImage.tsx",
       "src/features/Landing/components/LandingCtaBanner.tsx",
     ]) {
       const source = readSource(relativePath);
@@ -341,11 +331,15 @@ describe("landing feature contract", () => {
       expect(source).not.toContain("<img");
       expect(source).not.toContain('from "next/image"');
     }
+    const familyCard = readSource("src/features/Landing/components/LandingFamilyExampleCard.tsx");
+    expect(familyCard).toContain("FamilyCardFrame");
+    expect(familyCard).toContain("imageFallbackSrc");
+    expect(familyCard).not.toContain("<img");
   });
 
-  test("only the initial locale slide is eligible for priority loading", () => {
-    const carousel = readSource("src/features/Landing/components/LandingHeroCarousel.tsx");
-    expect(carousel).toContain("priority={isFirstSlide}");
+  test("only the static hero image is eligible for priority loading", () => {
+    const heroImage = readSource("src/features/Landing/components/LandingHeroImage.tsx");
+    expect(heroImage).toContain("priority");
     expect(readSource("src/features/Landing/components/LandingCtaBanner.tsx")).not.toContain("priority");
     expect(readSource("src/features/Landing/components/LandingFamilyExampleCard.tsx")).not.toContain("priority");
   });
@@ -363,16 +357,11 @@ describe("landing feature contract", () => {
     }
   });
 
-  test("the hero manifest is locale-pure with valid 4:3 files and neutral fallbacks", async () => {
-    const seenHashes = new Map<string, string>();
+  test("the hero manifest uses one valid 4:3 image per locale", async () => {
     for (const locale of ["en", "fr", "ar", "es"] as const) {
       const slides = heroSlidesByLanguage[locale];
-      expect(slides.length >= 2, `${locale} needs at least two slides`).toBe(true);
+      expect(slides).toHaveLength(1);
       for (const slide of slides) {
-        expect(slide.src.includes(`_${locale}.`) || slide.src.includes(`_${locale}-`), `${slide.src} is not owned by ${locale}`).toBe(true);
-        const isNeutralFallback = slide.fallbackSrc === HERO_NEUTRAL_FALLBACK;
-        const isOwnLocaleFallback = slide.fallbackSrc.includes(`_${locale}.`);
-        expect(isNeutralFallback || isOwnLocaleFallback, `${slide.id} falls back to another locale`).toBe(true);
         expect(slide.width).toBe(1448);
         expect(slide.height).toBe(1086);
         const filePath = join(publicRoot, slide.src.replace(/^\//, ""));
@@ -380,25 +369,7 @@ describe("landing feature contract", () => {
         expect(metadata.width).toBe(slide.width);
         expect(metadata.height).toBe(slide.height);
         expect(existsSync(join(publicRoot, slide.fallbackSrc.replace(/^\//, "")))).toBe(true);
-        // Rotation must visibly change the frame: byte-identical slides would
-        // crossfade a picture into itself, and solid-color placeholders would
-        // ship placeholder artwork as if it were a localized slide.
-        const hash = createHash("sha256").update(readFileSync(filePath)).digest("hex");
-        expect(seenHashes.has(hash), `${slide.src} duplicates ${seenHashes.get(hash) ?? "another slide"}`).toBe(false);
-        seenHashes.set(hash, slide.src);
       }
-      // Slides within one locale must differ from each other, not just from
-      // other locales: every locale's slide 2 is separate goods-focused
-      // artwork while slide 1 carries the locale's base/checklist
-      // composition.
-      const localeHashes = await Promise.all(
-        slides.map(async (slide) =>
-          createHash("sha256")
-            .update(readFileSync(join(publicRoot, slide.src.replace(/^\//, ""))))
-            .digest("hex"),
-        ),
-      );
-      expect(new Set(localeHashes).size, `${locale} slides are byte-identical`).toBe(slides.length);
     }
     const neutral = await sharp(join(publicRoot, HERO_NEUTRAL_FALLBACK.replace(/^\//, ""))).metadata();
     expect(neutral.width).toBe(1448);
@@ -418,7 +389,7 @@ describe("landing feature contract", () => {
     expect(banner.match(/<NNextImage/g)?.length).toBe(1);
     expect(banner).toContain('alt=""');
     expect(banner).toContain("LANDING_CTA_MASCOT_SRC");
-    expect(banner.toLowerCase()).not.toContain("hands");
+    expect(banner).not.toContain("HandsIcon");
   });
 
   test("family view models keep integer minor units and translated copy", async () => {

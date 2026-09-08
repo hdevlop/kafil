@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HeartHandshake, Users } from "lucide-react";
 import { NButton } from "najm-kit";
 import { NNextImage } from "najm-kit/next";
 import { useTranslation } from "najm-i18n/react";
@@ -36,10 +37,16 @@ export function LandingCtaBanner() {
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
           <NButton asChild variant="secondary" size="sm">
-            <Link href={LANDING_ROUTES.apply}>{t("landing.cta.sponsorCta")}</Link>
+            <Link href={LANDING_ROUTES.apply}>
+              <HeartHandshake aria-hidden="true" className="size-4" />
+              {t("landing.cta.sponsorCta")}
+            </Link>
           </NButton>
           <NButton asChild variant="outline" size="sm" className="border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
-            <Link href={`#${LANDING_ANCHORS.families}`}>{t("landing.cta.familiesCta")}</Link>
+            <Link href={`#${LANDING_ANCHORS.families}`}>
+              <Users aria-hidden="true" className="size-4" />
+              {t("landing.cta.familiesCta")}
+            </Link>
           </NButton>
         </div>
       </div>

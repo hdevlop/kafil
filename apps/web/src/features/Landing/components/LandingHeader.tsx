@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Languages, Loader2, Menu, Moon, Sun, X } from "lucide-react";
+import { ClipboardCheck, House, Languages, Loader2, LogIn, Mail, Menu, Moon, Sun, Users, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -109,14 +109,14 @@ export function LandingHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const links = [
-    { href: LANDING_ROUTES.home, label: t("landing.header.home") },
-    { href: `#${LANDING_ANCHORS.families}`, label: t("landing.header.families") },
-    { href: `#${LANDING_ANCHORS.howItWorks}`, label: t("landing.header.howItWorks") },
-    { href: `#${LANDING_ANCHORS.contact}`, label: t("landing.header.contact") },
+    { href: LANDING_ROUTES.home, icon: House, label: t("landing.header.home") },
+    { href: `#${LANDING_ANCHORS.families}`, icon: Users, label: t("landing.header.families") },
+    { href: `#${LANDING_ANCHORS.howItWorks}`, icon: ClipboardCheck, label: t("landing.header.howItWorks") },
+    { href: `#${LANDING_ANCHORS.contact}`, icon: Mail, label: t("landing.header.contact") },
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur">
       <a
         href="#landing-main"
         className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
@@ -133,7 +133,10 @@ export function LandingHeader() {
             {links.map((link) => (
               <li key={link.href + link.label}>
                 <NButton asChild variant="ghost" size="sm">
-                  <Link href={link.href}>{link.label}</Link>
+                  <Link href={link.href}>
+                    <link.icon aria-hidden="true" className="size-4" />
+                    {link.label}
+                  </Link>
                 </NButton>
               </li>
             ))}
@@ -143,7 +146,10 @@ export function LandingHeader() {
         <div className="flex items-center gap-1">
           <LandingPreferences />
           <NButton asChild size="sm" className="ms-1 hidden sm:inline-flex">
-            <Link href={LANDING_ROUTES.login}>{t("landing.header.signIn")}</Link>
+            <Link href={LANDING_ROUTES.login}>
+              <LogIn aria-hidden="true" className="size-4" />
+              {t("landing.header.signIn")}
+            </Link>
           </NButton>
           <NButton
             type="button"
@@ -166,6 +172,7 @@ export function LandingHeader() {
               <li key={link.href + link.label}>
                 <NButton asChild variant="ghost" size="sm" className="w-full justify-start">
                   <Link href={link.href} onClick={() => setMenuOpen(false)}>
+                    <link.icon aria-hidden="true" className="size-4" />
                     {link.label}
                   </Link>
                 </NButton>
@@ -174,6 +181,7 @@ export function LandingHeader() {
             <li>
               <NButton asChild size="sm" className="w-full sm:hidden">
                 <Link href={LANDING_ROUTES.login} onClick={() => setMenuOpen(false)}>
+                  <LogIn aria-hidden="true" className="size-4" />
                   {t("landing.header.signIn")}
                 </Link>
               </NButton>

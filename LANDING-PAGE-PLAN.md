@@ -1,6 +1,13 @@
 # Landing page plan — Kafil adaptation of the SadaqaHub mockup
 
-Status: **DEPLOYED — Phase A matches the supplied compact visual hierarchy; focused source/browser acceptance, repository gates, publication, and production verification pass (see section 14). Final asset-provenance acceptance remains on hold for three legacy hero bases and five mascots, and the unrelated complete legacy E2E suite is not green.**
+Status: **IMPLEMENTED — the 2026-09-09 static-hero refinement passes focused browser acceptance and is pending publication and deployment evidence. Final asset-provenance acceptance remains on hold for three legacy hero bases and five mascots, and the unrelated complete legacy E2E suite is not green.**
+
+> **2026-09-09 implementation override:** the refinement replaces the carousel
+> with one static, locale-aware 4:3 hero image. This supersedes the
+> carousel-specific design, timing, controls, tests, and acceptance requirements
+> retained below as historical planning context. The current contract is
+> `LandingHeroImage`, one manifest entry per locale, no timer or carousel
+> controls, and a text-free project-generated Spanish family illustration.
 
 Source mockup: `C:\Users\hdevlop\Desktop\landing.png` (hero, trust strip,
 family-card grid, CTA, and footer). The mockup is a visual reference only; it is
@@ -120,11 +127,13 @@ Do not invent exports or props from memory. Current verified details include:
 - `apps/web/scripts/run-phase6-e2e.ts` includes `landing.e2e.ts` in its explicit
   default spec list, and `KAFIL_E2E_FILES=test/e2e/landing.e2e.ts` supports a
   focused work-unit run through the same managed runner.
-- `apps/web/public/hero/` contains two documented 1448 × 1086, locale-pure PNG
-  slides for each of English, French, Arabic, and Spanish plus a language-neutral
-  fallback. The second slide for every locale and both Spanish slides are
-  project-generated; origin/license records for the three legacy first slides
-  remain unresolved and block final asset acceptance.
+- `apps/web/public/hero/` contains two documented 1448 × 1086, locale-pure
+  family illustrations for each of English, French, Arabic, and Spanish plus a
+  language-neutral fallback. English, French, and Arabic slide 2 plus both
+  Spanish slides are text-free project-generated family scenes. Their versioned
+  filenames prevent a stale optimized-image cache from restoring the rejected
+  abstract product panels. Origin/license records for the three legacy first
+  slides remain unresolved and block final asset acceptance.
 - `apps/web/public/mascots/` already contains five 1122 × 1402 transparent PNGs:
   `mascot-grocery-basket.png`, `mascot-heart-gift.png`, `mascot-idea.png`,
   `mascot-thumbs-up.png`, and `mascot-waving.png`. They contain no language
@@ -192,10 +201,10 @@ The manifest shape is explicit and reviewable:
 
 ```ts
 const heroSlidesByLanguage = {
-  en: ["/hero/hero-family_en.png", "/hero/hero-family_en-02.png"],
-  fr: ["/hero/hero-family_fr.png", "/hero/hero-family_fr-02.png"],
-  ar: ["/hero/hero-family_ar.png", "/hero/hero-family_ar-02.png"],
-  es: ["/hero/hero-family_es.png", "/hero/hero-family_es-02.png"],
+  en: ["/hero/hero-family_en.png", "/hero/hero-family_en-02-v2.png"],
+  fr: ["/hero/hero-family_fr.png", "/hero/hero-family_fr-02-v2.png"],
+  ar: ["/hero/hero-family_ar.png", "/hero/hero-family_ar-02-v2.png"],
+  es: ["/hero/hero-family_es-01-v2.png", "/hero/hero-family_es-02-v2.png"],
 } as const satisfies Record<KafilLocale, readonly string[]>;
 ```
 
@@ -286,13 +295,13 @@ apps/web/public/hero/
   README.md                    # origin/license or generation record
   hero-family-neutral.webp     # required language-neutral failure fallback
   hero-family_en.png           # existing English slide 1
-  hero-family_en-02.png        # required English slide 2+
+  hero-family_en-02-v2.png     # generated English family slide 2
   hero-family_fr.png           # existing French slide 1
-  hero-family_fr-02.png        # required French slide 2+
+  hero-family_fr-02-v2.png     # generated French family slide 2
   hero-family_ar.png           # existing Arabic slide 1
-  hero-family_ar-02.png        # required Arabic slide 2+
-  hero-family_es.png           # required Spanish slide 1
-  hero-family_es-02.png        # required Spanish slide 2+
+  hero-family_ar-02-v2.png     # generated Arabic family slide 2
+  hero-family_es-01-v2.png     # generated Spanish family slide 1
+  hero-family_es-02-v2.png     # generated Spanish family slide 2
 apps/web/public/mascots/
   README.md                    # required origin/license or generation record
   mascot-grocery-basket.png    # existing; optional goods-support placement
@@ -625,12 +634,12 @@ Do not check items until the named command or artifact exists.
 
 | Boundary | Status | Evidence |
 |----------|--------|----------|
-| Phase A implementation | IMPLEMENTED (pending final acceptance) | `features/Landing/`, locale catalogs, carousel, source + browser specs in workspace; slice record `docs/evidence/landing-page/2026-09-08/README.md` |
-| Hero asset readiness | PARTIAL — rotation ready, provenance on hold | 2 slides × en/fr/ar/es + neutral fallback, all 4:3 and locale-pure with distinct hashes; en/fr/ar slide 2 is now separate synthetic goods artwork (not a crop). Legacy `hero-family_{en,fr,ar}.png` bases: origin/license unrecorded — final acceptance blocked until cleared. See `apps/web/public/hero/README.md` |
+| Phase A implementation | IMPLEMENTED (pending final acceptance) | `features/Landing/`, locale catalogs, static locale-aware hero, and source/browser specs in workspace |
+| Hero asset readiness | PARTIAL — static hero ready, legacy provenance on hold | One 4:3 image per locale; en/fr/ar use legacy bases and Spanish uses a text-free generated family illustration. Legacy `hero-family_{en,fr,ar}.png` origin/license remains unrecorded. See `apps/web/public/hero/README.md` |
 | Mascot asset readiness | BLOCKED (provenance hold) | Five text-free 1122 × 1402 transparent PNGs exist; CTA uses `mascot-heart-gift.png` decoratively. Origin/license unrecorded — final acceptance blocked until cleared. See `apps/web/public/mascots/README.md` |
 | Family-example art | PASS (2026-09-08) | Eight distinct Imagegen-produced fictional 1448 × 1086 illustrations with no embedded text/UI/claims; provenance, exclusions, dimensions, and fingerprints recorded in `apps/web/public/landing/README.md` |
-| Focused source tests | PASS (2026-09-08) | `bun test test/landing-feature.test.ts test/landing-hero-carousel.test.tsx test/landing-hero-carousel-dom.test.tsx` in `apps/web`: 33 pass, 0 fail, 1720 expects |
-| Focused landing browser spec | PASS (2026-09-08) | `KAFIL_E2E_FILES=test/e2e/landing.e2e.ts bun run test:e2e` in `apps/web`: 13 pass, 0 fail; isolated users removed; English 375/1440 and Arabic RTL 1440 screenshots in `docs/evidence/landing-page/2026-09-08/` |
+| Focused source tests | PASS (2026-09-09) | `bun test test/landing-feature.test.ts test/sponsor-families.test.ts` in `apps/web`: 19 pass, 0 fail, 1626 expects |
+| Focused landing browser spec | PASS (2026-09-09 static-hero revision) | `KAFIL_E2E_FILES=test/e2e/landing.e2e.ts bun run test:e2e` in `apps/web`: 11 pass, 0 fail (6.1m); isolated users removed. |
 | Complete local E2E suite | FAIL / INTERRUPTED (2026-09-08) | Default runner exposed unrelated pre-existing selector/readiness failures in applicant decision, family create wizard, family order limits, and funding-cap specs; stopped after repeated failures and isolated users were removed. This is not a landing-spec failure |
 | Root lint/typecheck/test/build | PASS (2026-09-08) | Required sequential gate exit 0: web 430 pass, server 400 pass + 77 skip, seed 89 pass, 0 fail; production build success with 44 routes |
 | Schema drift (`db:generate`) | PASS — no migration (2026-09-08) | `bun run db:generate`: "No schema changes, nothing to migrate" |

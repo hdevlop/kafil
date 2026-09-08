@@ -2467,9 +2467,9 @@
         "play": "Reprendre",
         "position": "Diapositive {{current}} sur {{total}}",
         "slide1Alt": "Illustration d'une famille Kafil recevant des courses",
-        "slide2Alt": "Vue rapprochée d'une famille Kafil avec des produits prêts à être livrés",
-        "esSlide1Alt": "Visuel espagnol avec un slogan et une liste de soutien aux familles",
-        "esSlide2Alt": "Visuel espagnol montrant des produits d'épicerie"
+        "slide2Alt": "Illustration d'une famille marocaine réunie autour de courses dans une cour ensoleillée",
+        "esSlide1Alt": "Illustration d'une mère marocaine avec ses enfants dans une cour ensoleillée",
+        "esSlide2Alt": "Illustration d'une famille marocaine multigénérationnelle partageant des provisions"
       },
       "trust": {
         "title": "Pourquoi les parrains font confiance à Kafil",

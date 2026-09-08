@@ -118,17 +118,11 @@ async function overflowOf(page: Page) {
   );
 }
 
-// The carousel's accessible name is localized, so scope by the
-// locale-independent roledescription token instead of the English label.
 async function heroImageSources(page: Page): Promise<string[]> {
   return page
-    .locator('[aria-roledescription="carousel"]')
+    .locator('section[aria-labelledby="landing-hero-title"]')
     .locator("img")
     .evaluateAll((images) => images.map((image) => (image as HTMLImageElement).currentSrc));
-}
-
-async function heroPosition(page: Page): Promise<string> {
-  return (await page.locator("#landing-hero-position").textContent())?.trim() ?? "";
 }
 
 async function scrollIntoViewAndExpectDecoded(target: Locator, note: string) {
@@ -172,9 +166,8 @@ test.describe("landing static content", () => {
     await expect(page.getByRole("heading", { name: "Family examples" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Be the reason a family smiles." })).toBeVisible();
 
-    // Illustrative disclosure is visible; fictional cards carry Example badges.
+    // The fictional nature of the cards is explicit and visible.
     await expect(page.getByText("Illustrative examples").first()).toBeVisible();
-    expect(await page.getByText("Example", { exact: true }).count()).toBeGreaterThanOrEqual(8);
 
     // No fabricated claims, Verified badges, newsletter, or dead links.
     await expect(page.getByText("Verified", { exact: true })).toHaveCount(0);
@@ -190,7 +183,9 @@ test.describe("landing static content", () => {
     await page.goto("/", { waitUntil: "commit" });
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-    const heroImages = page.getByRole("region", { name: "Family support highlights" }).locator("img");
+    const heroImages = page
+      .locator('section[aria-labelledby="landing-hero-title"]')
+      .locator("img");
     expect(await heroImages.count()).toBeGreaterThanOrEqual(1);
     for (let position = 0; position < (await heroImages.count()); position += 1) {
       await scrollIntoViewAndExpectDecoded(heroImages.nth(position), `hero image ${position}`);
@@ -342,14 +337,13 @@ test.describe("landing responsive layout", () => {
 });
 
 test.describe("landing preferences", () => {
-  test("the language control switches to Arabic RTL with the Arabic hero manifest", async ({
+  test("the language control switches to Arabic RTL with the Arabic hero image", async ({
     page,
   }) => {
     const diagnostics = watch(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/", { waitUntil: "commit" });
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    expect(await heroPosition(page)).toBe("Slide 1 of 2");
     // Wait for the optimized hero image to resolve: on a cold dev server the
     // first `/_next/image` optimization can lag behind the heading, leaving
     // `currentSrc` empty at first paint.
@@ -373,22 +367,17 @@ test.describe("landing preferences", () => {
     await arabic.click();
 
     // `changeLanguage` remounts the hero synchronously before the persistence
-    // POST resolves, so assert the reset immediately: waiting for the POST
-    // (which compiles `/api/ui-language` on a cold dev server) would let the
-    // five-second rotation advance past slide 1 first.
+    // POST resolves, so assert the locale change immediately.
     await expect(page.locator("html")).toHaveAttribute("lang", "ar");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByRole("heading", { name: "عطاء شفاف. سلع حقيقية. أثر حقيقي." })).toBeVisible();
-    expect(await heroPosition(page)).toBe("الشريحة 1 من 2");
 
     const response = await preferenceResponse;
     expect(response.status()).toBe(200);
     expect(await response.json()).toEqual({ language: "ar" });
 
-    // The hero uses the Arabic manifest and never shows English or French
-    // embedded-text artwork while Arabic is active. The position may have
-    // advanced past slide 1 during the slow persistence round-trip, so the
-    // manifest assertion below checks artwork ownership, not the counter.
+    // The hero uses the Arabic image and never shows English or French
+    // embedded-text artwork while Arabic is active.
     await expect
       .poll(
         async () => (await heroImageSources(page)).some((src) => src.includes("hero-family_ar")),
@@ -476,65 +465,5 @@ test.describe("landing preferences", () => {
     await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
     diagnostics.expectClean("landing theme persistence");
-  });
-});
-
-test.describe("landing hero carousel", () => {
-  test("the hero advances once within the rotation window and Pause holds it", async ({
-    page,
-  }) => {
-    const diagnostics = watch(page);
-    await page.goto("/", { waitUntil: "commit" });
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-
-    const pauseControl = page.getByRole("button", { name: "Pause rotation" });
-    await waitForReactHandler(pauseControl);
-    expect(await heroPosition(page)).toBe("Slide 1 of 2");
-    await expect
-      .poll(() => heroPosition(page), {
-        message: "the hero must advance to slide 2 within the rotation window",
-        timeout: 15_000,
-      })
-      .toBe("Slide 2 of 2");
-
-    await pauseControl.click();
-    await expect(page.getByRole("button", { name: "Resume rotation" })).toBeVisible();
-    await page.waitForTimeout(6000);
-    expect(await heroPosition(page)).toBe("Slide 2 of 2");
-
-    await page.getByRole("button", { name: "Next slide" }).click();
-    expect(await heroPosition(page)).toBe("Slide 1 of 2");
-    await page.getByRole("button", { name: "Previous slide" }).click();
-    expect(await heroPosition(page)).toBe("Slide 2 of 2");
-
-    diagnostics.expectClean("landing carousel rotation and pause");
-  });
-});
-
-test.describe("landing hero carousel under reduced motion", () => {
-  test.use({ contextOptions: { reducedMotion: "reduce" } });
-
-  test("the hero stays on slide 1 while manual navigation still works", async ({ page }) => {
-    const diagnostics = watch(page);
-    await page.goto("/", { waitUntil: "commit" });
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-
-    const nextControl = page.getByRole("button", { name: "Next slide" });
-    await waitForReactHandler(nextControl);
-    expect(await heroPosition(page)).toBe("Slide 1 of 2");
-    await page.waitForTimeout(6500);
-    expect(await heroPosition(page)).toBe("Slide 1 of 2");
-
-    await nextControl.click();
-    expect(await heroPosition(page)).toBe("Slide 2 of 2");
-
-    const transitionProperty = await page
-      .getByRole("region", { name: "Family support highlights" })
-      .locator("div.absolute.inset-0")
-      .first()
-      .evaluate((element) => getComputedStyle(element).transitionProperty);
-    expect(transitionProperty).toBe("none");
-
-    diagnostics.expectClean("landing reduced-motion carousel");
   });
 });

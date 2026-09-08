@@ -6,7 +6,7 @@ import {
   Flag,
   HeartHandshake,
 } from "lucide-react";
-import type { SVGProps } from "react";
+import type { ReactNode, SVGProps } from "react";
 import {
   NButton,
   NBadge,
@@ -29,6 +29,60 @@ import { useFamilyCardStatus } from "../../hooks/useFamilyCardStatus";
 import type { FamilyRecord, SponsorFamilyView } from "../../types";
 
 type FamilyCardData = FamilyRecord | SponsorFamilyView;
+
+export function FamilyCardFrame({
+  title,
+  imageSrc,
+  imageAlt,
+  imageFallbackSrc,
+  imageSizes = "(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 20vw",
+  imageUnoptimized = false,
+  bordered = false,
+  headerAction,
+  overlay,
+  children,
+  footer,
+}: Readonly<{
+  title: ReactNode;
+  imageSrc: string;
+  imageAlt: string;
+  imageFallbackSrc?: string;
+  imageSizes?: string;
+  imageUnoptimized?: boolean;
+  bordered?: boolean;
+  headerAction: ReactNode;
+  overlay?: ReactNode;
+  children: ReactNode;
+  footer: ReactNode;
+}>) {
+  return (
+    <div
+      className={
+        bordered
+          ? "relative w-full overflow-hidden rounded-lg border border-border bg-card"
+          : "relative w-full"
+      }
+    >
+      {overlay}
+      <NCard embedded title={title}>
+        <NCardMedia variant="image" size={104}>
+          <NNextImage
+            unoptimized={imageUnoptimized}
+            src={imageSrc}
+            fallbackSrc={imageFallbackSrc}
+            alt={imageAlt}
+            fill
+            sizes={imageSizes}
+            className="object-cover"
+          />
+        </NCardMedia>
+        <NCardAction>{headerAction}</NCardAction>
+        {children}
+      </NCard>
+      <div className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4">{footer}</div>
+    </div>
+  );
+}
 
 function SupportedFamilyIcon(props: Readonly<SVGProps<SVGSVGElement>>) {
   return (
@@ -127,8 +181,31 @@ export function FamilyCard({
   }
 
   return (
-    <div className="relative w-full">
-      {sponsorFamily?.relationship === "supported" ? (
+    <FamilyCardFrame
+      title={
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate">{data.name}</span>
+          {fundingStatus === "active" ? (
+            <BadgeCheck
+              aria-hidden
+              className="size-4 shrink-0 fill-primary text-primary-foreground"
+            />
+          ) : null}
+        </span>
+      }
+      imageSrc={getPersonImage({ image: data.image, role: "family" })}
+      imageAlt={data.name}
+      imageUnoptimized
+      headerAction={
+        <div
+          className={
+            sponsorFamily ? "translate-y-16 sm:translate-y-0" : undefined
+          }
+        >
+          <NBadge status={fundingStatus} />
+        </div>
+      }
+      overlay={sponsorFamily?.relationship === "supported" ? (
         <NBadge
           aria-label={t("sponsor.directory.mySupport")}
           className="absolute end-3 top-3 z-10 size-7 justify-center rounded-full border-2 border-amber-600 bg-amber-500 p-0 text-white shadow-md"
@@ -140,64 +217,8 @@ export function FamilyCard({
           <SupportedFamilyIcon className="!size-[22px] shrink-0" />
         </NBadge>
       ) : null}
-      <NCard
-        embedded
-        title={
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate">{data.name}</span>
-            {fundingStatus === "active" ? (
-              <BadgeCheck
-                aria-hidden
-                className="size-4 shrink-0 fill-primary text-primary-foreground"
-              />
-            ) : null}
-          </span>
-        }
-      >
-        <NCardMedia variant="image" size={104}>
-          <NNextImage unoptimized
-            src={getPersonImage({ image: data.image, role: "family" })}
-            alt={data.name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 20vw"
-            className="object-cover"
-          />
-        </NCardMedia>
-        <NCardAction>
-          <div
-            className={
-              sponsorFamily ? "translate-y-16 sm:translate-y-0" : undefined
-            }
-          >
-            <NBadge status={fundingStatus} />
-          </div>
-        </NCardAction>
-        <NCardSection>
-          <NCardInfo
-            icon={Flag}
-            label={t("operator.families.supportPriority")}
-            value={supportPriorityLabel}
-            valueClassName={
-              data.supportPriority === "urgent"
-                ? "font-medium text-destructive"
-                : data.supportPriority === "high"
-                  ? "font-medium text-warning"
-                  : undefined
-            }
-          />
-          <NCardInfo
-            icon={Baby}
-            label={t("operator.families.children")}
-            value={data.activeChildCount}
-          />
-          <NCardInfo
-            icon={HeartHandshake}
-            label={t("operator.families.sponsors")}
-            value={data.activeSponsorCount}
-          />
-        </NCardSection>
-      </NCard>
-      <div className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4">
+      footer={
+        <>
         {data.funding ? (
           <FundingProgressBar inline progress={data.funding} />
         ) : null}
@@ -226,7 +247,33 @@ export function FamilyCard({
             onContribute={onContribute}
           />
         )}
-      </div>
-    </div>
+        </>
+      }
+    >
+      <NCardSection>
+        <NCardInfo
+          icon={Flag}
+          label={t("operator.families.supportPriority")}
+          value={supportPriorityLabel}
+          valueClassName={
+            data.supportPriority === "urgent"
+              ? "font-medium text-destructive"
+              : data.supportPriority === "high"
+                ? "font-medium text-warning"
+                : undefined
+          }
+        />
+        <NCardInfo
+          icon={Baby}
+          label={t("operator.families.children")}
+          value={data.activeChildCount}
+        />
+        <NCardInfo
+          icon={HeartHandshake}
+          label={t("operator.families.sponsors")}
+          value={data.activeSponsorCount}
+        />
+      </NCardSection>
+    </FamilyCardFrame>
   );
 }

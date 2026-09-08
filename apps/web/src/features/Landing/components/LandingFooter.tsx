@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HeartHandshake, LogIn } from "lucide-react";
 import { NButton } from "najm-kit";
 import { NThemeImage } from "najm-theme/react";
 import { useTranslation } from "najm-i18n/react";
@@ -54,10 +55,16 @@ export function LandingFooter() {
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <NButton asChild size="sm">
-              <Link href={LANDING_ROUTES.apply}>{t("landing.footer.applyCta")}</Link>
+              <Link href={LANDING_ROUTES.apply}>
+                <HeartHandshake aria-hidden="true" className="size-4" />
+                {t("landing.footer.applyCta")}
+              </Link>
             </NButton>
             <NButton asChild size="sm" variant="outline">
-              <Link href={LANDING_ROUTES.login}>{t("landing.footer.loginCta")}</Link>
+              <Link href={LANDING_ROUTES.login}>
+                <LogIn aria-hidden="true" className="size-4" />
+                {t("landing.footer.loginCta")}
+              </Link>
             </NButton>
           </div>
         </div>

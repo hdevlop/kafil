@@ -1,1 +1,1 @@
-export { FamilyCard } from "./FamilyCard";
+export { FamilyCard, FamilyCardFrame } from "./FamilyCard";

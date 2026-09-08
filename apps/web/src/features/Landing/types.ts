@@ -29,6 +29,7 @@ export interface LandingFamilyExample {
   id: string;
   nameKey: UiTranslationKey;
   cityKey: UiTranslationKey;
+  status: "active" | "pending";
   members: number;
   needMinor: number;
   imageSrc: string;
