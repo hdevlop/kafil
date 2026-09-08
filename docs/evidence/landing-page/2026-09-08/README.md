@@ -67,8 +67,8 @@ preserving truthful claims, localization, accessibility, and real routes.
   isolated users were removed. The focused landing work unit independently
   passes all 13 tests.
 - Git publication, deployment, and read-only production verification were
-  separately authorized on 2026-09-08; their results must be reported apart
-  from local source and browser acceptance.
+  separately authorized on 2026-09-08 and are reported below, apart from local
+  source and browser acceptance.
 
 ## Remaining final-acceptance blockers
 
@@ -82,3 +82,21 @@ preserving truthful claims, localization, accessibility, and real routes.
 - `landing-en-375px.png`
 - `landing-en-1440px.png`
 - `landing-ar-rtl-1440px.png`
+
+## Publication and production evidence
+
+- Implementation commit: `4220079f828ac893e5f8f45560758144d8fb832f`,
+  pushed to `origin/main`.
+- GitHub Actions run `34261680802`: Verify passed, GHCR image publication
+  passed, and the Dokploy trigger passed.
+- Dokploy recreated the app and notifications worker together at
+  `2026-09-08T18:20:49Z`; both became healthy on image ID `ed4d6f4…` with the
+  exact OCI revision above. Their ports remain internal-only. Redis and
+  Postgres are healthy; five notification tables exist and migration `0045`
+  is recorded.
+- Public read-only checks: root, login, liveness, readiness, one generated
+  family illustration, one localized hero image, and the CTA mascot returned
+  HTTP 200. The new English title, family section, and illustrative disclosure
+  are present; the former headline is absent.
+- The committed security-header verifier passed the public root and health
+  endpoint. No authenticated production mutation was performed.

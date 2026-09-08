@@ -1,6 +1,6 @@
 # Landing page plan — Kafil adaptation of the SadaqaHub mockup
 
-Status: **IMPLEMENTED — Phase A landing page now matches the supplied compact visual hierarchy; focused source and guarded landing-browser acceptance pass (see section 14). Final asset acceptance remains pending provenance clearance for three legacy hero bases and five mascots. Publication and deployment are authorized and pending the refreshed repository gate.**
+Status: **DEPLOYED — Phase A matches the supplied compact visual hierarchy; focused source/browser acceptance, repository gates, publication, and production verification pass (see section 14). Final asset-provenance acceptance remains on hold for three legacy hero bases and five mascots, and the unrelated complete legacy E2E suite is not green.**
 
 Source mockup: `C:\Users\hdevlop\Desktop\landing.png` (hero, trust strip,
 family-card grid, CTA, and footer). The mockup is a visual reference only; it is
@@ -612,12 +612,12 @@ deployment, and read-only production verification on 2026-09-08.
       and becomes static by default under reduced motion.
 - [ ] The landing spec is present in the default E2E runner and the complete
       suite passes with no unexpected diagnostics.
-- [ ] App tests, root gate, production build, and no-schema-drift generation
+- [x] App tests, root gate, production build, and no-schema-drift generation
       pass with native exit code 0.
 - [x] Evidence paths and exact commands/results are recorded below.
-- [x] Newsletter, live family data/details, real aggregate statistics,
-      deployment, and production acceptance remain deferred or are covered by
-      separately authorized plans.
+- [x] Newsletter, live family data/details, and real aggregate statistics
+      remain deferred; separately authorized publication, deployment, and
+      read-only production acceptance are recorded below.
 
 ## 14. Evidence record
 
@@ -635,7 +635,7 @@ Do not check items until the named command or artifact exists.
 | Root lint/typecheck/test/build | PASS (2026-09-08) | Required sequential gate exit 0: web 430 pass, server 400 pass + 77 skip, seed 89 pass, 0 fail; production build success with 44 routes |
 | Schema drift (`db:generate`) | PASS — no migration (2026-09-08) | `bun run db:generate`: "No schema changes, nothing to migrate" |
 | PostgreSQL integration | PASS (2026-09-08) | `bun run test:db`: 55 pass, 0 fail across 13 files |
-| Git publication | AUTHORIZED 2026-09-08 — pending execution | Must be verified independently after the local gates pass |
-| Deployment | AUTHORIZED 2026-09-08 — pending execution | GitHub workflow and live revision/health require separate evidence |
-| Production browser acceptance | READ-ONLY VERIFICATION AUTHORIZED WITH DEPLOYMENT | Public smoke only; authenticated production mutation remains out of scope |
+| Git publication | PASS (2026-09-08) | Implementation commit `4220079f828ac893e5f8f45560758144d8fb832f` pushed to `origin/main` |
+| Deployment | PASS (2026-09-08) | GitHub Actions run `34261680802` passed verify, GHCR publication, and Dokploy trigger. Dokploy recreated app + notification worker together; both healthy on identical image `ed4d6f4…` with OCI revision `4220079f…`; active raw Compose includes app, worker, Redis, Postgres, Mailpit, migration, reconciliation, and storage-init services |
+| Production browser acceptance | PASS — read-only (2026-09-08) | `https://kafala360.ma/`, login, liveness, readiness, new family art, hero, and mascot returned 200; new landing title/family/disclosure present and old headline absent; security-header verifier passed root + health |
 | Deferred Phase B | OUT OF SCOPE | Separate authorization and plan update required |
