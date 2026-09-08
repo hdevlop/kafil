@@ -15,6 +15,7 @@ import screenfull from "screenfull";
 
 import { useTranslation } from "najm-i18n/react";
 import type { KafilLocale } from "@kafil/server/locales";
+import { NotificationsMenu } from "@/features/Notifications";
 import { updateNotificationSettings } from "@/services/notificationsApi";
 
 const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";
@@ -62,6 +63,8 @@ export default function PageHeaderGlobalActions() {
 
   return (
     <>
+      <NotificationsMenu />
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <NButton

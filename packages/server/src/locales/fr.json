@@ -2435,6 +2435,110 @@
       "columnsStatus": "Statut",
       "stateUnread": "Non lue",
       "stateRead": "Lue"
+    },
+    "landing": {
+      "skip": "Aller au contenu",
+      "meta": {
+        "title": "Kafil — Un don transparent. Des biens réels. Un impact réel.",
+        "description": "Kafil relie les besoins vérifiés des familles, des achats responsables et des parrains, tout en protégeant les informations privées de chaque famille."
+      },
+      "header": {
+        "home": "Accueil",
+        "families": "Exemples de familles",
+        "howItWorks": "Comment ça marche",
+        "contact": "Contact",
+        "signIn": "Se connecter",
+        "navLabel": "Navigation principale",
+        "openMenu": "Ouvrir le menu",
+        "closeMenu": "Fermer le menu",
+        "themeToggle": "Changer de thème",
+        "languageError": "Impossible de mettre à jour la préférence de langue."
+      },
+      "hero": {
+        "eyebrow": "Parrainage familial responsable",
+        "title": "Un don transparent. Des biens réels. Un impact réel.",
+        "description": "Kafil relie les besoins vérifiés des familles, des achats responsables et des parrains — tout en protégeant les informations privées de chaque famille.",
+        "sponsorCta": "Parrainer une famille",
+        "examplesCta": "Voir les exemples",
+        "carouselLabel": "Moments de soutien aux familles",
+        "previous": "Diapositive précédente",
+        "next": "Diapositive suivante",
+        "pause": "Mettre en pause",
+        "play": "Reprendre",
+        "position": "Diapositive {{current}} sur {{total}}",
+        "slide1Alt": "Illustration d'une famille Kafil recevant des courses",
+        "slide2Alt": "Vue rapprochée d'une famille Kafil avec des produits prêts à être livrés",
+        "esSlide1Alt": "Visuel espagnol avec un slogan et une liste de soutien aux familles",
+        "esSlide2Alt": "Visuel espagnol montrant des produits d'épicerie"
+      },
+      "trust": {
+        "title": "Pourquoi les parrains font confiance à Kafil",
+        "item1Title": "Éligibilité vérifiée",
+        "item1Text": "Les besoins des familles sont vérifiés avant tout soutien.",
+        "item2Title": "Commandes suivies",
+        "item2Text": "Chaque commande est suivie de la demande à la livraison.",
+        "item3Title": "Achats approuvés",
+        "item3Text": "Les achats passent par un circuit approuvé et vérifiable.",
+        "item4Title": "Soutien en nature",
+        "item4Text": "Le soutien prend la forme de biens réels, pas de transferts opaques.",
+        "item5Title": "Confidentialité d'abord",
+        "item5Text": "Les parrains voient l'impact sans jamais voir les données privées."
+      },
+      "how": {
+        "title": "Comment ça marche",
+        "subtitle": "Un parcours simple et responsable, du besoin à la livraison.",
+        "step1Title": "Les besoins sont vérifiés",
+        "step1Text": "Les opérateurs examinent la situation de chaque famille et enregistrent des besoins vérifiés.",
+        "step2Title": "Les biens sont commandés",
+        "step2Text": "Le soutien devient des commandes suivies de biens réels issus de sources approuvées.",
+        "step3Title": "La vie privée est protégée",
+        "step3Text": "L'identité, les adresses et les documents ne quittent jamais le dossier protégé.",
+        "step4Title": "La livraison est prouvée",
+        "step4Text": "Chaque livraison est confirmée par une preuve protégée que la famille contrôle."
+      },
+      "families": {
+        "title": "Exemples de familles",
+        "subtitle": "Comment le soutien est présenté",
+        "disclosureTitle": "Exemples illustratifs",
+        "disclosureText": "Ces huit profils sont des illustrations fictives de la présentation du soutien. Ce ne sont pas des familles inscrites à Kafil ni des informations sur des bénéficiaires actuels.",
+        "exampleBadge": "Exemple",
+        "membersLabel": "Foyer",
+        "membersValue": "{{count}} membres",
+        "needLabel": "Besoin",
+        "applyCta": "Demander à parrainer",
+        "cardImageAlt": "Illustration d'un exemple de famille fictive {{index}}",
+        "card1Name": "Foyer de Salma",
+        "card1City": "Casablanca",
+        "card2Name": "Foyer de Yassine",
+        "card2City": "Rabat",
+        "card3Name": "Foyer de Khadija",
+        "card3City": "Marrakech",
+        "card4Name": "Foyer d'Omar",
+        "card4City": "Fès",
+        "card5Name": "Foyer de Fatima",
+        "card5City": "Agadir",
+        "card6Name": "Foyer de Hassan",
+        "card6City": "Tanger",
+        "card7Name": "Foyer d'Amina",
+        "card7City": "Meknès",
+        "card8Name": "Foyer de Bilal",
+        "card8City": "Oujda"
+      },
+      "cta": {
+        "title": "Soyez la raison du sourire d'une famille.",
+        "text": "Rejoignez Kafil comme parrain et transformez des besoins vérifiés en biens réels, avec confidentialité et responsabilité à chaque étape.",
+        "sponsorCta": "Parrainer une famille",
+        "familiesCta": "Voir les familles"
+      },
+      "footer": {
+        "tagline": "Un parrainage familial responsable, avec confidentialité et soin.",
+        "navTitle": "Explorer",
+        "contactTitle": "Contact",
+        "contactText": "Des questions sur le parrainage ? Déposez une demande et notre équipe vous guidera, ou connectez-vous si vous avez déjà un compte.",
+        "applyCta": "Demander à parrainer",
+        "loginCta": "Se connecter",
+        "rights": "© {{year}} Kafil. Tous droits réservés."
+      }
     }
   }
 }

@@ -2509,6 +2509,110 @@
       "columnsStatus": "Status",
       "stateUnread": "Unread",
       "stateRead": "Read"
+    },
+    "landing": {
+      "skip": "Skip to content",
+      "meta": {
+        "title": "Kafil — Transparent giving. Real goods. Real impact.",
+        "description": "Kafil connects reviewed family needs, responsible procurement, and sponsors while protecting every family's private information."
+      },
+      "header": {
+        "home": "Home",
+        "families": "Family examples",
+        "howItWorks": "How it works",
+        "contact": "Contact",
+        "signIn": "Sign in",
+        "navLabel": "Landing",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu",
+        "themeToggle": "Toggle color theme",
+        "languageError": "Could not update language preference."
+      },
+      "hero": {
+        "eyebrow": "Accountable family sponsorship",
+        "title": "Transparent giving. Real goods. Real impact.",
+        "description": "Kafil connects reviewed family needs, responsible procurement, and sponsors — while protecting every family's private information.",
+        "sponsorCta": "Sponsor a family",
+        "examplesCta": "See examples",
+        "carouselLabel": "Family support highlights",
+        "previous": "Previous slide",
+        "next": "Next slide",
+        "pause": "Pause rotation",
+        "play": "Resume rotation",
+        "position": "Slide {{current}} of {{total}}",
+        "slide1Alt": "Illustration of a Kafil family receiving grocery support",
+        "slide2Alt": "Closer view of a Kafil family with grocery goods ready for delivery",
+        "esSlide1Alt": "Spanish headline artwork with a family-support checklist",
+        "esSlide2Alt": "Spanish headline artwork showing grocery goods"
+      },
+      "trust": {
+        "title": "Why sponsors trust Kafil",
+        "item1Title": "Reviewed eligibility",
+        "item1Text": "Family needs are reviewed before any support is presented.",
+        "item2Title": "Tracked orders",
+        "item2Text": "Every order is tracked from request to delivery.",
+        "item3Title": "Approved procurement",
+        "item3Text": "Purchases go through approved, auditable procurement.",
+        "item4Title": "Goods-based support",
+        "item4Text": "Support means real goods, not untracked transfers.",
+        "item5Title": "Privacy-first reporting",
+        "item5Text": "Sponsors see impact without ever seeing private family data."
+      },
+      "how": {
+        "title": "How it works",
+        "subtitle": "A simple, accountable path from need to delivery.",
+        "step1Title": "Needs are reviewed",
+        "step1Text": "Operators review each family's situation and record verified needs.",
+        "step2Title": "Goods are ordered",
+        "step2Text": "Support becomes tracked orders for real goods from approved sources.",
+        "step3Title": "Privacy is protected",
+        "step3Text": "Guardian identity, addresses, and documents never leave the protected record.",
+        "step4Title": "Delivery is evidenced",
+        "step4Text": "Each delivery is confirmed with protected proof the family controls."
+      },
+      "families": {
+        "title": "Family examples",
+        "subtitle": "How support is presented",
+        "disclosureTitle": "Illustrative examples",
+        "disclosureText": "These eight profiles are fictional illustrations of how support is presented. They are not registered Kafil families and not claims about current beneficiaries.",
+        "exampleBadge": "Example",
+        "membersLabel": "Household",
+        "membersValue": "{{count}} members",
+        "needLabel": "Need",
+        "applyCta": "Apply to sponsor",
+        "cardImageAlt": "Illustrative artwork for fictional family example {{index}}",
+        "card1Name": "Salma's household",
+        "card1City": "Casablanca",
+        "card2Name": "Yassine's household",
+        "card2City": "Rabat",
+        "card3Name": "Khadija's household",
+        "card3City": "Marrakech",
+        "card4Name": "Omar's household",
+        "card4City": "Fes",
+        "card5Name": "Fatima's household",
+        "card5City": "Agadir",
+        "card6Name": "Hassan's household",
+        "card6City": "Tangier",
+        "card7Name": "Amina's household",
+        "card7City": "Meknes",
+        "card8Name": "Bilal's household",
+        "card8City": "Oujda"
+      },
+      "cta": {
+        "title": "Be the reason a family smiles.",
+        "text": "Join Kafil as a sponsor and turn reviewed needs into real goods, with privacy and accountability at every step.",
+        "sponsorCta": "Sponsor a family",
+        "familiesCta": "See families"
+      },
+      "footer": {
+        "tagline": "Accountable family sponsorship with privacy and care.",
+        "navTitle": "Explore",
+        "contactTitle": "Contact",
+        "contactText": "Questions about sponsoring? Start an application and our team will guide you, or sign in if you already have an account.",
+        "applyCta": "Apply to sponsor",
+        "loginCta": "Sign in",
+        "rights": "© {{year}} Kafil. All rights reserved."
+      }
     }
   }
 }

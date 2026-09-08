@@ -29,6 +29,7 @@ export const NotificationBell = forwardRef<
   const button = (
     <NButton
       aria-label={t("notifications.openInbox")}
+      className="text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100"
       onClick={onOpen}
       ref={ref}
       size="icon"

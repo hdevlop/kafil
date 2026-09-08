@@ -38,8 +38,26 @@ describe("published media contract integration", () => {
     for (const consumer of consumers) {
       const content = source(consumer);
       expect(content).toContain('from "najm-kit/next"');
-      expect(content).toContain("<NNextImage unoptimized");
       expect(content).not.toContain('from "next/image"');
+      // Public static landing artwork (/hero, /landing, /mascots, including via
+      // the explicit landing manifests) is served optimized with explicit
+      // layout and fallback; protected managed-image routes keep explicit
+      // direct (`unoptimized`) delivery.
+      const servesPublicStatic =
+        !content.includes("/api/") &&
+        (content.includes("/hero/") ||
+          content.includes("/landing/") ||
+          content.includes("/mascots/") ||
+          content.includes("landingMascots") ||
+          content.includes("landingHeroSlides") ||
+          content.includes("buildLandingViewModel") ||
+          content.includes("LANDING_CTA_MASCOT_SRC"));
+      if (servesPublicStatic && !content.includes("unoptimized")) {
+        expect(content).toContain("fallbackSrc");
+        expect(content.includes("fill") || content.includes("width={")).toBe(true);
+      } else {
+        expect(content).toContain("<NNextImage unoptimized");
+      }
     }
   });
 

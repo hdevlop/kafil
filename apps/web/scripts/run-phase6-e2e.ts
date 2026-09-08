@@ -96,6 +96,7 @@ try {
     ...(configuredFiles?.length
       ? configuredFiles
       : [
+          "test/e2e/landing.e2e.ts",
           "test/e2e/phase6-closeout.e2e.ts",
           "test/e2e/phase7-unified-flow.e2e.ts",
           "test/e2e/family-create-wizard.e2e.ts",

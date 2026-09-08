@@ -78,6 +78,15 @@ const SHARED_WITH_ENGLISH: Record<string, ReadonlySet<string>> = {
     "ui.sponsor.contributions.title",
     "ui.adminAccess.permissions.action",
     "ui.adminAccess.permissions.description",
+    // Landing proper nouns and genuine cognates: invariant Moroccan city
+    // names shared with English, and "Contact" which is identical in French.
+    "ui.landing.header.contact",
+    "ui.landing.footer.contactTitle",
+    "ui.landing.families.card1City",
+    "ui.landing.families.card2City",
+    "ui.landing.families.card3City",
+    "ui.landing.families.card5City",
+    "ui.landing.families.card8City",
   ]),
   ar: new Set([
     "ui.common.table.modeJson",
@@ -103,6 +112,12 @@ const SHARED_WITH_ENGLISH: Record<string, ReadonlySet<string>> = {
     "ui.family.orderCart.total",
     "ui.adminAccess.common.no",
     "ui.adminAccess.roles.title",
+    // Landing proper nouns: invariant Moroccan city names shared with English.
+    "ui.landing.families.card1City",
+    "ui.landing.families.card2City",
+    "ui.landing.families.card3City",
+    "ui.landing.families.card5City",
+    "ui.landing.families.card8City",
   ]),
 };
 

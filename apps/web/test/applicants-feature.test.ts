@@ -165,8 +165,13 @@ describe("applicant creation thin route", () => {
     expect(api).not.toContain("familyId");
     expect(api).not.toContain("family_id");
     expect(page).not.toContain("searchParams");
-    expect(landing).toContain('href="/apply"');
-    expect(landing).not.toContain('href="/register/sponsor"');
+    // The landing route stays thin per the landing plan: it delegates to
+    // LandingPage, and the /apply destination lives in the feature's
+    // explicit route manifest.
+    expect(landing).toContain("LandingPage");
+    const landingContent = source("../src/features/Landing/config/landingContent.ts");
+    expect(landingContent).toContain('apply: "/apply"');
+    expect(`${landing}\n${landingContent}`).not.toContain("/register/sponsor");
   });
 
   test("ships the complete application copy in every UI language", () => {

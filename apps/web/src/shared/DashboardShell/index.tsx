@@ -15,7 +15,6 @@ import {
    type SettingsSheetKind,
 } from "@/features/Settings/components/SettingsSheets";
 import { OrderCartOverlay, useOrderCartStore } from "@/features/OrderCart";
-import { NotificationsMenu } from "@/features/Notifications";
 import { openSponsorProfileSheet, SponsorProfileSheet, } from "@/features/Sponsors/components/profile/SponsorProfileSheet";
 import { KafilRoleProvider } from "@/shared/Authorization";
 import {
@@ -126,9 +125,6 @@ function DashboardShellBody({ children, user, onSignOut, signingOut }: Readonly<
             />
 
             <div className="flex h-full min-h-0 w-full flex-col">
-               <div className="flex shrink-0 items-center justify-end border-b border-border/60 bg-background px-3 py-1.5 sm:px-4">
-                  <NotificationsMenu />
-               </div>
                <NajmScroll axis="y" className="min-h-0 flex-1">
                   {children}
                </NajmScroll>

@@ -2341,6 +2341,110 @@
       "columnsStatus": "Estado",
       "stateUnread": "Sin leer",
       "stateRead": "Leída"
+    },
+    "landing": {
+      "skip": "Saltar al contenido",
+      "meta": {
+        "title": "Kafil — Donación transparente. Bienes reales. Impacto real.",
+        "description": "Kafil conecta necesidades familiares revisadas, compras responsables y padrinos, protegiendo la información privada de cada familia."
+      },
+      "header": {
+        "home": "Inicio",
+        "families": "Ejemplos de familias",
+        "howItWorks": "Cómo funciona",
+        "contact": "Contacto",
+        "signIn": "Iniciar sesión",
+        "navLabel": "Navegación principal",
+        "openMenu": "Abrir el menú",
+        "closeMenu": "Cerrar el menú",
+        "themeToggle": "Cambiar el tema",
+        "languageError": "No se pudo actualizar la preferencia de idioma."
+      },
+      "hero": {
+        "eyebrow": "Apadrinamiento familiar responsable",
+        "title": "Donación transparente. Bienes reales. Impacto real.",
+        "description": "Kafil conecta necesidades familiares revisadas, compras responsables y padrinos, protegiendo la información privada de cada familia.",
+        "sponsorCta": "Apadrina una familia",
+        "examplesCta": "Ver ejemplos",
+        "carouselLabel": "Momentos de apoyo a las familias",
+        "previous": "Diapositiva anterior",
+        "next": "Diapositiva siguiente",
+        "pause": "Pausar",
+        "play": "Reanudar",
+        "position": "Diapositiva {{current}} de {{total}}",
+        "slide1Alt": "Ilustración de una familia de Kafil recibiendo apoyo de compras",
+        "slide2Alt": "Vista más cercana de una familia de Kafil con productos listos para entregar",
+        "esSlide1Alt": "Arte titular en español con una lista de apoyo a las familias",
+        "esSlide2Alt": "Arte titular en español con productos de ultramarinos"
+      },
+      "trust": {
+        "title": "Por qué los padrinos confían en Kafil",
+        "item1Title": "Elegibilidad revisada",
+        "item1Text": "Las necesidades se revisan antes de presentar cualquier apoyo.",
+        "item2Title": "Pedidos rastreados",
+        "item2Text": "Cada pedido se sigue desde la solicitud hasta la entrega.",
+        "item3Title": "Compras aprobadas",
+        "item3Text": "Las compras pasan por un circuito aprobado y auditable.",
+        "item4Title": "Apoyo en bienes",
+        "item4Text": "El apoyo son bienes reales, no transferencias opacas.",
+        "item5Title": "Privacidad primero",
+        "item5Text": "Los padrinos ven el impacto sin ver datos privados."
+      },
+      "how": {
+        "title": "Cómo funciona",
+        "subtitle": "Un camino sencillo y responsable, de la necesidad a la entrega.",
+        "step1Title": "Se revisan las necesidades",
+        "step1Text": "Los operadores revisan la situación de cada familia y registran necesidades verificadas.",
+        "step2Title": "Se piden los bienes",
+        "step2Text": "El apoyo se convierte en pedidos rastreados de bienes reales de fuentes aprobadas.",
+        "step3Title": "Se protege la privacidad",
+        "step3Text": "La identidad, las direcciones y los documentos nunca salen del registro protegido.",
+        "step4Title": "Se acredita la entrega",
+        "step4Text": "Cada entrega se confirma con una prueba protegida que controla la familia."
+      },
+      "families": {
+        "title": "Ejemplos de familias",
+        "subtitle": "Cómo se presenta el apoyo",
+        "disclosureTitle": "Ejemplos ilustrativos",
+        "disclosureText": "Estos ocho perfiles son ilustraciones ficticias de cómo se presenta el apoyo. No son familias registradas en Kafil ni datos sobre beneficiarios actuales.",
+        "exampleBadge": "Ejemplo",
+        "membersLabel": "Hogar",
+        "membersValue": "{{count}} miembros",
+        "needLabel": "Necesidad",
+        "applyCta": "Solicitar apadrinar",
+        "cardImageAlt": "Ilustración de un ejemplo de familia ficticia {{index}}",
+        "card1Name": "Hogar de Salma",
+        "card1City": "Casablanca",
+        "card2Name": "Hogar de Yassine",
+        "card2City": "Rabat",
+        "card3Name": "Hogar de Khadija",
+        "card3City": "Marrakech",
+        "card4Name": "Hogar de Omar",
+        "card4City": "Fez",
+        "card5Name": "Hogar de Fatima",
+        "card5City": "Agadir",
+        "card6Name": "Hogar de Hassan",
+        "card6City": "Tánger",
+        "card7Name": "Hogar de Amina",
+        "card7City": "Mequinez",
+        "card8Name": "Hogar de Bilal",
+        "card8City": "Oujda"
+      },
+      "cta": {
+        "title": "Sé la razón de la sonrisa de una familia.",
+        "text": "Únete a Kafil como padrino y convierte necesidades revisadas en bienes reales, con privacidad y responsabilidad en cada paso.",
+        "sponsorCta": "Apadrina una familia",
+        "familiesCta": "Ver familias"
+      },
+      "footer": {
+        "tagline": "Apadrinamiento familiar responsable, con privacidad y cuidado.",
+        "navTitle": "Explorar",
+        "contactTitle": "Contacto",
+        "contactText": "¿Preguntas sobre apadrinar? Envía una solicitud y nuestro equipo te guiará, o inicia sesión si ya tienes cuenta.",
+        "applyCta": "Solicitar apadrinar",
+        "loginCta": "Iniciar sesión",
+        "rights": "© {{year}} Kafil. Todos los derechos reservados."
+      }
     }
   }
 }

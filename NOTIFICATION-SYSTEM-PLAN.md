@@ -463,9 +463,9 @@ apps/web/src/services/notificationsApi.ts
 apps/web/src/app/(dashboard)/notifications/page.tsx
 ```
 
-- `DashboardShell` owns one notification bell so every authenticated dashboard
-  route gets it. The existing page-specific global action component does not
-  own another copy.
+- The shared page-header global action group owns one notification bell so it
+  appears beside language, theme, and fullscreen controls without creating a
+  second shell row. The bell uses the same theme-aware foreground styling.
 - Add one `/notifications` navigation destination for every role.
 - Use Najm Kit primitives for indicator, button, popover/sheet, scroll, page,
   table/cards, badges, loading/error/empty states, and feedback.

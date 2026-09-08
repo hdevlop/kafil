@@ -107,20 +107,25 @@ describe("Phase B notification shell and navigation", () => {
     }
   });
 
-  test("shell owns exactly one bell and no page-global duplicate", async () => {
+  test("the page-global action group owns one themed bell", async () => {
     const [shell, globalActions] = await Promise.all([
       readSource("../src/shared/DashboardShell/index.tsx"),
       readSource("../src/shared/PageHeaderGlobalActions.tsx"),
     ]);
-    expect(shell).toContain("NotificationsMenu");
-    expect(
-      (shell.match(/NotificationsMenu/g) ?? []).length,
-    ).toBeGreaterThanOrEqual(1);
+    expect(shell).not.toContain("NotificationsMenu");
     expect(
       (shell.match(/<NotificationBell/g) ?? []).length,
     ).toBe(0);
-    expect(globalActions).not.toContain("NotificationsMenu");
+    expect(
+      (globalActions.match(/<NotificationsMenu/g) ?? []).length,
+    ).toBe(1);
     expect(globalActions).not.toContain("NotificationBell");
+
+    const bell = await readSource(
+      "../src/features/Notifications/components/NotificationBell.tsx",
+    );
+    expect(bell).toContain("text-foreground");
+    expect(bell).toContain("[&_svg]:text-foreground");
   });
 
   test("auth guards the inbox route for every role", async () => {
