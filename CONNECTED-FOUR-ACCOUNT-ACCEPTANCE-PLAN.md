@@ -2914,3 +2914,34 @@ request. The combined notification feature/runner source tests pass (`25 passed,
 0 failed, 546 assertions`), and web typecheck/lint pass. Full root verification,
 publication, exact deployment, and a separately authorized Units 01-02 plus
 diagnostics attempt remain required.
+
+### 12.15 Observable-popover attempt and navigation/read race correction
+
+The observable-popover correction was published and deployed as exact healthy
+app and worker revision `d0a5ee549ef09a3f810ba0b96d21be037830f3b5` after
+GitHub verification, image publication, deployment, and dedicated preflight
+passed. A fresh instruction authorized exactly Units 01-02 plus passive
+diagnostics. Playwright selected `3 tests using 1 worker`, with zero retries.
+Unit 01 passed in `27.1s`; Unit 02 failed, diagnostics did not run, and the
+runner retained only its 96-byte value-free failed marker. The terminal
+assertion was lost when the attached process session ended, so no narrower
+browser assertion is claimed. The marker's sensitive-pattern scan was clean,
+and no edit or retry occurred under that authorization.
+
+A value-free read-only production database check over the bounded attempt
+window showed both new `contribution.validated` rows still unread. It also
+showed two unread `contribution.submitted` rows, confirming that Unit 02's
+independent “only this row” boundary had a real comparison row. Source review
+then identified the owning frontend race: the popover `View` link launched an
+asynchronous mark-read mutation from `onNavigate` while allowing navigation to
+start immediately, so route transition could abort or outrun the PATCH. The
+link now prevents only an accepted unread-row navigation, awaits successful
+mark-read persistence, closes the popover, and then routes. Already-read links
+retain normal Next.js navigation, and a failed command keeps the popover open.
+
+The isolated navigation and remote-runner source contracts pass (`6 passed`,
+`0 failed`, `108 assertions`); web lint/typecheck pass; the full root
+lint/typecheck/test/build gate passes with web `429`, server `400` plus `77`
+opt-in skips, and seed `89`; `db:generate` reports no schema drift. Publication,
+exact deployment proof, and one freshly authorized Units 01-02 plus diagnostics
+attempt remain required.

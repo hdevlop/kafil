@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { NButton, NBadge, Card, CardContent } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 
@@ -34,6 +35,7 @@ export function NotificationCard({
   onNavigate?: () => void;
 }>) {
   const { t, language } = useTranslation();
+  const router = useRouter();
   const markRead = useMarkNotificationRead();
   const locale = normalizeLocale(language ?? notification.locale);
   const vm = buildNotificationViewModel(notification.topic, locale, {
@@ -43,19 +45,18 @@ export function NotificationCard({
   const Icon = vm.icon;
   const unread = notification.readAt === null;
 
-  async function handleNavigation() {
-    // Next invokes onNavigate only for an accepted client-side navigation.
-    // Closing and read confirmation therefore happen after the detail/focus
-    // action has been accepted, not for modified clicks or downloads.
-    onNavigate?.();
-    if (unread) {
-      try {
-        await markRead.mutateAsync(notification.id);
-      } catch {
-        // The shared command hook already presents the error.
-      }
+  async function markReadThenNavigate(href: string) {
+    try {
+      await markRead.mutateAsync(notification.id);
+      onNavigate?.();
+      router.push(href);
+    } catch {
+      // The shared command hook already presents the error. Keep the popover
+      // open so navigation cannot abort or hide a failed read command.
     }
   }
+
+  const href = `${vm.href}?focus=${notification.id}`;
 
   return (
     <Card
@@ -82,8 +83,15 @@ export function NotificationCard({
           <div className="mt-2 flex gap-2">
             <NButton asChild size="sm" variant="outline">
               <Link
-                href={`${vm.href}?focus=${notification.id}`}
-                onNavigate={() => void handleNavigation()}
+                href={href}
+                onNavigate={(event) => {
+                  if (!unread) {
+                    onNavigate?.();
+                    return;
+                  }
+                  event.preventDefault();
+                  void markReadThenNavigate(href);
+                }}
               >
                 {t("common.view")}
               </Link>
