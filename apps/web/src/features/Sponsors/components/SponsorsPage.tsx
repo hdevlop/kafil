@@ -1,18 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eye, Pencil, Trash2, UserRoundCheck, UserRoundX, type LucideIcon } from "lucide-react";
-import { useUser } from "najm-auth/client/react";
-import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog, useDialogStore } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
+import { useKafilRole } from "@/shared/Authorization";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 
 import { SponsorCard } from "./SponsorCard";
 import { SponsorOverviewDialogContent } from "./SponsorOverviewDialogContent";
-import { BulkDeleteSponsorsDialogContent, CreateSponsorDialogContent, DeleteSponsorDialogContent, SponsorStatusDialogContent, UpdateSponsorDialogContent } from "./SponsorForms";
-import { useResponsiveSponsors } from "../hooks/useSponsors";
+import { BulkDeleteSponsorsDialogContent, CreateSponsorDialogContent, SponsorStatusDialogContent, UpdateSponsorDialogContent } from "./SponsorForms";
+import { useResponsiveSponsors, useSponsorCommands } from "../hooks/useSponsors";
 import { useSponsorsTableColumns } from "../hooks/useSponsorsTableColumns";
 import { useSponsorsTableFilters } from "../hooks/useSponsorsTableFilters";
 import type { SponsorRecord } from "../types";
@@ -35,15 +35,40 @@ function SponsorsIcon({ className }: Readonly<{ className?: string }>) {
 export function SponsorsPage() {
   const { t } = useTranslation();
   const dialog = useDialog();
-  const user = useUser();
+  const dialogStore = useDialogStore();
+  const { isExactAdmin } = useKafilRole();
   const [listFilters, setListFilters] = useState<ListSponsorsFilters>({});
   const sponsors = useResponsiveSponsors(listFilters);
+  const { remove } = useSponsorCommands();
   const columns = useSponsorsTableColumns();
   const filters = useSponsorsTableFilters(listFilters, setListFilters);
   const rows = sponsors.data;
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const bulkDeleteDialogOpenRef = useRef(false);
-  const isAdmin = user?.role === "admin";
+
+  useEffect(() => {
+    if (!isExactAdmin) return;
+
+    const selectVisibleSponsors = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "a") {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("input, textarea, select, [contenteditable='true']")) return;
+      if (target.closest("[data-ntable-root]")) return;
+      if (dialogStore.getState().getCurrentDialog()) return;
+
+      event.preventDefault();
+      setRowSelection(
+        Object.fromEntries(rows.map((sponsor) => [sponsor.id, true])),
+      );
+    };
+
+    document.addEventListener("keydown", selectVisibleSponsors);
+    return () => document.removeEventListener("keydown", selectVisibleSponsors);
+  }, [dialogStore, isExactAdmin, rows]);
 
   function openCreate() {
     void dialog.openDialog({
@@ -90,12 +115,34 @@ export function SponsorsPage() {
   }
 
   function openDelete(sponsor: SponsorRecord) {
-    void dialog.openDialog({
-      title: t("operator.sponsors.deleteTitle", { name: sponsor.name }),
-      description: t("operator.sponsors.deleteDescription"),
-      children: <DeleteSponsorDialogContent sponsor={sponsor} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.sponsors.deleteDialogTitle"),
+      description: t("operator.sponsors.deleteDialogMessage"),
+      itemName: sponsor.name,
+      icon: Trash2,
+      warningText: t("operator.sponsors.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.sponsors.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(sponsor.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 
@@ -168,7 +215,7 @@ export function SponsorsPage() {
           });
         }
 
-        if (isAdmin) {
+        if (isExactAdmin) {
           actions.push({
             label: t("operator.sponsors.delete"),
             icon: Trash2,
@@ -182,10 +229,10 @@ export function SponsorsPage() {
       },
     },
     menuButton: true,
-    showCheckbox: isAdmin,
+    showCheckbox: isExactAdmin,
     rowSelection,
     onRowSelectionChange: setRowSelection,
-    onBulkDelete: isAdmin ? openBulkDelete : undefined,
+    onBulkDelete: isExactAdmin ? openBulkDelete : undefined,
     manualPagination: true,
     pageCount: sponsors.pageCount,
     pagination: sponsors.pagination,

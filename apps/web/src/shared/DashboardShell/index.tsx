@@ -19,6 +19,7 @@ import {
    PersonalSettingsSheet,
 } from "@/features/Settings/components/PersonalSettingsSheet";
 import { OrderCartOverlay, useOrderCartStore } from "@/features/OrderCart";
+import { useDeliveryDashboardContext } from "@/features/Dashboard/DeliveryDashboard";
 import { openSponsorProfileSheet, SponsorProfileSheet, } from "@/features/Sponsors/components/profile/SponsorProfileSheet";
 import { KafilRoleProvider } from "@/shared/Authorization";
 import {
@@ -58,7 +59,14 @@ function DashboardShellBody({ children, user, onSignOut, signingOut }: Readonly<
    const pathname = usePathname();
    const { t } = useTranslation();
    const sidebar = useNSidebar();
-   const navItems = useMemo(() => translateDashboardNavigation(getDashboardNavigation(user.role), t), [t, user.role],);
+   const deliveryContext = useDeliveryDashboardContext(user.role === "operator");
+   const navItems = useMemo(
+      () => translateDashboardNavigation(
+         getDashboardNavigation(user.role, { deliveryEligible: deliveryContext.data?.eligible === true }),
+         t,
+      ),
+      [deliveryContext.data?.eligible, t, user.role],
+   );
    const [activeSettingsSheet, setActiveSettingsSheet] = useState<SettingsSheetKind | null>(null);
    const closeMobile = () => sidebar?.closeMobile();
 

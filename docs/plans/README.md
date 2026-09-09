@@ -4,6 +4,10 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
 
 ## Root plans
 
+- [`DELIVERY-STAFF-DASHBOARD-PLAN.md`](../../DELIVERY-STAFF-DASHBOARD-PLAN.md)
+  - planned real-data, assignment-scoped Delivery dashboard with scheduling,
+    issue tracking, family-address mapping, staff-owned commands, responsive
+    browser acceptance, and the existing Operator dashboard preserved.
 - [`LANDING-PAGE-PLAN.md`](../../LANDING-PAGE-PLAN.md)
   - planned static public landing-page adaptation with truthful illustrative
     content, a five-second locale-specific `/hero` carousel, an existing
@@ -12,6 +16,10 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
 - [`FAMILY-ORDER-LIMITS-PLAN.md`](../../FAMILY-ORDER-LIMITS-PLAN.md)
   - implemented nullable global defaults, per-family order policy overrides,
     monthly inheritance/reset, and enforcement; browser acceptance is deferred.
+- [`FAMILY-EDIT-WIZARD-PLAN.md`](../../FAMILY-EDIT-WIZARD-PLAN.md)
+  - implementation-ready parity of the family edit dialog with the create
+    wizard (2-step guardian/household, bounded scrollable dialog, dead policy
+    inputs removed from edit).
 - [`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`](../../CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md)
   - completed guarded VPS four-account baseline and evidence record, plus the
     pending dedicated notification connected-acceptance extension.

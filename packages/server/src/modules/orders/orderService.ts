@@ -34,6 +34,8 @@ import {
   type ConfirmDeliveryDto,
   failDeliveryDto,
   type FailDeliveryDto,
+  reportDeliveryIssueDto,
+  type ReportDeliveryIssueDto,
   type FamilyCancelOrderDto,
   familyCancelOrderDto,
   type OperatorCancelOrderDto,
@@ -76,6 +78,8 @@ interface FamilyOrderContext {
   userId: string;
   guardianLegalName: string;
   exactAddress: string;
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
   phone: string | null;
 }
 
@@ -90,6 +94,12 @@ interface PendingOrderInput {
   auditAction: "order.assisted_submitted" | "order.submitted";
   purchasingStaff: StaffRecord | null;
   deliveryStaff: StaffRecord | null;
+  deliverySchedule: {
+    scheduledDate: string;
+    windowStartMinute: number | null;
+    windowEndMinute: number | null;
+    packageCount: number;
+  } | null;
 }
 
 @Service()
@@ -117,6 +127,18 @@ export class OrderService {
       throw new Error("SettingRepository is required for order-policy enforcement");
     }
     return this.settings;
+  }
+
+  private async requireDeliveryStaff(userId: string) {
+    const staff = await this.staff.findByUserId(userId);
+    if (
+      !staff ||
+      staff.status !== "active" ||
+      !staff.functions.includes("delivery")
+    ) {
+      HttpError.forbidden("Delivery Staff access denied");
+    }
+    return staff;
   }
 
   async getOwnCart(userId: string) {
@@ -427,6 +449,7 @@ export class OrderService {
       auditAction: "order.submitted",
       purchasingStaff: null,
       deliveryStaff: null,
+      deliverySchedule: null,
     });
     await this.carts.clear(cart.id);
     return this.orderDetail(order, "family");
@@ -473,6 +496,14 @@ export class OrderService {
       auditAction: "order.assisted_submitted",
       purchasingStaff,
       deliveryStaff,
+      deliverySchedule: deliveryStaff
+        ? {
+            scheduledDate: input.scheduledDate!,
+            windowStartMinute: input.windowStartMinute ?? null,
+            windowEndMinute: input.windowEndMinute ?? null,
+            packageCount: input.packageCount!,
+          }
+        : null,
     });
     return this.orderDetail(order, "operator");
   }
@@ -691,6 +722,10 @@ export class OrderService {
       affiliationSnapshot: staff.affiliation,
       companyNameSnapshot: staff.companyName,
       assignedByUserId: actorUserId,
+      scheduledDate: input.scheduledDate,
+      windowStartMinute: input.windowStartMinute ?? null,
+      windowEndMinute: input.windowEndMinute ?? null,
+      packageCount: input.packageCount,
       assignmentIdempotencyKey: input.idempotencyKey,
     });
     await this.recordDeliveryEvent("assigned", order, attempt, actorUserId);
@@ -733,6 +768,10 @@ export class OrderService {
       companyNameSnapshot: staff.companyName,
       assignedByUserId: actorUserId,
       assignedAt: changedAt,
+      scheduledDate: input.scheduledDate,
+      windowStartMinute: input.windowStartMinute ?? null,
+      windowEndMinute: input.windowEndMinute ?? null,
+      packageCount: input.packageCount,
       assignmentIdempotencyKey: input.idempotencyKey,
     });
     await this.recordDeliveryEvent("reassigned", order, replacement, actorUserId, {
@@ -747,6 +786,7 @@ export class OrderService {
     id: string,
     data: StartDeliveryDto,
     actorUserId: string,
+    requiredStaffProfileId?: string,
   ) {
     const input = startDeliveryDto.parse(data);
     const order = await this.lockOrder(id);
@@ -755,6 +795,12 @@ export class OrderService {
     );
     if (repeated) {
       this.ensureDeliveryIdempotencyContext(repeated, order.id);
+      if (
+        requiredStaffProfileId &&
+        repeated.staffProfileId !== requiredStaffProfileId
+      ) {
+        HttpError.forbidden("Delivery assignment access denied");
+      }
       return this.orderDetail(order, "operator");
     }
     this.validator.ensureStatus(order, "purchased");
@@ -764,6 +810,12 @@ export class OrderService {
     const attempt = await this.deliveries.findActiveByOrderId(order.id, true);
     if (!attempt || attempt.status !== "assigned") {
       HttpError.conflict("An active delivery assignment is required");
+    }
+    if (
+      requiredStaffProfileId &&
+      attempt.staffProfileId !== requiredStaffProfileId
+    ) {
+      HttpError.forbidden("Delivery assignment access denied");
     }
     await this.ensureAssignableDeliveryStaff(attempt.staffProfileId);
     const startedAt = new Date();
@@ -832,11 +884,22 @@ export class OrderService {
     id: string,
     data: ConfirmDeliveryDto,
     actorUserId: string,
+    requiredStaffProfileId?: string,
   ) {
     const input = confirmDeliveryDto.parse(data);
     const order = await this.lockOrder(id);
     if (order.status === "delivered") {
       if (order.deliveryConfirmationIdempotencyKey === input.idempotencyKey) {
+        const repeatedAttempt =
+          await this.deliveries.findByConfirmationIdempotencyKey(
+            input.idempotencyKey,
+          );
+        if (
+          requiredStaffProfileId &&
+          repeatedAttempt?.staffProfileId !== requiredStaffProfileId
+        ) {
+          HttpError.forbidden("Delivery assignment access denied");
+        }
         return this.orderDetail(order, "operator");
       }
       HttpError.conflict("Order is already delivered");
@@ -847,12 +910,24 @@ export class OrderService {
       );
     if (repeatedAttempt) {
       this.ensureDeliveryIdempotencyContext(repeatedAttempt, order.id);
+      if (
+        requiredStaffProfileId &&
+        repeatedAttempt.staffProfileId !== requiredStaffProfileId
+      ) {
+        HttpError.forbidden("Delivery assignment access denied");
+      }
       return this.orderDetail(order, "operator");
     }
     this.validator.ensureStatus(order, "out_for_delivery");
     const attempt = await this.deliveries.findActiveByOrderId(order.id, true);
     if (!attempt || attempt.status !== "in_progress") {
       HttpError.conflict("An in-progress delivery attempt is required");
+    }
+    if (
+      requiredStaffProfileId &&
+      attempt.staffProfileId !== requiredStaffProfileId
+    ) {
+      HttpError.forbidden("Delivery assignment access denied");
     }
     if (input.proofStoragePath) {
       await this.evidence.ensureManagedReference(
@@ -892,6 +967,70 @@ export class OrderService {
       },
     );
     return this.orderDetail(delivered, "operator");
+  }
+
+  async startOwnDelivery(
+    id: string,
+    data: StartDeliveryDto,
+    actorUserId: string,
+  ) {
+    const staff = await this.requireDeliveryStaff(actorUserId);
+    return this.startDelivery(id, data, actorUserId, staff.id);
+  }
+
+  async confirmOwnDelivery(
+    id: string,
+    data: ConfirmDeliveryDto,
+    actorUserId: string,
+  ) {
+    const staff = await this.requireDeliveryStaff(actorUserId);
+    return this.confirmDelivery(id, data, actorUserId, staff.id);
+  }
+
+  @Transaction({ retries: 2 })
+  async reportOwnDeliveryIssue(
+    id: string,
+    data: ReportDeliveryIssueDto,
+    actorUserId: string,
+  ) {
+    const input = reportDeliveryIssueDto.parse(data);
+    const staff = await this.requireDeliveryStaff(actorUserId);
+    const order = await this.lockOrder(id);
+    const attempt = await this.deliveries.findById(input.attemptId);
+    if (
+      !attempt ||
+      attempt.orderId !== order.id ||
+      attempt.staffProfileId !== staff.id
+    ) {
+      HttpError.forbidden("Delivery assignment access denied");
+    }
+    if (["delivered", "cancelled"].includes(attempt.status)) {
+      HttpError.conflict("Completed delivery attempts cannot receive issues");
+    }
+    const repeated = await this.deliveries.findIssueByIdempotencyKey(
+      input.idempotencyKey,
+    );
+    if (repeated) {
+      if (repeated.attemptId !== attempt.id || repeated.kind !== input.kind) {
+        HttpError.conflict("Delivery issue idempotency key was already used");
+      }
+      return repeated;
+    }
+    const issue = await this.deliveries.createIssue({
+      attemptId: attempt.id,
+      kind: input.kind,
+      note: input.note ?? null,
+      reportedByUserId: actorUserId,
+      reportIdempotencyKey: input.idempotencyKey,
+    });
+    await this.audits.record({
+      action: "order.delivery_issue_reported",
+      actorUserId,
+      metadata: { attemptId: attempt.id, kind: input.kind },
+      resource: "orders",
+      resourceId: order.id,
+    });
+    return issue;
   }
 
   /** Historical compatibility for orders already in the retired state. */
@@ -1024,6 +1163,8 @@ export class OrderService {
       guardianLegalNameSnapshot: input.family.guardianLegalName,
       deliveryAddressSnapshot: input.family.exactAddress,
       deliveryPhoneSnapshot: input.family.phone,
+      deliveryLatitudeSnapshot: input.family.deliveryLatitude,
+      deliveryLongitudeSnapshot: input.family.deliveryLongitude,
       placedByUserId: input.placedByUserId,
       purchasingStaffProfileId: input.purchasingStaff?.id ?? null,
       purchasingStaffNameSnapshot: input.purchasingStaff?.name ?? null,
@@ -1051,6 +1192,10 @@ export class OrderService {
         affiliationSnapshot: input.deliveryStaff.affiliation,
         companyNameSnapshot: input.deliveryStaff.companyName,
         assignedByUserId: input.placedByUserId,
+        scheduledDate: input.deliverySchedule!.scheduledDate,
+        windowStartMinute: input.deliverySchedule!.windowStartMinute,
+        windowEndMinute: input.deliverySchedule!.windowEndMinute,
+        packageCount: input.deliverySchedule!.packageCount,
         assignmentIdempotencyKey: input.idempotencyKey,
       });
     }

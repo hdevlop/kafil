@@ -18,6 +18,7 @@ import {
   NTable,
   type NTableProps,
   useDialog,
+  useDialogStore,
   createCardPagination,
 } from "najm-kit";
 import { useSearchParams } from "next/navigation";
@@ -27,6 +28,7 @@ import { useKafilRole } from "@/shared/Authorization/useKafilRole";
 import { useOrderCart, useOrderCartStore } from "@/features/OrderCart";
 import { CategoryFilterSheet } from "@/features/Categories/components/CategoryBar";
 import { useProductsWorkspace, type ProductsWorkspaceFilters } from "@/features/Products/hooks/useProductsWorkspace";
+import { useProductCommands } from "@/features/Products/hooks/useProducts";
 import { useProductsTableColumns } from "@/features/Products/hooks/useProductsTableColumns";
 import { useProductsTableFilters } from "@/features/Products/hooks/useProductsTableFilters";
 import {
@@ -39,7 +41,6 @@ import { ProductCard, type ProductCardAddInput } from "./ProductCard";
 import { ProductDetails } from "./ProductDetails";
 import {
   CreateProductDialogContent,
-  DeleteProductDialogContent,
   ProductStatusDialogContent,
   UpdateProductDialogContent,
 } from "./ProductForms";
@@ -49,8 +50,10 @@ const productsPagination = createOffsetPagination(0, 25);
 
 export function ProductsPage() {
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
   const { t } = useTranslation();
   const { isExactAdmin } = useKafilRole();
+  const { remove } = useProductCommands();
   const orderCart = useOrderCart();
   const setCartOpen = useOrderCartStore((state) => state.setDialogOpen);
   const columns = useProductsTableColumns();
@@ -131,12 +134,34 @@ export function ProductsPage() {
   }
 
   function openDelete(product: ProductRecord) {
-    void dialog.openDialog({
-      title: `${t("common.deleteForever")} ${product.name}?`,
-      description: t("common.permanentDeleteProductDescription"),
-      children: <DeleteProductDialogContent product={product} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.products.deleteDialogTitle"),
+      description: t("operator.products.deleteDialogMessage"),
+      itemName: product.name,
+      icon: Trash2,
+      warningText: t("operator.products.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.products.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(product.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

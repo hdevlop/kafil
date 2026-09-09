@@ -10,7 +10,7 @@ import {
   UserRoundX,
 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
-import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type NTableProps, useDialog, useDialogStore } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
@@ -22,12 +22,11 @@ import { StaffDetails } from "./StaffDetails";
 import {
   BulkDeleteStaffDialogContent,
   CreateStaffDialogContent,
-  DeleteStaffDialogContent,
   ProvisionStaffAccessDialogContent,
   StaffStatusDialogContent,
   UpdateStaffDialogContent,
 } from "./StaffForms";
-import { useResponsiveStaff } from "../hooks/useStaff";
+import { useResponsiveStaff, useStaffCommands } from "../hooks/useStaff";
 import { useStaffTableColumns } from "../hooks/useStaffTableColumns";
 import { useStaffTableFilters } from "../hooks/useStaffTableFilters";
 import type { StaffRecord } from "../types";
@@ -36,9 +35,11 @@ import type { StaffFilters } from "../hooks/useStaff";
 export function StaffPage() {
   const { t } = useTranslation();
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
   const user = useUser();
   const [listFilters, setListFilters] = useState<StaffFilters>({});
   const staff = useResponsiveStaff(listFilters);
+  const { remove } = useStaffCommands();
   const columns = useStaffTableColumns();
   const tableFilters = useStaffTableFilters(listFilters, setListFilters);
   const rows = staff.data;
@@ -97,12 +98,34 @@ export function StaffPage() {
   }
 
   function openDelete(target: StaffRecord) {
-    void dialog.openDialog({
-      title: t("operator.staff.deleteTitle", { name: target.name }),
-      description: t("operator.staff.deleteDescription"),
-      children: <DeleteStaffDialogContent staff={target} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.staff.deleteDialogTitle"),
+      description: t("operator.staff.deleteDialogMessage"),
+      itemName: target.name,
+      icon: Trash2,
+      warningText: t("operator.staff.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.staff.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(target.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

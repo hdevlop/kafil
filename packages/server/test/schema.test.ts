@@ -203,6 +203,7 @@ describe("Kafil database schema", () => {
         "notifications",
         "operatorProfiles",
         "orderDeliveryAttempts",
+        "orderDeliveryIssues",
         "orderItems",
         "orderPurchaseRecords",
         "orderPurchaseReversals",

@@ -293,7 +293,7 @@ test("isolated admin sees catalog permanent-delete confirmations", async ({
   await page.getByRole("button", { name: "Row actions" }).first().click();
   await page.getByRole("menuitem", { name: "Delete permanently" }).click();
   await expect(
-    page.getByText(/Permanently deletes this category, any products still under it/),
+    page.getByText(/Are you sure you want to permanently delete this category/),
   ).toBeVisible();
   await screenshot(page, "admin-category-delete-confirmation.png");
   await page.getByRole("button", { name: "Close" }).click();
@@ -302,7 +302,7 @@ test("isolated admin sees catalog permanent-delete confirmations", async ({
   await page.getByRole("button", { name: "Row actions" }).first().click();
   await page.getByRole("menuitem", { name: "Delete permanently" }).click();
   await expect(
-    page.getByText(/Permanently deletes this product, its cart entries/),
+    page.getByText(/Are you sure you want to permanently delete this product/),
   ).toBeVisible();
   await screenshot(page, "admin-product-delete-confirmation.png");
 });

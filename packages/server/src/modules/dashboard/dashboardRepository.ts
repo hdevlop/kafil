@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, ne, sql } from "drizzle-orm";
 import { usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
@@ -9,9 +9,15 @@ import { budgetAccounts } from "../budgets/budgetSchema";
 import { children } from "../children/childSchema";
 import { contributions, contributionPlans } from "../contributions/contributionSchema";
 import { familyProfiles } from "../families/familySchema";
-import { orders, orderItems } from "../orders/orderSchema";
+import {
+  orders,
+  orderDeliveryAttempts,
+  orderDeliveryIssues,
+  orderItems,
+} from "../orders/orderSchema";
 import { dominantOrderCategoryField } from "../orders/orderQueries";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
+import { staffFunctions, staffProfiles } from "../staff/staffSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
 
 const monthExpression = (column: typeof contributions.submittedAt | typeof orders.createdAt) =>
@@ -142,6 +148,90 @@ export class DashboardRepository {
       .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
       .orderBy(desc(orders.createdAt))
       .limit(limit);
+  }
+
+  async deliveryStaffIdentity(userId: string) {
+    const [row] = await this.db
+      .select({
+        id: staffProfiles.id,
+        name: staffProfiles.name,
+        status: staffProfiles.status,
+      })
+      .from(staffProfiles)
+      .innerJoin(
+        staffFunctions,
+        and(
+          eq(staffFunctions.staffProfileId, staffProfiles.id),
+          eq(staffFunctions.functionKey, "delivery"),
+        ),
+      )
+      .where(
+        and(
+          eq(staffProfiles.userId, userId),
+          eq(staffProfiles.status, "active"),
+        ),
+      )
+      .limit(1);
+    return row;
+  }
+
+  deliveryRows(staffProfileId: string, scheduledDate: string) {
+    return this.db
+      .select({
+        attemptId: orderDeliveryAttempts.id,
+        attemptStatus: orderDeliveryAttempts.status,
+        orderId: orders.id,
+        orderNumber: orders.orderNumber,
+        orderStatus: orders.status,
+        familyProfileId: familyProfiles.id,
+        familyName: usersTable.name,
+        familyImage: usersTable.image,
+        address: orders.deliveryAddressSnapshot,
+        phone: orders.deliveryPhoneSnapshot,
+        latitude: orders.deliveryLatitudeSnapshot,
+        longitude: orders.deliveryLongitudeSnapshot,
+        scheduledDate: orderDeliveryAttempts.scheduledDate,
+        windowStartMinute: orderDeliveryAttempts.windowStartMinute,
+        windowEndMinute: orderDeliveryAttempts.windowEndMinute,
+        packageCount: orderDeliveryAttempts.packageCount,
+      })
+      .from(orderDeliveryAttempts)
+      .innerJoin(orders, eq(orderDeliveryAttempts.orderId, orders.id))
+      .innerJoin(
+        familyProfiles,
+        eq(orders.familyProfileId, familyProfiles.id),
+      )
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
+      .where(
+        and(
+          eq(orderDeliveryAttempts.staffProfileId, staffProfileId),
+          eq(orderDeliveryAttempts.scheduledDate, scheduledDate),
+          ne(orderDeliveryAttempts.status, "cancelled"),
+        ),
+      )
+      .orderBy(
+        asc(orderDeliveryAttempts.windowStartMinute),
+        asc(orders.orderNumber),
+      );
+  }
+
+  openDeliveryIssues(attemptIds: readonly string[]) {
+    if (attemptIds.length === 0) return [];
+    return this.db
+      .select({
+        id: orderDeliveryIssues.id,
+        attemptId: orderDeliveryIssues.attemptId,
+        kind: orderDeliveryIssues.kind,
+        note: orderDeliveryIssues.note,
+      })
+      .from(orderDeliveryIssues)
+      .where(
+        and(
+          inArray(orderDeliveryIssues.attemptId, [...attemptIds]),
+          isNull(orderDeliveryIssues.resolvedAt),
+        ),
+      )
+      .orderBy(asc(orderDeliveryIssues.createdAt), asc(orderDeliveryIssues.id));
   }
 
   async familyIdentity(userId: string) {

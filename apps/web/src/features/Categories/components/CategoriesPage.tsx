@@ -11,6 +11,7 @@ import {
   NTable,
   type NTableProps,
   useDialog,
+  useDialogStore,
   createCardPagination,
 } from "najm-kit";
 import { useRouter } from "next/navigation";
@@ -30,7 +31,6 @@ import { CategoryDetails } from "./CategoryDetails";
 import {
   CategoryStatusDialogContent,
   CreateCategoryDialogContent,
-  DeleteCategoryDialogContent,
   UpdateCategoryDialogContent,
 } from "./CategoryForms";
 import type { CategoryRecord } from "../types";
@@ -39,11 +39,12 @@ const pagination = createOffsetPagination(0, 25);
 
 export function CategoriesPage() {
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
   const router = useRouter();
   const { t } = useTranslation();
   const { isExactFamily, isExactAdmin } = useKafilRole();
   const columns = useCategoriesTableColumns();
-  useCategoryCommands();
+  const { remove } = useCategoryCommands();
   // The card grid continues on scroll on every viewport. The table view keeps
   // numbered pages because its rows are unvirtualized.
   const [tableView, setTableView] = useState(false);
@@ -116,12 +117,34 @@ export function CategoriesPage() {
   }
 
   function openDelete(category: CategoryRecord) {
-    void dialog.openDialog({
-      title: t("operator.categories.deleteTitle", { name: category.name }),
-      description: t("common.permanentDeleteCategoryDescription"),
-      children: <DeleteCategoryDialogContent category={category} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.categories.deleteDialogTitle"),
+      description: t("operator.categories.deleteDialogMessage"),
+      itemName: category.name,
+      icon: Trash2,
+      warningText: t("operator.categories.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.categories.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(category.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

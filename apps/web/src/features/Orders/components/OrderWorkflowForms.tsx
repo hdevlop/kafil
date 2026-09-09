@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { z } from "zod";
+import { localDateInput } from "najm-kit/format";
 import {
   DynamicArray,
   FormInput,
@@ -63,12 +64,40 @@ const deliverySchema = z.object({
 
 const assignmentSchema = z.object({
   staffProfileId: z.string().uuid("Choose an active delivery staff member"),
+  scheduledDate: z.iso.date("Choose a delivery date"),
+  windowStart: z.string().regex(/^\d{2}:\d{2}$/).optional().or(z.literal("")),
+  windowEnd: z.string().regex(/^\d{2}:\d{2}$/).optional().or(z.literal("")),
+  packageCount: z.coerce.number().int().min(1).max(10_000),
   reason: z.string().trim().max(500).optional(),
+}).superRefine((values, context) => {
+  const hasStart = Boolean(values.windowStart);
+  const hasEnd = Boolean(values.windowEnd);
+  if (hasStart !== hasEnd) {
+    context.addIssue({
+      code: "custom",
+      message: "Start and end time must be provided together",
+      path: [hasStart ? "windowEnd" : "windowStart"],
+    });
+  } else if (
+    hasStart &&
+    timeToMinute(values.windowStart!) >= timeToMinute(values.windowEnd!)
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "End time must be after start time",
+      path: ["windowEnd"],
+    });
+  }
 });
 
-const reassignmentSchema = assignmentSchema.extend({
+const reassignmentSchema = assignmentSchema.safeExtend({
   reason: z.string().trim().min(3, "Give a short reason").max(500),
 });
+
+function timeToMinute(value: string) {
+  const [hour, minute] = value.split(":").map(Number);
+  return hour * 60 + minute;
+}
 
 const deliveryFailureSchema = z.object({
   reason: z.string().trim().min(3, "Give a short reason").max(500),
@@ -385,6 +414,12 @@ export function AssignDeliveryDialogContent({
     const common = {
       id: order.id,
       staffProfileId: values.staffProfileId,
+      scheduledDate: values.scheduledDate,
+      windowStartMinute: values.windowStart
+        ? timeToMinute(values.windowStart)
+        : null,
+      windowEndMinute: values.windowEnd ? timeToMinute(values.windowEnd) : null,
+      packageCount: values.packageCount,
       idempotencyKey: crypto.randomUUID(),
     };
     if (reassign) {
@@ -402,7 +437,14 @@ export function AssignDeliveryDialogContent({
     <NForm
       id={reassign ? "reassign-order-delivery" : "assign-order-delivery"}
       schema={reassign ? reassignmentSchema : assignmentSchema}
-      defaultValues={{ staffProfileId: "", reason: "" }}
+      defaultValues={{
+        staffProfileId: "",
+        scheduledDate: localDateInput(),
+        windowStart: "",
+        windowEnd: "",
+        packageCount: 1,
+        reason: "",
+      }}
       onSubmit={submit}
     >
       <NFormSectionHeader
@@ -420,6 +462,35 @@ export function AssignDeliveryDialogContent({
         disabled={options.isPending}
         required
       />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormInput
+          name="scheduledDate"
+          type="date"
+          formLabel={t("operator.orders.delivery.scheduledDate")}
+          icon="CalendarDays"
+          required
+        />
+        <FormInput
+          name="packageCount"
+          type="number"
+          formLabel={t("operator.orders.delivery.packageCount")}
+          icon="Package"
+          min={1}
+          required
+        />
+        <FormInput
+          name="windowStart"
+          type="time"
+          formLabel={t("operator.orders.delivery.windowStart")}
+          icon="Clock3"
+        />
+        <FormInput
+          name="windowEnd"
+          type="time"
+          formLabel={t("operator.orders.delivery.windowEnd")}
+          icon="Clock3"
+        />
+      </div>
       {reassign ? (
         <FormInput
           name="reason"

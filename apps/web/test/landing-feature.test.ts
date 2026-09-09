@@ -199,8 +199,10 @@ describe("landing feature contract", () => {
 
   test("landing metadata follows the active locale instead of hard-coded English", () => {
     const page = readSource("src/app/(landing)/page.tsx");
-    // Resolves the same language cookie the root layout uses for <html lang>.
+    // Resolves the same cookie/account/browser precedence as <html lang>.
     expect(page).toContain("kafilPreferences.resolve");
+    expect(page).toContain('requestHeaders.get("accept-language")');
+    expect(page).toContain("languageFallback");
     expect(page).toContain("kafilUiI18n.createTranslator");
     expect(page).toContain('t("landing.meta.title")');
     expect(page).toContain('t("landing.meta.description")');

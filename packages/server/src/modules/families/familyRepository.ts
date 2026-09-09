@@ -52,6 +52,8 @@ const familySelection = {
   guardianCin: familyProfiles.guardianCin,
   guardianDateOfBirth: familyProfiles.guardianDateOfBirth,
   exactAddress: familyProfiles.exactAddress,
+  deliveryLatitude: familyProfiles.deliveryLatitude,
+  deliveryLongitude: familyProfiles.deliveryLongitude,
   phone: familyProfiles.phone,
   activeChildCount: sql<number>`(
     select count(*)::int
@@ -231,6 +233,8 @@ export class FamilyRepository {
         | "guardianCin"
         | "guardianDateOfBirth"
         | "exactAddress"
+        | "deliveryLatitude"
+        | "deliveryLongitude"
         | "phone"
       >
     >,

@@ -59,7 +59,7 @@ it("assigns a direct, domain-specific response key to every controller endpoint"
     // 192 = the previous 183 routes plus the nine notification inbox routes
     // (list, unread-count, settings GET/PUT, push-config, subscribe,
     // unsubscribe, read-all, mark-read).
-    expect(routes).toHaveLength(192);
+    expect(routes).toHaveLength(197);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

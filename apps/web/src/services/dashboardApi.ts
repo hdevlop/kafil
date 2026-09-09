@@ -1,5 +1,6 @@
 import type {
   FamilyDashboardData,
+  DeliveryDashboardData,
   OperatorDashboardData,
 } from "@/features/Dashboard/types";
 
@@ -11,4 +12,16 @@ export function getOperatorDashboard() {
 
 export function getFamilyDashboard() {
   return api.get<FamilyDashboardData>("/dashboard/family");
+}
+
+export function getDeliveryDashboard(date: string) {
+  return api.get<DeliveryDashboardData>("/dashboard/delivery", {
+    query: { date },
+  });
+}
+
+export function getDeliveryDashboardContext() {
+  return api.get<{ eligible: boolean; staffProfileId: string | null }>(
+    "/dashboard/delivery/context",
+  );
 }

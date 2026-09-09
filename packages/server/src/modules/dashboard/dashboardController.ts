@@ -1,10 +1,15 @@
-import { Controller, Get, User,
+import { Controller, Get, Query, User,
   ResMsg,
 } from "najm-core";
 import { McpTool, ToolGroup } from "najm-mcp";
+import { Validate } from "najm-validation";
 
 import { isFamily, isOperator, isSponsor } from "../../config/authConfig";
 import { DashboardService } from "./dashboardService";
+import {
+  type DeliveryDashboardQuery,
+  deliveryDashboardQuery,
+} from "./dashboardDto";
 
 @ToolGroup("dashboard")
 @Controller("/dashboard")
@@ -17,6 +22,26 @@ export class DashboardController {
   @ResMsg("dashboards.success.retrieved")
   getOperator() {
     return this.dashboard.getOperator();
+  }
+
+  @Get("/delivery/context")
+  @isOperator()
+  @McpTool({ description: "Check whether the authenticated Staff profile can use the delivery dashboard", readOnly: true })
+  @ResMsg("dashboards.success.retrieved")
+  getDeliveryContext(@User("id") userId: string) {
+    return this.dashboard.getDeliveryContext(userId);
+  }
+
+  @Get("/delivery")
+  @isOperator()
+  @Validate({ query: deliveryDashboardQuery })
+  @McpTool({ description: "Read the authenticated Staff member's scheduled deliveries", readOnly: true })
+  @ResMsg("dashboards.success.retrieved")
+  getDelivery(
+    @User("id") userId: string,
+    @Query() query: DeliveryDashboardQuery,
+  ) {
+    return this.dashboard.getDelivery(userId, query.date);
   }
 
   @Get("/family")

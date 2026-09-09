@@ -98,9 +98,11 @@ export interface StaffProvisionAccessInput {
 
 export interface StaffProvisionAccessResult {
   profile: StaffRecord;
-  initialPassword: string;
+  emailSent: boolean;
+  initialPassword: null;
 }
 
 export interface StaffCreateResult extends StaffRecord {
-  initialPassword: string | null;
+  emailSent: boolean | null;
+  initialPassword: null;
 }

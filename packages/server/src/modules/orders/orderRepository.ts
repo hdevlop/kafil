@@ -28,12 +28,14 @@ import {
   type NewOrderPurchaseRecord,
   type NewOrderPurchaseReversal,
   type NewOrderDeliveryAttempt,
+  type NewOrderDeliveryIssue,
   type NewOrder,
   type NewOrderItem,
   type OrderItem,
   type OrderPurchaseRecord,
   orderItems,
   orderDeliveryAttempts,
+  orderDeliveryIssues,
   orderPurchaseRecords,
   orderPurchaseReversals,
   type OrderDeliveryAttempt,
@@ -538,6 +540,15 @@ export class OrderDeliveryRepository {
     return attempt;
   }
 
+  async findById(id: string) {
+    const [attempt] = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(eq(orderDeliveryAttempts.id, id))
+      .limit(1);
+    return attempt;
+  }
+
   async findByStartIdempotencyKey(startIdempotencyKey: string) {
     const [attempt] = await this.db
       .select()
@@ -576,6 +587,23 @@ export class OrderDeliveryRepository {
       .values(data)
       .returning();
     return attempt;
+  }
+
+  async findIssueByIdempotencyKey(reportIdempotencyKey: string) {
+    const [issue] = await this.db
+      .select()
+      .from(orderDeliveryIssues)
+      .where(eq(orderDeliveryIssues.reportIdempotencyKey, reportIdempotencyKey))
+      .limit(1);
+    return issue;
+  }
+
+  async createIssue(data: NewOrderDeliveryIssue) {
+    const [issue] = await this.db
+      .insert(orderDeliveryIssues)
+      .values(data)
+      .returning();
+    return issue;
   }
 
   async start(id: string, idempotencyKey: string, startedAt: Date) {

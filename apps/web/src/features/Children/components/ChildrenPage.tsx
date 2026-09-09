@@ -19,6 +19,7 @@ import {
   NTable,
   type NTableProps,
   useDialog,
+  useDialogStore,
   createCardPagination,
 } from "najm-kit";
 
@@ -33,10 +34,9 @@ import {
   BulkDeleteChildrenDialogContent,
   ChildStatusDialogContent,
   CreateChildDialogContent,
-  DeleteChildDialogContent,
   UpdateChildDialogContent,
 } from "./ChildForms";
-import { useResponsiveChildren } from "../hooks/useChildren";
+import { useChildCommands, useResponsiveChildren } from "../hooks/useChildren";
 import { useChildrenTableColumns } from "../hooks/useChildrenTableColumns";
 import { useChildrenTableFilters } from "../hooks/useChildrenTableFilters";
 import type { ChildRecord } from "../types";
@@ -45,9 +45,11 @@ import type { ListChildrenFilters } from "@/services/childApi";
 export function ChildrenPage() {
   const { t } = useTranslation();
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
   const { isExactAdmin, isExactFamily } = useKafilRole();
   const [listFilters, setListFilters] = useState<ListChildrenFilters>({});
   const children = useResponsiveChildren(listFilters);
+  const { remove } = useChildCommands();
   const columns = useChildrenTableColumns();
   const filters = useChildrenTableFilters(listFilters, setListFilters);
   const rows = children.data;
@@ -110,11 +112,34 @@ export function ChildrenPage() {
   }
 
   function openDelete(child: ChildRecord) {
-    void dialog.openDialog({
-      title: `Permanently delete ${child.legalName}?`,
-      children: <DeleteChildDialogContent child={child} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.children.deleteDialogTitle"),
+      description: t("operator.children.deleteDialogMessage"),
+      itemName: child.legalName,
+      icon: Trash2,
+      warningText: t("operator.children.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.children.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(child.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

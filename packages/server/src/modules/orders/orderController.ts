@@ -43,6 +43,8 @@ import {
   replacePurchaseDto,
   type ReassignDeliveryDto,
   reassignDeliveryDto,
+  type ReportDeliveryIssueDto,
+  reportDeliveryIssueDto,
   type SetCartItemQuantityDto,
   setCartItemQuantityDto,
   type SubmitOrderDto,
@@ -374,6 +376,56 @@ export class OrderController {
     @User("id") userId: string,
   ) {
     return this.orders.confirmDelivery(id, body, userId);
+  }
+
+  @Post("/:id/delivery/me/start")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: startDeliveryDto })
+  @McpTool({
+    description: "Start the authenticated Staff member's assigned delivery",
+    confirm: { level: "warning", message: "Start this assigned delivery?" },
+  })
+  @ResMsg("orders.success.deliveryStarted")
+  startOwnDelivery(
+    @Params("id") id: string,
+    @Body() body: StartDeliveryDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.startOwnDelivery(id, body, userId);
+  }
+
+  @Post("/:id/delivery/me/confirm")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: confirmDeliveryDto })
+  @McpTool({
+    description: "Confirm the authenticated Staff member's assigned delivery",
+    idempotent: true,
+    confirm: { level: "danger", message: "Confirm this delivery?" },
+  })
+  @ResMsg("orders.success.delivered")
+  confirmOwnDelivery(
+    @Params("id") id: string,
+    @Body() body: ConfirmDeliveryDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.confirmOwnDelivery(id, body, userId);
+  }
+
+  @Post("/:id/delivery/me/issues")
+  @isOperator()
+  @Validate({ params: orderIdParams, body: reportDeliveryIssueDto })
+  @McpTool({
+    description: "Report an issue for the authenticated Staff member's assigned delivery",
+    idempotent: true,
+    confirm: { level: "warning", message: "Report this delivery issue?" },
+  })
+  @ResMsg("orders.success.deliveryIssueReported")
+  reportOwnDeliveryIssue(
+    @Params("id") id: string,
+    @Body() body: ReportDeliveryIssueDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.reportOwnDeliveryIssue(id, body, userId);
   }
 
   @Post("/:id/deliver")

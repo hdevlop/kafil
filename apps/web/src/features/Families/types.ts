@@ -32,6 +32,8 @@ export interface FamilyRecord {
   guardianCin: string | null;
   guardianDateOfBirth: string | null;
   exactAddress: string;
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
   housingSituation: FamilyStoredHousingSituation;
   registrationDate: string;
   supportPriority: FamilySupportPriority;
@@ -61,6 +63,8 @@ export interface CreateFamilyInput {
   guardianCin: string;
   guardianDateOfBirth: string;
   exactAddress: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   housingSituation: FamilyHousingSituation;
   registrationDate: string;
   supportPriority: FamilySupportPriority;
@@ -81,6 +85,8 @@ export interface UpdateFamilyInput {
   guardianCin?: string;
   guardianDateOfBirth?: string;
   exactAddress?: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   housingSituation?: FamilyStoredHousingSituation;
   registrationDate?: string;
   supportPriority?: FamilySupportPriority;

@@ -96,6 +96,11 @@ export const orderDeliveryAttemptStatusEnum = pgEnum(
   "order_delivery_attempt_status",
   ["assigned", "in_progress", "failed", "delivered", "cancelled"],
 );
+export const deliveryIssueKindEnum = pgEnum("delivery_issue_kind", [
+  "address_confirmation",
+  "family_unreachable",
+  "missing_proof",
+]);
 export const outboxEventStatusEnum = pgEnum("outbox_event_status", [
   "pending",
   "processing",

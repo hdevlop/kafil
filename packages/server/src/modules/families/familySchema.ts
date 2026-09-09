@@ -3,6 +3,7 @@ import {
   bigint,
   check,
   date,
+  doublePrecision,
   pgTable,
   text,
   timestamp,
@@ -30,6 +31,8 @@ export const familyProfiles = pgTable(
     guardianCin: varchar("guardian_cin", { length: 20 }).notNull().unique(),
     guardianDateOfBirth: date("guardian_date_of_birth"),
     exactAddress: text("exact_address").notNull(),
+    deliveryLatitude: doublePrecision("delivery_latitude"),
+    deliveryLongitude: doublePrecision("delivery_longitude"),
     housingSituation: familyHousingSituationEnum("housing_situation").notNull(),
     registrationDate: date("registration_date").notNull(),
     supportPriority: familySupportPriorityEnum("support_priority")
@@ -56,6 +59,14 @@ export const familyProfiles = pgTable(
     check(
       "family_profiles_positive_funding_target_check",
       sql`${table.fundingTargetMinor} > 0`,
+    ),
+    check(
+      "family_profiles_delivery_coordinates_check",
+      sql`(
+        (${table.deliveryLatitude} IS NULL AND ${table.deliveryLongitude} IS NULL)
+        OR
+        (${table.deliveryLatitude} BETWEEN -90 AND 90 AND ${table.deliveryLongitude} BETWEEN -180 AND 180)
+      )`,
     ),
   ],
 );

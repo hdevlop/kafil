@@ -100,6 +100,7 @@ try {
           "test/e2e/phase6-closeout.e2e.ts",
           "test/e2e/phase7-unified-flow.e2e.ts",
           "test/e2e/family-create-wizard.e2e.ts",
+          "test/e2e/family-edit-wizard.e2e.ts",
           "test/e2e/funding-cap-and-catalog-delete.e2e.ts",
           "test/e2e/image-delivery.e2e.ts",
           "test/e2e/staff-delivery-assignment.e2e.ts",

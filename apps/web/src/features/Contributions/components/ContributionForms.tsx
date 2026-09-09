@@ -105,39 +105,6 @@ export function ContributionReasonDialogContent({
   );
 }
 
-export function DeleteContributionDialogContent({
-  contribution,
-}: Readonly<{ contribution: ContributionRecord }>) {
-  const { t } = useTranslation();
-  const { pop } = useDialog();
-  const { remove } = useContributionCommands();
-
-  async function handleDelete() {
-    await remove.mutateAsync(contribution.id);
-    await pop();
-  }
-
-  return (
-    <div className="space-y-5">
-      <p className="text-sm leading-6 text-muted-foreground">
-        {t("operator.contributions.deleteWarning")}
-      </p>
-      <div className="flex justify-end pt-5">
-        <NButton
-          type="button"
-          variant="destructive"
-          disabled={remove.isPending}
-          onClick={() => void handleDelete()}
-        >
-          {remove.isPending
-            ? t("operator.contributions.deleting")
-            : t("operator.contributions.deleteContribution")}
-        </NButton>
-      </div>
-    </div>
-  );
-}
-
 export function BulkDeleteContributionsDialogContent({
   contributionIds,
   onDeleted,

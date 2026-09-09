@@ -46,6 +46,40 @@ describe("people-list bulk deletion", () => {
     expect(familySource).toContain("bulkDeleteDialogOpenRef.current) return");
   });
 
+  test("uses the server-backed exact role for sponsor selection", async () => {
+    const sponsorSource = await Bun.file(
+      "src/features/Sponsors/components/SponsorsPage.tsx",
+    ).text();
+
+    expect(sponsorSource).toContain("const { isExactAdmin } = useKafilRole()");
+    expect(sponsorSource).toContain("showCheckbox: isExactAdmin");
+    expect(sponsorSource).toContain(
+      "onBulkDelete: isExactAdmin ? openBulkDelete : undefined",
+    );
+    expect(sponsorSource).not.toContain("user?.role === \"admin\"");
+  });
+
+  test("selects visible sponsors when Ctrl+A starts outside the table", async () => {
+    const sponsorSource = await Bun.file(
+      "src/features/Sponsors/components/SponsorsPage.tsx",
+    ).text();
+
+    expect(sponsorSource).toContain("event.ctrlKey || event.metaKey");
+    expect(sponsorSource).toContain("event.preventDefault()");
+    expect(sponsorSource).toContain(
+      "Object.fromEntries(rows.map((sponsor) => [sponsor.id, true]))",
+    );
+    expect(sponsorSource).toContain(
+      'target.closest("input, textarea, select, [contenteditable=\'true\']")',
+    );
+    expect(sponsorSource).toContain(
+      'target.closest("[data-ntable-root]")',
+    );
+    expect(sponsorSource).toContain(
+      "dialogStore.getState().getCurrentDialog()",
+    );
+  });
+
   test("prevents repeated contribution keyboard events and confirm clicks", async () => {
     const pageSource = await Bun.file(
       "src/features/Contributions/components/ContributionsPage.tsx",

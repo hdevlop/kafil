@@ -70,8 +70,25 @@ const familyIdentityFields = z.object({
     .toUpperCase(),
   guardianDateOfBirth: z.iso.date(),
   exactAddress: z.string().trim().min(5).max(1_000),
+  deliveryLatitude: z.number().min(-90).max(90).nullish(),
+  deliveryLongitude: z.number().min(-180).max(180).nullish(),
   phone: phoneDto,
 });
+
+function requireCoordinatePair(
+  data: { deliveryLatitude?: number | null; deliveryLongitude?: number | null },
+  context: z.RefinementCtx,
+) {
+  const hasLatitude = data.deliveryLatitude != null;
+  const hasLongitude = data.deliveryLongitude != null;
+  if (hasLatitude !== hasLongitude) {
+    context.addIssue({
+      code: "custom",
+      message: "Delivery latitude and longitude must be provided together.",
+      path: [hasLatitude ? "deliveryLongitude" : "deliveryLatitude"],
+    });
+  }
+}
 
 const familyProfileFields = z.object({
   relationshipToChildren: z.string().trim().max(120).nullish(),
@@ -105,7 +122,8 @@ export const createFamilyDto = createUserDto
     supportPriority: familySupportPriorityDto,
     ...familyIdentityFields.shape,
     ...familyProfileFields.shape,
-  });
+  })
+  .superRefine(requireCoordinatePair);
 
 export const updateFamilyDto = updateUserDto
   .omit({
@@ -122,7 +140,8 @@ export const updateFamilyDto = updateUserDto
     ...familyIdentityFields.partial().shape,
     ...familyProfileFields.partial().shape,
     fundingTargetMinor: positiveMinorAmountDto.optional(),
-  });
+  })
+  .superRefine(requireCoordinatePair);
 export const familyIdParams = z.object({
   id: z.string().uuid(),
 });

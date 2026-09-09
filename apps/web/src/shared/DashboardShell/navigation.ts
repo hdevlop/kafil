@@ -10,6 +10,7 @@ import {  Baby,  Bell,  ClipboardCheck,  ClipboardList,  HandCoins,
    ShoppingBag,
    Settings2,
    Tags,
+   Truck,
    UserRound,
    UsersRound,
 } from "lucide-react";
@@ -49,6 +50,7 @@ interface DashboardNavRow {
    icon: NavIcon;
    roles: readonly DashboardRole[];
    section?: SectionId | Partial<Record<DashboardRole, SectionId>>;
+   deliveryOnly?: boolean;
 }
 
 
@@ -58,6 +60,13 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       labelKey: "nav.overview",
       icon: LayoutDashboard,
       roles: ALL_ROLES,
+   },
+   {
+      href: "/delivery",
+      labelKey: "nav.deliveryDashboard",
+      icon: Truck,
+      roles: ["operator"],
+      deliveryOnly: true,
    },
    {
       href: "/family",
@@ -167,6 +176,7 @@ function resolveSection(
 
 export function getDashboardNavigation(
    role: string | null | undefined,
+   options: { deliveryEligible?: boolean } = {},
 ): NavItem[] {
    if (!isDashboardRole(role)) return [];
 
@@ -175,6 +185,7 @@ export function getDashboardNavigation(
 
    for (const row of DASHBOARD_NAV) {
       if (!row.roles.includes(role)) continue;
+      if (row.deliveryOnly && !options.deliveryEligible) continue;
 
       const section = resolveSection(row, role);
       const startsSection = section !== undefined && section !== openSection;

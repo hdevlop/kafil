@@ -75,7 +75,6 @@ export function useStaffCommands() {
   const create = useEntityCommand({
     mutationFn: createStaff,
     invalidate,
-    successMessage: t("operator.staff.createSuccess"),
     errorMessage: t("operator.staff.createError"),
   });
 
@@ -117,7 +116,6 @@ export function useStaffCommands() {
   const provisionAccess = useEntityCommand({
     mutationFn: provisionStaffOperatorAccess,
     invalidate,
-    successMessage: t("operator.staff.provisionAccessSuccess"),
     errorMessage: t("operator.staff.provisionAccessError"),
   });
 

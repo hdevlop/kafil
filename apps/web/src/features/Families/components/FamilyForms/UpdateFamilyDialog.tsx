@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { NButton, NForm, useDialog } from "najm-kit";
+import { useRef, useState } from "react";
+import type { StepConfig } from "najm-kit";
+import { useDialog, WizardForm } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 import { minorUnitsToMadInput } from "@/features/Budgets/config/budgetSchemas";
@@ -11,8 +12,10 @@ import {
 } from "@/services/familyApi";
 
 import {
+  createFamilyGuardianStepSchema,
   toUpdateFamilyInput,
   updateFamilyFormSchema,
+  updateFamilyHouseholdStepSchema,
   type UpdateFamilyFormValues,
 } from "../../config/familySchemas";
 import { useFamilyCommands } from "../../hooks/useFamilies";
@@ -31,6 +34,8 @@ export function UpdateFamilyDialogContent({
   const [imageError, setImageError] = useState<string | null>(null);
   const [removeFamilyImage, setRemoveFamilyImage] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const submittingRef = useRef(false);
+  const isSubmitting = update.isPending || isUploadingImage;
 
   function selectFamilyImage(file: File | null) {
     if (!file) {
@@ -53,6 +58,8 @@ export function UpdateFamilyDialogContent({
 
   async function handleSubmit(values: UpdateFamilyFormValues) {
     if (imageError) throw new Error(imageError);
+    if (submittingRef.current) return;
+    submittingRef.current = true;
 
     let uploadedImagePath: string | null = null;
     setIsUploadingImage(Boolean(familyImage));
@@ -81,53 +88,103 @@ export function UpdateFamilyDialogContent({
       throw error;
     } finally {
       setIsUploadingImage(false);
+      submittingRef.current = false;
     }
   }
 
+  const steps: StepConfig[] = [
+    {
+      id: "guardian",
+      title: t("operator.families.guardianStep"),
+      description: "",
+      fields: [
+        "name",
+        "guardianCin",
+        "email",
+        "guardianDateOfBirth",
+        "relationshipToChildren",
+        "phone",
+      ],
+      schema: createFamilyGuardianStepSchema,
+      render: () => (
+        <FamilyGuardianFields
+          disabled={isSubmitting}
+          image={removeFamilyImage ? null : familyImage ?? family.image}
+          imageError={imageError}
+          imageVersion={family.updatedAt}
+          onImageChange={selectFamilyImage}
+          showSectionHeader={false}
+        />
+      ),
+    },
+    {
+      id: "household",
+      title: t("operator.families.householdStep"),
+      description: t("operator.families.householdStepDescription"),
+      fields: [
+        "housingSituation",
+        "registrationDate",
+        "supportPriority",
+        "activationTargetMad",
+        "notes",
+        "exactAddress",
+        "deliveryLatitudeInput",
+        "deliveryLongitudeInput",
+      ],
+      schema: updateFamilyHouseholdStepSchema,
+      render: () => (
+        <FamilyHouseholdFields
+          disabled={isSubmitting}
+          showSectionHeader={false}
+          showPolicyFields={false}
+        />
+      ),
+    },
+  ];
+
   return (
-    <NForm
-      id="update-family-form"
-      schema={updateFamilyFormSchema}
-      defaultValues={{
-        name: family.name,
-        email: family.email,
-        guardianCin: family.guardianCin ?? "",
-        guardianDateOfBirth: family.guardianDateOfBirth ?? "",
-        relationshipToChildren: family.relationshipToChildren ?? "",
-        phone: family.phone ?? "",
-        housingSituation: family.housingSituation,
-        registrationDate: family.registrationDate,
-        supportPriority: family.supportPriority,
-        activationTargetMad: family.funding
-          ? minorUnitsToMadInput(family.funding.targetMinor)
-          : "",
-        notes: family.notes ?? "",
-        exactAddress: family.exactAddress,
-      }}
-      onSubmit={handleSubmit}
-      devTools={{
-        overrides: {
-          housingSituation: ["owned", "rented", "hosted", "temporary"],
-        },
-      }}
-    >
-      <FamilyGuardianFields
-        disabled={update.isPending || isUploadingImage}
-        image={removeFamilyImage ? null : familyImage ?? family.image}
-        imageError={imageError}
-        imageVersion={family.updatedAt}
-        onImageChange={selectFamilyImage}
-      />
-      <FamilyHouseholdFields
-        disabled={update.isPending || isUploadingImage}
-      />
-      <div className="flex justify-end pt-1">
-        <NButton type="submit" disabled={update.isPending || isUploadingImage}>
-          {update.isPending || isUploadingImage
+    <div className="h-full min-h-0" aria-busy={isSubmitting}>
+      <WizardForm
+        steps={steps}
+        schema={updateFamilyFormSchema}
+        defaultValues={{
+          name: family.name,
+          email: family.email,
+          guardianCin: family.guardianCin ?? "",
+          guardianDateOfBirth: family.guardianDateOfBirth ?? "",
+          relationshipToChildren: family.relationshipToChildren ?? "",
+          phone: family.phone ?? "",
+          housingSituation: family.housingSituation,
+          registrationDate: family.registrationDate,
+          supportPriority: family.supportPriority,
+          activationTargetMad: family.funding
+            ? minorUnitsToMadInput(family.funding.targetMinor)
+            : "",
+          notes: family.notes ?? "",
+          exactAddress: family.exactAddress,
+          deliveryLatitudeInput: family.deliveryLatitude?.toString() ?? "",
+          deliveryLongitudeInput: family.deliveryLongitude?.toString() ?? "",
+        }}
+        onSubmit={handleSubmit}
+        nextLabel={t("operator.families.next")}
+        previousLabel={t("operator.families.previous")}
+        submitLabel={
+          isSubmitting
             ? t("operator.families.saving")
-            : t("operator.families.saveProfile")}
-        </NButton>
-      </div>
-    </NForm>
+            : t("operator.families.saveProfile")
+        }
+        className={isSubmitting ? "pointer-events-none select-none" : undefined}
+        classNames={{
+          root: "h-full min-h-0",
+          step: "min-h-0 flex-1 pb-4",
+          footer: "sticky bottom-0 z-10 bg-background/95 pt-3",
+        }}
+        devTools={{
+          overrides: {
+            housingSituation: ["owned", "rented", "hosted", "temporary"],
+          },
+        }}
+      />
+    </div>
   );
 }

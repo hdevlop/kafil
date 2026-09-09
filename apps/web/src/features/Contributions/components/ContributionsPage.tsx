@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { BadgeCheck, CircleX, Eye, RotateCcw, Trash2 } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
-import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NButton, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDialogStore, useDesktopTableMode } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
@@ -16,7 +16,6 @@ import { RecordContributionDialogContent } from "./RecordContributionForm";
 import {
   BulkDeleteContributionsDialogContent,
   ContributionReasonDialogContent,
-  DeleteContributionDialogContent,
   ValidateContributionDialogContent,
 } from "./ContributionForms";
 import { useContributionCommands, useResponsiveContributions } from "../hooks/useContributions";
@@ -39,6 +38,7 @@ function isManagement(record: ContributionListRecord): record is ContributionRec
 export function ContributionsPage() {
   const { t } = useTranslation();
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
   const user = useUser();
   const { exact } = useKafilRole();
   const tableMode = useDesktopTableMode();
@@ -100,12 +100,34 @@ export function ContributionsPage() {
   }
 
   function openDelete(contribution: ContributionRecord) {
-    void dialog.openDialog({
-      title: t("operator.contributions.deleteTitle"),
-      description: t("operator.contributions.deleteDescription"),
-      children: <DeleteContributionDialogContent contribution={contribution} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.contributions.deleteDialogTitle"),
+      description: t("operator.contributions.deleteDialogMessage"),
+      itemName: `${contribution.sponsorName} → ${contribution.familyName}`,
+      icon: Trash2,
+      warningText: t("operator.contributions.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.contributions.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(contribution.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

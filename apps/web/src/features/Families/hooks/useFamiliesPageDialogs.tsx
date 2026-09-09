@@ -1,5 +1,6 @@
 import { useRef } from "react";
-import { useDialog } from "najm-kit";
+import { Trash2 } from "lucide-react";
+import { useDialog, useDialogStore } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 
@@ -7,15 +8,17 @@ import { FamilyDetails } from "../components/FamilyDetails";
 import {
   BulkDeleteFamiliesDialogContent,
   CreateFamilyDialogContent,
-  DeleteFamilyDialogContent,
   FamilyStatusDialogContent,
   UpdateFamilyDialogContent,
 } from "../components/FamilyForms";
+import { useFamilyCommands } from "./useFamilies";
 import type { FamilyRecord } from "../types";
 
 export function useFamiliesPageDialogs() {
   const { t } = useTranslation();
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
+  const { remove } = useFamilyCommands();
   const bulkDeleteDialogOpenRef = useRef(false);
 
   function openCreate() {
@@ -43,8 +46,8 @@ export function useFamiliesPageDialogs() {
       description: t("operator.families.editDescription"),
       children: <UpdateFamilyDialogContent family={family} />,
       showButtons: false,
-      size: "xxl",
-      height: "auto",
+      width: "xxl",
+      height: "xl",
     });
   }
 
@@ -67,12 +70,34 @@ export function useFamiliesPageDialogs() {
   }
 
   function openDelete(family: FamilyRecord) {
-    void dialog.openDialog({
-      title: t("operator.families.deleteTitle", { name: family.name }),
-      description: t("operator.families.deleteDescription"),
-      children: <DeleteFamilyDialogContent family={family} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.families.deleteDialogTitle"),
+      description: t("operator.families.deleteDialogMessage"),
+      itemName: family.name,
+      icon: Trash2,
+      warningText: t("operator.families.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.families.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(family.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

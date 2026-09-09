@@ -27,7 +27,7 @@ export function createContentSecurityPolicy(
     "form-action 'self'",
     "frame-ancestors 'none'",
     "frame-src 'none'",
-    "img-src 'self' data: blob: https://cdnjs.cloudflare.com",
+    "img-src 'self' data: blob: https://cdnjs.cloudflare.com https://tile.openstreetmap.org",
     "manifest-src 'self'",
     "media-src 'self'",
     "object-src 'none'",

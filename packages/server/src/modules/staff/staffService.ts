@@ -110,13 +110,16 @@ export class StaffService {
     data: CreateStaffDto & { userId?: string },
     actorUserId: string,
   ) {
-    return this.createInternal(data, actorUserId, { userId: data.userId });
+    return this.createInternal(data, actorUserId, {
+      sendInvitation: false,
+      userId: data.userId,
+    });
   }
 
   private async createInternal(
     data: CreateStaffDto & { userId?: string },
     actorUserId: string,
-    options: { userId?: string } = {},
+    options: { sendInvitation?: boolean; userId?: string } = {},
   ) {
     const input = createStaffDto.parse(data);
     const functionKeys = input.functions as StaffFunctionKey[];
@@ -153,7 +156,9 @@ export class StaffService {
     await this.staff.setFunctions(profile!.id, functionKeys);
 
     let createdWithAccess: Awaited<ReturnType<typeof this.staff.findById>>;
+    let emailSent: boolean | null = null;
     let initialPassword: string | null = null;
+    let hasAccount = false;
     try {
       if (wantsOperator && createOperatorAccess) {
         const accessEmail =
@@ -162,10 +167,15 @@ export class StaffService {
           profile!.id,
           { email: accessEmail! },
           actorUserId,
-          options.userId,
+          {
+            providedUserId: options.userId,
+            sendInvitation: options.sendInvitation ?? true,
+          },
         );
         createdWithAccess = result.profile;
+        emailSent = result.emailSent;
         initialPassword = result.initialPassword;
+        hasAccount = true;
       } else {
         createdWithAccess = await this.staff.findById(profile!.id);
       }
@@ -176,11 +186,11 @@ export class StaffService {
         {
           functions: functionKeys,
           affiliation: input.affiliation,
-          hasAccount: Boolean(initialPassword),
+          hasAccount,
         },
       );
     } catch (error) {
-      if (initialPassword === null) {
+      if (!hasAccount) {
         await this.staff.deleteProfile(profile!.id).catch(() => undefined);
       }
       throw error;
@@ -188,8 +198,12 @@ export class StaffService {
 
     return {
       ...createdWithAccess!,
+      emailSent,
       initialPassword,
-    } satisfies StaffRecord & { initialPassword: string | null };
+    } satisfies StaffRecord & {
+      emailSent: boolean | null;
+      initialPassword: string | null;
+    };
   }
 
   @Transaction({ retries: 2 })
@@ -353,31 +367,40 @@ export class StaffService {
     staffProfileId: string,
     body: ProvisionOperatorAccessDto,
     actorUserId: string,
-    providedUserId?: string,
+    options: { providedUserId?: string; sendInvitation?: boolean } = {},
   ): Promise<{
-    initialPassword: string;
+    emailSent: boolean | null;
+    initialPassword: string | null;
     profile: StaffRecord;
   }> {
     const profile = await this.validator.ensureExists(staffProfileId);
     await this.validator.ensureEmailUnique(body.email, profile.userId ?? undefined);
 
-    const initialPassword = generateInitialPassword(
-      profile.name,
-      profile.dateOfBirth ?? "1990-01-01",
-    );
-
-    const user = await this.auth.provisionUser({
-      ...(providedUserId ? { id: providedUserId } : {}),
+    const account = {
+      ...(options.providedUserId ? { id: options.providedUserId } : {}),
       name: profile.name,
       email: body.email,
+      phone: profile.phone,
       role: OPERATOR_ROLE,
-      password: initialPassword,
       image: profile.image ?? undefined,
-    });
+    };
+    const initialPassword = options.sendInvitation === false
+      ? generateInitialPassword(
+          profile.name,
+          profile.dateOfBirth ?? "1990-01-01",
+        )
+      : null;
+    const user = initialPassword
+      ? await this.auth.provisionUser({
+          ...account,
+          password: initialPassword,
+          status: "active",
+        })
+      : await this.auth.inviteUser({ ...account, status: "pending" });
     await this.userRecords?.update(user.id, {
       phone: profile.phone,
       phoneVerified: false,
-      emailVerified: true,
+      emailVerified: initialPassword !== null,
     });
 
     await this.staff.updateProfile(staffProfileId, {
@@ -394,6 +417,10 @@ export class StaffService {
       },
     );
     return {
+      emailSent:
+        "emailSent" in user && typeof user.emailSent === "boolean"
+          ? user.emailSent
+          : null,
       initialPassword,
       profile: updated!,
     };

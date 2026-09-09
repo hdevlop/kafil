@@ -70,6 +70,25 @@ export function confirmOrderDelivery({ id, ...input }: ConfirmDeliveryInput) {
   return api.post<OrderDetail>(`/orders/${id}/delivery/confirm`, input);
 }
 
+export function startOwnOrderDelivery({ id, ...input }: StartDeliveryInput) {
+  return api.post<OrderDetail>(`/orders/${id}/delivery/me/start`, input);
+}
+
+export function confirmOwnOrderDelivery({ id, ...input }: ConfirmDeliveryInput) {
+  return api.post<OrderDetail>(`/orders/${id}/delivery/me/confirm`, input);
+}
+
+export function reportOwnOrderDeliveryIssue(input: {
+  id: string;
+  attemptId: string;
+  kind: "address_confirmation" | "family_unreachable" | "missing_proof";
+  note?: string;
+  idempotencyKey: string;
+}) {
+  const { id, ...body } = input;
+  return api.post(`/orders/${id}/delivery/me/issues`, body);
+}
+
 export function uploadOrderEvidence(
   kind: "deliveries" | "receipts",
   file: File,

@@ -41,7 +41,7 @@ describe("the per-request application policy", () => {
     }
 
     expect(enforced).toContain(
-      "img-src 'self' data: blob: https://cdnjs.cloudflare.com",
+      "img-src 'self' data: blob: https://cdnjs.cloudflare.com https://tile.openstreetmap.org",
     );
   });
 

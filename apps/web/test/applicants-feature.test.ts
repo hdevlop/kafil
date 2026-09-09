@@ -231,7 +231,7 @@ describe("admin applicant queue", () => {
     expect(page).toContain('"pending_review"');
     expect(page).toContain('applicant.status === "rejected"');
     expect(page).toContain("if (isAdmin)");
-    expect(page).toContain("DeleteApplicantDialogContent");
+    expect(page).toContain("confirmDelete");
     expect(page).toContain("icon: Trash2");
     expect(page).toContain("useApplicantsTableFilters(query, setQuery)");
     expect(page).not.toContain("<NativeSelect");

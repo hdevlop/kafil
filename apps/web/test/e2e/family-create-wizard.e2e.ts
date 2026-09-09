@@ -140,12 +140,16 @@ test("family-create wizard shows paired rows on desktop and collapses to one col
   await expect(dialog.locator("#step-household")).toBeVisible();
 
   await page.setViewportSize({ width: 1280, height: 900 });
-  const householdFields = dialog
-    .locator("#step-household")
+  const householdStep = dialog.locator("#step-household");
+  await expect(householdStep.getByLabel(/Housing situation/)).toBeVisible();
+  await expect(householdStep.getByLabel(/registration date/i)).toBeVisible();
+  await expect(householdStep.getByLabel(/Activation target/)).toBeVisible();
+  await expect(householdStep.getByLabel(/Max orders per month/)).toBeVisible();
+  await expect(householdStep.getByLabel(/exact address/i)).toBeVisible();
+  const householdFields = householdStep
     .locator('div[class~="md:grid-cols-2"]')
     .first()
     .locator(":scope > *");
-  await expect(householdFields).toHaveCount(6);
   const registrationTrigger = dialog
     .locator("#step-household")
     .getByText(/[A-Z][a-z]+ \d{1,2}(?:st|nd|rd|th), \d{4}/, {

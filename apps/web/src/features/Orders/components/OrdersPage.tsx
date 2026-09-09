@@ -27,6 +27,7 @@ import {
   NTable,
   type NTableProps,
   useDialog,
+  useDialogStore,
   useDesktopTableMode,
   useNajmFormat,
 } from "najm-kit";
@@ -44,7 +45,6 @@ import { DeliveryDetailsSheet } from "./DeliveryDetailsSheet";
 import { FamilyOrderDetailsSheet, OrderDetailsSheet } from "./OrderDetails";
 import {
   ConfirmOrderCommandDialogContent,
-  DeleteOrderDialogContent,
   FamilyCancelOrderDialogContent,
   OrderReasonDialogContent,
 } from "./OrderForms";
@@ -100,6 +100,7 @@ export interface OrdersPageProps {
 
 export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps>) {
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
   const { t } = useTranslation();
   const fmt = useNajmFormat();
   const { isExactAdmin, isExactFamily, isExactSponsor } = useKafilRole();
@@ -216,12 +217,34 @@ export function OrdersPage({ highlightOrderId = null }: Readonly<OrdersPageProps
   }
 
   function openDelete(order: SharedOrderRecord) {
-    void dialog.openDialog({
-      title: t("operator.orders.deleteTitle", { number: order.orderNumber }),
-      description: t("operator.orders.deleteDescription"),
-      children: <DeleteOrderDialogContent order={order as unknown as OrderRecord} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.orders.deleteDialogTitle"),
+      description: t("operator.orders.deleteDialogMessage"),
+      itemName: order.orderNumber,
+      icon: Trash2,
+      warningText: t("operator.orders.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.orders.deleting") },
+          dialogId,
+        );
+
+        try {
+          await orderCommands.remove.mutateAsync(order.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

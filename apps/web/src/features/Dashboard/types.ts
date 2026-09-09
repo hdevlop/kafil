@@ -3,6 +3,58 @@ export interface DashboardStatusCount {
   count: number;
 }
 
+export type DeliveryDashboardCategory =
+  | "pending"
+  | "delivered"
+  | "needs_attention";
+
+export interface DeliveryDashboardItem {
+  attemptId: string;
+  orderId: string;
+  orderNumber: string;
+  familyProfileId: string;
+  familyName: string;
+  familyImage: string | null;
+  category: DeliveryDashboardCategory;
+  attemptStatus: "assigned" | "in_progress" | "failed" | "delivered";
+  address: string;
+  phone: string | null;
+  coordinates: { latitude: number; longitude: number } | null;
+  scheduledDate: string;
+  windowStartMinute: number | null;
+  windowEndMinute: number | null;
+  packageCount: number;
+  delayed: boolean;
+  openIssues: Array<{
+    id: string;
+    kind: "address_confirmation" | "family_unreachable" | "missing_proof";
+    note: string | null;
+  }>;
+  canStart: boolean;
+  canConfirm: boolean;
+  canReportIssue: boolean;
+}
+
+export interface DeliveryDashboardData {
+  selectedDate: string;
+  timezone: "Africa/Casablanca";
+  counts: {
+    assigned: number;
+    pending: number;
+    delivered: number;
+    needsAttention: number;
+    families: number;
+    packagesRemaining: number;
+  };
+  issueCounts: {
+    addressToConfirm: number;
+    familyUnreachable: number;
+    missingProof: number;
+    delayed: number;
+  };
+  deliveries: DeliveryDashboardItem[];
+}
+
 export interface OperatorDashboardData {
   counts: {
     families: number;

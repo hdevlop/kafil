@@ -3,6 +3,9 @@ import { HttpError, Service } from "najm-core";
 import { DashboardRepository } from "./dashboardRepository";
 import type {
   DashboardStatusCount,
+  DeliveryDashboard,
+  DeliveryDashboardCategory,
+  DeliveryDashboardItem,
   FamilyDashboard,
   OperatorDashboard,
   SponsorDashboard,
@@ -87,6 +90,117 @@ export class DashboardService {
         familyName: order.familyName || "Family",
         totalMinor: numberValue(order.totalMinor),
       })),
+    };
+  }
+
+  async getDeliveryContext(
+    userId: string,
+  ): Promise<{ eligible: boolean; staffProfileId: string | null }> {
+    const staff = await this.dashboard.deliveryStaffIdentity(userId);
+    return { eligible: Boolean(staff), staffProfileId: staff?.id ?? null };
+  }
+
+  async getDelivery(
+    userId: string,
+    selectedDate: string,
+    now = new Date(),
+  ): Promise<DeliveryDashboard> {
+    const staff = await this.dashboard.deliveryStaffIdentity(userId);
+    if (!staff) HttpError.forbidden("Delivery dashboard access denied");
+
+    const rows = await this.dashboard.deliveryRows(staff.id, selectedDate);
+    const issueRows = await this.dashboard.openDeliveryIssues(
+      rows.map((row) => row.attemptId),
+    );
+    const issuesByAttempt = new Map<string, typeof issueRows>();
+    for (const issue of issueRows) {
+      const issues = issuesByAttempt.get(issue.attemptId) ?? [];
+      issues.push(issue);
+      issuesByAttempt.set(issue.attemptId, issues);
+    }
+
+    const clock = casablancaClock(now);
+    const deliveries: DeliveryDashboardItem[] = rows.map((row) => {
+      const openIssues = (issuesByAttempt.get(row.attemptId) ?? []).map(
+        ({ id, kind, note }) => ({ id, kind, note }),
+      );
+      const delayed = isDeliveryDelayed({
+        attemptStatus: row.attemptStatus,
+        selectedDate,
+        windowEndMinute: row.windowEndMinute,
+      }, clock);
+      const category: DeliveryDashboardCategory =
+        row.attemptStatus === "delivered"
+          ? "delivered"
+          : row.attemptStatus === "failed" || delayed || openIssues.length > 0
+            ? "needs_attention"
+            : "pending";
+      const hasCoordinates =
+        row.latitude != null &&
+        row.longitude != null &&
+        row.latitude >= -90 &&
+        row.latitude <= 90 &&
+        row.longitude >= -180 &&
+        row.longitude <= 180;
+
+      return {
+        attemptId: row.attemptId,
+        orderId: row.orderId,
+        orderNumber: row.orderNumber,
+        familyProfileId: row.familyProfileId,
+        familyName: row.familyName || "Family",
+        familyImage: row.familyImage,
+        category,
+        attemptStatus: row.attemptStatus as DeliveryDashboardItem["attemptStatus"],
+        address: row.address,
+        phone: row.phone,
+        coordinates: hasCoordinates
+          ? { latitude: row.latitude!, longitude: row.longitude! }
+          : null,
+        scheduledDate: row.scheduledDate!,
+        windowStartMinute: row.windowStartMinute,
+        windowEndMinute: row.windowEndMinute,
+        packageCount: row.packageCount ?? 0,
+        delayed,
+        openIssues,
+        canStart:
+          row.attemptStatus === "assigned" && row.orderStatus === "purchased",
+        canConfirm:
+          row.attemptStatus === "in_progress" &&
+          row.orderStatus === "out_for_delivery",
+        canReportIssue: row.attemptStatus !== "delivered",
+      };
+    });
+
+    const pending = deliveries.filter((item) => item.category === "pending").length;
+    const delivered = deliveries.filter((item) => item.category === "delivered").length;
+    const needsAttention = deliveries.filter(
+      (item) => item.category === "needs_attention",
+    ).length;
+    const issueCount = (
+      kind: DeliveryDashboardItem["openIssues"][number]["kind"],
+    ) => deliveries.filter((item) => item.openIssues.some((issue) => issue.kind === kind)).length;
+
+    return {
+      selectedDate,
+      timezone: "Africa/Casablanca",
+      counts: {
+        assigned: deliveries.length,
+        pending,
+        delivered,
+        needsAttention,
+        families: new Set(deliveries.map((item) => item.familyProfileId)).size,
+        packagesRemaining: deliveries
+          .filter((item) => item.category !== "delivered")
+          .reduce((total, item) => total + item.packageCount, 0),
+      },
+      issueCounts: {
+        addressToConfirm: issueCount("address_confirmation"),
+        familyUnreachable: issueCount("family_unreachable"),
+        missingProof: issueCount("missing_proof"),
+        delayed: deliveries.filter((item) => item.delayed).length,
+      },
+      deliveries,
     };
   }
 
@@ -256,4 +370,39 @@ export class DashboardService {
       })),
     };
   }
+}
+
+function casablancaClock(now: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: "Africa/Casablanca",
+    year: "numeric",
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "00";
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    minute: Number(value("hour")) * 60 + Number(value("minute")),
+  };
+}
+
+function isDeliveryDelayed(
+  delivery: {
+    attemptStatus: string;
+    selectedDate: string;
+    windowEndMinute: number | null;
+  },
+  clock: { date: string; minute: number },
+) {
+  if (["delivered", "failed", "cancelled"].includes(delivery.attemptStatus)) {
+    return false;
+  }
+  if (delivery.selectedDate < clock.date) return true;
+  return delivery.selectedDate === clock.date &&
+    delivery.windowEndMinute != null &&
+    delivery.windowEndMinute < clock.minute;
 }

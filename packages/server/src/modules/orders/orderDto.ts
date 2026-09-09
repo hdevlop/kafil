@@ -28,6 +28,38 @@ const evidenceMediaType = z.enum([
 ]);
 const evidenceByteSize = z.coerce.number().int().min(1).max(10_000_000);
 
+const deliveryScheduleFields = {
+  scheduledDate: z.iso.date(),
+  windowStartMinute: z.coerce.number().int().min(0).max(1439).nullish(),
+  windowEndMinute: z.coerce.number().int().min(1).max(1440).nullish(),
+  packageCount: z.coerce.number().int().min(1).max(10_000),
+} as const;
+
+function validateDeliveryWindow(
+  input: { windowStartMinute?: number | null; windowEndMinute?: number | null },
+  context: z.RefinementCtx,
+) {
+  const hasStart = input.windowStartMinute != null;
+  const hasEnd = input.windowEndMinute != null;
+  if (hasStart !== hasEnd) {
+    context.addIssue({
+      code: "custom",
+      message: "Delivery window start and end must be provided together.",
+      path: [hasStart ? "windowEndMinute" : "windowStartMinute"],
+    });
+  } else if (
+    hasStart &&
+    hasEnd &&
+    input.windowStartMinute! >= input.windowEndMinute!
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "Delivery window must end after it starts.",
+      path: ["windowEndMinute"],
+    });
+  }
+}
+
 export const orderIdParams = z.object({ id });
 export const cartProductIdParams = z.object({ productId: id });
 
@@ -47,7 +79,8 @@ export const orderReasonDto = z.object({ reason });
 export const assignDeliveryDto = z.object({
   staffProfileId: id,
   idempotencyKey,
-});
+  ...deliveryScheduleFields,
+}).superRefine(validateDeliveryWindow);
 
 export const reassignDeliveryDto = assignDeliveryDto.extend({ reason });
 
@@ -55,10 +88,25 @@ export const startDeliveryDto = z.object({ idempotencyKey });
 
 export const failDeliveryDto = z.object({ reason, idempotencyKey });
 
+export const reportDeliveryIssueDto = z.object({
+  attemptId: id,
+  kind: z.enum([
+    "address_confirmation",
+    "family_unreachable",
+    "missing_proof",
+  ]),
+  note: z.string().trim().max(500).nullish(),
+  idempotencyKey,
+});
+
 export const assistedOrderDto = z.object({
   familyProfileId: id,
   purchasingStaffProfileId: id.optional(),
   deliveryStaffProfileId: id.optional(),
+  scheduledDate: deliveryScheduleFields.scheduledDate.optional(),
+  windowStartMinute: deliveryScheduleFields.windowStartMinute,
+  windowEndMinute: deliveryScheduleFields.windowEndMinute,
+  packageCount: deliveryScheduleFields.packageCount.optional(),
   items: z
     .array(
       z.object({
@@ -84,6 +132,19 @@ export const assistedOrderDto = z.object({
   assistanceChannel: z.enum(["phone", "in_person", "home_visit", "other"]),
   assistanceNote: z.string().trim().max(500).nullish(),
   idempotencyKey,
+}).superRefine((input, context) => {
+  validateDeliveryWindow(input, context);
+  if (input.deliveryStaffProfileId) {
+    for (const field of ["scheduledDate", "packageCount"] as const) {
+      if (input[field] == null) {
+        context.addIssue({
+          code: "custom",
+          message: `${field} is required when delivery staff is assigned.`,
+          path: [field],
+        });
+      }
+    }
+  }
 });
 
 export const recordPurchaseDto = z.object({
@@ -193,6 +254,7 @@ export type AssignDeliveryDto = z.input<typeof assignDeliveryDto>;
 export type ReassignDeliveryDto = z.input<typeof reassignDeliveryDto>;
 export type StartDeliveryDto = z.input<typeof startDeliveryDto>;
 export type FailDeliveryDto = z.input<typeof failDeliveryDto>;
+export type ReportDeliveryIssueDto = z.input<typeof reportDeliveryIssueDto>;
 export type FamilyCancelOrderDto = z.input<typeof familyCancelOrderDto>;
 export type OrderListQuery = z.input<typeof orderListQuery>;
 export type OwnOrderListQuery = z.input<typeof ownOrderListQuery>;

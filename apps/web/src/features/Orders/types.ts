@@ -195,6 +195,10 @@ export interface ConfirmDeliveryInput {
 export interface AssignDeliveryInput {
   id: string;
   staffProfileId: string;
+  scheduledDate: string;
+  windowStartMinute?: number | null;
+  windowEndMinute?: number | null;
+  packageCount: number;
   idempotencyKey: string;
 }
 

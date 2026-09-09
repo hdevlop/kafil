@@ -3,7 +3,7 @@
 import { CheckCircle2, ClipboardList, Eye, Trash2, XCircle } from "lucide-react";
 import { useUser } from "najm-auth/client/react";
 import { useState } from "react";
-import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDesktopTableMode } from "najm-kit";
+import { createCardPagination, NEmptyState, NErrorState, NPageHeader, NPageLayout, NTable, type ContextMenuItem, type NTableProps, useDialog, useDialogStore, useDesktopTableMode } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
@@ -13,10 +13,10 @@ import { ApplicantCard } from "./ApplicantCard";
 import { ApplicantDetailsSheet } from "./ApplicantDetails";
 import {
   ApproveApplicantDialogContent,
-  DeleteApplicantDialogContent,
   RejectApplicantDialogContent,
 } from "./ApplicantDecisionDialogs";
 import {
+  useApplicantDecisionCommands,
   useResponsiveApplicants,
 } from "../hooks/useApplicants";
 import { useApplicantsTableColumns } from "../hooks/useApplicantsTableColumns";
@@ -27,6 +27,7 @@ import type { ListApplicantsParams } from "../services/api";
 export function ApplicantsPage() {
   const { t } = useTranslation();
   const dialog = useDialog();
+  const dialogStore = useDialogStore();
   const user = useUser();
   const tableMode = useDesktopTableMode();
   const [query, setQuery] = useState<Omit<ListApplicantsParams, "limit" | "offset">>({});
@@ -36,6 +37,7 @@ export function ApplicantsPage() {
   const filters = useApplicantsTableFilters(query, setQuery);
   const rows = applicants.data;
   const isAdmin = user?.role === "admin";
+  const { remove } = useApplicantDecisionCommands();
 
   function openView(applicant: ApplicantRecord) {
     setViewingApplicant(applicant);
@@ -62,12 +64,34 @@ export function ApplicantsPage() {
   }
 
   function openDelete(applicant: ApplicantRecord) {
-    void dialog.openDialog({
-      title: t("operator.applicants.deleteTitle", { name: applicant.name }),
-      description: t("operator.applicants.deleteDescription"),
-      children: <DeleteApplicantDialogContent applicant={applicant} />,
-      showButtons: false,
+    const confirmText = t("common.delete");
+
+    void dialog.confirmDelete({
+      title: t("operator.applicants.deleteDialogTitle"),
+      description: t("operator.applicants.deleteDialogMessage"),
+      itemName: applicant.name,
+      icon: Trash2,
+      warningText: t("operator.applicants.deleteDialogMessage"),
+      confirmText,
+      cancelText: t("common.cancel"),
       size: "sm",
+      onConfirm: async () => {
+        const dialogId = dialogStore.getState().getCurrentDialog()?.id;
+        dialogStore.getState().updatePrimaryButton(
+          { text: t("operator.applicants.deleting") },
+          dialogId,
+        );
+
+        try {
+          await remove.mutateAsync(applicant.id);
+        } catch (error) {
+          dialogStore.getState().updatePrimaryButton(
+            { text: confirmText },
+            dialogId,
+          );
+          throw error;
+        }
+      },
     });
   }
 

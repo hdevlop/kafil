@@ -270,7 +270,7 @@ describe("staff module services", () => {
         deleteProfile: async () => undefined,
       } as unknown as StaffRepository,
       {
-        provisionUser: async () => {
+        inviteUser: async () => {
           throw new Error("should not provision delivery-only staff");
         },
       } as unknown as AuthService,
@@ -329,10 +329,11 @@ describe("staff module services", () => {
     );
   });
 
-  it("provisions an operator account with a one-time credential when requested", async () => {
+  it("creates a pending operator account and emails a set-password invitation", async () => {
     const functionSets: string[][] = [];
-    const provisionCalls: Array<Record<string, unknown>> = [];
+    const invitationCalls: Array<Record<string, unknown>> = [];
     const auditEvents: Record<string, unknown>[] = [];
+    const userRecordUpdates: Array<Record<string, unknown>> = [];
 
     const service = new StaffService(
       {
@@ -346,9 +347,13 @@ describe("staff module services", () => {
         deleteProfile: async () => undefined,
       } as unknown as StaffRepository,
       {
-        provisionUser: async (input: Record<string, unknown>) => {
-          provisionCalls.push(input);
-          return { id: "operator-user", role: "operator" } as SanitizedUser;
+        inviteUser: async (input: Record<string, unknown>) => {
+          invitationCalls.push(input);
+          return {
+            id: "operator-user",
+            role: "operator",
+            emailSent: true,
+          } as SanitizedUser & { emailSent: boolean };
         },
       } as unknown as AuthService,
       {
@@ -368,7 +373,10 @@ describe("staff module services", () => {
       } as unknown as AuditService,
       undefined,
       {
-        update: async () => ({ id: "operator-user", role: "operator" } as SanitizedUser),
+        update: async (_id: string, input: Record<string, unknown>) => {
+          userRecordUpdates.push(input);
+          return { id: "operator-user", role: "operator" } as SanitizedUser;
+        },
       } as unknown as UserRepository,
     );
 
@@ -390,12 +398,22 @@ describe("staff module services", () => {
     );
 
     expect(functionSets).toEqual([["operator"]]);
-    expect(provisionCalls).toHaveLength(1);
-    expect(provisionCalls[0]).toMatchObject({
+    expect(invitationCalls).toHaveLength(1);
+    expect(invitationCalls[0]).toMatchObject({
       email: "operator@example.test",
+      phone: "+212600000000",
       role: "operator",
+      status: "pending",
     });
-    expect(typeof result.initialPassword).toBe("string");
+    expect(invitationCalls[0]).not.toHaveProperty("password");
+    expect(userRecordUpdates).toEqual([
+      {
+        phone: "+212600000000",
+        phoneVerified: false,
+        emailVerified: false,
+      },
+    ]);
+    expect(result).toMatchObject({ emailSent: true, initialPassword: null });
     expect(auditEvents.map((event) => event.action)).toEqual([
       "staff.operator_access_provisioned",
       "staff.created",

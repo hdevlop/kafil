@@ -151,15 +151,28 @@ describe("Kafil root-layout resolution", () => {
     });
   });
 
-  test("prefers the cookie, then the session language, then the catalog default", () => {
+  test("prefers the cookie, then the session language, then the browser, then the catalog default", () => {
     expect(
-      kafilPreferences.resolve(cookies({ "kafil-ui-language": "fr" }), { languageFallback: "ar" })
-        .language,
+      kafilPreferences.resolve(cookies({ "kafil-ui-language": "fr" }), {
+        languageFallback: "ar",
+        acceptLanguage: "es-ES,es;q=0.9",
+      }).language,
     ).toBe("fr");
-    expect(kafilPreferences.resolve(cookies({}), { languageFallback: "ar" }).language).toBe("ar");
-    expect(kafilPreferences.resolve(cookies({}), { languageFallback: "klingon" }).language).toBe(
-      "en",
-    );
+    expect(
+      kafilPreferences.resolve(cookies({}), {
+        languageFallback: "ar",
+        acceptLanguage: "es-ES,es;q=0.9",
+      }).language,
+    ).toBe("ar");
+    expect(
+      kafilPreferences.resolve(cookies({}), {
+        languageFallback: "klingon",
+        acceptLanguage: "fr-FR,fr;q=0.9,en;q=0.8",
+      }).language,
+    ).toBe("fr");
+    expect(
+      kafilPreferences.resolve(cookies({}), { acceptLanguage: "de-DE,de;q=0.9" }).language,
+    ).toBe("en");
   });
 
   test("reads back the theme and time zone the endpoints wrote", () => {

@@ -1,0 +1,33 @@
+.map {
+  height: 32rem;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.marker {
+  display: grid;
+  height: 2rem;
+  width: 2rem;
+  place-items: center;
+  border: 3px solid white;
+  border-radius: 9999px 9999px 9999px 0;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 35%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transform: rotate(-45deg);
+}
+
+.marker > span {
+  transform: rotate(45deg);
+}
+
+.pending { background: #0891b2; }
+.delivered { background: #16a34a; }
+.attention { background: #ea580c; }
+.selected { outline: 3px solid rgb(15 23 42 / 45%); }
+
+:global(.dark) .map :global(.leaflet-tile) {
+  filter: brightness(0.72) contrast(1.15) saturate(0.75);
+}

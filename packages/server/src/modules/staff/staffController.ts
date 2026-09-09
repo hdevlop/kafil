@@ -177,10 +177,10 @@ export class StaffController {
   @CanUpdate()
   @Validate({ params: staffIdParams, body: provisionOperatorAccessDto })
   @McpTool({
-    description: "Provision an operator Najm account for an existing Staff record",
+    description: "Invite an existing Staff record to a pending operator account",
     confirm: {
       level: "warning",
-      message: "Provision an operator account for this staff record?",
+      message: "Email an operator account invitation to this staff record?",
     },
   })
   @ResMsg("staff.success.operatorAccessProvisioned")

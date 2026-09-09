@@ -47,7 +47,9 @@ export function StaffDetails({
       : t("operator.staff.internal");
 
   const accessLabel = staff.hasOperatorAccess
-    ? staff.email || t("operator.staff.active")
+    ? staff.userStatus === "pending"
+      ? t("operator.staff.invitationPending")
+      : staff.email || t("operator.staff.active")
     : t("operator.staff.noApplicationAccount");
 
   return (

@@ -212,7 +212,7 @@ function BrandingSettingsSheet({ open, onOpenChange }: Readonly<SheetProps>) {
           />
         }
       >
-        <NThemeBrandingSettings />
+        <NThemeBrandingSettings className="!grid-cols-2 max-[24rem]:!grid-cols-1 [&_.najm-theme-branding-constraints]:hidden [&_.najm-theme-branding-provenance]:hidden" />
       </NSheet>
       <NConfirmDialog
         open={confirmClose}

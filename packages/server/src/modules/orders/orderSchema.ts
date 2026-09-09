@@ -3,6 +3,8 @@ import {
   bigint,
   type AnyPgColumn,
   check,
+  date,
+  doublePrecision,
   index,
   integer,
   pgTable,
@@ -17,6 +19,7 @@ import { usersTable } from "najm-auth/pg";
 import { timestamps } from "../../database/columns";
 import {
   deliveryConfirmationMethodEnum,
+  deliveryIssueKindEnum,
   orderAssistanceChannelEnum,
   orderDeliveryAttemptStatusEnum,
   orderPlacementSourceEnum,
@@ -88,6 +91,8 @@ export const orders = pgTable(
     guardianLegalNameSnapshot: text("guardian_legal_name_snapshot").notNull(),
     deliveryAddressSnapshot: text("delivery_address_snapshot").notNull(),
     deliveryPhoneSnapshot: varchar("delivery_phone_snapshot", { length: 40 }),
+    deliveryLatitudeSnapshot: doublePrecision("delivery_latitude_snapshot"),
+    deliveryLongitudeSnapshot: doublePrecision("delivery_longitude_snapshot"),
     placedByUserId: text("placed_by_user_id")
       .notNull()
       .references(() => usersTable.id),
@@ -337,6 +342,10 @@ export const orderDeliveryAttempts = pgTable(
     assignedAt: timestamp("assigned_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    scheduledDate: date("scheduled_date"),
+    windowStartMinute: integer("window_start_minute"),
+    windowEndMinute: integer("window_end_minute"),
+    packageCount: integer("package_count"),
     startedAt: timestamp("started_at", { withTimezone: true }),
     failedAt: timestamp("failed_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -374,6 +383,22 @@ export const orderDeliveryAttempts = pgTable(
       table.assignedAt,
     ),
     index("order_delivery_attempts_staff_profile_idx").on(table.staffProfileId),
+    index("order_delivery_attempts_staff_schedule_idx").on(
+      table.staffProfileId,
+      table.scheduledDate,
+    ),
+    check(
+      "order_delivery_attempts_schedule_check",
+      sql`(
+        (${table.windowStartMinute} IS NULL AND ${table.windowEndMinute} IS NULL)
+        OR
+        (${table.windowStartMinute} BETWEEN 0 AND 1439 AND ${table.windowEndMinute} BETWEEN 1 AND 1440 AND ${table.windowStartMinute} < ${table.windowEndMinute})
+      )`,
+    ),
+    check(
+      "order_delivery_attempts_package_count_check",
+      sql`${table.packageCount} IS NULL OR ${table.packageCount} > 0`,
+    ),
     check(
       "order_delivery_attempts_lifecycle_check",
       sql`(
@@ -391,6 +416,46 @@ export const orderDeliveryAttempts = pgTable(
   ],
 );
 
+export const orderDeliveryIssues = pgTable(
+  "order_delivery_issues",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    attemptId: uuid("attempt_id")
+      .notNull()
+      .references(() => orderDeliveryAttempts.id, { onDelete: "cascade" }),
+    kind: deliveryIssueKindEnum("kind").notNull(),
+    note: text("note"),
+    reportIdempotencyKey: varchar("report_idempotency_key", {
+      length: 160,
+    }).notNull(),
+    reportedByUserId: text("reported_by_user_id")
+      .notNull()
+      .references(() => usersTable.id),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolvedByUserId: text("resolved_by_user_id").references(
+      () => usersTable.id,
+    ),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex("order_delivery_issues_report_key_unique").on(
+      table.reportIdempotencyKey,
+    ),
+    index("order_delivery_issues_attempt_open_idx").on(
+      table.attemptId,
+      table.resolvedAt,
+    ),
+    check(
+      "order_delivery_issues_resolution_check",
+      sql`(
+        (${table.resolvedAt} IS NULL AND ${table.resolvedByUserId} IS NULL)
+        OR
+        (${table.resolvedAt} IS NOT NULL AND ${table.resolvedByUserId} IS NOT NULL)
+      )`,
+    ),
+  ],
+);
+
 export type Cart = typeof carts.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
@@ -401,6 +466,8 @@ export type OrderStatus = Order["status"];
 export type OrderStatusEvent = typeof orderStatusEvents.$inferSelect;
 export type OrderDeliveryAttempt = typeof orderDeliveryAttempts.$inferSelect;
 export type NewOrderDeliveryAttempt = typeof orderDeliveryAttempts.$inferInsert;
+export type OrderDeliveryIssue = typeof orderDeliveryIssues.$inferSelect;
+export type NewOrderDeliveryIssue = typeof orderDeliveryIssues.$inferInsert;
 export type OrderPurchaseRecord = typeof orderPurchaseRecords.$inferSelect;
 export type NewOrderPurchaseRecord = typeof orderPurchaseRecords.$inferInsert;
 export type OrderPurchaseReversal = typeof orderPurchaseReversals.$inferSelect;
@@ -414,6 +481,7 @@ export const orderSchema = {
   orderItems,
   orderStatusEvents,
   orderDeliveryAttempts,
+  orderDeliveryIssues,
   orderPurchaseRecords,
   orderPurchaseReversals,
 };

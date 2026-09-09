@@ -4,12 +4,11 @@ import {
   AvatarFormInput,
   FormInput,
   NButton,
-  NCredentialsCard,
   NForm,
+  toast,
   useDialog,
   useNForm,
 } from "najm-kit";
-import { KeyRound, Phone } from "lucide-react";
 import { useState } from "react";
 
 import { useTranslation } from "najm-i18n/react";
@@ -114,7 +113,16 @@ export function CreateStaffDialogContent() {
         ...values,
         image: uploadedImagePath,
       });
-      await create.mutateAsync(input);
+      const created = await create.mutateAsync(input);
+      if (input.createOperatorAccess) {
+        if (created.emailSent) {
+          toast.success(t("operator.staff.invitationSent"));
+        } else {
+          toast.error(t("operator.staff.invitationEmailFailed"));
+        }
+      } else {
+        toast.success(t("operator.staff.createSuccess"));
+      }
       await pop();
     } catch (error) {
       if (uploadedImagePath) {
@@ -513,39 +521,6 @@ export function StaffStatusDialogContent({
   );
 }
 
-export function DeleteStaffDialogContent({
-  staff,
-}: Readonly<{ staff: StaffRecord }>) {
-  const { t } = useTranslation();
-  const { pop } = useDialog();
-  const { remove } = useStaffCommands();
-
-  async function handleDelete() {
-    await remove.mutateAsync(staff.id);
-    await pop();
-  }
-
-  return (
-    <div className="space-y-5">
-      <p className="text-sm leading-6 text-muted-foreground">
-        {t("operator.staff.deleteWarning")}
-      </p>
-      <div className="flex justify-end pt-5">
-        <NButton
-          type="button"
-          variant="destructive"
-          disabled={remove.isPending}
-          onClick={() => void handleDelete()}
-        >
-          {remove.isPending
-            ? t("operator.staff.deleting")
-            : t("operator.staff.deleteStaff")}
-        </NButton>
-      </div>
-    </div>
-  );
-}
-
 export function BulkDeleteStaffDialogContent({
   staffIds,
   onDeleted,
@@ -587,43 +562,23 @@ export function ProvisionStaffAccessDialogContent({
   const { t } = useTranslation();
   const { pop } = useDialog();
   const { provisionAccess } = useStaffCommands();
-  const [credentials, setCredentials] = useState<{
-    password: string;
-    phone: string;
-  } | null>(null);
 
   async function handleSubmit(values: ProvisionStaffAccessValues) {
     const result = await provisionAccess.mutateAsync({
       id: staff.id,
       email: values.email,
     });
-    setCredentials({ phone: staff.phone, password: result.initialPassword });
-  }
-
-  if (credentials) {
-    return (
-      <NCredentialsCard
-        title={t("operator.staff.accessCreated")}
-        description={t("operator.staff.accessOneTimeHint")}
-        fields={[
-          { label: t("common.phone"), value: credentials.phone, icon: Phone },
-          {
-            label: t("operator.staff.accessInitialPassword"),
-            value: credentials.password,
-            icon: KeyRound,
-          },
-        ]}
-        copyLabel={t("common.copyDetails")}
-        copiedLabel={t("common.copied")}
-        copyErrorLabel={t("common.copyError")}
-        actions={<NButton onClick={() => void pop()}>{t("common.done")}</NButton>}
-      />
-    );
+    if (result.emailSent) {
+      toast.success(t("operator.staff.invitationSent"));
+    } else {
+      toast.error(t("operator.staff.invitationEmailFailed"));
+    }
+    await pop();
   }
 
   return (
     <NForm
-      defaultValues={{ email: staff.email ?? "" }}
+      defaultValues={{ email: staff.email ?? staff.contactEmail ?? "" }}
       id={`staff-provision-access-${staff.id}`}
       schema={provisionStaffAccessSchema}
       onSubmit={handleSubmit}

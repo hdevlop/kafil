@@ -12,6 +12,8 @@ describe("Phase 7 dashboard report boundaries", () => {
   it("exposes one read-only dashboard per product role", () => {
     expect(getMcpTools(DashboardController).map((tool) => tool.methodKey)).toEqual([
       "getOperator",
+      "getDeliveryContext",
+      "getDelivery",
       "getFamily",
       "getSponsor",
     ]);
@@ -64,6 +66,64 @@ describe("Phase 7 dashboard report boundaries", () => {
       totalMinor: 1800,
       placedAt: new Date("2026-07-20"),
     }]);
+  });
+
+  it("derives one mutually exclusive delivery projection from the selected staff day", async () => {
+    const dashboard = new DashboardService({
+      deliveryStaffIdentity: async () => ({ id: "staff-1", name: "Courier", status: "active" }),
+      deliveryRows: async () => [
+        {
+          attemptId: "attempt-1", attemptStatus: "assigned", orderId: "order-1", orderNumber: "KAF-1",
+          orderStatus: "purchased", familyProfileId: "family-1", familyName: "Atlas Family", familyImage: null,
+          address: "Address 1", phone: "+212600000001", latitude: 33.57, longitude: -7.59,
+          scheduledDate: "2026-09-09", windowStartMinute: 14 * 60, windowEndMinute: 15 * 60, packageCount: 2,
+        },
+        {
+          attemptId: "attempt-2", attemptStatus: "delivered", orderId: "order-2", orderNumber: "KAF-2",
+          orderStatus: "delivered", familyProfileId: "family-1", familyName: "Atlas Family", familyImage: null,
+          address: "Address 1", phone: null, latitude: null, longitude: null,
+          scheduledDate: "2026-09-09", windowStartMinute: 15 * 60, windowEndMinute: 16 * 60, packageCount: 4,
+        },
+        {
+          attemptId: "attempt-3", attemptStatus: "failed", orderId: "order-3", orderNumber: "KAF-3",
+          orderStatus: "purchased", familyProfileId: "family-2", familyName: "Rif Family", familyImage: null,
+          address: "Address 2", phone: null, latitude: null, longitude: null,
+          scheduledDate: "2026-09-09", windowStartMinute: null, windowEndMinute: null, packageCount: 3,
+        },
+      ],
+      openDeliveryIssues: async () => [{
+        id: "issue-1", attemptId: "attempt-1", kind: "address_confirmation", note: null,
+      }],
+    } as unknown as DashboardRepository);
+
+    const result = await dashboard.getDelivery(
+      "operator-user",
+      "2026-09-09",
+      new Date("2026-09-09T15:30:00.000Z"),
+    );
+
+    expect(result.counts).toEqual({
+      assigned: 3, pending: 0, delivered: 1, needsAttention: 2,
+      families: 2, packagesRemaining: 5,
+    });
+    expect(result.counts.assigned).toBe(
+      result.counts.pending + result.counts.delivered + result.counts.needsAttention,
+    );
+    expect(result.deliveries[0]).toMatchObject({
+      category: "needs_attention", delayed: true,
+      coordinates: { latitude: 33.57, longitude: -7.59 }, canStart: true,
+    });
+    expect(result.deliveries[1]).toMatchObject({ category: "delivered", coordinates: null, canConfirm: false });
+  });
+
+  it("reports delivery eligibility only for an active linked delivery Staff profile", async () => {
+    const dashboard = new DashboardService({
+      deliveryStaffIdentity: async () => undefined,
+    } as unknown as DashboardRepository);
+    await expect(dashboard.getDeliveryContext("operator-user")).resolves.toEqual({
+      eligible: false,
+      staffProfileId: null,
+    });
   });
 
   it("returns the dominant category projection for each family recent order", async () => {

@@ -32,6 +32,12 @@ const productId = "00000000-0000-4000-8000-000000000082";
 const orderId = "00000000-0000-4000-8000-000000000083";
 const accountId = "00000000-0000-4000-8000-000000000084";
 const deliveryStaffId = "00000000-0000-4000-8000-000000000085";
+const deliverySchedule = {
+  scheduledDate: "2026-09-09",
+  packageCount: 2,
+  windowStartMinute: 14 * 60,
+  windowEndMinute: 15 * 60,
+};
 const purchasingStaffId = "00000000-0000-4000-8000-000000000087";
 
 describe("Phase 5 cart and route contracts", () => {
@@ -359,6 +365,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
         familyProfileId: householdId,
         purchasingStaffProfileId: purchasingStaffId,
         deliveryStaffProfileId: purchasingStaffId,
+        ...deliverySchedule,
         items: [{ productId, quantity: 2 }],
         assistanceChannel: "in_person",
         idempotencyKey: "assisted-order-dual-0001",
@@ -457,6 +464,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     await service.assignDelivery(
       orderId,
       {
+        ...deliverySchedule,
         staffProfileId: deliveryStaffId,
         idempotencyKey: "delivery-assign-0001",
       },
@@ -505,7 +513,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     const { service, state } = orderService({ status: "approved" });
     await service.assignDelivery(
       orderId,
-      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-approved-assign-0001" },
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-approved-assign-0001" },
       "operator-user",
     );
 
@@ -513,6 +521,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     await service.reassignDelivery(
       orderId,
       {
+        ...deliverySchedule,
         staffProfileId: replacementStaffId,
         reason: "Buyer route changed",
         idempotencyKey: "delivery-approved-reassign-0001",
@@ -542,7 +551,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     });
     await service.assignDelivery(
       orderId,
-      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-approved-cancel-0001" },
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-approved-cancel-0001" },
       "operator-user",
     );
 
@@ -564,13 +573,14 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     state.activePurchase = purchaseRecord();
     await service.assignDelivery(
       orderId,
-      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-1001" },
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-1001" },
       "operator-user",
     );
     const replacementStaffId = "00000000-0000-4000-8000-000000000086";
     await service.reassignDelivery(
       orderId,
       {
+        ...deliverySchedule,
         staffProfileId: replacementStaffId,
         reason: "Courier shift changed",
         idempotencyKey: "delivery-reassign-1001",
@@ -606,7 +616,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     state.activePurchase = purchaseRecord();
     await service.assignDelivery(
       orderId,
-      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-2001" },
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-2001" },
       "operator-user",
     );
     await service.startDelivery(
@@ -628,6 +638,55 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     expect(state.balanceUpdates).toEqual([]);
   });
 
+  it("scopes delivery-worker start and issue commands to the linked Staff assignment", async () => {
+    const { service, state } = orderService({ status: "purchased" });
+    state.activePurchase = purchaseRecord();
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-assign-0001" },
+      "operator-user",
+    );
+
+    await service.startOwnDelivery(
+      orderId,
+      { idempotencyKey: "delivery-own-start-0001" },
+      "delivery-user",
+    );
+    const issue = await service.reportOwnDeliveryIssue(
+      orderId,
+      {
+        attemptId: String(state.deliveryAttempts[0].id),
+        kind: "family_unreachable",
+        note: "No answer",
+        idempotencyKey: "delivery-own-issue-0001",
+      },
+      "delivery-user",
+    );
+
+    expect(state.deliveryAttempts[0]).toMatchObject({ status: "in_progress" });
+    expect(issue).toMatchObject({ kind: "family_unreachable", note: "No answer" });
+    expect(state.auditEvents).toContainEqual(expect.objectContaining({
+      action: "order.delivery_issue_reported",
+      metadata: { attemptId: "00000000-0000-4000-8000-000000000091", kind: "family_unreachable" },
+    }));
+
+    state.deliveryAttempts[0].staffProfileId = "another-staff";
+    await expect(service.startOwnDelivery(
+      orderId,
+      { idempotencyKey: "delivery-own-start-0001" },
+      "delivery-user",
+    )).rejects.toMatchObject({ status: 403 });
+    await expect(service.reportOwnDeliveryIssue(
+      orderId,
+      {
+        attemptId: String(state.deliveryAttempts[0].id),
+        kind: "missing_proof",
+        idempotencyKey: "delivery-own-issue-0002",
+      },
+      "delivery-user",
+    )).rejects.toMatchObject({ status: 403 });
+  });
+
   it("rejects assignment to inactive Delivery staff", async () => {
     const { service } = orderService({
       status: "purchased",
@@ -636,7 +695,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     await expect(
       service.assignDelivery(
         orderId,
-        { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-3001" },
+        { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-3001" },
         "operator-user",
       ),
     ).rejects.toMatchObject({ status: 409 });
@@ -655,7 +714,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     });
     await service.assignDelivery(
       orderId,
-      { staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-4001" },
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-assign-4001" },
       "operator-user",
     );
 
@@ -880,6 +939,7 @@ function orderService(options: {
     deletedOrderIds: [] as string[],
     auditEvents: [] as Record<string, unknown>[],
     deliveryAttempts: [] as Record<string, unknown>[],
+    deliveryIssues: [] as Record<string, unknown>[],
     detailReads: [] as string[],
   };
   const detailRead = async <T>(label: string, value: T) => {
@@ -972,6 +1032,14 @@ function orderService(options: {
       ),
   } as unknown as OrderPurchaseRepository;
   const deliveries = {
+    findById: async (id: string) => state.deliveryAttempts.find((attempt) => attempt.id === id),
+    findIssueByIdempotencyKey: async (key: string) =>
+      state.deliveryIssues.find((issue) => issue.reportIdempotencyKey === key),
+    createIssue: async (input: Record<string, unknown>) => {
+      const issue = { id: `delivery-issue-${state.deliveryIssues.length + 1}`, ...input };
+      state.deliveryIssues.push(issue);
+      return issue;
+    },
     findByAssignmentIdempotencyKey: async (key: string) =>
       state.deliveryAttempts.find(
         (attempt) => attempt.assignmentIdempotencyKey === key,
@@ -990,7 +1058,7 @@ function orderService(options: {
       ),
     create: async (input: Record<string, unknown>) => {
       const attempt = {
-        id: `delivery-attempt-${state.deliveryAttempts.length + 1}`,
+        id: `00000000-0000-4000-8000-00000000009${state.deliveryAttempts.length + 1}`,
         assignedAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -1054,6 +1122,12 @@ function orderService(options: {
     deliveries,
     purchases,
     {
+      findByUserId: async () => ({
+        id: deliveryStaffId,
+        name: "Amina Delivery",
+        status: "active",
+        functions: ["delivery"],
+      }),
       findById: async (id: string) => ({
         id,
         name: "Amina Delivery",

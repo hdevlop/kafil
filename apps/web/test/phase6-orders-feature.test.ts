@@ -219,8 +219,8 @@ describe("Phase 6D order command contracts", () => {
 
     expect(page).toContain("isExactAdmin");
     expect(page).toContain('label: t("common.deleteForever")');
-    expect(page).toContain("<DeleteOrderDialogContent");
-    expect(forms).toContain('t("operator.orders.deleteWarning")');
+    expect(page).toContain("confirmDelete");
+    expect(page).toContain('t("operator.orders.deleteDialogMessage")');
     expect(forms).toContain('variant="destructive"');
     expect(api).toContain('api.delete<OrderRecord>(`/orders/${id}`)');
   });

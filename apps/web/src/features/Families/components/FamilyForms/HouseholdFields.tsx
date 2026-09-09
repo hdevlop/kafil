@@ -11,9 +11,11 @@ import type { FamilyStoredHousingSituation } from "../../types";
 export function FamilyHouseholdFields({
   disabled = false,
   showSectionHeader = true,
+  showPolicyFields = true,
 }: Readonly<{
   disabled?: boolean;
   showSectionHeader?: boolean;
+  showPolicyFields?: boolean;
 }>) {
   const { t } = useTranslation();
   const housingSituation = useWatch({
@@ -83,30 +85,34 @@ export function FamilyHouseholdFields({
           disabled={disabled}
           required
         />
-        <FormInput
-          name="maxOrdersPerMonthInput"
-          type="text"
-          formLabel={t("operator.families.maxOrdersLabel")}
-          placeholder={t("operator.families.maxOrdersPlaceholder")}
-          icon="Hash"
-          disabled={disabled}
-        />
-        <FormInput
-          name="maxBudgetPerOrderMadInput"
-          type="text"
-          formLabel={t("operator.families.maxPerOrderLabel")}
-          placeholder={t("operator.families.targetExample")}
-          icon="CircleDollarSign"
-          disabled={disabled}
-        />
-        <FormInput
-          name="monthlyBudgetMadInput"
-          type="text"
-          formLabel={t("operator.families.monthlyBudgetLabel")}
-          placeholder={t("operator.families.targetExample")}
-          icon="CircleDollarSign"
-          disabled={disabled}
-        />
+        {showPolicyFields ? (
+          <>
+            <FormInput
+              name="maxOrdersPerMonthInput"
+              type="text"
+              formLabel={t("operator.families.maxOrdersLabel")}
+              placeholder={t("operator.families.maxOrdersPlaceholder")}
+              icon="Hash"
+              disabled={disabled}
+            />
+            <FormInput
+              name="maxBudgetPerOrderMadInput"
+              type="text"
+              formLabel={t("operator.families.maxPerOrderLabel")}
+              placeholder={t("operator.families.targetExample")}
+              icon="CircleDollarSign"
+              disabled={disabled}
+            />
+            <FormInput
+              name="monthlyBudgetMadInput"
+              type="text"
+              formLabel={t("operator.families.monthlyBudgetLabel")}
+              placeholder={t("operator.families.targetExample")}
+              icon="CircleDollarSign"
+              disabled={disabled}
+            />
+          </>
+        ) : null}
         <FormInput
           name="notes"
           type="textarea"
@@ -127,6 +133,22 @@ export function FamilyHouseholdFields({
           className="h-full"
           disabled={disabled}
           required
+        />
+        <FormInput
+          name="deliveryLatitudeInput"
+          type="text"
+          formLabel={t("operator.families.deliveryLatitude")}
+          placeholder="33.5731"
+          icon="MapPin"
+          disabled={disabled}
+        />
+        <FormInput
+          name="deliveryLongitudeInput"
+          type="text"
+          formLabel={t("operator.families.deliveryLongitude")}
+          placeholder="-7.5898"
+          icon="MapPin"
+          disabled={disabled}
         />
       </div>
     </div>

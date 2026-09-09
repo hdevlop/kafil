@@ -556,6 +556,8 @@ describe("Phase 1 family workflow", () => {
       data: [
         {
           ...family,
+          deliveryLatitude: null,
+          deliveryLongitude: null,
           funding: progress,
           activeSponsorNames: ["Sponsor One", "Sponsor Two"],
         },
@@ -1166,6 +1168,8 @@ function familyProfile(overrides: Record<string, unknown> = {}) {
     guardianCin: "AB123456",
     guardianDateOfBirth: "1987-03-12",
     exactAddress: "Private address in Rabat",
+    deliveryLatitude: null,
+    deliveryLongitude: null,
     housingSituation: "rented" as const,
     registrationDate: "2026-01-15",
     supportPriority: "normal" as const,

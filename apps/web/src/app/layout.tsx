@@ -56,6 +56,7 @@ export default async function RootLayout({
 
   const { language, theme, timeZone } = kafilPreferences.resolve(cookieStore, {
     languageFallback: (session?.user as { language?: unknown } | undefined)?.language,
+    acceptLanguage: requestHeaders.get("accept-language"),
   });
 
   return (

@@ -387,38 +387,6 @@ export function ChildStatusDialogContent({
   );
 }
 
-export function DeleteChildDialogContent({
-  child,
-}: Readonly<{ child: ChildRecord }>) {
-  const { pop } = useDialog();
-  const { t } = useTranslation();
-  const { remove } = useChildCommands();
-
-  async function handleDelete() {
-    await remove.mutateAsync(child.id);
-    await pop();
-  }
-
-  return (
-    <div className="space-y-5">
-      <p className="text-sm leading-6 text-muted-foreground">
-        This permanently deletes the child record. It cannot be undone, and it
-        is unavailable while support history still references this child.
-      </p>
-      <div className="flex justify-end pt-5">
-        <NButton
-          type="button"
-          variant="destructive"
-          disabled={remove.isPending}
-          onClick={() => void handleDelete()}
-        >
-          {remove.isPending ? t("operator.children.deleting") : t("operator.children.deleteChild")}
-        </NButton>
-      </div>
-    </div>
-  );
-}
-
 export function BulkDeleteChildrenDialogContent({
   childIds,
   onDeleted,
