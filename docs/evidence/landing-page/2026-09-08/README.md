@@ -122,6 +122,14 @@ passed 2/2, then the complete focused `landing.e2e.ts` spec passed 11/11 in
 
 ## Publication and production evidence
 
+The 2026-09-09 static-hero refinement shipped as
+`3891358900e005cec7ae971436f4130f6a2c171b`. GitHub Actions run `34292843128`
+passed verification, image publication, and the Dokploy trigger. Direct VPS
+inspection then confirmed healthy app and notification-worker containers on
+identical image content with that OCI revision. Read-only production probes
+returned 200 for root, liveness, and readiness; the static landing marker was
+present, carousel markup was absent, and CSP plus HSTS headers were present.
+
 - Implementation commit: `4220079f828ac893e5f8f45560758144d8fb832f`,
   pushed to `origin/main`.
 - GitHub Actions run `34261680802`: Verify passed, GHCR image publication

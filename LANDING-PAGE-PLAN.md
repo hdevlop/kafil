@@ -1,6 +1,6 @@
 # Landing page plan — Kafil adaptation of the SadaqaHub mockup
 
-Status: **IMPLEMENTED — the 2026-09-09 static-hero refinement passes focused browser acceptance and is pending publication and deployment evidence. Final asset-provenance acceptance remains on hold for three legacy hero bases and five mascots, and the unrelated complete legacy E2E suite is not green.**
+Status: **DEPLOYED — the 2026-09-09 static-hero refinement passes focused browser acceptance, repository gates, publication, live revision verification, and read-only production checks. Final asset-provenance acceptance remains on hold for three legacy hero bases and five mascots, and the unrelated complete legacy E2E suite is not green.**
 
 > **2026-09-09 implementation override:** the refinement replaces the carousel
 > with one static, locale-aware 4:3 hero image. This supersedes the
@@ -644,7 +644,7 @@ Do not check items until the named command or artifact exists.
 | Root lint/typecheck/test/build | PASS (2026-09-08) | Required sequential gate exit 0: web 430 pass, server 400 pass + 77 skip, seed 89 pass, 0 fail; production build success with 44 routes |
 | Schema drift (`db:generate`) | PASS — no migration (2026-09-08) | `bun run db:generate`: "No schema changes, nothing to migrate" |
 | PostgreSQL integration | PASS (2026-09-08) | `bun run test:db`: 55 pass, 0 fail across 13 files |
-| Git publication | PASS (2026-09-08) | Implementation commit `4220079f828ac893e5f8f45560758144d8fb832f` pushed to `origin/main` |
-| Deployment | PASS (2026-09-08) | GitHub Actions run `34261680802` passed verify, GHCR publication, and Dokploy trigger. Dokploy recreated app + notification worker together; both healthy on identical image `ed4d6f4…` with OCI revision `4220079f…`; active raw Compose includes app, worker, Redis, Postgres, Mailpit, migration, reconciliation, and storage-init services |
-| Production browser acceptance | PASS — read-only (2026-09-08) | `https://kafala360.ma/`, login, liveness, readiness, new family art, hero, and mascot returned 200; new landing title/family/disclosure present and old headline absent; security-header verifier passed root + health |
+| Git publication | PASS (2026-09-09) | Static-hero implementation commit `3891358900e005cec7ae971436f4130f6a2c171b` pushed to `origin/main`; local, tracking, and remote SHAs matched. |
+| Deployment | PASS (2026-09-09) | GitHub Actions run `34292843128` passed verify, GHCR publication, and Dokploy trigger. Dokploy recreated app + notification worker together; both healthy on identical image content with OCI revision `3891358900e005cec7ae971436f4130f6a2c171b`. |
+| Production browser acceptance | PASS — read-only (2026-09-09) | Root, liveness, and readiness returned 200; static landing marker present, carousel markup absent, and CSP plus HSTS headers present. |
 | Deferred Phase B | OUT OF SCOPE | Separate authorization and plan update required |
