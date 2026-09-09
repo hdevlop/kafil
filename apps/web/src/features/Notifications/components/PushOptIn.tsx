@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BellOff, BellRing, Loader2 } from "lucide-react";
-import { NAlert, NButton, Card, CardContent } from "najm-kit";
+import { Switch } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 
 import { usePushConfig } from "../hooks/useNotifications";
@@ -133,78 +132,45 @@ export function PushOptIn() {
     }
   }
 
-  if (pushConfig.data && !pushConfig.data.enabled) return null;
-  if (status === "unsupported") {
-    return (
-      <NAlert tone="info" title={t("notifications.pushTitle")} description={t("notifications.pushUnsupported")} />
-    );
-  }
-  if (status === "loading") {
-    return (
-      <Card>
-        <CardContent className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-          <Loader2 className="animate-spin" size={16} />
-          {t("notifications.loading")}
-        </CardContent>
-      </Card>
-    );
-  }
+  const configured = pushConfig.data?.enabled !== false;
+  const disabled =
+    busy ||
+    pushConfig.isPending ||
+    status === "loading" ||
+    status === "unsupported" ||
+    status === "denied" ||
+    !configured;
+
+  let description = t("notifications.pushBody");
+  if (!configured) description = t("notifications.pushUnavailable");
+  else if (status === "unsupported") description = t("notifications.pushUnsupported");
+  else if (status === "denied") description = t("notifications.pushDenied");
+  else if (status === "loading" || busy) description = t("notifications.loading");
+  else if (isIosDevice() && status !== "granted") description = t("notifications.pushIosHint");
+  if (error) description = error;
 
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span aria-hidden="true" className="mt-0.5 text-muted-foreground">
-            {status === "granted" ? <BellRing size={18} /> : <BellOff size={18} />}
-          </span>
-          <div>
-            <p className="text-sm font-semibold">{t("notifications.pushTitle")}</p>
-            <p className="text-sm text-muted-foreground">{t("notifications.pushBody")}</p>
-            {status === "denied" ? (
-              <p role="alert" className="mt-1 text-sm text-destructive">
-                {t("notifications.pushDenied")}
-              </p>
-            ) : null}
-            {status === "granted" ? (
-              <p aria-live="polite" className="mt-1 text-sm text-muted-foreground">
-                {t("notifications.pushGranted")}
-              </p>
-            ) : null}
-            {isIosDevice() && status !== "granted" ? (
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("notifications.pushIosHint")}
-              </p>
-            ) : null}
-            {error ? (
-              <p role="alert" className="mt-1 text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-          </div>
+    <div className="space-y-2">
+      <p className="text-sm font-medium">{t("notifications.pushTitle")}</p>
+      <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-input bg-background px-3 py-2">
+        <div className="min-w-0">
+          <p
+            aria-live="polite"
+            className={status === "denied" || error ? "text-sm text-destructive" : "text-sm"}
+          >
+            {description}
+          </p>
         </div>
-        <div className="flex shrink-0 gap-2">
-          {status === "granted" ? (
-            <NButton
-              disabled={busy}
-              onClick={() => void disable()}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {busy ? t("notifications.pushDisabling") : t("notifications.pushDisable")}
-            </NButton>
-          ) : status !== "denied" ? (
-            <NButton
-              disabled={busy || pushConfig.isPending}
-              onClick={() => void enable()}
-              size="sm"
-              type="button"
-            >
-              {busy ? t("notifications.pushEnabling") : t("notifications.pushEnable")}
-            </NButton>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
+        <Switch
+          aria-label={t("notifications.pushTitle")}
+          checked={status === "granted"}
+          disabled={disabled}
+          onCheckedChange={(checked) => {
+            if (checked) void enable();
+            else void disable();
+          }}
+        />
+      </div>
+    </div>
   );
 }

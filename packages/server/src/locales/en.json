@@ -2495,6 +2495,7 @@
       "pushDisable": "Turn off",
       "pushDisabling": "Turning off…",
       "pushUnsupported": "This browser does not support web push.",
+      "pushUnavailable": "Push notifications are not available right now.",
       "pushDenied": "Notifications are blocked. Allow them in the browser site settings, then try again.",
       "pushGranted": "Push is on for this device.",
       "pushError": "We could not update push settings.",

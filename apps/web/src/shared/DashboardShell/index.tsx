@@ -14,6 +14,10 @@ import {
    canOpenAppSettings,
    type SettingsSheetKind,
 } from "@/features/Settings/components/SettingsSheets";
+import {
+   canOpenPersonalSettings,
+   PersonalSettingsSheet,
+} from "@/features/Settings/components/PersonalSettingsSheet";
 import { OrderCartOverlay, useOrderCartStore } from "@/features/OrderCart";
 import { openSponsorProfileSheet, SponsorProfileSheet, } from "@/features/Sponsors/components/profile/SponsorProfileSheet";
 import { KafilRoleProvider } from "@/shared/Authorization";
@@ -78,7 +82,7 @@ function DashboardShellBody({ children, user, onSignOut, signingOut }: Readonly<
          id: "settings",
          icon: Settings2,
          label: t("nav.settings"),
-         show: canOpenAppSettings(user.role),
+         show: canOpenAppSettings(user.role) || canOpenPersonalSettings(user.role),
          onClick: () => {
             openSettingsSheet("app");
          },
@@ -131,11 +135,18 @@ function DashboardShellBody({ children, user, onSignOut, signingOut }: Readonly<
             </div>
          </div>
          {pathname !== "/settings" ? (
-            <AppSettingsSheet
-               open={activeSettingsSheet === "app"}
-               onOpenChange={(open) => setActiveSettingsSheet(open ? "app" : null)}
-               role={user.role}
-            />
+            <>
+               <AppSettingsSheet
+                  open={activeSettingsSheet === "app"}
+                  onOpenChange={(open) => setActiveSettingsSheet(open ? "app" : null)}
+                  role={user.role}
+               />
+               <PersonalSettingsSheet
+                  open={activeSettingsSheet === "app"}
+                  onOpenChange={(open) => setActiveSettingsSheet(open ? "app" : null)}
+                  role={user.role}
+               />
+            </>
          ) : null}
          <AdminThemeSettingsSheets
             activeSheet={activeSettingsSheet}

@@ -2327,6 +2327,7 @@
       "pushDisable": "Desactivar",
       "pushDisabling": "Desactivando…",
       "pushUnsupported": "Este navegador no admite push web.",
+      "pushUnavailable": "Las notificaciones push no están disponibles en este momento.",
       "pushDenied": "Las notificaciones están bloqueadas. Permítelas en los ajustes del sitio e inténtalo de nuevo.",
       "pushGranted": "El push está activado en este dispositivo.",
       "pushError": "No pudimos actualizar los ajustes push.",

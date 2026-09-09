@@ -9,6 +9,7 @@ import {
 } from "../src/features/Notifications/lib/buildNotificationViewModel";
 import { notificationKeys } from "../src/features/Notifications/hooks/notificationKeys";
 import { synchronizeNotificationLocale } from "../src/features/Notifications/lib/synchronizeNotificationLocale";
+import { canOpenPersonalSettings } from "../src/features/Settings/components/PersonalSettingsSheet";
 
 function readSource(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -82,6 +83,9 @@ describe("Phase B notification query contracts", () => {
       "../src/features/Notifications/components/NotificationsPage.tsx",
     );
     expect(page).toContain('refetchOnMount: "always"');
+    expect(page).toContain("useNotificationsTableFilters");
+    expect(page).toContain("filters,");
+    expect(page).not.toContain('role="group"');
     expect(commands).toContain("notificationKeys.all");
     expect(commands).toContain("notificationKeys.unreadCount()");
   });
@@ -186,6 +190,23 @@ describe("Phase B notification view models", () => {
 });
 
 describe("Phase B notification push presentation", () => {
+  test("family and sponsor recipients can open personal push settings", async () => {
+    expect(canOpenPersonalSettings("family")).toBe(true);
+    expect(canOpenPersonalSettings("sponsor")).toBe(true);
+    expect(canOpenPersonalSettings("admin")).toBe(false);
+    expect(canOpenPersonalSettings("operator")).toBe(false);
+
+    const [shell, personalSettings] = await Promise.all([
+      readSource("../src/shared/DashboardShell/index.tsx"),
+      readSource(
+        "../src/features/Settings/components/PersonalSettingsSheet.tsx",
+      ),
+    ]);
+    expect(shell).toContain("canOpenPersonalSettings(user.role)");
+    expect(shell).toContain("<PersonalSettingsSheet");
+    expect(personalSettings).toContain("<PushOptIn />");
+  });
+
   test("push opt-in covers unsupported, denied, granted, and unsubscribe states", async () => {
     const source = await readSource(
       "../src/features/Notifications/components/PushOptIn.tsx",
@@ -196,7 +217,7 @@ describe("Phase B notification push presentation", () => {
     expect(source).toContain('"prompt"');
     expect(source).toContain("pushUnsupported");
     expect(source).toContain("pushDenied");
-    expect(source).toContain("pushGranted");
+    expect(source).toContain('checked={status === "granted"}');
     expect(source).toContain("pushIosHint");
     expect(source).toContain("requestPermission");
     expect(source).toContain("unsubscribe");

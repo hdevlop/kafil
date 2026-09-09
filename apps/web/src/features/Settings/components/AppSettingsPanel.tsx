@@ -14,6 +14,7 @@ import { useWatch } from "react-hook-form";
 
 import { useTranslation } from "najm-i18n/react";
 import { useNajmFormat } from "najm-kit";
+import { PushOptIn } from "@/features/Notifications/components/PushOptIn";
 
 import {
   evenSplitHint,
@@ -142,6 +143,7 @@ export function AppSettingsPanel({
           formLabel={t("display.timeZone.label")}
         />
       </NForm>
+      <PushOptIn />
     </div>
   );
 }

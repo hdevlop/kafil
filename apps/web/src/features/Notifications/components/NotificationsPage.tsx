@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bell, CheckCheck, Eye } from "lucide-react";
 import {
@@ -25,6 +25,7 @@ import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
 } from "../hooks/useNotificationCommands";
+import { useNotificationsTableFilters } from "../hooks/useNotificationsTableFilters";
 import { useNotificationTableColumns } from "../config/notificationColumns";
 import {
   buildNotificationViewModel,
@@ -33,7 +34,6 @@ import {
 import { synchronizeNotificationLocale } from "../lib/synchronizeNotificationLocale";
 import type { NotificationRecord } from "../types";
 import { NotificationCard } from "./NotificationCard";
-import { PushOptIn } from "./PushOptIn";
 
 const PAGE_SIZE = 20;
 
@@ -85,11 +85,13 @@ export function NotificationsPage() {
     };
   }, [language]);
 
-  function resetToFirstPage(unread: boolean) {
+  const resetToFirstPage = useCallback((unread: boolean) => {
     setUnreadOnly(unread);
     setPageIndex(0);
     setCursorChain([null]);
-  }
+  }, []);
+
+  const filters = useNotificationsTableFilters(unreadOnly, resetToFirstPage);
 
   function goToPage(next: number) {
     // Fill the cursor for the next page from the current page's nextCursor
@@ -146,6 +148,7 @@ export function NotificationsPage() {
   const tableProps: NTableProps<NotificationRecord> = {
     data: rows,
     columns,
+    filters,
     loading: list.isPending,
     error: list.error,
     getRowId: (row) => row.id,
@@ -235,24 +238,6 @@ export function NotificationsPage() {
           </span>
         }
       />
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t("notifications.inboxTitle")}>
-        <NButton
-          onClick={() => resetToFirstPage(false)}
-          size="sm"
-          type="button"
-          variant={unreadOnly ? "outline" : "default"}
-        >
-          {t("notifications.allFilter")}
-        </NButton>
-        <NButton
-          onClick={() => resetToFirstPage(true)}
-          size="sm"
-          type="button"
-          variant={unreadOnly ? "default" : "outline"}
-        >
-          {t("notifications.unreadFilter")}
-        </NButton>
-      </div>
       {settingsSyncFailed ? (
         <p role="alert" className="text-sm text-muted-foreground">
           {t("notifications.settingsFailed")}
@@ -263,7 +248,6 @@ export function NotificationsPage() {
           {t("notifications.focusMissing")}
         </p>
       ) : null}
-      <PushOptIn />
       <div className="min-h-0 flex-1">
         <NTable {...tableProps} />
       </div>
