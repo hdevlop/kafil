@@ -2,10 +2,14 @@
 
 import { NPageLayout } from "najm-kit";
 
+import { DignitySection } from "./DignitySection";
+import { FaqSection } from "./FaqSection";
+import { HowItWorksSection } from "./HowItWorksSection";
 import { LandingCtaBanner } from "./LandingCtaBanner";
 import { LandingFamilyExamples } from "./LandingFamilyExamples";
 import { LandingHero } from "./LandingHero";
 import { LandingTrustStrip } from "./LandingTrustStrip";
+import { TransparencySection } from "./TransparencySection";
 
 // Main sections only. The route layout owns LandingHeader and
 // LandingFooter so chrome is never duplicated.
@@ -17,6 +21,10 @@ export function LandingPage() {
       <LandingHero />
       <LandingTrustStrip />
       <LandingFamilyExamples />
+      <HowItWorksSection />
+      <TransparencySection />
+      <DignitySection />
+      <FaqSection />
       <LandingCtaBanner />
     </NPageLayout>
   );

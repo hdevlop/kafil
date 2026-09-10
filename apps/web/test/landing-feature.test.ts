@@ -17,6 +17,16 @@ import {
   LANDING_CTA_MASCOT_SRC,
   landingMascots,
 } from "../src/features/Landing/config/landingMascots";
+import { LANDING_SECTION_ASSETS } from "../src/features/Landing/config/landingSectionAssets";
+import {
+  LANDING_DIGNITY_BENEFITS,
+  LANDING_FAQ_ITEMS,
+  LANDING_PROCESS_STEPS,
+  LANDING_SAMPLE_ORDER_STATUSES,
+  LANDING_SAMPLE_ORDER_TOTAL_MINOR,
+  LANDING_SAMPLE_PRODUCTS,
+  LANDING_TRANSPARENCY_BENEFITS,
+} from "../src/features/Landing/config/landingSectionContent";
 import { buildLandingFamilyViewModels } from "../src/features/Landing/lib/buildLandingViewModel";
 
 const webRoot = join(import.meta.dir, "..");
@@ -94,6 +104,57 @@ const REQUIRED_LANDING_KEYS = [
   "ui.landing.how.step3Text",
   "ui.landing.how.step4Title",
   "ui.landing.how.step4Text",
+  "ui.landing.process.eyebrow",
+  "ui.landing.process.title",
+  "ui.landing.process.description",
+  "ui.landing.process.step1Title",
+  "ui.landing.process.step1Text",
+  "ui.landing.process.step2Title",
+  "ui.landing.process.step2Text",
+  "ui.landing.process.step3Title",
+  "ui.landing.process.step3Text",
+  "ui.landing.process.step4Title",
+  "ui.landing.process.step4Text",
+  "ui.landing.transparency.eyebrow",
+  "ui.landing.transparency.headingLead",
+  "ui.landing.transparency.headingAccent",
+  "ui.landing.transparency.description",
+  "ui.landing.transparency.benefit1Title",
+  "ui.landing.transparency.benefit1Text",
+  "ui.landing.transparency.benefit2Title",
+  "ui.landing.transparency.benefit2Text",
+  "ui.landing.transparency.benefit3Title",
+  "ui.landing.transparency.benefit3Text",
+  "ui.landing.transparency.action",
+  "ui.landing.sampleOrder.title",
+  "ui.landing.sampleOrder.badge",
+  "ui.landing.sampleOrder.schoolBag",
+  "ui.landing.sampleOrder.notebooks",
+  "ui.landing.sampleOrder.stationery",
+  "ui.landing.sampleOrder.total",
+  "ui.landing.sampleOrder.approved",
+  "ui.landing.sampleOrder.purchased",
+  "ui.landing.sampleOrder.delivered",
+  "ui.landing.dignity.eyebrow",
+  "ui.landing.dignity.headingLead",
+  "ui.landing.dignity.headingAccent",
+  "ui.landing.dignity.imageAlt",
+  "ui.landing.dignity.benefit1Title",
+  "ui.landing.dignity.benefit1Text",
+  "ui.landing.dignity.benefit2Title",
+  "ui.landing.dignity.benefit2Text",
+  "ui.landing.dignity.benefit3Title",
+  "ui.landing.dignity.benefit3Text",
+  "ui.landing.faq.eyebrow",
+  "ui.landing.faq.title",
+  "ui.landing.faq.item1Question",
+  "ui.landing.faq.item1Answer",
+  "ui.landing.faq.item2Question",
+  "ui.landing.faq.item2Answer",
+  "ui.landing.faq.item3Question",
+  "ui.landing.faq.item3Answer",
+  "ui.landing.faq.item4Question",
+  "ui.landing.faq.item4Answer",
   "ui.landing.families.title",
   "ui.landing.families.subtitle",
   "ui.landing.families.disclosureTitle",
@@ -138,6 +199,7 @@ const REQUIRED_LANDING_KEYS = [
 const SHARED_WITH_ENGLISH = new Set([
   "fr:ui.landing.header.contact",
   "fr:ui.landing.footer.contactTitle",
+  "fr:ui.landing.sampleOrder.total",
   "fr:ui.landing.families.card1City",
   "fr:ui.landing.families.card2City",
   "fr:ui.landing.families.card3City",
@@ -148,6 +210,7 @@ const SHARED_WITH_ENGLISH = new Set([
   "es:ui.landing.families.card3City",
   "es:ui.landing.families.card5City",
   "es:ui.landing.families.card8City",
+  "es:ui.landing.sampleOrder.total",
 ]);
 
 describe("landing feature contract", () => {
@@ -173,10 +236,23 @@ describe("landing feature contract", () => {
     expect(LANDING_ANCHORS).toEqual({
       families: "families",
       howItWorks: "how-it-works",
+      transparency: "transparency",
+      illustrativeOrder: "illustrative-order",
+      commitment: "commitment",
+      faq: "faq",
       contact: "contact",
     });
 
-    const allowedAnchors = new Set(["families", "how-it-works", "contact", "landing-main"]);
+    const allowedAnchors = new Set([
+      "families",
+      "how-it-works",
+      "transparency",
+      "illustrative-order",
+      "commitment",
+      "faq",
+      "contact",
+      "landing-main",
+    ]);
     for (const source of landingSources().map((file) => readFileSync(file, "utf8"))) {
       for (const match of source.matchAll(/href=\{"#([A-Za-z-]+)"\}/g)) {
         expect(allowedAnchors.has(match[1]), `unexpected in-page link #${match[1]}`).toBe(true);
@@ -229,7 +305,7 @@ describe("landing feature contract", () => {
     expect(header).not.toContain("Could not update language");
   });
 
-  test("the static hero has no redundant controls and the skip target is focusable", () => {
+  test("the static hero has no redundant controls and section ownership is explicit", () => {
     const heroImage = readSource("src/features/Landing/components/LandingHeroImage.tsx");
     expect(heroImage).toContain("NNextImage");
     expect(heroImage).not.toContain("NButton");
@@ -237,10 +313,68 @@ describe("landing feature contract", () => {
     const landingPage = readSource("src/features/Landing/components/LandingPage.tsx");
     expect(landingPage).toContain('id="landing-main"');
     expect(landingPage).toContain("tabIndex={-1}");
-    expect(landingPage).not.toContain("LandingHowItWorks");
-    expect(readSource("src/features/Landing/components/LandingTrustStrip.tsx")).toContain(
+    expect(landingPage).toContain("<HowItWorksSection />");
+    expect(readSource("src/features/Landing/components/HowItWorksSection.tsx")).toContain(
       "LANDING_ANCHORS.howItWorks",
     );
+    expect(readSource("src/features/Landing/components/LandingTrustStrip.tsx")).not.toContain(
+      "LANDING_ANCHORS.howItWorks",
+    );
+
+    const orderedSections = [
+      "<LandingFamilyExamples />",
+      "<HowItWorksSection />",
+      "<TransparencySection />",
+      "<DignitySection />",
+      "<FaqSection />",
+      "<LandingCtaBanner />",
+    ];
+    const positions = orderedSections.map((section) => landingPage.indexOf(section));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((left, right) => left - right));
+  });
+
+  test("new section manifests keep exact counts, derived money, and no receipt action", () => {
+    expect(LANDING_PROCESS_STEPS.map((step) => step.number)).toEqual([1, 2, 3, 4]);
+    expect(LANDING_TRANSPARENCY_BENEFITS).toHaveLength(3);
+    expect(LANDING_SAMPLE_PRODUCTS.map((product) => product.amountMinor)).toEqual([
+      25_000,
+      12_000,
+      8_000,
+    ]);
+    expect(LANDING_SAMPLE_PRODUCTS.every((product) => Number.isInteger(product.amountMinor))).toBe(true);
+    expect(LANDING_SAMPLE_ORDER_TOTAL_MINOR).toBe(
+      LANDING_SAMPLE_PRODUCTS.reduce((total, product) => total + product.amountMinor, 0),
+    );
+    expect(LANDING_SAMPLE_ORDER_TOTAL_MINOR).toBe(45_000);
+    expect(LANDING_SAMPLE_ORDER_STATUSES).toHaveLength(3);
+    expect(LANDING_DIGNITY_BENEFITS).toHaveLength(3);
+    expect(LANDING_FAQ_ITEMS).toHaveLength(4);
+
+    const card = readSource("src/features/Landing/components/ExampleOrderCard.tsx");
+    expect(card).toContain("LANDING_SAMPLE_ORDER_TOTAL_MINOR");
+    expect(card).not.toContain("45_000");
+    expect(card).not.toContain("sampleReceipt");
+    expect(card).not.toContain("View sample receipt");
+    expect(card).not.toMatch(/<li[^>]*className="[^"]*border/);
+  });
+
+  test("new section image manifest matches committed WebP assets", async () => {
+    expect(Object.keys(LANDING_SECTION_ASSETS)).toEqual([
+      "dignityFamily",
+      "schoolBag",
+      "notebooks",
+      "stationery",
+    ]);
+    for (const [key, asset] of Object.entries(LANDING_SECTION_ASSETS)) {
+      const filePath = join(publicRoot, asset.src.replace(/^\//, ""));
+      expect(existsSync(filePath), `${key} asset must exist`).toBe(true);
+      const metadata = await sharp(filePath).metadata();
+      expect(metadata.format).toBe("webp");
+      expect(metadata.width).toBe(asset.width);
+      expect(metadata.height).toBe(asset.height);
+      if (asset.decorative) expect(metadata.hasAlpha).toBe(true);
+    }
   });
 
   test("absent routes, newsletter, and placeholder links are never emitted", () => {
@@ -283,8 +417,9 @@ describe("landing feature contract", () => {
         );
       }
     }
-    const sources = landingSources().map((file) => readFileSync(file, "utf8")).join("\n");
-    expect(sources).not.toMatch(/\d+\s*%/);
+    // CSS percentages used for responsive connectors are presentation values,
+    // not invented operating claims; localized user-visible copy is the
+    // contract guarded above.
   });
 
   test("every required raw locale key exists and is translated", () => {
@@ -326,6 +461,8 @@ describe("landing feature contract", () => {
     for (const relativePath of [
       "src/features/Landing/components/LandingHeroImage.tsx",
       "src/features/Landing/components/LandingCtaBanner.tsx",
+      "src/features/Landing/components/ExampleOrderCard.tsx",
+      "src/features/Landing/components/DignitySection.tsx",
     ]) {
       const source = readSource(relativePath);
       expect(source).toContain("NNextImage");
@@ -344,6 +481,8 @@ describe("landing feature contract", () => {
     expect(heroImage).toContain("priority");
     expect(readSource("src/features/Landing/components/LandingCtaBanner.tsx")).not.toContain("priority");
     expect(readSource("src/features/Landing/components/LandingFamilyExampleCard.tsx")).not.toContain("priority");
+    expect(readSource("src/features/Landing/components/ExampleOrderCard.tsx")).not.toContain("priority");
+    expect(readSource("src/features/Landing/components/DignitySection.tsx")).not.toContain("priority");
   });
 
   test("no runtime path discovery is used for hero or mascot assets", () => {

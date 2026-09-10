@@ -2446,6 +2446,67 @@
         "step4Title": "Se acredita la entrega",
         "step4Text": "Cada entrega se confirma con una prueba protegida que controla la familia."
       },
+      "process": {
+        "eyebrow": "Nuestro proceso",
+        "title": "Cómo llega tu apoyo a una familia",
+        "description": "Un recorrido claro desde la contribución hasta la entrega.",
+        "step1Title": "Elige una familia",
+        "step1Text": "Apoya necesidades verificadas.",
+        "step2Title": "Financia lo esencial",
+        "step2Text": "Contribuye a bienes útiles.",
+        "step3Title": "Gestionamos las compras",
+        "step3Text": "Los operadores compran los artículos aprobados.",
+        "step4Title": "Sigue la entrega",
+        "step4Text": "Consulta las novedades del pedido y el estado del recibo."
+      },
+      "transparency": {
+        "eyebrow": "Transparencia en acción",
+        "headingLead": "Cada dírham tiene",
+        "headingAccent": "un propósito.",
+        "description": "Sigue los bienes que financias, desde la compra aprobada hasta la entrega confirmada.",
+        "benefit1Title": "Compras detalladas",
+        "benefit1Text": "Consulta exactamente qué se compra.",
+        "benefit2Title": "Actualizaciones claras",
+        "benefit2Text": "Sigue el progreso en cada etapa.",
+        "benefit3Title": "Confirmación de entrega",
+        "benefit3Text": "Recibe una confirmación cuando lleguen los artículos.",
+        "action": "Explorar la transparencia"
+      },
+      "sampleOrder": {
+        "title": "Pedido ilustrativo",
+        "badge": "Material escolar",
+        "schoolBag": "Mochila escolar",
+        "notebooks": "Cuadernos",
+        "stationery": "Papelería",
+        "total": "Total",
+        "approved": "Aprobado",
+        "purchased": "Comprado",
+        "delivered": "Entregado"
+      },
+      "dignity": {
+        "eyebrow": "Nuestro compromiso",
+        "headingLead": "Apoyo real.",
+        "headingAccent": "La dignidad primero.",
+        "imageAlt": "Ilustración de una madre marroquí y sus dos hijos junto a productos alimentarios esenciales",
+        "benefit1Title": "Necesidades verificadas",
+        "benefit1Text": "Los perfiles familiares y la información de respaldo se revisan antes de organizar el apadrinamiento.",
+        "benefit2Title": "Privacidad desde el diseño",
+        "benefit2Text": "Los datos sensibles de las familias permanecen protegidos.",
+        "benefit3Title": "Apoyo en bienes",
+        "benefit3Text": "Las contribuciones financian artículos esenciales y prácticos."
+      },
+      "faq": {
+        "eyebrow": "Preguntas frecuentes",
+        "title": "¿Tienes preguntas antes de empezar?",
+        "item1Question": "¿La familia recibe dinero en efectivo?",
+        "item1Answer": "No. El apoyo financia bienes aprobados que se piden para la familia, en lugar de un pago directo en efectivo.",
+        "item2Question": "¿Puedo apoyar a más de una familia?",
+        "item2Answer": "Sí. Después de aprobar al padrino, el apoyo puede organizarse para varias familias mediante asignaciones separadas.",
+        "item3Question": "¿Cómo puedo seguir mi contribución?",
+        "item3Answer": "Tu espacio de padrino muestra tus contribuciones y las actualizaciones de pedidos que protegen la privacidad de las familias que apoyas, incluido el estado de compra y entrega.",
+        "item4Question": "¿Cómo se revisan las familias?",
+        "item4Answer": "Los operadores crean y revisan los perfiles familiares y la información de respaldo antes de organizar el apadrinamiento."
+      },
       "families": {
         "title": "Ejemplos de familias",
         "subtitle": "Cómo se presenta el apoyo",

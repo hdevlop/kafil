@@ -3,7 +3,7 @@
 import { NGrid, NGridItem, NStatCard } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 
-import { LANDING_ANCHORS, LANDING_TRUST_ITEMS } from "../config/landingContent";
+import { LANDING_TRUST_ITEMS } from "../config/landingContent";
 
 export function LandingTrustStrip() {
   const { t } = useTranslation();
@@ -11,8 +11,7 @@ export function LandingTrustStrip() {
   return (
     <section
       aria-labelledby="landing-trust-title"
-      id={LANDING_ANCHORS.howItWorks}
-      className="mx-auto w-full min-w-0 max-w-6xl scroll-mt-24 px-4 pb-4 sm:px-6"
+      className="mx-auto w-full min-w-0 max-w-6xl px-4 pb-4 sm:px-6"
     >
       <h2 id="landing-trust-title" className="sr-only">
           {t("landing.trust.title")}

@@ -11,6 +11,10 @@ import type { LandingFamilyExample } from "../types";
 export const LANDING_ANCHORS = {
   families: "families",
   howItWorks: "how-it-works",
+  transparency: "transparency",
+  illustrativeOrder: "illustrative-order",
+  commitment: "commitment",
+  faq: "faq",
   contact: "contact",
 } as const;
 

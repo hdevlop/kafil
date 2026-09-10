@@ -82,6 +82,7 @@ const SHARED_WITH_ENGLISH: Record<string, ReadonlySet<string>> = {
     // names shared with English, and "Contact" which is identical in French.
     "ui.landing.header.contact",
     "ui.landing.footer.contactTitle",
+    "ui.landing.sampleOrder.total",
     "ui.landing.families.card1City",
     "ui.landing.families.card2City",
     "ui.landing.families.card3City",
@@ -112,12 +113,13 @@ const SHARED_WITH_ENGLISH: Record<string, ReadonlySet<string>> = {
     "ui.family.orderCart.total",
     "ui.adminAccess.common.no",
     "ui.adminAccess.roles.title",
-    // Landing proper nouns: invariant Moroccan city names shared with English.
+    // Landing proper nouns and genuine cognates shared with English.
     "ui.landing.families.card1City",
     "ui.landing.families.card2City",
     "ui.landing.families.card3City",
     "ui.landing.families.card5City",
     "ui.landing.families.card8City",
+    "ui.landing.sampleOrder.total",
   ]),
 };
 

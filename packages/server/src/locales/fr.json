@@ -2540,6 +2540,67 @@
         "step4Title": "La livraison est prouvée",
         "step4Text": "Chaque livraison est confirmée par une preuve protégée que la famille contrôle."
       },
+      "process": {
+        "eyebrow": "Notre parcours",
+        "title": "Comment votre soutien parvient à une famille",
+        "description": "Un parcours clair, de la contribution à la livraison.",
+        "step1Title": "Choisissez une famille",
+        "step1Text": "Soutenez des besoins vérifiés.",
+        "step2Title": "Financez l’essentiel",
+        "step2Text": "Contribuez à des biens utiles.",
+        "step3Title": "Nous gérons les achats",
+        "step3Text": "Les opérateurs achètent les articles approuvés.",
+        "step4Title": "Suivez la livraison",
+        "step4Text": "Consultez les mises à jour et le statut du reçu."
+      },
+      "transparency": {
+        "eyebrow": "La transparence en action",
+        "headingLead": "Chaque dirham a",
+        "headingAccent": "une raison d’être.",
+        "description": "Suivez les biens que vous financez, de l’achat approuvé à la livraison confirmée.",
+        "benefit1Title": "Achats détaillés",
+        "benefit1Text": "Voyez précisément ce qui est acheté.",
+        "benefit2Title": "Mises à jour claires",
+        "benefit2Text": "Suivez l’avancement à chaque étape.",
+        "benefit3Title": "Confirmation de livraison",
+        "benefit3Text": "Recevez une confirmation à l’arrivée des articles.",
+        "action": "Découvrir la transparence"
+      },
+      "sampleOrder": {
+        "title": "Commande illustrative",
+        "badge": "Fournitures scolaires",
+        "schoolBag": "Cartable",
+        "notebooks": "Cahiers",
+        "stationery": "Papeterie",
+        "total": "Total",
+        "approved": "Approuvée",
+        "purchased": "Achetée",
+        "delivered": "Livrée"
+      },
+      "dignity": {
+        "eyebrow": "Notre engagement",
+        "headingLead": "Un soutien réel.",
+        "headingAccent": "La dignité d’abord.",
+        "imageAlt": "Illustration d’une mère marocaine et de ses deux enfants près de produits alimentaires essentiels",
+        "benefit1Title": "Besoins vérifiés",
+        "benefit1Text": "Les profils familiaux et les informations justificatives sont examinés avant l’organisation du parrainage.",
+        "benefit2Title": "Confidentialité intégrée",
+        "benefit2Text": "Les informations sensibles des familles restent protégées.",
+        "benefit3Title": "Soutien en nature",
+        "benefit3Text": "Les contributions financent des biens essentiels et pratiques."
+      },
+      "faq": {
+        "eyebrow": "Questions fréquentes",
+        "title": "Des questions avant de commencer ?",
+        "item1Question": "La famille reçoit-elle de l’argent ?",
+        "item1Answer": "Non. Le soutien finance des biens approuvés commandés pour la famille, et non un versement direct en espèces.",
+        "item2Question": "Puis-je soutenir plusieurs familles ?",
+        "item2Answer": "Oui. Après l’approbation du parrain, le soutien peut être organisé pour plusieurs familles au moyen d’affectations distinctes.",
+        "item3Question": "Comment suivre ma contribution ?",
+        "item3Answer": "Votre espace parrain affiche vos contributions et les mises à jour de commande respectueuses de la vie privée pour les familles soutenues, y compris les statuts d’achat et de livraison.",
+        "item4Question": "Comment les familles sont-elles examinées ?",
+        "item4Answer": "Les opérateurs créent et examinent les profils familiaux et les informations justificatives avant l’organisation du parrainage."
+      },
       "families": {
         "title": "Exemples de familles",
         "subtitle": "Comment le soutien est présenté",

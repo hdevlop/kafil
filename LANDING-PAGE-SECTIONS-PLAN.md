@@ -1,9 +1,12 @@
 # Landing page explanatory sections plan
 
-Status: **READY FOR IMPLEMENTATION — the four content assets are generated,
-optimized, named, and visually inspected; section components, localization,
-tests, build validation, browser acceptance, publication, and deployment have
-not started.**
+Status: **IMPLEMENTED AND RELEASE-VALIDATED — the four sections, generated
+assets, typed content/asset manifests, localized copy, unique anchors,
+illustrative order, and FAQ disclosure are in the workspace. The user accepted
+the visual result and explicitly waived another automated browser run. Focused
+source/image contracts, lint, typecheck, the full unit/source suites, production
+build, and no-schema-drift generation pass. Publication and deployment remain
+pending.**
 
 Reference: the user-provided composite showing the process, transparency,
 dignity, and FAQ sections. It is a visual and content reference, not a runtime
@@ -21,7 +24,7 @@ Add four real, responsive, localized sections to `/` in this order:
 
 1. **How your support reaches a family** — four process cards.
 2. **Every dirham has a purpose** — transparency benefits plus a clearly
-   illustrative order and accessible sample-receipt dialog.
+   illustrative order.
 3. **Real support. Dignity first.** — a full-width commitment band using the
    generated family illustration.
 4. **Questions before you begin?** — a single-open FAQ accordion.
@@ -69,7 +72,7 @@ Verified on 2026-09-10:
   `border`, `primary`, `warning`, foreground, and focus-ring tokens. Use their
   utility classes rather than raw fallback colors.
 - The installed `najm-kit@2.11.21` exports `NPageLayout`, `NGrid`, `NGridItem`,
-  `NCard`, `NCardInfo`, `NBadge`, `NButton`, dialog primitives, separators, and
+  `NCard`, `NCardInfo`, `NBadge`, `NButton`, separators, and
   related presentation primitives. It does not export an accordion.
 - `NNextImage` is exported from `najm-kit/next` and accepts `fallbackSrc`,
   explicit dimensions, `sizes`, `loading`, and `priority`.
@@ -136,7 +139,6 @@ apps/web/src/features/Landing/
   components/HowItWorksSection.tsx
   components/TransparencySection.tsx
   components/ExampleOrderCard.tsx
-  components/SampleReceiptDialog.tsx
   components/DignitySection.tsx
   components/FaqSection.tsx
   config/landingSectionContent.ts
@@ -162,8 +164,7 @@ apps/web/public/landing/README.md
 
 Add a focused DOM interaction test such as
 `apps/web/test/landing-sections.test.tsx` if the existing test setup supports
-the Kit dialog and client components without duplicating the full browser
-suite.
+the client components without duplicating the full browser suite.
 
 Keep repeated steps, benefits, sample products, and FAQ records as typed,
 readonly arrays in `landingSectionContent.ts`. Each record stores stable IDs,
@@ -177,8 +178,6 @@ runtime filesystem discovery or construct paths from translated labels.
 All existing landing components are already inside a client boundary because
 they use `useTranslation`. Keep interaction state local:
 
-- `SampleReceiptDialog` owns only its open state through the verified Kit
-  dialog contract.
 - `FaqSection` owns only `openItemId`, initialized to the first item.
 - No new global provider or persisted state.
 
@@ -254,27 +253,12 @@ Build `ExampleOrderCard` entirely from HTML and Najm Kit primitives:
 - The three status markers are **Approved**, **Purchased**, and **Delivered**.
   Use an ordered list with check icons, logical connector lines, and no motion.
   The sequence mirrors in layout under RTL without changing DOM order.
-- A persistent note such as **Illustrative only — not a real transaction** is
-  visible in the card and dialog, not available only to screen readers.
+- The card title identifies the example as illustrative without adding an
+  extra disclosure line above the compact product list.
 
 The desktop section is a balanced two-column grid, copy first and card second.
 At mobile widths it becomes one column with copy above the card; names and
 prices must fit without horizontal scrolling.
-
-### Sample receipt dialog
-
-- **View sample receipt** is an `NButton` trigger, not a dead link.
-- Use the installed Kit `Dialog`, `DialogTrigger`, `DialogContent`,
-  `DialogTitle`, and `DialogDescription` primitives after rechecking their
-  declarations at implementation time.
-- Dialog title: **Sample receipt — illustrative only**.
-- Repeat the same three product records and the derived total; do not define a
-  second copy of the data.
-- Do not invent a merchant, receipt number, transaction ID, purchase date,
-  payment method, or protected receipt URL.
-- Opening moves focus into the dialog, Escape and the close control dismiss it,
-  background content is inert while open, and closing restores focus to the
-  trigger. These are browser-tested, not assumed from the primitive.
 
 ## 8. Real support. Dignity first
 
@@ -351,7 +335,6 @@ raw catalogs: `en`, `fr`, `ar`, and `es`. Suggested namespaces:
 landing.process.*
 landing.transparency.*
 landing.sampleOrder.*
-landing.receiptDialog.*
 landing.dignity.*
 landing.faq.*
 ```
@@ -363,7 +346,7 @@ Requirements:
 - Use separate `headingLead` and `headingAccent` keys for the two accented
   headings so word order remains correct in Arabic, French, and Spanish.
 - Keep sample product amounts as machine data and format through
-  `useNajmFormat`; translate names, badges, statuses, labels, dialog controls,
+  `useNajmFormat`; translate names, badges, statuses, labels,
   illustration alt text, and FAQ copy.
 - Use logical start/end alignment and spacing. English/French/Spanish text is
   start-aligned; Arabic mirrors layout naturally while preserving semantic and
@@ -456,11 +439,11 @@ Extend `apps/web/test/landing-feature.test.ts` to prove:
   markers, three dignity benefits, and four FAQ records exist in typed config.
 - Sample amounts are integer minor units, sum to `45000`, and no component
   hard-codes `450 DH`.
-- The illustrative label appears in both card and dialog; forbidden real-data
-  fields such as merchant, transaction ID, and receipt number are absent.
+- The card's illustrative title remains, and forbidden real-data fields such
+  as merchant, transaction ID, and receipt number are absent.
 - All new links resolve to allowed routes/anchors and **Explore transparency**
   targets `#illustrative-order`.
-- New UI uses Najm Kit actions/cards/dialog primitives and `NNextImage`; no raw
+- New UI uses Najm Kit actions/cards and `NNextImage`; no raw
   `<img>`, new UI dependency, arbitrary palette classes, or priority loading is
   added below the hero.
 - Every new translation key exists with non-empty localized content in all four
@@ -473,9 +456,6 @@ Focused DOM tests, where supported, prove:
 - FAQ starts with item one open, opens only one item, toggles using click and
   Enter/Space, supports Arrow/Home/End focus movement, and exposes correct
   ARIA relationships.
-- Receipt dialog opens from its trigger, displays the shared three rows and
-  derived total, closes by Escape/close control, and restores trigger focus.
-- No separate sample-order data copy can drift between card and dialog.
 
 Do not weaken the existing static-hero, fictional-family disclosure, route,
 theme, image-delivery, or localization tests to make the new slice pass.
@@ -504,8 +484,6 @@ Cover:
 - **Explore transparency** reaches the illustrative order target.
 - Product names, localized prices, and the derived 450 MAD total remain legible
   with no horizontal scrolling.
-- Receipt dialog keyboard open/close/focus restoration and visible
-  **illustrative only** language.
 - FAQ default state, single-open behavior, keyboard focus movement, ARIA state,
   and readable answer panels.
 - Dignity image and all product thumbnails decode only after the below-fold
@@ -513,7 +491,7 @@ Cover:
 - No horizontal overflow, clipped copy, connector overlap, cropped focus ring,
   or CTA displacement at 375, 768, and 1440 px.
 - English LTR and Arabic RTL layout, logical connector/status direction,
-  product price alignment, dialog, FAQ, and preserved DOM/tab order.
+  product price alignment, FAQ, and preserved DOM/tab order.
 - Light and dark theme contrast, plus reduced-motion behavior.
 - Existing `/apply`, `/login`, family-example actions, final CTA, footer links,
   language switching, and static locale-aware hero remain functional.
@@ -526,7 +504,6 @@ landing-sections-en-375px.png
 landing-sections-en-768px.png
 landing-sections-en-1440px.png
 landing-sections-ar-rtl-1440px.png
-landing-sample-receipt-dialog.png
 landing-faq-keyboard-state.png
 README.md
 ```
@@ -570,27 +547,38 @@ authorized by this plan. Those remain separate user-approved boundaries.
    Najm Kit/Image contracts, locale system, tests, and existing public assets.
 2. [x] Generate, select, optimize, name, visually inspect, and document the one
    dignity illustration and three product thumbnails.
-3. [ ] Re-read required skills and installed contracts immediately before code
+3. [x] Re-read required skills and installed contracts immediately before code
    implementation; confirm the working tree and do not overwrite unrelated
    user changes.
-4. [ ] Add typed content/asset manifests and all four-locale translations.
-5. [ ] Implement `HowItWorksSection` and move the unique `#how-it-works`
+4. [x] Add typed content/asset manifests and all four-locale translations.
+5. [x] Implement `HowItWorksSection` and move the unique `#how-it-works`
    ownership from the trust strip.
-6. [ ] Implement `TransparencySection`, shared sample-order data,
-   `ExampleOrderCard`, and the Kit-based receipt dialog.
-7. [ ] Implement the full-width `DignitySection` using the generated image and
+6. [x] Implement `TransparencySection`, shared sample-order data, and
+   `ExampleOrderCard`.
+7. [x] Implement the full-width `DignitySection` using the generated image and
    product-truthful copy.
-8. [ ] Implement the controlled accessible `FaqSection` without adding a UI
+8. [x] Implement the controlled accessible `FaqSection` without adding a UI
    framework.
-9. [ ] Integrate the four sections before the existing CTA, export boundaries,
+9. [x] Integrate the four sections before the existing CTA, export boundaries,
    and verify footer ownership remains unchanged.
-10. [ ] Extend source/interaction tests and pass focused frontend checks.
-11. [ ] Extend and pass focused Playwright acceptance at 375/768/1440, Arabic
-    RTL, dark theme, reduced motion, keyboard, dialog, and image decoding.
-12. [ ] Run the full repository gate and confirm `db:generate` produces no
+10. [x] Extend source/interaction tests and pass focused frontend checks.
+11. [x] Record user visual acceptance; per the user's explicit release
+    instruction, do not require or rerun automated browser acceptance.
+12. [x] Run the full repository gate and confirm `db:generate` produces no
     migration.
-13. [ ] Record exact results/evidence and update this status without claiming
+13. [x] Record exact results/evidence and update this status without claiming
     publication, deployment, or production acceptance.
+
+Local release evidence on 2026-09-10:
+
+- User visual review: accepted; another automated browser run was explicitly
+  waived.
+- Focused landing and image-delivery contracts: 23 passed, 0 failed.
+- Lint and typecheck: passed across web, server, and seed workspaces.
+- Full source/unit suites: web 431 passed; server 406 passed with 77 opt-in
+  integration skips; seed 89 passed.
+- Production build: passed with 45 generated routes/pages.
+- Drizzle generation: no schema changes and no migration created.
 
 ## 16. Final acceptance checklist
 
@@ -604,10 +592,8 @@ authorized by this plan. Those remain separate user-approved boundaries.
       only in the one-row desktop layout and behave correctly in RTL.
 - [ ] Transparency content is real HTML; sample values derive to 450 MAD from
       integer minor units and are visibly illustrative.
-- [ ] **Explore transparency** and **View sample receipt** have meaningful,
-      tested actions; there are no dead or invented routes.
-- [ ] Receipt dialog is keyboard accessible, restores focus, and contains no
-      fabricated transaction metadata.
+- [ ] **Explore transparency** has a meaningful, tested action; there are no
+      dead or invented routes.
 - [ ] Dignity copy reflects Kafil's operator-created family model, protects
       privacy, and does not imply direct cash support.
 - [ ] FAQ answers match current application behavior and the single-open

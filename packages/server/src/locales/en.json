@@ -2614,6 +2614,67 @@
         "step4Title": "Delivery is evidenced",
         "step4Text": "Each delivery is confirmed with protected proof the family controls."
       },
+      "process": {
+        "eyebrow": "Our process",
+        "title": "How your support reaches a family",
+        "description": "A clear journey from contribution to delivery.",
+        "step1Title": "Choose a family",
+        "step1Text": "Support verified needs.",
+        "step2Title": "Fund essentials",
+        "step2Text": "Contribute to useful goods.",
+        "step3Title": "We handle procurement",
+        "step3Text": "Operators purchase approved items.",
+        "step4Title": "Follow the delivery",
+        "step4Text": "See order updates and receipt status."
+      },
+      "transparency": {
+        "eyebrow": "Transparency in action",
+        "headingLead": "Every dirham has a",
+        "headingAccent": "purpose.",
+        "description": "Follow the goods you fund, from approved purchase to confirmed delivery.",
+        "benefit1Title": "Itemized purchases",
+        "benefit1Text": "See exactly what's bought.",
+        "benefit2Title": "Clear order updates",
+        "benefit2Text": "Track progress at every step.",
+        "benefit3Title": "Delivery confirmation",
+        "benefit3Text": "Receive confirmation when items arrive.",
+        "action": "Explore transparency"
+      },
+      "sampleOrder": {
+        "title": "Illustrative order",
+        "badge": "School essentials",
+        "schoolBag": "School bag",
+        "notebooks": "Notebooks",
+        "stationery": "Stationery",
+        "total": "Total",
+        "approved": "Approved",
+        "purchased": "Purchased",
+        "delivered": "Delivered"
+      },
+      "dignity": {
+        "eyebrow": "Our commitment",
+        "headingLead": "Real support.",
+        "headingAccent": "Dignity first.",
+        "imageAlt": "Illustration of a Moroccan mother and two children beside practical grocery support",
+        "benefit1Title": "Verified needs",
+        "benefit1Text": "Family profiles and supporting information are reviewed before sponsorship is arranged.",
+        "benefit2Title": "Privacy by design",
+        "benefit2Text": "Sensitive family details stay protected.",
+        "benefit3Title": "Goods-based support",
+        "benefit3Text": "Contributions fund practical essentials."
+      },
+      "faq": {
+        "eyebrow": "Frequently asked questions",
+        "title": "Questions before you begin?",
+        "item1Question": "Does the family receive cash?",
+        "item1Answer": "No. Support funds approved goods ordered for the family rather than a direct cash payment.",
+        "item2Question": "Can I support more than one family?",
+        "item2Answer": "Yes. After sponsor approval, support can be arranged for more than one family through separate support assignments.",
+        "item3Question": "How can I follow my contribution?",
+        "item3Answer": "Your sponsor workspace shows your contributions and privacy-safe order updates for the families you support, including purchase and delivery status.",
+        "item4Question": "How are families reviewed?",
+        "item4Answer": "Operators create and review family profiles and supporting information before sponsorship is arranged."
+      },
       "families": {
         "title": "Family examples",
         "subtitle": "How support is presented",
