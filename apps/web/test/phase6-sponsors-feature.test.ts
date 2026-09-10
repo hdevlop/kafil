@@ -10,6 +10,28 @@ import {
 import { sponsorKeys } from "../src/features/Sponsors/hooks/sponsorKeys";
 
 describe("Phase 6C sponsor invitation form", () => {
+  test("accepts a 7-character Moroccan CIN", () => {
+    expect(
+      createSponsorFormSchema.safeParse({
+        name: "Amina Sponsor",
+        email: "amina@example.com",
+        phone: "+212600000000",
+        cin: "BB46122",
+        gender: "F",
+        address: "Rabat",
+        dateOfBirth: "1990-05-20",
+      }).success,
+    ).toBe(true);
+    expect(
+      updateSponsorFormSchema.safeParse({
+        name: "Amina Sponsor",
+        email: "amina@example.com",
+        cin: "BB46122",
+        dateOfBirth: "",
+      }).success,
+    ).toBe(true);
+  });
+
   test("creates an operator-managed sponsor payload without a caller-supplied password", () => {
     const values = createSponsorFormSchema.parse({
       name: "  Amina Sponsor  ",

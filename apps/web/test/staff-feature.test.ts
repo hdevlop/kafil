@@ -36,6 +36,23 @@ describe("Staff admin-only navigation", () => {
 });
 
 describe("Staff form contracts", () => {
+  test("accepts a 7-character Moroccan CIN when creating or updating staff", () => {
+    const staff = {
+      address: "Rabat",
+      affiliation: "internal" as const,
+      cin: "BB46122",
+      contactEmail: "seven-character@example.test",
+      dateOfBirth: "1990-05-20",
+      gender: "F" as const,
+      name: "Seven Character Staff",
+      phone: "+212600000000",
+      functions: ["operator" as const],
+    };
+
+    expect(createStaffFormSchema.safeParse(staff).success).toBe(true);
+    expect(updateStaffFormSchema.safeParse(staff).success).toBe(true);
+  });
+
   test("rejects an Operator capability without its required profile fields", () => {
     expect(
       createStaffFormSchema.safeParse({

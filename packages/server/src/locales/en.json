@@ -878,8 +878,8 @@
       "collapse": "Collapse",
       "expand": "Expand",
       "impactTitle": "You're making an impact",
-      "impactDescription": "Thank you for supporting {count} families and building trust through transparent giving.",
-      "sponsorMore": "Sponsor more families",
+      "impactDescription": "Thank you for supporting {count} families.",
+      "sponsorMore": "Support more",
       "supportTitle": "Need help?",
       "supportDescription": "We're here to help you.",
       "contactSupport": "Contact support"

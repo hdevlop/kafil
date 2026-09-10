@@ -49,7 +49,7 @@ const baseStaffIdentity = z.object({
 });
 
 const privateStaffFields = z.object({
-  cin: z.string().trim().min(8).max(20).toUpperCase().nullish(),
+  cin: z.string().trim().min(7).max(20).toUpperCase().nullish(),
   gender: z.enum(["M", "F"]).nullish(),
   address: z.string().trim().min(1).max(500).nullish(),
   dateOfBirth: z.iso.date().nullish(),

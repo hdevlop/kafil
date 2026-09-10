@@ -68,6 +68,23 @@ function makeStaffRecord(overrides: Partial<StaffRecord> = {}): StaffRecord {
 }
 
 describe("staff module DTOs", () => {
+  it("accepts a 7-character Moroccan CIN when creating or updating staff", () => {
+    const staff = {
+      affiliation: "internal" as const,
+      cin: "BB46122",
+      contactEmail: "seven-character@example.test",
+      dateOfBirth: "1990-05-20",
+      functions: ["operator"],
+      gender: "F" as const,
+      address: "Rabat",
+      name: "Seven Character Staff",
+      phone: "+212600000000",
+    };
+
+    expect(createStaffDto.safeParse(staff).success).toBe(true);
+    expect(updateStaffDto.safeParse(staff).success).toBe(true);
+  });
+
   it("rejects an operator function without contactEmail", () => {
     expect(
       createStaffDto.safeParse({

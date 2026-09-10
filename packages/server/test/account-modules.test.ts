@@ -44,6 +44,29 @@ const validIdentity = {
 };
 
 describe("account module DTOs", () => {
+  it("accepts 7-character Moroccan CIN values for every sponsor write", () => {
+    const sevenCharacterCin = "BB46122";
+
+    expect(
+      createSponsorDto.safeParse({
+        ...validAccount,
+        ...validIdentity,
+        cin: sevenCharacterCin,
+        name: "Seven Character Sponsor",
+      }).success,
+    ).toBe(true);
+    expect(updateSponsorDto.safeParse({ cin: sevenCharacterCin }).success).toBe(true);
+    expect(
+      createOwnSponsorProfileDto.safeParse({
+        ...validIdentity,
+        cin: sevenCharacterCin,
+      }).success,
+    ).toBe(true);
+    expect(
+      updateOwnSponsorProfileDto.safeParse({ cin: sevenCharacterCin }).success,
+    ).toBe(true);
+  });
+
   it("requires a unique non-empty UUID set for sponsor bulk deletion", () => {
     const secondId = "00000000-0000-4000-8000-000000000003";
 

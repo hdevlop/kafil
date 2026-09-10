@@ -40,7 +40,7 @@ export const createStaffFormSchema = z.object({
     .max(20)
     .optional()
     .refine(
-      (value) => !value || (value.length >= 8 && value.length <= 20),
+      (value) => !value || (value.length >= 7 && value.length <= 20),
       "Enter a valid CIN",
     ),
   gender: z.enum(["M", "F"]).optional(),
@@ -58,7 +58,7 @@ export const createStaffFormSchema = z.object({
   if (data.functions.includes("operator")) {
     for (const [field, valid, message] of [
       ["contactEmail", Boolean(data.contactEmail), "Email is required for Operator staff."],
-      ["cin", Boolean(data.cin && data.cin.trim().length >= 8), "CIN is required for Operator staff."],
+      ["cin", Boolean(data.cin && data.cin.trim().length >= 7), "CIN is required for Operator staff."],
       ["gender", Boolean(data.gender), "Gender is required for Operator staff."],
       ["address", Boolean(data.address?.trim()), "Address is required for Operator staff."],
       ["dateOfBirth", Boolean(data.dateOfBirth), "Date of birth is required for Operator staff."],
@@ -94,7 +94,7 @@ export const updateStaffFormSchema = z.object({
     .max(20)
     .optional()
     .refine(
-      (value) => !value || (value.length >= 8 && value.length <= 20),
+      (value) => !value || (value.length >= 7 && value.length <= 20),
       "Enter a valid CIN",
     ),
   gender: z.enum(["M", "F"]).optional(),
@@ -111,7 +111,7 @@ export const updateStaffFormSchema = z.object({
   if (data.functions.includes("operator")) {
     for (const [field, valid, message] of [
       ["contactEmail", Boolean(data.contactEmail), "Email is required for Operator staff."],
-      ["cin", Boolean(data.cin && data.cin.trim().length >= 8), "CIN is required for Operator staff."],
+      ["cin", Boolean(data.cin && data.cin.trim().length >= 7), "CIN is required for Operator staff."],
       ["gender", Boolean(data.gender), "Gender is required for Operator staff."],
       ["address", Boolean(data.address?.trim()), "Address is required for Operator staff."],
       ["dateOfBirth", Boolean(data.dateOfBirth), "Date of birth is required for Operator staff."],

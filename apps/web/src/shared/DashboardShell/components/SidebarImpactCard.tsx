@@ -1,7 +1,14 @@
 "use client";
 
 import { HeartHandshake } from "lucide-react";
-import { NButton, NCard, useNajmFormat, useNSidebar } from "najm-kit";
+import {
+   CardDescription,
+   CardTitle,
+   NButton,
+   NCard,
+   useNajmFormat,
+   useNSidebar,
+} from "najm-kit";
 import Link from "next/link";
 import { useTranslation } from "najm-i18n/react";
 
@@ -27,18 +34,27 @@ export function SidebarImpactCard({ collapsed }: Readonly<{ collapsed: boolean }
    }
 
    return (
-      <NCard
-         description={t("sidebar.impactDescription", {
-            count: fmt.number(dashboard.data.counts.activeSupportedFamilies),
-         })}
-         icon={HeartHandshake}
-         title={t("sidebar.impactTitle")}
-      >
-         <NButton asChild fullWidth size="sm">
-            <Link href="/family" onClick={() => sidebar?.closeMobile()}>
-               {t("sidebar.sponsorMore")}
-            </Link>
-         </NButton>
+      <NCard classNames={{ content: "items-center text-center" }}>
+         <div className="flex w-full min-w-0 flex-col items-center gap-3 text-center">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+               <HeartHandshake aria-hidden="true" className="size-5 text-primary" />
+            </div>
+            <div className="min-w-0 space-y-1">
+               <CardTitle className="text-sm leading-snug">
+                  {t("sidebar.impactTitle")}
+               </CardTitle>
+               <CardDescription className="text-xs leading-relaxed">
+                  {t("sidebar.impactDescription", {
+                     count: fmt.number(dashboard.data.counts.activeSupportedFamilies),
+                  })}
+               </CardDescription>
+            </div>
+            <NButton asChild fullWidth size="sm">
+               <Link href="/family" onClick={() => sidebar?.closeMobile()}>
+                  {t("sidebar.sponsorMore")}
+               </Link>
+            </NButton>
+         </div>
       </NCard>
    );
 }

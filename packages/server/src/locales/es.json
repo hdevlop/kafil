@@ -858,8 +858,8 @@
       "collapse": "Contraer",
       "expand": "Expandir",
       "impactTitle": "Estás generando un impacto",
-      "impactDescription": "Gracias por apoyar a {count} familias y generar confianza con donaciones transparentes.",
-      "sponsorMore": "Apoyar a más familias",
+      "impactDescription": "Gracias por apoyar a {count} familias.",
+      "sponsorMore": "Apoyar más",
       "supportTitle": "¿Necesitas ayuda?",
       "supportDescription": "Estamos aquí para ayudarte.",
       "contactSupport": "Contactar con soporte"

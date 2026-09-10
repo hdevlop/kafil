@@ -7,7 +7,7 @@ import type {
 
 const requiredProfileFields = {
   phone: z.string().trim().min(1, "Enter a phone number").max(40),
-  cin: z.string().trim().min(8, "Enter a valid CIN").max(20),
+  cin: z.string().trim().min(7, "Enter a valid CIN").max(20),
   gender: z.enum(["M", "F"]),
   address: z.string().trim().min(1, "Enter an address").max(500),
   dateOfBirth: z.iso.date("Enter a valid date of birth"),
@@ -25,7 +25,7 @@ export const updateOwnSponsorProfileFormSchema = z.object({
     .max(20)
     .optional()
     .refine(
-      (value) => !value || (value.length >= 8 && value.length <= 20),
+      (value) => !value || (value.length >= 7 && value.length <= 20),
       "Enter a valid CIN",
     ),
   gender: z.enum(["M", "F"]).optional(),

@@ -11,6 +11,24 @@ import { isSponsorProfileMissing } from "../src/features/Sponsors/lib/isSponsorP
 import { KafilApiError } from "../src/services/apiError";
 
 describe("Phase 6F sponsor profile completion", () => {
+  test("accepts a 7-character Moroccan CIN for profile creation and updates", () => {
+    expect(
+      createOwnSponsorProfileFormSchema.safeParse({
+        phone: "+212600000000",
+        cin: "BB46122",
+        gender: "F",
+        address: "Rabat",
+        dateOfBirth: "1990-05-20",
+      }).success,
+    ).toBe(true);
+    expect(
+      updateOwnSponsorProfileFormSchema.safeParse({
+        cin: "BB46122",
+        dateOfBirth: "",
+      }).success,
+    ).toBe(true);
+  });
+
   test("creates the self-service profile payload without account or lifecycle controls", () => {
     const values = createOwnSponsorProfileFormSchema.parse({
       phone: " +212600000000 ",

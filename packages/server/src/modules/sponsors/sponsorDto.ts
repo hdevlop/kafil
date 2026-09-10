@@ -8,7 +8,7 @@ import { SPONSOR_IMAGE_SERVE_PREFIX } from "./sponsorImageController";
 
 const sponsorProfileDto = z.object({
   phone: phoneDto,
-  cin: z.string().trim().min(8).max(20).toUpperCase(),
+  cin: z.string().trim().min(7).max(20).toUpperCase(),
   gender: z.enum(["M", "F"]),
   address: z.string().trim().min(1).max(500),
   dateOfBirth: z.iso.date(),

@@ -9,10 +9,14 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
     issue tracking, family-address mapping, staff-owned commands, responsive
     browser acceptance, and the existing Operator dashboard preserved.
 - [`LANDING-PAGE-PLAN.md`](../../LANDING-PAGE-PLAN.md)
-  - planned static public landing-page adaptation with truthful illustrative
-    content, a five-second locale-specific `/hero` carousel, an existing
-    `/mascots`-powered CTA, four-locale responsive/RTL acceptance, and live-data
-    or newsletter behavior explicitly deferred.
+  - deployed static public landing-page baseline with truthful illustrative
+    content, one locale-aware hero image, an existing `/mascots`-powered CTA,
+    four-locale responsive/RTL acceptance, and live-data or newsletter behavior
+    explicitly deferred.
+- [`LANDING-PAGE-SECTIONS-PLAN.md`](../../LANDING-PAGE-SECTIONS-PLAN.md)
+  - implementation-ready extension for the process, illustrative transparency
+    order and receipt dialog, dignity, and FAQ sections, with generated public
+    assets plus responsive, localized, RTL, keyboard, and browser acceptance.
 - [`FAMILY-ORDER-LIMITS-PLAN.md`](../../FAMILY-ORDER-LIMITS-PLAN.md)
   - implemented nullable global defaults, per-family order policy overrides,
     monthly inheritance/reset, and enforcement; browser acceptance is deferred.

@@ -864,8 +864,8 @@
       "collapse": "Réduire",
       "expand": "Développer",
       "impactTitle": "Vous avez un impact réel",
-      "impactDescription": "Merci de soutenir {count} familles et de bâtir la confiance grâce à un don transparent.",
-      "sponsorMore": "Soutenir d'autres familles",
+      "impactDescription": "Merci de soutenir {count} familles.",
+      "sponsorMore": "Soutenir plus",
       "supportTitle": "Besoin d'aide ?",
       "supportDescription": "Nous sommes là pour vous aider.",
       "contactSupport": "Contacter le support"
