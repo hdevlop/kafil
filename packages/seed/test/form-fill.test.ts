@@ -72,4 +72,40 @@ describe("development form fill generator", () => {
       expect(values.gender === "F" ? femaleNames : maleNames).toContain(firstName);
     }
   });
+  it("generates numeric strings for family order-policy and coordinate inputs", () => {
+    const policySchema = z.object({
+      maxOrdersPerMonthInput: z.string(),
+      maxBudgetPerOrderMadInput: z.string(),
+      monthlyBudgetMadInput: z.string(),
+      deliveryLatitudeInput: z.string(),
+      deliveryLongitudeInput: z.string(),
+      targetMad: z.string(),
+      defaultMaxOrders: z.string(),
+      defaultMaxPerOrderMad: z.string(),
+      defaultMonthlyMad: z.string(),
+    });
+
+    const values = buildFormFill(policySchema);
+
+    const count = Number(values.maxOrdersPerMonthInput);
+    expect(Number.isInteger(count)).toBe(true);
+    expect(count >= 1 && count <= 31).toBe(true);
+
+    for (const field of [
+      "maxBudgetPerOrderMadInput",
+      "monthlyBudgetMadInput",
+      "defaultMaxPerOrderMad",
+      "defaultMonthlyMad",
+    ] as const) {
+      expect(Number.isFinite(Number(values[field]))).toBe(true);
+    }
+
+    const latitude = Number(values.deliveryLatitudeInput);
+    const longitude = Number(values.deliveryLongitudeInput);
+    expect(latitude >= -90 && latitude <= 90).toBe(true);
+    expect(longitude >= -180 && longitude <= 180).toBe(true);
+    expect(["7000", "7500", "8000", "8500", "9000"]).toContain(
+      String(values.targetMad),
+    );
+  });
 });

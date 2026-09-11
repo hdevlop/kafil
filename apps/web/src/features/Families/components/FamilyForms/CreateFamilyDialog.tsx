@@ -60,13 +60,15 @@ export function CreateFamilyDialogContent() {
       ],
       schema: createFamilyGuardianStepSchema,
       render: () => (
-        <FamilyGuardianFields
-          disabled={isSubmitting}
-          image={familyImage}
-          imageError={imageError}
-          onImageChange={selectFamilyImage}
-          showSectionHeader={false}
-        />
+        <NajmScroll axis="y" className="min-h-0 flex-1">
+          <FamilyGuardianFields
+            disabled={isSubmitting}
+            image={familyImage}
+            imageError={imageError}
+            onImageChange={selectFamilyImage}
+            showSectionHeader={false}
+          />
+        </NajmScroll>
       ),
     },
     {
@@ -83,10 +85,14 @@ export function CreateFamilyDialogContent() {
         "monthlyBudgetMadInput",
         "notes",
         "exactAddress",
+        "deliveryLatitudeInput",
+        "deliveryLongitudeInput",
       ],
       schema: createFamilyHouseholdStepSchema,
       render: () => (
-        <FamilyHouseholdFields disabled={isSubmitting} showSectionHeader={false} />
+        <NajmScroll axis="y" className="min-h-0 flex-1">
+          <FamilyHouseholdFields disabled={isSubmitting} showSectionHeader={false} />
+        </NajmScroll>
       ),
     },
     {
@@ -184,6 +190,17 @@ export function CreateFamilyDialogContent() {
         classNames={{
           root: "h-full min-h-0",
           step: "min-h-0 flex-1 overflow-y-hidden pb-4",
+        }}
+        devTools={{
+          overrides: {
+            // najm-kit buildFormFill falls back to `Test <field>` for unknown
+            // strings; these policy/coordinate inputs need numeric strings.
+            maxOrdersPerMonthInput: ["2", "4", "6"],
+            maxBudgetPerOrderMadInput: ["500.00", "750.00", "1000.00"],
+            monthlyBudgetMadInput: ["1500.00", "2000.00", "2500.00"],
+            deliveryLatitudeInput: ["33.5731", "34.0209", "35.7595"],
+            deliveryLongitudeInput: ["-7.5898", "-6.8416", "-5.8340"],
+          },
         }}
       />
     </div>

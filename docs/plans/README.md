@@ -24,6 +24,10 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
   - implementation-ready parity of the family edit dialog with the create
     wizard (2-step guardian/household, bounded scrollable dialog, dead policy
     inputs removed from edit).
+- [`NAJM-LOCATION-PICKER-PLAN.md`](../../NAJM-LOCATION-PICKER-PLAN.md)
+  - proposed provider-neutral Najm location/form input with Leaflet and Google
+    adapters, runtime consumer configuration, privacy-safe Kafil family-form
+    adoption, and responsive/RTL/keyboard browser acceptance.
 - [`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`](../../CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md)
   - completed guarded VPS four-account baseline and evidence record, plus the
     pending dedicated notification connected-acceptance extension.

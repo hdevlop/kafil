@@ -197,7 +197,26 @@ function fieldValue(
   if (key.includes("clothingsize")) return pick(CLOTHING_SIZES);
   if (key.includes("shoesize")) return String(faker.number.int({ min: 28, max: 42 }));
   if (key.includes("relationship")) return pick(["Mother", "Father", "Legal guardian"]);
-  if (key.includes("activationtargetmad")) return pick(ACTIVATION_TARGETS_MAD);
+  if (key.includes("targetmad")) return pick(ACTIVATION_TARGETS_MAD);
+  if (key.includes("maxorders") || key.includes("orderspermonth")) {
+    return String(faker.number.int({ min: 2, max: 6 }));
+  }
+  if (
+    key.includes("budgetmad") ||
+    key.includes("budgetperorder") ||
+    key.includes("perordermad") ||
+    key.includes("monthlybudget") ||
+    key.includes("monthlymad") ||
+    key.includes("maxperordermad")
+  ) {
+    return faker.commerce.price({ min: 200, max: 1_500, dec: 2 });
+  }
+  if (key.includes("latitude")) {
+    return (faker.number.int({ min: 310_000, max: 357_000 }) / 10_000).toFixed(4);
+  }
+  if (key.includes("longitude")) {
+    return (faker.number.int({ min: -99_000, max: -53_000 }) / 10_000).toFixed(4);
+  }
   if (key === "slug") return faker.helpers.slugify(faker.commerce.department()).toLowerCase();
   if (key === "sku") return `KAF-${faker.string.alphanumeric({ length: 8, casing: "upper" })}`;
   if (key.includes("amountmad") || key.includes("pricemad") || key.includes("limitmad")) {

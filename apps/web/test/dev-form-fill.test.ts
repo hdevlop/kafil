@@ -39,6 +39,31 @@ describe("F8 development form fills", () => {
     );
   });
 
+  test("family policy and coordinate F8 overrides stay numeric and schema-valid", () => {
+    // Mirrors CreateFamilyDialog devTools overrides: najm-kit falls back to
+    // `Test <field>` for these inputs, so the dialog supplies numeric strings.
+    const values = buildFormFill(createFamilyFormSchema, {
+      maxOrdersPerMonthInput: ["2", "4", "6"],
+      maxBudgetPerOrderMadInput: ["500.00", "750.00", "1000.00"],
+      monthlyBudgetMadInput: ["1500.00", "2000.00", "2500.00"],
+      deliveryLatitudeInput: ["33.5731", "34.0209", "35.7595"],
+      deliveryLongitudeInput: ["-7.5898", "-6.8416", "-5.8340"],
+    });
+
+    expect(createFamilyFormSchema.safeParse(values).success).toBe(true);
+    const count = Number(values.maxOrdersPerMonthInput);
+    expect(Number.isInteger(count)).toBe(true);
+    expect(count >= 1 && count <= 31).toBe(true);
+    for (const field of [
+      "maxBudgetPerOrderMadInput",
+      "monthlyBudgetMadInput",
+    ] as const) {
+      expect(Number.isFinite(Number(values[field]))).toBe(true);
+      expect(String(values[field])).not.toStartWith("Test ");
+    }
+    expect(String(values.maxOrdersPerMonthInput)).not.toStartWith("Test ");
+  });
+
   test("generate valid operational form values", () => {
     const cases = [
       [createCategoryFormSchema, buildFormFill(createCategoryFormSchema)],
