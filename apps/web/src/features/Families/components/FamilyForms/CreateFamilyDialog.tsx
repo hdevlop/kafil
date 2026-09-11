@@ -184,7 +184,6 @@ export function CreateFamilyDialogContent() {
         classNames={{
           root: "h-full min-h-0",
           step: "min-h-0 flex-1 overflow-y-hidden pb-4",
-          footer: "sticky bottom-0 z-10 bg-transparent pt-3",
         }}
       />
     </div>

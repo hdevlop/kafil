@@ -177,7 +177,6 @@ export function UpdateFamilyDialogContent({
         classNames={{
           root: "h-full min-h-0",
           step: "min-h-0 flex-1 pb-4",
-          footer: "sticky bottom-0 z-10 bg-background/95 pt-3",
         }}
         devTools={{
           overrides: {
