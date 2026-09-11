@@ -344,6 +344,14 @@ export class ContributionRepository {
     return contribution;
   }
 
+  listIdsForSponsor(sponsorProfileId: string) {
+    return this.db
+      .select({ id: contributions.id })
+      .from(contributions)
+      .where(eq(contributions.sponsorProfileId, sponsorProfileId))
+      .orderBy(asc(contributions.id));
+  }
+
   async findOwnById(id: string, userId: string) {
     const [contribution] = await this.db
       .select(sponsorContributionSelection)

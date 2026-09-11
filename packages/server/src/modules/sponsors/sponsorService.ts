@@ -10,6 +10,7 @@ import { Transaction } from "najm-database";
 import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { DashboardService } from "../dashboard/dashboardService";
+import { ContributionService } from "../contributions/contributionService";
 import { removeManagedImage } from "../../storage/managedImageController";
 import {
   type CreateOwnSponsorProfileDto,
@@ -42,6 +43,7 @@ export class SponsorService {
     private readonly dashboard: DashboardService,
     private readonly userRecords?: UserRepository,
     private readonly tokens?: TokenService,
+    private readonly contributionCommands?: ContributionService,
   ) {}
 
   async list(query: SponsorListQuery) {
@@ -257,17 +259,25 @@ export class SponsorService {
 
   private async deleteOne(id: string, actorUserId: string) {
     const sponsor = await this.validator.ensureExists(id);
-    if (await this.sponsors.hasLinkedHistory(id)) {
-      HttpError.conflict(
-        "A sponsor with support or contribution history cannot be permanently deleted",
-      );
+    if (!this.contributionCommands) {
+      HttpError.internal("Sponsor contribution cleanup is unavailable");
     }
+    const contributions = await this.contributionCommands.deleteForSponsor(
+      id,
+      actorUserId,
+    );
+    const history = await this.sponsors.deleteSupportHistory(id);
     await this.sponsors.delete(id);
     await this.users.delete(sponsor.userId);
     await this.audits.record({
       action: "sponsor.deleted",
       actorUserId,
-      metadata: { permanent: true },
+      metadata: {
+        permanent: true,
+        contributionsDeleted: contributions.length,
+        plansDeleted: history.plans,
+        supportAssignmentsDeleted: history.assignments,
+      },
       resource: "sponsors",
       resourceId: sponsor.id,
     });

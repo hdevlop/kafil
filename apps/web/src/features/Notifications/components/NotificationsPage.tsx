@@ -149,6 +149,19 @@ export function NotificationsPage() {
     data: rows,
     columns,
     filters,
+    headerSlot: (
+      <NButton
+        aria-label={t("notifications.markAllRead")}
+        disabled={markAll.isPending}
+        onClick={() => void markAll.mutateAsync().catch(() => undefined)}
+        size="icon"
+        title={t("notifications.markAllRead")}
+        type="button"
+        variant="outline"
+      >
+        <CheckCheck aria-hidden="true" size={18} />
+      </NButton>
+    ),
     loading: list.isPending,
     error: list.error,
     getRowId: (row) => row.id,
@@ -213,6 +226,10 @@ export function NotificationsPage() {
     noDataText: t("notifications.emptyTitle"),
     loadingText: t("notifications.loading"),
     dynamicHeight: true,
+    classNames: {
+      header:
+        "gap-2 [&_[data-ntable-mobile-toolbar]]:w-auto [&_[data-ntable-mobile-toolbar]]:flex-1",
+    },
   };
 
   return (
@@ -221,22 +238,7 @@ export function NotificationsPage() {
         icon={Bell}
         title={t("notifications.inboxTitle")}
         subtitle={t("notifications.inboxSubtitle")}
-        actions={
-          <span className="flex items-center gap-2">
-            <NButton
-              disabled={markAll.isPending}
-              onClick={() => void markAll.mutateAsync().catch(() => undefined)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {markAll.isPending
-                ? t("notifications.markingAll")
-                : t("notifications.markAllRead")}
-            </NButton>
-            <PageHeaderGlobalActions />
-          </span>
-        }
+        actions={<PageHeaderGlobalActions />}
       />
       {settingsSyncFailed ? (
         <p role="alert" className="text-sm text-muted-foreground">

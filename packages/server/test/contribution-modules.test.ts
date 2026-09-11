@@ -769,6 +769,56 @@ describe("Phase 3 contribution transactions", () => {
     expect(rejected).toEqual(["rejected"]);
   });
 
+  it("refunds validated sponsor contributions before deleting the complete set", async () => {
+    const validatedId = "00000000-0000-4000-8000-000000000071";
+    const pendingId = "00000000-0000-4000-8000-000000000072";
+    const statuses = new Map<string, string>([
+      [validatedId, "validated"],
+      [pendingId, "pending"],
+    ]);
+    const refunded: string[] = [];
+    const deleted: string[] = [];
+    const service = new ContributionService(
+      {
+        listIdsForSponsor: async () => [
+          { id: validatedId },
+          { id: pendingId },
+        ],
+        lockById: async (id: string) =>
+          contributionRecord({ id, status: statuses.get(id) }),
+        delete: async (id: string) => {
+          deleted.push(id);
+          return contributionRecord({ id, status: statuses.get(id) });
+        },
+      } as unknown as ContributionRepository,
+      {} as ContributionPlanRepository,
+      {} as BudgetAccountRepository,
+      {} as BudgetLedgerRepository,
+      { record: async () => undefined } as unknown as AuditService,
+      {} as never,
+      {} as ContributionValidator,
+      {} as FundingService,
+      {} as never,
+      {} as never,
+    );
+    service.refund = async (id: string) => {
+      refunded.push(id);
+      // The refund command's own behavior is covered separately. This seam
+      // keeps this test focused on sponsor-cascade ordering.
+      statuses.set(id, "rejected");
+      return {} as never;
+    };
+
+    await expect(
+      service.deleteForSponsor(
+        "00000000-0000-4000-8000-000000000065",
+        "admin-user",
+      ),
+    ).resolves.toHaveLength(2);
+    expect(refunded).toEqual([validatedId]);
+    expect(deleted).toEqual([validatedId, pendingId]);
+  });
+
   it("reports reconciliation from the immutable latest ledger snapshot", async () => {
     const service = new BudgetService(
       {

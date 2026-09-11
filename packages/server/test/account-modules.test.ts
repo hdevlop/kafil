@@ -28,6 +28,7 @@ import {
   updateSponsorDto,
 } from "../src/modules/sponsors";
 import { AuditService } from "../src/modules/audit";
+import { ContributionService } from "../src/modules/contributions";
 import { DashboardService } from "../src/modules/dashboard";
 
 const sponsorId = "00000000-0000-4000-8000-000000000002";
@@ -197,9 +198,11 @@ describe("account module services", () => {
     expect(listCalls).toEqual([[25, 5, {}]]);
   });
 
-  it("permanently deletes an unreferenced sponsor login and profile, then audits the admin action", async () => {
+  it("permanently deletes a sponsor graph, then audits the cascade", async () => {
     const deletedProfileIds: string[] = [];
     const deletedUserIds: string[] = [];
+    const cleanedContributionSponsors: string[] = [];
+    const cleanedSupportSponsors: string[] = [];
     const auditEvents: Record<string, unknown>[] = [];
     const service = new SponsorService(
       authService({}),
@@ -214,7 +217,10 @@ describe("account module services", () => {
           deletedProfileIds.push(id);
           return sponsorProfile();
         },
-        hasLinkedHistory: async () => false,
+        deleteSupportHistory: async (id) => {
+          cleanedSupportSponsors.push(id);
+          return { assignments: 3, plans: 2 };
+        },
       }),
       auditService({
         record: async (event) => {
@@ -223,6 +229,14 @@ describe("account module services", () => {
       }),
       sponsorValidator({ ensureExists: async () => sponsorProfile() }),
       {} as unknown as DashboardService,
+      undefined,
+      undefined,
+      {
+        deleteForSponsor: async (id: string) => {
+          cleanedContributionSponsors.push(id);
+          return [{ id: "contribution-1" }, { id: "contribution-2" }];
+        },
+      } as unknown as ContributionService,
     );
 
     await expect(service.delete(sponsorId, "admin-user")).resolves.toMatchObject({
@@ -230,28 +244,35 @@ describe("account module services", () => {
     });
     expect(deletedProfileIds).toEqual([sponsorId]);
     expect(deletedUserIds).toEqual(["sponsor-user"]);
+    expect(cleanedContributionSponsors).toEqual([sponsorId]);
+    expect(cleanedSupportSponsors).toEqual([sponsorId]);
     expect(auditEvents).toEqual([
       expect.objectContaining({
         action: "sponsor.deleted",
         actorUserId: "admin-user",
         resourceId: sponsorId,
-        metadata: { permanent: true },
+        metadata: {
+          permanent: true,
+          contributionsDeleted: 2,
+          plansDeleted: 2,
+          supportAssignmentsDeleted: 3,
+        },
       }),
     ]);
   });
 
-  it("refuses to permanently delete a sponsor with support or contribution history", async () => {
+  it("fails closed when sponsor contribution cleanup is unavailable", async () => {
     const service = new SponsorService(
       authService({}),
       userService({}),
-      sponsorRepository({ hasLinkedHistory: async () => true }),
+      sponsorRepository({}),
       auditService({}),
       sponsorValidator({ ensureExists: async () => sponsorProfile() }),
       {} as unknown as DashboardService,
     );
 
     await expect(service.delete(sponsorId, "admin-user")).rejects.toMatchObject({
-      status: 409,
+      status: 500,
     });
   });
 
@@ -423,6 +444,9 @@ function sponsorRepository(
       input: Record<string, unknown>,
     ) => Promise<ReturnType<typeof sponsorProfile>>;
     delete: (id: string) => Promise<ReturnType<typeof sponsorProfile>>;
+    deleteSupportHistory: (
+      id: string,
+    ) => Promise<{ assignments: number; plans: number }>;
     hasLinkedHistory: (id: string) => Promise<boolean>;
   }>,
 ): SponsorRepository {

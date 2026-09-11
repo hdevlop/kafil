@@ -133,6 +133,8 @@ describe("applicant creation thin route", () => {
 
     expect(otp).toContain('type="otp"');
     expect(otp).toContain("length={6}");
+    expect(otp).toContain('input: "mx-auto max-w-xs"');
+    expect(otp).toContain('className="mt-2 break-all font-medium"');
     expect(otp).toContain('t("applicants.otp.title")');
     expect(otp).toContain('t("applicants.otp.codeLabel")');
     expect(otp).toContain('t("applicants.otp.submit")');

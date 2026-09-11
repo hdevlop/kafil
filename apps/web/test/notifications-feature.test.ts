@@ -274,6 +274,9 @@ describe("Phase B notification accessibility", () => {
     ]);
     expect(bell).toContain('aria-live="polite"');
     expect(bell).toContain("aria-label");
+    expect(bell).toContain("ComponentPropsWithoutRef<typeof NButton>");
+    expect(bell).toContain("...buttonProps");
+    expect(bell).not.toContain("onClick={onOpen}");
     expect(popover).toContain("Popover");
     expect(popover).toContain("returns focus to the trigger");
     expect(card).toContain("markRead");

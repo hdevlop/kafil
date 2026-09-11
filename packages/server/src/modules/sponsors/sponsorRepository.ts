@@ -1,10 +1,13 @@
-import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { rolesTable, usersTable } from "najm-auth/pg";
 import { Repository } from "najm-core";
 import { DB } from "najm-database";
 
 import type { KafilDatabase } from "../../database/types";
-import { contributions } from "../contributions/contributionSchema";
+import {
+  contributionPlans,
+  contributions,
+} from "../contributions/contributionSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
 import {
   type NewSponsorProfile,
@@ -188,6 +191,25 @@ export class SponsorRepository {
     }
     await this.db.delete(sponsorProfiles).where(eq(sponsorProfiles.id, id));
     return existing;
+  }
+
+  async deleteSupportHistory(id: string) {
+    const assignmentIds = this.db
+      .select({ id: supportAssignments.id })
+      .from(supportAssignments)
+      .where(eq(supportAssignments.sponsorProfileId, id));
+    const deletedPlans = await this.db
+      .delete(contributionPlans)
+      .where(inArray(contributionPlans.supportAssignmentId, assignmentIds))
+      .returning({ id: contributionPlans.id });
+    const deletedAssignments = await this.db
+      .delete(supportAssignments)
+      .where(eq(supportAssignments.sponsorProfileId, id))
+      .returning({ id: supportAssignments.id });
+    return {
+      assignments: deletedAssignments.length,
+      plans: deletedPlans.length,
+    };
   }
 
   async hasLinkedHistory(id: string) {

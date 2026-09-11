@@ -8,6 +8,9 @@ import type { OffsetPagination } from "najm-kit/pagination";
 import { bulkDeleteSponsors, createSponsor, deactivateSponsor, deleteSponsor, listSponsors, reactivateSponsor, updateSponsor, type ListSponsorsFilters } from "@/services/sponsorApi";
 
 import { sponsorKeys } from "./sponsorKeys";
+import { contributionInvalidation } from "@/features/Contributions/hooks/contributionInvalidation";
+import { supportAssignmentKeys } from "@/features/SupportAssignments/hooks/supportAssignmentKeys";
+import { dashboardKeys } from "@/features/Dashboard";
 
 export function useSponsors(pagination: OffsetPagination, enabled = true) {
   return useEntityQuery({
@@ -30,7 +33,12 @@ export function useResponsiveSponsors(
 
 export function useSponsorCommands() {
   const { t } = useTranslation();
-  const invalidate = [sponsorKeys.all];
+  const invalidate = [
+    sponsorKeys.all,
+    ...contributionInvalidation.financial,
+    supportAssignmentKeys.all,
+    dashboardKeys.all,
+  ];
 
   const create = useEntityCommand({
     mutationFn: createSponsor,

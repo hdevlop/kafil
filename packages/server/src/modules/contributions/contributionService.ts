@@ -619,6 +619,30 @@ async getForPrincipal(id: string, userId: string, role: string) {
     return deleted;
   }
 
+  /**
+   * Bootstrap-admin sponsor cleanup. Validated contributions are first
+   * reversed through the normal financial command, then every contribution is
+   * permanently removed through the same audited correction path.
+   */
+  @Transaction({ retries: 2 })
+  async deleteForSponsor(sponsorProfileId: string, actorUserId: string) {
+    const rows = await this.contributions.listIdsForSponsor(sponsorProfileId);
+    const deleted = [];
+    for (const { id } of rows) {
+      const contribution = await this.contributions.lockById(id);
+      if (!contribution) continue;
+      if (contribution.status === "validated") {
+        await this.refund(
+          id,
+          { reason: "Sponsor account permanently deleted" },
+          actorUserId,
+        );
+      }
+      deleted.push(await this.deleteOne(id, actorUserId));
+    }
+    return deleted;
+  }
+
   private async deleteOne(id: string, actorUserId: string) {
     const contribution = await this.contributions.lockById(id);
     if (!contribution) {

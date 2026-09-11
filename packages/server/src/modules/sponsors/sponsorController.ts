@@ -121,11 +121,11 @@ export class SponsorController {
   @CanDelete(Sponsor)
   @Validate({ body: bulkDeleteSponsorsDto })
   @McpTool({
-    description: "Permanently delete multiple unreferenced sponsor accounts",
+    description: "Permanently delete multiple sponsor accounts and their contribution history",
     destructive: true,
     confirm: {
       level: "danger",
-      message: "Permanently delete these sponsor accounts? This cannot be undone.",
+      message: "Permanently delete these sponsor accounts and all linked contributions and support history? This cannot be undone.",
     },
   })
   @ResMsg("sponsors.success.deleted")
@@ -198,11 +198,11 @@ export class SponsorController {
   @CanDelete(Sponsor)
   @Validate({ params: sponsorIdParams })
   @McpTool({
-    description: "Permanently delete an unreferenced sponsor account",
+    description: "Permanently delete a sponsor account and its contribution history",
     destructive: true,
     confirm: {
       level: "danger",
-      message: "Permanently delete this sponsor account? This cannot be undone.",
+      message: "Permanently delete this sponsor account and all linked contributions and support history? This cannot be undone.",
     },
   })
   @ResMsg("sponsors.success.deleted")

@@ -107,7 +107,7 @@ export function OtpStep({
   }
 
   return (
-    <div className="flex w-full flex-col text-center" dir="auto">
+    <div className="flex min-w-0 w-full flex-col text-center" dir="auto">
       <h1 className="text-3xl text-muted-foreground">
         {t("applicants.otp.title")}
       </h1>
@@ -115,7 +115,7 @@ export function OtpStep({
         {t("applicants.otp.instructions")}
       </p>
       <p
-        className="mt-2 font-medium"
+        className="mt-2 break-all font-medium"
         aria-label={t("applicants.otp.destination")}
       >
         {current.maskedDestination}
@@ -139,7 +139,7 @@ export function OtpStep({
         schema={applicantEmailOtpSchema}
         defaultValues={{ code: "" }}
         onSubmit={submit}
-        className="mt-6 space-y-5 text-start"
+        className="mt-6 min-w-0 space-y-5 text-start"
       >
         <FormInput
           name="code"
@@ -149,6 +149,10 @@ export function OtpStep({
           length={6}
           numeric
           autoComplete="one-time-code"
+          classNames={{
+            item: "min-w-0",
+            input: "mx-auto max-w-xs",
+          }}
           disabled={submitting}
           required
         />

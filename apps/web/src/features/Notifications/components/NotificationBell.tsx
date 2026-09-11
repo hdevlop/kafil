@@ -1,16 +1,17 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
 import { Bell } from "lucide-react";
-import { NButton, NIndicator } from "najm-kit";
+import { cn, NButton, NIndicator } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 
 import { useUnreadCount } from "../hooks/useNotifications";
 import { formatBadgeCount } from "../lib/buildNotificationViewModel";
 
-interface NotificationBellProps {
-  onOpen?: () => void;
-}
+type NotificationBellProps = Omit<
+  ComponentPropsWithoutRef<typeof NButton>,
+  "children"
+>;
 
 /**
  * Shell-owned unread indicator. Badge hides at zero, shows a localized
@@ -19,7 +20,7 @@ interface NotificationBellProps {
 export const NotificationBell = forwardRef<
   HTMLButtonElement,
   NotificationBellProps
->(function NotificationBell({ onOpen }, ref) {
+>(function NotificationBell({ className, ...buttonProps }, ref) {
   const { t, language } = useTranslation();
   const countQuery = useUnreadCount();
   const count = countQuery.data?.count ?? 0;
@@ -28,9 +29,12 @@ export const NotificationBell = forwardRef<
 
   const button = (
     <NButton
+      {...buttonProps}
       aria-label={t("notifications.openInbox")}
-      className="text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100"
-      onClick={onOpen}
+      className={cn(
+        "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100",
+        className,
+      )}
       ref={ref}
       size="icon"
       type="button"
