@@ -11,11 +11,13 @@ import {
   type OwnershipToken,
   Policy,
 } from "najm-auth";
+import { readFileSync } from "node:fs";
 import Redis from "ioredis";
 import type { CachePluginConfig } from "najm-cache";
 import { Ctx, Service, User } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
 
+import { kafilTheme } from "@kafil/server/theme";
 import { envConfig } from "./envConfig";
 
 export {
@@ -97,11 +99,24 @@ export const authInfrastructureConfig = () => {
   } as const;
 };
 
+const authLogo = kafilTheme.asset("authLogo");
+if (!authLogo) {
+  throw new Error("Kafil factory theme must define the authLogo asset.");
+}
+
+const accountInviteLogo = Object.freeze({
+  alt: "Kafil",
+  contentBase64: readFileSync(authLogo.sourcePath).toString("base64"),
+  contentType: authLogo.mimeType,
+  filename: authLogo.fileName,
+});
+
 export const authConfig = () => {
   const infrastructure = authInfrastructureConfig();
 
   return auth({
     appName: "Kafil",
+    accountInviteLogo,
     cache: infrastructure.cache,
     defaultRole: "sponsor",
     dialect: "pg",

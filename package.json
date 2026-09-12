@@ -85,5 +85,9 @@
     "ioredis": "5.11.1",
     "najm-core": "^2.0.6",
     "najm-kit": "2.13.1"
+  },
+  "patchedDependencies": {
+    "najm-email@2.0.4": "patches/najm-email@2.0.4.patch",
+    "najm-auth@4.0.2": "patches/najm-auth@4.0.2.patch"
   }
 }

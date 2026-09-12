@@ -1,0 +1,51 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 600617c6d3bdae1ba0c403dcb665d009d9c6949f..fd77c4f98fb0005ea112758f75d3411d2ced75ac 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -608,6 +608,8 @@ declare function accountInviteTemplate(params: {
+     userName: string;
+     appName?: string;
+     accountType?: string;
++    logoSrc?: string;
++    logoAlt?: string;
+     expiryTime?: string;
+ }): string;
+ /**
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 402d535fff2d5ed374f9286129f00e1fccb6c5ea..a58f89d8575bfa4660068580ca6973e33739de8c 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -346,7 +346,9 @@ var ResendProvider = class extends BaseProvider {
+       payload.attachments = message.attachments.map((att) => ({
+         filename: att.filename,
+         content: typeof att.content === "string" ? att.content : att.content.toString("base64"),
+-        content_type: att.contentType
++        content_type: att.contentType,
++        content_disposition: att.disposition,
++        content_id: att.cid
+       }));
+     }
+     return payload;
+@@ -1154,10 +1156,12 @@ function welcomeEmailTemplate(params) {
+ }
+ __name(welcomeEmailTemplate, "welcomeEmailTemplate");
+ function accountInviteTemplate(params) {
+-  const { inviteLink, userName, appName = "Your app", accountType, expiryTime = "3 days" } = params;
++  const { inviteLink, userName, appName = "Your app", accountType, logoSrc, logoAlt, expiryTime = "3 days" } = params;
+   const safeName = escapeHtml(userName);
+   const safeLink = escapeHtml(inviteLink);
+   const safeAppName = escapeHtml(appName);
++  const safeLogoSrc = logoSrc ? escapeHtml(logoSrc) : "";
++  const safeLogoAlt = escapeHtml(logoAlt?.trim() || appName);
+   const safeExpiryTime = escapeHtml(expiryTime);
+   const normalizedAccountType = accountType?.trim();
+   const safeAccountLabel = normalizedAccountType ? `${escapeHtml(normalizedAccountType)} account` : "account";
+@@ -1194,7 +1198,7 @@ function accountInviteTemplate(params) {
+           </tr>
+           <tr>
+             <td class="email-header" style="padding:32px 40px 30px; background-color:#173d2a; color:#ffffff;">
+-              <p style="margin:0 0 24px; font-size:18px; line-height:24px; font-weight:800; letter-spacing:1.8px; color:#ffffff;">${safeAppName}</p>
++              ${safeLogoSrc ? `<img src="${safeLogoSrc}" alt="${safeLogoAlt}" width="132" style="display:block; width:auto; max-width:132px; height:auto; max-height:52px; margin:0 0 24px; border:0; outline:none; text-decoration:none; object-fit:contain;" />` : `<p style="margin:0 0 24px; font-size:18px; line-height:24px; font-weight:800; letter-spacing:1.8px; color:#ffffff;">${safeAppName}</p>`}
+               <p style="margin:0 0 10px; font-size:12px; line-height:18px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#f3b184;">Secure account invitation</p>
+               <h1 class="email-title" style="margin:0; font-size:34px; line-height:41px; font-weight:700; letter-spacing:-0.4px; color:#ffffff;">Activate your ${safeAccountLabel}</h1>
+             </td>

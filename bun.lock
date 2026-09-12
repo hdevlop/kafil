@@ -117,6 +117,10 @@
     "sharp",
     "unrs-resolver",
   ],
+  "patchedDependencies": {
+    "najm-auth@4.0.2": "patches/najm-auth@4.0.2.patch",
+    "najm-email@2.0.4": "patches/najm-email@2.0.4.patch",
+  },
   "overrides": {
     "diject": "0.1.8",
     "esbuild": "0.25.12",

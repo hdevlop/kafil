@@ -1,0 +1,85 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index e128b2ec8c2ad82f93cb9728df927f62688ac5c4..98beba431717703e8207bfe0893b2efec738cbd3 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -200,6 +200,13 @@ interface AuthConfig {
+     frontendUrl: string;
+     /** Product name used in security email subjects and templates. */
+     appName: string;
++    /** Optional inline logo embedded in account invitation emails. */
++    accountInviteLogo?: {
++        alt?: string;
++        contentBase64: string;
++        contentType: string;
++        filename: string;
++    };
+     /** Registration mode: 'active' auto-activates, 'pending' requires admin approval (default: 'active') */
+     registrationMode: 'active' | 'pending';
+     /** Whether the unauthenticated POST /auth/register route is mounted. */
+@@ -269,6 +276,13 @@ type AuthPluginConfig = {
+     frontendUrl?: string;
+     /** Product name used in account invitation emails (default: 'Your app'). */
+     appName?: string;
++    /** Optional inline logo embedded in account invitation emails. */
++    accountInviteLogo?: {
++        alt?: string;
++        contentBase64: string;
++        contentType: string;
++        filename: string;
++    };
+     /** Registration mode: 'active' auto-activates new users, 'pending' requires admin approval (default: 'active') */
+     registrationMode?: 'active' | 'pending';
+     /**
+diff --git a/dist/index.js b/dist/index.js
+index 172aa23fa960fa4f12486c51b301ad477704addb..ed23dbf9b2fd9f08e49d3ee460600222ecdfd73e 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -3492,16 +3492,32 @@ var AuthService = class AuthService2 {
+     const accountLabel = accountType ? `${accountType} account` : "account";
+     let emailSent = false;
+     try {
+-      await this.emailService.sendHtml(body.email, this.t("emails.accountInvite.subject", {
++      const logo = this.config.accountInviteLogo;
++      const logoCid = logo ? "najm-account-invite-logo" : void 0;
++      const result = await this.emailService.send({
++        to: body.email,
++        subject: this.t("emails.accountInvite.subject", {
+         accountLabel,
+         appName: this.config.appName
+-      }), accountInviteTemplate({
+-        accountType,
+-        appName: this.config.appName,
+-        inviteLink,
+-        userName: user.name || body.email
+-      }));
+-      emailSent = true;
++        }),
++        html: accountInviteTemplate({
++          accountType,
++          appName: this.config.appName,
++          inviteLink,
++          logoAlt: logo?.alt,
++          logoSrc: logoCid ? `cid:${logoCid}` : void 0,
++          userName: user.name || body.email
++        }),
++        attachments: logo ? [{
++          filename: logo.filename,
++          content: logo.contentBase64,
++          contentType: logo.contentType,
++          cid: logoCid,
++          disposition: "inline",
++          encoding: "base64"
++        }] : void 0
++      });
++      emailSent = result.success;
+     } catch (error) {
+       this.logger.warn("Account invite email failed", { email: body.email, error });
+     }
+@@ -7569,6 +7585,7 @@ var resolveAuthConfig = /* @__PURE__ */ __name((config) => {
+     defaultRole: config?.defaultRole ?? null,
+     frontendUrl: config?.frontendUrl ?? process.env.FRONTEND_URL ?? "http://localhost:3000",
+     appName: resolveAppName(config?.appName),
++    accountInviteLogo: config?.accountInviteLogo,
+     registrationMode: config?.registrationMode ?? "active",
+     publicRegistration: config?.publicRegistration ?? true,
+     requireVerifiedEmail: config?.requireVerifiedEmail ?? false,
