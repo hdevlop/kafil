@@ -5,7 +5,7 @@ published, registry-verified, and pushed. Kafil consumes those exact releases
 through one app-owned Leaflet runtime definition. Focused checks, the full root
 source gate, production build, and no-schema-drift gate pass. Manual visual
 acceptance confirms online tiles, pin selection, and the intentionally manual
-address-plus-pin workflow. Kafil Git publication is next; browser automation,
+address-plus-pin workflow. Kafil Git publication is verified; browser automation,
 deployment, and live production acceptance have not run.**
 
 Plan date: **2026-09-11**
@@ -1093,7 +1093,7 @@ response alone is not live feature acceptance.
 
 - [ ] Production tile/search provider approved.
 - [ ] Google billing/key restrictions/privacy review complete if Google is used.
-- [ ] Kafil Git publication explicitly authorized and verified.
+- [x] Kafil Git publication explicitly authorized and verified.
 - [ ] Deployment explicitly authorized and exact live revision healthy.
 - [ ] Read-only and synthetic live map acceptance pass.
 - [ ] Runtime configuration rollback is demonstrated.
