@@ -1,12 +1,12 @@
-# Najm app integration DX — Phase 0 ledger (Freeze contracts and baselines)
+# Najm app integration DX — implementation ledger
 
 - Plan: `NAJM-APP-INTEGRATION-DX-PLAN.md` (untracked root file, plan date 2026-09-12, status PLANNED).
 - Ledger date: **2026-09-12**. Canonical path:
   `docs/evidence/najm-app-integration-dx/2026-09-12/README.md`.
-- Scope of this task: **Phase 0 only**. No Phase 1 production code, no publish,
-  push, deployment, real provider call, or database mutation.
-- This ledger is the **only intended repository change** of this task and was
-  produced for orchestrator review.
+- Scope recorded here: **Phases 0 and 1**. No publish, push, deployment, real
+  provider call, or database mutation.
+- This ledger is the Kafil evidence change; Phase 1 implementation is isolated
+  in the Najm commits recorded in §6.5.
 - Revision: corrected and completed per orchestrator review on 2026-09-12
   (provenance correction, delegation stamp in §2.5, eight approved contract
   decisions in §6.2). No production source touched by the revision.
@@ -41,9 +41,9 @@ tokens, addresses, coordinates, or provider keys are recorded.
 
 ## 1. Repository baselines (branch, HEAD, dirty status)
 
-Recorded 2026-09-12. Pre-existing user changes are distinguished from
-orchestrator-owned delegation files and from this task's ledger change below.
-No production source was modified by this task.
+Recorded at the Phase 0 checkpoint on 2026-09-12. Pre-existing user changes are
+distinguished from orchestrator-owned delegation files and from the ledger
+change below. No production source was modified during Phase 0.
 
 ### 1.1 Kafil — `C:\Users\hdevlop\Desktop\kafil`
 
@@ -747,7 +747,7 @@ this task, **[U]** unverified browser/connected behavior (not claimed).
 | Phase | State after this task | Review / evidence notes |
 | --- | --- | --- |
 | 0 — Freeze contracts/baselines | **COMPLETE — ready for Phase 1** (§7) | This ledger as revised. Branch/HEAD/dirty (§1), resolutions/patches/scripts + delegation stamp (§2), traces (§3), approved contract (§4, §6.2), focused fixtures (§5). No prod-source change |
-| 1 — Shared security + client init | Pending | Decided redaction rule (§6.2-D6) + FIX-03 Zod timing gate + FIX-04 investigation gate (§6.2-D2) |
+| 1 — Shared security + client init | **COMPLETE** (§6.5) | `najm-next` app/security/report/client-init contract at `5e69429`; FIX-04 auth regression evidence at `dd0a4e8`. Production Next 16 fixtures pass without workspace-root warnings. Real browser-generated prefetch remains a consumer-acceptance limitation |
 | 2 — Preferences + server bootstrap | Pending | Decided additive `najm-kit/server` extension + POST/DELETE co-ownership (§6.2-D1/D7); request-isolation tests |
 | 3 — Providers + location | Pending | Decided Google runtime fields + address-edit contract (§6.2-D3/D5) incl. the School lat/lng parity test; one-context + no-map proofs |
 | 4 — Release candidate | Pending | Exact versions/artifacts/hashes; School consumes registry only (no workspace/file/tarball) |
@@ -809,29 +809,23 @@ No unresolved public-API, client/server, ownership, redaction, or address-edit
 contract decision remains. What remains is evidence and runtime proof owned by
 later phases:
 
-1. **FIX-03 Zod timing proof.** Verify the installed Zod initialization-timing
-   contract and reproduce School hydration/CSP behavior before migrating to
-   shared client initialization (Phase 1). No duplicate init script meanwhile.
-2. **FIX-04 reproduction.** Characterize actual prefetch/recovery behavior with
-   direct-navigation, tampering, and logout-race tests before any `najm-auth`
-   change (Phase 1). The bypass branch stays until its replacement is tested.
-3. **Browser/connected acceptance limits.** PREF/BOOT/UI/LOC matrix behaviors
+1. **Browser/connected acceptance limits.** PREF/BOOT/UI/LOC matrix behaviors
    (first-paint cookies, RTL, save→fresh-read→reopen, F8 focus refresh,
    keyboard shortcuts, no-map SDK silence, runtime-config change,
    production hydration, edge-policy intersection) are source-traced only in
    Phase 0; each needs its Phase 1–6 proof. Mocked tests never establish real
    Google availability, persistence, hydration, publication, or deployment.
-4. **FIX-08 registry upgrade.** School kit 2.11.19→2.13.x + next 0.3.0→0.4.x
+2. **FIX-08 registry upgrade.** School kit 2.11.19→2.13.x + next 0.3.0→0.4.x
    through published releases before shared location/preference adoption
    (Phase 6); no workspace/file/tarball consumption.
-5. **School dirty-tree re-audit.** Reconcile the §1.3 working tree against this
+3. **School dirty-tree re-audit.** Reconcile the §1.3 working tree against this
    baseline at Phase 6 start; migration 0046/journal handling stays its own
    boundary.
-6. **Kafil patch audit.** Re-audit `patches/najm-auth@4.0.2.patch` +
+4. **Kafil patch audit.** Re-audit `patches/najm-auth@4.0.2.patch` +
    `patches/najm-email@2.0.4.patch` before changing affected package versions
    (Phase 5).
 
-### 6.4 Authority boundaries (this task + revision)
+### 6.4 Phase 0 authority boundaries (historical)
 
 No code, publish, commit, push, deployment, provider call, browser test, DB,
 install, seed, or build was authorized or performed — in the original pass or
@@ -843,7 +837,22 @@ brief — read as instructions, then removed after review); git index/HEAD (no
 add/commit/switch/reset/restore/clean/stash); package installs, version bumps,
 migration generation/application, seed/reset, releases. Evidence is source +
 safe local unit fixtures only (§5, §8). The only repository change is this
-ledger file, left uncommitted.
+ledger file, subsequently committed by the orchestrator as `7df64f0`.
+
+### 6.5 Phase 1 review and evidence
+
+| Slice | Repo / commit / source version | Scoped result | Independent commands and results | Limitations |
+| --- | --- | --- | --- | --- |
+| Phase 1A — `najm-next` security and client initialization | Najm `master`; `5e69429`; `najm-next@0.4.0` | Added import-safe `najm-next/app`, `najm-next/security`, `najm-next/security/reports`, and `najm-next/instrumentation/client`; typed app config, nonce/CSP/auth-proxy composition, origins-or-keywords-only report redaction with bounded body handling, early JIT-less client initialization, exports/docs/compatibility tests, and a hermetic Next 16 fixture. Requirements: FIX-03, DX, AUTH, CSP, BOOT, PKG | `bun run --cwd packages/najm-next lint` — exit 0. `bun run --cwd packages/najm-next test` — 94 pass, 0 fail, 411 expects. `bun run --cwd packages/najm-next build` — exit 0, JS/DTS. `bun run api:check` — exit 0, snapshot current. `bun run --cwd packages/najm-next test:next16` — exit 0, Next 16.2.11 production fixture PASS with no workspace-root warning. `git diff --check` — exit 0 | Fixture proves production build/runtime policy composition; actual consumer dev-HMR and browser hydration remain Phase 5/6 acceptance |
+| Phase 1B — FIX-04 auth reproduction | Najm `master`; `dd0a4e8`; `najm-auth@4.0.1` | Reproduced School's cookie-presence bypass as unsafe and proved the current authoritative, non-rotating recovery contract already handles direct/speculative requests, forged/expired/tampered state, redirects/cookie clearing, CSP request overrides, concurrency, and honest logout ordering. No `najm-auth` production-source change was necessary. Added focused regression tests, production fixture cases, docs, and fixture root pinning. Requirements: FIX-04, AUTH, CSP, PKG | `bun run --cwd packages/najm-auth test` — 461 pass, 13 environment-gated skip, 0 fail, 1490 expects across 39 files; RSC sub-run 13 pass, 6 redirect-runtime skip, 0 fail, 32 expects. Focused FIX-04 file — 25 pass, 0 fail, 175 expects. `bun run --cwd packages/najm-auth build` — exit 0, JS/DTS. `bun run --cwd packages/najm-auth test:next16` — exit 0, Next 16.2.11 production recovery suite PASS with no workspace-root warning. `bun run api:check` — exit 0. `git diff --check` — exit 0 | Production sends the four School header shapes through plain `fetch`; it does not drive a browser router prefetch. The deterministic logout ordering test is not a real DB/concurrent-tab run. An in-flight request validated before logout may finish, but its late session snapshot cannot restore subsequent access under School authoritative mode without the cleared refresh cookie |
+
+Phase 1 review used OpenCode sessions `ses_f68cc5817ffe2uwnaFGnZxY4D9`
+(Phase 1A) and `ses_f68b28d1dffetq2pN2gbgXpcRD` (FIX-04). The
+orchestrator reviewed the actual diffs, required two FIX-04 evidence deltas and
+one fixture-hermeticity delta, reran the gates above, and authored both commits.
+No version bump, package publication, consumer edit, push, deployment, provider
+call, database write, seed, or browser test occurred. School remained read-only
+with its dirty snapshot preserved.
 
 ---
 
@@ -861,10 +870,9 @@ apps; no unresolved dependency cycle or secret-bearing client configuration."*
   or address-edit contract decision remains; §6.3 holds only evidence gates
   and acceptance limitations for later phases.
 
-**Verdict: Phase 0 exit condition is MET — status COMPLETE, ready for Phase 1.**
-Phase 0 claims no Phase 1 behavior implemented or verified. Phases 1–8 remain
-**pending**; Phase 1 (shared security and client initialization) may now start
-under its own authorization.
+**Verdict at the Phase 0 checkpoint: exit condition MET.** Phase 0 itself made
+no production claim. Phase 1 has since completed under its separately reviewed
+Najm commits (§6.5); Phases 2–8 remain pending.
 
 ---
 
@@ -897,4 +905,4 @@ cover was touched):
   no content hashes were taken and no `git add`/commit performed.
 - Toolchain: `bun 1.3.14`. Delegation stamp: §2.5. No code, publish, commit,
   push, deployment, provider call, browser test, DB, install, seed, or build
-  executed in either pass.
+  was executed during either Phase 0 pass.
