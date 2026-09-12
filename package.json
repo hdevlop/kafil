@@ -22,9 +22,9 @@
     "najm-database": "2.0.4",
     "najm-email": "2.0.4",
     "najm-i18n": "2.1.2",
-    "najm-kit": "2.11.23",
+    "najm-kit": "2.13.1",
     "najm-mcp": "2.1.2",
-    "najm-next": "0.3.0",
+    "najm-next": "0.4.0",
     "najm-rate": "2.1.1",
     "najm-storage": "2.2.0",
     "najm-theme": "0.2.1",
@@ -84,6 +84,6 @@
     "@clack/prompts": "^1.7.0",
     "ioredis": "5.11.1",
     "najm-core": "^2.0.6",
-    "najm-kit": "2.11.23"
+    "najm-kit": "2.13.1"
   }
 }

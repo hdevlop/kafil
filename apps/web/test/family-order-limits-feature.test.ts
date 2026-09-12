@@ -109,7 +109,7 @@ describe("family order limits create conversion", () => {
       maxBudgetPerOrderMadInput: "",
       monthlyBudgetMadInput: "",
       notes: "",
-      exactAddress: "123 Test Street",
+      deliveryLocation: { address: "123 Test Street", latitude: null, longitude: null },
       initialChildren: [],
     } as never);
     expect(input.maxOrdersPerMonth).toBeUndefined();

@@ -1,8 +1,12 @@
 # Najm location picker and Kafil adoption plan
 
-Status: **PROPOSED - documentation only; implementation, package release,
-Kafil adoption, browser acceptance, publication, and deployment are not
-started**
+Status: **IN PROGRESS - `najm-kit@2.13.1` and `najm-next@0.4.0` are built,
+published, registry-verified, and pushed. Kafil consumes those exact releases
+through one app-owned Leaflet runtime definition. Focused checks, the full root
+source gate, production build, and no-schema-drift gate pass. Manual visual
+acceptance confirms online tiles, pin selection, and the intentionally manual
+address-plus-pin workflow. Kafil Git publication is next; browser automation,
+deployment, and live production acceptance have not run.**
 
 Plan date: **2026-09-11**
 
@@ -33,15 +37,23 @@ The map-pin action opens a responsive dialog matching the supplied reference:
 - complete keyboard, focus, error, loading, RTL, and reduced-motion behavior.
 
 The reusable UI belongs to `najm-kit`. Kafil owns provider selection,
-credentials, runtime environment parsing, CSP policy, translations, family
-schema adaptation, and the decision to transmit sensitive household data to a
-third party.
+credentials, environment-variable naming, CSP policy composition,
+translations, family schema adaptation, and the decision to transmit sensitive
+household data to a third party. Generic runtime parsing, provider loading, and
+provider-derived CSP-source calculation belong to shared Najm leaf entrypoints
+so another application does not have to rebuild the same server/client bridge.
 
-The first supported map engines are:
+The reusable Najm Kit supports these map engines:
 
 1. `leaflet` - default and required for the first Kafil adoption;
-2. `google` - optional and activated only when a consumer provides a valid,
-   restricted Google Maps browser key and explicitly enables Google search.
+2. `google` - optional for other consumers and playground evaluation when a
+   valid, restricted Google Maps browser key and billing are available.
+
+Kafil's first adoption is intentionally **Leaflet-only**. Its runtime contract
+supports `leaflet` and the manual-address `disabled` fallback, with no Google
+key, Google CSP origins, Places search, or public Nominatim geocoder. This
+decision keeps the reusable provider boundary intact without sending sensitive
+household locations to a third-party geocoder.
 
 The package contract must allow later MapLibre, MapTiler, self-hosted
 Nominatim, or other providers without changing the location field or dialog.
@@ -382,11 +394,8 @@ Add documented runtime variables to `.env.example` and
 `deploy/env/app.env.example`:
 
 ```env
-# leaflet | google | disabled
+# leaflet | disabled
 KAFIL_LOCATION_MAP_PROVIDER=leaflet
-
-# none | google; custom geocoders are supplied in application code
-KAFIL_LOCATION_SEARCH_PROVIDER=none
 
 KAFIL_LOCATION_DEFAULT_LATITUDE=33.5731
 KAFIL_LOCATION_DEFAULT_LONGITUDE=-7.5898
@@ -396,9 +405,6 @@ KAFIL_LOCATION_DEFAULT_ZOOM=12
 KAFIL_LOCATION_TILE_URL=https://tile.openstreetmap.org/{z}/{x}/{y}.png
 KAFIL_LOCATION_TILE_ATTRIBUTION=&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors
 
-# Intentionally delivered to the browser only when provider=google.
-# Restrict by exact website origins and enabled Google APIs.
-KAFIL_GOOGLE_MAPS_BROWSER_KEY=
 ```
 
 Do not add real values to `.env.example`, deployment templates, source,
@@ -411,8 +417,8 @@ the shared provider after the location input is accepted.
 
 ### 6.2 Runtime server bridge
 
-Create a pure parser plus a server-only loader under `apps/web/src/lib`, for
-example:
+The initial Kafil adoption created a pure parser plus a server-only loader under
+`apps/web/src/lib`:
 
 ```text
 locationConfig.ts        # pure parsing, defaults, serialization and tests
@@ -421,35 +427,60 @@ serverLocationConfig.ts  # server-only process.env reads
 
 The serialized client configuration contains only:
 
-- selected provider and search mode;
+- selected provider;
 - default center and zoom;
 - public tile/style URL and attribution;
-- intentionally browser-visible Google Maps key when Google is selected;
 - capability flags needed by the UI.
 
 It must never contain a server geocoding key, unrestricted credential, cookie,
 database value, or other environment entry.
 
 Load this configuration in the dynamic root layout and pass it through
-`AppProviders` to a small Kafil-owned `KafilLocationProvider`. That client
-boundary selects and dynamically imports the matching Najm adapter. Najm Kit
-does not read `process.env`, assume Next.js, or know Kafil variable names.
+`AppProviders` to the client location provider. Najm Kit does not read
+`process.env` or know Kafil variable names.
 
 This runtime bridge is required because Next.js inlines direct
 `NEXT_PUBLIC_*` references at build time. Deployment must be able to promote
 one image and choose the location provider from runtime environment without a
 rebuild.
 
+### 6.4 Shared runtime DX follow-up
+
+The initial bridge proved the boundary but leaves too much repeated wiring for
+each Najm application. Extract the generic mechanics before a second consumer
+copies them:
+
+- add `najm-kit/location/runtime`, a client-only provider that accepts a
+  serializable provider configuration and lazily imports the selected map
+  adapter only when the dialog mounts;
+- add `najm-next/location/server`, a pure server-safe definition/resolver that
+  reads a caller-supplied environment record using an application-owned prefix,
+  validates provider values, centers, zoom, tile URLs, and attribution, and
+  returns both the public configuration and exact CSP source lists;
+- keep environment access at the application call site; neither package reads
+  `process.env` or chooses an application prefix;
+- keep geocoder selection and privacy approval application-owned; the runtime
+  provider accepts an explicitly supplied geocoder and never defaults to a
+  public service;
+- after both packages are published, replace Kafil's `locationConfig.ts`,
+  `serverLocationConfig.ts`, and `KafilLocationProvider.tsx` with one small
+  application definition/facade and shared runtime provider usage;
+- do not make Kafil consume workspace aliases, sibling source, local copies, or
+  unpublished tarballs while waiting for that release.
+
+The shared packages may keep separate internal server/client modules. The DX
+goal is one declarative integration surface per application, not collapsing
+incompatible Next.js module graphs into one file.
+
 ### 6.3 Invalid configuration behavior
 
-- Unknown provider/search names resolve to `disabled` with one sanitized server
+- Unknown provider names resolve to `disabled` with one sanitized server
   diagnostic.
-- Explicit `google` without a browser key disables map selection and exposes a
-  localized configuration-unavailable message; it must not crash unrelated
-  Kafil pages.
+- `google` is not a valid Kafil provider value in this adoption and resolves to
+  the same safe `disabled` fallback as any unknown value.
 - Leaflet without a valid HTTPS tile URL keeps the manual address input and
   disables the map action in production.
-- Development may accept loopback HTTP tile/search origins; production does not.
+- Development may accept loopback HTTP tile origins; production does not.
 - Invalid center/zoom values use tested Moroccan defaults.
 - Provider configuration is immutable for the current rendered client tree and
   changes on the next request after the runtime environment/deployment changes.
@@ -515,12 +546,9 @@ policy or derive the exact allowlist from the same validated server config.
   string into the CSP.
 - Keep `'self'`, nonce, `strict-dynamic`, object denial, and other existing
   protections intact.
-- For Google, verify required script, connection, image, font, worker, and frame
-  origins from the current official integration; do not use broad `https:` or
-  wildcard allowances as a shortcut.
-- Tests must prove Leaflet configuration does not enable Google origins, Google
-  configuration enables only the reviewed Google origins, malformed URLs add
-  nothing, and development-only loopback behavior cannot reach production.
+- Tests must prove Leaflet configuration does not enable Google origins,
+  malformed URLs add nothing, and development-only loopback behavior cannot
+  reach production.
 
 ## 8. Najm implementation slices
 
@@ -603,6 +631,20 @@ bun run --cwd packages/najm-kit typecheck:tests
 6. Add a Najm browser acceptance page using deterministic provider adapters for
    UI behavior, plus adapter-specific contract tests that do not depend on paid
    or mutable external services.
+
+### Slice N6 - shared runtime DX
+
+1. Add `najm-kit/location/runtime` with a serializable provider union and a
+   client provider that lazily loads Leaflet or Google only when the map mounts.
+2. Keep geocoders explicit and application-owned; do not add public Nominatim.
+3. Add `najm-next/location/server` with a prefix-based pure definition/resolver,
+   safe fallbacks, sanitized issue codes, and exact CSP source output.
+4. Publish both as isolated subpaths and document the one-definition consumer
+   pattern.
+5. Migrate the Najm playground to exercise the runtime provider without
+   duplicating lazy map-adapter construction.
+6. After explicit version/publication authorization, install the published
+   artifacts in Kafil and collapse its integration to one app definition.
 
 Najm gate from `C:\Users\hdevlop\Desktop\najm`:
 
@@ -692,12 +734,7 @@ Prove these configurations independently:
   unavailability;
 - `leaflet` with no geocoder: marker selection and current location work,
   search is absent, and no search request occurs;
-- `leaflet` with an app-supplied approved geocoder: search capability appears
-  without changing the form component;
-- `google` with key/search enabled: Google adapter and Places search appear;
-- `google` without a key: no Google script/request occurs and manual address
-  entry remains usable;
-- adapter load/search failure: committed form value is preserved and retry is
+- adapter load failure: committed form value is preserved and retry is
   available.
 
 ## 11. Test matrix
@@ -737,7 +774,7 @@ Extend focused family tests to prove:
 - both wizards register one household location field;
 - no visible latitude/longitude input remains;
 - all four locale catalogs contain the new dialog/status/error labels;
-- disabled/malformed/Leaflet/Google runtime configuration is parsed without
+- disabled/malformed/Leaflet runtime configuration is parsed without
   exposing unrelated environment data;
 - CSP allowlists match only the selected configuration;
 - server source and built client chunks contain no unrestricted or server-only
@@ -837,12 +874,10 @@ for one server process:
 
 1. `disabled` fallback;
 2. Leaflet with local tiles and no geocoder;
-3. malformed Google configuration with no outbound Google request.
+3. malformed provider configuration with no outbound provider request.
 
-Google's real hosted provider is a separate opt-in acceptance run requiring an
-explicitly authorized restricted test key, billing/quota confirmation, approved
-test data, and current terms review. It is not part of the deterministic default
-suite and must never use real household data.
+Google remains a separate Najm adapter/playground concern and is not part of
+Kafil acceptance for this adoption.
 
 ## 13. Browser execution ladder
 
@@ -1018,29 +1053,37 @@ response alone is not live feature acceptance.
 
 ### Najm Kit
 
-- [ ] Core location types and pure helpers implemented.
-- [ ] Transactional `NLocationInput` / `NLocationDialog` implemented.
-- [ ] `FormLocationInput` implemented as one object field.
-- [ ] Leaflet adapter implemented through an isolated optional subpath.
-- [ ] Google adapter implemented through an isolated optional subpath.
-- [ ] Search capability remains optional and public Nominatim is not defaulted.
-- [ ] Accessibility, RTL, responsive, failure, cleanup, and bundle-isolation
+- [x] Core location types and pure helpers implemented.
+- [x] Transactional `NLocationInput` / `NLocationDialog` implemented.
+- [x] `FormLocationInput` implemented as one object field.
+- [x] Leaflet adapter implemented through an isolated optional subpath.
+- [x] Google adapter implemented through an isolated optional subpath.
+- [x] Search capability remains optional and public Nominatim is not defaulted.
+- [x] Accessibility, RTL, responsive, failure, cleanup, and bundle-isolation
       tests pass.
-- [ ] Najm Kit full gate and Next.js 16 integration pass.
-- [ ] Minor version prepared, reviewed, committed, packed, and verified.
-- [ ] npm publication explicitly authorized and registry-verified.
+- [x] Najm Kit full gate and Next.js 16 integration pass.
+- [x] Minor version prepared, reviewed, committed, packed, and verified.
+- [x] npm publication explicitly authorized and registry-verified.
+- [x] Shared runtime provider and server resolver implemented in Najm source.
+- [x] Najm Kit and Najm Next unit suites plus package typechecks pass.
+- [x] Playground source uses the shared runtime provider and passes an isolated
+      page typecheck.
+- [x] Runtime-DX package builds, dist-shape checks, version preparation, and
+      publication are explicitly authorized and pass.
 
 ### Kafil
 
-- [ ] Published Najm Kit artifact installed and declarations verified.
-- [ ] Runtime provider config and safe client bridge implemented.
-- [ ] Provider-aware CSP implemented with exact-origin tests.
-- [ ] Local and deployment env templates documented without secrets.
-- [ ] Family create/edit use one `deliveryLocation` form field.
-- [ ] Backend DTO field names and coordinate semantics remain unchanged.
-- [ ] Four-locale copy and parity pass.
-- [ ] F8 form fill supplies a valid nested location.
-- [ ] Focused source, web, seed, root, build, and no-schema-drift gates pass.
+- [x] Published Najm Kit artifact installed and declarations verified.
+- [x] Runtime provider config and safe client bridge implemented.
+- [x] Provider-aware CSP implemented with exact-origin tests.
+- [x] Local and deployment env templates documented without secrets.
+- [x] Family create/edit use one `deliveryLocation` form field.
+- [x] Backend DTO field names and coordinate semantics remain unchanged.
+- [x] Four-locale copy and parity pass.
+- [x] F8 form fill supplies a valid nested location.
+- [x] Published runtime-DX packages replace the three Kafil-specific runtime
+      bridge files with one app-owned definition/facade.
+- [x] Focused source, web, seed, root, build, and no-schema-drift gates pass.
 - [ ] Deterministic Leaflet browser spec passes.
 - [ ] Existing create/edit browser regressions pass.
 - [ ] Production-style local browser range passes.

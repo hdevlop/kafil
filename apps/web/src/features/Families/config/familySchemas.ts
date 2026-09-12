@@ -71,12 +71,25 @@ const optionalOrderCountInput = z
     return Number.isInteger(parsed) && parsed >= 1 && parsed <= 31;
   }, "Enter 1 to 31 or leave empty for the global default");
 
-const optionalCoordinate = (minimum: number, maximum: number) =>
-  z.string().trim().refine((value) => {
-    if (!value || value.startsWith("Test ")) return true;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) && parsed >= minimum && parsed <= maximum;
-  }, `Enter a number from ${minimum} to ${maximum}`);
+const deliveryLocationSchema = z
+  .object({
+    address: z
+      .string()
+      .trim()
+      .min(5, "Enter the family's exact address")
+      .max(1_000),
+    latitude: z.number().finite().min(-90).max(90).nullable(),
+    longitude: z.number().finite().min(-180).max(180).nullable(),
+  })
+  .superRefine((value, context) => {
+    if ((value.latitude === null) !== (value.longitude === null)) {
+      context.addIssue({
+        code: "custom",
+        message: "Latitude and longitude must be provided together",
+        path: [value.latitude === null ? "latitude" : "longitude"],
+      });
+    }
+  });
 
 const householdFieldsShape = {
   housingSituation: z.enum(FAMILY_HOUSING_SITUATIONS),
@@ -87,31 +100,10 @@ const householdFieldsShape = {
   maxBudgetPerOrderMadInput: optionalMadAmountInput.default(""),
   monthlyBudgetMadInput: optionalMadAmountInput.default(""),
   notes: optionalText(2_000),
-  exactAddress: z
-    .string()
-    .trim()
-    .min(5, "Enter the family's exact address")
-    .max(1_000),
-  deliveryLatitudeInput: optionalCoordinate(-90, 90).default(""),
-  deliveryLongitudeInput: optionalCoordinate(-180, 180).default(""),
+  deliveryLocation: deliveryLocationSchema,
 };
 
-function validateCoordinatePair(
-  values: { deliveryLatitudeInput?: string; deliveryLongitudeInput?: string },
-  context: z.RefinementCtx,
-) {
-  const hasLatitude = Boolean(values.deliveryLatitudeInput);
-  const hasLongitude = Boolean(values.deliveryLongitudeInput);
-  if (hasLatitude !== hasLongitude) {
-    context.addIssue({
-      code: "custom",
-      message: "Latitude and longitude must be provided together",
-      path: [hasLatitude ? "deliveryLongitudeInput" : "deliveryLatitudeInput"],
-    });
-  }
-}
-
-const householdFieldsSchema = z.object(householdFieldsShape).superRefine(validateCoordinatePair);
+const householdFieldsSchema = z.object(householdFieldsShape);
 
 const updateHouseholdFieldsBaseShape = {
   ...householdFieldsShape,
@@ -126,8 +118,7 @@ const {
 } = updateHouseholdFieldsBaseShape;
 
 export const updateFamilyHouseholdStepSchema = z
-  .object(updateHouseholdNoPolicyShape)
-  .superRefine(validateCoordinatePair);
+  .object(updateHouseholdNoPolicyShape);
 
 export const createFamilyGuardianStepSchema = guardianFieldsSchema;
 export const createFamilyHouseholdStepSchema = householdFieldsSchema;
@@ -137,12 +128,10 @@ export const createFamilyChildrenStepSchema = z.object({
 
 export const createFamilyFormSchema = guardianFieldsSchema
   .extend(householdFieldsSchema.shape)
-  .extend(createFamilyChildrenStepSchema.shape)
-  .superRefine(validateCoordinatePair);
+  .extend(createFamilyChildrenStepSchema.shape);
 
 export const updateFamilyFormSchema = guardianFieldsSchema
-  .extend(updateHouseholdNoPolicyShape)
-  .superRefine(validateCoordinatePair);
+  .extend(updateHouseholdNoPolicyShape);
 
 export const familyStatusFormSchema = z.object({
   reason: z.string().trim().min(3, "Give a short reason").max(500),
@@ -183,12 +172,6 @@ function parseOptionalMad(value: string | undefined): number | null {
   return minor;
 }
 
-function parseOptionalCoordinate(value: string | undefined): number | null {
-  const trimmed = value?.trim();
-  if (!trimmed || trimmed.startsWith("Test ")) return null;
-  return Number(trimmed);
-}
-
 export function toCreateFamilyInput(
   values: CreateFamilyFormValues,
 ): CreateFamilyInput {
@@ -212,9 +195,9 @@ export function toCreateFamilyInput(
     email: values.email.trim(),
     guardianCin: values.guardianCin,
     guardianDateOfBirth: values.guardianDateOfBirth,
-    exactAddress: values.exactAddress.trim(),
-    deliveryLatitude: parseOptionalCoordinate(values.deliveryLatitudeInput),
-    deliveryLongitude: parseOptionalCoordinate(values.deliveryLongitudeInput),
+    exactAddress: values.deliveryLocation.address.trim(),
+    deliveryLatitude: values.deliveryLocation.latitude,
+    deliveryLongitude: values.deliveryLocation.longitude,
     housingSituation: values.housingSituation,
     registrationDate: values.registrationDate,
     supportPriority: values.supportPriority,
@@ -246,9 +229,9 @@ export function toUpdateFamilyInput(
     email: values.email.trim(),
     guardianCin: values.guardianCin,
     guardianDateOfBirth: values.guardianDateOfBirth,
-    exactAddress: values.exactAddress.trim(),
-    deliveryLatitude: parseOptionalCoordinate(values.deliveryLatitudeInput),
-    deliveryLongitude: parseOptionalCoordinate(values.deliveryLongitudeInput),
+    exactAddress: values.deliveryLocation.address.trim(),
+    deliveryLatitude: values.deliveryLocation.latitude,
+    deliveryLongitude: values.deliveryLocation.longitude,
     ...(values.housingSituation === "unknown"
       ? {}
       : { housingSituation: values.housingSituation }),

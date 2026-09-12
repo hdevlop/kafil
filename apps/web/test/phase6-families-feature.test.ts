@@ -27,7 +27,7 @@ describe("Phase 6C family invitation form", () => {
       email: "amina@example.com",
       guardianCin: "ab123456",
        guardianDateOfBirth: "1987-03-12",
-      exactAddress: "12 Example Street, Casablanca",
+      deliveryLocation: { address: "12 Example Street, Casablanca", latitude: null, longitude: null },
        housingSituation: "rented",
        registrationDate: "2026-01-15",
        supportPriority: "normal",
@@ -68,7 +68,7 @@ describe("Phase 6C family invitation form", () => {
       email: "youssef@example.com",
       guardianCin: "cd987654",
        guardianDateOfBirth: "1982-09-21",
-      exactAddress: "12 Example Street, Casablanca",
+      deliveryLocation: { address: "12 Example Street, Casablanca", latitude: null, longitude: null },
        housingSituation: "hosted",
        registrationDate: "2026-02-10",
        supportPriority: "high",
@@ -132,7 +132,7 @@ describe("Phase 6C family invitation form", () => {
       createFamilyFormSchema.safeParse({
         ...common,
         guardianCin: "AB123456",
-        exactAddress: "",
+        deliveryLocation: { address: "", latitude: null, longitude: null },
         phone: "",
         activationTargetMad: "7200",
       }).success,
@@ -142,7 +142,7 @@ describe("Phase 6C family invitation form", () => {
       createFamilyFormSchema.safeParse({
         ...common,
         guardianCin: "AB123456",
-        exactAddress: "Another exact address",
+        deliveryLocation: { address: "Another exact address", latitude: null, longitude: null },
         phone: "",
         activationTargetMad: "",
       }).success,
@@ -152,7 +152,7 @@ describe("Phase 6C family invitation form", () => {
       createFamilyFormSchema.safeParse({
         ...common,
         guardianCin: "",
-        exactAddress: "Another exact address",
+        deliveryLocation: { address: "Another exact address", latitude: null, longitude: null },
         phone: "",
         activationTargetMad: "7200",
       }).success,
@@ -258,7 +258,7 @@ describe("Phase 6C family lifecycle contracts", () => {
       email: "amina@example.com",
       guardianCin: "ab123456",
        guardianDateOfBirth: "1987-03-12",
-       exactAddress: "12 Example Street, Casablanca",
+       deliveryLocation: { address: "12 Example Street, Casablanca", latitude: null, longitude: null },
        housingSituation: "rented",
        registrationDate: "2026-01-15",
        supportPriority: "normal",
@@ -328,9 +328,7 @@ describe("family edit wizard parity", () => {
     supportPriority: "normal",
     activationTargetMad: "6400",
     notes: "Operator notes",
-    exactAddress: "12 Example Street, Casablanca",
-    deliveryLatitudeInput: "",
-    deliveryLongitudeInput: "",
+    deliveryLocation: { address: "12 Example Street, Casablanca", latitude: null, longitude: null },
   } as const;
 
   test("update household step accepts stored unknown housing", () => {
@@ -346,24 +344,21 @@ describe("family edit wizard parity", () => {
     expect(
       updateFamilyHouseholdStepSchema.safeParse({
         ...householdBase,
-        deliveryLatitudeInput: "33.5731",
-        deliveryLongitudeInput: "",
+        deliveryLocation: { address: "12 Example Street, Casablanca", latitude: 33.5731, longitude: null },
       }).success,
     ).toBe(false);
 
     expect(
       updateFamilyHouseholdStepSchema.safeParse({
         ...householdBase,
-        deliveryLatitudeInput: "",
-        deliveryLongitudeInput: "-7.5898",
+        deliveryLocation: { address: "12 Example Street, Casablanca", latitude: null, longitude: -7.5898 },
       }).success,
     ).toBe(false);
 
     expect(
       updateFamilyHouseholdStepSchema.safeParse({
         ...householdBase,
-        deliveryLatitudeInput: "33.5731",
-        deliveryLongitudeInput: "-7.5898",
+        deliveryLocation: { address: "12 Example Street, Casablanca", latitude: 33.5731, longitude: -7.5898 },
       }).success,
     ).toBe(true);
   });
@@ -399,9 +394,7 @@ describe("family edit wizard parity", () => {
     expect(Object.keys(updateFamilyHouseholdStepSchema.shape).sort()).toEqual(
       [
         "activationTargetMad",
-        "deliveryLatitudeInput",
-        "deliveryLongitudeInput",
-        "exactAddress",
+        "deliveryLocation",
         "housingSituation",
         "notes",
         "registrationDate",
@@ -414,8 +407,7 @@ describe("family edit wizard parity", () => {
     const values = updateFamilyFormSchema.parse({
       ...guardianBase,
       ...householdBase,
-      deliveryLatitudeInput: "33.5731",
-      deliveryLongitudeInput: "-7.5898",
+      deliveryLocation: { address: "12 Example Street, Casablanca", latitude: 33.5731, longitude: -7.5898 },
     });
 
     const input = toUpdateFamilyInput(values);
@@ -471,9 +463,7 @@ describe("family edit wizard parity", () => {
       '"supportPriority"',
       '"activationTargetMad"',
       '"notes"',
-      '"exactAddress"',
-      '"deliveryLatitudeInput"',
-      '"deliveryLongitudeInput"',
+      '"deliveryLocation"',
     ]) {
       expect(dialog).toContain(field);
     }

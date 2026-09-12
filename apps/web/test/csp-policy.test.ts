@@ -8,6 +8,7 @@ import {
   createContentSecurityPolicy,
   createCspNonce,
 } from "../src/lib/contentSecurityPolicy";
+import { kafilLocation } from "../src/lib/locationConfig";
 import { POST } from "../src/app/api/csp-report/route";
 
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..", "..");
@@ -61,6 +62,17 @@ describe("the per-request application policy", () => {
 
   test("allows React's development evaluator only outside production", () => {
     expect(createContentSecurityPolicy(nonce, true)).toContain("'unsafe-eval'");
+  });
+
+  test("adds only the configured location tile origin", () => {
+    const location = kafilLocation.resolve({
+      KAFIL_LOCATION_TILE_URL: "https://tiles.example.test/{z}/{x}/{y}.png",
+      KAFIL_LOCATION_TILE_ATTRIBUTION: "Example tiles",
+    });
+    const policy = createContentSecurityPolicy(nonce, false, location);
+
+    expect(policy).toContain("https://tiles.example.test");
+    expect(policy).not.toContain("{z}");
   });
 
   test("reports violations to the bounded application sink", () => {

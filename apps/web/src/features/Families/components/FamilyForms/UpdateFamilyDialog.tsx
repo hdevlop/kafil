@@ -127,9 +127,7 @@ export function UpdateFamilyDialogContent({
         "supportPriority",
         "activationTargetMad",
         "notes",
-        "exactAddress",
-        "deliveryLatitudeInput",
-        "deliveryLongitudeInput",
+        "deliveryLocation",
       ],
       schema: updateFamilyHouseholdStepSchema,
       render: () => (
@@ -161,9 +159,11 @@ export function UpdateFamilyDialogContent({
             ? minorUnitsToMadInput(family.funding.targetMinor)
             : "",
           notes: family.notes ?? "",
-          exactAddress: family.exactAddress,
-          deliveryLatitudeInput: family.deliveryLatitude?.toString() ?? "",
-          deliveryLongitudeInput: family.deliveryLongitude?.toString() ?? "",
+          deliveryLocation: {
+            address: family.exactAddress,
+            latitude: family.deliveryLatitude,
+            longitude: family.deliveryLongitude,
+          },
         }}
         onSubmit={handleSubmit}
         nextLabel={t("operator.families.next")}

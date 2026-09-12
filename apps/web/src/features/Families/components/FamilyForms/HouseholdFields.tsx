@@ -2,6 +2,7 @@
 
 import { House } from "lucide-react";
 import { FormInput, NFormSectionHeader } from "najm-kit";
+import { FormLocationInput } from "najm-kit/location";
 import { useWatch } from "react-hook-form";
 
 import { useTranslation } from "najm-i18n/react";
@@ -113,43 +114,26 @@ export function FamilyHouseholdFields({
             />
           </>
         ) : null}
-        <FormInput
-          name="notes"
-          type="textarea"
-          formLabel={t("operator.families.familyNotes")}
-          placeholder={t("operator.families.optionalOperatorNotes")}
-          icon="NotebookPen"
-          rows={4}
-          className="h-full"
-          disabled={disabled}
-        />
-        <FormInput
-          name="exactAddress"
-          type="textarea"
+        <FormLocationInput
+          name="deliveryLocation"
           formLabel={t("operator.families.exactAddress")}
           placeholder={t("operator.families.fullAddress")}
-          icon="MapPin"
-          rows={4}
-          className="h-full"
           disabled={disabled}
           required
+          classNames={{ item: "md:col-span-2", status: "hidden" }}
         />
-        <FormInput
-          name="deliveryLatitudeInput"
-          type="text"
-          formLabel={t("operator.families.deliveryLatitude")}
-          placeholder="33.5731"
-          icon="MapPin"
-          disabled={disabled}
-        />
-        <FormInput
-          name="deliveryLongitudeInput"
-          type="text"
-          formLabel={t("operator.families.deliveryLongitude")}
-          placeholder="-7.5898"
-          icon="MapPin"
-          disabled={disabled}
-        />
+        <div className="md:col-span-2">
+          <FormInput
+            name="notes"
+            type="textarea"
+            formLabel={t("operator.families.familyNotes")}
+            placeholder={t("operator.families.optionalOperatorNotes")}
+            icon="NotebookPen"
+            rows={4}
+            className="h-full"
+            disabled={disabled}
+          />
+        </div>
       </div>
     </div>
   );

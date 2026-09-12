@@ -84,9 +84,7 @@ export function CreateFamilyDialogContent() {
         "maxBudgetPerOrderMadInput",
         "monthlyBudgetMadInput",
         "notes",
-        "exactAddress",
-        "deliveryLatitudeInput",
-        "deliveryLongitudeInput",
+        "deliveryLocation",
       ],
       schema: createFamilyHouseholdStepSchema,
       render: () => (
@@ -198,8 +196,11 @@ export function CreateFamilyDialogContent() {
             maxOrdersPerMonthInput: ["2", "4", "6"],
             maxBudgetPerOrderMadInput: ["500.00", "750.00", "1000.00"],
             monthlyBudgetMadInput: ["1500.00", "2000.00", "2500.00"],
-            deliveryLatitudeInput: ["33.5731", "34.0209", "35.7595"],
-            deliveryLongitudeInput: ["-7.5898", "-6.8416", "-5.8340"],
+            deliveryLocation: [
+              { address: "12 Rue Example, Casablanca", latitude: 33.5731, longitude: -7.5898 },
+              { address: "24 Avenue Example, Rabat", latitude: 34.0209, longitude: -6.8416 },
+              { address: "8 Boulevard Example, Tangier", latitude: 35.7595, longitude: -5.834 },
+            ],
           },
         }}
       />

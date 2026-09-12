@@ -8,6 +8,7 @@ import { getSession } from "@/lib/session";
 import { AppProviders } from "@/providers/AppProviders";
 import { loadServerAppearance, loadServerBranding } from "@/lib/serverTheme";
 import { loadFormFillSetting } from "@/lib/serverSettings";
+import { kafilLocation } from "@/lib/locationConfig";
 import { kafilPreferences } from "@/lib/preferences";
 import { APP_NAME } from "@/types/branding";
 import { kafilI18n } from "@kafil/server/locales";
@@ -52,6 +53,9 @@ export default async function RootLayout({
     loadServerBranding(),
     loadFormFillSetting(),
   ]);
+  const locationConfig = kafilLocation.resolve(process.env, {
+    isDevelopment: process.env.NODE_ENV === "development",
+  }).config;
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   const { language, theme, timeZone } = kafilPreferences.resolve(cookieStore, {
@@ -76,6 +80,7 @@ export default async function RootLayout({
           initialDesign={appearance.designConfig}
           initialFormFill={formFill}
           initialLanguage={language}
+          locationConfig={locationConfig}
           initialSession={session}
           initialTheme={theme}
           initialTimeZone={timeZone}

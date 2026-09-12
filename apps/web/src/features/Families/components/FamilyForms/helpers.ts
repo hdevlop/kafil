@@ -26,9 +26,7 @@ export function createFamilyDefaultValues(): CreateFamilyFormValues {
     maxBudgetPerOrderMadInput: "",
     monthlyBudgetMadInput: "",
     notes: "",
-    exactAddress: "",
-    deliveryLatitudeInput: "",
-    deliveryLongitudeInput: "",
+    deliveryLocation: { address: "", latitude: null, longitude: null },
     initialChildren: [],
   };
 }
