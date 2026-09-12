@@ -140,6 +140,8 @@ export const updateFamilyDto = updateUserDto
     ...familyIdentityFields.partial().shape,
     ...familyProfileFields.partial().shape,
     fundingTargetMinor: positiveMinorAmountDto.optional(),
+    maxOrdersPerMonth: nullableMaxOrdersPerMonthDto,
+    monthlyBudgetMinor: nullableMinorAmountDto,
   })
   .superRefine(requireCoordinatePair);
 export const familyIdParams = z.object({

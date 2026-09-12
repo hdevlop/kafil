@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 import { cache as cachePlugin, type CachePluginConfig, CacheService } from "najm-cache";
 import { Server } from "najm-core";
 import { getGuardMetadata } from "najm-guard";
@@ -97,6 +97,7 @@ describe("Kafil auth definitions", () => {
           },
           rateLimit: { trustedProxyHops: 1 },
         });
+        expect(authInfrastructureConfig().rateLimit.skip).toBeUndefined();
       },
     );
   });
@@ -113,6 +114,7 @@ describe("Kafil auth definitions", () => {
           cache: { driver: "memory", required: false },
           rateLimit: { trustedProxyHops: 0 },
         });
+        expect(authInfrastructureConfig().rateLimit.skip?.()).toBe(true);
       },
     );
   });
@@ -201,6 +203,7 @@ describe("Kafil auth definitions", () => {
 
   it("never leaves the trusted-hop contract undeclared", () => {
     const redis = "redis://:test-password@redis.internal:6379/0";
+    const warning = spyOn(console, "warn").mockImplementation(() => undefined);
     const environments = [
       { KAFIL_TRUSTED_PROXY_HOPS: undefined, NODE_ENV: "production", REDIS_URL: redis },
       { KAFIL_TRUSTED_PROXY_HOPS: undefined, NODE_ENV: "development", REDIS_URL: undefined },
@@ -209,33 +212,37 @@ describe("Kafil auth definitions", () => {
       { KAFIL_TRUSTED_PROXY_HOPS: "2", NODE_ENV: "production", REDIS_URL: redis },
     ];
 
-    for (const environment of environments) {
-      withAuthEnvironment(environment, () => {
-        // Typed as `number`, not `number | undefined`: najm-rate reads an absent
-        // hop count as "use the deprecated leftmost X-Forwarded-For value", so
-        // widening this contract would silently restore the spoofable path.
-        const hops: number = authInfrastructureConfig().rateLimit.trustedProxyHops;
-        expect(Number.isInteger(hops)).toBe(true);
+    try {
+      for (const environment of environments) {
+        withAuthEnvironment(environment, () => {
+          // Typed as `number`, not `number | undefined`: najm-rate reads an absent
+          // hop count as "use the deprecated leftmost X-Forwarded-For value", so
+          // widening this contract would silently restore the spoofable path.
+          const hops: number = authInfrastructureConfig().rateLimit.trustedProxyHops;
+          expect(Number.isInteger(hops)).toBe(true);
 
-        // A chain of exactly the declared length is what the real topology
-        // produces; prepending an attacker-chosen entry must not move the
-        // boundary, whatever hop count this environment resolved to.
-        //
-        // No peer address is supplied here. The runtime's peer comes from the
-        // connection, which this unit cannot fabricate without asserting a
-        // contract it does not control, so at zero hops both chains resolve to
-        // the fail-closed token and share one bucket. najm-rate covers the
-        // peer-backed behaviour through its own middleware.
-        const declared = Array.from(
-          { length: hops },
-          (_, index) => `203.0.113.${index + 1}`,
-        ).join(", ");
-        const address = (forwarded: string) =>
-          resolveClientAddress({ "x-forwarded-for": forwarded }, hops);
+          // A chain of exactly the declared length is what the real topology
+          // produces; prepending an attacker-chosen entry must not move the
+          // boundary, whatever hop count this environment resolved to.
+          //
+          // No peer address is supplied here. The runtime's peer comes from the
+          // connection, which this unit cannot fabricate without asserting a
+          // contract it does not control, so at zero hops both chains resolve to
+          // the fail-closed token and share one bucket. najm-rate covers the
+          // peer-backed behaviour through its own middleware.
+          const declared = Array.from(
+            { length: hops },
+            (_, index) => `203.0.113.${index + 1}`,
+          ).join(", ");
+          const address = (forwarded: string) =>
+            resolveClientAddress({ "x-forwarded-for": forwarded }, hops);
 
-        expect(address(`192.0.2.44, ${declared}`)).toBe(address(declared));
-        expect(address(`192.0.2.44, ${declared}`)).not.toBe("192.0.2.44");
-      });
+          expect(address(`192.0.2.44, ${declared}`)).toBe(address(declared));
+          expect(address(`192.0.2.44, ${declared}`)).not.toBe("192.0.2.44");
+        });
+      }
+    } finally {
+      warning.mockRestore();
     }
   });
 

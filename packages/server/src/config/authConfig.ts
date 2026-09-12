@@ -67,6 +67,9 @@ function redisClient(
 
 export const authInfrastructureConfig = () => {
   const cacheConfig = envConfig.auth.cache;
+  const trustedProxyHops = envConfig.auth.trustedProxyHops;
+  const skipUnresolvableLocalRateLimits =
+    process.env.NODE_ENV !== "production" && trustedProxyHops === 0;
 
   return {
     cache: {
@@ -83,7 +86,13 @@ export const authInfrastructureConfig = () => {
         : {}),
     },
     rateLimit: {
-      trustedProxyHops: envConfig.auth.trustedProxyHops,
+      trustedProxyHops,
+      // The Web Request passed through a direct local Next.js route handler
+      // does not expose its socket peer. With zero trusted proxies, Najm must
+      // reject forwarded headers, so there is no trustworthy per-client key.
+      // Skip request-rate middleware in that development-only topology rather
+      // than warning and placing every request in one accidental bucket.
+      ...(skipUnresolvableLocalRateLimits ? { skip: () => true } : {}),
     },
   } as const;
 };

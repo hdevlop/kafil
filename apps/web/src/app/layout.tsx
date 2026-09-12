@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
 import { cookies, headers } from "next/headers";
-import Script from "next/script";
 import { NajmPwaRegistration } from "najm-next/pwa/react";
 import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { getSession } from "@/lib/session";
@@ -56,7 +55,6 @@ export default async function RootLayout({
   const locationConfig = kafilLocation.resolve(process.env, {
     isDevelopment: process.env.NODE_ENV === "development",
   }).config;
-  const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   const { language, theme, timeZone } = kafilPreferences.resolve(cookieStore, {
     languageFallback: (session?.user as { language?: unknown } | undefined)?.language,
@@ -72,9 +70,6 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-screen w-screen">
-        <Script id="zod-strict-csp" nonce={nonce} strategy="beforeInteractive">
-          {`globalThis.__zod_globalConfig ??= {}; globalThis.__zod_globalConfig.jitless = true;`}
-        </Script>
         <AppProviders
           initialBranding={branding}
           initialDesign={appearance.designConfig}

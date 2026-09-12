@@ -202,7 +202,8 @@ test.describe("login smoke", () => {
       })
       .toBe(true);
 
-    const secondResponse = await page.reload();
+    const secondResponse = await page.reload({ waitUntil: "commit" });
+    await expect(page.getByRole("button", { name: "Log in" })).toBeVisible();
     const secondNonce = await expectMatchingScriptNonces(
       page,
       secondResponse?.headers()["content-security-policy"],

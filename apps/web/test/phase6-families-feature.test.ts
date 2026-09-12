@@ -283,6 +283,8 @@ describe("Phase 6C family lifecycle contracts", () => {
       relationshipToChildren: "Legal guardian",
       notes: null,
       fundingTargetMinor: 640000,
+      maxOrdersPerMonth: null,
+      monthlyBudgetMinor: null,
     });
     expect(updateFamilyFormSchema.safeParse({ ...values, initialChildren: [] }).data)
       .not.toHaveProperty("initialChildren");
@@ -309,6 +311,16 @@ describe("Phase 6C family lifecycle contracts", () => {
       "detail",
       "family-1",
     ]);
+  });
+
+  test("refreshes family and budget data after a profile update", () => {
+    const hooks = readSource("../src/features/Families/hooks/useFamilies.ts");
+    const updateStart = hooks.indexOf("const update = useEntityCommand");
+    const removeStart = hooks.indexOf("const remove = useEntityCommand");
+    const updateBlock = hooks.slice(updateStart, removeStart);
+
+    expect(updateBlock).toContain("familyKeys.all");
+    expect(updateBlock).toContain("budgetKeys.all");
   });
 });
 
@@ -363,7 +375,7 @@ describe("family edit wizard parity", () => {
     ).toBe(true);
   });
 
-  test("update schemas strip dead order-policy keys without strict rejection", () => {
+  test("update schemas retain editable order and monthly policy keys", () => {
     const withPolicy = {
       ...guardianBase,
       ...householdBase,
@@ -378,24 +390,26 @@ describe("family edit wizard parity", () => {
       maxBudgetPerOrderMadInput: "1000",
       monthlyBudgetMadInput: "2000",
     });
-    expect(stepParsed).not.toHaveProperty("maxOrdersPerMonthInput");
+    expect(stepParsed.maxOrdersPerMonthInput).toBe("5");
     expect(stepParsed).not.toHaveProperty("maxBudgetPerOrderMadInput");
-    expect(stepParsed).not.toHaveProperty("monthlyBudgetMadInput");
+    expect(stepParsed.monthlyBudgetMadInput).toBe("2000");
 
     const formParsed = updateFamilyFormSchema.parse(withPolicy);
-    expect(formParsed).not.toHaveProperty("maxOrdersPerMonthInput");
+    expect(formParsed.maxOrdersPerMonthInput).toBe("5");
     expect(formParsed).not.toHaveProperty("maxBudgetPerOrderMadInput");
-    expect(formParsed).not.toHaveProperty("monthlyBudgetMadInput");
+    expect(formParsed.monthlyBudgetMadInput).toBe("2000");
     expect(updateFamilyFormSchema.safeParse({ ...formParsed, initialChildren: [] }).data)
       .not.toHaveProperty("initialChildren");
   });
 
-  test("update household step exposes only the no-policy household shape", () => {
+  test("update household step exposes the editable policy fields", () => {
     expect(Object.keys(updateFamilyHouseholdStepSchema.shape).sort()).toEqual(
       [
         "activationTargetMad",
         "deliveryLocation",
         "housingSituation",
+        "maxOrdersPerMonthInput",
+        "monthlyBudgetMadInput",
         "notes",
         "registrationDate",
         "supportPriority",
@@ -403,7 +417,7 @@ describe("family edit wizard parity", () => {
     );
   });
 
-  test("toUpdateFamilyInput keeps profile fields and coordinates without policy", () => {
+  test("toUpdateFamilyInput keeps profile fields, coordinates, and editable policy", () => {
     const values = updateFamilyFormSchema.parse({
       ...guardianBase,
       ...householdBase,
@@ -427,14 +441,14 @@ describe("family edit wizard parity", () => {
       relationshipToChildren: "Mother",
       notes: "Operator notes",
       fundingTargetMinor: 640000,
+      maxOrdersPerMonth: null,
+      monthlyBudgetMinor: null,
     });
-    expect(input).not.toHaveProperty("maxOrdersPerMonth");
     expect(input).not.toHaveProperty("maxBudgetPerOrderMinor");
-    expect(input).not.toHaveProperty("monthlyBudgetMinor");
     expect(input).not.toHaveProperty("initialChildren");
   });
 
-  test("edit wizard registers guardian fields on step one and no-policy household fields on step two", () => {
+  test("edit wizard registers guardian and household policy fields", () => {
     const dialog = readSource(
       "../src/features/Families/components/FamilyForms/UpdateFamilyDialog.tsx",
     );
@@ -445,7 +459,6 @@ describe("family edit wizard parity", () => {
     expect(dialog).toContain("createFamilyGuardianStepSchema");
     expect(dialog).toContain("updateFamilyHouseholdStepSchema");
     expect(dialog).toContain("showSectionHeader={false}");
-    expect(dialog).toContain("showPolicyFields={false}");
 
     for (const field of [
       '"name"',
@@ -462,14 +475,14 @@ describe("family edit wizard parity", () => {
       '"registrationDate"',
       '"supportPriority"',
       '"activationTargetMad"',
+      '"maxOrdersPerMonthInput"',
+      '"monthlyBudgetMadInput"',
       '"notes"',
       '"deliveryLocation"',
     ]) {
       expect(dialog).toContain(field);
     }
-    expect(dialog).not.toContain('"maxOrdersPerMonthInput"');
     expect(dialog).not.toContain('"maxBudgetPerOrderMadInput"');
-    expect(dialog).not.toContain('"monthlyBudgetMadInput"');
     expect(dialog).not.toContain('"initialChildren"');
   });
 

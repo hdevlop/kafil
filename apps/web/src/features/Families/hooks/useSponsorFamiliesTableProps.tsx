@@ -16,7 +16,7 @@ export function useSponsorFamiliesTableProps(
   onContribute: (family: SponsorFamilyView, assignmentId: string) => void,
 ): NTableProps<SponsorFamilyView> {
   const { t } = useTranslation();
-  const families = useResponsiveSponsorFamilyCatalog();
+  const families = useResponsiveSponsorFamilyCatalog({}, true, "infinite");
   const rows = useMemo(
     () => buildSponsorFamilyViews(families.data),
     [families.data],
@@ -70,8 +70,12 @@ export function useSponsorFamiliesTableProps(
     loading: families.loading,
     error: families.error,
     getRowId: (family) => family.id,
-    renderCard: ({ data }) => (
-      <FamilyCard data={data} onContribute={onContribute} />
+    renderCard: ({ data, row }) => (
+      <FamilyCard
+        data={data}
+        imageLoading={row.index === 0 ? "eager" : undefined}
+        onContribute={onContribute}
+      />
     ),
     renderEmpty: () => (
       <NEmptyState

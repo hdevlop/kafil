@@ -8,7 +8,7 @@ import {
   resolveOrderPolicy,
   setFamilyOrderPolicyDto,
 } from "../src/modules/budgets";
-import { createFamilyDto } from "../src/modules/families";
+import { createFamilyDto, updateFamilyDto } from "../src/modules/families";
 import {
   nullableMaxOrdersPerMonthDto,
   updateSettingsDto,
@@ -168,6 +168,27 @@ describe("family order limits DTO boundaries", () => {
     expect(
       createFamilyDto.safeParse({ ...base, maxOrdersPerMonth: 0 }).success,
     ).toBe(false);
+  });
+
+  it("allows family edits to set or restore the visible policy fields", () => {
+    expect(
+      updateFamilyDto.parse({
+        maxOrdersPerMonth: 4,
+        monthlyBudgetMinor: 200_000,
+      }),
+    ).toMatchObject({
+      maxOrdersPerMonth: 4,
+      monthlyBudgetMinor: 200_000,
+    });
+    expect(
+      updateFamilyDto.parse({
+        maxOrdersPerMonth: null,
+        monthlyBudgetMinor: null,
+      }),
+    ).toMatchObject({
+      maxOrdersPerMonth: null,
+      monthlyBudgetMinor: null,
+    });
   });
 });
 

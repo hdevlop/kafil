@@ -278,7 +278,14 @@ export class FamilyService {
   async update(id: string, data: UpdateFamilyDto, actorUserId: string) {
     const current = await this.validator.ensureExists(id);
     const input = updateFamilyDto.parse(data);
-    const { name, email, image, ...profile } = input;
+    const {
+      name,
+      email,
+      image,
+      maxOrdersPerMonth,
+      monthlyBudgetMinor,
+      ...profile
+    } = input;
     const changedFields = familyChangedFields(current, input);
 
     await this.validator.ensureEmailUnique(email, current.userId);
@@ -313,6 +320,34 @@ export class FamilyService {
       ...profile,
       ...(name === undefined ? {} : { guardianLegalName: name }),
     });
+
+    if (maxOrdersPerMonth !== undefined || monthlyBudgetMinor !== undefined) {
+      await this.accounts.createForFamily(id);
+      const locked = await this.accounts.lockByFamilyId(id);
+      if (!locked) HttpError.notFound("Budget account not found");
+
+      if (maxOrdersPerMonth !== undefined) {
+        await this.accounts.updatePolicy(locked.id, { maxOrdersPerMonth });
+      }
+
+      if (monthlyBudgetMinor !== undefined) {
+        if (!this.monthlyLimits) {
+          throw new Error("MonthlyBudgetLimitRepository is required when updating a family monthly limit");
+        }
+        const month = currentMonth();
+        if (monthlyBudgetMinor === null) {
+          await this.monthlyLimits.reset({ budgetAccountId: locked.id, month });
+        } else {
+          await this.monthlyLimits.set({
+            budgetAccountId: locked.id,
+            limitMinor: monthlyBudgetMinor,
+            month,
+            reason: "Set during family profile update",
+            setByUserId: actorUserId,
+          });
+        }
+      }
+    }
 
     const profileChangedFields = changedFields.filter(
       (field) => field !== "fundingTargetMinor",

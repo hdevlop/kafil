@@ -106,7 +106,6 @@ describe("family order limits create conversion", () => {
       supportPriority: "normal",
       activationTargetMad: "10000.00",
       maxOrdersPerMonthInput: "",
-      maxBudgetPerOrderMadInput: "",
       monthlyBudgetMadInput: "",
       notes: "",
       deliveryLocation: { address: "123 Test Street", latitude: null, longitude: null },

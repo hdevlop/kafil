@@ -97,7 +97,6 @@ const householdFieldsShape = {
   supportPriority: z.enum(FAMILY_SUPPORT_PRIORITIES),
   activationTargetMad: positiveMadAmount,
   maxOrdersPerMonthInput: optionalOrderCountInput.default(""),
-  maxBudgetPerOrderMadInput: optionalMadAmountInput.default(""),
   monthlyBudgetMadInput: optionalMadAmountInput.default(""),
   notes: optionalText(2_000),
   deliveryLocation: deliveryLocationSchema,
@@ -111,9 +110,6 @@ const updateHouseholdFieldsBaseShape = {
 };
 
 const {
-  maxOrdersPerMonthInput: _omittedMaxOrdersPerMonthInput,
-  maxBudgetPerOrderMadInput: _omittedMaxBudgetPerOrderMadInput,
-  monthlyBudgetMadInput: _omittedMonthlyBudgetMadInput,
   ...updateHouseholdNoPolicyShape
 } = updateHouseholdFieldsBaseShape;
 
@@ -183,9 +179,6 @@ export function toCreateFamilyInput(
   const maxOrdersPerMonth = parseOptionalCount(
     (values as { maxOrdersPerMonthInput?: string }).maxOrdersPerMonthInput,
   );
-  const maxBudgetPerOrderMinor = parseOptionalMad(
-    (values as { maxBudgetPerOrderMadInput?: string }).maxBudgetPerOrderMadInput,
-  );
   const monthlyBudgetMinor = parseOptionalMad(
     (values as { monthlyBudgetMadInput?: string }).monthlyBudgetMadInput,
   );
@@ -204,7 +197,6 @@ export function toCreateFamilyInput(
     phone: values.phone.trim(),
     fundingTargetMinor,
     ...(maxOrdersPerMonth !== null ? { maxOrdersPerMonth } : {}),
-    ...(maxBudgetPerOrderMinor !== null ? { maxBudgetPerOrderMinor } : {}),
     ...(monthlyBudgetMinor !== null ? { monthlyBudgetMinor } : {}),
     initialChildren: values.initialChildren.map(toInitialChild),
     relationshipToChildren: nullable(values.relationshipToChildren),
@@ -241,5 +233,7 @@ export function toUpdateFamilyInput(
     relationshipToChildren: nullable(values.relationshipToChildren),
     notes: nullable(values.notes),
     fundingTargetMinor,
+    maxOrdersPerMonth: parseOptionalCount(values.maxOrdersPerMonthInput),
+    monthlyBudgetMinor: parseOptionalMad(values.monthlyBudgetMadInput),
   };
 }

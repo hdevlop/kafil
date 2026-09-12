@@ -27,7 +27,14 @@ export function useFamiliesTableProps() {
   const { t } = useTranslation();
   const { isExactAdmin } = useKafilRole();
   const [listFilters, setListFilters] = useState<ListFamiliesFilters>({});
-  const operatorFamilies = useResponsiveFamilies(listFilters);
+  // Cards continue automatically as the user scrolls. An explicitly selected
+  // table keeps numbered pages because its rows are not virtualized.
+  const [tableView, setTableView] = useState(false);
+  const operatorFamilies = useResponsiveFamilies(
+    listFilters,
+    true,
+    tableView ? "paged" : "infinite",
+  );
   const columns = useFamiliesTableColumns();
   const filters = useFamiliesTableFilters(listFilters, setListFilters);
   const rows: FamilyRecord[] = operatorFamilies.data;
@@ -59,7 +66,12 @@ export function useFamiliesTableProps() {
     onView: openView,
     onEdit: openEdit,
     onRowClick: openView,
-    renderCard: FamilyCard,
+    renderCard: ({ data, row }) => (
+      <FamilyCard
+        data={data}
+        imageLoading={row.index === 0 ? "eager" : undefined}
+      />
+    ),
     renderEmpty: () => (
       <NEmptyState
         surface="panel"
@@ -139,6 +151,7 @@ export function useFamiliesTableProps() {
     showPagination: true,
     responsiveCards: true,
     defaultMode: "cards",
+    onModeChange: (mode) => setTableView(mode === "table"),
     classNames: {
       header: "relative z-20",
       cards:

@@ -133,6 +133,27 @@ test("role-scoped data reuses the shared catalog, order, and contribution compon
     expect(family).toContain('<NCardMedia variant="image" size={104}>');
     expect(family).toContain('className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4"');
     expect(family).toContain("<FundingProgressBar inline progress={data.funding} />");
+    expect(family).toContain('loading={imageLoading}');
+
+    const familyTable = readSource(
+      "../src/features/Families/hooks/useFamiliesTableProps.tsx",
+    );
+    const sponsorFamilyTable = readSource(
+      "../src/features/Families/hooks/useSponsorFamiliesTableProps.tsx",
+    );
+    expect(familyTable).toContain(
+      'imageLoading={row.index === 0 ? "eager" : undefined}',
+    );
+    expect(familyTable).toContain('tableView ? "paged" : "infinite"');
+    expect(familyTable).toContain(
+      'onModeChange: (mode) => setTableView(mode === "table")',
+    );
+    expect(sponsorFamilyTable).toContain(
+      'imageLoading={row.index === 0 ? "eager" : undefined}',
+    );
+    expect(sponsorFamilyTable).toContain(
+      'useResponsiveSponsorFamilyCatalog({}, true, "infinite")',
+    );
 
     expect(
       readSource(

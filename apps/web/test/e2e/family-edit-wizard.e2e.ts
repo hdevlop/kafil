@@ -360,7 +360,7 @@ test("family edit wizard persists profile changes on desktop", async ({
     });
     await expect(createDialog).toBeVisible();
     await expect(createDialog.getByLabel(/Max orders per month/)).toBeVisible();
-    await expect(createDialog.getByLabel(/Max budget per order/)).toBeVisible();
+    await expect(createDialog.getByLabel(/Max budget per order/)).toHaveCount(0);
     await expect(createDialog.getByLabel(/Monthly budget in MAD/)).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(createDialog).toBeHidden();

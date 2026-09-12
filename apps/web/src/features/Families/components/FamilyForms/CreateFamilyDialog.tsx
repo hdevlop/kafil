@@ -74,14 +74,13 @@ export function CreateFamilyDialogContent() {
     {
       id: "household",
       title: t("operator.families.householdStep"),
-      description: t("operator.families.householdStepDescription"),
+      description: "",
       fields: [
         "housingSituation",
         "registrationDate",
         "supportPriority",
         "activationTargetMad",
         "maxOrdersPerMonthInput",
-        "maxBudgetPerOrderMadInput",
         "monthlyBudgetMadInput",
         "notes",
         "deliveryLocation",
@@ -192,9 +191,8 @@ export function CreateFamilyDialogContent() {
         devTools={{
           overrides: {
             // najm-kit buildFormFill falls back to `Test <field>` for unknown
-            // strings; these policy/coordinate inputs need numeric strings.
+            // strings; these policy inputs need numeric strings.
             maxOrdersPerMonthInput: ["2", "4", "6"],
-            maxBudgetPerOrderMadInput: ["500.00", "750.00", "1000.00"],
             monthlyBudgetMadInput: ["1500.00", "2000.00", "2500.00"],
             deliveryLocation: [
               { address: "12 Rue Example, Casablanca", latitude: 33.5731, longitude: -7.5898 },

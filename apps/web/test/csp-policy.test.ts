@@ -103,14 +103,18 @@ describe("the edge preserves the application's nonce policy", () => {
 });
 
 describe("strict-CSP client initialization", () => {
-  test("configures Zod before hydration with the request nonce", () => {
+  test("configures Zod through Next's pre-hydration instrumentation hook", () => {
     const layout = read("apps/web/src/app/layout.tsx");
+    const instrumentation = read("apps/web/src/instrumentation-client.ts");
 
     expect(layout).toContain('headers()');
-    expect(layout).toContain('requestHeaders.get("x-nonce")');
-    expect(layout).toContain('strategy="beforeInteractive"');
-    expect(layout).toContain('nonce={nonce}');
-    expect(layout).toContain('__zod_globalConfig.jitless = true');
+    expect(layout).not.toContain('from "next/script"');
+    expect(layout).not.toContain('<script');
+    expect(instrumentation).toContain('configuredGlobal.__zod_globalConfig ??= {}');
+    expect(instrumentation).toContain(
+      'configuredGlobal.__zod_globalConfig.jitless = true',
+    );
+    expect(instrumentation).not.toContain("console.");
   });
 });
 

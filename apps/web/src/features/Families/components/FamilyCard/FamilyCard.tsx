@@ -37,6 +37,7 @@ export function FamilyCardFrame({
   imageFallbackSrc,
   imageSizes = "(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 20vw",
   imageUnoptimized = false,
+  imageLoading,
   bordered = false,
   headerAction,
   overlay,
@@ -49,6 +50,7 @@ export function FamilyCardFrame({
   imageFallbackSrc?: string;
   imageSizes?: string;
   imageUnoptimized?: boolean;
+  imageLoading?: "eager" | "lazy";
   bordered?: boolean;
   headerAction: ReactNode;
   overlay?: ReactNode;
@@ -68,6 +70,7 @@ export function FamilyCardFrame({
         <NCardMedia variant="image" size={104}>
           <NNextImage
             unoptimized={imageUnoptimized}
+            loading={imageLoading}
             src={imageSrc}
             fallbackSrc={imageFallbackSrc}
             alt={imageAlt}
@@ -155,9 +158,11 @@ function SponsorFamilyAction({
 
 export function FamilyCard({
   data,
+  imageLoading,
   onContribute,
 }: Readonly<{
   data: FamilyCardData;
+  imageLoading?: "eager" | "lazy";
   onContribute?: (family: SponsorFamilyView, assignmentId: string) => void;
 }>) {
   const { t } = useTranslation();
@@ -196,6 +201,7 @@ export function FamilyCard({
       imageSrc={getPersonImage({ image: data.image, role: "family" })}
       imageAlt={data.name}
       imageUnoptimized
+      imageLoading={imageLoading}
       headerAction={
         <div
           className={

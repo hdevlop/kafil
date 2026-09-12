@@ -58,7 +58,12 @@ describe("sponsor Families projection", () => {
     );
 
     expect(tableSource).toContain('import { FamilyCard }');
-    expect(tableSource).toContain("<FamilyCard data={data} onContribute={onContribute} />");
+    expect(tableSource).toContain("<FamilyCard");
+    expect(tableSource).toContain("data={data}");
+    expect(tableSource).toContain("onContribute={onContribute}");
+    expect(tableSource).toContain(
+      'imageLoading={row.index === 0 ? "eager" : undefined}',
+    );
     expect(cardSource).not.toContain("<Operator>");
     expect(cardSource).not.toContain("<OnlySponsor>");
     expect(cardSource).not.toContain("@/shared/Authorization");

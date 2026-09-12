@@ -4,8 +4,13 @@ import { useAuth } from "najm-auth/client/react";
 
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useOffsetInfiniteQuery, useResponsiveOffsetList } from "najm-kit/query";
+import {
+  type ListStrategy,
+  useOffsetInfiniteQuery,
+  useResponsiveOffsetList,
+} from "najm-kit/query";
 import type { OffsetPagination } from "najm-kit/pagination";
+import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
 import {
   type ListFamiliesFilters,
   type SponsorFamilyCatalogFilters,
@@ -41,10 +46,12 @@ export function useFamilies(
 export function useResponsiveFamilies(
   filters: ListFamiliesFilters = {},
   enabled = true,
+  strategy: ListStrategy = "paged",
 ) {
   const { accessToken, user } = useAuth();
   return useResponsiveOffsetList({
     enabled: Boolean(user && accessToken) && enabled,
+    strategy,
     queryKey: [
       ...familyKeys.all,
       "responsive",
@@ -93,10 +100,12 @@ export function useInfiniteSponsorFamilyCatalog(
 export function useResponsiveSponsorFamilyCatalog(
   filters: SponsorFamilyCatalogFilters = {},
   enabled = true,
+  strategy: ListStrategy = "paged",
 ) {
   const { accessToken, user } = useAuth();
   return useResponsiveOffsetList({
     enabled: Boolean(user && accessToken) && enabled,
+    strategy,
     queryKey: [
       ...familyKeys.sponsorCatalog(filters),
       "responsive",
@@ -119,7 +128,7 @@ export function useFamilyCommands() {
 
   const update = useEntityCommand({
     mutationFn: updateFamily,
-    invalidate: [familyKeys.all],
+    invalidate: [familyKeys.all, budgetKeys.all],
     successMessage: "Family profile updated.",
     errorMessage: "Could not update the family profile.",
   });

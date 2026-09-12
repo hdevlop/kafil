@@ -155,7 +155,11 @@ the process fails closed at startup and readiness reports the cache separately
 from PostgreSQL. `KAFIL_TRUSTED_PROXY_HOPS` must equal the exact number of known
 proxies between clients and Kafil (`1` for the current direct Traefik topology).
 Local development defaults to an in-process cache and trusts no forwarded
-addresses when `REDIS_URL` and the hop override are left empty.
+addresses when `REDIS_URL` and the hop override are left empty. In the direct
+zero-hop development topology, auth request-rate middleware is skipped because
+Next.js does not expose a trustworthy socket peer through the Web Request;
+durable account lockout remains separate. Set a positive hop count only when a
+known proxy actually supplies the forwarded chain.
 
 Seed repeatable demo data with 10 families, 20 sponsors, 6 operators, 4
 delivery staff, 20 contributions, 18 image-backed products, and 24

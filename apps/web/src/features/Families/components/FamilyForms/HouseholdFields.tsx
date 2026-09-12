@@ -70,7 +70,6 @@ export function FamilyHouseholdFields({
           name="supportPriority"
           type="select"
           formLabel={t("operator.families.supportPriority")}
-          formDescription={t("operator.families.supportPriorityHelp")}
           placeholder={t("operator.families.chooseSupportPriority")}
           items={priorityItems}
           icon="Flag"
@@ -94,14 +93,6 @@ export function FamilyHouseholdFields({
               formLabel={t("operator.families.maxOrdersLabel")}
               placeholder={t("operator.families.maxOrdersPlaceholder")}
               icon="Hash"
-              disabled={disabled}
-            />
-            <FormInput
-              name="maxBudgetPerOrderMadInput"
-              type="text"
-              formLabel={t("operator.families.maxPerOrderLabel")}
-              placeholder={t("operator.families.targetExample")}
-              icon="CircleDollarSign"
               disabled={disabled}
             />
             <FormInput

@@ -2,10 +2,13 @@
 
 import { useRef, useState } from "react";
 import type { StepConfig } from "najm-kit";
-import { useDialog, WizardForm } from "najm-kit";
+import { NSpinner, useDialog, WizardForm } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 import { minorUnitsToMadInput } from "@/features/Budgets/config/budgetSchemas";
+import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
+import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { getBudgetSummary } from "@/services/budgetApi";
 import {
   deleteFamilyImage,
   uploadFamilyImage,
@@ -34,6 +37,10 @@ export function UpdateFamilyDialogContent({
   const [imageError, setImageError] = useState<string | null>(null);
   const [removeFamilyImage, setRemoveFamilyImage] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const policy = useEntityQuery({
+    queryKey: [...budgetKeys.all, family.id],
+    queryFn: () => getBudgetSummary(family.id),
+  });
   const submittingRef = useRef(false);
   const isSubmitting = update.isPending || isUploadingImage;
 
@@ -120,12 +127,14 @@ export function UpdateFamilyDialogContent({
     {
       id: "household",
       title: t("operator.families.householdStep"),
-      description: t("operator.families.householdStepDescription"),
+      description: "",
       fields: [
         "housingSituation",
         "registrationDate",
         "supportPriority",
         "activationTargetMad",
+        "maxOrdersPerMonthInput",
+        "monthlyBudgetMadInput",
         "notes",
         "deliveryLocation",
       ],
@@ -134,11 +143,14 @@ export function UpdateFamilyDialogContent({
         <FamilyHouseholdFields
           disabled={isSubmitting}
           showSectionHeader={false}
-          showPolicyFields={false}
         />
       ),
     },
   ];
+
+  if (policy.isPending) {
+    return <NSpinner className="m-auto" />;
+  }
 
   return (
     <div className="h-full min-h-0" aria-busy={isSubmitting}>
@@ -158,6 +170,14 @@ export function UpdateFamilyDialogContent({
           activationTargetMad: family.funding
             ? minorUnitsToMadInput(family.funding.targetMinor)
             : "",
+          maxOrdersPerMonthInput:
+            policy.data?.orders?.override == null
+              ? ""
+              : String(policy.data.orders.override),
+          monthlyBudgetMadInput:
+            policy.data?.monthly?.override == null
+              ? ""
+              : minorUnitsToMadInput(policy.data.monthly.override),
           notes: family.notes ?? "",
           deliveryLocation: {
             address: family.exactAddress,

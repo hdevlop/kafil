@@ -23,7 +23,6 @@ export function createFamilyDefaultValues(): CreateFamilyFormValues {
     supportPriority: "normal",
     activationTargetMad: "",
     maxOrdersPerMonthInput: "",
-    maxBudgetPerOrderMadInput: "",
     monthlyBudgetMadInput: "",
     notes: "",
     deliveryLocation: { address: "", latitude: null, longitude: null },

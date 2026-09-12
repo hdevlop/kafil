@@ -94,6 +94,8 @@ export interface UpdateFamilyInput {
   relationshipToChildren?: string | null;
   notes?: string | null;
   fundingTargetMinor?: number;
+  maxOrdersPerMonth?: number | null;
+  monthlyBudgetMinor?: number | null;
 }
 
 export interface CreatedFamilyRecord extends FamilyRecord {

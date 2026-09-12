@@ -44,7 +44,6 @@ describe("F8 development form fills", () => {
     // `Test <field>` for these inputs, so the dialog supplies numeric strings.
     const values = buildFormFill(createFamilyFormSchema, {
       maxOrdersPerMonthInput: ["2", "4", "6"],
-      maxBudgetPerOrderMadInput: ["500.00", "750.00", "1000.00"],
       monthlyBudgetMadInput: ["1500.00", "2000.00", "2500.00"],
       deliveryLocation: [
         { address: "12 Rue Example, Casablanca", latitude: 33.5731, longitude: -7.5898 },
@@ -55,10 +54,7 @@ describe("F8 development form fills", () => {
     const count = Number(values.maxOrdersPerMonthInput);
     expect(Number.isInteger(count)).toBe(true);
     expect(count >= 1 && count <= 31).toBe(true);
-    for (const field of [
-      "maxBudgetPerOrderMadInput",
-      "monthlyBudgetMadInput",
-    ] as const) {
+    for (const field of ["monthlyBudgetMadInput"] as const) {
       expect(Number.isFinite(Number(values[field]))).toBe(true);
       expect(String(values[field])).not.toStartWith("Test ");
     }
