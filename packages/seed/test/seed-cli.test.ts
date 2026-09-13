@@ -138,11 +138,12 @@ describe("seed CLI", () => {
   });
 
   it("seeds categories, products, and realistic historical orders during demo seeding", async () => {
-    const [demoSeedSource, demoCommandSource] = await Promise.all([
+    const [demoSeedSource, demoCommandSource, demoOrdersSource] = await Promise.all([
       Bun.file(new URL("../src/demo-seed.ts", import.meta.url)).text(),
       Bun.file(
         new URL("../src/scripts/demo/seed-demo.ts", import.meta.url),
       ).text(),
+      Bun.file(new URL("../src/demo-orders.ts", import.meta.url)).text(),
     ]);
 
     expect(demoCommandSource).toContain("seedCatalogCategories");
@@ -151,5 +152,8 @@ describe("seed CLI", () => {
     expect(demoCommandSource).toContain("OrderEvidenceService");
     expect(demoCommandSource).toContain("OrderService");
     expect(demoSeedSource).toContain('functions: ["delivery"]');
+    expect(demoOrdersSource).toContain("scheduledDate: fixture.delivery.scheduledDate");
+    expect(demoOrdersSource).toContain("packageCount: fixture.delivery.packageCount");
+    expect(demoOrdersSource).toContain("reportOwnDeliveryIssue");
   });
 });

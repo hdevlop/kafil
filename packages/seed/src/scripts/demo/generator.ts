@@ -44,6 +44,7 @@ export interface DemoDelivery {
   name: string;
   notes: string;
   phone: string;
+  userId: string;
 }
 
 export type DemoSponsor = DemoPersonAccount;
@@ -60,6 +61,8 @@ export interface DemoChild {
 }
 
 export interface DemoFamily {
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
   email: string;
   exactAddress: string;
   housingSituation: "owned" | "rented" | "hosted" | "temporary";
@@ -106,6 +109,16 @@ export interface DemoOrder {
     | "purchased"
     | "rejected";
   familyProfileId: string;
+  delivery: {
+    issueKind?: "address_confirmation" | "family_unreachable" | "missing_proof";
+    latitude: number | null;
+    longitude: number | null;
+    packageCount: number;
+    scheduledDate: string;
+    staffIndex: number;
+    windowEndMinute: number;
+    windowStartMinute: number;
+  } | null;
   idempotencyKey: string;
   items: Array<{
     quantity: number;
@@ -190,6 +203,14 @@ const DELIVERY_JOB_TITLES = [
   "Family delivery driver",
   "Field delivery agent",
   "Last-mile courier",
+] as const;
+const CASABLANCA_DELIVERY_LOCATIONS = [
+  { address: "Maarif, Casablanca", latitude: 33.5737, longitude: -7.6417 },
+  { address: "Bourgogne, Casablanca", latitude: 33.5942, longitude: -7.6502 },
+  { address: "Gauthier, Casablanca", latitude: 33.5898, longitude: -7.6326 },
+  { address: "Anfa, Casablanca", latitude: 33.5901, longitude: -7.6774 },
+  { address: "Oasis, Casablanca", latitude: 33.5574, longitude: -7.6308 },
+  { address: "Ain Diab, Casablanca", latitude: 33.5984, longitude: -7.6901 },
 ] as const;
 
 export function readDemoSeedCounts(
@@ -442,6 +463,17 @@ function generateOrders(
   const orderCount = Math.min(24, activatedFamilies.length * 8);
   if (orderCount === 0) return [];
 
+  const statuses = Array.from({ length: orderCount }, (_, index) =>
+    demoOrderStatus(index, orderCount),
+  );
+  const dashboardIndexes = statuses.flatMap((status, index) =>
+    index >= orderCount - 9 &&
+    (status === "delivered" || status === "purchased" || status === "out_for_delivery")
+      ? [index]
+      : [],
+  );
+  const dashboardDate = casablancaCalendarDate(referenceDate);
+
   return Array.from({ length: orderCount }, (_, index) => {
     const monthSlot = Math.floor((index * 12) / orderCount);
     const monthOffset = 11 - monthSlot;
@@ -472,17 +504,52 @@ function generateOrders(
       }
     }
 
+    const expectedStatus = statuses[index]!;
+    const dashboardIndex = dashboardIndexes.indexOf(index);
+    const hasDelivery =
+      expectedStatus === "delivered" ||
+      expectedStatus === "purchased" ||
+      expectedStatus === "out_for_delivery";
+    const windowStartMinute = dashboardIndex >= 0
+      ? 13 * 60 + dashboardIndex * 60
+      : 9 * 60 + (index % 8) * 60;
+
     return {
       assistanceChannel: ["phone", "in_person", "home_visit"][
         index % 3
       ] as DemoOrder["assistanceChannel"],
-      expectedStatus: demoOrderStatus(index, orderCount),
+      expectedStatus,
       familyProfileId: family.id,
+      delivery: hasDelivery
+        ? {
+            ...(dashboardIndex >= 0 && expectedStatus === "purchased"
+              ? { issueKind: "address_confirmation" as const }
+              : {}),
+            latitude: family.deliveryLatitude,
+            longitude: family.deliveryLongitude,
+            packageCount: 1 + (index % 3),
+            scheduledDate: dashboardIndex >= 0
+              ? dashboardDate
+              : placedAt.slice(0, 10),
+            staffIndex: dashboardIndex >= 0 ? 0 : index,
+            windowEndMinute: windowStartMinute + 60,
+            windowStartMinute,
+          }
+        : null,
       idempotencyKey: `demo-assisted-order:${String(index + 1).padStart(4, "0")}`,
       items,
       placedAt,
     };
   });
+}
+
+function casablancaCalendarDate(referenceDate: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Africa/Casablanca",
+    year: "numeric",
+  }).format(referenceDate);
 }
 
 function demoOrderStatus(index: number, count: number): DemoOrder["expectedStatus"] {
@@ -685,6 +752,7 @@ function delivery(index: number, adultName: AdultNameGenerator): DemoDelivery {
   const name = adultName(gender).fullName;
   return {
     id: stableUuid(401, index),
+    userId: stableUuid(402, index),
     name,
     contactEmail: seedEmail("delivery", index),
     phone: seedPhone(40, index),
@@ -723,6 +791,8 @@ function family(
   const guardianGender = alternatingGender(index);
   const guardianName = adultName(guardianGender);
   const childCount = 1 + (index % 3);
+  const location = CASABLANCA_DELIVERY_LOCATIONS[index % CASABLANCA_DELIVERY_LOCATIONS.length]!;
+  const hasMappedLocation = index % 3 !== 2;
 
   return {
     id: stableUuid(301, index),
@@ -732,7 +802,9 @@ function family(
     guardianCin: seedCin("FM", index),
     guardianDateOfBirth: adultBirthDate(index + 19),
     guardianGender,
-    exactAddress: moroccanAddress(),
+    exactAddress: location.address,
+    deliveryLatitude: hasMappedLocation ? location.latitude : null,
+    deliveryLongitude: hasMappedLocation ? location.longitude : null,
     housingSituation: distributionValue(
       index,
       familyCount,

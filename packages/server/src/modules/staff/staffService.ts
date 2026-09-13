@@ -117,6 +117,38 @@ export class StaffService {
     });
   }
 
+  @Transaction({ retries: 2 })
+  async provisionDeliveryAccessWithUserId(
+    id: string,
+    data: ProvisionOperatorAccessDto,
+    actorUserId: string,
+    userId: string,
+  ) {
+    const body = provisionOperatorAccessDto.parse(data);
+    const profile = await this.validator.ensureExists(id);
+    if (!profile.functions.includes("delivery")) {
+      HttpError.conflict(
+        "Delivery function is required to provision a delivery account",
+      );
+    }
+    if (profile.functions.includes("operator")) {
+      HttpError.conflict(
+        "Operator-capable staff must use an operator account",
+      );
+    }
+    if (profile.affiliation !== "internal") {
+      HttpError.conflict("External staff cannot receive a Kafil delivery account");
+    }
+    if (profile.userId) {
+      HttpError.conflict("Staff profile already has an application account");
+    }
+    return this.provisionStaffAccessInternal(id, body, actorUserId, {
+      providedUserId: userId,
+      role: DELIVERY_ROLE,
+      sendInvitation: false,
+    });
+  }
+
   private async createInternal(
     data: CreateStaffDto & { userId?: string },
     actorUserId: string,

@@ -29,7 +29,6 @@ import type {
   DemoSponsor,
   DemoSupportAssignment,
 } from "./scripts/demo/generator";
-import { rebuildDemoBudgetSnapshots } from "./demo-budget";
 import {
   seedDemoOrderLimits,
   verifyDemoOrderLimits,
@@ -138,7 +137,6 @@ export async function seedDemoData(
     summary.contributions,
     expiresAt,
   );
-  await rebuildDemoBudgetSnapshots(data.families.map((family) => family.id));
   await seedDemoOrderLimits({
     demoOperatorUserId: data.operators[0]?.userId ?? actorUserId,
     demoFamilyIds: data.families.map((family) => family.id),
@@ -477,6 +475,7 @@ async function seedDeliveryGroup(
       notes: staffProfiles.notes,
       phone: staffProfiles.phone,
       status: staffProfiles.status,
+      userId: staffProfiles.userId,
     })
     .from(staffProfiles)
     .leftJoin(
@@ -536,7 +535,10 @@ async function seedDeliveryGroup(
     };
 
     if (!stored) {
-      await service.createWithUserId({ id: item.id, ...desired }, actorUserId);
+      await service.createWithUserId(
+        { id: item.id, userId: item.userId, ...desired },
+        actorUserId,
+      );
       result.inserted += 1;
     } else {
       const functionKeys = new Set(
@@ -567,7 +569,15 @@ async function seedDeliveryGroup(
           actorUserId,
         );
       }
-      if (needsRepair || stored.status !== "active") result.repaired += 1;
+      if (!stored.userId) {
+        await service.provisionDeliveryAccessWithUserId(
+          item.id,
+          { email: item.contactEmail },
+          actorUserId,
+          item.userId,
+        );
+      }
+      if (needsRepair || stored.status !== "active" || !stored.userId) result.repaired += 1;
       else result.skipped += 1;
     }
     logProgress("deliveries", index + 1, items.length);
@@ -607,6 +617,9 @@ async function seedFamilyGroup(
   const storedRows = profileIds.length
     ? await db
         .select({
+          deliveryLatitude: familyProfiles.deliveryLatitude,
+          deliveryLongitude: familyProfiles.deliveryLongitude,
+          exactAddress: familyProfiles.exactAddress,
           housingSituation: familyProfiles.housingSituation,
           id: familyProfiles.id,
           registrationDate: familyProfiles.registrationDate,
@@ -625,6 +638,9 @@ async function seedFamilyGroup(
         await services.families.update(
           family.id,
           {
+            deliveryLatitude: family.deliveryLatitude,
+            deliveryLongitude: family.deliveryLongitude,
+            exactAddress: family.exactAddress,
             housingSituation: family.housingSituation,
             registrationDate: family.registrationDate,
             supportPriority: family.supportPriority,
@@ -869,6 +885,9 @@ async function verifyDemoData(
 
     const familyRows = await db
       .select({
+        deliveryLatitude: familyProfiles.deliveryLatitude,
+        deliveryLongitude: familyProfiles.deliveryLongitude,
+        exactAddress: familyProfiles.exactAddress,
         id: familyProfiles.id,
         housingSituation: familyProfiles.housingSituation,
         registrationDate: familyProfiles.registrationDate,
@@ -888,6 +907,9 @@ async function verifyDemoData(
       const stored = familyRowsById.get(family.id);
       if (
         !stored ||
+        stored.exactAddress !== family.exactAddress ||
+        stored.deliveryLatitude !== family.deliveryLatitude ||
+        stored.deliveryLongitude !== family.deliveryLongitude ||
         stored.housingSituation !== family.housingSituation ||
         stored.registrationDate !== family.registrationDate ||
         stored.supportPriority !== family.supportPriority
@@ -1021,6 +1043,7 @@ async function verifyDemoDeliveries(items: readonly DemoDelivery[]) {
       id: staffProfiles.id,
       functionKey: staffFunctions.functionKey,
       status: staffProfiles.status,
+      userId: staffProfiles.userId,
     })
     .from(staffProfiles)
     .innerJoin(
@@ -1038,10 +1061,10 @@ async function verifyDemoDeliveries(items: readonly DemoDelivery[]) {
     );
   if (
     rows.length !== items.length ||
-    rows.some((row) => row.status !== "active")
+    rows.some((row) => row.status !== "active" || !row.userId)
   ) {
     throw new Error(
-      `Demo verification expected ${items.length} active delivery staff, found ${rows.length}.`,
+      `Demo verification expected ${items.length} linked active delivery staff, found ${rows.length}.`,
     );
   }
 }

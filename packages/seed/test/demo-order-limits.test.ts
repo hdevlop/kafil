@@ -42,5 +42,7 @@ describe("demo family order limits", () => {
 
     expect(orchestrator).not.toContain("delete(monthlyBudgetLimits)");
     expect(seeder).not.toContain("delete(monthlyBudgetLimits)");
+    expect(seeder).toContain("maxBudgetPerOrderMinor: null");
+    expect(seeder).toContain("maxOrdersPerMonth: null");
   });
 });

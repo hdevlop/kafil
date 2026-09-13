@@ -32,6 +32,16 @@ export async function seedDemoOrderLimits(input: {
     .where(eq(platformSettings.id, "platform"));
 
   const [firstFamilyId] = input.demoFamilyIds;
+  if (input.demoFamilyIds.length > 0) {
+    await db
+      .update(budgetAccounts)
+      .set({
+        maxBudgetPerOrderMinor: null,
+        maxOrdersPerMonth: null,
+        updatedAt: new Date(),
+      })
+      .where(inArray(budgetAccounts.familyProfileId, input.demoFamilyIds));
+  }
   if (firstFamilyId) {
     const [account] = await db
       .select({ id: budgetAccounts.id })

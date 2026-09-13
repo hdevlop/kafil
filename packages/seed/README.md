@@ -124,7 +124,11 @@ staff, and 20 contributions. Fully funded families receive 24 repeat orders
 spread across the trailing 12 months, with a realistic mix of delivered,
 rejected, cancelled, approved, purchased, pending, and out-for-delivery states.
 Order creation and lifecycle transitions use the normal services and ledger
-commands; reruns reuse the deterministic records.
+commands; reruns reuse the deterministic records. The first delivery-staff
+account receives six assignments scheduled for the current Casablanca date:
+four delivered, one in progress, and one assigned with an open address issue.
+Those assignments include package counts, delivery windows, and a mix of mapped
+and intentionally unmapped family addresses for dashboard testing.
 
 `demo` accepts configurable counts:
 

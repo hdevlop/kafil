@@ -3,17 +3,21 @@ import {
   budgetLedgerEntries,
   db,
   orderDeliveryAttempts,
+  orderDeliveryIssues,
   orderItems,
   orderPurchaseRecords,
   orders,
   orderStatusEvents,
   outboxEvents,
+  staffProfiles,
 } from "@kafil/server/database";
 import type {
+  AssignDeliveryDto,
   AssistedOrderDto,
   ConfirmDeliveryDto,
   OrderReasonDto,
   RecordPurchaseDto,
+  ReportDeliveryIssueDto,
 } from "@kafil/server/modules";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
@@ -58,7 +62,7 @@ interface DemoOrderService {
   approve(id: string, actorUserId: string): Promise<DemoOrderRecord>;
   assignDelivery(
     id: string,
-    data: { idempotencyKey: string; staffProfileId: string },
+    data: AssignDeliveryDto,
     actorUserId: string,
   ): Promise<DemoOrderRecord>;
   cancel(
@@ -76,6 +80,11 @@ interface DemoOrderService {
     data: RecordPurchaseDto,
     actorUserId: string,
   ): Promise<DemoOrderRecord>;
+  reportOwnDeliveryIssue(
+    id: string,
+    data: ReportDeliveryIssueDto,
+    actorUserId: string,
+  ): Promise<unknown>;
   reject(
     id: string,
     data: OrderReasonDto,
@@ -121,6 +130,27 @@ export async function seedDemoOrders(
     throw new Error("Demo orders require at least one delivery staff fixture.");
   }
 
+  const deliveryStaffRows = await db
+    .select({
+      affiliation: staffProfiles.affiliation,
+      companyName: staffProfiles.companyName,
+      id: staffProfiles.id,
+      name: staffProfiles.name,
+      phone: staffProfiles.phone,
+      userId: staffProfiles.userId,
+    })
+    .from(staffProfiles)
+    .where(inArray(staffProfiles.id, [...deliveryStaffIds]));
+  const deliveryStaffById = new Map(
+    deliveryStaffRows.map((staff) => [staff.id, staff]),
+  );
+  if (
+    deliveryStaffById.size !== deliveryStaffIds.length ||
+    deliveryStaffRows.some((staff) => !staff.userId)
+  ) {
+    throw new Error("Demo orders require linked users for every delivery staff fixture.");
+  }
+
   const { data: products } = await services.catalog.listProducts({
     limit: 100,
     offset: 0,
@@ -147,9 +177,15 @@ export async function seedDemoOrders(
   for (const [index, fixture] of fixtures.entries()) {
     const actorUserId =
       actorUserIds[index % actorUserIds.length] ?? fallbackActorUserId;
+    const deliveryStaffIndex = fixture.delivery?.staffIndex ?? index;
     const deliveryStaffId =
-      deliveryStaffIds[index % deliveryStaffIds.length]!;
+      deliveryStaffIds[deliveryStaffIndex % deliveryStaffIds.length]!;
+    const deliveryStaff = deliveryStaffById.get(deliveryStaffId)!;
+    const deliveryStaffUserId = deliveryStaff.userId!;
     const before = existingByKey.get(fixture.idempotencyKey);
+    if (before && fixture.delivery) {
+      await alignManagedDeliveryStaff(fixture, deliveryStaff);
+    }
     const order = await seedDemoOrder(
       fixture,
       deliveryStaffId,
@@ -160,6 +196,13 @@ export async function seedDemoOrders(
     );
     if (order.status === fixture.expectedStatus) {
       await alignDemoOrderTimeline(order.id, fixture);
+      await ensureDemoDeliveryIssue(
+        order.id,
+        fixture,
+        deliveryStaffId,
+        deliveryStaffUserId,
+        services.orders,
+      );
     }
 
     if (!before) result.inserted += 1;
@@ -177,6 +220,33 @@ export async function seedDemoOrders(
   );
   await verifyDemoOrders(fixtures);
   return result;
+}
+
+async function alignManagedDeliveryStaff(
+  fixture: DemoOrder,
+  staff: {
+    affiliation: string;
+    companyName: string | null;
+    id: string;
+    name: string;
+    phone: string;
+  },
+) {
+  await db
+    .update(orderDeliveryAttempts)
+    .set({
+      affiliationSnapshot: staff.affiliation as "external" | "internal",
+      companyNameSnapshot: staff.companyName,
+      deliveryNameSnapshot: staff.name,
+      deliveryPhoneSnapshot: staff.phone,
+      staffProfileId: staff.id,
+    })
+    .where(
+      eq(
+        orderDeliveryAttempts.assignmentIdempotencyKey,
+        `${fixture.idempotencyKey}:delivery:assign`,
+      ),
+    );
 }
 
 async function seedDemoOrder(
@@ -290,11 +360,20 @@ async function seedDemoOrder(
       actorUserId,
     );
   }
+  if (!fixture.delivery) {
+    throw new Error(
+      `Demo order '${fixture.idempotencyKey}' is missing its delivery schedule.`,
+    );
+  }
   order = await services.orders.assignDelivery(
     order.id,
     {
       idempotencyKey: `${fixture.idempotencyKey}:delivery:assign`,
+      packageCount: fixture.delivery.packageCount,
+      scheduledDate: fixture.delivery.scheduledDate,
       staffProfileId: deliveryStaffId,
+      windowEndMinute: fixture.delivery.windowEndMinute,
+      windowStartMinute: fixture.delivery.windowStartMinute,
     },
     actorUserId,
   );
@@ -324,6 +403,47 @@ async function seedDemoOrder(
   );
   ensureStatus(order, ["delivered"], fixture);
   return order;
+}
+
+async function ensureDemoDeliveryIssue(
+  orderId: string,
+  fixture: DemoOrder,
+  deliveryStaffId: string,
+  deliveryStaffUserId: string,
+  ordersService: DemoOrderService,
+) {
+  const issueKind = fixture.delivery?.issueKind;
+  if (!issueKind) return;
+
+  const [attempt] = await db
+    .select({
+      id: orderDeliveryAttempts.id,
+      staffProfileId: orderDeliveryAttempts.staffProfileId,
+    })
+    .from(orderDeliveryAttempts)
+    .where(
+      eq(
+        orderDeliveryAttempts.assignmentIdempotencyKey,
+        `${fixture.idempotencyKey}:delivery:assign`,
+      ),
+    )
+    .limit(1);
+  if (!attempt || attempt.staffProfileId !== deliveryStaffId) {
+    throw new Error(
+      `Demo order '${fixture.idempotencyKey}' is missing its managed delivery attempt.`,
+    );
+  }
+
+  await ordersService.reportOwnDeliveryIssue(
+    orderId,
+    {
+      attemptId: attempt.id,
+      idempotencyKey: `${fixture.idempotencyKey}:delivery:issue`,
+      kind: issueKind,
+      note: "Generated demo delivery attention case.",
+    },
+    deliveryStaffUserId,
+  );
 }
 
 async function ensureDemoReceipt(
@@ -381,6 +501,12 @@ async function alignDemoOrderTimeline(orderId: string, fixture: DemoOrder) {
     .update(orders)
     .set({
       createdAt: placedAt,
+      ...(fixture.delivery
+        ? {
+            deliveryLatitudeSnapshot: fixture.delivery.latitude,
+            deliveryLongitudeSnapshot: fixture.delivery.longitude,
+          }
+        : {}),
       updatedAt: finalAt,
       ...(isApprovedOrLater(fixture.expectedStatus) ? { approvedAt } : {}),
       ...(fixture.expectedStatus === "rejected"
@@ -443,6 +569,14 @@ async function alignDemoOrderTimeline(orderId: string, fixture: DemoOrder) {
     .set({
       assignedAt,
       createdAt: assignedAt,
+      ...(fixture.delivery
+        ? {
+            packageCount: fixture.delivery.packageCount,
+            scheduledDate: fixture.delivery.scheduledDate,
+            windowEndMinute: fixture.delivery.windowEndMinute,
+            windowStartMinute: fixture.delivery.windowStartMinute,
+          }
+        : {}),
       updatedAt: finalAt,
       ...(fixture.expectedStatus === "out_for_delivery" ||
       fixture.expectedStatus === "delivered"
@@ -511,7 +645,10 @@ async function alignDemoOrderTimeline(orderId: string, fixture: DemoOrder) {
 async function verifyDemoOrders(fixtures: readonly DemoOrder[]) {
   const rows = await db
     .select({
+      deliveryLatitude: orders.deliveryLatitudeSnapshot,
+      deliveryLongitude: orders.deliveryLongitudeSnapshot,
       familyProfileId: orders.familyProfileId,
+      id: orders.id,
       idempotencyKey: orders.submissionIdempotencyKey,
       placedAt: orders.createdAt,
       status: orders.status,
@@ -524,6 +661,55 @@ async function verifyDemoOrders(fixtures: readonly DemoOrder[]) {
       ),
     );
   const byKey = new Map(rows.map((row) => [row.idempotencyKey, row]));
+  const deliveryFixtures = fixtures.filter((fixture) => fixture.delivery);
+  const attempts = deliveryFixtures.length
+    ? await db
+        .select({
+          assignmentIdempotencyKey: orderDeliveryAttempts.assignmentIdempotencyKey,
+          id: orderDeliveryAttempts.id,
+          orderId: orderDeliveryAttempts.orderId,
+          packageCount: orderDeliveryAttempts.packageCount,
+          scheduledDate: orderDeliveryAttempts.scheduledDate,
+          staffProfileId: orderDeliveryAttempts.staffProfileId,
+          windowEndMinute: orderDeliveryAttempts.windowEndMinute,
+          windowStartMinute: orderDeliveryAttempts.windowStartMinute,
+        })
+        .from(orderDeliveryAttempts)
+        .where(
+          inArray(
+            orderDeliveryAttempts.assignmentIdempotencyKey,
+            deliveryFixtures.map(
+              (fixture) => `${fixture.idempotencyKey}:delivery:assign`,
+            ),
+          ),
+        )
+    : [];
+  const attemptsByKey = new Map(
+    attempts.map((attempt) => [attempt.assignmentIdempotencyKey, attempt]),
+  );
+  const issueFixtures = deliveryFixtures.filter(
+    (fixture) => fixture.delivery?.issueKind,
+  );
+  const issues = issueFixtures.length
+    ? await db
+        .select({
+          attemptId: orderDeliveryIssues.attemptId,
+          kind: orderDeliveryIssues.kind,
+          reportIdempotencyKey: orderDeliveryIssues.reportIdempotencyKey,
+        })
+        .from(orderDeliveryIssues)
+        .where(
+          inArray(
+            orderDeliveryIssues.reportIdempotencyKey,
+            issueFixtures.map(
+              (fixture) => `${fixture.idempotencyKey}:delivery:issue`,
+            ),
+          ),
+        )
+    : [];
+  const issuesByKey = new Map(
+    issues.map((issue) => [issue.reportIdempotencyKey, issue]),
+  );
   for (const fixture of fixtures) {
     const row = byKey.get(fixture.idempotencyKey);
     if (
@@ -535,6 +721,33 @@ async function verifyDemoOrders(fixtures: readonly DemoOrder[]) {
       throw new Error(
         `Demo order '${fixture.idempotencyKey}' did not match its managed fixture.`,
       );
+    }
+    if (row.status !== fixture.expectedStatus || !fixture.delivery) continue;
+
+    const attempt = attemptsByKey.get(
+      `${fixture.idempotencyKey}:delivery:assign`,
+    );
+    if (
+      !attempt ||
+      attempt.orderId !== row.id ||
+      attempt.scheduledDate !== fixture.delivery.scheduledDate ||
+      attempt.windowStartMinute !== fixture.delivery.windowStartMinute ||
+      attempt.windowEndMinute !== fixture.delivery.windowEndMinute ||
+      attempt.packageCount !== fixture.delivery.packageCount ||
+      row.deliveryLatitude !== fixture.delivery.latitude ||
+      row.deliveryLongitude !== fixture.delivery.longitude
+    ) {
+      throw new Error(
+        `Demo order '${fixture.idempotencyKey}' has an incorrect delivery fixture.`,
+      );
+    }
+    if (fixture.delivery.issueKind) {
+      const issue = issuesByKey.get(`${fixture.idempotencyKey}:delivery:issue`);
+      if (!issue || issue.attemptId !== attempt.id || issue.kind !== fixture.delivery.issueKind) {
+        throw new Error(
+          `Demo order '${fixture.idempotencyKey}' is missing its delivery issue.`,
+        );
+      }
     }
   }
 }

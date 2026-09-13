@@ -27,4 +27,13 @@ describe("delivery dashboard source contracts", () => {
     expect(map).not.toContain("watchPosition");
     expect(map).not.toContain("geolocation");
   });
+
+  test("keeps the Casablanca map mounted when a selected date has no mapped deliveries", () => {
+    const page = readFileSync("src/features/Dashboard/DeliveryDashboard/components/DeliveryDashboardPage.tsx", "utf8");
+    const map = readFileSync("src/features/Dashboard/DeliveryDashboard/components/DeliveryMap.tsx", "utf8");
+    expect(page).toContain("<DeliveryMap");
+    expect(page).not.toContain('items.some((item) => item.coordinates) ? <DeliveryMap');
+    expect(map).toContain('mappedItems.length === 0');
+    expect(map).toContain('map.setView(CASABLANCA, 12)');
+  });
 });

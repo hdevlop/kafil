@@ -40,6 +40,7 @@ describe("demo seed generator", () => {
     expect(data.assignments).toHaveLength(20);
     expect(data.contributions).toHaveLength(20);
     expect(data.orders).toHaveLength(24);
+    expect(new Set(data.deliveries.map((delivery) => delivery.userId)).size).toBe(4);
     expect(data.families.every((family) => family.initialChildren.length >= 1)).toBe(
       true,
     );
@@ -313,6 +314,9 @@ describe("demo seed generator", () => {
     const familyOrderCounts = countValues(
       data.orders.map((order) => order.familyProfileId),
     );
+    const dashboardDeliveries = data.orders.filter(
+      (order) => order.delivery?.scheduledDate === "2026-07-30",
+    );
 
     expect(data.orders).toHaveLength(24);
     expect(months.size).toBe(12);
@@ -335,6 +339,36 @@ describe("demo seed generator", () => {
       purchased: 1,
       rejected: 2,
     });
+    expect(dashboardDeliveries).toHaveLength(6);
+    expect(
+      countValues(dashboardDeliveries.map((order) => order.expectedStatus)),
+    ).toEqual({ delivered: 4, out_for_delivery: 1, purchased: 1 });
+    expect(
+      dashboardDeliveries.every(
+        (order) =>
+          order.delivery?.staffIndex === 0 &&
+          order.delivery.packageCount > 0 &&
+          order.delivery.windowStartMinute < order.delivery.windowEndMinute,
+      ),
+    ).toBe(true);
+    expect(
+      dashboardDeliveries.filter((order) => order.delivery?.issueKind),
+    ).toHaveLength(1);
+    expect(
+      dashboardDeliveries.some((order) => order.delivery?.latitude === null),
+    ).toBe(true);
+    expect(
+      dashboardDeliveries.some((order) => order.delivery?.latitude !== null),
+    ).toBe(true);
+    expect(
+      data.orders.every((order) =>
+        ["delivered", "out_for_delivery", "purchased"].includes(
+          order.expectedStatus,
+        )
+          ? order.delivery !== null
+          : order.delivery === null,
+      ),
+    ).toBe(true);
     expect(simulateHistoricalBalances(data)).toBe(true);
   });
 

@@ -215,7 +215,7 @@ for an assignment and is not derived from order-item quantity.
   Keep new historical fields nullable and provide an operator reconciliation
   path for existing unscheduled/unlocated assignments rather than fabricating a
   backfill.
-- [ ] Update demo fixtures with deterministic schedules, package counts,
+- [x] Update demo fixtures with deterministic schedules, package counts,
   mutually exclusive dashboard outcomes, issue cases, and a mix of present and
   absent coordinates.
 
