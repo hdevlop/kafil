@@ -36,4 +36,40 @@ describe("delivery dashboard source contracts", () => {
     expect(map).toContain('mappedItems.length === 0');
     expect(map).toContain('map.setView(CASABLANCA, 12)');
   });
+
+  test("keeps delivery date state off the URL and exposes only the Today preset", () => {
+    const page = readFileSync("src/features/Dashboard/DeliveryDashboard/components/DeliveryDashboardPage.tsx", "utf8");
+
+    expect(page).not.toContain("useSearchParams");
+    expect(page).not.toContain("useRouter");
+    expect(page).not.toContain("tomorrowDate");
+    expect(page).not.toContain("dashboard.delivery.tomorrow");
+    expect(page).toContain('const [date, setDate] = useState(() => casablancaDate())');
+    expect(page).toContain('currentUrl.searchParams.delete("date")');
+  });
+
+  test("reuses shared attention, quick-action, and dashboard skeleton components", () => {
+    const page = readFileSync("src/features/Dashboard/DeliveryDashboard/components/DeliveryDashboardPage.tsx", "utf8");
+    const adminAttention = readFileSync("src/features/Dashboard/AdminDashboard/components/AttentionCard.tsx", "utf8");
+    const adminActions = readFileSync("src/features/Dashboard/AdminDashboard/components/QuickActionsCard.tsx", "utf8");
+    const sponsorActions = readFileSync("src/features/Dashboard/SponsorDashboard/components/SponsorQuickActionsCard.tsx", "utf8");
+    const skeletons = readFileSync("src/features/Dashboard/shared/DashboardSkeletons.tsx", "utf8");
+
+    expect(page).toContain("<DashboardAttentionCard");
+    expect(page).toContain("<DashboardQuickActionsCard");
+    expect(page).toContain("<DeliveryDashboardSkeleton");
+    expect(adminAttention).toContain("<DashboardAttentionCard");
+    expect(adminActions).toContain("<DashboardQuickActionsCard");
+    expect(sponsorActions).toContain("<DashboardQuickActionsCard");
+    expect(skeletons).toContain("export function DeliveryDashboardSkeleton");
+  });
+
+  test("puts Today and the date picker in the map card header at equal height", () => {
+    const page = readFileSync("src/features/Dashboard/DeliveryDashboard/components/DeliveryDashboardPage.tsx", "utf8");
+
+    expect(page).toContain("<NCardAction>");
+    expect(page).toContain('className="h-10 px-3"');
+    expect(page).toContain('<DateInput');
+    expect(page).toContain('className="w-32 sm:w-48"');
+  });
 });

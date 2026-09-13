@@ -24,7 +24,7 @@ dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
   Families, and Packages remaining.
 - Delivery overview pie chart, latest five assigned deliveries, attention
   summary, selected-delivery summary, quick actions, and a family-address map.
-- Today, Tomorrow, and calendar-date selection driven by one URL-backed date.
+- Today and calendar-date selection driven by local dashboard state.
 - Bidirectional row/marker selection and selected-delivery actions.
 - Staff-scoped start, issue-reporting, and confirmation commands that reuse the
   existing order delivery state machine.
@@ -108,10 +108,13 @@ dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
 8. Delivery issues are separate operational records and never mutate the order
    lifecycle by themselves. Delay is derived from the schedule; the other
    three categories come from unresolved structured issues.
-9. Selection is one client-owned `selectedDeliveryId`. Rows and markers update
+9. The selected day is client-owned and defaults to today in Casablanca. It is
+   sent only to the dashboard API and is intentionally omitted from the browser
+   URL because it is transient operational state, not a shareable route state.
+10. Selection is one client-owned `selectedDeliveryId`. Rows and markers update
    that same state. Changing date clears a selection that is not present in the
    new response.
-10. All new visible copy is authored in English as requested. It still uses
+11. All new visible copy is authored in English as requested. It still uses
     Kafil translation keys, with native en/fr/ar/es copy and locale parity; no
     hard-coded component strings are introduced. RTL
     layout remains an acceptance requirement even though this surface's copy is
@@ -280,9 +283,9 @@ for an assignment and is not derived from order-item quantity.
   `PageHeaderGlobalActions`, `NGrid`, `NGridItem`, `NStatCard`, `NPieChart`,
   `NCard`, `NAvatar`, `NBadge`, `NButton`, Najm date/form primitives, shared
   formatters, and standard page feedback states.
-- [x] Use a URL-backed `date=YYYY-MM-DD`. Today, Tomorrow, and date-picker
-  controls all update that value without a full page reload or scroll reset.
-  Every section consumes the same query result.
+- [x] Keep the selected date in local dashboard state. Today and the date picker
+  update it without navigation or scroll reset; the obsolete `date` query is
+  removed on entry. Every section consumes the same query result.
 - [ ] Implement six top cards in the existing compact responsive pattern.
   Adapt labels to `Assigned today`/`Families today` only for the actual current
   date; use selected-date wording for any other date.
@@ -317,9 +320,11 @@ for an assignment and is not derived from order-item quantity.
   command. On success, invalidate the selected date's dashboard query plus the
   affected order/detail keys so statistics, chart, list, marker, and details
   update together.
-- [ ] Provide loading skeletons, whole-page error/retry, zeroed empty state, map
-  provider failure state, per-delivery location-unavailable treatment, and
-  mutation pending/error feedback.
+- [x] Provide a dashboard loading skeleton matching the established admin and
+  sponsor structure.
+- [ ] Provide whole-page error/retry, zeroed empty state, map provider failure
+  state, per-delivery location-unavailable treatment, and mutation pending/error
+  feedback.
 
 ### Phase 5 - Tests and real browser acceptance
 
@@ -388,7 +393,8 @@ for an assignment and is not derived from order-item quantity.
   empty dates.
 - [ ] Families is distinct families; Packages remaining uses real persisted
   package counts for non-delivered assignments.
-- [ ] The date control refreshes every section consistently and survives reload.
+- [ ] The date control refreshes every section consistently; reload resets it to
+  the current Casablanca date without adding transient state to the URL.
 - [ ] Rows and available markers select each other; missing-location rows remain
   fully usable without a fabricated pin.
 - [ ] The map has independent status markers, legend, and zoom only—no tracking,
@@ -411,9 +417,9 @@ treated as passed.
 
 | Boundary | Status | Evidence |
 | --- | --- | --- |
-| Source implementation | Implemented | `/delivery`, dashboard API/read model, Staff-owned commands, schedule/coordinates/issues, Leaflet map, passwordless Staff account invitations |
+| Source implementation | Implemented | `/delivery`, shared dashboard action/attention cards, local date state and matched header controls, shared skeleton structure, dashboard API/read model, Staff-owned commands, schedule/coordinates/issues, Leaflet map, passwordless Staff account invitations |
 | Migration/schema | Passed locally | `0046_misty_thing.sql` generated, reviewed, applied; second `bun run db:generate` found no drift |
-| Focused tests | Passed | Web 417/417; server 404/404; seed 89/89 in the root suite, including the installed Najm invitation-activation contract |
+| Focused tests | Passed | Delivery/dashboard 23/23; locale parity 5/5; root suites: web 443/443, server 410/410 (77 DB-gated skips), seed 90/90 |
 | PostgreSQL integration | Passed | `bun run test:db`: 55/55 after applying migration 0046 |
 | Browser acceptance | Manual pending | No Playwright spec was created or run, per user instruction |
 | Root gate | Passed | `bun run lint`, `bun run typecheck`, `bun run test`, `bun run build`, `bun run db:generate`; schema had no further drift |

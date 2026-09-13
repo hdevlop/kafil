@@ -1,18 +1,21 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
   CalendarDays,
   CheckCircle2,
+  ClockAlert,
   Clock3,
   ExternalLink,
+  FileWarning,
   MapPin,
+  MapPinned,
   Package,
   PackageCheck,
   Phone,
+  PhoneOff,
   Play,
   Truck,
   UsersRound,
@@ -23,6 +26,7 @@ import {
   NBadge,
   NButton,
   NCard,
+  NCardAction,
   NErrorState,
   NGrid,
   NGridItem,
@@ -32,13 +36,15 @@ import {
   NPageLayout,
   NPieChart,
   NStatCard,
-  SegmentedControl,
   useNajmFormat,
 } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import { getPublicApiErrorMessage } from "@/services/apiError";
+import { DashboardAttentionCard } from "../../shared/DashboardAttentionCard";
+import { DashboardQuickActionsCard } from "../../shared/DashboardQuickActionsCard";
+import { DeliveryDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import type { DeliveryDashboardItem } from "../../types";
 import { useDeliveryDashboard, useDeliveryDashboardCommands } from "../hooks/useDeliveryDashboard";
 
@@ -54,12 +60,6 @@ function casablancaDate(date = new Date()) {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
-}
-
-function tomorrowDate() {
-  const tomorrow = new Date();
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-  return casablancaDate(tomorrow);
 }
 
 function minuteLabel(value: number | null) {
@@ -78,17 +78,21 @@ function categoryKey(category: DeliveryDashboardItem["category"]) {
 export function DeliveryDashboardPage() {
   const { t } = useTranslation();
   const fmt = useNajmFormat();
-  const router = useRouter();
-  const search = useSearchParams();
-  const requestedDate = search.get("date");
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate ?? "") ? requestedDate! : casablancaDate();
+  const [date, setDate] = useState(() => casablancaDate());
   const today = casablancaDate();
-  const tomorrow = tomorrowDate();
   const dashboard = useDeliveryDashboard(date);
   const commands = useDeliveryDashboardCommands(date);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [issueKind, setIssueKind] = useState<"address_confirmation" | "family_unreachable" | "missing_proof">("address_confirmation");
+
+  useEffect(() => {
+    const currentUrl = new URL(window.location.href);
+    if (!currentUrl.searchParams.has("date")) return;
+
+    currentUrl.searchParams.delete("date");
+    window.history.replaceState(window.history.state, "", currentUrl);
+  }, []);
 
   const items = dashboard.data?.deliveries ?? [];
   const selected = items.find((item) => item.attemptId === selectedId) ?? items[0] ?? null;
@@ -99,9 +103,7 @@ export function DeliveryDashboardPage() {
     if (!next) return;
     setSelectedId(null);
     setShowAll(false);
-    const params = new URLSearchParams(search.toString());
-    params.set("date", next);
-    router.replace(`/delivery?${params.toString()}`, { scroll: false });
+    setDate(next);
   }
 
   async function start(item: DeliveryDashboardItem) {
@@ -137,7 +139,12 @@ export function DeliveryDashboardPage() {
   }
 
   if (dashboard.isPending || !dashboard.data) {
-    return <div className="m-4 h-96 animate-pulse rounded-xl bg-muted" />;
+    return (
+      <DeliveryDashboardSkeleton
+        loadingLabel={t("state.loading")}
+        title={t("dashboard.delivery.title")}
+      />
+    );
   }
 
   const data = dashboard.data;
@@ -156,12 +163,44 @@ export function DeliveryDashboardPage() {
     { icon: Package, key: "packagesRemaining" as const, value: counts.packagesRemaining },
   ];
   const attentionRows = [
-    { key: "addressToConfirm" as const, value: data.issueCounts.addressToConfirm },
-    { key: "familyUnreachable" as const, value: data.issueCounts.familyUnreachable },
-    { key: "missingProof" as const, value: data.issueCounts.missingProof },
-    { key: "delayed" as const, value: data.issueCounts.delayed },
+    { icon: MapPinned, id: "address-to-confirm", key: "addressToConfirm" as const, tone: "bg-amber-500", value: data.issueCounts.addressToConfirm },
+    { icon: PhoneOff, id: "family-unreachable", key: "familyUnreachable" as const, tone: "bg-sky-500", value: data.issueCounts.familyUnreachable },
+    { icon: FileWarning, id: "missing-proof", key: "missingProof" as const, tone: "bg-violet-500", value: data.issueCounts.missingProof },
+    { icon: ClockAlert, id: "delayed", key: "delayed" as const, tone: "bg-rose-500", value: data.issueCounts.delayed },
   ];
-  const datePreset = date === today ? "today" : date === tomorrow ? "tomorrow" : "custom";
+  const quickActions = [
+    {
+      description: t("dashboard.delivery.viewDeliveriesHint"),
+      icon: Truck,
+      id: "view-deliveries",
+      label: t("dashboard.delivery.viewDeliveries"),
+      onClick: () => document.getElementById("delivery-list")?.scrollIntoView({ behavior: "smooth" }),
+    },
+    {
+      description: t("dashboard.delivery.confirmDeliveryHint"),
+      disabled: !selected?.canConfirm || commands.confirm.isPending,
+      icon: CheckCircle2,
+      id: "confirm-delivery",
+      label: t("dashboard.delivery.confirmDelivery"),
+      onClick: () => { if (selected?.canConfirm) void confirm(selected); },
+    },
+    {
+      description: t("dashboard.delivery.callFamilyHint"),
+      disabled: !selected?.phone,
+      icon: Phone,
+      id: "call-family",
+      label: t("dashboard.delivery.callFamily"),
+      onClick: () => { if (selected?.phone) window.location.href = `tel:${selected.phone}`; },
+    },
+    {
+      description: t("dashboard.delivery.reportIssueHint"),
+      disabled: !selected?.canReportIssue || commands.reportIssue.isPending,
+      icon: AlertTriangle,
+      id: "report-issue",
+      label: t("dashboard.delivery.reportIssue"),
+      onClick: () => { if (selected?.canReportIssue) void reportIssue(selected); },
+    },
+  ];
 
   return (
     <NPageLayout className="flex min-h-full flex-col gap-4">
@@ -225,15 +264,15 @@ export function DeliveryDashboardPage() {
             </NCard>
           </div>
 
-          <NCard className="h-full" title={t("dashboard.delivery.attentionTitle")} icon={AlertTriangle}>
-            <div className="space-y-2.5 text-sm">
-              {attentionRows.map(({ key, value }) => (
-                <div key={key} className="flex items-center justify-between gap-4">
-                  <span>{t(`dashboard.delivery.${key}`)}</span>
-                  <strong>{fmt.number(value)}</strong>
-                </div>
-              ))}
-            </div>
+          <DashboardAttentionCard
+            allClearLabel={t("dashboard.operator.allClear")}
+            icon={AlertTriangle}
+            items={attentionRows.map(({ key, ...item }) => ({
+              ...item,
+              label: t(`dashboard.delivery.${key}`),
+            }))}
+            title={t("dashboard.delivery.attentionTitle")}
+          >
             {selected ? (
               <div className="mt-4 border-t pt-4">
                 <NAvatar
@@ -246,49 +285,41 @@ export function DeliveryDashboardPage() {
                 />
               </div>
             ) : null}
-          </NCard>
+          </DashboardAttentionCard>
 
-          <NCard className="h-full" title={t("dashboard.delivery.quickActions")} icon={Play}>
-            <div className="grid gap-2">
-              <NButton variant="outline" className="justify-start" onClick={() => document.getElementById("delivery-list")?.scrollIntoView({ behavior: "smooth" })}>
-                <Truck className="size-4" />{t("dashboard.delivery.viewDeliveries")}
-              </NButton>
-              <NButton variant="outline" className="justify-start" disabled={!selected?.canConfirm || commands.confirm.isPending} onClick={() => { if (selected?.canConfirm) void confirm(selected); }}>
-                <CheckCircle2 className="size-4" />{t("dashboard.delivery.confirmDelivery")}
-              </NButton>
-              <NButton variant="outline" className="justify-start" disabled={!selected?.phone} onClick={() => { if (selected?.phone) window.location.href = `tel:${selected.phone}`; }}>
-                <Phone className="size-4" />{t("dashboard.delivery.callFamily")}
-              </NButton>
-              <NButton variant="outline" className="justify-start" disabled={!selected?.canReportIssue || commands.reportIssue.isPending} onClick={() => { if (selected?.canReportIssue) void reportIssue(selected); }}>
-                <AlertTriangle className="size-4" />{t("dashboard.delivery.reportIssue")}
-              </NButton>
-            </div>
-          </NCard>
+          <DashboardQuickActionsCard actions={quickActions} title={t("dashboard.delivery.quickActions")} />
         </div>
 
         <NCard
           className="h-full xl:col-span-6"
-          classNames={{ content: "flex h-full min-h-0 flex-col" }}
+          classNames={{
+            content: "flex h-full min-h-0 flex-col",
+            header: "flex-wrap gap-2",
+          }}
           title={t("dashboard.delivery.mapTitle")}
           description={t("dashboard.delivery.mapSubtitle")}
           icon={MapPin}
         >
-          <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <SegmentedControl
-              value={datePreset}
-              onChange={(value) => {
-                if (value === "today") changeDate(today);
-                if (value === "tomorrow") changeDate(tomorrow);
-              }}
-              options={[
-                { value: "today", label: t("dashboard.delivery.today") },
-                { value: "tomorrow", label: t("dashboard.delivery.tomorrow") },
-              ]}
-              ariaLabel={t("dashboard.delivery.selectDate")}
-              size="sm"
-            />
-            <DateInput value={new Date(`${date}T12:00:00`)} onChange={changeDate} ariaLabel={t("dashboard.delivery.selectDate")} />
-          </div>
+          <NCardAction>
+            <div className="flex items-center gap-2">
+              <NButton
+                aria-pressed={date === today}
+                className="h-10 px-3"
+                onClick={() => changeDate(today)}
+                size="lg"
+                type="button"
+                variant={date === today ? "secondary" : "outline"}
+              >
+                {t("dashboard.delivery.today")}
+              </NButton>
+              <DateInput
+                ariaLabel={t("dashboard.delivery.selectDate")}
+                className="w-32 sm:w-48"
+                onChange={changeDate}
+                value={new Date(`${date}T12:00:00`)}
+              />
+            </div>
+          </NCardAction>
 
           <div className="relative min-h-[34rem] flex-1 overflow-hidden rounded-xl border">
             <DeliveryMap

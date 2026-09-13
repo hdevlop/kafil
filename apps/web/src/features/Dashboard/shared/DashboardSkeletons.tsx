@@ -1,6 +1,6 @@
 "use client";
 
-import { House, LayoutDashboard } from "lucide-react";
+import { House, LayoutDashboard, Truck } from "lucide-react";
 import {
   NPageHeader,
   NCard,
@@ -106,6 +106,29 @@ export function SponsorDashboardSkeleton({
           <NCard className="h-full" title={loadingLabel}><NSkeletonWidgets count={3} /></NCard>
         </NGridItem>
       </NGrid>
+    </NPageLayout>
+  );
+}
+
+export function DeliveryDashboardSkeleton({
+  loadingLabel,
+  title,
+}: Readonly<{ loadingLabel: string; title: string }>) {
+  return (
+    <NPageLayout className="flex min-h-full flex-col gap-4">
+      <NPageHeader icon={Truck} subtitle={loadingLabel} title={title} />
+      <StatSkeletonGrid count={6} xlColumns={6} />
+      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-12">
+        <div className="grid content-stretch gap-4 md:grid-cols-2 xl:col-span-6">
+          <ChartSkeletonCard loadingLabel={loadingLabel} variant="pie" />
+          {Array.from({ length: 3 }, (_, index) => (
+            <ListSkeletonCard key={index} loadingLabel={loadingLabel} />
+          ))}
+        </div>
+        <NCard className="h-full xl:col-span-6" title={loadingLabel}>
+          <NChartSkeleton variant="bar" />
+        </NCard>
+      </div>
     </NPageLayout>
   );
 }
