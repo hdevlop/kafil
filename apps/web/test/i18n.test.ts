@@ -13,7 +13,7 @@ describe("shared web locale definition", () => {
     expect(provider).toContain('from "najm-kit/app"');
     expect(provider).toContain("i18n={kafilUiI18n}");
     // The active language is the one facet no definition can know.
-    expect(provider).toContain("initialLanguage={initialLanguage}");
+    expect(provider).toContain("initialLanguage={snapshot.preferences.language}");
 
     // Catalogs, fallback policy, writing direction, and formatting tags are all
     // declared in the definition. Re-passing any of them here is the drift this

@@ -192,7 +192,7 @@ describe("najm-theme adoption — Kafil boundary", () => {
   });
 
   test("one module-scoped RSC bootstrap, with a server-only guard", () => {
-    const loader = readSource("../src/lib/serverTheme.ts");
+    const loader = readSource("../src/najm.server.ts");
 
     expect(loader).toStartWith('import "server-only";');
     // One import, of one definition. The factory design and the factory
@@ -210,7 +210,7 @@ describe("najm-theme adoption — Kafil boundary", () => {
     // The one compatibility override that has to survive: Kafil's routes are
     // `/api/appearance` and `/api/branding`, not `/api/theme/...`.
     expect(loader).toContain('basePath: "/api"');
-    expect(loader).not.toContain("onDiagnostic");
+    expect(loader).toContain("onDiagnostic");
     expect(loader).not.toContain("new Request");
 
     // Code lines only. The file explains in a comment why a second instance is
@@ -229,14 +229,16 @@ describe("najm-theme adoption — Kafil boundary", () => {
     // to `NThemeBrandingProvider`; the auth and first-login layouts render
     // slots from that context, so they neither import the loader nor thread a
     // `src` down. One load, and one place that can be wrong.
-    expect(readSource("../src/app/layout.tsx")).toContain('from "@/lib/serverTheme"');
+    const rootLayout = readSource("../src/app/layout.tsx");
+    expect(rootLayout).toContain('from "@/najm.server"');
+    expect(rootLayout).toContain("await loadUiSnapshot()");
 
     for (const path of [
       "../src/app/(auth)/layout.tsx",
       "../src/app/(first-login)/layout.tsx",
     ]) {
       const layout = readSource(path);
-      expect(layout).not.toContain("@/lib/serverTheme");
+      expect(layout).not.toContain("loadUiSnapshot");
       expect(layout).not.toContain("loadServerBranding");
     }
   });
@@ -270,7 +272,7 @@ describe("najm-theme adoption — Kafil boundary", () => {
     expect(provider).toContain("appName={APP_NAME}");
     // Najm Kit owns slot selection. Kafil forwards the package payload without
     // renaming, resolving, inheriting, or dropping consumer-defined slots.
-    expect(provider).toContain("initialBranding={initialBranding}");
+    expect(provider).toContain("initialBranding={snapshot.branding}");
     expect(provider).not.toContain("sidebarLogoExpandedPath:");
     expect(provider).not.toContain("sidebarLogoCollapsedPath:");
     expect(provider).not.toContain("??");
@@ -284,14 +286,15 @@ describe("najm-theme adoption — Kafil boundary", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
 
     expect(provider).toContain('import { NThemeBrandingProvider } from "najm-theme/react"');
-    expect(provider).toContain("<NThemeBrandingProvider branding={initialBranding}>");
+    expect(provider).toContain("NThemeBrandingProvider,");
+    expect(provider).toContain("branding: snapshot.branding");
 
     // Exactly one. `NThemeImage` throws outside the provider on purpose, and a
     // second provider lower in the tree would make a stale snapshot look like a
     // working one.
     const mounts = provider
       .split("\n")
-      .filter((line) => line.includes("<NThemeBrandingProvider"));
+      .filter((line) => line.includes("NThemeBrandingProvider,"));
     expect(mounts).toHaveLength(1);
   });
 
@@ -304,7 +307,7 @@ describe("najm-theme adoption — Kafil boundary", () => {
       "../src/app/(auth)/layout.tsx",
       "../src/app/(first-login)/layout.tsx",
       "../src/providers/AppProviders.tsx",
-      "../src/lib/serverTheme.ts",
+      "../src/najm.server.ts",
     ]) {
       const source = readSource(path);
       expect(source).not.toContain("logoExpanded.webp");

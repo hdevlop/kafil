@@ -1,4 +1,4 @@
-import { readBoundedJson, sanitizeCspReports } from "@/lib/cspReports";
+import { createCspReportHandler } from "najm-next/security/reports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,14 +14,6 @@ export const dynamic = "force-dynamic";
  * This route sits beside the `[...route]` catch-all deliberately — a static
  * segment wins over the catch-all, so reports never reach the Najm server.
  */
-export async function POST(request: Request): Promise<Response> {
-  const payload = await readBoundedJson(request);
-
-  if (payload !== null) {
-    for (const report of sanitizeCspReports(payload)) {
-      console.warn("[csp] violation", report);
-    }
-  }
-
-  return new Response(null, { status: 204 });
-}
+export const POST = createCspReportHandler({
+  sink: (report) => console.warn("[csp] violation", report),
+});

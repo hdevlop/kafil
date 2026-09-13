@@ -133,7 +133,7 @@ describe("Phase B notification shell and navigation", () => {
   });
 
   test("auth guards the inbox route for every role", async () => {
-    const auth = await readSource("../src/lib/auth.ts");
+    const auth = await readSource("../src/najm.config.ts");
     expect(auth).toContain('"/notifications"');
     expect(auth).toContain('"admin", "operator", "family", "sponsor"');
   });

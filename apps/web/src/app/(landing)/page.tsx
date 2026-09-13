@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 
 import { kafilPreferences } from "@/lib/preferences";
-import { getSession } from "@/lib/session";
+import { getSession } from "@/najm.server";
 import { kafilLocales, kafilUiI18n } from "@kafil/server/locales";
 import { LandingPage } from "@/features/Landing";
 
@@ -12,10 +12,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const [cookieStore, requestHeaders, session] = await Promise.all([
     cookies(),
     headers(),
-    getSession().catch(() => null),
+    getSession(),
   ]);
-  const { language } = kafilPreferences.resolve(cookieStore, {
-    languageFallback: (session?.user as { language?: unknown } | undefined)?.language,
+  const { language } = kafilPreferences.resolveOrdered(cookieStore, {
+    user: (session?.user ?? {}) as { language?: unknown },
     acceptLanguage: requestHeaders.get("accept-language"),
   });
   const t = kafilUiI18n.createTranslator(language);

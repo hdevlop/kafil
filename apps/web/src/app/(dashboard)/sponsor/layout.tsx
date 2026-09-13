@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/session";
+import { requireRole } from "@/najm.server";
 
 export default async function SponsorLayout({
   children,

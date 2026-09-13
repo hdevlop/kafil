@@ -1,5 +1,5 @@
 import { ApplicantsPage } from "@/features/Applicants";
-import { requireRole } from "@/lib/session";
+import { requireRole } from "@/najm.server";
 
 export const metadata = { title: "Applicants" };
 

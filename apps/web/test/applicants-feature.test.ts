@@ -112,7 +112,7 @@ describe("applicant creation thin route", () => {
     const otp = source("../src/features/Applicants/components/OtpStep.tsx");
     const page = source("../src/features/Applicants/components/ApplicantPage.tsx");
     const route = source("../src/app/(auth)/apply/page.tsx");
-    const auth = source("../src/lib/auth.ts");
+    const auth = source("../src/najm.config.ts");
 
     expect(route).toContain("ApplicantPage");
     expect(route).not.toContain("searchParams");
@@ -209,7 +209,7 @@ describe("admin applicant queue", () => {
   test("uses the shared management workspace structure", () => {
     const page = source("../src/features/Applicants/components/ApplicantsPage.tsx");
     const route = source("../src/app/(dashboard)/applicants/page.tsx");
-    const auth = source("../src/lib/auth.ts");
+    const auth = source("../src/najm.config.ts");
 
     expect(route).toContain("<ApplicantsPage />");
     expect(route).toContain('requireRole(["admin"])');

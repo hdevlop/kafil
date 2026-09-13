@@ -1,5 +1,5 @@
 import { SettingsPage } from "@/features/Settings";
-import { requireRole } from "@/lib/session";
+import { requireRole } from "@/najm.server";
 
 export const metadata = { title: "Platform settings" };
 

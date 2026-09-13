@@ -1,14 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
-import { cookies, headers } from "next/headers";
 import { NajmPwaRegistration } from "najm-next/pwa/react";
 import { NajmClientRoot } from "@/components/NajmClientRoot";
-import { getSession } from "@/lib/session";
+import { loadUiSnapshot } from "@/najm.server";
 import { AppProviders } from "@/providers/AppProviders";
-import { loadServerAppearance, loadServerBranding } from "@/lib/serverTheme";
-import { loadFormFillSetting } from "@/lib/serverSettings";
-import { kafilLocation } from "@/lib/locationConfig";
-import { kafilPreferences } from "@/lib/preferences";
 import { APP_NAME } from "@/types/branding";
 import { kafilI18n } from "@kafil/server/locales";
 import "./globals.css";
@@ -44,22 +39,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [session, cookieStore, requestHeaders, appearance, branding, formFill] = await Promise.all([
-    getSession().catch(() => null),
-    cookies(),
-    headers(),
-    loadServerAppearance(),
-    loadServerBranding(),
-    loadFormFillSetting(),
-  ]);
-  const locationConfig = kafilLocation.resolve(process.env, {
-    isDevelopment: process.env.NODE_ENV === "development",
-  }).config;
-
-  const { language, theme, timeZone } = kafilPreferences.resolve(cookieStore, {
-    languageFallback: (session?.user as { language?: unknown } | undefined)?.language,
-    acceptLanguage: requestHeaders.get("accept-language"),
-  });
+  const snapshot = await loadUiSnapshot();
+  const { language, theme, timeZone } = snapshot.preferences;
 
   return (
     <html
@@ -70,16 +51,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-screen w-screen">
-        <AppProviders
-          initialBranding={branding}
-          initialDesign={appearance.designConfig}
-          initialFormFill={formFill}
-          initialLanguage={language}
-          locationConfig={locationConfig}
-          initialSession={session}
-          initialTheme={theme}
-          initialTimeZone={timeZone}
-        >
+        <AppProviders snapshot={snapshot}>
           {children}
           <NajmClientRoot />
           <NajmPwaRegistration />

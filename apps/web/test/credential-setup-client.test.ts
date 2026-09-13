@@ -54,7 +54,7 @@ describe("credential setup client", () => {
 
     // Renaming this silently restores persistent cookies for a browser that
     // still holds kafil.remember=0.
-    expect(route).toContain('rememberCookieName: "kafil.remember"');
+    expect(route).toContain("rememberCookieName: kafilApp.auth.rememberCookieName");
     expect(route).toContain('import { auth } from "@/lib/auth"');
     expect(route).toContain("auth.routeHandlers(serverHandler");
     expect(route).toContain(

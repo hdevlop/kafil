@@ -1,3 +1,3 @@
 import { kafilPreferences } from "@/lib/preferences";
 
-export const POST = kafilPreferences.handlers.language;
+export const { POST, DELETE } = kafilPreferences.routes.language;

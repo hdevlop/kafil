@@ -1,4 +1,4 @@
-import { requireSession } from "@/lib/session";
+import { requireSession } from "@/najm.server";
 import { DashboardShell } from "@/shared/DashboardShell";
 
 export default async function DashboardLayout({

@@ -1,5 +1,5 @@
 import { SupportAssignmentsPage } from "@/features/SupportAssignments";
-import { requireRole } from "@/lib/session";
+import { requireRole } from "@/najm.server";
 
 export const metadata = { title: "Support assignments" };
 

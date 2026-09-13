@@ -4,6 +4,7 @@ import { Protected, useLogout } from "najm-auth/client/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, Settings2, UserRound } from "lucide-react";
 import { NButton, NLoadingState, NajmScroll, NSidebar, NSidebarProvider, useNSidebar } from "najm-kit";
+import { clearNajmUiPreferences, logoutWithNajmPreferenceCleanup } from "najm-kit/server";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, type ComponentType } from "react";
@@ -184,7 +185,10 @@ export function DashboardShell({ children, user, }: Readonly<{ children: React.R
       logoutStarted.current = true;
       queryClient.clear();
       useOrderCartStore.getState().bindSession(null);
-      void logout().then(() => {
+      void logoutWithNajmPreferenceCleanup({
+         logout,
+         clearPreferences: clearNajmUiPreferences,
+      }).then(() => {
          router.replace("/login");
       });
    }, [logout, queryClient, router]);

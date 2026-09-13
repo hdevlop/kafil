@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { NThemeImage } from "najm-theme/react";
 
-import { getSession } from "@/lib/session";
+import { getSession } from "@/najm.server";
 
 export default async function AuthLayout({
   children,

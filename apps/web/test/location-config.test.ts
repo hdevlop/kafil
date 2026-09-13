@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { kafilLocation } from "../src/lib/locationConfig";
+import { kafilLocation } from "../src/najm.config";
 
 describe("family location runtime config", () => {
   test("defaults to the Leaflet provider and Morocco center", () => {

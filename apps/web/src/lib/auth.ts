@@ -1,54 +1,27 @@
 import { defineAuth } from "najm-auth/client/server";
 
+import { kafilApp } from "@/najm.config";
+
+const roleRoutes = Object.fromEntries(
+  Object.entries(kafilApp.auth.roleRoutes ?? {}).map(([route, roles]) => [
+    route,
+    [...roles],
+  ]),
+);
+
 export const auth = defineAuth({
-  apiBaseURL: "/api",
-  authPrefix: "/auth",
+  apiBaseURL: kafilApp.auth.apiBaseURL,
+  authPrefix: kafilApp.auth.authPrefix,
   afterLoginRoute: "/dashboard",
-  loginRoute: "/login",
-  forbiddenRoute: "/forbidden",
-  publicRoutes: [
-    "/",
-    "/apply",
-    "/change-password",
-    "/auth/oauth/callback",
-    "/login",
-    "/forgot-password",
-    "/reset-password",
-  ],
-  protectedRoutes: [
-    "/dashboard",
-    "/forbidden",
-    "/operator/:path*",
-    "/family/:path*",
-    "/sponsor/:path*",
-    "/products",
-    "/categories",
-    "/orders",
-    "/contribution",
-    "/family",
-    "/children",
-    "/applicants",
-    "/notifications",
-  ],
-  roleRoutes: {
-    "/operator/:path*": ["admin", "operator"],
-    "/family": ["admin", "operator", "sponsor"],
-    "/family/:path*": ["family"],
-    "/children": ["admin", "operator", "family"],
-    "/sponsor/:path*": ["sponsor"],
-    "/products": ["admin", "operator", "family"],
-    "/categories": ["admin", "operator", "family"],
-    "/orders": ["admin", "operator", "family", "sponsor"],
-    "/contribution": ["admin", "operator", "family", "sponsor"],
-    "/applicants": ["admin"],
-    "/notifications": ["admin", "operator", "family", "sponsor"],
-  },
-  refreshThreshold: 0.8,
-  tabSync: true,
-  // Proxy is an optimistic routing boundary. Revalidating every otherwise
-  // valid signed snapshot makes every protected page response a potential
-  // `najm.session` writer, including a response that began before logout and
-  // arrives after the logout deletion. API authorization remains authoritative,
-  // and a missing or expired snapshot still uses Najm's recovery path.
-  proxySessionMode: "optimistic",
+  loginRoute: kafilApp.auth.loginRoute,
+  forbiddenRoute: kafilApp.auth.forbiddenRoute,
+  publicRoutes: [...kafilApp.auth.publicRoutes],
+  protectedRoutes: [...kafilApp.auth.protectedRoutes],
+  roleRoutes,
+  refreshThreshold: kafilApp.auth.refreshThreshold,
+  tabSync: kafilApp.auth.tabSync,
+  // Proxy is an optimistic routing boundary. API authorization remains
+  // authoritative, while a missing or expired snapshot still uses Najm's
+  // recovery path without letting an older response resurrect a logout.
+  proxySessionMode: kafilApp.auth.proxySessionMode,
 });

@@ -4,6 +4,10 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
 
 ## Root plans
 
+- [`NAJM-APP-INTEGRATION-DX-PLAN.md`](../../NAJM-APP-INTEGRATION-DX-PLAN.md)
+  - planned shared Najm CSP/reporting, server bootstrap, preferences, provider
+    and location integration, with independent Kafil and School migrations,
+    validation, package release, and future-app scaffolding.
 - [`DELIVERY-STAFF-DASHBOARD-PLAN.md`](../../DELIVERY-STAFF-DASHBOARD-PLAN.md)
   - planned real-data, assignment-scoped Delivery dashboard with scheduling,
     issue tracking, family-address mapping, staff-owned commands, responsive

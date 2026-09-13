@@ -1,6 +1,7 @@
 import { server } from "@kafil/server";
 import { handle } from "najm-core";
 import { auth } from "@/lib/auth";
+import { kafilApp } from "@/najm.config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +15,6 @@ const serverHandler = handle(server);
 // cookie name is Kafil's, and renaming it would silently restore persistent
 // cookies for a browser still holding `kafil.remember=0`.
 const handlers = auth.routeHandlers(serverHandler, {
-  rememberCookieName: "kafil.remember",
+  rememberCookieName: kafilApp.auth.rememberCookieName,
 });
 export const { GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS } = handlers;

@@ -3,12 +3,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readBoundedJson, sanitizeCspReports } from "../src/lib/cspReports";
+import { createNajmCsp, createNajmNonce } from "najm-next/security";
 import {
-  createContentSecurityPolicy,
-  createCspNonce,
-} from "../src/lib/contentSecurityPolicy";
-import { kafilLocation } from "../src/lib/locationConfig";
+  readNajmBoundedJson,
+  sanitizeNajmCspReports,
+} from "najm-next/security/reports";
+import { kafilApp, kafilLocation } from "../src/najm.config";
 import { POST } from "../src/app/api/csp-report/route";
 
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..", "..");
@@ -20,8 +20,19 @@ const SOURCES = [
 ];
 
 describe("the per-request application policy", () => {
-  const nonce = "test-nonce_123=";
-  const enforced = createContentSecurityPolicy(nonce, false);
+  const nonce = "dGVzdC1ub25jZQ==";
+  const createPolicy = (
+    nonceValue: string,
+    isDevelopment: boolean,
+    location = kafilLocation.resolve({}),
+  ) =>
+    createNajmCsp(nonceValue, {
+      mode: "nonce",
+      isDevelopment,
+      app: kafilApp,
+      locationCsp: location.csp,
+    });
+  const enforced = createPolicy(nonce, false);
 
   test("enforces every directive the app can satisfy", () => {
 
@@ -61,7 +72,7 @@ describe("the per-request application policy", () => {
   });
 
   test("allows React's development evaluator only outside production", () => {
-    expect(createContentSecurityPolicy(nonce, true)).toContain("'unsafe-eval'");
+    expect(createPolicy(nonce, true)).toContain("'unsafe-eval'");
   });
 
   test("adds only the configured location tile origin", () => {
@@ -69,7 +80,7 @@ describe("the per-request application policy", () => {
       KAFIL_LOCATION_TILE_URL: "https://tiles.example.test/{z}/{x}/{y}.png",
       KAFIL_LOCATION_TILE_ATTRIBUTION: "Example tiles",
     });
-    const policy = createContentSecurityPolicy(nonce, false, location);
+    const policy = createPolicy(nonce, false, location);
 
     expect(policy).toContain("https://tiles.example.test");
     expect(policy).not.toContain("{z}");
@@ -80,8 +91,8 @@ describe("the per-request application policy", () => {
   });
 
   test("generates a different valid nonce for each request", () => {
-    const first = createCspNonce();
-    const second = createCspNonce();
+    const first = createNajmNonce();
+    const second = createNajmNonce();
 
     expect(first).not.toBe(second);
     expect(first).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
@@ -89,7 +100,7 @@ describe("the per-request application policy", () => {
   });
 
   test("rejects a nonce that could alter the directive", () => {
-    expect(() => createContentSecurityPolicy("bad'; script-src *", false)).toThrow();
+    expect(() => createPolicy("bad'; script-src *", false)).toThrow();
   });
 });
 
@@ -104,23 +115,19 @@ describe("the edge preserves the application's nonce policy", () => {
 
 describe("strict-CSP client initialization", () => {
   test("configures Zod through Next's pre-hydration instrumentation hook", () => {
-    const layout = read("apps/web/src/app/layout.tsx");
+    const proxy = read("apps/web/src/proxy.ts");
     const instrumentation = read("apps/web/src/instrumentation-client.ts");
 
-    expect(layout).toContain('headers()');
-    expect(layout).not.toContain('from "next/script"');
-    expect(layout).not.toContain('<script');
-    expect(instrumentation).toContain('configuredGlobal.__zod_globalConfig ??= {}');
-    expect(instrumentation).toContain(
-      'configuredGlobal.__zod_globalConfig.jitless = true',
-    );
+    expect(proxy).toContain("composeNajmProxy");
+    expect(proxy).toContain("resolveLocationCsp");
+    expect(instrumentation).toContain('import "najm-next/instrumentation/client"');
     expect(instrumentation).not.toContain("console.");
   });
 });
 
 describe("the violation sink refuses to log what it was sent", () => {
   test("a document URI's query string never reaches the log line", () => {
-    const [report] = sanitizeCspReports({
+    const [report] = sanitizeNajmCspReports({
       "csp-report": {
         "document-uri": "https://kafala360.ma/reset-password?token=SECRET-RESET-TOKEN#frag",
         "violated-directive": "script-src",
@@ -129,30 +136,30 @@ describe("the violation sink refuses to log what it was sent", () => {
       },
     });
 
-    expect(report.documentUri).toBe("https://kafala360.ma/reset-password");
+    expect(report.documentUri).toBe("https://kafala360.ma");
     expect(JSON.stringify(report)).not.toContain("SECRET-RESET-TOKEN");
     expect(JSON.stringify(report)).not.toContain("SECRET-SESSION");
   });
 
   test("CSP keywords are kept, since they carry no data", () => {
-    const [report] = sanitizeCspReports({
+    const [report] = sanitizeNajmCspReports({
       "csp-report": { "effective-directive": "script-src", "blocked-uri": "inline" },
     });
     expect(report.blockedUri).toBe("inline");
   });
 
   test("the Reporting API batch shape is understood too", () => {
-    const reports = sanitizeCspReports([
+    const reports = sanitizeNajmCspReports([
       { body: { effectiveDirective: "style-src", blockedURL: "inline", disposition: "report" } },
       { body: { effectiveDirective: "img-src", blockedURL: "https://evil.test/a?b=c" } },
     ]);
 
     expect(reports).toHaveLength(2);
-    expect(reports[1].blockedUri).toBe("https://evil.test/a");
+    expect(reports[1].blockedUri).toBe("https://evil.test");
   });
 
   test("every field is length-capped", () => {
-    const [report] = sanitizeCspReports({
+    const [report] = sanitizeNajmCspReports({
       "csp-report": { "violated-directive": "x".repeat(5_000), "blocked-uri": "inline" },
     });
     expect(report.violatedDirective.length).toBeLessThanOrEqual(257);
@@ -165,7 +172,7 @@ describe("the violation sink refuses to log what it was sent", () => {
       body: huge,
     });
 
-    expect(await readBoundedJson(request)).toBeNull();
+    expect(await readNajmBoundedJson(request)).toBeNull();
   });
 
   test("a body with no Content-Length is bounded by the read, not after it", async () => {
@@ -194,7 +201,7 @@ describe("the violation sink refuses to log what it was sent", () => {
     });
     expect(request.headers.get("content-length")).toBeNull();
 
-    expect(await readBoundedJson(request)).toBeNull();
+    expect(await readNajmBoundedJson(request)).toBeNull();
     expect(cancelled).toBe(true);
     // Never consumed the whole 256 KiB the sender was willing to produce.
     expect(produced).toBeLessThanOrEqual(16_384);
@@ -207,7 +214,7 @@ describe("the violation sink refuses to log what it was sent", () => {
       body: JSON.stringify({ "csp-report": { "blocked-uri": "inline", note: filler } }),
     });
 
-    expect(await readBoundedJson(request)).not.toBeNull();
+    expect(await readNajmBoundedJson(request)).not.toBeNull();
   });
 
   test("garbage, empty, and valid bodies are answered identically", async () => {

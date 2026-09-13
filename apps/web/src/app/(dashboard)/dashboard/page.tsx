@@ -4,7 +4,7 @@ import {
   resolveDashboard,
   SponsorDashboardGate,
 } from "@/features/Dashboard";
-import { requireSession } from "@/lib/session";
+import { requireSession } from "@/najm.server";
 import { DashboardReturnAction } from "@/shared/DashboardReturnAction";
 import { NForbiddenState } from "najm-kit/app";
 

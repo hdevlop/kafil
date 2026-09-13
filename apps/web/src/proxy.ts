@@ -1,19 +1,15 @@
 import { auth } from "@/lib/auth";
-import { createContentSecurityPolicy, createCspNonce } from "@/lib/contentSecurityPolicy";
+import { composeNajmProxy } from "najm-next/security";
+import { kafilApp, kafilLocation } from "@/najm.config";
 
-export default async function proxy(request: Request) {
-  const nonce = createCspNonce();
-  const policy = createContentSecurityPolicy(nonce);
-  const response = await auth.proxy(request, {
-    requestHeaders: {
-      "content-security-policy": policy,
-      "x-nonce": nonce,
-    },
-  });
-
-  response.headers.set("Content-Security-Policy", policy);
-  return response;
-}
+export default composeNajmProxy({
+  auth,
+  app: kafilApp,
+  resolveLocationCsp: (env) =>
+    kafilLocation.resolve(env, {
+      isDevelopment: env.NODE_ENV === "development",
+    }).csp,
+});
 
 export const config = {
   matcher: [

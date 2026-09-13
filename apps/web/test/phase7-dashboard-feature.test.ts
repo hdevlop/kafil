@@ -181,7 +181,7 @@ describe("Phase 7 dashboard presentation contracts", () => {
   test("routes sponsor Orders through the same canonical surface", async () => {
     const navigation = getDashboardNavigation("sponsor");
     const authSource = await Bun.file(
-      new URL("../src/lib/auth.ts", import.meta.url),
+      new URL("../src/najm.config.ts", import.meta.url),
     ).text();
 
     expect(navigation.some((item) => item.href === "/orders")).toBe(true);

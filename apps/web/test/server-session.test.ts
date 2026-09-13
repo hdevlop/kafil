@@ -5,33 +5,34 @@ function readSource(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
 }
 
-const session = readSource("../src/lib/session.ts");
+const session = readSource("../src/najm.server.ts");
 const authConfig = readSource("../src/lib/auth.ts");
+const appConfig = readSource("../src/najm.config.ts");
 const proxy = readSource("../src/proxy.ts");
 
 describe("the server session boundary is package-owned", () => {
-  test("session.ts is one createReactServerAuth singleton", () => {
+  test("najm.server.ts is one createReactServerAuth singleton", () => {
     expect(session).toContain(
       'import { createReactServerAuth } from "najm-auth/client/server/react"',
     );
-    expect(session).toContain("export const serverAuth = createReactServerAuth(auth)");
+    expect(session).toContain("const serverAuth = createReactServerAuth(auth)");
 
     // Called once, and at module scope. A second call, or one nested inside a
     // function, would build a separate memoized resolver that shares nothing.
     const calls = session
       .split("\n")
       .filter((line) => line.includes("createReactServerAuth("));
-    expect(calls).toEqual(["export const serverAuth = createReactServerAuth(auth);"]);
+    expect(calls).toEqual(["const serverAuth = createReactServerAuth(auth);"]);
   });
 
-  test("session.ts keeps the server-only marker", () => {
+  test("najm.server.ts keeps the server-only marker", () => {
     expect(session).toStartWith('import "server-only";');
   });
 
   test("the route-facing named exports survive the migration", () => {
-    expect(session).toContain(
-      "export const { getSession, requireSession, requireRole } = serverAuth",
-    );
+    expect(session).toContain("export const getSession = serverAuth.getSession");
+    expect(session).toContain("export const requireSession = serverAuth.requireSession");
+    expect(session).toContain("export const requireRole = serverAuth.requireRole");
   });
 
   test("no guard logic is reimplemented locally", () => {
@@ -47,15 +48,17 @@ describe("the server session boundary is package-owned", () => {
   });
 
   test("redirect targets come from defineAuth, not from a literal", () => {
-    expect(authConfig).toContain('loginRoute: "/login"');
-    expect(authConfig).toContain('forbiddenRoute: "/forbidden"');
+    expect(authConfig).toContain("loginRoute: kafilApp.auth.loginRoute");
+    expect(authConfig).toContain("forbiddenRoute: kafilApp.auth.forbiddenRoute");
+    expect(appConfig).toContain('loginRoute: "/login"');
+    expect(appConfig).toContain('forbiddenRoute: "/forbidden"');
   });
 });
 
 describe("the proxy stays free of React-server code", () => {
   test("proxy.ts reaches only the core auth object", () => {
     expect(proxy).toContain('import { auth } from "@/lib/auth"');
-    expect(proxy).not.toContain("@/lib/session");
+    expect(proxy).not.toContain("@/najm.server");
     expect(proxy).not.toContain("client/server/react");
   });
 
@@ -66,7 +69,7 @@ describe("the proxy stays free of React-server code", () => {
   });
 
   test("proxy treats the signed session as an optimistic snapshot", () => {
-    expect(authConfig).toContain('proxySessionMode: "optimistic"');
+    expect(appConfig).toContain('proxySessionMode: "optimistic"');
     expect(authConfig).not.toContain('proxySessionMode: "authoritative"');
 
     // Next.js 16 strips internal Flight headers before Proxy receives the
@@ -75,8 +78,8 @@ describe("the proxy stays free of React-server code", () => {
     // after logout.
     expect(proxy).not.toContain("next-router-prefetch");
     expect(proxy).not.toContain("next-router-state-tree");
-    expect(proxy).toContain("await auth.proxy(request, {");
-    expect(proxy).toContain("requestHeaders: {");
+    expect(proxy).toContain("composeNajmProxy({");
+    expect(proxy).toContain("auth,");
   });
 });
 
@@ -102,11 +105,16 @@ describe("every session consumer goes through the shared module", () => {
     expect(offenders).toEqual([]);
   });
 
-  test("each consumer imports from @/lib/session", () => {
+  test("each session consumer imports from @/najm.server", () => {
     const missing = consumers.filter(
-      (path) => !readSource(path).includes('from "@/lib/session"'),
+      (path) =>
+        path !== "../src/app/layout.tsx" &&
+        !readSource(path).includes('from "@/najm.server"'),
     );
 
     expect(missing).toEqual([]);
+    expect(readSource("../src/app/layout.tsx")).toContain(
+      'import { loadUiSnapshot } from "@/najm.server"',
+    );
   });
 });

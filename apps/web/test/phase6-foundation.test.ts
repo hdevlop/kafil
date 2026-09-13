@@ -123,7 +123,7 @@ describe("Phase 6A authentication schemas", () => {
 
   test("keeps setup-only sessions outside the dashboard auth boundary", () => {
     const authSource = readFileSync(
-      new URL("../src/lib/auth.ts", import.meta.url),
+      new URL("../src/najm.config.ts", import.meta.url),
       "utf8",
     );
     const dashboardLayoutSource = readFileSync(

@@ -1,9 +1,7 @@
 "use client";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ServerSession } from "najm-auth/client/server";
-import { QueryProvider } from "@/providers/QueryProvider";
-import type { PublicBranding } from "najm-theme";
-import { NThemeBrandingProvider } from "najm-theme/react";
 import { AuthProvider } from "najm-auth/client/react";
 import { NajmAppProvider } from "najm-kit/app";
 import type { NajmDesignConfig } from "najm-kit";
@@ -12,18 +10,65 @@ import {
   type NLeafletLocationRuntimeProviderProps,
 } from "najm-kit/location/runtime/leaflet";
 import type { NajmMode, NajmPreferenceTimeZone } from "najm-kit/server";
+import {
+  bindNajmNextProvider,
+  NajmNextAppProvider,
+  type NajmNextProviderContext,
+} from "najm-next/app/react";
+import type { NajmServerSession } from "najm-next/app/server";
+import type { PublicBranding } from "najm-theme";
+import { NThemeBrandingProvider } from "najm-theme/react";
 import { useTranslation } from "najm-i18n/react";
+
+import type { FormFillSetting } from "@/features/Settings/types";
+import { KAFIL_BADGE_DEFAULTS } from "@/features/StatusLabels";
+import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { auth } from "@/lib/auth";
+import type { kafilPreferences } from "@/lib/preferences";
+import { getApiErrorStatus } from "@/services/apiError";
+import { getFormFillSetting } from "@/services/settingApi";
+import { APP_NAME } from "@/types/branding";
 import { kafilUiI18n, type KafilLocale } from "@kafil/server/locales";
 import { KAFIL_CURRENCY } from "@kafil/server/money";
-import { KAFIL_BADGE_DEFAULTS } from "@/features/StatusLabels";
-import { auth } from "@/lib/auth";
-import { APP_NAME } from "@/types/branding";
-import type { kafilPreferences } from "@/lib/preferences";
-import type { FormFillSetting } from "@/features/Settings/types";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { getFormFillSetting } from "@/services/settingApi";
 
 type KafilLocationRuntimeConfig = NLeafletLocationRuntimeProviderProps["config"];
+
+export interface KafilUiSnapshot {
+  session: NajmServerSession | null;
+  preferences: {
+    language: KafilLocale;
+    theme: NajmMode;
+    timeZone: NajmPreferenceTimeZone<typeof kafilPreferences>;
+  };
+  appearance: { designConfig: NajmDesignConfig };
+  branding: PublicBranding;
+  settings: {
+    formFill: FormFillSetting;
+    locationConfig: KafilLocationRuntimeConfig;
+  };
+}
+
+type ProviderContext = NajmNextProviderContext<KafilUiSnapshot, QueryClient>;
+
+function shouldRetry(failureCount: number, error: unknown) {
+  if (failureCount >= 1) return false;
+  const status = getApiErrorStatus(error);
+  return status === undefined || status >= 500;
+}
+
+function createQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60_000,
+        gcTime: 10 * 60_000,
+        refetchOnWindowFocus: false,
+        retry: shouldRetry,
+      },
+      mutations: { retry: false },
+    },
+  });
+}
 
 function KafilLocationProvider({
   children,
@@ -67,32 +112,14 @@ function KafilLocationProvider({
   );
 }
 
-function NajmProviders({
+function KafilUiProvider({
   children,
-  initialBranding,
-  initialDesign,
-  initialFormFill,
-  initialLanguage,
-  locationConfig,
-  initialTheme,
-  initialTimeZone,
-}: Readonly<{
-  children: React.ReactNode;
-  initialBranding: PublicBranding;
-  initialDesign: NajmDesignConfig;
-  initialFormFill: FormFillSetting;
-  initialLanguage: KafilLocale;
-  locationConfig: KafilLocationRuntimeConfig;
-  initialTheme: NajmMode;
-  initialTimeZone: NajmPreferenceTimeZone<typeof kafilPreferences>;
-}>) {
-  // Seeded by the layout, so F8 is live on first paint. The read is public by
-  // design because the shortcut also serves public forms; only writes require
-  // an operator or admin. Other sessions refresh the value on their next focus.
+  snapshot,
+}: Readonly<{ children: React.ReactNode; snapshot: KafilUiSnapshot }>) {
   const formFillSetting = useEntityQuery({
     queryKey: ["settings", "form-fill"] as const,
     queryFn: getFormFillSetting,
-    initialData: initialFormFill,
+    initialData: snapshot.settings.formFill,
     refetchOnWindowFocus: true,
     staleTime: 60_000,
   });
@@ -104,55 +131,66 @@ function NajmProviders({
       badgeDefaults={KAFIL_BADGE_DEFAULTS}
       currency={KAFIL_CURRENCY}
       formDevTools={formFillSetting.data.enabled}
-      initialBranding={initialBranding}
-      initialDesign={initialDesign}
-      initialLanguage={initialLanguage}
-      initialTheme={initialTheme}
-      initialTimeZone={initialTimeZone}
+      initialBranding={snapshot.branding}
+      initialDesign={snapshot.appearance.designConfig}
+      initialLanguage={snapshot.preferences.language}
+      initialTheme={snapshot.preferences.theme}
+      initialTimeZone={snapshot.preferences.timeZone}
     >
-      <NThemeBrandingProvider branding={initialBranding}>
-        <KafilLocationProvider config={locationConfig}>{children}</KafilLocationProvider>
-      </NThemeBrandingProvider>
+      {children}
     </NajmAppProvider>
   );
 }
 
+const authProvider = bindNajmNextProvider(
+  AuthProvider,
+  ({ snapshot }: ProviderContext) => ({
+    client: auth.client,
+    initialSession: snapshot.session as ServerSession | null,
+  }),
+);
+
+const queryProvider = bindNajmNextProvider(
+  QueryClientProvider,
+  ({ queryClient }: ProviderContext) => ({ client: queryClient! }),
+);
+
+const uiProvider = bindNajmNextProvider(
+  KafilUiProvider,
+  ({ snapshot }: ProviderContext) => ({ snapshot }),
+);
+
+const brandingProvider = bindNajmNextProvider(
+  NThemeBrandingProvider,
+  ({ snapshot }: ProviderContext) => ({ branding: snapshot.branding }),
+);
+
+const locationProvider = bindNajmNextProvider(
+  KafilLocationProvider,
+  ({ snapshot }: ProviderContext) => ({
+    config: snapshot.settings.locationConfig,
+  }),
+);
+
+const providers = {
+  auth: authProvider,
+  query: queryProvider,
+  ui: uiProvider,
+  branding: brandingProvider,
+  location: locationProvider,
+} as const;
+
 export function AppProviders({
   children,
-  initialBranding,
-  initialDesign,
-  initialFormFill,
-  initialLanguage,
-  locationConfig,
-  initialSession,
-  initialTheme,
-  initialTimeZone,
-}: Readonly<{
-  children: React.ReactNode;
-  initialBranding: PublicBranding;
-  initialDesign: NajmDesignConfig;
-  initialFormFill: FormFillSetting;
-  initialLanguage: KafilLocale;
-  locationConfig: KafilLocationRuntimeConfig;
-  initialSession: ServerSession | null;
-  initialTheme: NajmMode;
-  initialTimeZone: NajmPreferenceTimeZone<typeof kafilPreferences>;
-}>) {
+  snapshot,
+}: Readonly<{ children: React.ReactNode; snapshot: KafilUiSnapshot }>) {
   return (
-    <AuthProvider client={auth.client} initialSession={initialSession}>
-      <QueryProvider>
-        <NajmProviders
-          initialBranding={initialBranding}
-          initialDesign={initialDesign}
-          initialFormFill={initialFormFill}
-          initialLanguage={initialLanguage}
-          locationConfig={locationConfig}
-          initialTheme={initialTheme}
-          initialTimeZone={initialTimeZone}
-        >
-          {children}
-        </NajmProviders>
-      </QueryProvider>
-    </AuthProvider>
+    <NajmNextAppProvider
+      snapshot={snapshot}
+      createQueryClient={createQueryClient}
+      providers={providers}
+    >
+      {children}
+    </NajmNextAppProvider>
   );
 }

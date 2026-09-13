@@ -1,5 +1,6 @@
 import { defineNajmPreferences } from "najm-kit/server";
 import { kafilI18n } from "@kafil/server/locales";
+import { kafilApp } from "@/najm.config";
 
 /**
  * Kafil's UI preferences. Configuration only — Najm owns the behavior.
@@ -11,10 +12,6 @@ import { kafilI18n } from "@kafil/server/locales";
  */
 export const kafilPreferences = defineNajmPreferences({
   i18n: kafilI18n,
-  defaultTimeZone: "Africa/Casablanca",
-  cookieNames: {
-    language: "kafil-ui-language",
-    theme: "kafil-ui-theme",
-    timeZone: "kafil-ui-timezone",
-  },
+  defaultTimeZone: kafilApp.preferences.defaultTimeZone,
+  cookieNames: kafilApp.preferences.cookieNames,
 });

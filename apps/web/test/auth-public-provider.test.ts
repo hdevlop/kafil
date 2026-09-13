@@ -8,15 +8,15 @@ function readSource(relativePath: string) {
 describe("public auth page provider boundaries", () => {
   test("keeps the public form-fill setting live on public forms", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
-    const serverSettings = readSource("../src/lib/serverSettings.ts");
+    const serverSettings = readSource("../src/najm.server.ts");
 
     expect(provider).toContain('import { AuthProvider } from "najm-auth/client/react";');
-    expect(provider).toContain("initialData: initialFormFill,");
+    expect(provider).toContain("initialData: snapshot.settings.formFill,");
     expect(provider).not.toContain("enabled: isAuthenticated,");
     expect(serverSettings).toContain(
       '"@kafil/server/settings-bootstrap"',
     );
-    expect(serverSettings).not.toContain('import("@kafil/server")');
+    expect(serverSettings).toContain("readFormFillEnabled");
     expect(serverSettings).toContain("console.warn(");
   });
 

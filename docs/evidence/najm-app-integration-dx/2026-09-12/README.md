@@ -748,8 +748,8 @@ this task, **[U]** unverified browser/connected behavior (not claimed).
 | --- | --- | --- |
 | 0 — Freeze contracts/baselines | **COMPLETE — ready for Phase 1** (§7) | This ledger as revised. Branch/HEAD/dirty (§1), resolutions/patches/scripts + delegation stamp (§2), traces (§3), approved contract (§4, §6.2), focused fixtures (§5). No prod-source change |
 | 1 — Shared security + client init | **COMPLETE** (§6.5) | `najm-next` app/security/report/client-init contract at `5e69429`; FIX-04 auth regression evidence at `dd0a4e8`. Production Next 16 fixtures pass without workspace-root warnings. Real browser-generated prefetch remains a consumer-acceptance limitation |
-| 2 — Preferences + server bootstrap | Pending | Decided additive `najm-kit/server` extension + POST/DELETE co-ownership (§6.2-D1/D7); request-isolation tests |
-| 3 — Providers + location | Pending | Decided Google runtime fields + address-edit contract (§6.2-D3/D5) incl. the School lat/lng parity test; one-context + no-map proofs |
+| 2 — Preferences + server bootstrap | **SOURCE COMPLETE** — [2026-09-13 continuation](../2026-09-13/README.md) | Additive `najm-kit/server` extension, POST/DELETE co-ownership, logout cleanup, public snapshot and request-isolation tests pass; release remains Phase 4 |
+| 3 — Providers + location | **SOURCE COMPLETE; VISUAL DEFERRED** — [2026-09-13 continuation](../2026-09-13/README.md) | Provider composition, Google runtime/metadata, shared labels, built-export fixtures and manual Playground surface implemented; user requested no browser tests |
 | 4 — Release candidate | Pending | Exact versions/artifacts/hashes; School consumes registry only (no workspace/file/tarball) |
 | 5 — Kafil migration | Pending | Published pins + overrides audit (incl. the two patches); 8-file helper removal; no-schema-drift check; Kafil layout catch-all migrated to decided session classification (§6.2-D4) |
 | 6 — School migration | Pending | Re-audit dirty tree vs §1.3; 0046/journal diff handled as its own boundary; keyboard/F8/placeId parity |

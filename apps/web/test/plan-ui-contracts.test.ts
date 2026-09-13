@@ -120,7 +120,7 @@ describe("root PLAN shared UI contracts", () => {
   });
 
   test("orders exact family-directory authorization before its wildcard", () => {
-    const auth = source("../src/lib/auth.ts");
+    const auth = source("../src/najm.config.ts");
     expect(auth.indexOf('"/family": ["admin", "operator", "sponsor"]')).toBeLessThan(
       auth.indexOf('"/family/:path*": ["family"]'),
     );

@@ -1,5 +1,5 @@
 import { AdminRolesPage } from "@/features/AdminAccess";
-import { requireRole } from "@/lib/session";
+import { requireRole } from "@/najm.server";
 
 export const metadata = { title: "Roles" };
 

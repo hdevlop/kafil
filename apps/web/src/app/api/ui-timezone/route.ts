@@ -1,3 +1,3 @@
 import { kafilPreferences } from "@/lib/preferences";
 
-export const POST = kafilPreferences.handlers.timeZone;
+export const { POST, DELETE } = kafilPreferences.routes.timeZone;

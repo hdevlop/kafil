@@ -30,10 +30,10 @@ describe("dashboard auth tab-sync integration", () => {
       '<NLoadingState fullScreen label={t("common.processing")} />',
     );
     expect(dashboardShell.indexOf("queryClient.clear()"))
-      .toBeLessThan(dashboardShell.indexOf("void logout()"));
+      .toBeLessThan(dashboardShell.indexOf("void logoutWithNajmPreferenceCleanup("));
     expect(dashboardShell.indexOf("bindSession(null)"))
-      .toBeLessThan(dashboardShell.indexOf("void logout()"));
-    expect(dashboardShell.indexOf("void logout()"))
+      .toBeLessThan(dashboardShell.indexOf("void logoutWithNajmPreferenceCleanup("));
+    expect(dashboardShell.indexOf("void logoutWithNajmPreferenceCleanup("))
       .toBeLessThan(dashboardShell.indexOf('router.replace("/login")'));
   });
 
