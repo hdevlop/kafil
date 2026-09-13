@@ -822,8 +822,7 @@
       "earliestExpiry": "Première expiration en attente : {date}"
     },
     "nav": {
-      "overview": "Vue d’ensemble",
-      "deliveryDashboard": "Tableau de livraison",
+      "dashboard": "Dashboard",
       "families": "Familles",
       "children": "Enfants",
       "sponsors": "Parrains",
@@ -989,7 +988,7 @@
         "mapSubtitle": "Adresses familiales planifiées", "selectDate": "Sélectionner la date de livraison", "today": "Aujourd’hui", "tomorrow": "Demain",
         "noMapLocations": "Aucune adresse cartographiée", "noMapLocationsHint": "Les livraisons planifiées restent disponibles dans la liste.",
         "packages": "colis", "openMaps": "Ouvrir dans Google Maps", "startDelivery": "Démarrer la livraison",
-        "confirmDelivery": "Confirmer la livraison", "issueKind": "Type de problème", "viewAll": "Tout afficher", "showLess": "Afficher moins", "locationUnavailable": "Localisation indisponible"
+        "confirmDelivery": "Confirmer la livraison", "issueKind": "Type de problème", "viewAll": "Tout afficher", "showLess": "Afficher moins", "locationUnavailable": "Localisation indisponible", "familiesTitle": "Familles assignées", "familiesSubtitle": "Familles avec des livraisons qui vous sont assignées pour la date sélectionnée.", "familiesSearch": "Rechercher des familles assignées", "familiesAccount": "Famille", "familiesPhone": "Téléphone", "familiesOrders": "Commandes", "familiesOrdersCount": "{count} commandes", "familiesStatus": "Statut", "familiesNextWindow": "Prochain créneau", "familiesEmpty": "Aucune famille assignée pour cette date.", "familiesEmptyHint": "Les familles apparaissent ici une fois que des livraisons vous sont assignées.", "familiesNoData": "Aucune famille assignée pour cette date.", "familiesLoading": "Chargement des familles assignées"
       },
       "family": {
         "welcome": "Bienvenue, {name}",
@@ -2191,9 +2190,6 @@
         "searchStaff": "Rechercher dans le personnel",
         "noPurchasingStaff": "Aucun opérateur actif trouvé.",
         "noDeliveryStaff": "Aucun livreur actif trouvé.",
-        "sameStaff": "La même personne achète et livre",
-        "sameStaffDescription": "Cette personne possède les fonctions Opérateur et Livraison.",
-        "sameStaffUnavailable": "Choisissez un opérateur qui possède aussi la fonction Livraison.",
         "purchasingAssignmentPlanned": "Affectation planifiée ; l'achat commence uniquement à l'enregistrement du reçu.",
         "confirmationNotice": "La disponibilité, le budget et les prix sont vérifiés à nouveau lors de la confirmation.",
         "quantityAria": "Quantité pour {name}",

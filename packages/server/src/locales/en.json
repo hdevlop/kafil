@@ -836,8 +836,7 @@
       "earliestExpiry": "Earliest pending expiry: {date}"
     },
     "nav": {
-      "overview": "Overview",
-      "deliveryDashboard": "Delivery dashboard",
+      "dashboard": "Dashboard",
       "families": "Families",
       "children": "Children",
       "sponsors": "Sponsors",
@@ -1003,7 +1002,7 @@
         "mapSubtitle": "Scheduled family addresses", "selectDate": "Select delivery date", "today": "Today", "tomorrow": "Tomorrow",
         "noMapLocations": "No mapped delivery addresses", "noMapLocationsHint": "The scheduled deliveries remain available in the list.",
         "packages": "packages", "openMaps": "Open in Google Maps", "startDelivery": "Start delivery",
-        "confirmDelivery": "Confirm delivery", "issueKind": "Issue type", "viewAll": "View all", "showLess": "Show less", "locationUnavailable": "Location unavailable"
+        "confirmDelivery": "Confirm delivery", "issueKind": "Issue type", "viewAll": "View all", "showLess": "Show less", "locationUnavailable": "Location unavailable", "familiesTitle": "Assigned families", "familiesSubtitle": "Families with deliveries assigned to you for the selected date.", "familiesSearch": "Search assigned families", "familiesAccount": "Family", "familiesPhone": "Phone", "familiesOrders": "Orders", "familiesOrdersCount": "{count} orders", "familiesStatus": "Status", "familiesNextWindow": "Next window", "familiesEmpty": "No assigned families for this date.", "familiesEmptyHint": "Families appear here once deliveries are assigned to you.", "familiesNoData": "No assigned families for this date.", "familiesLoading": "Loading assigned families"
       },
       "family": {
         "welcome": "Welcome, {name}",
@@ -2262,9 +2261,6 @@
         "searchStaff": "Search staff",
         "noPurchasingStaff": "No active Operator staff found.",
         "noDeliveryStaff": "No active Delivery staff found.",
-        "sameStaff": "Same person purchases and delivers",
-        "sameStaffDescription": "This staff member has both Operator and Delivery capabilities.",
-        "sameStaffUnavailable": "Choose an Operator who also has the Delivery capability.",
         "purchasingAssignmentPlanned": "Planned assignment; purchase starts only when the receipt is recorded.",
         "confirmationNotice": "Availability, budget, and prices are verified again when you confirm.",
         "quantityAria": "Quantity for {name}",

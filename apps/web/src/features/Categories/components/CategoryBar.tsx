@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Tags } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
-import { createCardPagination, NButton, NSheet, NTable, type NTableProps } from "najm-kit";
+import { createCardPagination, NButton, NEmptyState, NSheet, NTable, type NTableProps } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
 import type { ResolvedListMode } from "najm-kit/query";
@@ -123,6 +123,18 @@ export function CategoryFilterSheet({
             noDataText={t("common.emptyCategories", {
               defaultValue: "No active categories",
             })}
+            renderEmpty={() => (
+              <NEmptyState
+                surface="panel"
+                icon={Tags}
+                title={t("common.emptyCategories", {
+                  defaultValue: "No active categories",
+                })}
+                description={t("common.emptyCategoriesHint", {
+                  defaultValue: "Operators can publish catalog categories when they are ready.",
+                })}
+              />
+            )}
             renderCard={({ data }) => (
               <NButton
                 aria-label={data.name}

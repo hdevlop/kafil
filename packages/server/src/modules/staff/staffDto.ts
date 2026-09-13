@@ -22,7 +22,7 @@ const baseStaffIdentity = z.object({
   functions: z
     .array(z.string().min(1).max(32))
     .min(1)
-    .max(STAFF_FUNCTION_KEYS.length)
+    .max(1, "Each staff account must have exactly one role")
     .superRefine((values, context) => {
       const seen = new Set<string>();
       for (const [index, value] of values.entries()) {

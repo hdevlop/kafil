@@ -12,9 +12,10 @@ delivery-capable Staff member work only with deliveries assigned to that Staff
 profile for one selected Casablanca calendar date.
 
 The existing Operator dashboard at `/dashboard` remains available and its
-current data contract and layout are not replaced. The Delivery dashboard will
-be a separate, thin route at `/delivery` with the page title **Delivery
-dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
+current data contract and layout are not replaced. A dedicated `delivery`
+account also enters through `/dashboard`, which resolves the Delivery dashboard
+from the authenticated role. The legacy `/delivery` URL redirects that account
+to `/dashboard`.
 
 ## Scope boundaries
 
@@ -46,11 +47,11 @@ dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
   but must not invent a code flow.
 - No automatic geocoding. A missing coordinate remains missing and is rendered
   as **Location unavailable**.
-- No broad Operator access for delivery-only Staff. Every Staff record created
-  by an administrator receives a pending invitation account; records with the
-  Operator function use the `operator` role, while delivery-only records use
-  the least-privilege `delivery` role. Consuming the one-time set-password link
-  verifies and activates the account.
+- No mixed Operator/Delivery account or Staff profile. Every Staff record
+  created by an administrator has exactly one role and receives its own pending
+  invitation account. A person who needs both responsibilities must have two
+  separate accounts. Consuming each one-time set-password link verifies and
+  activates only that account.
 
 ## Current repository evidence and gaps
 
@@ -81,13 +82,14 @@ dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
 
 ## Locked implementation decisions
 
-1. `/dashboard` and `GET /api/dashboard/operator` stay intact. `/delivery` and
-   `GET /api/dashboard/delivery?date=YYYY-MM-DD` are additive.
-2. Staff remains a profile/capability model, with a dedicated least-privilege
-   `delivery` auth role for delivery-only login accounts. A dedicated delivery
-   guard resolves the authenticated user's active Staff profile and requires
-   its `delivery` function. Admin super-role behavior must be explicit in tests;
-   it must not be mistaken for an assigned Staff identity.
+1. `/dashboard` is the single dashboard entry for every account role;
+   `GET /api/dashboard/operator` stays intact and
+   `GET /api/dashboard/delivery?date=YYYY-MM-DD` is additive. `/delivery` is a
+   compatibility redirect for delivery accounts, not a second workspace link.
+2. Each Staff profile has exactly one function and one matching account role.
+   A dedicated least-privilege `delivery` guard accepts only the `delivery`
+   role, then resolves that user's active Staff profile and requires its
+   delivery function. Operator and admin accounts cannot cross that boundary.
 3. Only the current Staff profile's attempts scheduled on the requested date
    enter the response. Aggregates are derived in the service from that exact
    returned set so chart values and cards cannot drift apart.
@@ -229,15 +231,13 @@ for an assignment and is not derived from order-item quantity.
 - [x] Add a dedicated delivery-dashboard guard/decorator using that resolver.
   Keep `isOperator`, the Operator dashboard, and existing operator management
   commands unchanged.
-- [x] Add a minimal self-context endpoint returning only delivery-dashboard
-  eligibility/Staff ID needed for presentation. Use it to show the `/delivery`
-  navigation entry only to eligible linked Staff; frontend hiding is not the
-  security boundary.
-- [x] Deny unlinked Operators, inactive Staff, Staff without the Delivery
-  function, families, sponsors, and unlinked legacy Staff records.
-- [x] Prove that admin access is either denied without an assigned Staff profile
-  or explicitly resolved to a linked delivery-capable profile; never let the
-  admin role bypass assignment ownership implicitly.
+- [x] Use the authenticated account role to render one `/dashboard` navigation
+  entry. No delivery-eligibility request or second delivery navigation item is
+  needed; backend delivery authorization remains authoritative.
+- [x] Deny every Operator and admin account, inactive Staff, Staff without the
+  Delivery function, families, sponsors, and unlinked legacy Staff records.
+- [x] Keep admin accounts outside the delivery-account boundary; administrative
+  authority never substitutes for a separately authenticated delivery account.
 - [x] Add the dedicated `delivery` auth role with no general product
   permissions; only the delivery guard and linked Staff identity unlock the
   assigned-delivery workflow.
@@ -278,14 +278,16 @@ for an assignment and is not derived from order-item quantity.
 
 - [x] Add `apps/web/src/features/Dashboard/DeliveryDashboard/` with a page,
   focused section components, hook, query keys, types, and pure view-model
-  helpers. Keep `apps/web/src/app/(dashboard)/delivery/page.tsx` thin.
+  helpers. Keep role resolution in the thin `/dashboard` route.
 - [x] Reuse `NPageLayout`, `NPageHeader`, `NPageHeaderActions`,
   `PageHeaderGlobalActions`, `NGrid`, `NGridItem`, `NStatCard`, `NPieChart`,
   `NCard`, `NAvatar`, `NBadge`, `NButton`, Najm date/form primitives, shared
   formatters, and standard page feedback states.
 - [x] Keep the selected date in local dashboard state. Today and the date picker
   update it without navigation or scroll reset; the obsolete `date` query is
-  removed on entry. Every section consumes the same query result.
+  removed on entry. Same-date selections are a no-op, and cached dashboard data
+  keeps the page and Leaflet instance mounted while another date loads. Every
+  section consumes the same query result.
 - [ ] Implement six top cards in the existing compact responsive pattern.
   Adapt labels to `Assigned today`/`Families today` only for the actual current
   date; use selected-date wording for any other date.
@@ -417,9 +419,9 @@ treated as passed.
 
 | Boundary | Status | Evidence |
 | --- | --- | --- |
-| Source implementation | Implemented | `/delivery`, shared dashboard action/attention cards, local date state and matched header controls, shared skeleton structure, dashboard API/read model, Staff-owned commands, schedule/coordinates/issues, Leaflet map, passwordless Staff account invitations |
+| Source implementation | Implemented | role-resolved `/dashboard`, legacy `/delivery` redirect, shared dashboard action/attention cards, local date state and matched header controls, shared skeleton structure, dashboard API/read model, Staff-owned commands, schedule/coordinates/issues, Leaflet map, passwordless Staff account invitations |
 | Migration/schema | Passed locally | `0046_misty_thing.sql` generated, reviewed, applied; second `bun run db:generate` found no drift |
-| Focused tests | Passed | Delivery/dashboard 23/23; locale parity 5/5; root suites: web 443/443, server 410/410 (77 DB-gated skips), seed 90/90 |
+| Focused tests | Passed | Dashboard/Staff/Order web contracts 32/32; locale parity 5/5; root suites: web 444/444, server 410/410 (77 DB-gated skips), seed 94/94 |
 | PostgreSQL integration | Passed | `bun run test:db`: 55/55 after applying migration 0046 |
 | Browser acceptance | Manual pending | No Playwright spec was created or run, per user instruction |
 | Root gate | Passed | `bun run lint`, `bun run typecheck`, `bun run test`, `bun run build`, `bun run db:generate`; schema had no further drift |

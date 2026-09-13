@@ -1,7 +1,7 @@
 "use client";
 
 import { Baby, ClipboardCheck, HandCoins, HeartHandshake, LayoutDashboard, UsersRound, WalletCards } from "lucide-react";
-import { NErrorState, NPageHeader, NDonutCard, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown, useNajmFormat } from "najm-kit";
+import { NCard, NErrorState, NPageHeader, NDonutCard, NEmptyState, NGrid, NGridItem, NLineChart, NPageHeaderActions, NPageLayout, NPieChart, NStatCard, NStatusBreakdown, useNajmFormat } from "najm-kit";
 import { toChartData } from "../../shared/chartData";
 import { AdminDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import { retainOrderPipelineStages } from "../../shared/orderPipeline";
@@ -38,6 +38,10 @@ export function AdminDashboardPage() {
   const data = dashboard.data;
   const number = (value: number) => fmt.number(value);
   const money = (value: number) => fmt.money(value);
+  const budgetTotalMinor =
+    data.money.availableBudgetMinor +
+    data.money.reservedBudgetMinor +
+    data.money.spentBudgetMinor;
 
   return (
     <NPageLayout className="flex min-h-full flex-col gap-4">
@@ -91,6 +95,7 @@ export function AdminDashboardPage() {
             icon={UsersRound}
             title={t("dashboard.operator.communityBreakdown")}
             valueFormatter={number}
+            emptyLabel={<NEmptyState icon={UsersRound} title={t("state.empty")} />}
           />
         </NGridItem>
 
@@ -105,22 +110,37 @@ export function AdminDashboardPage() {
             ]}
             title={t("dashboard.operator.contributionTrend")}
             valueFormatter={money}
+            emptyLabel={<NEmptyState icon={HandCoins} title={t("state.empty")} />}
           />
         </NGridItem>
 
         <NGridItem span={1} xlSpan={3}>
-          <NDonutCard
-            className="h-full"
-            icon={WalletCards}
-            items={[
-              { id: "available", label: t("dashboard.common.available"), value: data.money.availableBudgetMinor },
-              { id: "reserved", label: t("dashboard.common.reserved"), value: data.money.reservedBudgetMinor },
-              { id: "spent", label: t("dashboard.common.spent"), value: data.money.spentBudgetMinor },
-            ]}
-            title={t("dashboard.operator.budgetPosition")}
-            totalLabel={t("family.cart.total")}
-            valueFormatter={money}
-          />
+          {budgetTotalMinor > 0 ? (
+            <NDonutCard
+              className="h-full"
+              icon={WalletCards}
+              items={[
+                { id: "available", label: t("dashboard.common.available"), value: data.money.availableBudgetMinor },
+                { id: "reserved", label: t("dashboard.common.reserved"), value: data.money.reservedBudgetMinor },
+                { id: "spent", label: t("dashboard.common.spent"), value: data.money.spentBudgetMinor },
+              ]}
+              title={t("dashboard.operator.budgetPosition")}
+              totalLabel={t("family.cart.total")}
+              valueFormatter={money}
+            />
+          ) : (
+            <NCard
+              className="h-full"
+              icon={WalletCards}
+              title={t("dashboard.operator.budgetPosition")}
+            >
+              <NEmptyState
+                className="min-h-40 py-8"
+                icon={WalletCards}
+                title={t("state.empty")}
+              />
+            </NCard>
+          )}
         </NGridItem>
       </NGrid>
 
@@ -129,7 +149,7 @@ export function AdminDashboardPage() {
         <NGridItem span={1} xlSpan={3}>
           <NStatusBreakdown
             className="h-full"
-            emptyLabel={t("state.empty")}
+            emptyLabel={<NEmptyState icon={ClipboardCheck} title={t("state.empty")} />}
             icon={ClipboardCheck}
             items={retainOrderPipelineStages(data.orderStatuses)
               .filter(({ status }) => status !== "purchased")

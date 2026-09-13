@@ -1,4 +1,5 @@
-import { NAvatar, statusTextClass, useNajmFormat } from "najm-kit";
+import { NAvatar, NEmptyState, statusTextClass, useNajmFormat } from "najm-kit";
+import { HandCoins } from "lucide-react";
 import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
@@ -68,9 +69,11 @@ export function FamilyDetailsContributions({
           ))}
         </div>
       ) : (
-        <p className="py-5 text-center text-sm text-muted-foreground">
-          {t("operator.families.noSponsorContributions")}
-        </p>
+        <NEmptyState
+          surface="panel"
+          icon={HandCoins}
+          title={t("operator.families.noSponsorContributions")}
+        />
       )}
     </section>
   );

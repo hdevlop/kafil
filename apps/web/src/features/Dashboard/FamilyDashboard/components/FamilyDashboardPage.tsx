@@ -65,6 +65,10 @@ export function FamilyDashboardPage() {
   const data = dashboard.data;
   const number = (value: number) => fmt.number(value);
   const money = (value: number) => fmt.money(value);
+  const budgetTotalMinor =
+    data.budget.availableMinor +
+    data.budget.reservedMinor +
+    data.budget.spentMinor;
 
   return (
     <NPageLayout className="flex min-h-full flex-col gap-4">
@@ -119,21 +123,36 @@ export function FamilyDashboardPage() {
             series={[{ id: "spentMinor", label: t("dashboard.family.orderValue") }]}
             title={t("dashboard.family.spendingTrend")}
             valueFormatter={money}
+            emptyLabel={<NEmptyState icon={ShoppingBag} title={t("state.empty")} />}
           />
         </NGridItem>
         <NGridItem span={1} xlSpan={3}>
-          <NDonutCard
-            className="h-full"
-            icon={WalletCards}
-            items={[
-              { id: "available", label: t("dashboard.common.available"), value: data.budget.availableMinor },
-              { id: "reserved", label: t("dashboard.common.reserved"), value: data.budget.reservedMinor },
-              { id: "spent", label: t("dashboard.common.spent"), value: data.budget.spentMinor },
-            ]}
-            title={t("dashboard.family.budgetPosition")}
-            totalLabel={t("family.cart.total")}
-            valueFormatter={money}
-          />
+          {budgetTotalMinor > 0 ? (
+            <NDonutCard
+              className="h-full"
+              icon={WalletCards}
+              items={[
+                { id: "available", label: t("dashboard.common.available"), value: data.budget.availableMinor },
+                { id: "reserved", label: t("dashboard.common.reserved"), value: data.budget.reservedMinor },
+                { id: "spent", label: t("dashboard.common.spent"), value: data.budget.spentMinor },
+              ]}
+              title={t("dashboard.family.budgetPosition")}
+              totalLabel={t("family.cart.total")}
+              valueFormatter={money}
+            />
+          ) : (
+            <NCard
+              className="h-full"
+              icon={WalletCards}
+              title={t("dashboard.family.budgetPosition")}
+            >
+              <NEmptyState
+                className="min-h-40 py-8"
+                icon={WalletCards}
+                title={t("state.empty")}
+              />
+            </NCard>
+          )}
         </NGridItem>
       </NGrid>
 
@@ -141,7 +160,7 @@ export function FamilyDashboardPage() {
         <NGridItem span={1}>
           <NStatusBreakdown
             className="h-full"
-            emptyLabel={t("state.empty")}
+            emptyLabel={<NEmptyState icon={ClipboardCheck} title={t("state.empty")} />}
             icon={ClipboardCheck}
             items={retainOrderPipelineStages(data.orderStatuses)
               .map(({ status, count }) => ({

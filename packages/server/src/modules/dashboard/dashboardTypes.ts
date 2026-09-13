@@ -55,6 +55,28 @@ export interface DeliveryDashboard {
   deliveries: DeliveryDashboardItem[];
 }
 
+export type DeliveryFamilyStatus =
+  | "pending"
+  | "delivered"
+  | "needs_attention";
+
+export interface DeliveryFamilyDirectoryEntry {
+  familyProfileId: string;
+  familyName: string;
+  familyImage: string | null;
+  phone: string | null;
+  address: string;
+  coordinates: { latitude: number; longitude: number } | null;
+  scheduledDate: string;
+  orderCount: number;
+  pending: number;
+  delivered: number;
+  needsAttention: number;
+  status: DeliveryFamilyStatus;
+  nextWindowStartMinute: number | null;
+  nextWindowEndMinute: number | null;
+}
+
 export interface OperatorContributionTrendPoint {
   month: string;
   validatedMinor: number;

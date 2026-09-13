@@ -33,8 +33,8 @@ export const kafilApp = defineNajmApp({
     ],
     roleRoutes: {
       "/operator/:path*": ["admin", "operator"],
-      "/delivery": ["operator", "delivery"],
-      "/family": ["admin", "operator", "sponsor"],
+      "/delivery": ["delivery"],
+      "/family": ["admin", "operator", "sponsor", "delivery"],
       "/family/:path*": ["family"],
       "/children": ["admin", "operator", "family"],
       "/sponsor/:path*": ["sponsor"],

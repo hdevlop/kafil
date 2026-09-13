@@ -81,6 +81,7 @@ describe("seed CLI", () => {
       "full",
       "migrate",
       "admin",
+      "access",
       "categories",
       "products",
       "verify",
@@ -155,5 +156,16 @@ describe("seed CLI", () => {
     expect(demoOrdersSource).toContain("scheduledDate: fixture.delivery.scheduledDate");
     expect(demoOrdersSource).toContain("packageCount: fixture.delivery.packageCount");
     expect(demoOrdersSource).toContain("reportOwnDeliveryIssue");
+  });
+
+  it("routes interactive demo access without accepting password arguments", async () => {
+    const cliSource = await Bun.file(
+      new URL("../src/cli.ts", import.meta.url),
+    ).text();
+
+    expect(cliSource).toContain('access: "src/scripts/seed-access.ts"');
+    expect(() => parseSeedCliArgs(["access", "DemoAccess1"])).toThrow(
+      "does not accept",
+    );
   });
 });

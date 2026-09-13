@@ -46,7 +46,7 @@ describe("Staff form contracts", () => {
       gender: "F" as const,
       name: "Seven Character Staff",
       phone: "+212600000000",
-      functions: ["operator" as const],
+      role: "operator" as const,
     };
 
     expect(createStaffFormSchema.safeParse(staff).success).toBe(true);
@@ -63,12 +63,12 @@ describe("Staff form contracts", () => {
         gender: "F",
         name: "Safe Operator",
         phone: "+212600000000",
-        functions: ["operator"],
+        role: "operator",
       }).success,
     ).toBe(false);
   });
 
-  test("maps Operator and Delivery capabilities to one staff invitation", () => {
+  test("maps one selected Operator role to one staff invitation", () => {
     const values = createStaffFormSchema.parse({
         address: "Rabat",
         affiliation: "internal",
@@ -78,12 +78,12 @@ describe("Staff form contracts", () => {
         gender: "F",
         name: "Safe Operator",
         phone: "+212600000000",
-        functions: ["operator", "delivery"],
+        role: "operator",
       });
 
     expect(toCreateStaffInput(values)).toMatchObject({
       contactEmail: "operator@example.test",
-      functions: ["operator", "delivery"],
+      functions: ["operator"],
     });
     expect(toCreateStaffInput(values)).not.toHaveProperty("createOperatorAccess");
     expect(toCreateStaffInput(values)).not.toHaveProperty("createOperatorAccessEmail");
@@ -97,7 +97,7 @@ describe("Staff form contracts", () => {
         contactEmail: "ops@dhl.test",
         name: "External Operator",
         phone: "+212600000000",
-        functions: ["operator"],
+        role: "operator",
       }).success,
     ).toBe(false);
   });
@@ -112,7 +112,7 @@ describe("Staff form contracts", () => {
       gender: "F",
       name: "Delivery Driver",
       phone: "+212600000000",
-      functions: ["delivery"],
+      role: "delivery",
     });
 
     const input = toCreateStaffInput(values);
@@ -143,7 +143,7 @@ describe("Staff form contracts", () => {
         gender: "F",
         name: "Delivery Driver",
         phone: "+212600000000",
-        functions: ["delivery"],
+        role: "delivery",
       }),
     );
 

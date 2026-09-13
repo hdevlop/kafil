@@ -56,9 +56,9 @@ it("assigns a direct, domain-specific response key to every controller endpoint"
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    // 192 = the previous 183 routes plus the nine notification inbox routes
-    // (list, unread-count, settings GET/PUT, push-config, subscribe,
-    // unsubscribe, read-all, mark-read).
+    // The delivery self-context route was removed once delivery became a
+    // dedicated account role with one role-resolved dashboard entry. The
+    // delivery families directory below restores the count by one.
     expect(routes).toHaveLength(197);
 
     for (const { controller: current, route } of routes) {

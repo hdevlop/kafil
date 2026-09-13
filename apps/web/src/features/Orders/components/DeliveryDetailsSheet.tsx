@@ -12,6 +12,7 @@ import {
   NBadge,
   NButton,
   NCard,
+  NEmptyState,
   NErrorState,
   NSheet,
   useNajmFormat,
@@ -251,7 +252,21 @@ function DeliveryDetailsBody({
             ))}
           </ol>
         </section>
-      ) : null}
+      ) : (
+        <section aria-labelledby="delivery-history-title" className="space-y-3">
+          <div className="flex items-center gap-2">
+            <History aria-hidden className="size-4" />
+            <h3 id="delivery-history-title" className="font-semibold">
+              {t("operator.orders.delivery.history")}
+            </h3>
+          </div>
+          <NEmptyState
+            surface="panel"
+            icon={History}
+            title={t("operator.orders.delivery.noAttempts")}
+          />
+        </section>
+      )}
     </div>
   );
 }

@@ -109,7 +109,7 @@ export function StaffDetails({
             items={[
               {
                 icon: CircleUserRound,
-                label: t("operator.staff.functions"),
+                label: t("operator.staff.role"),
                 value: functionList,
               },
               {

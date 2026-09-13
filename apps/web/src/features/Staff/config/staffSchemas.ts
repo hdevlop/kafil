@@ -31,7 +31,7 @@ export const createStaffFormSchema = z.object({
     .optional(),
   affiliation: z.enum(["internal", "external"]),
   companyName: optionalText(160),
-  functions: z.array(z.enum(STAFF_FUNCTION_VALUES)).min(1).max(STAFF_FUNCTION_VALUES.length),
+  role: z.enum(STAFF_FUNCTION_VALUES),
   jobTitle: optionalText(120),
   notes: optionalText(2_000),
   cin: z
@@ -55,7 +55,7 @@ export const createStaffFormSchema = z.object({
     });
   }
 
-  if (data.functions.includes("operator")) {
+  if (data.role === "operator") {
     for (const [field, valid, message] of [
       ["contactEmail", Boolean(data.contactEmail), "Email is required for Operator staff."],
       ["cin", Boolean(data.cin && data.cin.trim().length >= 7), "CIN is required for Operator staff."],
@@ -85,7 +85,7 @@ export const updateStaffFormSchema = z.object({
     .nullish(),
   affiliation: z.enum(["internal", "external"]),
   companyName: optionalText(160),
-  functions: z.array(z.enum(STAFF_FUNCTION_VALUES)).min(1).max(STAFF_FUNCTION_VALUES.length),
+  role: z.enum(STAFF_FUNCTION_VALUES),
   jobTitle: optionalText(120),
   notes: optionalText(2_000),
   cin: z
@@ -108,7 +108,7 @@ export const updateStaffFormSchema = z.object({
       path: ["companyName"],
     });
   }
-  if (data.functions.includes("operator")) {
+  if (data.role === "operator") {
     for (const [field, valid, message] of [
       ["contactEmail", Boolean(data.contactEmail), "Email is required for Operator staff."],
       ["cin", Boolean(data.cin && data.cin.trim().length >= 7), "CIN is required for Operator staff."],
@@ -148,18 +148,6 @@ function optional(value: string | null | undefined) {
   return trimmed || undefined;
 }
 
-function normalizeFunctions(values: readonly StaffFunctionKey[]): StaffFunctionKey[] {
-  const seen = new Set<StaffFunctionKey>();
-  const list: StaffFunctionKey[] = [];
-  for (const value of values) {
-    if (!seen.has(value)) {
-      seen.add(value);
-      list.push(value);
-    }
-  }
-  return list;
-}
-
 interface FormLikeValues {
   address?: string | null | undefined;
   affiliation: "internal" | "external";
@@ -167,7 +155,7 @@ interface FormLikeValues {
   companyName?: string | null | undefined;
   contactEmail?: string | null | undefined;
   dateOfBirth?: string | null | undefined;
-  functions: StaffFunctionKey[];
+  role: StaffFunctionKey;
   gender?: "M" | "F" | null | undefined;
   image?: string | File | null | undefined;
   jobTitle?: string | null | undefined;
@@ -187,7 +175,7 @@ function toStaffProfileInput(
     image: normalizeImage(values.image),
     affiliation,
     companyName: null,
-    functions: normalizeFunctions(values.functions),
+    functions: [values.role],
     jobTitle: optional(values.jobTitle) ?? null,
     notes: optional(values.notes) ?? null,
     cin: optional(values.cin)?.toUpperCase() ?? null,

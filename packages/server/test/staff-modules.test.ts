@@ -101,7 +101,7 @@ describe("staff module DTOs", () => {
     ).toBe(false);
   });
 
-  it("accepts one Staff profile with both Operator and Delivery functions", () => {
+  it("rejects a Staff profile with both Operator and Delivery roles", () => {
     expect(
       createStaffDto.safeParse({
         affiliation: "internal",
@@ -114,7 +114,7 @@ describe("staff module DTOs", () => {
         name: "Dual Staff",
         phone: "+212600000000",
       }).success,
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("requires company name for external staff records", () => {
@@ -595,7 +595,7 @@ describe("staff module services", () => {
     ]);
   });
 
-  it("upgrades a linked delivery account when the Operator function is added", async () => {
+  it("requires a separate account instead of changing a linked delivery role", async () => {
     const roleAssignments: Array<{
       userId: string;
       roleId: string | undefined;
@@ -633,7 +633,7 @@ describe("staff module services", () => {
       { record: async () => undefined } as unknown as AuditService,
     );
 
-    await service.update(
+    await expect(service.update(
       staffId,
       {
         address: "Rabat",
@@ -641,21 +641,18 @@ describe("staff module services", () => {
         cin: "AB123456",
         contactEmail: "operator@example.test",
         dateOfBirth: "1990-05-20",
-        functions: ["operator", "delivery"],
+        functions: ["operator"],
         gender: "F",
         name: "Safe Operator",
         phone: "+212600000000",
       },
       "admin-user",
-    );
+    )).rejects.toMatchObject({
+      message: "A staff account role cannot be changed; create a separate staff account for the other role",
+      status: 409,
+    });
 
-    expect(roleAssignments).toEqual([
-      {
-        userId: "delivery-user",
-        roleId: undefined,
-        roleName: "operator",
-      },
-    ]);
+    expect(roleAssignments).toEqual([]);
   });
 
   it("refuses to permanently delete a staff record that has linked history", async () => {

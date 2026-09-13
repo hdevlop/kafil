@@ -83,6 +83,23 @@ otherwise the old environment credentials may be synchronized again. Do not
 mount that protected VPS file read-write into the normal web container merely
 to support this CLI.
 
+### Restore demo account access
+
+Demo sponsor and delivery accounts use fake `@demo.kafil.test` addresses, so
+their original invitation or generated password may be unavailable. In a
+development terminal, set a new password on the same linked account with:
+
+```bash
+bun run seed:access
+```
+
+Choose an existing sponsor or delivery account, then enter and confirm the new
+password through the masked prompts. The command refuses production and
+non-interactive use, accepts only linked `@demo.kafil.test` identities, marks
+the selected account active and email-verified, revokes its old sessions and
+supersedes old invitation/reset links. Profile IDs, assignments, orders,
+contributions, and other demo data remain unchanged.
+
 ### Catalog categories and products
 
 The standalone category seed creates or repairs the packaged catalog category

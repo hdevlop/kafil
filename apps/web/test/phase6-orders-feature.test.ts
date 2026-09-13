@@ -261,11 +261,10 @@ describe("Phase 7 unified OrderCart flow", () => {
     expect(dialog).toContain("AssignmentPlanningSection");
     expect(dialog).toContain("useOperatorStaffOptions");
     expect(dialog).toContain("useDeliveryStaffOptions");
-    expect(dialog).toContain("sameStaff");
+    expect(dialog).not.toContain("sameStaff");
     expect(dialog).toContain("purchasingStaffProfileId");
     expect(dialog).toContain("deliveryStaffProfileId");
     expect(dialog).not.toContain('t("family.orderCart.assignmentDescription")');
-    expect(dialog).not.toContain('t("family.orderCart.sameStaffUnavailable")');
     expect(dialog).toContain("confirmationFamily");
     expect(dialog).toContain("setReviewing(true)");
     expect(dialog).toContain("family.exactAddress");

@@ -13,7 +13,9 @@ import {
 import { DashboardService } from "./dashboardService";
 import {
   type DeliveryDashboardQuery,
+  type DeliveryFamiliesQuery,
   deliveryDashboardQuery,
+  deliveryFamiliesQuery,
 } from "./dashboardDto";
 
 @ToolGroup("dashboard")
@@ -29,14 +31,6 @@ export class DashboardController {
     return this.dashboard.getOperator();
   }
 
-  @Get("/delivery/context")
-  @isDeliveryStaff()
-  @McpTool({ description: "Check whether the authenticated Staff profile can use the delivery dashboard", readOnly: true })
-  @ResMsg("dashboards.success.retrieved")
-  getDeliveryContext(@User("id") userId: string) {
-    return this.dashboard.getDeliveryContext(userId);
-  }
-
   @Get("/delivery")
   @isDeliveryStaff()
   @Validate({ query: deliveryDashboardQuery })
@@ -47,6 +41,18 @@ export class DashboardController {
     @Query() query: DeliveryDashboardQuery,
   ) {
     return this.dashboard.getDelivery(userId, query.date);
+  }
+
+  @Get("/delivery/families")
+  @isDeliveryStaff()
+  @Validate({ query: deliveryFamiliesQuery })
+  @McpTool({ description: "Read the authenticated Staff member's assigned families and order summary for a date", readOnly: true })
+  @ResMsg("dashboards.success.retrieved")
+  getDeliveryFamilies(
+    @User("id") userId: string,
+    @Query() query: DeliveryFamiliesQuery,
+  ) {
+    return this.dashboard.getDeliveryFamilies(userId, query);
   }
 
   @Get("/family")

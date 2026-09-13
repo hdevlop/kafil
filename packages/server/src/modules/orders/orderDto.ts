@@ -134,6 +134,16 @@ export const assistedOrderDto = z.object({
   idempotencyKey,
 }).superRefine((input, context) => {
   validateDeliveryWindow(input, context);
+  if (
+    input.purchasingStaffProfileId &&
+    input.purchasingStaffProfileId === input.deliveryStaffProfileId
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "Purchasing and delivery require separate staff accounts.",
+      path: ["deliveryStaffProfileId"],
+    });
+  }
   if (input.deliveryStaffProfileId) {
     for (const field of ["scheduledDate", "packageCount"] as const) {
       if (input[field] == null) {

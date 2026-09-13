@@ -27,7 +27,6 @@ import {
   Wallet,
 } from "lucide-react";
 import {
-  CheckboxInput,
   ComboboxInput,
   Label,
   NBadge,
@@ -202,31 +201,21 @@ export interface OrderConfirmationFamily {
 function AssignmentPlanningSection({
   purchasingStaffId,
   deliveryStaffId,
-  sameStaff,
   operatorOptions,
   deliveryOptions,
   disabled,
   onPurchasingStaffChange,
   onDeliveryStaffChange,
-  onSameStaffChange,
 }: Readonly<{
   purchasingStaffId: string;
   deliveryStaffId: string;
-  sameStaff: boolean;
   operatorOptions: StaffAssignmentOption[];
   deliveryOptions: StaffAssignmentOption[];
   disabled: boolean;
   onPurchasingStaffChange: (value: string) => void;
   onDeliveryStaffChange: (value: string) => void;
-  onSameStaffChange: (value: boolean) => void;
 }>) {
   const { t } = useTranslation();
-  const selectedPurchasingStaff = operatorOptions.find(
-    ({ id }) => id === purchasingStaffId,
-  );
-  const canUseSameStaff = Boolean(
-    selectedPurchasingStaff?.functionKeys.includes("delivery"),
-  );
   const unassigned = "__unassigned__";
   const toItems = (options: StaffAssignmentOption[]) => [
     { value: unassigned, label: t("family.orderCart.assignmentUnassigned") },
@@ -272,7 +261,7 @@ function AssignmentPlanningSection({
               {t("family.orderCart.deliveryStaff")}
             </Label>
             <ComboboxInput
-              disabled={disabled || sameStaff}
+              disabled={disabled}
               emptyMessage={t("family.orderCart.noDeliveryStaff")}
               items={toItems(deliveryOptions)}
               placeholder={t("family.orderCart.chooseDeliveryStaff")}
@@ -284,15 +273,6 @@ function AssignmentPlanningSection({
             />
           </div>
         </div>
-        {canUseSameStaff ? (
-          <CheckboxInput
-            label={t("family.orderCart.sameStaff")}
-            value={sameStaff}
-            onChange={(value) => {
-              if (!disabled) onSameStaffChange(value);
-            }}
-          />
-        ) : null}
       </div>
     </section>
   );
@@ -440,7 +420,6 @@ export function OrderCartSheet({
     useState<AssistedFamilySelection | null>(null);
   const [purchasingStaffId, setPurchasingStaffId] = useState("");
   const [deliveryStaffId, setDeliveryStaffId] = useState("");
-  const [sameStaff, setSameStaff] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const staffOptionsEnabled = open && !isExactFamily;
   const operatorStaff = useOperatorStaffOptions({ enabled: staffOptionsEnabled });
@@ -541,7 +520,6 @@ export function OrderCartSheet({
           setSelectedFamilySummary(null);
           setPurchasingStaffId("");
           setDeliveryStaffId("");
-          setSameStaff(false);
         }
         setReviewing(false);
         onOpenChange(false);
@@ -561,27 +539,7 @@ export function OrderCartSheet({
     setSelectedFamilySummary(null);
     setPurchasingStaffId("");
     setDeliveryStaffId("");
-    setSameStaff(false);
     setReviewing(false);
-  }
-
-  function handlePurchasingStaffChange(value: string) {
-    setPurchasingStaffId(value);
-    if (!sameStaff) return;
-    const canDeliver = operatorStaff.data
-      ?.find(({ id }) => id === value)
-      ?.functionKeys.includes("delivery");
-    if (canDeliver) {
-      setDeliveryStaffId(value);
-      return;
-    }
-    setSameStaff(false);
-    setDeliveryStaffId("");
-  }
-
-  function handleSameStaffChange(value: boolean) {
-    setSameStaff(value);
-    if (value) setDeliveryStaffId(purchasingStaffId);
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -741,10 +699,8 @@ export function OrderCartSheet({
               disabled={saving || operatorStaff.isPending || deliveryStaff.isPending}
               operatorOptions={operatorStaff.data ?? []}
               purchasingStaffId={purchasingStaffId}
-              sameStaff={sameStaff}
               onDeliveryStaffChange={setDeliveryStaffId}
-              onPurchasingStaffChange={handlePurchasingStaffChange}
-              onSameStaffChange={handleSameStaffChange}
+              onPurchasingStaffChange={setPurchasingStaffId}
             />
           ) : null}
         </OrderConfirmationStep>

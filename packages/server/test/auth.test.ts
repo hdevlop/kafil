@@ -363,8 +363,8 @@ describe("Kafil auth definitions", () => {
       getGuardMetadata(DashboardController, method)[0]?.guardClass.name;
 
     expect(guardName("getOperator")).toBe("OperatorRoleGuard");
-    expect(guardName("getDeliveryContext")).toBe("DeliveryStaffRoleGuard");
     expect(guardName("getDelivery")).toBe("DeliveryStaffRoleGuard");
+    expect(guardName("getDeliveryFamilies")).toBe("DeliveryStaffRoleGuard");
     expect(guardName("getFamily")).toBe("FamilyRoleGuard");
     expect(guardName("getSponsor")).toBe("SponsorRoleGuard");
   });

@@ -26,13 +26,11 @@ function markerIcon(item: DeliveryDashboardItem, selected: boolean) {
   });
 }
 
-export function DeliveryMap({ items, selectedId, onSelect, ariaLabel, emptyTitle, emptyDescription, errorTitle }: Readonly<{
+export function DeliveryMap({ items, selectedId, onSelect, ariaLabel, errorTitle }: Readonly<{
   items: DeliveryDashboardItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   ariaLabel: string;
-  emptyTitle: string;
-  emptyDescription: string;
   errorTitle: string;
 }>) {
   const elementRef = useRef<HTMLDivElement>(null);
@@ -97,12 +95,6 @@ export function DeliveryMap({ items, selectedId, onSelect, ariaLabel, emptyTitle
     <div className={styles.root}>
       <div ref={elementRef} className={styles.map} aria-label={ariaLabel} />
       {tileError ? <div className={styles.message} role="alert"><strong>{errorTitle}</strong></div> : null}
-      {!tileError && mappedItems.length === 0 ? (
-        <div className={styles.message} role="status">
-          <strong>{emptyTitle}</strong>
-          <span>{emptyDescription}</span>
-        </div>
-      ) : null}
     </div>
   );
 }

@@ -816,8 +816,7 @@
       "earliestExpiry": "Primera caducidad pendiente: {date}"
     },
     "nav": {
-      "overview": "Resumen",
-      "deliveryDashboard": "Panel de entregas",
+      "dashboard": "Dashboard",
       "families": "Familias",
       "children": "Niños",
       "sponsors": "Patrocinadores",
@@ -983,7 +982,7 @@
         "mapSubtitle": "Direcciones familiares programadas", "selectDate": "Seleccionar fecha de entrega", "today": "Hoy", "tomorrow": "Mañana",
         "noMapLocations": "No hay direcciones en el mapa", "noMapLocationsHint": "Las entregas programadas siguen disponibles en la lista.",
         "packages": "paquetes", "openMaps": "Abrir en Google Maps", "startDelivery": "Iniciar entrega",
-        "confirmDelivery": "Confirmar entrega", "issueKind": "Tipo de problema", "viewAll": "Ver todo", "showLess": "Ver menos", "locationUnavailable": "Ubicación no disponible"
+        "confirmDelivery": "Confirmar entrega", "issueKind": "Tipo de problema", "viewAll": "Ver todo", "showLess": "Ver menos", "locationUnavailable": "Ubicación no disponible", "familiesTitle": "Familias asignadas", "familiesSubtitle": "Familias con entregas asignadas a ti para la fecha seleccionada.", "familiesSearch": "Buscar familias asignadas", "familiesAccount": "Familia", "familiesPhone": "Teléfono", "familiesOrders": "Pedidos", "familiesOrdersCount": "{count} pedidos", "familiesStatus": "Estado", "familiesNextWindow": "Próxima ventana", "familiesEmpty": "No hay familias asignadas para esta fecha.", "familiesEmptyHint": "Las familias aparecen aquí una vez que se te asignen entregas.", "familiesNoData": "No hay familias asignadas para esta fecha.", "familiesLoading": "Cargando familias asignadas"
       },
       "family": {
         "welcome": "Bienvenido, {name}",
@@ -2097,9 +2096,6 @@
         "searchStaff": "Buscar personal",
         "noPurchasingStaff": "No se encontró personal Operador activo.",
         "noDeliveryStaff": "No se encontró personal de Entrega activo.",
-        "sameStaff": "La misma persona compra y entrega",
-        "sameStaffDescription": "Esta persona tiene las funciones Operador y Entrega.",
-        "sameStaffUnavailable": "Elige un Operador que también tenga la función Entrega.",
         "purchasingAssignmentPlanned": "Asignación planificada; la compra comienza solo al registrar el recibo.",
         "confirmationNotice": "La disponibilidad, el presupuesto y los precios se verifican de nuevo al confirmar.",
         "quantityAria": "Cantidad de {name}",

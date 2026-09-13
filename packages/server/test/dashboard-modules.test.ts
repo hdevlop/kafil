@@ -6,14 +6,15 @@ import {
   DashboardController,
   DashboardRepository,
   DashboardService,
+  deliveryFamiliesQuery,
 } from "../src/modules/dashboard";
 
 describe("Phase 7 dashboard report boundaries", () => {
   it("exposes one read-only dashboard per product role", () => {
     expect(getMcpTools(DashboardController).map((tool) => tool.methodKey)).toEqual([
       "getOperator",
-      "getDeliveryContext",
       "getDelivery",
+      "getDeliveryFamilies",
       "getFamily",
       "getSponsor",
     ]);
@@ -116,14 +117,152 @@ describe("Phase 7 dashboard report boundaries", () => {
     expect(result.deliveries[1]).toMatchObject({ category: "delivered", coordinates: null, canConfirm: false });
   });
 
-  it("reports delivery eligibility only for an active linked delivery Staff profile", async () => {
+  it("groups one selected-date directory entry per family with distinct order counts", async () => {
+    const dashboard = new DashboardService({
+      deliveryStaffIdentity: async () => ({ id: "staff-1", name: "Courier", status: "active" }),
+      deliveryRows: async () => [
+        {
+          attemptId: "attempt-1", attemptStatus: "assigned", orderId: "order-1", orderNumber: "KAF-2",
+          orderStatus: "purchased", familyProfileId: "family-1", familyName: "Atlas Family", familyImage: null,
+          address: "Second address", phone: "+212600000002", latitude: 33.58, longitude: -7.6,
+          scheduledDate: "2026-09-09", windowStartMinute: 15 * 60, windowEndMinute: 16 * 60, packageCount: 2,
+        },
+        {
+          attemptId: "attempt-2", attemptStatus: "assigned", orderId: "order-2", orderNumber: "KAF-1",
+          orderStatus: "purchased", familyProfileId: "family-1", familyName: "Atlas Family", familyImage: "img.webp",
+          address: "First address", phone: "+212600000001", latitude: 33.57, longitude: -7.59,
+          scheduledDate: "2026-09-09", windowStartMinute: 14 * 60, windowEndMinute: 15 * 60, packageCount: 1,
+        },
+        {
+          attemptId: "attempt-3", attemptStatus: "delivered", orderId: "order-3", orderNumber: "KAF-3",
+          orderStatus: "delivered", familyProfileId: "family-2", familyName: "Rif Family", familyImage: null,
+          address: "Address 2", phone: null, latitude: null, longitude: null,
+          scheduledDate: "2026-09-09", windowStartMinute: null, windowEndMinute: null, packageCount: 3,
+        },
+      ],
+      openDeliveryIssues: async () => [
+        { id: "issue-1", attemptId: "attempt-1", kind: "family_unreachable", note: null },
+        { id: "issue-2", attemptId: "attempt-1", kind: "missing_proof", note: null },
+      ],
+    } as unknown as DashboardRepository);
+
+    const result = await dashboard.getDeliveryFamilies(
+      "delivery-user",
+      { date: "2026-09-09" },
+      new Date("2026-09-09T10:00:00.000Z"),
+    );
+
+    expect(result.pagination.total).toBe(2);
+    // Two issues on one attempt flag the family once without multiplying orders.
+    expect(result.data[0]).toMatchObject({
+      familyProfileId: "family-1",
+      familyName: "Atlas Family",
+      status: "needs_attention",
+      orderCount: 2,
+      pending: 1,
+      delivered: 0,
+      needsAttention: 1,
+      // Deterministic snapshot: earliest window wins even though its order
+      // number sorts later.
+      phone: "+212600000001",
+      address: "First address",
+      coordinates: { latitude: 33.57, longitude: -7.59 },
+      nextWindowStartMinute: 14 * 60,
+      nextWindowEndMinute: 15 * 60,
+    });
+    expect(result.data[1]).toMatchObject({
+      familyProfileId: "family-2",
+      status: "delivered",
+      orderCount: 1,
+      phone: null,
+      coordinates: null,
+      nextWindowStartMinute: null,
+    });
+    const json = JSON.stringify(result);
+    expect(json).not.toContain("guardian");
+    expect(json).not.toContain("cin");
+    expect(json).not.toContain("documents");
+    expect(json).not.toContain("notes");
+  });
+
+  it("searches, orders stably, and paginates the delivery families directory", async () => {
+    const rows = (name: string, profile: string, phone: string | null, window: number | null) => ({
+      attemptId: `attempt-${profile}`, attemptStatus: "assigned", orderId: `order-${profile}`,
+      orderNumber: `KAF-${profile}`, orderStatus: "purchased", familyProfileId: profile,
+      familyName: name, familyImage: null, address: `${name} address`, phone,
+      latitude: null, longitude: null, scheduledDate: "2026-09-09",
+      windowStartMinute: window, windowEndMinute: window == null ? null : window + 60, packageCount: 1,
+    });
+    const dashboard = new DashboardService({
+      deliveryStaffIdentity: async () => ({ id: "staff-1", name: "Courier", status: "active" }),
+      deliveryRows: async () => [
+        rows("Zulu Family", "family-3", "+212600000003", null),
+        rows("Atlas Family", "family-1", "+212600000001", 14 * 60),
+        rows("Rif Household", "family-2", "+212600000002", 9 * 60),
+      ],
+      openDeliveryIssues: async () => [],
+    } as unknown as DashboardRepository);
+
+    const searched = await dashboard.getDeliveryFamilies(
+      "delivery-user",
+      { date: "2026-09-09", search: "atlas" },
+      new Date("2026-09-09T10:00:00.000Z"),
+    );
+    expect(searched.pagination.total).toBe(1);
+    expect(searched.data.map((entry) => entry.familyName)).toEqual(["Atlas Family"]);
+
+    const byPhone = await dashboard.getDeliveryFamilies(
+      "delivery-user",
+      { date: "2026-09-09", search: "0000002" },
+      new Date("2026-09-09T10:00:00.000Z"),
+    );
+    expect(byPhone.data.map((entry) => entry.familyName)).toEqual(["Rif Household"]);
+
+    const first = await dashboard.getDeliveryFamilies(
+      "delivery-user",
+      { date: "2026-09-09", limit: 2, offset: 0 },
+      new Date("2026-09-09T10:00:00.000Z"),
+    );
+    // Earliest window first; families without a window sort last.
+    expect(first.data.map((entry) => entry.familyName)).toEqual(["Rif Household", "Atlas Family"]);
+    expect(first.pagination).toMatchObject({ total: 3, page: 1, limit: 2 });
+
+    const second = await dashboard.getDeliveryFamilies(
+      "delivery-user",
+      { date: "2026-09-09", limit: 2, offset: 2 },
+      new Date("2026-09-09T10:00:00.000Z"),
+    );
+    expect(second.data.map((entry) => entry.familyName)).toEqual(["Zulu Family"]);
+    expect(second.pagination).toMatchObject({ total: 3, page: 2, limit: 2 });
+  });
+
+  it("denies the delivery families directory without an active delivery staff identity", async () => {
     const dashboard = new DashboardService({
       deliveryStaffIdentity: async () => undefined,
+      deliveryRows: async () => {
+        throw new Error("must not query without staff identity");
+      },
+      openDeliveryIssues: async () => {
+        throw new Error("must not query without staff identity");
+      },
     } as unknown as DashboardRepository);
-    await expect(dashboard.getDeliveryContext("operator-user")).resolves.toEqual({
-      eligible: false,
-      staffProfileId: null,
+
+    await expect(
+      dashboard.getDeliveryFamilies("operator-user", { date: "2026-09-09" }),
+    ).rejects.toThrow();
+  });
+
+  it("validates the delivery families query boundaries", () => {
+    expect(() =>
+      deliveryFamiliesQuery.parse({ date: "not-a-date" }),
+    ).toThrow();
+    expect(deliveryFamiliesQuery.parse({ date: "2026-09-09" })).toMatchObject({
+      limit: 50,
+      offset: 0,
     });
+    expect(
+      deliveryFamiliesQuery.parse({ date: "2026-09-09", limit: "25", offset: "50" }),
+    ).toMatchObject({ limit: 25, offset: 50 });
   });
 
   it("returns the dominant category projection for each family recent order", async () => {

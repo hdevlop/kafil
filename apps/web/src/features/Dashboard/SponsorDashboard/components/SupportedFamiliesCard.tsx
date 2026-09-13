@@ -1,7 +1,7 @@
 "use client";
 
 import { HeartHandshake } from "lucide-react";
-import { NCard } from "najm-kit";
+import { NButton, NCard, NEmptyState } from "najm-kit";
 import Link from "next/link";
 
 import type { SupportedFamilyEntry } from "../types";
@@ -42,15 +42,16 @@ export function SupportedFamiliesCard({
             )}
           </>
         ) : (
-          <Link
-            className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/70 px-4 py-10 hover:bg-muted/60"
-            href="/family"
-          >
-            <HeartHandshake className="size-8 text-muted-foreground/50" />
-            <span className="text-sm text-muted-foreground">
-              {t("dashboard.sponsor.findFamilyToSupport")}
-            </span>
-          </Link>
+          <NEmptyState
+            className="min-h-40 py-8"
+            icon={HeartHandshake}
+            title={t("dashboard.sponsor.findFamilyToSupport")}
+            action={
+              <NButton asChild size="sm" variant="outline">
+                <Link href="/family">{t("dashboard.sponsor.viewAllSupport")}</Link>
+              </NButton>
+            }
+          />
         )}
       </div>
     </NCard>

@@ -236,6 +236,12 @@ export class StaffService {
     const input = updateStaffDto.parse(data);
     const functionKeys = (input.functions ?? existing.functions) as StaffFunctionKey[];
     const wantsOperator = functionKeys.includes("operator");
+    const desiredRole = wantsOperator ? OPERATOR_ROLE : DELIVERY_ROLE;
+    if (existing.userId && existing.role !== desiredRole) {
+      HttpError.conflict(
+        "A staff account role cannot be changed; create a separate staff account for the other role",
+      );
+    }
     await this.validator.ensurePhoneUnique(input.phone, id, existing.userId ?? undefined);
     await this.validator.ensureCinUnique(input.cin, id);
     await this.validator.ensureEmailUnique(input.contactEmail, existing.userId ?? undefined);
@@ -290,12 +296,6 @@ export class StaffService {
     if (Object.keys(accountUpdates).length > 0 && existing.userId) {
       await this.users.update(existing.userId, accountUpdates);
     }
-    if (existing.userId) {
-      const desiredRole = wantsOperator ? OPERATOR_ROLE : DELIVERY_ROLE;
-      if (existing.role !== desiredRole) {
-        await this.users.assignRole(existing.userId, undefined, desiredRole);
-      }
-    }
     if (existing.userId && input.phone !== undefined && input.phone !== existing.phone) {
       await this.userRecords?.update(existing.userId, {
         phone: input.phone,
@@ -332,6 +332,11 @@ export class StaffService {
     if (!profile.functions.includes("operator")) {
       HttpError.conflict(
         "Operator function is required to provision an operator account",
+      );
+    }
+    if (profile.functions.includes("delivery")) {
+      HttpError.conflict(
+        "Delivery staff must use a separate delivery account",
       );
     }
     if (profile.affiliation !== "internal") {

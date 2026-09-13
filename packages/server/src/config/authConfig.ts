@@ -221,7 +221,7 @@ class DeliveryStaffRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.DELIVERY, ROLES.OPERATOR, ROLES.ADMIN] },
+      { allowedRoles: [ROLES.DELIVERY] },
       user,
       context,
     );

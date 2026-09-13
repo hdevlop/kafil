@@ -1,8 +1,10 @@
 "use client";
 
+import { keepPreviousData } from "@tanstack/react-query";
+
 import { useEntityCommand } from "@/hooks/useEntityCommand";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { getDeliveryDashboard, getDeliveryDashboardContext } from "@/services/dashboardApi";
+import { getDeliveryDashboard } from "@/services/dashboardApi";
 import {
   confirmOwnOrderDelivery,
   reportOwnOrderDeliveryIssue,
@@ -15,20 +17,12 @@ export function useDeliveryDashboard(date: string) {
   return useEntityQuery({
     queryKey: dashboardKeys.delivery(date),
     queryFn: () => getDeliveryDashboard(date),
-  });
-}
-
-export function useDeliveryDashboardContext(enabled = true) {
-  return useEntityQuery({
-    queryKey: dashboardKeys.deliveryContext,
-    queryFn: getDeliveryDashboardContext,
-    enabled,
-    staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   });
 }
 
 export function useDeliveryDashboardCommands(date: string) {
-  const invalidate = [dashboardKeys.delivery(date)];
+  const invalidate = [dashboardKeys.delivery(date), dashboardKeys.deliveryFamilies];
   return {
     start: useEntityCommand({ mutationFn: startOwnOrderDelivery, invalidate }),
     confirm: useEntityCommand({ mutationFn: confirmOwnOrderDelivery, invalidate }),

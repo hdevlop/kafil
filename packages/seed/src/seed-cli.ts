@@ -5,6 +5,7 @@ export const SEED_CLI_COMMANDS = [
   "full",
   "migrate",
   "admin",
+  "access",
   "categories",
   "products",
   "themes",
@@ -96,8 +97,7 @@ export function demoCountArgs(counts: SeedCliDemoCounts) {
 export function seedCliHelp() {
   return `Kafil seed CLI
 
-Usage:
-  bun run seed
+Usage: bun run seed
   bun run seed -- <command> [options]
 
 Commands:
@@ -107,6 +107,7 @@ Commands:
   setup      Reset app data and seed auth
   migrate    Apply migrations
   admin      Repair admin access
+  access     Restore demo sponsor/delivery access (interactive dev only)
   categories Seed catalog categories
   products   Seed demo catalog products
   themes     Seed built-in theme presets (non-destructive)
@@ -120,7 +121,7 @@ Demo/full options:
   -d, --deliveries <count>    Default: 4
   -c, --contributions <count> Default: 20
 
-Safety:
+Safety: access is limited to linked @demo.kafil.test accounts.
   remove deletes managed demo data plus products and empty categories.
   setup/full delete all app data.
   Destructive non-interactive commands require --yes.`;

@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { NLineChart, useNajmFormat } from "najm-kit";
+import { NEmptyState, NLineChart, useNajmFormat } from "najm-kit";
 
 import { toChartData } from "@/features/Dashboard/shared/chartData";
 
@@ -27,7 +27,7 @@ export function ContributionOverviewCard({
     <NLineChart
       className="h-full"
       data={toChartData(data, series.map((item) => item.key), fmt)}
-      emptyLabel={emptyLabel}
+      emptyLabel={emptyLabel ? <NEmptyState icon={icon} title={emptyLabel} /> : undefined}
       icon={icon}
       series={series.map((item) => ({
         id: item.key,

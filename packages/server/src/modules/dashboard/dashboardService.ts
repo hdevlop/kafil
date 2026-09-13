@@ -1,17 +1,22 @@
 import { HttpError, Service } from "najm-core";
 
+import { listPage } from "../../pagination";
 import { DashboardRepository } from "./dashboardRepository";
 import type {
   DashboardStatusCount,
   DeliveryDashboard,
   DeliveryDashboardCategory,
   DeliveryDashboardItem,
+  DeliveryFamilyDirectoryEntry,
+  DeliveryFamilyStatus,
   FamilyDashboard,
   OperatorDashboard,
   SponsorDashboard,
   SponsorMetrics,
 } from "./dashboardTypes";
+import { deliveryFamiliesQuery, type DeliveryFamiliesQuery } from "./dashboardDto";
 import { sponsorFamilyReference } from "../supportAssignments/supportAssignmentProjection";
+import { casablancaClock, isDeliveryDelayed } from "./deliveryTiming";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 
@@ -91,13 +96,6 @@ export class DashboardService {
         totalMinor: numberValue(order.totalMinor),
       })),
     };
-  }
-
-  async getDeliveryContext(
-    userId: string,
-  ): Promise<{ eligible: boolean; staffProfileId: string | null }> {
-    const staff = await this.dashboard.deliveryStaffIdentity(userId);
-    return { eligible: Boolean(staff), staffProfileId: staff?.id ?? null };
   }
 
   async getDelivery(
@@ -202,6 +200,116 @@ export class DashboardService {
       },
       deliveries,
     };
+  }
+
+  async getDeliveryFamilies(
+    userId: string,
+    query: DeliveryFamiliesQuery,
+    now = new Date(),
+  ) {
+    const { date: selectedDate, limit, offset, search } = deliveryFamiliesQuery.parse(query ?? {});
+    const staff = await this.dashboard.deliveryStaffIdentity(userId);
+    if (!staff) HttpError.forbidden("Delivery dashboard access denied");
+
+    const rows = await this.dashboard.deliveryRows(staff.id, selectedDate);
+    const issueRows = await this.dashboard.openDeliveryIssues(
+      rows.map((row) => row.attemptId),
+    );
+    const openIssueAttemptIds = new Set(issueRows.map((issue) => issue.attemptId));
+
+    const clock = casablancaClock(now);
+    const attemptsByFamily = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const attempts = attemptsByFamily.get(row.familyProfileId) ?? [];
+      attempts.push(row);
+      attemptsByFamily.set(row.familyProfileId, attempts);
+    }
+
+    const rank: Record<DeliveryDashboardCategory, number> = {
+      needs_attention: 2,
+      pending: 1,
+      delivered: 0,
+    };
+    const categoryOf = (attemptStatus: string, attemptId: string, windowEndMinute: number | null): DeliveryDashboardCategory => {
+      if (attemptStatus === "delivered") return "delivered";
+      const delayed = isDeliveryDelayed({ attemptStatus, selectedDate, windowEndMinute }, clock);
+      return attemptStatus === "failed" || delayed || openIssueAttemptIds.has(attemptId)
+        ? "needs_attention"
+        : "pending";
+    };
+
+    const entries: DeliveryFamilyDirectoryEntry[] = [];
+    for (const attempts of attemptsByFamily.values()) {
+      // Deterministic snapshot: earliest window wins, then order number, then
+      // attempt id. A family with several destinations or windows keeps one
+      // contact card while every distinct order still counts.
+      const ordered = [...attempts].sort(
+        (left, right) =>
+          (left.windowStartMinute ?? Number.MAX_SAFE_INTEGER) -
+            (right.windowStartMinute ?? Number.MAX_SAFE_INTEGER) ||
+          (left.orderNumber < right.orderNumber ? -1 : left.orderNumber > right.orderNumber ? 1 : 0) ||
+          (left.attemptId < right.attemptId ? -1 : left.attemptId > right.attemptId ? 1 : 0),
+      );
+      const snapshot = ordered[0]!;
+      const orderStatus = new Map<string, DeliveryDashboardCategory>();
+      let familyRank = 0;
+      for (const attempt of attempts) {
+        const category = categoryOf(attempt.attemptStatus, attempt.attemptId, attempt.windowEndMinute);
+        familyRank = Math.max(familyRank, rank[category]);
+        const current = orderStatus.get(attempt.orderId);
+        if (!current || rank[category] > rank[current]) {
+          orderStatus.set(attempt.orderId, category);
+        }
+      }
+      const statuses = [...orderStatus.values()];
+      const hasCoordinates =
+        snapshot.latitude != null &&
+        snapshot.longitude != null &&
+        snapshot.latitude >= -90 &&
+        snapshot.latitude <= 90 &&
+        snapshot.longitude >= -180 &&
+        snapshot.longitude <= 180;
+      entries.push({
+        familyProfileId: snapshot.familyProfileId,
+        familyName: snapshot.familyName || "Family",
+        familyImage: snapshot.familyImage,
+        phone: snapshot.phone,
+        address: snapshot.address,
+        coordinates: hasCoordinates
+          ? { latitude: snapshot.latitude!, longitude: snapshot.longitude! }
+          : null,
+        scheduledDate: snapshot.scheduledDate!,
+        orderCount: orderStatus.size,
+        pending: statuses.filter((status) => status === "pending").length,
+        delivered: statuses.filter((status) => status === "delivered").length,
+        needsAttention: statuses.filter((status) => status === "needs_attention").length,
+        status: (["delivered", "pending", "needs_attention"] as const)[familyRank] as DeliveryFamilyStatus,
+        nextWindowStartMinute: snapshot.windowStartMinute,
+        nextWindowEndMinute: snapshot.windowEndMinute,
+      });
+    }
+
+    const needle = search?.toLowerCase();
+    const filtered = needle
+      ? entries.filter(
+          (entry) =>
+            entry.familyName.toLowerCase().includes(needle) ||
+            (entry.phone ?? "").toLowerCase().includes(needle),
+        )
+      : entries;
+    filtered.sort(
+      (left, right) =>
+        (left.nextWindowStartMinute ?? Number.MAX_SAFE_INTEGER) -
+          (right.nextWindowStartMinute ?? Number.MAX_SAFE_INTEGER) ||
+        (left.familyName < right.familyName ? -1 : left.familyName > right.familyName ? 1 : 0) ||
+        (left.familyProfileId < right.familyProfileId ? -1 : left.familyProfileId > right.familyProfileId ? 1 : 0),
+    );
+
+    return listPage(filtered.slice(offset, offset + limit), {
+      limit,
+      offset,
+      total: filtered.length,
+    });
   }
 
   async getFamily(userId: string): Promise<FamilyDashboard> {
@@ -370,39 +478,4 @@ export class DashboardService {
       })),
     };
   }
-}
-
-function casablancaClock(now: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    day: "2-digit",
-    hour: "2-digit",
-    hour12: false,
-    minute: "2-digit",
-    month: "2-digit",
-    timeZone: "Africa/Casablanca",
-    year: "numeric",
-  }).formatToParts(now);
-  const value = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value ?? "00";
-  return {
-    date: `${value("year")}-${value("month")}-${value("day")}`,
-    minute: Number(value("hour")) * 60 + Number(value("minute")),
-  };
-}
-
-function isDeliveryDelayed(
-  delivery: {
-    attemptStatus: string;
-    selectedDate: string;
-    windowEndMinute: number | null;
-  },
-  clock: { date: string; minute: number },
-) {
-  if (["delivered", "failed", "cancelled"].includes(delivery.attemptStatus)) {
-    return false;
-  }
-  if (delivery.selectedDate < clock.date) return true;
-  return delivery.selectedDate === clock.date &&
-    delivery.windowEndMinute != null &&
-    delivery.windowEndMinute < clock.minute;
 }

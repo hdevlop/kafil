@@ -7,6 +7,7 @@ import {
   FormInput,
   NButton,
   NCard,
+  NEmptyState,
   NForm,
   NFormSectionHeader,
   useDialog,
@@ -436,9 +437,11 @@ export function SponsorContributionWorkspace({
             ) : null}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            {t("sponsor.contributions.none")}
-          </p>
+          <NEmptyState
+            surface="panel"
+            icon={HandCoins}
+            title={t("sponsor.contributions.none")}
+          />
         )}
       </NCard> : null}
     </div>

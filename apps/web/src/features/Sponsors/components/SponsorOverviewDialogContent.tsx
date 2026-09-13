@@ -63,6 +63,7 @@ export function SponsorOverviewDialogContent({
         <NGridItem span={1} lgSpan={7}>
           <ContributionOverviewCard
             data={vm.contributionTrend}
+            emptyLabel={t("dashboard.sponsor.noContributions")}
             icon={HandCoins}
             series={vm.chartSeries}
             title={t("dashboard.sponsor.contributionOverview")}

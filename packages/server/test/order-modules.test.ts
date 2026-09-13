@@ -26,6 +26,7 @@ import {
   submitOrderDto,
 } from "../src/modules/orders";
 import { dominantOrderCategoryField } from "../src/modules/orders/orderQueries";
+import { assistedOrderDto } from "../src/modules/orders/orderDto";
 
 const householdId = "00000000-0000-4000-8000-000000000081";
 const productId = "00000000-0000-4000-8000-000000000082";
@@ -208,6 +209,18 @@ describe("Phase 5 cart and route contracts", () => {
     ).toBe(false);
   });
 
+  it("requires separate purchasing and delivery staff accounts", () => {
+    expect(assistedOrderDto.safeParse({
+      familyProfileId: householdId,
+      purchasingStaffProfileId: deliveryStaffId,
+      deliveryStaffProfileId: deliveryStaffId,
+      ...deliverySchedule,
+      items: [{ productId, quantity: 1 }],
+      assistanceChannel: "phone",
+      idempotencyKey: "separate-staff-accounts",
+    }).success).toBe(false);
+  });
+
   it("exposes command-specific cart and lifecycle tools without a status update route", () => {
     const methods = getMcpTools(OrderController).map((tool) => tool.methodKey);
 
@@ -357,18 +370,18 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     expect(state.clearedCartIds).toEqual([]);
   });
 
-  it("plans one dual-capability Staff member for purchase and delivery without advancing status", async () => {
+  it("plans separate purchasing and delivery accounts without advancing status", async () => {
     const { service, state } = orderService();
 
     const order = await service.submitAssisted(
       {
         familyProfileId: householdId,
         purchasingStaffProfileId: purchasingStaffId,
-        deliveryStaffProfileId: purchasingStaffId,
+        deliveryStaffProfileId: deliveryStaffId,
         ...deliverySchedule,
         items: [{ productId, quantity: 2 }],
         assistanceChannel: "in_person",
-        idempotencyKey: "assisted-order-dual-0001",
+        idempotencyKey: "assisted-order-separated-0001",
       },
       "operator-user",
     );
@@ -376,21 +389,21 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     expect(order).toMatchObject({
       status: "pending",
       purchasingStaffProfileId: purchasingStaffId,
-      purchasingStaffNameSnapshot: "Amina Delivery",
+      purchasingStaffNameSnapshot: "Omar Operator",
     });
     expect(state.deliveryAttempts).toHaveLength(1);
     expect(state.deliveryAttempts[0]).toMatchObject({
       orderId,
-      staffProfileId: purchasingStaffId,
+      staffProfileId: deliveryStaffId,
       status: "assigned",
-      assignmentIdempotencyKey: "assisted-order-dual-0001",
+      assignmentIdempotencyKey: "assisted-order-separated-0001",
     });
     expect(state.auditEvents).toContainEqual(
       expect.objectContaining({
         action: "order.assisted_submitted",
         metadata: expect.objectContaining({
           purchasingStaffProfileId: purchasingStaffId,
-          deliveryStaffProfileId: purchasingStaffId,
+          deliveryStaffProfileId: deliveryStaffId,
         }),
       }),
     );
@@ -1130,17 +1143,14 @@ function orderService(options: {
       }),
       findById: async (id: string) => ({
         id,
-        name: "Amina Delivery",
+        name: id === purchasingStaffId ? "Omar Operator" : "Amina Delivery",
         phone: "+212600001122",
         image: "/api/staff-images/files/serve/amina.webp",
         gender: "F",
         affiliation: "internal",
         companyName: null,
         status: options.deliveryStaffActive === false ? "inactive" : "active",
-        functions:
-          id === purchasingStaffId
-            ? ["operator", "delivery"]
-            : ["delivery"],
+        functions: id === purchasingStaffId ? ["operator"] : ["delivery"],
       }),
     } as unknown as StaffRepository,
     {

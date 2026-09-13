@@ -27,6 +27,7 @@ import {
   NButton,
   NCard,
   NCardAction,
+  NEmptyState,
   NErrorState,
   NGrid,
   NGridItem,
@@ -35,6 +36,7 @@ import {
   NPageHeaderActions,
   NPageLayout,
   NPieChart,
+  NSpinner,
   NStatCard,
   useNajmFormat,
 } from "najm-kit";
@@ -45,6 +47,7 @@ import { getPublicApiErrorMessage } from "@/services/apiError";
 import { DashboardAttentionCard } from "../../shared/DashboardAttentionCard";
 import { DashboardQuickActionsCard } from "../../shared/DashboardQuickActionsCard";
 import { DeliveryDashboardSkeleton } from "../../shared/DashboardSkeletons";
+import { casablancaToday, minuteLabel } from "../../shared/deliveryTime";
 import type { DeliveryDashboardItem } from "../../types";
 import { useDeliveryDashboard, useDeliveryDashboardCommands } from "../hooks/useDeliveryDashboard";
 
@@ -52,20 +55,6 @@ const DeliveryMap = dynamic(() => import("./DeliveryMap").then((module) => modul
   ssr: false,
   loading: () => <div className="h-[34rem] animate-pulse rounded-xl bg-muted" />,
 });
-
-function casablancaDate(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Casablanca",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function minuteLabel(value: number | null) {
-  if (value == null) return "—";
-  return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
-}
 
 function categoryKey(category: DeliveryDashboardItem["category"]) {
   return category === "needs_attention"
@@ -78,8 +67,8 @@ function categoryKey(category: DeliveryDashboardItem["category"]) {
 export function DeliveryDashboardPage() {
   const { t } = useTranslation();
   const fmt = useNajmFormat();
-  const [date, setDate] = useState(() => casablancaDate());
-  const today = casablancaDate();
+  const [date, setDate] = useState(() => casablancaToday());
+  const today = casablancaToday();
   const dashboard = useDeliveryDashboard(date);
   const commands = useDeliveryDashboardCommands(date);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -94,13 +83,16 @@ export function DeliveryDashboardPage() {
     window.history.replaceState(window.history.state, "", currentUrl);
   }, []);
 
+  const isDateTransition = dashboard.isPlaceholderData && dashboard.isFetching;
   const items = dashboard.data?.deliveries ?? [];
-  const selected = items.find((item) => item.attemptId === selectedId) ?? items[0] ?? null;
+  const selected = isDateTransition
+    ? null
+    : items.find((item) => item.attemptId === selectedId) ?? items[0] ?? null;
   const effectiveSelectedId = selected?.attemptId ?? null;
   const onSelect = useCallback((id: string) => setSelectedId(id), []);
 
   function changeDate(next: string | undefined) {
-    if (!next) return;
+    if (!next || next === date) return;
     setSelectedId(null);
     setShowAll(false);
     setDate(next);
@@ -224,7 +216,7 @@ export function DeliveryDashboardPage() {
             title={t("dashboard.delivery.overview")}
             icon={PackageCheck}
             items={chartItems}
-            emptyLabel={t("dashboard.delivery.noDeliveries")}
+            emptyLabel={<NEmptyState icon={PackageCheck} title={t("dashboard.delivery.noDeliveries")} />}
             valueFormatter={fmt.number}
           />
 
@@ -233,9 +225,14 @@ export function DeliveryDashboardPage() {
               className="h-full min-h-72"
               title={t("dashboard.delivery.todaysDeliveries")}
               icon={Truck}
-              empty={items.length === 0}
-              emptyText={t("dashboard.delivery.noDeliveries")}
             >
+              {items.length === 0 ? (
+                <NEmptyState
+                  className="min-h-40 py-8"
+                  icon={Truck}
+                  title={t("dashboard.delivery.noDeliveries")}
+                />
+              ) : (
               <div className="space-y-1">
                 {(showAll ? items : items.slice(0, 5)).map((item) => (
                   <NButton
@@ -246,8 +243,11 @@ export function DeliveryDashboardPage() {
                   >
                     <NAvatar fallback={item.familyName} src={item.familyImage} size="sm" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{item.orderNumber}</span>
-                      <span className="block truncate text-xs font-normal text-muted-foreground">{item.familyName}</span>
+                      <span className="block truncate font-semibold">{item.familyName}</span>
+                      {item.phone ? (
+                        <span dir="ltr" className="block truncate text-start text-xs font-normal text-muted-foreground">{item.phone}</span>
+                      ) : null}
+                      <span className="sr-only">{item.orderNumber}</span>
                     </span>
                     <span className="shrink-0 text-xs font-normal text-muted-foreground">
                       {minuteLabel(item.windowStartMinute)}–{minuteLabel(item.windowEndMinute)}
@@ -261,6 +261,7 @@ export function DeliveryDashboardPage() {
                   </NButton>
                 ) : null}
               </div>
+              )}
             </NCard>
           </div>
 
@@ -272,20 +273,7 @@ export function DeliveryDashboardPage() {
               label: t(`dashboard.delivery.${key}`),
             }))}
             title={t("dashboard.delivery.attentionTitle")}
-          >
-            {selected ? (
-              <div className="mt-4 border-t pt-4">
-                <NAvatar
-                  title={selected.familyName}
-                  subtitle={`${selected.orderNumber} · ${minuteLabel(selected.windowStartMinute)}–${minuteLabel(selected.windowEndMinute)}`}
-                  fallback={selected.familyName}
-                  src={selected.familyImage}
-                  size="sm"
-                  meta={<NBadge status={selected.category}>{t(categoryKey(selected.category))}</NBadge>}
-                />
-              </div>
-            ) : null}
-          </DashboardAttentionCard>
+          />
 
           <DashboardQuickActionsCard actions={quickActions} title={t("dashboard.delivery.quickActions")} />
         </div>
@@ -302,6 +290,12 @@ export function DeliveryDashboardPage() {
         >
           <NCardAction>
             <div className="flex items-center gap-2">
+              {isDateTransition ? (
+                <span className="inline-flex size-10 items-center justify-center" role="status">
+                  <NSpinner aria-hidden="true" size={18} />
+                  <span className="sr-only">{t("state.loading")}</span>
+                </span>
+              ) : null}
               <NButton
                 aria-pressed={date === today}
                 className="h-10 px-3"
@@ -327,8 +321,6 @@ export function DeliveryDashboardPage() {
               selectedId={effectiveSelectedId}
               onSelect={onSelect}
               ariaLabel={t("dashboard.delivery.mapTitle")}
-              emptyTitle={t("dashboard.delivery.noMapLocations")}
-              emptyDescription={t("dashboard.delivery.noMapLocationsHint")}
               errorTitle={t("operator.families.locationProviderError")}
             />
 

@@ -52,7 +52,7 @@ export function useStaffTableColumns() {
             row.original.functions,
             String(selectedFunction),
           ),
-        header: t("operator.staff.functions"),
+        header: t("operator.staff.role"),
         cell: ({ getValue }) =>
           functionLabels(getValue<StaffRecord["functions"]>(), {
             delivery: t("operator.staff.functionDelivery"),

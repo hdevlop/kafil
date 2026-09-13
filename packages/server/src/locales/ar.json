@@ -820,8 +820,7 @@
       "earliestExpiry": "أقرب انتهاء لدفعة معلقة: {date}"
     },
     "nav": {
-      "overview": "نظرة عامة",
-      "deliveryDashboard": "لوحة التوصيل",
+      "dashboard": "لوحة التحكم",
       "families": "الأسر",
       "children": "الأطفال",
       "sponsors": "الكفلاء",
@@ -986,7 +985,7 @@
         "mapSubtitle": "عناوين الأسر المجدولة", "selectDate": "اختيار تاريخ التوصيل", "today": "اليوم", "tomorrow": "غدًا",
         "noMapLocations": "لا توجد عناوين على الخريطة", "noMapLocationsHint": "تبقى عمليات التوصيل المجدولة متاحة في القائمة.",
         "packages": "طرود", "openMaps": "فتح في خرائط Google", "startDelivery": "بدء التوصيل",
-        "confirmDelivery": "تأكيد التوصيل", "issueKind": "نوع المشكلة", "viewAll": "عرض الكل", "showLess": "عرض أقل", "locationUnavailable": "الموقع غير متاح"
+        "confirmDelivery": "تأكيد التوصيل", "issueKind": "نوع المشكلة", "viewAll": "عرض الكل", "showLess": "عرض أقل", "locationUnavailable": "الموقع غير متاح", "familiesTitle": "العائلات المسندة", "familiesSubtitle": "العائلات التي لديها عمليات توصيل مسندة إليك في التاريخ المحدد.", "familiesSearch": "ابحث في العائلات المسندة", "familiesAccount": "العائلة", "familiesPhone": "الهاتف", "familiesOrders": "الطلبات", "familiesOrdersCount": "{count} طلبات", "familiesStatus": "الحالة", "familiesNextWindow": "النافذة التالية", "familiesEmpty": "لا توجد عائلات مسندة لهذا التاريخ.", "familiesEmptyHint": "تظهر العائلات هنا بمجرد إسناد عمليات توصيل إليك.", "familiesNoData": "لا توجد عائلات مسندة لهذا التاريخ.", "familiesLoading": "جارٍ تحميل العائلات المسندة"
       },
       "family": {
         "welcome": "مرحبًا، {name}",
@@ -2188,9 +2187,6 @@
         "searchStaff": "البحث في الموظفين",
         "noPurchasingStaff": "لا يوجد موظف مشغّل نشط.",
         "noDeliveryStaff": "لا يوجد موظف توصيل نشط.",
-        "sameStaff": "نفس الشخص يشتري ويوصل",
-        "sameStaffDescription": "هذا الموظف لديه مهمتا التشغيل والتوصيل.",
-        "sameStaffUnavailable": "اختر مشغّلاً لديه أيضاً مهمة التوصيل.",
         "purchasingAssignmentPlanned": "تعيين مخطط؛ يبدأ الشراء فقط عند تسجيل الوصل.",
         "confirmationNotice": "يتم التحقق من التوفر والميزانية والأسعار مرة أخرى عند التأكيد.",
         "quantityAria": "الكمية لـ {name}",
