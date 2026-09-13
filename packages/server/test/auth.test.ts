@@ -12,6 +12,7 @@ import {
   ChildImageController,
   FamilyImageController,
   Document,
+  OrderController,
   Sponsor,
   Staff,
   StaffDeliveryOptions,
@@ -50,17 +51,21 @@ function withAuthEnvironment(
 }
 
 describe("Kafil auth definitions", () => {
-  it("defines the four product roles with admin as the super role", () => {
+  it("defines the product roles with admin as the super role", () => {
     expect(ROLES).toEqual({
       ADMIN: "admin",
       OPERATOR: "operator",
+      DELIVERY: "delivery",
       FAMILY: "family",
       SPONSOR: "sponsor",
     });
     expect(hasRole("admin", "OPERATOR")).toBe(true);
+    expect(hasRole("admin", "DELIVERY")).toBe(true);
     expect(hasRole("admin", "FAMILY")).toBe(true);
     expect(hasRole("admin", "SPONSOR")).toBe(true);
     expect(hasRole("operator", "OPERATOR")).toBe(true);
+    expect(hasRole("delivery", "DELIVERY")).toBe(true);
+    expect(hasRole("delivery", "OPERATOR")).toBe(false);
     expect(hasRole("family", "FAMILY")).toBe(true);
     expect(hasRole("sponsor", "OPERATOR")).toBe(false);
     expect(isInGroup("family", ["ADMIN", "OPERATOR", "FAMILY"])).toBe(
@@ -358,8 +363,22 @@ describe("Kafil auth definitions", () => {
       getGuardMetadata(DashboardController, method)[0]?.guardClass.name;
 
     expect(guardName("getOperator")).toBe("OperatorRoleGuard");
+    expect(guardName("getDeliveryContext")).toBe("DeliveryStaffRoleGuard");
+    expect(guardName("getDelivery")).toBe("DeliveryStaffRoleGuard");
     expect(guardName("getFamily")).toBe("FamilyRoleGuard");
     expect(guardName("getSponsor")).toBe("SponsorRoleGuard");
+  });
+
+  it("limits delivery accounts to Staff-owned delivery commands", () => {
+    const guardName = (method: string) =>
+      getGuardMetadata(OrderController, method)[0]?.guardClass.name;
+
+    expect(guardName("startOwnDelivery")).toBe("DeliveryStaffRoleGuard");
+    expect(guardName("confirmOwnDelivery")).toBe("DeliveryStaffRoleGuard");
+    expect(guardName("reportOwnDeliveryIssue")).toBe(
+      "DeliveryStaffRoleGuard",
+    );
+    expect(guardName("confirmDelivery")).toBe("OperatorRoleGuard");
   });
 
   it("keeps image routes on their explicit public and protected boundaries", () => {

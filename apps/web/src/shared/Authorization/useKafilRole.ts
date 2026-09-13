@@ -9,9 +9,21 @@ import {
 } from "react";
 import { useUser } from "najm-auth/client/react";
 
-export type KafilExactRole = "admin" | "operator" | "family" | "sponsor" | null;
+export type KafilExactRole =
+  | "admin"
+  | "operator"
+  | "delivery"
+  | "family"
+  | "sponsor"
+  | null;
 
-const KAFIL_ROLES = ["admin", "operator", "family", "sponsor"] as const;
+const KAFIL_ROLES = [
+  "admin",
+  "operator",
+  "delivery",
+  "family",
+  "sponsor",
+] as const;
 const KafilRoleContext = createContext<KafilExactRole | undefined>(undefined);
 
 function normalize(role: string | null | undefined): KafilExactRole {
@@ -31,6 +43,7 @@ export function useKafilRole() {
       exact,
       isExactAdmin: exact === "admin",
       isExactOperator: exact === "operator",
+      isExactDelivery: exact === "delivery",
       isExactFamily: exact === "family",
       isExactSponsor: exact === "sponsor",
       isExactly(role: KafilExactRole) {

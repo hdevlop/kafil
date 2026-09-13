@@ -435,8 +435,8 @@ describe("connected four-account remote runner", () => {
     );
     expect(step03).toContain('{ method: "GET", path: "/api/applicants", status: 401 }');
     expect(step03).toContain("transientStatus: 401");
-    expect(step03).toContain("pollExactlyOneOtpMessage({");
-    expect(step03).toContain("handleConcurrentPromise(\n      pollExactlyOneOtpMessage({");
+    expect(step03).toContain("pollExactlyOneMailboxMessage({");
+    expect(step03).toContain("handleConcurrentPromise(\n      pollExactlyOneMailboxMessage({");
     expect(step03).toContain("subjectKeyword: otpSubjectKeyword");
     expect(step03).toContain("expect(confirmedOtpMessages).toHaveLength(1)");
     expect(step03.indexOf("const confirmResponse")).toBeLessThan(
@@ -524,7 +524,7 @@ describe("connected four-account remote runner", () => {
     ]) {
       expect(step04).toContain(contract);
     }
-    expect(step04).toContain("handleConcurrentPromise(\n      pollExactlyOneOtpMessage({");
+    expect(step04).toContain("handleConcurrentPromise(\n      pollExactlyOneMailboxMessage({");
     expect(specSource).toContain("sponsorBContext = await newIsolatedContext(browser)");
     expect(specSource).toContain('assertDiagnosticsClean("sponsor-b", sponsorBDiagnostics)');
     expect(step04).toContain("await deleteMailboxMessage(otpMessage.ID)");
@@ -725,9 +725,14 @@ describe("connected four-account remote runner", () => {
     expect(specSource).toContain('page.goto("/staff", { waitUntil: "commit" })');
     expect(specSource).toContain('new URL(response.url()).pathname === "/api/staff"');
     expect(specSource).toContain('expect(created.functions).toEqual(["delivery"])');
-    expect(specSource).toContain("expect(created.userId).toBeNull()");
+    expect(specSource).toContain('expect(typeof created.userId).toBe("string")');
+    expect(specSource).toContain('expect(created.role).toBe("delivery")');
     expect(specSource).toContain("expect(created.hasOperatorAccess).toBe(false)");
+    expect(specSource).toContain("expect(created.emailSent).toBe(true)");
     expect(specSource).toContain("expect(created.initialPassword).toBeNull()");
+    expect(deliveryStaffHelper).toContain(
+      'subjectKeyword: "activate your delivery account"',
+    );
     expect(deliveryStaffHelper).toContain(
       "await expect(form).toBeVisible({ timeout: 5_000 })",
     );

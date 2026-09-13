@@ -89,7 +89,15 @@ export class AdminAccessRepository {
     const roles = await this.db
       .select()
       .from(rolesTable)
-      .where(inArray(rolesTable.name, ["admin", "operator", "family", "sponsor"]))
+      .where(
+        inArray(rolesTable.name, [
+          "admin",
+          "operator",
+          "delivery",
+          "family",
+          "sponsor",
+        ]),
+      )
       .orderBy(asc(rolesTable.name));
     return Promise.all(
       roles.map(async (role) => ({

@@ -1044,20 +1044,41 @@ async function createDeliveryStaffThroughUi(
     exact: true,
   });
   await submit.click({ trial: true, timeout: 5_000 });
+  const invitationStartedAt = Date.now();
+  const invitationAbort = new AbortController();
+  const invitationPromise = handleConcurrentPromise(
+    pollExactlyOneMailboxMessage({
+      recipient: fixture.email,
+      since: invitationStartedAt,
+      subjectKeyword: "activate your delivery account",
+      signal: invitationAbort.signal,
+    }),
+  );
   const createResponse = page.waitForResponse(
     (response) =>
       response.request().method() === "POST" &&
       new URL(response.url()).pathname === "/api/staff",
   );
-  await submit.click();
-  const response = await createResponse;
-  expect(response.status()).toBeLessThan(400);
-  const created = responseRecord(await response.json());
+  let created: Record<string, unknown>;
+  try {
+    await submit.click();
+    const response = await createResponse;
+    expect(response.status()).toBeLessThan(400);
+    created = responseRecord(await response.json());
+    const invitation = await invitationPromise;
+    await deleteMailboxMessage(invitation.ID);
+  } catch (error) {
+    invitationAbort.abort();
+    await invitationPromise.catch(() => undefined);
+    throw error;
+  }
   expect(created.name).toBe(fixture.name);
   expect(created.status).toBe("active");
   expect(created.functions).toEqual(["delivery"]);
-  expect(created.userId).toBeNull();
+  expect(typeof created.userId).toBe("string");
+  expect(created.role).toBe("delivery");
   expect(created.hasOperatorAccess).toBe(false);
+  expect(created.emailSent).toBe(true);
   expect(created.initialPassword).toBeNull();
   await expect(dialog).toBeHidden();
   return created;
@@ -1248,6 +1269,24 @@ async function findMailboxMessages(input: {
   return matches;
 }
 
+async function pollExactlyOneMailboxMessage(input: {
+  recipient: string;
+  since: number;
+  subjectKeyword: string;
+  signal: AbortSignal;
+}): Promise<MailpitMessage> {
+  for (let attempt = 0; attempt < OTP_POLL_ATTEMPTS; attempt += 1) {
+    if (input.signal.aborted) throw new Error("Mailpit polling was cancelled.");
+    const matches = await findMailboxMessages(input);
+    if (matches.length > 1) {
+      throw new Error("Mailpit returned more than one exact matching message.");
+    }
+    if (matches.length === 1) return matches[0]!;
+    await new Promise((resolve) => setTimeout(resolve, OTP_POLL_INTERVAL_MS));
+  }
+  throw new Error("Mailpit did not return exactly one matching message in time.");
+}
+
 async function findOtpMailboxMessages(input: {
   recipient: string;
   since: number;
@@ -1255,24 +1294,6 @@ async function findOtpMailboxMessages(input: {
   signal?: AbortSignal;
 }): Promise<MailpitMessage[]> {
   return findMailboxMessages(input);
-}
-
-async function pollExactlyOneOtpMessage(input: {
-  recipient: string;
-  since: number;
-  subjectKeyword: string;
-  signal: AbortSignal;
-}): Promise<MailpitMessage> {
-  for (let attempt = 0; attempt < OTP_POLL_ATTEMPTS; attempt += 1) {
-    if (input.signal.aborted) throw new Error("Mailpit OTP polling was cancelled.");
-    const matches = await findOtpMailboxMessages(input);
-    if (matches.length > 1) {
-      throw new Error("Mailpit returned more than one matching OTP message.");
-    }
-    if (matches.length === 1) return matches[0]!;
-    await new Promise((resolve) => setTimeout(resolve, OTP_POLL_INTERVAL_MS));
-  }
-  throw new Error("Mailpit did not return exactly one matching OTP message in time.");
 }
 
 function extractOtp(message: MailpitMessage): string {
@@ -1877,7 +1898,7 @@ test.describe.serial("connected VPS acceptance", () => {
     const otpSubjectKeyword = "Verify your Kafil sponsor application";
     const otpPolling = new AbortController();
     const otpMessagePromise = handleConcurrentPromise(
-      pollExactlyOneOtpMessage({
+      pollExactlyOneMailboxMessage({
         recipient: sponsorAEmail,
         since: submitStartedAt,
         subjectKeyword: otpSubjectKeyword,
@@ -2183,7 +2204,7 @@ test.describe.serial("connected VPS acceptance", () => {
     const otpSubjectKeyword = "Verify your Kafil sponsor application";
     const otpPolling = new AbortController();
     const otpMessagePromise = handleConcurrentPromise(
-      pollExactlyOneOtpMessage({
+      pollExactlyOneMailboxMessage({
         recipient: sponsorBEmail,
         since: submitStartedAt,
         subjectKeyword: otpSubjectKeyword,
@@ -4305,6 +4326,9 @@ test.describe.serial("connected VPS acceptance", () => {
       await Promise.all([
         findMailboxMessages({ recipient: sponsorAEmail, since: runStartedAt }),
         findMailboxMessages({ recipient: sponsorBEmail, since: runStartedAt }),
+        ...deliveryStaffFixtures.map((fixture) =>
+          findMailboxMessages({ recipient: fixture.email, since: runStartedAt }),
+        ),
       ])
     ).flat();
     const mailboxMessageIds = [...new Set(mailboxMessages.map((message) => message.ID))];
@@ -4313,6 +4337,9 @@ test.describe.serial("connected VPS acceptance", () => {
       await Promise.all([
         findMailboxMessages({ recipient: sponsorAEmail, since: runStartedAt }),
         findMailboxMessages({ recipient: sponsorBEmail, since: runStartedAt }),
+        ...deliveryStaffFixtures.map((fixture) =>
+          findMailboxMessages({ recipient: fixture.email, since: runStartedAt }),
+        ),
       ])
     ).reduce((count, messages) => count + messages.length, 0);
     expect(mailboxMessagesRetained, "No exact-recipient runtime mailbox message may remain").toBe(0);

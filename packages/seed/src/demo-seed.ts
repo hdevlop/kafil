@@ -104,8 +104,6 @@ export async function seedDemoData(
           contactEmail: item.email,
           affiliation: "internal",
           functions: ["operator"],
-          createOperatorAccess: true,
-          createOperatorAccessEmail: item.email,
         },
         actorUserId,
       ),
@@ -538,7 +536,7 @@ async function seedDeliveryGroup(
     };
 
     if (!stored) {
-      await service.create({ id: item.id, ...desired }, actorUserId);
+      await service.createWithUserId({ id: item.id, ...desired }, actorUserId);
       result.inserted += 1;
     } else {
       const functionKeys = new Set(

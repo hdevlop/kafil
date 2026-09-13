@@ -1,5 +1,6 @@
 import {
   AdminDashboardPage,
+  DeliveryDashboardPage,
   FamilyDashboardPage,
   resolveDashboard,
   SponsorDashboardGate,
@@ -18,6 +19,8 @@ export default async function DashboardPage() {
       return <AdminDashboardPage />;
     case "family":
       return <FamilyDashboardPage />;
+    case "delivery":
+      return <DeliveryDashboardPage />;
     case "sponsor":
       return <SponsorDashboardGate />;
     default:

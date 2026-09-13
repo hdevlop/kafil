@@ -68,7 +68,7 @@ describe("Staff form contracts", () => {
     ).toBe(false);
   });
 
-  test("maps Operator and Delivery capabilities and provisions one operator login", () => {
+  test("maps Operator and Delivery capabilities to one staff invitation", () => {
     const values = createStaffFormSchema.parse({
         address: "Rabat",
         affiliation: "internal",
@@ -82,10 +82,11 @@ describe("Staff form contracts", () => {
       });
 
     expect(toCreateStaffInput(values)).toMatchObject({
-      createOperatorAccess: true,
-      createOperatorAccessEmail: "operator@example.test",
+      contactEmail: "operator@example.test",
       functions: ["operator", "delivery"],
     });
+    expect(toCreateStaffInput(values)).not.toHaveProperty("createOperatorAccess");
+    expect(toCreateStaffInput(values)).not.toHaveProperty("createOperatorAccessEmail");
   });
 
   test("refuses operator access for external staff records", () => {
@@ -101,7 +102,7 @@ describe("Staff form contracts", () => {
     ).toBe(false);
   });
 
-  test("accepts a complete delivery-only staff profile with no application access", () => {
+  test("accepts a complete delivery-only staff profile for an invitation", () => {
     const values = createStaffFormSchema.parse({
       address: "Rabat",
       affiliation: "internal",
@@ -121,13 +122,13 @@ describe("Staff form contracts", () => {
       companyName: null,
       cin: "AB123456",
       contactEmail: "delivery@example.test",
-      createOperatorAccess: false,
       dateOfBirth: "1990-05-20",
       functions: ["delivery"],
       gender: "F",
       name: "Delivery Driver",
       phone: "+212600000000",
     });
+    expect(input).not.toHaveProperty("createOperatorAccess");
   });
 
   test("preserves shared identity values for a Delivery-only profile", () => {

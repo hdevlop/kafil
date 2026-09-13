@@ -10,7 +10,9 @@ export const accessRoleIdParams = z.object({
 
 export const accessUserListQuery = z.object({
   search: z.string().trim().max(200).optional(),
-  role: z.enum(["admin", "operator", "family", "sponsor"]).optional(),
+  role: z
+    .enum(["admin", "operator", "delivery", "family", "sponsor"])
+    .optional(),
   status: z.enum(["active", "inactive", "pending"]).optional(),
   verified: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -36,8 +38,8 @@ export const createAccessPermissionDto = z.object({
   resource: permissionSegment,
   description: z.string().trim().max(500).optional(),
   roles: z
-    .array(z.enum(["admin", "operator", "family", "sponsor"]))
-    .max(4)
+    .array(z.enum(["admin", "operator", "delivery", "family", "sponsor"]))
+    .max(5)
     .default([]),
 });
 

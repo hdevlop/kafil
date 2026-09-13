@@ -359,8 +359,10 @@ describe("Phase 7 dashboard presentation contracts", () => {
 
     expect(routeSource).toContain('case "admin"');
     expect(routeSource).toContain('case "family"');
+    expect(routeSource).toContain('case "delivery"');
     expect(routeSource).toContain('case "sponsor"');
     expect(routeSource).toContain("<AdminDashboardPage />");
+    expect(routeSource).toContain("<DeliveryDashboardPage />");
     expect(routeSource).toContain("<FamilyDashboardPage />");
     expect(routeSource).toContain("<SponsorDashboardGate />");
     expect(routeSource).not.toContain("redirect(");

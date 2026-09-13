@@ -20,7 +20,7 @@ const trimmedRequired = (maximum: number) =>
 export const createStaffFormSchema = z.object({
   name: z.string().trim().min(2, "Enter the staff member's name").max(120),
   phone: trimmedRequired(40),
-  contactEmail: z.union([z.literal(""), z.email("Enter a valid email")]).optional(),
+  contactEmail: z.email("Enter a valid email"),
   image: z
     .union([
       z.file(),
@@ -73,7 +73,7 @@ export const createStaffFormSchema = z.object({
 export const updateStaffFormSchema = z.object({
   name: z.string().trim().min(2, "Enter the staff member's name").max(120),
   phone: trimmedRequired(40),
-  contactEmail: z.union([z.literal(""), z.email("Enter a valid email")]).optional(),
+  contactEmail: z.email("Enter a valid email"),
   image: z
     .union([
       z.file(),
@@ -178,7 +178,7 @@ interface FormLikeValues {
 
 function toStaffProfileInput(
   values: FormLikeValues,
-): Omit<StaffProfileInput, "createOperatorAccess" | "createOperatorAccessEmail"> {
+): StaffProfileInput {
   const affiliation = "internal";
   return {
     name: values.name.trim(),
@@ -207,14 +207,7 @@ export function toCreateStaffInput(
   values: FormLikeValues,
 ): CreateStaffInput {
   const profile = toStaffProfileInput(values);
-  return {
-    ...profile,
-    createOperatorAccess: values.functions.includes("operator"),
-    createOperatorAccessEmail:
-      values.functions.includes("operator")
-        ? nullable(values.contactEmail) ?? undefined
-        : undefined,
-  };
+  return profile;
 }
 
 export function toUpdateStaffInput(

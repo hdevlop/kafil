@@ -60,7 +60,9 @@ function DashboardShellBody({ children, user, onSignOut, signingOut }: Readonly<
    const pathname = usePathname();
    const { t } = useTranslation();
    const sidebar = useNSidebar();
-   const deliveryContext = useDeliveryDashboardContext(user.role === "operator");
+   const deliveryContext = useDeliveryDashboardContext(
+      user.role === "operator" || user.role === "delivery",
+   );
    const navItems = useMemo(
       () => translateDashboardNavigation(
          getDashboardNavigation(user.role, { deliveryEligible: deliveryContext.data?.eligible === true }),

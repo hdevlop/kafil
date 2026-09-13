@@ -96,8 +96,6 @@ describe("demo seed generator", () => {
           contactEmail: operator.email,
           affiliation: "internal",
           functions: ["operator"],
-          createOperatorAccess: true,
-          createOperatorAccessEmail: operator.email,
         }).success,
       ).toBe(true);
     }

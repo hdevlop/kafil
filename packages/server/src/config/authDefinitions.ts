@@ -1,4 +1,9 @@
-export type AuthRoleName = "admin" | "operator" | "family" | "sponsor";
+export type AuthRoleName =
+  | "admin"
+  | "operator"
+  | "delivery"
+  | "family"
+  | "sponsor";
 
 export const AUTH_ROLES = [
   {
@@ -6,6 +11,10 @@ export const AUTH_ROLES = [
     description: "Bootstrap-only Najm administrator; not assigned to operators",
   },
   { name: "operator", description: "Kafil operator" },
+  {
+    name: "delivery",
+    description: "Delivery staff with access only to their assigned workflow",
+  },
   { name: "family", description: "Family account" },
   { name: "sponsor", description: "Sponsor account" },
 ] satisfies Array<{
@@ -93,6 +102,7 @@ export const AUTH_ROLE_PERMISSIONS: Record<
     "read:notifications",
     "update:notifications",
   ],
+  delivery: [],
   family: ["read:families", "read:children", "read:budgets", "read:contributions", "read:notifications", "update:notifications"],
   sponsor: [
     "read:sponsors",

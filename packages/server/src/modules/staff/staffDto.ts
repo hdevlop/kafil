@@ -58,38 +58,17 @@ const privateStaffFields = z.object({
 export const createStaffDto = baseStaffIdentity
   .extend({
     id: z.string().uuid().optional(),
-    createOperatorAccess: z.boolean().default(false),
-    createOperatorAccessEmail: z
-      .string()
-      .email()
-      .max(254)
-      .optional(),
+    contactEmail: z.string().email().max(254),
   })
   .extend(privateStaffFields.shape)
   .superRefine((data, context) => {
     const wantsOperator = data.functions.includes("operator");
-    if (data.createOperatorAccess && !wantsOperator) {
-      context.addIssue({
-        code: "custom",
-        message:
-          "Operator access can only be created when the operator function is selected.",
-        path: ["createOperatorAccess"],
-      });
-    }
     if (data.affiliation === "external") {
       if (!data.companyName || !data.companyName.trim()) {
         context.addIssue({
           code: "custom",
           message: "External staff records require a company name.",
           path: ["companyName"],
-        });
-      }
-      if (data.createOperatorAccess) {
-        context.addIssue({
-          code: "custom",
-          message:
-            "External staff records cannot receive a Kafil operator application account.",
-          path: ["createOperatorAccess"],
         });
       }
     }
@@ -106,14 +85,6 @@ export const createStaffDto = baseStaffIdentity
           code: "custom",
           message: "Operator staff records require an email.",
           path: ["contactEmail"],
-        });
-      }
-      if (data.createOperatorAccess && !data.createOperatorAccessEmail) {
-        context.addIssue({
-          code: "custom",
-          message:
-            "Operator login email is required when operator access is requested.",
-          path: ["createOperatorAccessEmail"],
         });
       }
       if (!data.cin) {

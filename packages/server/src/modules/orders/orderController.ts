@@ -13,7 +13,14 @@ import {
 import { McpTool, ToolGroup } from "najm-mcp";
 import { Validate } from "najm-validation";
 
-import { isAdmin, isFamily, isOperator, isOrderReader, isSponsor } from "../../config/authConfig";
+import {
+  isAdmin,
+  isDeliveryStaff,
+  isFamily,
+  isOperator,
+  isOrderReader,
+  isSponsor,
+} from "../../config/authConfig";
 import {
   type AssignDeliveryDto,
   assignDeliveryDto,
@@ -379,7 +386,7 @@ export class OrderController {
   }
 
   @Post("/:id/delivery/me/start")
-  @isOperator()
+  @isDeliveryStaff()
   @Validate({ params: orderIdParams, body: startDeliveryDto })
   @McpTool({
     description: "Start the authenticated Staff member's assigned delivery",
@@ -395,7 +402,7 @@ export class OrderController {
   }
 
   @Post("/:id/delivery/me/confirm")
-  @isOperator()
+  @isDeliveryStaff()
   @Validate({ params: orderIdParams, body: confirmDeliveryDto })
   @McpTool({
     description: "Confirm the authenticated Staff member's assigned delivery",
@@ -412,7 +419,7 @@ export class OrderController {
   }
 
   @Post("/:id/delivery/me/issues")
-  @isOperator()
+  @isDeliveryStaff()
   @Validate({ params: orderIdParams, body: reportDeliveryIssueDto })
   @McpTool({
     description: "Report an issue for the authenticated Staff member's assigned delivery",

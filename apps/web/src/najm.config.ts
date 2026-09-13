@@ -17,6 +17,7 @@ export const kafilApp = defineNajmApp({
     ],
     protectedRoutes: [
       "/dashboard",
+      "/delivery",
       "/forbidden",
       "/operator/:path*",
       "/family/:path*",
@@ -32,6 +33,7 @@ export const kafilApp = defineNajmApp({
     ],
     roleRoutes: {
       "/operator/:path*": ["admin", "operator"],
+      "/delivery": ["operator", "delivery"],
       "/family": ["admin", "operator", "sponsor"],
       "/family/:path*": ["family"],
       "/children": ["admin", "operator", "family"],

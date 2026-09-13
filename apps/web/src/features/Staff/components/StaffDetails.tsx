@@ -46,7 +46,7 @@ export function StaffDetails({
       ? `${t("operator.staff.external")}${staff.companyName ? ` · ${staff.companyName}` : ""}`
       : t("operator.staff.internal");
 
-  const accessLabel = staff.hasOperatorAccess
+  const accessLabel = staff.userId
     ? staff.userStatus === "pending"
       ? t("operator.staff.invitationPending")
       : staff.email || t("operator.staff.active")

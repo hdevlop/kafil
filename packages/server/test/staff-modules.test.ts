@@ -122,6 +122,7 @@ describe("staff module DTOs", () => {
       createStaffDto.safeParse({
         affiliation: "external",
         companyName: "",
+        contactEmail: "courier@example.test",
         functions: ["delivery"],
         name: "External Courier",
         phone: "+212600000000",
@@ -131,6 +132,7 @@ describe("staff module DTOs", () => {
       createStaffDto.safeParse({
         affiliation: "external",
         companyName: "DHL",
+        contactEmail: "courier@example.test",
         functions: ["delivery"],
         name: "External Courier",
         phone: "+212600000000",
@@ -142,6 +144,7 @@ describe("staff module DTOs", () => {
     expect(
       createStaffDto.safeParse({
         affiliation: "internal",
+        contactEmail: "duplicate@example.test",
         functions: ["operator", "operator"],
         name: "Duplicate Function",
         phone: "+212600000000",
@@ -150,6 +153,7 @@ describe("staff module DTOs", () => {
     expect(
       createStaffDto.safeParse({
         affiliation: "internal",
+        contactEmail: "unknown@example.test",
         functions: ["driver"],
         name: "Unknown Function",
         phone: "+212600000000",
@@ -157,13 +161,12 @@ describe("staff module DTOs", () => {
     ).toBe(false);
   });
 
-  it("rejects operator access creation on external affiliation", () => {
+  it("rejects the operator function on external affiliation", () => {
     expect(
       createStaffDto.safeParse({
         affiliation: "external",
         companyName: "DHL",
         contactEmail: "ops@dhl.test",
-        createOperatorAccess: true,
         functions: ["operator"],
         name: "External Operator",
         phone: "+212600000000",
@@ -258,10 +261,11 @@ describe("staff module controller validation", () => {
 });
 
 describe("staff module services", () => {
-  it("creates a delivery-only staff record without provisioning a Najm user", async () => {
+  it("creates a pending delivery account and emails a set-password invitation", async () => {
     const profileCreates: NewStaffProfile[] = [];
     const auditEvents: Record<string, unknown>[] = [];
     const usersUpdates: Array<{ id: string; data: Record<string, unknown> }> = [];
+    const invitationCalls: Array<Record<string, unknown>> = [];
 
     const service = new StaffService(
       {
@@ -270,31 +274,41 @@ describe("staff module services", () => {
           return makeStaffRecord({
             affiliation: "internal",
             companyName: null,
-            contactEmail: null,
-            email: null,
+            contactEmail: "delivery@example.test",
+            email: "delivery@example.test",
             functions: ["delivery"],
             hasOperatorAccess: false,
             userId: null,
+            role: null,
           });
         },
         setFunctions: async () => undefined,
         findById: async () =>
           makeStaffRecord({
+            contactEmail: "delivery@example.test",
+            email: "delivery@example.test",
             functions: ["delivery"],
             hasOperatorAccess: false,
-            userId: null,
+            role: "delivery",
+            userId: "delivery-user",
           }),
+        updateProfile: async () => undefined,
         deleteProfile: async () => undefined,
       } as unknown as StaffRepository,
       {
-        inviteUser: async () => {
-          throw new Error("should not provision delivery-only staff");
+        inviteUser: async (input: Record<string, unknown>) => {
+          invitationCalls.push(input);
+          return {
+            id: "delivery-user",
+            role: "delivery",
+            emailSent: true,
+          } as SanitizedUser & { emailSent: boolean };
         },
       } as unknown as AuthService,
       {
         update: async (id: string, data: Record<string, unknown>) => {
           usersUpdates.push({ id, data });
-          return { id, role: "operator" } as SanitizedUser;
+          return { id, role: "delivery" } as SanitizedUser;
         },
       } as unknown as UserService,
       {
@@ -305,6 +319,7 @@ describe("staff module services", () => {
             functions: ["delivery"],
             hasOperatorAccess: false,
             userId: null,
+            role: null,
           }),
         ensureIdUnique: async () => undefined,
         ensurePhoneUnique: async () => undefined,
@@ -314,11 +329,19 @@ describe("staff module services", () => {
           auditEvents.push(event);
         },
       } as unknown as AuditService,
+      undefined,
+      {
+        update: async (id: string, data: Record<string, unknown>) => {
+          usersUpdates.push({ id, data });
+          return { id, role: "delivery" } as SanitizedUser;
+        },
+      } as unknown as UserRepository,
     );
 
     const created = await service.create(
       {
         affiliation: "internal",
+        contactEmail: "delivery@example.test",
         functions: ["delivery"],
         name: "Delivery Driver",
         phone: "+212600000000",
@@ -329,21 +352,46 @@ describe("staff module services", () => {
     expect(created).toMatchObject({
       functions: ["delivery"],
       hasOperatorAccess: false,
-      userId: null,
+      userId: "delivery-user",
+      role: "delivery",
+      emailSent: true,
     });
     expect(profileCreates).toHaveLength(1);
-    expect(usersUpdates).toHaveLength(0);
-    expect(auditEvents).toContainEqual(
+    expect(invitationCalls).toEqual([
+      expect.objectContaining({
+        email: "delivery@example.test",
+        phone: "+212600000000",
+        role: "delivery",
+        status: "pending",
+      }),
+    ]);
+    expect(invitationCalls[0]).not.toHaveProperty("password");
+    expect(usersUpdates).toEqual([
+      {
+        id: "delivery-user",
+        data: {
+          phone: "+212600000000",
+          phoneVerified: false,
+          emailVerified: false,
+        },
+      },
+    ]);
+    expect(auditEvents).toEqual([
+      expect.objectContaining({
+        action: "staff.access_provisioned",
+        actorUserId: "admin-user",
+        metadata: { functions: ["delivery"] },
+      }),
       expect.objectContaining({
         action: "staff.created",
         actorUserId: "admin-user",
         metadata: {
           functions: ["delivery"],
           affiliation: "internal",
-          hasAccount: false,
+          hasAccount: true,
         },
       }),
-    );
+    ]);
   });
 
   it("creates a pending operator account and emails a set-password invitation", async () => {
@@ -402,8 +450,6 @@ describe("staff module services", () => {
         affiliation: "internal",
         cin: "AB123456",
         contactEmail: "operator@example.test",
-        createOperatorAccess: true,
-        createOperatorAccessEmail: "operator@example.test",
         dateOfBirth: "1990-05-20",
         functions: ["operator"],
         gender: "F",
@@ -432,7 +478,7 @@ describe("staff module services", () => {
     ]);
     expect(result).toMatchObject({ emailSent: true, initialPassword: null });
     expect(auditEvents.map((event) => event.action)).toEqual([
-      "staff.operator_access_provisioned",
+      "staff.access_provisioned",
       "staff.created",
     ]);
   });
@@ -513,7 +559,6 @@ describe("staff module services", () => {
       {} as unknown as AuthService,
       { update: async () => makeStaffRecord() } as unknown as UserService,
       {
-        ensureCanRemoveOperatorFunction: async () => undefined,
         ensureCinUnique: async () => undefined,
         ensureEmailUnique: async () => undefined,
         ensureExists: async () => makeStaffRecord(),
@@ -547,6 +592,69 @@ describe("staff module services", () => {
 
     expect(authPhoneUpdates).toEqual([
       { phone: "+212611111111", phoneVerified: false },
+    ]);
+  });
+
+  it("upgrades a linked delivery account when the Operator function is added", async () => {
+    const roleAssignments: Array<{
+      userId: string;
+      roleId: string | undefined;
+      roleName: string | undefined;
+    }> = [];
+    const delivery = makeStaffRecord({
+      functions: ["delivery"],
+      hasOperatorAccess: false,
+      role: "delivery",
+      userId: "delivery-user",
+    });
+    const service = new StaffService(
+      {
+        setFunctions: async () => undefined,
+        updateProfile: async () => undefined,
+      } as unknown as StaffRepository,
+      {} as unknown as AuthService,
+      {
+        assignRole: async (
+          userId: string,
+          roleId?: string,
+          roleName?: string,
+        ) => {
+          roleAssignments.push({ userId, roleId, roleName });
+          return { id: userId, role: roleName } as SanitizedUser;
+        },
+        update: async () => ({ id: "delivery-user", role: "delivery" } as SanitizedUser),
+      } as unknown as UserService,
+      {
+        ensureCinUnique: async () => undefined,
+        ensureEmailUnique: async () => undefined,
+        ensureExists: async () => delivery,
+        ensurePhoneUnique: async () => undefined,
+      } as unknown as StaffValidator,
+      { record: async () => undefined } as unknown as AuditService,
+    );
+
+    await service.update(
+      staffId,
+      {
+        address: "Rabat",
+        affiliation: "internal",
+        cin: "AB123456",
+        contactEmail: "operator@example.test",
+        dateOfBirth: "1990-05-20",
+        functions: ["operator", "delivery"],
+        gender: "F",
+        name: "Safe Operator",
+        phone: "+212600000000",
+      },
+      "admin-user",
+    );
+
+    expect(roleAssignments).toEqual([
+      {
+        userId: "delivery-user",
+        roleId: undefined,
+        roleName: "operator",
+      },
     ]);
   });
 

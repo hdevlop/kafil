@@ -137,6 +137,7 @@ export const authConfig = () => {
 export const ROLES = {
   ADMIN: "admin",
   OPERATOR: "operator",
+  DELIVERY: "delivery",
   FAMILY: "family",
   SPONSOR: "sponsor",
 } as const;
@@ -208,6 +209,19 @@ class OperatorRoleGuard {
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
       { allowedRoles: [ROLES.OPERATOR, ROLES.ADMIN] },
+      user,
+      context,
+    );
+  }
+}
+
+@Service()
+class DeliveryStaffRoleGuard {
+  constructor(private readonly guard: KafilRoleGuard) {}
+
+  canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
+    return this.guard.canActivate(
+      { allowedRoles: [ROLES.DELIVERY, ROLES.OPERATOR, ROLES.ADMIN] },
       user,
       context,
     );
@@ -336,6 +350,7 @@ class SponsorImageManagerRoleGuard {
 
 const AdminRole = createGuard(AdminRoleGuard);
 const OperatorRole = createGuard(OperatorRoleGuard);
+const DeliveryStaffRole = createGuard(DeliveryStaffRoleGuard);
 const FamilyRole = createGuard(FamilyRoleGuard);
 const SponsorRole = createGuard(SponsorRoleGuard);
 const NotificationReaderRole = createGuard(NotificationReaderRoleGuard);
@@ -348,6 +363,7 @@ const ChildImageViewerRole = createGuard(ChildImageViewerRoleGuard);
 
 export const isAdmin = composeGuards(AdminRole());
 export const isOperator = composeGuards(OperatorRole());
+export const isDeliveryStaff = composeGuards(DeliveryStaffRole());
 export const isFamily = composeGuards(FamilyRole());
 export const isSponsor = composeGuards(SponsorRole());
 export const isNotificationReader = composeGuards(NotificationReaderRole());

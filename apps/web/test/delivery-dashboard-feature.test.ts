@@ -8,6 +8,8 @@ describe("delivery dashboard source contracts", () => {
   test("shows delivery navigation only after Staff eligibility is resolved", () => {
     expect(getDashboardNavigation("operator").map((item) => item.href)).not.toContain("/delivery");
     expect(getDashboardNavigation("operator", { deliveryEligible: true }).map((item) => item.href)).toContain("/delivery");
+    expect(getDashboardNavigation("delivery", { deliveryEligible: true }).map((item) => item.href)).toEqual(["/delivery"]);
+    expect(getDashboardNavigation("delivery").map((item) => item.href)).toEqual([]);
     expect(getDashboardNavigation("admin", { deliveryEligible: true }).map((item) => item.href)).not.toContain("/delivery");
   });
 

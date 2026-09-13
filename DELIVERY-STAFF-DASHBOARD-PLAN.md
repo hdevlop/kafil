@@ -1,7 +1,7 @@
 # Delivery Staff Dashboard Implementation Plan
 
 Status: source implementation complete; manual browser acceptance pending
-Last source audit: 2026-09-09
+Last source audit: 2026-09-13
 Owner: Kafil full-stack delivery workflow
 
 ## Goal
@@ -46,12 +46,11 @@ dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
   but must not invent a code flow.
 - No automatic geocoding. A missing coordinate remains missing and is rendered
   as **Location unavailable**.
-- No login access for external or delivery-only Staff in this slice. Kafil
-  provisions pending invitation accounts only for internal Staff with the
-  Operator function. Consuming the one-time set-password link verifies and
-  activates the account. Eligible users are therefore active, authenticated
-  Staff profiles that already have application access and include the Delivery
-  function.
+- No broad Operator access for delivery-only Staff. Every Staff record created
+  by an administrator receives a pending invitation account; records with the
+  Operator function use the `operator` role, while delivery-only records use
+  the least-privilege `delivery` role. Consuming the one-time set-password link
+  verifies and activates the account.
 
 ## Current repository evidence and gaps
 
@@ -65,8 +64,8 @@ dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
   currently part of dashboard or navigation resolution.
 - `staff_profiles.user_id` links a Staff profile to a login, while
   `staff_functions.function_key = 'delivery'` expresses delivery capability.
-  Delivery-only and external demo Staff have no login. Do not provision them as
-  broad Operators merely to make the new UI reachable.
+  New delivery-only Staff receive a dedicated `delivery` account. They are not
+  provisioned as broad Operators merely to make the UI reachable.
 - `order_delivery_attempts` records assignee and lifecycle timestamps but has
   no scheduled date, time window, or package count.
 - Orders already snapshot the private delivery address and phone and already
@@ -84,10 +83,11 @@ dashboard** and subtitle **Manage scheduled deliveries and confirm receipt.**
 
 1. `/dashboard` and `GET /api/dashboard/operator` stay intact. `/delivery` and
    `GET /api/dashboard/delivery?date=YYYY-MM-DD` are additive.
-2. Staff remains a profile/capability model, not a new auth role. A dedicated
-   delivery guard resolves the authenticated user's active Staff profile and
-   requires its `delivery` function. Admin super-role behavior must be explicit
-   in tests; it must not be mistaken for an assigned Staff identity.
+2. Staff remains a profile/capability model, with a dedicated least-privilege
+   `delivery` auth role for delivery-only login accounts. A dedicated delivery
+   guard resolves the authenticated user's active Staff profile and requires
+   its `delivery` function. Admin super-role behavior must be explicit in tests;
+   it must not be mistaken for an assigned Staff identity.
 3. Only the current Staff profile's attempts scheduled on the requested date
    enter the response. Aggregates are derived in the service from that exact
    returned set so chart values and cards cannot drift apart.
@@ -223,7 +223,7 @@ for an assignment and is not derived from order-item quantity.
 
 - [x] Add a reusable backend resolver that maps authenticated `userId` to one
   active Staff profile and verifies the `delivery` function.
-- [ ] Add a dedicated delivery-dashboard guard/decorator using that resolver.
+- [x] Add a dedicated delivery-dashboard guard/decorator using that resolver.
   Keep `isOperator`, the Operator dashboard, and existing operator management
   commands unchanged.
 - [x] Add a minimal self-context endpoint returning only delivery-dashboard
@@ -231,18 +231,18 @@ for an assignment and is not derived from order-item quantity.
   navigation entry only to eligible linked Staff; frontend hiding is not the
   security boundary.
 - [x] Deny unlinked Operators, inactive Staff, Staff without the Delivery
-  function, families, sponsors, and delivery-only records without accounts.
+  function, families, sponsors, and unlinked legacy Staff records.
 - [x] Prove that admin access is either denied without an assigned Staff profile
   or explicitly resolved to a linked delivery-capable profile; never let the
   admin role bypass assignment ownership implicitly.
-- [x] Keep the standalone delivery-login question visible: supporting
-  delivery-only Staff accounts requires a separate least-privilege auth design
-  and is not solved by granting the existing Operator role.
+- [x] Add the dedicated `delivery` auth role with no general product
+  permissions; only the delivery guard and linked Staff identity unlock the
+  assigned-delivery workflow.
 - [x] Use the same passwordless admin-invitation contract as Sponsor accounts
-  for internal Operator-enabled Staff: create the auth account as pending,
-  email a one-time set-password link, and rely on Najm Auth 4.0.2 to verify and
-  activate it only after successful link consumption. Never return an initial
-  password from an admin-created Staff API response.
+  for every administrator-created Staff record: create the auth account as
+  pending, email a one-time set-password link, and rely on Najm Auth 4.0.4 to
+  verify and activate it only after successful link consumption. Never return
+  an initial password from an admin-created Staff API response.
 
 ### Phase 3 - Backend dashboard read model and staff commands
 

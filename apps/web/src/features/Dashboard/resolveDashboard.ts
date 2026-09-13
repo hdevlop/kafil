@@ -1,4 +1,4 @@
-export type DashboardKind = "admin" | "family" | "sponsor";
+export type DashboardKind = "admin" | "delivery" | "family" | "sponsor";
 
 export function resolveDashboard(
   role: string | null | undefined,
@@ -7,6 +7,8 @@ export function resolveDashboard(
     case "admin":
     case "operator":
       return "admin";
+    case "delivery":
+      return "delivery";
     case "family":
       return "family";
     case "sponsor":

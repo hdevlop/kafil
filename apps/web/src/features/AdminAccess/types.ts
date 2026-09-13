@@ -1,6 +1,11 @@
 import type { OffsetPagination } from "najm-kit/pagination";
 
-export type AccessRoleName = "admin" | "operator" | "family" | "sponsor";
+export type AccessRoleName =
+  | "admin"
+  | "operator"
+  | "delivery"
+  | "family"
+  | "sponsor";
 export type AccessUserStatus = "active" | "inactive" | "pending";
 
 export interface AccessUser {

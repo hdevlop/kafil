@@ -20,11 +20,23 @@ import type { ComponentType } from "react";
 import type { UiTranslationKey } from "@kafil/server/locales";
 import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";
 
-export type DashboardRole = "admin" | "operator" | "family" | "sponsor";
+export type DashboardRole =
+   | "admin"
+   | "operator"
+   | "delivery"
+   | "family"
+   | "sponsor";
 
 type NavIcon = ComponentType<{ className?: string }>;
 
-const ALL_ROLES = ["admin", "operator", "family", "sponsor"] as const;
+const DASHBOARD_ROLES = [
+   "admin",
+   "operator",
+   "delivery",
+   "family",
+   "sponsor",
+] as const;
+const FULL_APP_ROLES = ["admin", "operator", "family", "sponsor"] as const;
 
 const NAV_SECTIONS = {
    support: { labelKey: "nav.supportOperations", icon: HeartHandshake },
@@ -59,13 +71,13 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       href: "/dashboard",
       labelKey: "nav.overview",
       icon: LayoutDashboard,
-      roles: ALL_ROLES,
+      roles: FULL_APP_ROLES,
    },
    {
       href: "/delivery",
       labelKey: "nav.deliveryDashboard",
       icon: Truck,
-      roles: ["operator"],
+      roles: ["operator", "delivery"],
       deliveryOnly: true,
    },
    {
@@ -104,7 +116,7 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       href: "/contribution",
       labelKey: "nav.contributions",
       icon: HandCoins,
-      roles: ALL_ROLES,
+      roles: FULL_APP_ROLES,
       // Sponsor is absent on purpose: contributions stay inside the sponsor's
       // single "Support" group instead of opening a Finance heading.
       section: { admin: "finance", operator: "finance", family: "finance" },
@@ -133,13 +145,13 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       href: "/orders",
       labelKey: "nav.orders",
       icon: ClipboardCheck,
-      roles: ALL_ROLES,
+      roles: FULL_APP_ROLES,
    },
    {
       href: "/notifications",
       labelKey: "nav.notifications",
       icon: Bell,
-      roles: ALL_ROLES,
+      roles: FULL_APP_ROLES,
    },
    {
       href: "/users",
@@ -163,7 +175,7 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
 ];
 
 function isDashboardRole(role: string | null | undefined): role is DashboardRole {
-   return (ALL_ROLES as readonly string[]).includes(role ?? "");
+   return (DASHBOARD_ROLES as readonly string[]).includes(role ?? "");
 }
 
 function resolveSection(

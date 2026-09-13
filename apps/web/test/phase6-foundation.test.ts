@@ -13,6 +13,7 @@ describe("Phase 6A dashboard selection", () => {
   test.each([
     ["admin", "admin"],
     ["operator", "admin"],
+    ["delivery", "delivery"],
     ["family", "family"],
     ["sponsor", "sponsor"],
     [null, null],

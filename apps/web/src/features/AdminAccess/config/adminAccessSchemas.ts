@@ -18,7 +18,9 @@ export const createAccessPermissionSchema = z.object({
   action: permissionSegment,
   resource: permissionSegment,
   description: optionalText(500),
-  roles: z.array(z.enum(["admin", "operator", "family", "sponsor"])).max(4),
+  roles: z
+    .array(z.enum(["admin", "operator", "delivery", "family", "sponsor"]))
+    .max(5),
 });
 
 export type CreateAccessPermissionValues = z.infer<

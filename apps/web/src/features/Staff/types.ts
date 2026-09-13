@@ -74,8 +74,6 @@ export interface StaffProfileInput {
   jobTitle?: string | null;
   notes?: string | null;
   functions: StaffFunctionKey[];
-  createOperatorAccess?: boolean;
-  createOperatorAccessEmail?: string | null;
 }
 
 export type CreateStaffInput = StaffProfileInput;
@@ -103,6 +101,6 @@ export interface StaffProvisionAccessResult {
 }
 
 export interface StaffCreateResult extends StaffRecord {
-  emailSent: boolean | null;
+  emailSent: boolean;
   initialPassword: null;
 }

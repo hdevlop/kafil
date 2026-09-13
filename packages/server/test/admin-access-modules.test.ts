@@ -202,6 +202,7 @@ describe("admin access lifecycle", () => {
     expect(roles.map((role) => role.name)).toEqual([
       "admin",
       "operator",
+      "delivery",
       "family",
       "sponsor",
     ]);

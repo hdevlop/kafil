@@ -36,6 +36,7 @@ import {
 import { StaffValidator } from "./staffValidator";
 
 const OPERATOR_ROLE = "operator";
+const DELIVERY_ROLE = "delivery";
 
 const PRIVATE_AUDIT_DENYLIST = new Set([
   "cin",
@@ -128,11 +129,7 @@ export class StaffService {
     await this.validator.ensureCinUnique(input.cin);
 
     const wantsOperator = functionKeys.includes("operator");
-    const createOperatorAccess = input.createOperatorAccess === true;
-
-    if (!createOperatorAccess) {
-      await this.validator.ensureEmailUnique(input.contactEmail);
-    }
+    await this.validator.ensureEmailUnique(input.contactEmail);
 
     const profile = await this.staff.createProfile({
       id: input.id,
@@ -160,25 +157,20 @@ export class StaffService {
     let initialPassword: string | null = null;
     let hasAccount = false;
     try {
-      if (wantsOperator && createOperatorAccess) {
-        const accessEmail =
-          input.createOperatorAccessEmail ?? input.contactEmail;
-        const result = await this.provisionOperatorAccessInternal(
-          profile!.id,
-          { email: accessEmail! },
-          actorUserId,
-          {
-            providedUserId: options.userId,
-            sendInvitation: options.sendInvitation ?? true,
-          },
-        );
-        createdWithAccess = result.profile;
-        emailSent = result.emailSent;
-        initialPassword = result.initialPassword;
-        hasAccount = true;
-      } else {
-        createdWithAccess = await this.staff.findById(profile!.id);
-      }
+      const result = await this.provisionStaffAccessInternal(
+        profile!.id,
+        { email: input.contactEmail },
+        actorUserId,
+        {
+          providedUserId: options.userId,
+          role: wantsOperator ? OPERATOR_ROLE : DELIVERY_ROLE,
+          sendInvitation: options.sendInvitation ?? true,
+        },
+      );
+      createdWithAccess = result.profile;
+      emailSent = result.emailSent;
+      initialPassword = result.initialPassword;
+      hasAccount = true;
       await this.recordAudit(
         "staff.created",
         actorUserId,
@@ -215,7 +207,6 @@ export class StaffService {
     await this.validator.ensurePhoneUnique(input.phone, id, existing.userId ?? undefined);
     await this.validator.ensureCinUnique(input.cin, id);
     await this.validator.ensureEmailUnique(input.contactEmail, existing.userId ?? undefined);
-    await this.validator.ensureCanRemoveOperatorFunction(id, functionKeys);
 
     const accountUpdates: Record<string, unknown> = {};
     if (existing.userId) {
@@ -267,6 +258,12 @@ export class StaffService {
     if (Object.keys(accountUpdates).length > 0 && existing.userId) {
       await this.users.update(existing.userId, accountUpdates);
     }
+    if (existing.userId) {
+      const desiredRole = wantsOperator ? OPERATOR_ROLE : DELIVERY_ROLE;
+      if (existing.role !== desiredRole) {
+        await this.users.assignRole(existing.userId, undefined, desiredRole);
+      }
+    }
     if (existing.userId && input.phone !== undefined && input.phone !== existing.phone) {
       await this.userRecords?.update(existing.userId, {
         phone: input.phone,
@@ -311,7 +308,9 @@ export class StaffService {
     if (profile.userId) {
       HttpError.conflict("Staff profile already has an application account");
     }
-    return this.provisionOperatorAccessInternal(id, body, actorUserId);
+    return this.provisionStaffAccessInternal(id, body, actorUserId, {
+      role: OPERATOR_ROLE,
+    });
   }
 
   @Transaction({ retries: 2 })
@@ -363,11 +362,15 @@ export class StaffService {
     return deleted;
   }
 
-  private async provisionOperatorAccessInternal(
+  private async provisionStaffAccessInternal(
     staffProfileId: string,
     body: ProvisionOperatorAccessDto,
     actorUserId: string,
-    options: { providedUserId?: string; sendInvitation?: boolean } = {},
+    options: {
+      providedUserId?: string;
+      role: typeof OPERATOR_ROLE | typeof DELIVERY_ROLE;
+      sendInvitation?: boolean;
+    },
   ): Promise<{
     emailSent: boolean | null;
     initialPassword: string | null;
@@ -381,7 +384,7 @@ export class StaffService {
       name: profile.name,
       email: body.email,
       phone: profile.phone,
-      role: OPERATOR_ROLE,
+      role: options.role,
       image: profile.image ?? undefined,
     };
     const initialPassword = options.sendInvitation === false
@@ -409,7 +412,7 @@ export class StaffService {
     });
     const updated = await this.staff.findById(staffProfileId);
     await this.recordAudit(
-      "staff.operator_access_provisioned",
+      "staff.access_provisioned",
       actorUserId,
       staffProfileId,
       {

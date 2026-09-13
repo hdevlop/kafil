@@ -232,20 +232,6 @@ export class StaffRepository {
     return this.listActiveByFunction("operator");
   }
 
-  async hasOperatorFunction(staffProfileId: string) {
-    const [functionRow] = await this.db
-      .select({ id: staffFunctions.id })
-      .from(staffFunctions)
-      .where(
-        and(
-          eq(staffFunctions.staffProfileId, staffProfileId),
-          eq(staffFunctions.functionKey, "operator"),
-        ),
-      )
-      .limit(1);
-    return Boolean(functionRow);
-  }
-
   async createProfile(data: NewStaffProfile) {
     const [created] = await this.db
       .insert(staffProfiles)

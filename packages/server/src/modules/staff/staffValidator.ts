@@ -1,7 +1,7 @@
 import { UserRepository, UserValidator } from "najm-auth";
 import { HttpError, Service } from "najm-core";
 
-import { type StaffFunctionKey, isStaffFunctionKey } from "./staffFunctions";
+import { isStaffFunctionKey } from "./staffFunctions";
 import { StaffRepository } from "./staffRepository";
 
 @Service()
@@ -71,22 +71,5 @@ export class StaffValidator {
         HttpError.badRequest(`Unknown staff function '${key}'`);
       }
     }
-  }
-
-  async ensureCanRemoveOperatorFunction(
-    staffProfileId: string,
-    nextFunctionKeys: readonly StaffFunctionKey[],
-  ) {
-    if (nextFunctionKeys.includes("operator")) return;
-    const hadOperator =
-      (await this.staff.findById(staffProfileId))?.functions.includes(
-        "operator",
-      ) ?? false;
-    if (!hadOperator) return;
-    const hasUser = await this.staff.hasOperatorFunction(staffProfileId);
-    if (!hasUser) return;
-    HttpError.conflict(
-      "Deactivate or remove operator access before removing the operator function",
-    );
   }
 }

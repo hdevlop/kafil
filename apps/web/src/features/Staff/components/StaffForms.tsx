@@ -114,14 +114,10 @@ export function CreateStaffDialogContent() {
         image: uploadedImagePath,
       });
       const created = await create.mutateAsync(input);
-      if (input.createOperatorAccess) {
-        if (created.emailSent) {
-          toast.success(t("operator.staff.invitationSent"));
-        } else {
-          toast.error(t("operator.staff.invitationEmailFailed"));
-        }
+      if (created.emailSent) {
+        toast.success(t("operator.staff.invitationSent"));
       } else {
-        toast.success(t("operator.staff.createSuccess"));
+        toast.error(t("operator.staff.invitationEmailFailed"));
       }
       await pop();
     } catch (error) {

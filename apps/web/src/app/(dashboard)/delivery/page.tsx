@@ -7,7 +7,10 @@ export const metadata = { title: "Delivery dashboard" };
 
 export default async function DeliveryPage() {
   const session = await requireSession();
-  if (session.user.role !== "operator") {
+  if (
+    session.user.role !== "operator" &&
+    session.user.role !== "delivery"
+  ) {
     return <NForbiddenState action={<DashboardReturnAction />} />;
   }
   return <DeliveryDashboardPage />;
