@@ -1,6 +1,6 @@
 # Najm app integration DX: Kafil and School
 
-Status: **SOURCE IMPLEMENTED — manual browser acceptance and rollout remain open.**
+Status: **KAFIL DEPLOYED — School rollout and manual browser acceptance remain open.**
 
 Plan date: **2026-09-12**
 

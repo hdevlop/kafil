@@ -13,7 +13,7 @@ or production builds.
 | Boundary | Result | Remaining |
 | --- | --- | --- |
 | Najm shared packages | Implemented, packed, published, and registry-verified | None for Auth/Kit/Next release candidate |
-| Kafil consumer | Published versions adopted; source gate and no-schema-drift gate pass | Manual visual/connected acceptance; consumer commit/push/deploy |
+| Kafil consumer | Published versions adopted; source gate, publication, image build, deployment, and live revision checks pass | Manual visual/connected acceptance |
 | School consumer | Published versions adopted; source tests, build, i18n, and schema check pass | Manual Google/visual/connected acceptance; consumer commit/push/deploy |
 | Najm CLI | Non-destructive generator implemented; three registry-backed Next 16 fixtures pass | CLI version/release is intentionally separate and unpublished |
 
@@ -142,10 +142,29 @@ settings projection, and lazy Google Places adapter.
   setting (`*_LOCATION_MAP_PROVIDER=disabled`) followed by the normal process
   restart, without changing shared package code.
 
+## Kafil publication and deployment
+
+- Integration commit `b383c85739e43887095cbf5cbc812e54530be68f` was
+  pushed to `origin/main`; local, tracking, and remote revisions matched.
+- GitHub Actions run `34755053662` passed exact-revision lint, typecheck,
+  non-browser tests, production build, GHCR image publication, and the Dokploy
+  trigger.
+- Dokploy recreated both the application and notification-worker containers.
+  Both became healthy on image
+  `sha256:1b30244d3347300af4af23074eb88e85d8237f2998c796d6d319b6223802ad28`
+  with OCI revision `b383c85739e43887095cbf5cbc812e54530be68f`.
+- Neither container publishes a host port. The application retained the
+  Dokploy/frontend/backend networks; the worker retained only backend and
+  notification-egress networks.
+- Read-only HTTPS probes returned `200` for root, liveness, and readiness, and
+  confirmed CSP and HSTS response headers. These probes are operational checks,
+  not browser or visual acceptance.
+
 ## Acceptance and rollout boundary
 
 Unverified by design: browser navigation/recovery, responsive and Arabic RTL
 interaction, production hydration in the real apps, real Google availability,
-location save → fresh read → reopen, live settings refresh, and deployed
-runtime/CSP consistency. No consumer or CLI commit, push, image build,
-deployment, or live revision verification was performed in this continuation.
+location save → fresh read → reopen, and live settings refresh. Kafil Git,
+image, deployment, exact-revision, health, and response-header evidence is
+recorded above; School and CLI publication/deployment remain open. No browser
+or visual acceptance was performed.
