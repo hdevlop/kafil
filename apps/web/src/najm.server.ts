@@ -1,40 +1,37 @@
 import "server-only";
 
-import { cookies, headers } from "next/headers";
-import { createReactServerAuth } from "najm-auth/client/server/react";
-import type { NLeafletLocationRuntimeProviderProps } from "najm-kit/location/runtime/leaflet";
-import { createNajmServerApp } from "najm-next/app/server";
+import { defineNajmPreferences } from "najm-kit/server";
+import { createNajmNextServerApp } from "najm-next/app/next";
 
 import type { FormFillSetting } from "@/features/Settings/types";
-import { auth } from "@/lib/auth";
-import { kafilPreferences } from "@/lib/preferences";
+import { auth } from "@/najm.auth";
 import { kafilApp, kafilLocation } from "@/najm.config";
+import { kafilI18n } from "@kafil/server/locales";
 import { kafilTheme } from "@kafil/server/theme";
 
-const serverAuth = createReactServerAuth(auth);
-const serverTheme = kafilTheme.react({
-  getServer: async () => (await import("@kafil/server")).server,
-  basePath: "/api",
+export const kafilPreferences = defineNajmPreferences({
+  i18n: kafilI18n,
+  ...kafilApp.preferences,
 });
 
-const resolvedLocationConfig = kafilLocation.resolve(process.env, {
+const locationConfig = kafilLocation.resolve(process.env, {
   isDevelopment: process.env.NODE_ENV === "development",
 }).config;
-if (resolvedLocationConfig.provider === "google") {
-  throw new Error("Kafil's location runtime does not allow the Google provider");
-}
-const locationConfig: NLeafletLocationRuntimeProviderProps["config"] =
-  resolvedLocationConfig;
 
 export interface KafilPublicUiSettings {
   formFill: FormFillSetting;
   locationConfig: typeof locationConfig;
 }
 
-export const najmServer = createNajmServerApp({
+export const najmServer = createNajmNextServerApp({
   app: kafilApp,
-  auth: serverAuth,
-  theme: serverTheme,
+  auth,
+  theme: kafilTheme,
+  themeOptions: {
+    getServer: async () => (await import("@kafil/server")).server,
+    basePath: "/api",
+  },
+  preferences: kafilPreferences,
   readSettings: async (): Promise<KafilPublicUiSettings> => {
     const { readFormFillEnabled } = await import("@kafil/server/settings-bootstrap");
     return {
@@ -46,25 +43,10 @@ export const najmServer = createNajmServerApp({
     formFill: { enabled: false },
     locationConfig,
   },
-  readCookies: cookies,
-  readHeaders: headers,
-  resolvePreferences: ({ cookies: cookieStore, headers: requestHeaders, session }) =>
-    kafilPreferences.resolveOrdered(cookieStore, {
-      user: (session?.user ?? {}) as {
-        language?: unknown;
-        theme?: unknown;
-        timeZone?: unknown;
-      },
-      acceptLanguage: requestHeaders.get("accept-language"),
-    }),
   onDiagnostic: (diagnostic) => {
     console.warn("[kafil] public UI settings fallback", diagnostic);
   },
 });
 
-// Keep Kafil's richer Najm Auth session type at the leaf facade. The shared
-// orchestrator intentionally treats the public session user as opaque.
-export const getSession = serverAuth.getSession;
-export const requireSession = serverAuth.requireSession;
-export const requireRole = serverAuth.requireRole;
-export const { loadSettings, loadUiSnapshot } = najmServer;
+export const { getSession, requireSession, requireRole, loadSettings, loadUiSnapshot } = najmServer;
+export type KafilUiSnapshot = Awaited<ReturnType<typeof loadUiSnapshot>>;

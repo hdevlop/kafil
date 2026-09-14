@@ -1,7 +1,6 @@
 import { server } from "@kafil/server";
 import { handle } from "najm-core";
-import { auth } from "@/lib/auth";
-import { kafilApp } from "@/najm.config";
+import { auth } from "@/najm.auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,11 +9,5 @@ export const dynamic = "force-dynamic";
 // complete decorated controller registry as one unit.
 const serverHandler = handle(server);
 
-// Najm knows its own login, logout, refresh and credential-setup routes, and
-// recognizes a setup response without configuration. Only the preference
-// cookie name is Kafil's, and renaming it would silently restore persistent
-// cookies for a browser still holding `kafil.remember=0`.
-const handlers = auth.routeHandlers(serverHandler, {
-  rememberCookieName: kafilApp.auth.rememberCookieName,
-});
+const handlers = auth.routeHandlers(serverHandler);
 export const { GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS } = handlers;

@@ -1,52 +1,31 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ServerSession } from "najm-auth/client/server";
 import { AuthProvider } from "najm-auth/client/react";
 import { NajmAppProvider } from "najm-kit/app";
-import type { NajmDesignConfig } from "najm-kit";
 import {
   NLeafletLocationRuntimeProvider,
   type NLeafletLocationRuntimeProviderProps,
 } from "najm-kit/location/runtime/leaflet";
-import type { NajmMode, NajmPreferenceTimeZone } from "najm-kit/server";
 import {
   bindNajmNextProvider,
   NajmNextAppProvider,
   type NajmNextProviderContext,
 } from "najm-next/app/react";
-import type { NajmServerSession } from "najm-next/app/server";
-import type { PublicBranding } from "najm-theme";
 import { NThemeBrandingProvider } from "najm-theme/react";
 import { useTranslation } from "najm-i18n/react";
 
-import type { FormFillSetting } from "@/features/Settings/types";
 import { KAFIL_BADGE_DEFAULTS } from "@/features/StatusLabels";
 import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { auth } from "@/lib/auth";
-import type { kafilPreferences } from "@/lib/preferences";
+import { auth } from "@/najm.auth";
+import type { KafilUiSnapshot } from "@/najm.server";
 import { getApiErrorStatus } from "@/services/apiError";
 import { getFormFillSetting } from "@/services/settingApi";
 import { APP_NAME } from "@/types/branding";
-import { kafilUiI18n, type KafilLocale } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/server/locales";
 import { KAFIL_CURRENCY } from "@kafil/server/money";
 
 type KafilLocationRuntimeConfig = NLeafletLocationRuntimeProviderProps["config"];
-
-export interface KafilUiSnapshot {
-  session: NajmServerSession | null;
-  preferences: {
-    language: KafilLocale;
-    theme: NajmMode;
-    timeZone: NajmPreferenceTimeZone<typeof kafilPreferences>;
-  };
-  appearance: { designConfig: NajmDesignConfig };
-  branding: PublicBranding;
-  settings: {
-    formFill: FormFillSetting;
-    locationConfig: KafilLocationRuntimeConfig;
-  };
-}
 
 type ProviderContext = NajmNextProviderContext<KafilUiSnapshot, QueryClient>;
 
@@ -146,7 +125,7 @@ const authProvider = bindNajmNextProvider(
   AuthProvider,
   ({ snapshot }: ProviderContext) => ({
     client: auth.client,
-    initialSession: snapshot.session as ServerSession | null,
+    initialSession: snapshot.session,
   }),
 );
 

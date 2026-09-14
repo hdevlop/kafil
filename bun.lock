@@ -118,6 +118,8 @@
     "unrs-resolver",
   ],
   "patchedDependencies": {
+    "najm-auth@4.0.4": "patches/najm-auth@4.0.4.patch",
+    "najm-next@0.5.0": "patches/najm-next@0.5.0.patch",
     "najm-email@2.0.4": "patches/najm-email@2.0.4.patch",
   },
   "overrides": {

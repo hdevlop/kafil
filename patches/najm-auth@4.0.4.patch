@@ -1,0 +1,61 @@
+diff --git a/dist/client/edge.d.ts b/dist/client/edge.d.ts
+index 09f498bd61409f12d369df44d7e80a99b700c407..e86495912b59e5bdaee6b89780e80c73330a559c 100644
+--- a/dist/client/edge.d.ts
++++ b/dist/client/edge.d.ts
+@@ -18,13 +18,13 @@ interface AuthProxyOptions {
+ }
+ interface AuthMiddlewareConfig {
+     /** Routes that require authentication (glob patterns) */
+-    protectedRoutes?: string[];
++    protectedRoutes?: readonly string[];
+     /** Always-public routes (glob patterns) */
+-    publicRoutes?: string[];
++    publicRoutes?: readonly string[];
+     /** Route to redirect unauthenticated users to */
+     loginRoute?: string;
+     /** Routes restricted to specific roles: { '/admin/*': ['admin'] } */
+-    roleRoutes?: Record<string, string[]>;
++    roleRoutes?: Readonly<Record<string, readonly string[]>>;
+     /** Refresh token cookie name (default: 'refreshToken') */
+     cookieName?: string;
+     /** API base URL used by session recovery (default: '/api'). */
+diff --git a/dist/client/server/index.d.ts b/dist/client/server/index.d.ts
+index ab594fa1c0ecbb11f83f4d6d82a05a00f637e099..ce72878b0e2f063434cc34b7f0bdab87e006c735 100644
+--- a/dist/client/server/index.d.ts
++++ b/dist/client/server/index.d.ts
+@@ -158,6 +158,8 @@ interface DefineAuthConfig {
+     authPrefix?: string;
+     /** Refresh token cookie name (default: 'refreshToken') */
+     cookieName?: string;
++    /** Remember Me preference cookie used by routeHandlers; per-handler options override it. */
++    rememberCookieName?: string;
+     /** Proactive refresh at this fraction of token lifetime (default: 0.8) */
+     refreshThreshold?: number;
+     /** Enable multi-tab sync via BroadcastChannel (default: true) */
+@@ -183,11 +185,11 @@ interface DefineAuthConfig {
+      */
+     forbiddenRoute?: string;
+     /** Routes that are always public (glob patterns) */
+-    publicRoutes?: string[];
++    publicRoutes?: readonly string[];
+     /** Routes that require authentication (glob patterns) */
+-    protectedRoutes?: string[];
++    protectedRoutes?: readonly string[];
+     /** Routes restricted to specific roles: { '/admin/:path*': ['admin'] } */
+-    roleRoutes?: Record<string, string[]>;
++    roleRoutes?: Readonly<Record<string, readonly string[]>>;
+     /** Session cookie name (default: 'najm.session') */
+     sessionCookieName?: string;
+     /** Secret for verifying session cookie HMAC. Falls back to env vars. */
+diff --git a/dist/client/server/index.js b/dist/client/server/index.js
+index 5b0d009368e1b5a5b20105bd2eb6d0f05787ce50..a66789aac8f47b205558e38a4a9188f6a7eefc9f 100644
+--- a/dist/client/server/index.js
++++ b/dist/client/server/index.js
+@@ -1734,6 +1734,7 @@ function defineAuth(authConfig = {}) {
+   const routeHandlers = /* @__PURE__ */ __name((handler, options = {}) => {
+     const persistentHandler = withAuthCookiePersistence(handler, {
+       ...options,
++      rememberCookieName: options.rememberCookieName ?? authConfig.rememberCookieName,
+       authCookieNames: options.authCookieNames ?? [cookieName2, sessionCookieName]
+     });
+     return {

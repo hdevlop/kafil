@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/najm.auth";
 import { composeNajmProxy } from "najm-next/security";
 import { kafilApp, kafilLocation } from "@/najm.config";
 

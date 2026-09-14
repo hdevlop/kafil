@@ -12,7 +12,7 @@ import { getAuthErrorMessage } from "../lib/getAuthErrorMessage";
 import { getPostLoginRoute } from "../lib/getPostLoginRoute";
 import type { LoginFormProps, LoginValues } from "@/app/(auth)/types";
 import { useTranslation } from "najm-i18n/react";
-import { auth } from "@/lib/auth";
+import { auth } from "@/najm.auth";
 
 function GoogleMark() {
   return (

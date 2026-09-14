@@ -1,12 +1,14 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import { NAJM_TIME_ZONES } from "najm-kit/server";
 import { kafilI18n, kafilLocales } from "@kafil/server/locales";
 
-import { POST as postLanguage } from "@/app/api/ui-language/route";
-import { POST as postTheme } from "@/app/api/ui-theme/route";
-import { POST as postTimeZone } from "@/app/api/ui-timezone/route";
-import { kafilPreferences } from "@/lib/preferences";
+mock.module("server-only", () => ({}));
+
+const { POST: postLanguage } = await import("@/app/api/ui-language/route");
+const { POST: postTheme } = await import("@/app/api/ui-theme/route");
+const { POST: postTimeZone } = await import("@/app/api/ui-timezone/route");
+const { kafilPreferences } = await import("@/najm.server");
 
 /**
  * Kafil's *configuration*, not Najm's behavior.

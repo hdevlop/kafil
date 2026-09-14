@@ -218,9 +218,9 @@ describe("najm-theme adoption — Kafil boundary", () => {
     // failing for the opposite of the reason it exists.
     const instances = loader
       .split("\n")
-      .filter((line) => line.includes("kafilTheme.react("))
+      .filter((line) => line.includes("createNajmNextServerApp("))
       .filter((line) => !/^\s*(\*|\/\/)/.test(line));
-    expect(instances).toEqual(["const serverTheme = kafilTheme.react({"]);
+    expect(instances).toEqual(["export const najmServer = createNajmNextServerApp({"]);
   });
 
   test("the snapshot is loaded once, by the root layout only", () => {

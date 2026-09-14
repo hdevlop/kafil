@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { auth } from "../src/lib/auth";
+import { auth } from "../src/najm.auth";
 
 const setCookiesOf = (response: Response) =>
   (response.headers as Headers & { getSetCookie(): string[] }).getSetCookie();

@@ -6,23 +6,17 @@ function readSource(relativePath: string) {
 }
 
 const session = readSource("../src/najm.server.ts");
-const authConfig = readSource("../src/lib/auth.ts");
+const authConfig = readSource("../src/najm.auth.ts");
 const appConfig = readSource("../src/najm.config.ts");
 const proxy = readSource("../src/proxy.ts");
 
 describe("the server session boundary is package-owned", () => {
-  test("najm.server.ts is one createReactServerAuth singleton", () => {
-    expect(session).toContain(
-      'import { createReactServerAuth } from "najm-auth/client/server/react"',
-    );
-    expect(session).toContain("const serverAuth = createReactServerAuth(auth)");
-
-    // Called once, and at module scope. A second call, or one nested inside a
-    // function, would build a separate memoized resolver that shares nothing.
-    const calls = session
-      .split("\n")
-      .filter((line) => line.includes("createReactServerAuth("));
-    expect(calls).toEqual(["const serverAuth = createReactServerAuth(auth);"]);
+  test("najm.server.ts delegates to one Next adapter at module scope", () => {
+    expect(session).toContain('from "najm-next/app/next"');
+    expect(session.split("\n").filter((line) => line.includes("createNajmNextServerApp(")))
+      .toEqual(["export const najmServer = createNajmNextServerApp({"]);
+    expect(session).not.toContain("createReactServerAuth(");
+    expect(session).not.toContain('from "next/headers"');
   });
 
   test("najm.server.ts keeps the server-only marker", () => {
@@ -30,9 +24,7 @@ describe("the server session boundary is package-owned", () => {
   });
 
   test("the route-facing named exports survive the migration", () => {
-    expect(session).toContain("export const getSession = serverAuth.getSession");
-    expect(session).toContain("export const requireSession = serverAuth.requireSession");
-    expect(session).toContain("export const requireRole = serverAuth.requireRole");
+    expect(session).toContain("export const { getSession, requireSession, requireRole, loadSettings, loadUiSnapshot } = najmServer");
   });
 
   test("no guard logic is reimplemented locally", () => {
@@ -48,8 +40,7 @@ describe("the server session boundary is package-owned", () => {
   });
 
   test("redirect targets come from defineAuth, not from a literal", () => {
-    expect(authConfig).toContain("loginRoute: kafilApp.auth.loginRoute");
-    expect(authConfig).toContain("forbiddenRoute: kafilApp.auth.forbiddenRoute");
+    expect(authConfig).toContain("defineAuth(kafilApp.auth)");
     expect(appConfig).toContain('loginRoute: "/login"');
     expect(appConfig).toContain('forbiddenRoute: "/forbidden"');
   });
@@ -57,7 +48,7 @@ describe("the server session boundary is package-owned", () => {
 
 describe("the proxy stays free of React-server code", () => {
   test("proxy.ts reaches only the core auth object", () => {
-    expect(proxy).toContain('import { auth } from "@/lib/auth"');
+    expect(proxy).toContain('import { auth } from "@/najm.auth"');
     expect(proxy).not.toContain("@/najm.server");
     expect(proxy).not.toContain("client/server/react");
   });

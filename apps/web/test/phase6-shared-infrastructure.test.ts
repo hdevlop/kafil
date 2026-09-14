@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import { entityKeys } from "../src/hooks/queryKeys";
 import {
@@ -12,7 +12,9 @@ import { resolveStatusColor } from "najm-kit";
 import { formatStatusLabel } from "../src/features/StatusLabels";
 import { kafilLocales, type KafilLocale } from "@kafil/server/locales";
 import { KAFIL_CURRENCY } from "@kafil/server/money";
-import { kafilPreferences } from "../src/lib/preferences";
+mock.module("server-only", () => ({}));
+
+const { kafilPreferences } = await import("../src/najm.server");
 import {
   getApiErrorMessage,
   getApiErrorStatus,

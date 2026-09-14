@@ -47,7 +47,7 @@ describe("applicant creation form", () => {
   });
 
   test("normalizes the email to lowercase and the phone to the Moroccan international format", async () => {
-    const { auth } = await import("../src/lib/auth");
+    const { auth } = await import("../src/najm.auth");
     const post = spyOn(auth.api, "post").mockResolvedValue({
       data: {
         nextStep: "applicant_email_otp",

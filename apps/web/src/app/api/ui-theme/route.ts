@@ -1,3 +1,3 @@
-import { kafilPreferences } from "@/lib/preferences";
+import { kafilPreferences } from "@/najm.server";
 
 export const { POST, DELETE } = kafilPreferences.routes.theme;

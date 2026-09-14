@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { auth } from "../src/lib/auth";
+import { auth } from "../src/najm.auth";
 import {
   cancelCredentialSetup,
   getCredentialSetupStatus,
@@ -54,8 +54,11 @@ describe("credential setup client", () => {
 
     // Renaming this silently restores persistent cookies for a browser that
     // still holds kafil.remember=0.
-    expect(route).toContain("rememberCookieName: kafilApp.auth.rememberCookieName");
-    expect(route).toContain('import { auth } from "@/lib/auth"');
+    expect(readFileSync(new URL("../src/najm.config.ts", import.meta.url), "utf8"))
+      .toContain('rememberCookieName: "kafil.remember"');
+    expect(readFileSync(new URL("../src/najm.auth.ts", import.meta.url), "utf8"))
+      .toContain("defineAuth(kafilApp.auth)");
+    expect(route).toContain('import { auth } from "@/najm.auth"');
     expect(route).toContain("auth.routeHandlers(serverHandler");
     expect(route).toContain(
       "export const { GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS } = handlers;",

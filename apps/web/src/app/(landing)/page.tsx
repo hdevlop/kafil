@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 
-import { kafilPreferences } from "@/lib/preferences";
-import { getSession } from "@/najm.server";
+import { getSession, kafilPreferences } from "@/najm.server";
 import { kafilLocales, kafilUiI18n } from "@kafil/server/locales";
 import { LandingPage } from "@/features/Landing";
 

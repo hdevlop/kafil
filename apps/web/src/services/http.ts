@@ -5,7 +5,7 @@
 // deliberately leaves unhydrated — a call from a server component would go out
 // unauthenticated.
 
-import { auth } from "@/lib/auth";
+import { auth } from "@/najm.auth";
 
 export type QueryValue = boolean | number | string | null | undefined;
 
