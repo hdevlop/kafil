@@ -1,9 +1,9 @@
 diff --git a/node_modules/najm-next/dist/app/next.d.ts b/dist/app/next.d.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..5639d348ceb0cc29b8e5e56543a2868ae93aa629
+index 0000000000000000000000000000000000000000..e4c012f0428e796262daeb9d862e82c6284932d9
 --- /dev/null
 +++ b/dist/app/next.d.ts
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,32 @@
 +import { ServerSession, AuthKit } from 'najm-auth/client/server';
 +import { NajmCookieReader, NajmOrderedResolveInput } from 'najm-kit/server';
 +import { NajmThemeDefinition } from 'najm-theme/contracts';
@@ -13,7 +13,7 @@ index 0000000000000000000000000000000000000000..5639d348ceb0cc29b8e5e56543a2868a
 +type Theme = ReturnType<NajmThemeDefinition["react"]>;
 +type Appearance = Awaited<ReturnType<Theme["loadAppearance"]>>;
 +type Branding = Awaited<ReturnType<Theme["loadBranding"]>>;
-+interface CreateNajmNextServerAppOptions<TSettings, TPreferences> extends Omit<CreateNajmServerAppOptions<TSettings, TPreferences, Appearance, Branding, ServerSession>, "auth" | "theme" | "readCookies" | "readHeaders" | "resolvePreferences"> {
++interface CreateNajmNextServerAppOptions<TSettings, TPreferences, TResolvedPreferences = TPreferences> extends Omit<CreateNajmServerAppOptions<TSettings, TResolvedPreferences, Appearance, Branding, ServerSession>, "auth" | "theme" | "readCookies" | "readHeaders" | "resolvePreferences"> {
 +    readonly auth: AuthKit;
 +    readonly theme: Pick<NajmThemeDefinition, "react">;
 +    readonly themeOptions: Parameters<NajmThemeDefinition["react"]>[0];
@@ -24,6 +24,8 @@ index 0000000000000000000000000000000000000000..5639d348ceb0cc29b8e5e56543a2868a
 +    readonly acceptLanguage?: boolean;
 +    /** Optional source policy; resolution and validation remain owned by Najm Kit. */
 +    readonly preferenceSources?: (input: NajmResolvePreferencesInput<TSettings, ServerSession>) => NajmOrderedResolveInput;
++    /** Add derived fields such as direction or locale after Najm validates the stored values. */
++    readonly mapPreferences?: (preferences: TPreferences, input: NajmResolvePreferencesInput<TSettings, ServerSession>) => TResolvedPreferences;
 +}
 +/**
 + * Next adapter for apps using Najm Auth, Theme and Kit. Create once at module
@@ -31,15 +33,15 @@ index 0000000000000000000000000000000000000000..5639d348ceb0cc29b8e5e56543a2868a
 + * or load the backend; preference route handlers can share that module safely.
 + * The lower-level app/server entry remains independent of these optional peers.
 + */
-+declare function createNajmNextServerApp<TSettings, TPreferences>(options: CreateNajmNextServerAppOptions<TSettings, TPreferences>): NajmServerApp<TSettings, TPreferences, Appearance, Branding, ServerSession>;
++declare function createNajmNextServerApp<TSettings, TPreferences, TResolvedPreferences = TPreferences>(options: CreateNajmNextServerAppOptions<TSettings, TPreferences, TResolvedPreferences>): NajmServerApp<TSettings, TResolvedPreferences, Appearance, Branding, ServerSession>;
 +
 +export { type CreateNajmNextServerAppOptions, createNajmNextServerApp };
 diff --git a/node_modules/najm-next/dist/app/next.js b/dist/app/next.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..4e265285b98452525d7cab726f029d2e7d1f7727
+index 0000000000000000000000000000000000000000..12415c6bf253b5a6efd49878f0752cff658905d1
 --- /dev/null
 +++ b/dist/app/next.js
-@@ -0,0 +1,303 @@
+@@ -0,0 +1,306 @@
 +import { headers, cookies } from 'next/headers';
 +import { createReactServerAuth } from 'najm-auth/client/server/react';
 +import * as React from 'react';
@@ -333,11 +335,14 @@ index 0000000000000000000000000000000000000000..4e265285b98452525d7cab726f029d2e
 +    onDiagnostic: options.onDiagnostic,
 +    readCookies: cookies,
 +    readHeaders: headers,
-+    resolvePreferences: /* @__PURE__ */ __name((input) => options.preferences.resolveOrdered(input.cookies, {
-+      user: userPreferences(input.session?.user),
-+      acceptLanguage: options.acceptLanguage === false ? void 0 : input.headers.get("accept-language"),
-+      ...options.preferenceSources?.(input)
-+    }), "resolvePreferences")
++    resolvePreferences: /* @__PURE__ */ __name((input) => {
++      const preferences = options.preferences.resolveOrdered(input.cookies, {
++        user: userPreferences(input.session?.user),
++        acceptLanguage: options.acceptLanguage === false ? void 0 : input.headers.get("accept-language"),
++        ...options.preferenceSources?.(input)
++      });
++      return options.mapPreferences ? options.mapPreferences(preferences, input) : preferences;
++    }, "resolvePreferences")
 +  });
 +}
 +__name(createNajmNextServerApp, "createNajmNextServerApp");
