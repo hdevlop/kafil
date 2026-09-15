@@ -11,18 +11,16 @@ import { fundingProgressPercent } from "../src/shared/FundingProgressCard";
 import { getDashboardNavigation } from "../src/shared/DashboardShell";
 
 describe("configurable family funding web contracts", () => {
-  test("converts the operator-entered MAD target, expiry hours, and form-fill flag to the API payload", () => {
+  test("converts the operator-entered MAD target and expiry hours to the API payload", () => {
     const values = settingsFormSchema.parse({
       targetMad: "3500.50",
       pendingContributionExpiryHours: "96",
-      formFillEnabled: true,
       timeZone: "Africa/Casablanca",
     });
 
     expect(toSettingsInput(values)).toEqual({
       familyFundingTargetMinor: 350050,
       pendingContributionExpiryHours: 96,
-      formFillEnabled: true,
       defaultMaxOrdersPerMonth: null,
       defaultMaxBudgetPerOrderMinor: null,
       defaultMonthlyBudgetMinor: null,
@@ -30,11 +28,9 @@ describe("configurable family funding web contracts", () => {
     const defaults = settingsFormDefault({
       familyFundingTargetMinor: 350050,
       pendingContributionExpiryHours: 72,
-      formFillEnabled: false,
     });
     expect(defaults.targetMad).toBe("3500.50");
     expect(defaults.pendingContributionExpiryHours).toBe(72);
-    expect(defaults.formFillEnabled).toBe(false);
   });
 
   test("rejects empty, zero, negative, and unsafe targets", () => {
@@ -43,7 +39,6 @@ describe("configurable family funding web contracts", () => {
         settingsFormSchema.safeParse({
           targetMad,
           pendingContributionExpiryHours: 72,
-          formFillEnabled: true,
           timeZone: "Africa/Casablanca",
         }).success,
       ).toBe(false);
@@ -60,7 +55,6 @@ describe("configurable family funding web contracts", () => {
         settingsFormSchema.safeParse({
           targetMad: "1500",
           pendingContributionExpiryHours: hours,
-          formFillEnabled: false,
           timeZone: "Africa/Casablanca",
         }).success,
       ).toBe(true);
@@ -74,7 +68,6 @@ describe("configurable family funding web contracts", () => {
         settingsFormSchema.safeParse({
           targetMad: "1500",
           pendingContributionExpiryHours: hours,
-          formFillEnabled: false,
           timeZone: "Africa/Casablanca",
         }).success,
       ).toBe(false);
@@ -116,19 +109,4 @@ describe("configurable family funding web contracts", () => {
     ).not.toContain("/settings");
   });
 
-  test("requires an explicit form-fill flag", () => {
-    expect(
-      settingsFormSchema.safeParse({
-        targetMad: "1000",
-        pendingContributionExpiryHours: 72,
-      }).success,
-    ).toBe(false);
-    expect(
-      settingsFormSchema.safeParse({
-        targetMad: "1000",
-        pendingContributionExpiryHours: 72,
-        formFillEnabled: "true",
-      }).success,
-    ).toBe(false);
-  });
 });

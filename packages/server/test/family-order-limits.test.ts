@@ -19,7 +19,6 @@ describe("family order limits DTO boundaries", () => {
     const base = {
       familyFundingTargetMinor: 1_000_000,
       pendingContributionExpiryHours: 72,
-      formFillEnabled: false,
     };
     expect(updateSettingsDto.parse(base)).toEqual(base);
     expect(
@@ -57,7 +56,6 @@ describe("family order limits DTO boundaries", () => {
       updateSettingsDto.safeParse({
         familyFundingTargetMinor: 1_000_000,
         pendingContributionExpiryHours: 72,
-        formFillEnabled: false,
         defaultMaxBudgetPerOrderMinor: 0,
       }).success,
     ).toBe(false);
@@ -65,7 +63,6 @@ describe("family order limits DTO boundaries", () => {
       updateSettingsDto.safeParse({
         familyFundingTargetMinor: 1_000_000,
         pendingContributionExpiryHours: 72,
-        formFillEnabled: false,
         defaultMaxBudgetPerOrderMinor: -5,
       }).success,
     ).toBe(false);
@@ -73,7 +70,6 @@ describe("family order limits DTO boundaries", () => {
       updateSettingsDto.safeParse({
         familyFundingTargetMinor: 1_000_000,
         pendingContributionExpiryHours: 72,
-        formFillEnabled: false,
         defaultMonthlyBudgetMinor: 1.5,
       }).success,
     ).toBe(false);
@@ -81,7 +77,6 @@ describe("family order limits DTO boundaries", () => {
       updateSettingsDto.safeParse({
         familyFundingTargetMinor: 1_000_000,
         pendingContributionExpiryHours: 72,
-        formFillEnabled: false,
         defaultMonthlyBudgetMinor: Number.MAX_SAFE_INTEGER + 1,
       }).success,
     ).toBe(false);

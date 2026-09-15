@@ -210,13 +210,3 @@ immutable browser cache entry. The protected API paths are written into the
 Najm user records. Family files go to `storage/family-images`; sponsor files go
 to `storage/sponsor-images`. The package image folders stay the canonical input
 and are never deleted by a database reset.
-
-## Development form data
-
-Kafil data-entry forms use `buildFormFill` from `@kafil/seed/fakers`. In a
-supported browser form, open it and press `F8` to replace its current values
-with realistic fake data. Relation fields are selected from options already
-loaded by that form.
-
-Use `/settings` to enable or disable the shortcut. The persisted
-setting is disabled by default and applies without a Docker restart.

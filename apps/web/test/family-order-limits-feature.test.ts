@@ -30,7 +30,6 @@ describe("family order limits settings conversion", () => {
     const input = toSettingsInput({
       targetMad: "10000.00",
       pendingContributionExpiryHours: 72,
-      formFillEnabled: false,
       timeZone: "Africa/Casablanca",
       defaultMaxOrders: "",
       defaultMaxPerOrderMad: "",
@@ -45,7 +44,6 @@ describe("family order limits settings conversion", () => {
     const input = toSettingsInput({
       targetMad: "10000.00",
       pendingContributionExpiryHours: 72,
-      formFillEnabled: true,
       timeZone: "Africa/Casablanca",
       defaultMaxOrders: "4",
       defaultMaxPerOrderMad: "3000.00",
@@ -58,7 +56,6 @@ describe("family order limits settings conversion", () => {
       {
         familyFundingTargetMinor: 1_000_000,
         pendingContributionExpiryHours: 72,
-        formFillEnabled: true,
         defaultMaxOrdersPerMonth: 4,
         defaultMaxBudgetPerOrderMinor: 300_000,
         defaultMonthlyBudgetMinor: 600_000,
@@ -70,7 +67,6 @@ describe("family order limits settings conversion", () => {
     expect(defaults.defaultMonthlyMad).toBe("6000.00");
     const unlimited = settingsFormDefault({
       familyFundingTargetMinor: 1_000_000,
-      formFillEnabled: false,
       defaultMaxOrdersPerMonth: null,
       defaultMaxBudgetPerOrderMinor: null,
       defaultMonthlyBudgetMinor: null,

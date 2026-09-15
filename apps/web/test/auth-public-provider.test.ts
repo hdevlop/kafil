@@ -6,18 +6,23 @@ function readSource(relativePath: string) {
 }
 
 describe("public auth page provider boundaries", () => {
-  test("keeps the public form-fill setting live on public forms", () => {
+  test("keeps authentication available on public forms", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
-    const serverSettings = readSource("../src/najm.server.ts");
 
-    expect(provider).toContain('import { AuthProvider } from "najm-auth/client/react";');
-    expect(provider).toContain("initialData: snapshot.settings.formFill,");
+    expect(provider).toContain("authClient: auth.client,");
     expect(provider).not.toContain("enabled: isAuthenticated,");
-    expect(serverSettings).toContain(
-      '"@kafil/server/settings-bootstrap"',
-    );
-    expect(serverSettings).toContain("readFormFillEnabled");
-    expect(serverSettings).toContain("console.warn(");
+  });
+
+  test("uses Najm's single app provider with its default Query integration", () => {
+    const provider = readSource("../src/providers/AppProviders.tsx");
+
+    expect(provider).toContain("createNajmAppProvider");
+    expect(provider).toContain("<NajmAppProvider");
+    expect(provider).not.toContain("NajmNextAppProvider");
+    expect(provider).not.toContain("bindNajmNextProvider");
+    expect(provider).not.toContain("QueryClientProvider");
+    expect(provider).not.toContain("createQueryClient");
+    expect(provider).not.toContain("shouldRetry");
   });
 
   test("submits password reset through the real form instead of an external button", () => {

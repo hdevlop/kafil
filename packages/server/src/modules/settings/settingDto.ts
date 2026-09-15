@@ -25,7 +25,6 @@ export const nullableMinorAmountDto = positiveMinorAmountDto.nullish();
 export const updateSettingsDto = z.object({
   familyFundingTargetMinor: positiveMinorAmountDto,
   pendingContributionExpiryHours: pendingContributionExpiryHoursDto,
-  formFillEnabled: z.boolean(),
   defaultMaxOrdersPerMonth: nullableMaxOrdersPerMonthDto,
   defaultMaxBudgetPerOrderMinor: nullableMinorAmountDto,
   defaultMonthlyBudgetMinor: nullableMinorAmountDto,

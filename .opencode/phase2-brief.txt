@@ -1,0 +1,60 @@
+Implement only Phase 2 (preferences and server bootstrap) of C:\Users\hdevlop\Desktop\kafil\NAJM-APP-INTEGRATION-DX-PLAN.md in the Najm repository.
+
+Working repository: C:\Users\hdevlop\Desktop\najm
+Read completely before editing:
+- C:\Users\hdevlop\Desktop\najm\AGENTS.md
+- C:\Users\hdevlop\Desktop\najm\packages\najm-kit\AGENTS.md
+- C:\Users\hdevlop\Desktop\kafil\NAJM-APP-INTEGRATION-DX-PLAN.md, especially §§4.1-4.5, 6.2-6.3, Phase 2, and the PREF/BOOT matrix
+- C:\Users\hdevlop\Desktop\kafil\docs\evidence\najm-app-integration-dx\2026-09-12\README.md, especially §§3.2-3.3, 4.3-4.5, D1/D4/D7, and §6.5
+- Current `najm-kit/server` preference/UI bootstrap source, tests, RSC tests, and Next 16 fixture
+- Current `najm-next/app` contract and Phase 1 import-boundary tests
+
+Consumer evidence to inspect read-only (never edit Kafil or School in this task):
+- Kafil: apps/web/src/lib/preferences.ts, app/api/ui-*/route.ts, lib/serverSettings.ts, lib/serverTheme.ts, lib/session.ts, app/layout.tsx, providers/AppProviders.tsx, feature settings types/hooks
+- School: apps/dashboard/src/preferences/**, lib/serverPreferences.ts, lib/serverSettings.ts, lib/serverTheme.ts, lib/session.ts, lib/auth.ts, app/api/ui-*/route.ts, app/[[...route]] auth wrapper, app/layout.tsx, app/providers.tsx, logout cleanup in services/http.ts
+- School has an extensive dirty tree including migration 0046. It is read-only and must remain byte-for-byte untouched.
+
+Current reviewed Najm commits on master:
+- 5e69429 `feat(najm-next): add app security integration`
+- dd0a4e8 `test(najm-auth): prove speculative recovery safety`
+Najm begins clean, ahead of origin by 2. Do not commit, push, publish, version-bump, install, or edit consumers.
+
+Frozen decisions / ownership:
+1. Extend existing `defineNajmPreferences` / `najm-kit/server` additively. No parallel School/institution resolver. Existing consumers using `preferences.resolve(...)` and `preferences.handlers.language/theme/timeZone` must continue to compile and behave identically.
+2. Add typed ordered preference sources/guards. Public types from the ledger are the design floor:
+   - `NajmPreferenceSource = "cookie" | "user" | "institution" | "fallback"`
+   - `NajmOrderedPreference<T>` has ordered sources, a type guard, and a typed fallback.
+   Language/theme/timeZone must support independent valid-first ordering such as cookie -> user -> institution -> fallback, skipping invalid candidates. Currency must be expressible as institution -> fallback only and never derive from locale/cookie/user.
+3. Keep Kafil semantics unchanged: valid language cookie -> valid user language -> Accept-Language -> configured default; existing theme/timezone defaults and `Africa/Casablanca` consumer configuration remain possible.
+4. POST and DELETE preference route mechanics belong together in `najm-kit/server`. Add an additive route surface that preserves the current POST handler properties and exact configured cookie names/options/body fields/status/JSON. DELETE must clear the matching cookie with compatible name/path/domain/secure/httpOnly/sameSite semantics and a stable response; confirm exact School behavior from its source. Do not make Kafil logout clear preferences automatically.
+5. School best-effort logout cleanup must be expressible: clearing display cookies cannot prevent auth logout. Prove this at the shared helper/contract boundary without importing `najm-auth` into Kit or hiding auth failures.
+6. Implement `najm-next/app/server` as the server-only integration owner. Add package export/build/type path/API-isolation coverage. It composes structural Auth/Theme/Kit callbacks and must not import Kafil/School backends, infer cwd, initialize DB/theme in proxy/config imports, or introduce a Najm package cycle.
+7. The application binds any backend lazily and explicitly. Public-settings readers return only typed public projections (Kafil `{enabled:boolean}`; School its existing UI settings projection). Diagnostics expose stable code + bounded safe detail only, never raw thrown values/settings/env/cookies/session/secrets.
+8. One module-scope factory per app. Expose lightweight `getSession`, `requireSession`, and `requireRole` accessors without triggering theme/settings/cookies/headers. `loadSettings` and `loadUiSnapshot` use React request-scoped memoization, never a module-global promise/map/cache. A later request must retry a prior failure and observe saved values.
+9. `loadUiSnapshot` starts independent session, cookie/header, appearance, branding, and settings work before awaiting; preference selection waits only for its inputs. Keep appearance/branding/settings failures independent. Operational auth/config/backend errors propagate according to Najm Auth classification; no blanket session catch and no universal anonymous fallback.
+10. Return only a typed, public, serializable initial UI snapshot. Never serialize app definition, callbacks, auth object, raw env, server object, QueryClient, secrets, or unprojected settings. If the frozen ledger's generic sketch needs a small additive refinement to express the full snapshot coherently, keep the names/ownership intent and explain the refinement explicitly.
+11. Keep `najm-next/app` pure/import-free. Config-only imports must not require React/Next/Auth/Theme/Kit. `najm-next/app/server` is a leaf server entry and may use declared Next/React peers, but keep runtime package dependencies and cycles audited. Use structural contracts rather than adding runtime Najm dependencies.
+
+Required tests/fixtures:
+- Backward-compatible current preference resolve/POST behavior and public types.
+- Ordered valid-first precedence independently per field, including invalid skip; Kafil Accept-Language compatibility; School currency institution-only.
+- Exact cookie route compatibility for custom School names/options: POST and DELETE response, Set-Cookie attributes/path, invalid bodies; best-effort logout cleanup where display-cookie cleanup rejection does not suppress or replace auth logout result/error.
+- Server bootstrap resource independence/concurrent starts, lightweight accessors, settings projection/diagnostics, per-render agreement, next-request freshness/retry, multi-user concurrent request isolation, no cross-request session/settings/theme leakage.
+- Two composed fixtures (Kafil-style and School-style) with their different session failure policies and preference orders; no duplicate loader/resolver implementation.
+- Import/API/graph tests proving pure `app` and security/config remain isolated from server bootstrap/backend/UI initialization.
+- Next 16 production fixture if required for real React `cache()` request behavior. It must be hermetic and warning-free.
+- No skip/only/TODO placeholders added.
+
+Validation (run and report exact results):
+- bun run --cwd packages/najm-kit lint
+- bun run --cwd packages/najm-kit test
+- bun run --cwd packages/najm-kit build
+- bun run --cwd packages/najm-kit test:next16
+- bun run --cwd packages/najm-next lint
+- bun run --cwd packages/najm-next test
+- bun run --cwd packages/najm-next build
+- bun run --cwd packages/najm-next test:next16
+- bun run api:check
+- git diff --check
+
+Before finishing, inspect the actual diff. Report public API shape, files changed, test counts, command exits, cycle/import evidence, and honest limitations. Leave the working tree uncommitted for orchestrator review.

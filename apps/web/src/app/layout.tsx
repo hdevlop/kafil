@@ -34,11 +34,8 @@ export const viewport: Viewport = {
   themeColor: "#2f6e42",
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function RootLayout({children,}: Readonly<{children: React.ReactNode;}>) {
+
   const snapshot = await loadUiSnapshot();
   const { language, theme, timeZone } = snapshot.preferences;
 

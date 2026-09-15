@@ -35,16 +35,6 @@ export class SettingController {
     return this.settings.getSettings();
   }
 
-  @Get("/form-fill")
-  @McpTool({
-    description: "Read whether the browser F8 form-fill shortcut is enabled",
-    readOnly: true,
-  })
-  @ResMsg("settings.success.retrieved")
-  getFormFill() {
-    return this.settings.getFormFill();
-  }
-
   @Put("/")
   @isOperator()
   @CanUpdate()

@@ -1,0 +1,1 @@
+ALTER TABLE "platform_settings" DROP COLUMN "form_fill_enabled";

@@ -31,7 +31,7 @@ export const APP_SETTINGS_FORM_ID = "platform-settings-form";
 
 /**
  * Kafil's own platform settings: the funding target, the contribution expiry
- * window, the form-fill shortcut, and the display time zone.
+ * window, order limits, and the display time zone.
  *
  * Branding used to be saved from here, which coupled a Kafil product form to
  * an asset lifecycle. It now has its own `najm-theme` sheet and save action.
@@ -92,12 +92,6 @@ export function AppSettingsPanel({
         form={form}
         onSubmit={handleSubmit}
       >
-        <FormInput
-          name="formFillEnabled"
-          type="switch"
-          formLabel={t("operator.settings.shortcutLabel")}
-          label={t("operator.settings.shortcutControl")}
-        />
         <FormInput
           name="targetMad"
           type="text"

@@ -170,9 +170,6 @@ export function CreateProductDialogContent() {
       schema={createProductFormSchema}
       defaultValues={{ categoryId: "", name: "", priceMad: "", imageUrl: "", description: "" }}
       onSubmit={handleSubmit}
-      devTools={{
-        overrides: { categoryId: categoryOptions(categories.data ?? []) },
-      }}
     >
       <NFormSectionHeader icon={PackagePlus} title={t("operator.products.catalogProduct")} />
       <ProductFields
@@ -267,11 +264,6 @@ export function UpdateProductDialogContent({ product }: Readonly<{ product: Prod
         description: product.description ?? "",
       }}
       onSubmit={handleSubmit}
-      devTools={{
-        overrides: {
-          categoryId: categoryOptions(categories.data ?? [], product),
-        },
-      }}
     >
       <NFormSectionHeader icon={FolderTree} title={t("operator.products.productDetails")} />
       <ProductFields

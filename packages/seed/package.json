@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./fakers": "./src/fakers/index.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "seed": "bun src/cli.ts",

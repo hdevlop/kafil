@@ -1,0 +1,35 @@
+Phase 2 review delta. Resume this session, keep scope to Najm, and do not commit/push/publish/install/version-bump.
+
+The overall structure is promising, but fix these blocking contract issues:
+
+1. Diagnostic secrecy
+- `toSafeDetail(Error)` currently includes `error.message`, and tests explicitly expect `connect ECONNREFUSED`. Raw messages can contain connection strings, URLs, tokens, SQL, or settings. This violates the frozen sanitized-diagnostic rule.
+- Emit only a stable code plus a safe error classification (normally bounded `error.name`), never `message`, stack, cause, arbitrary object content, or thrown string. Add tests with secrets embedded in Error.message/cause and confirm they never appear.
+
+2. Preserve School logout ordering
+- School currently performs auth logout first through `SignOutButton`, then runs `clearSchoolUiPreferences` in `onSuccess`. The new `logoutWithNajmPreferenceCleanup` does cleanup before logout and its test pins that divergence.
+- Change the helper to await/propagate auth logout first, then best-effort preference cleanup, then return the exact logout result. If auth logout rejects, propagate the identical error and do not run cleanup (matching `onSuccess`). If cleanup rejects or endpoints fail after a successful logout, it must not replace the successful auth result.
+- Also make `clearNajmUiPreferences` truly independent for synchronous injected throws: one throwing endpoint must not prevent attempts to the other endpoints. Test call count/URLs.
+
+3. Remove the shared MAD business default
+- `defineNajmPreferences` currently adds `currencies: ["MAD"]` / default `MAD` to every old consumer. This hard-codes Kafil/School business policy in Kit and contradicts the plan's app-owned currency semantics.
+- Preserve zero-config legacy consumers without inventing any currency. Ordered currency resolution should be available only when the app explicitly configures a typed currency allowlist/fallback (or through a separate explicitly configured ordered descriptor). Use conditional/additive typing if needed: legacy `resolve()` remains unchanged; an app that wants `resolveOrdered().currency` must configure currency explicitly. Kafil/School fixtures must pass their own `MAD` fallback. No generic USD/MAD/locale default.
+- Keep currency sources structurally restricted to institution -> fallback; cookie/user/locale must remain unrepresentable/ignored.
+
+4. Compose the actual Kit resolver in fixtures
+- `packages/najm-next/test/serverApps.ts` currently duplicates `firstValid`, Accept-Language lookup, guards, allowed arrays, and resolution policy while claiming it is not a duplicate. That cannot prove the Phase 2 exit condition.
+- Make the Kafil/School composed fixture callbacks delegate to the real `defineNajmPreferences(...).resolveOrdered(...)` from `najm-kit/server`. A dev-only workspace dependency is acceptable if it does not create a package/build cycle; audit it explicitly. Do not add a runtime dependency from `najm-next` to Kit. Keep only app-owned direction/locale mapping around the returned Kit snapshot.
+- Add a test/import graph assertion proving the published `najm-next/app/server` output has no Kit import while the test fixture uses Kit as test/dev integration.
+
+5. Package-owned server-only enforcement
+- A runtime `typeof window` throw is weaker than the planned `server-only` boundary, and requiring each consumer to remember its own marker does not make the new public entry safe.
+- Enforce the boundary from the package. Prefer the literal `import "server-only"` if you can do so without violating the dependency-free/package build constraints. If that is genuinely incompatible with the zero-runtime-dependency contract, use the established Najm conditional-export client-guard pattern (`browser` -> throwing guard, server/react-server/import -> server implementation) and test built output/Next rejection. Explain this narrow implementation refinement. Do not leave only the window guard.
+
+6. Correct overclaims
+- `NajmServerUiSnapshot` generic values are not statically constrained to JSON and an arbitrary caller can place non-serializable values inside them. Either add a practical public JSON-serializable constraint/projection boundary that still accepts real Najm session/theme shapes, or soften docs to say the app callbacks are responsible for returning public serializable projections and add runtime validation if appropriate. Do not claim the generic alone guarantees it.
+- Keep theme failure ownership accurate: app-provided theme loaders own their independent fallbacks; this orchestrator starts them independently but a rejected loader rejects the snapshot.
+
+7. DELETE compatibility
+- Keep browser-compatible deletion attributes, but test and document the exact observable School contract: 200 `{cleared:true}`, same name/path, cookie becomes expired, and custom Domain/Secure scopes are cleared correctly. Do not call a byte-different header byte-identical.
+
+Re-run every original Phase 2 gate. Leave only deliberate source/test/fixture/config changes; no generated files. Report revised API, exact counts, dependency/cycle evidence, and limitations.

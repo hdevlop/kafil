@@ -81,7 +81,6 @@ test("operator settings renders the global pending expiry rule", async ({
   await page.route("**/api/settings", (route) =>
     json(route, {
       familyFundingTargetMinor: 720_000,
-      formFillEnabled: false,
       id: "platform",
       pendingContributionExpiryHours: 72,
     }),

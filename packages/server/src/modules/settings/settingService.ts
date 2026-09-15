@@ -22,12 +22,6 @@ export class SettingService {
     return setting;
   }
 
-  async getFormFill() {
-    const setting = await this.settings.find();
-    if (!setting) HttpError.notFound("Platform setting not found");
-    return { enabled: setting.formFillEnabled };
-  }
-
   async getPendingContributionExpiryHours() {
     const setting = await this.settings.find();
     if (!setting) return DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS;
@@ -40,7 +34,6 @@ export class SettingService {
     const patch: PlatformSettingsPatch = {
       familyFundingTargetMinor: input.familyFundingTargetMinor,
       pendingContributionExpiryHours: input.pendingContributionExpiryHours,
-      formFillEnabled: input.formFillEnabled,
       updatedByUserId: actorUserId,
     };
     if (input.defaultMaxOrdersPerMonth !== undefined) {

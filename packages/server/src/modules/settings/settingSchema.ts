@@ -1,7 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
-  boolean,
   check,
   integer,
   jsonb,
@@ -36,7 +35,6 @@ export const platformSettings = pgTable(
     )
       .default(DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS)
       .notNull(),
-    formFillEnabled: boolean("form_fill_enabled").default(false).notNull(),
     designConfig: jsonb("design_config").$type<NajmDesignConfig>(),
     appearanceRevision: integer("appearance_revision")
       .default(DEFAULT_APPEARANCE_REVISION)

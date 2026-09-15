@@ -198,11 +198,6 @@ export function UpdateFamilyDialogContent({
           root: "h-full min-h-0",
           step: "min-h-0 flex-1 pb-4",
         }}
-        devTools={{
-          overrides: {
-            housingSituation: ["owned", "rented", "hosted", "temporary"],
-          },
-        }}
       />
     </div>
   );

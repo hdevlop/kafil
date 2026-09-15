@@ -1,8 +1,4 @@
-import type {
-  FormFillSetting,
-  PlatformSettings,
-  UpdateSettingsInput,
-} from "@/features/Settings/types";
+import type { PlatformSettings, UpdateSettingsInput } from "@/features/Settings/types";
 import { api } from "@/services/http";
 
 export function getSettings() {
@@ -11,8 +7,4 @@ export function getSettings() {
 
 export function updateSettings(input: UpdateSettingsInput) {
   return api.put<PlatformSettings>("/settings", input);
-}
-
-export function getFormFillSetting() {
-  return api.get<FormFillSetting>("/settings/form-fill");
 }

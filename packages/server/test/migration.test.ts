@@ -332,7 +332,7 @@ describe("initial PostgreSQL migration", () => {
     expect(migration).not.toContain('DROP TABLE "family_profiles"');
   });
 
-  it("adds the runtime F8 setting disabled by default", async () => {
+  it("records the historical browser helper setting without rewriting its deployed migration", async () => {
     const migration = await Bun.file(
       join(migrationsDirectory, "0019_lovely_rawhide_kid.sql"),
     ).text();
@@ -606,6 +606,16 @@ it("adds assisted procurement, immutable purchases, and delivery without destruc
     );
     expect(migration).not.toContain("CASCADE");
     expect(migration).not.toContain("CREATE TABLE");
+  });
+
+  it("drops the retired browser helper setting in a new migration", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0047_loving_big_bertha.sql"),
+    ).text();
+
+    expect(migration.trim()).toBe(
+      'ALTER TABLE "platform_settings" DROP COLUMN "form_fill_enabled";',
+    );
   });
 
   it("prevents OAuth links from persisting for non-active identities", async () => {

@@ -153,7 +153,6 @@ export function CreateChildDialogContent() {
         notes: "",
       }}
       onSubmit={handleSubmit}
-      devTools={{ overrides: { familyProfileId: familyOptions } }}
     >
       <NFormSectionHeader icon={Baby} title={t("operator.children.record")} />
       <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)]">

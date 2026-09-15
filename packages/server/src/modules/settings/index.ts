@@ -7,7 +7,6 @@ export {
   type CapacityBreakdown,
   type FundingCapacityStatus,
 } from "./fundingCapacity";
-export { readFormFillEnabled } from "./settingBootstrap";
 export { SettingController } from "./settingController";
 export * from "./settingDto";
 export * from "./settingGuards";

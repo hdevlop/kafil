@@ -16,7 +16,7 @@ const optionalMadAmount = z
   .optional()
   .default("")
   .refine((value) => {
-    if (value === "" || value.startsWith("Test ")) return true;
+    if (value === "") return true;
     const minor = parseMadAmount(value);
     return minor !== null && minor > 0 && Number.isSafeInteger(minor);
   }, "Enter a positive MAD amount with up to two decimals or leave empty for unlimited");
@@ -27,7 +27,7 @@ const optionalOrderCount = z
   .optional()
   .default("")
   .refine((value) => {
-    if (value === "" || value.startsWith("Test ")) return true;
+    if (value === "") return true;
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed >= 1 && parsed <= 31;
   }, "Enter a whole number from 1 to 31 or leave empty for unlimited");
@@ -45,7 +45,6 @@ export const settingsFormSchema = z.object({
     .int()
     .min(MIN_PENDING_CONTRIBUTION_EXPIRY_HOURS, "Expiry must be at least 1 hour")
     .max(MAX_PENDING_CONTRIBUTION_EXPIRY_HOURS, "Expiry cannot exceed 720 hours"),
-  formFillEnabled: z.boolean(),
   timeZone: z.string().min(1),
   defaultMaxOrders: optionalOrderCount,
   defaultMaxPerOrderMad: optionalMadAmount,
@@ -56,7 +55,7 @@ export type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export function parseOptionalMadInput(value: string): number | null {
   const trimmed = value.trim();
-  if (trimmed === "" || trimmed.startsWith("Test ")) return null;
+  if (trimmed === "") return null;
   const minor = parseMadAmount(trimmed);
   if (minor === null || minor <= 0) return null;
   return minor;
@@ -64,7 +63,7 @@ export function parseOptionalMadInput(value: string): number | null {
 
 export function parseOptionalCountInput(value: string): number | null {
   const trimmed = value.trim();
-  if (trimmed === "" || trimmed.startsWith("Test ")) return null;
+  if (trimmed === "") return null;
   const parsed = Number(trimmed);
   if (!Number.isInteger(parsed) || parsed < 1 || parsed > 31) return null;
   return parsed;
@@ -80,7 +79,6 @@ export function toSettingsInput(
   return {
     familyFundingTargetMinor,
     pendingContributionExpiryHours: values.pendingContributionExpiryHours,
-    formFillEnabled: values.formFillEnabled,
     defaultMaxOrdersPerMonth: parseOptionalCountInput(
       values.defaultMaxOrders ?? "",
     ),
@@ -97,7 +95,6 @@ export function settingsFormDefault(
   setting: {
     familyFundingTargetMinor: number;
     pendingContributionExpiryHours?: number;
-    formFillEnabled: boolean;
     defaultMaxOrdersPerMonth?: number | null;
     defaultMaxBudgetPerOrderMinor?: number | null;
     defaultMonthlyBudgetMinor?: number | null;
@@ -108,7 +105,6 @@ export function settingsFormDefault(
     targetMad: minorUnitsToMadInput(setting.familyFundingTargetMinor),
     pendingContributionExpiryHours:
       setting.pendingContributionExpiryHours ?? 72,
-    formFillEnabled: setting.formFillEnabled,
     defaultMaxOrders:
       setting.defaultMaxOrdersPerMonth == null
         ? ""

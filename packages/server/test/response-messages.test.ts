@@ -56,10 +56,9 @@ it("assigns a direct, domain-specific response key to every controller endpoint"
       getRoutes(current).map((route) => ({ controller: current, route })),
     );
 
-    // The delivery self-context route was removed once delivery became a
-    // dedicated account role with one role-resolved dashboard entry. The
-    // delivery families directory below restores the count by one.
-    expect(routes).toHaveLength(197);
+    // The retired public browser-helper endpoint reduces the current route
+    // surface by one.
+    expect(routes).toHaveLength(196);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

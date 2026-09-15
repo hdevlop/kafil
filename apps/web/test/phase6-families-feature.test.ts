@@ -12,7 +12,6 @@ import {
 } from "../src/features/Families/config/familySchemas";
 import { familyHousingItems } from "../src/features/Families/config/housingOptions";
 import { createFamilyDefaultValues } from "../src/features/Families/components/FamilyForms";
-import { buildFormFill } from "najm-kit";
 import { localDateInput } from "najm-kit/format";
 import { familyKeys } from "../src/features/Families/hooks/familyKeys";
 
@@ -167,20 +166,6 @@ describe("Phase 6C family invitation form", () => {
     expect(defaults.supportPriority).toBe("normal");
   });
 
-  test("fills all three family steps with create-valid household data", () => {
-    const values = createFamilyFormSchema.parse({
-      ...createFamilyDefaultValues(),
-      ...buildFormFill(createFamilyFormSchema),
-    });
-
-    expect(createFamilyFormSchema.safeParse(values).success).toBe(true);
-    expect(["owned", "rented", "hosted", "temporary"]).toContain(
-      values.housingSituation,
-    );
-    expect(values.housingSituation).not.toBe("unknown");
-    expect(["normal", "high", "urgent"]).toContain(values.supportPriority);
-    expect(values.initialChildren).toHaveLength(1);
-  });
   test("masks guardian CIN in operator displays", () => {
     expect(maskGuardianCin("AB123456")).toBe("AB****56");
     expect(maskGuardianCin(null)).toBe("Not provided");

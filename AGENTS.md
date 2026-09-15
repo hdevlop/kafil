@@ -88,7 +88,6 @@ and needs a real database:
 
 ```bash
 bun run --cwd apps/web test:e2e             # full browser suite
-bun run --cwd apps/web test:e2e:form-fill   # F8 form-fill workflow only
 bun run --cwd apps/web smoke:phase6         # fast smoke pass
 ```
 
@@ -313,10 +312,6 @@ table are still in the schema on purpose and are read by nothing. Run
 - Authorization lives in the backend (`@Can*` decorators, guards). Do not rely on hiding UI buttons.
 - Family guardian CIN, address, and documents are sensitive. They must never appear in sponsor responses, audit outbox metadata, or logs.
 - `NAJM_ENCRYPTION_KEY` is 64 hex characters. `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` must each be ≥32 characters.
-
-## Form-fill shortcut
-
-The persisted F8 form-fill shortcut is disabled by default. Operators and admins can enable it from `/operator/settings`; supported browser forms then fill with Moroccan-friendly test data without a Docker rebuild or restart.
 
 ## Deployment
 

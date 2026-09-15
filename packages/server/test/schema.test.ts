@@ -418,7 +418,6 @@ describe("Kafil database schema", () => {
     expect(Object.keys(columns)).toEqual(
       expect.arrayContaining([
         "familyFundingTargetMinor",
-        "formFillEnabled",
         "designConfig",
         "appearanceRevision",
         "currency",
@@ -426,8 +425,6 @@ describe("Kafil database schema", () => {
       ]),
     );
     expect(columns.familyFundingTargetMinor.notNull).toBe(true);
-    expect(columns.formFillEnabled.notNull).toBe(true);
-    expect(columns.formFillEnabled.hasDefault).toBe(true);
     expect(columns.designConfig.notNull).toBe(false);
     expect(columns.appearanceRevision.notNull).toBe(true);
     expect(columns.appearanceRevision.hasDefault).toBe(true);

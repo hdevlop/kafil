@@ -188,19 +188,6 @@ export function CreateFamilyDialogContent() {
           root: "h-full min-h-0",
           step: "min-h-0 flex-1 overflow-y-hidden pb-4",
         }}
-        devTools={{
-          overrides: {
-            // najm-kit buildFormFill falls back to `Test <field>` for unknown
-            // strings; these policy inputs need numeric strings.
-            maxOrdersPerMonthInput: ["2", "4", "6"],
-            monthlyBudgetMadInput: ["1500.00", "2000.00", "2500.00"],
-            deliveryLocation: [
-              { address: "12 Rue Example, Casablanca", latitude: 33.5731, longitude: -7.5898 },
-              { address: "24 Avenue Example, Rabat", latitude: 34.0209, longitude: -6.8416 },
-              { address: "8 Boulevard Example, Tangier", latitude: 35.7595, longitude: -5.834 },
-            ],
-          },
-        }}
       />
     </div>
   );

@@ -139,7 +139,6 @@ export function RecordContributionDialogContent({
         externalReference: "",
       }}
       onSubmit={handleSubmit}
-      devTools={{ overrides: { supportAssignmentId: assignmentOptions } }}
     >
       <NFormSectionHeader icon={HandCoins} title={t("operator.contributions.offlinePayment")} />
       <FormInput

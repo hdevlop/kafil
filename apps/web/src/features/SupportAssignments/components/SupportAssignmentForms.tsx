@@ -64,12 +64,6 @@ export function CreateSupportAssignmentDialogContent({
         notes: "",
       }}
       onSubmit={handleSubmit}
-      devTools={{
-        overrides: {
-          sponsorProfileId: sponsorOptions,
-          familyProfileId: familyOptions,
-        },
-      }}
     >
       <NFormSectionHeader icon={HeartHandshake} title={t("operator.assignments.relationship")} />
       <div className="grid gap-4 md:grid-cols-2">

@@ -22,41 +22,27 @@ import {
 import {
   DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS,
 } from "../src/modules/settings/settingSchema";
-import { requireFormFillEnabled } from "../src/modules/settings/settingBootstrap";
 
 const householdId = "00000000-0000-4000-8000-000000000091";
 const familyId = "00000000-0000-4000-8000-000000000092";
 
 describe("configurable family funding contracts", () => {
-  it("accepts a positive target, expiry hours, and explicit form-fill flag, stripping unknown fields", () => {
+  it("accepts a positive target and expiry hours while stripping unknown fields", () => {
     expect(
       updateSettingsDto.parse({
         familyFundingTargetMinor: "500000",
         pendingContributionExpiryHours: "72",
-        formFillEnabled: true,
         reason: "unused",
         currency: "EUR",
       }),
     ).toEqual({
       familyFundingTargetMinor: 500000,
       pendingContributionExpiryHours: 72,
-      formFillEnabled: true,
     });
     expect(
       updateSettingsDto.safeParse({
         familyFundingTargetMinor: 0,
         pendingContributionExpiryHours: 72,
-        formFillEnabled: true,
-      }).success,
-    ).toBe(false);
-  });
-
-  it("requires an explicit boolean form-fill flag", () => {
-    expect(
-      updateSettingsDto.safeParse({
-        familyFundingTargetMinor: 500000,
-        pendingContributionExpiryHours: 72,
-        formFillEnabled: "true",
       }).success,
     ).toBe(false);
   });
@@ -67,7 +53,6 @@ describe("configurable family funding contracts", () => {
         updateSettingsDto.safeParse({
           familyFundingTargetMinor: 500000,
           pendingContributionExpiryHours: hours,
-          formFillEnabled: false,
         }).success,
       ).toBe(true);
     }
@@ -76,7 +61,6 @@ describe("configurable family funding contracts", () => {
         updateSettingsDto.safeParse({
           familyFundingTargetMinor: 500000,
           pendingContributionExpiryHours: hours,
-          formFillEnabled: false,
         }).success,
       ).toBe(false);
     }
@@ -85,7 +69,6 @@ describe("configurable family funding contracts", () => {
   it("exposes read and update commands only", () => {
     expect(getMcpTools(SettingController).map((tool) => tool.methodKey)).toEqual([
       "getSettings",
-      "getFormFill",
       "updateSettings",
     ]);
     expect(
@@ -96,14 +79,6 @@ describe("configurable family funding contracts", () => {
         (guard) => guard.guardClass.name,
       ),
     ).toContain("OperatorRoleGuard");
-  });
-
-  it("fails loudly when the bootstrap setting row is missing", () => {
-    expect(requireFormFillEnabled({ formFillEnabled: true })).toBe(true);
-    expect(requireFormFillEnabled({ formFillEnabled: false })).toBe(false);
-    expect(() => requireFormFillEnabled(undefined)).toThrow(
-      "Platform settings not found",
-    );
   });
 });
 
@@ -169,12 +144,11 @@ describe("configurable family funding workflow", () => {
     const audits: unknown[] = [];
     const service = new SettingService(
       {
-        find: async () => settingRecord(500000, false, 72),
+        find: async () => settingRecord(500000, 72),
         update: async (patch: PlatformSettingsPatch) => {
           updates.push(patch);
           return settingRecord(
             patch.familyFundingTargetMinor,
-            patch.formFillEnabled,
             patch.pendingContributionExpiryHours,
             patch.updatedByUserId,
           );
@@ -192,7 +166,6 @@ describe("configurable family funding workflow", () => {
       {
         familyFundingTargetMinor: 300000,
         pendingContributionExpiryHours: 96,
-        formFillEnabled: true,
       },
       "operator-user",
     );
@@ -200,14 +173,12 @@ describe("configurable family funding workflow", () => {
     expect(result).toMatchObject({
       familyFundingTargetMinor: 300000,
       pendingContributionExpiryHours: 96,
-      formFillEnabled: true,
       updatedByUserId: "operator-user",
     });
     expect(updates).toEqual([
       {
         familyFundingTargetMinor: 300000,
         pendingContributionExpiryHours: 96,
-        formFillEnabled: true,
         updatedByUserId: "operator-user",
       },
     ]);
@@ -223,11 +194,10 @@ describe("configurable family funding workflow", () => {
     const audits: unknown[] = [];
     const service = new SettingService(
       {
-        find: async () => settingRecord(500000, false, 72),
+        find: async () => settingRecord(500000, 72),
         update: async (patch: PlatformSettingsPatch) =>
           settingRecord(
             patch.familyFundingTargetMinor,
-            patch.formFillEnabled,
             patch.pendingContributionExpiryHours,
           ),
       } as unknown as SettingRepository,
@@ -243,7 +213,6 @@ describe("configurable family funding workflow", () => {
       {
         familyFundingTargetMinor: 600000,
         pendingContributionExpiryHours: 72,
-        formFillEnabled: false,
       },
       "operator-user",
     );
@@ -307,7 +276,6 @@ function fundingService({
 
 function settingRecord(
   familyFundingTargetMinor: number,
-  formFillEnabled = false,
   pendingContributionExpiryHours: number = DEFAULT_PENDING_CONTRIBUTION_EXPIRY_HOURS,
   updatedByUserId: string | null = null,
 ) {
@@ -315,7 +283,6 @@ function settingRecord(
     id: "platform",
     familyFundingTargetMinor,
     pendingContributionExpiryHours,
-    formFillEnabled,
     currency: "MAD",
     updatedByUserId,
     createdAt: new Date("2026-07-18T00:00:00.000Z"),

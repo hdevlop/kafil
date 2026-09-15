@@ -9,7 +9,6 @@ import { PLATFORM_SETTINGS_ID, platformSettings } from "./settingSchema";
 export interface PlatformSettingsPatch {
   familyFundingTargetMinor: number;
   pendingContributionExpiryHours: number;
-  formFillEnabled: boolean;
   updatedByUserId: string;
   defaultMaxOrdersPerMonth?: number | null;
   defaultMaxBudgetPerOrderMinor?: number | null;
@@ -20,7 +19,6 @@ export interface PlatformSettingRow {
   id: string;
   familyFundingTargetMinor: number;
   pendingContributionExpiryHours: number;
-  formFillEnabled: boolean;
   defaultMaxOrdersPerMonth: number | null;
   defaultMaxBudgetPerOrderMinor: number | null;
   defaultMonthlyBudgetMinor: number | null;
@@ -51,7 +49,6 @@ export class SettingRepository {
       .set({
         familyFundingTargetMinor: patch.familyFundingTargetMinor,
         pendingContributionExpiryHours: patch.pendingContributionExpiryHours,
-        formFillEnabled: patch.formFillEnabled,
         ...(patch.defaultMaxOrdersPerMonth !== undefined
           ? { defaultMaxOrdersPerMonth: patch.defaultMaxOrdersPerMonth }
           : {}),

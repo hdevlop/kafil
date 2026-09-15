@@ -86,7 +86,7 @@ School baseline as a working-tree snapshot, not an accepted release.
 | `locationConfig.ts` | 15 | `defineNajmLocationRuntime`, Leaflet policy | Consolidate server runtime configuration |
 | `contentSecurityPolicy.ts` | 57 | Nonce, policy, provider origins | Move mechanics to `najm-next`; retain app exceptions |
 | `cspReports.ts` | 137 | Bounded body reader and report sanitizer | Remove after shared report handler adoption |
-| `serverSettings.ts` | 28 | F8 setting loader and fallback | Bind an app-owned public setting reader through server integration |
+| `serverSettings.ts` | 28 | Retired browser-helper setting loader and fallback | Remove after the browser form helper is retired |
 
 Also inspect and simplify:
 
@@ -95,7 +95,7 @@ Also inspect and simplify:
   `src/instrumentation-client.ts`.
 - `src/app/api/[...route]/route.ts`, the three `ui-*` routes, and `csp-report`.
 - Login, service HTTP client, and all layouts/pages importing auth/session.
-- Settings/F8 query subscription and location label configuration.
+- Location label configuration; the former browser form-helper subscription is retired.
 
 ### 3.2 School inventory and differences
 
@@ -123,7 +123,7 @@ Preserve these explicit differences:
 | Preference resolution | Existing Najm resolver with user-language and Accept-Language inputs | Valid cookie, then user, then school setting, then typed fallback |
 | Currency | App-configured MAD | School settings, then typed fallback; not user language |
 | Location | Leaflet, runtime server config, no geocoder | Google Maps, Places autocomplete/reverse geocoding, optional `placeId` |
-| F8 | Persisted public boolean; authorized writes; query refresh | Build-time opt-in flag, enabled by default in development |
+| Browser form helper | Removed from Kafil on 2026-09-15 | School policy remains independently owned |
 | Query retry | One retry for network/server failures, no mutation retry | No query or mutation retry |
 | Extensions | Location and settings subscription | School keyboard shortcuts |
 
@@ -171,7 +171,8 @@ together if names change.
 | --- | --- |
 | `najm-next/app` | Pure typed app definition and shared-safe configuration |
 | `najm-next/app/server` | `createNajmServerApp`: singleton wiring, request snapshot and session accessors |
-| `najm-next/app/react` | `NajmNextAppProvider`: optional integrations and typed initial state |
+| `najm-next/app/client` | `createNajmAppProvider`: one full-stack client provider accepting the typed snapshot and Kit UI props |
+| `najm-next/app/react` | Low-level optional provider composition for minimal or unusual stacks |
 | `najm-next/security` | Policy definition, nonce generation, auth/proxy composition |
 | `najm-next/security/reports` | `createCspReportHandler`: bounded report processing and sanitized sink |
 | `najm-next/instrumentation/client` | Minimal CSP-compatible client initialization, if required by verified Zod contract |
@@ -280,7 +281,7 @@ catch-all shapes and all existing methods/cookie behavior.
   Protected, financial or account reads must not use that fallback mechanism.
 - Reuse existing public UI loader primitives where applicable. Add a narrow
   callback adapter only where a direct settings reader is not fetch-shaped.
-- Kafil reader returns only its public F8 boolean. School reader returns only
+- Kafil no longer reads a public browser-helper setting. School returns only
   the existing `SchoolUiSettings` projection needed for initial UI.
 - Scope caching so repeated reads in one render agree, but a subsequent request
   observes saved settings. Include multi-user/request-isolation tests.
@@ -308,15 +309,15 @@ catch-all shapes and all existing methods/cookie behavior.
 
 ### 6.4 Provider composition
 
-- Mount each enabled auth/query/UI/branding/location provider once. Reuse
-  `NajmAppProvider` and `NThemeBrandingProvider`; introduce no new theme state.
+- Full applications mount one generated `NajmAppProvider`; it composes each
+  enabled auth/query/UI/branding/location owner once and introduces no new
+  theme state. Keep the low-level binding API for minimal or unusual stacks.
 - Preserve provider order and allow explicit extension placement. School's
   KeyboardProvider currently sits inside Query and outside the UI provider.
-  Kafil's settings subscription needs Query; location labels need i18n.
+  Kafil's location labels need i18n.
 - QueryClient lifetime is per mounted application, never server-global.
   App-specific retry functions remain in client code and are not serialized.
-- Preserve Kafil's F8 live query subscription and focus refresh. A server
-  snapshot alone must not freeze the setting for the lifetime of a browser tab.
+- Kafil's former persisted browser form helper is intentionally removed.
 - Preserve School's existing F8 opt-in/development behavior. Moving it to a
   persisted runtime setting is a separate product change.
 - Resolve common location labels through shared translation defaults with app
@@ -429,7 +430,7 @@ loader/resolver implementation or cross-request leakage.
 ### Phase 3 — Client providers and location integration
 
 - [x] Implement optional provider composition and typed extension slots.
-- [x] Preserve per-app QueryClient options and reactive F8 behavior.
+- [x] Preserve per-app QueryClient options and School keyboard/helper behavior.
 - [x] Reuse Leaflet runtime and add tested Google runtime/metadata integration.
 - [x] Add shared default labels with app overrides and en/fr/ar/es coverage.
 - [x] Verify one context instance, emitted CSS, closed-dialog lazy loading,
@@ -463,7 +464,7 @@ source or tarballs; its consumer policy requires published versions.
 - [x] Add app/server/client composition; migrate auth imports, session users,
   layout, providers, proxy and thin routes incrementally.
 - [x] Preserve auth routes/role rules/Remember Me and request cookie handling.
-- [ ] Preserve F8 persistence, Leaflet runtime/CSP and family create/edit/reopen.
+- [ ] Preserve Leaflet runtime/CSP and family create/edit/reopen; Kafil's browser form helper is retired.
 - [x] Resolve applicable FIX items with targeted regression evidence.
 - [x] Delete obsolete eight-file helpers when their consumers are migrated;
   retain only actual app policy or justified boundary modules.
@@ -543,7 +544,7 @@ boundaries are evidenced. Deferred/unrequested deployment stays clearly marked.
 | PREF-02 | Language/theme/timezone save and reload/logout | First paint, cookies, formatting, RTL and cleanup preserved |
 | PREF-03 | School currency | Institution value unaffected by language/user cookie |
 | UI-01 | Branding/settings/theme changes | Initial and subsequent UI reflects persisted changes |
-| UI-02 | F8, focus refresh, keyboard and query failure | Each app keeps its own shortcut/update/retry policy |
+| UI-02 | School keyboard/helper and query failure | School keeps its shortcut policy; Kafil has no browser form helper |
 | LOC-01 | Kafil Leaflet/disabled/invalid config | Address retained, complete coordinate pair, no geocoder traffic |
 | LOC-02 | School search/reverse/manual selection/cancel | Correct address, coordinates and placeId after save and reopen |
 | LOC-03 | Google/Leaflet absent, closed dialog | No unwanted SDK scripts, tiles or search requests |
@@ -621,7 +622,7 @@ bun run db:generate
 
 Use the root `.env` wrapper for dev/runtime. Before browser work, read the
 required Kafil Playwright skill and select existing runner work units for auth,
-preferences, F8 and family location. Respect any current manual-only or
+preferences and family location. Respect any current manual-only or
 no-build instruction; record unperformed gates instead of claiming completion.
 No schema change is expected; investigate any new generated migration.
 
@@ -687,7 +688,7 @@ addresses/coordinates or provider keys in evidence.
 - [x] Removed helpers have no remaining consumers or duplicate replacements.
 - [x] Auth failures, cookies, request caches and context identity are preserved.
 - [ ] School institutional preferences and Google metadata survive migration.
-- [ ] Kafil persisted F8 and private manual-address/Leaflet workflow survive.
+- [ ] Kafil private manual-address/Leaflet workflow survives; its persisted browser form helper is removed.
 - [ ] Both apps pass the relevant source and real workflow validation matrix.
 - [x] Exact package artifacts are published and independently consumed.
 - [x] Fresh-app scaffolding uses the final published integration.

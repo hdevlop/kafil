@@ -29,11 +29,6 @@ bun run dev:https
 Opening `next dev --experimental-https` directly inside `apps/web` bypasses the
 root `.env` loader and leaves required services such as email unconfigured.
 
-The persisted F8 form-fill shortcut is disabled by default. An operator or
-admin can enable it from `/operator/settings` to fill supported browser forms
-with generated Moroccan-friendly test data. Changes take effect without
-rebuilding or restarting Docker.
-
 Available routes:
 
 - `http://localhost:3000/` — public landing route group.

@@ -230,7 +230,6 @@ describe("Kafil server", () => {
       "order-evidence_list_orphans",
       "order-evidence_cleanup_orphans",
       "settings_get_settings",
-      "settings_get_form_fill",
       "settings_update_settings",
       "sponsors_list",
       "sponsors_get_own",

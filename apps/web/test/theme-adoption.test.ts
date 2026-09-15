@@ -270,9 +270,10 @@ describe("najm-theme adoption — Kafil boundary", () => {
 
     expect(provider).toContain("NajmAppProvider");
     expect(provider).toContain("appName={APP_NAME}");
-    // Najm Kit owns slot selection. Kafil forwards the package payload without
-    // renaming, resolving, inheriting, or dropping consumer-defined slots.
-    expect(provider).toContain("initialBranding={snapshot.branding}");
+    // Najm Kit projects the package payload from the snapshot. Kafil does not
+    // rename, resolve, inherit, or drop consumer-defined slots.
+    expect(provider).toContain("snapshot={snapshot}");
+    expect(provider).not.toContain("initialBranding={");
     expect(provider).not.toContain("sidebarLogoExpandedPath:");
     expect(provider).not.toContain("sidebarLogoCollapsedPath:");
     expect(provider).not.toContain("??");
@@ -282,20 +283,13 @@ describe("najm-theme adoption — Kafil boundary", () => {
     expect(shell).not.toContain("BrandingImage");
   });
 
-  test("the branding provider is mounted once, above every slot consumer", () => {
+  test("delegates the single branding mount to the Najm app provider", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
 
-    expect(provider).toContain('import { NThemeBrandingProvider } from "najm-theme/react"');
-    expect(provider).toContain("NThemeBrandingProvider,");
-    expect(provider).toContain("branding: snapshot.branding");
-
-    // Exactly one. `NThemeImage` throws outside the provider on purpose, and a
-    // second provider lower in the tree would make a stale snapshot look like a
-    // working one.
-    const mounts = provider
-      .split("\n")
-      .filter((line) => line.includes("NThemeBrandingProvider,"));
-    expect(mounts).toHaveLength(1);
+    expect(provider).toContain('from "najm-next/app/client"');
+    expect(provider).toContain("createNajmAppProvider");
+    expect(provider).not.toContain("NThemeBrandingProvider");
+    expect(provider).not.toContain("branding: snapshot.branding");
   });
 
   test("no Kafil module hard-codes a factory brand path any more", () => {
@@ -307,6 +301,7 @@ describe("najm-theme adoption — Kafil boundary", () => {
       "../src/app/(auth)/layout.tsx",
       "../src/app/(first-login)/layout.tsx",
       "../src/providers/AppProviders.tsx",
+      "../src/providers/KafilLocationProvider.tsx",
       "../src/najm.server.ts",
     ]) {
       const source = readSource(path);

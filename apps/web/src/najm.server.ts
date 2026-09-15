@@ -3,7 +3,6 @@ import "server-only";
 import { defineNajmPreferences } from "najm-kit/server";
 import { createNajmNextServerApp } from "najm-next/app/next";
 
-import type { FormFillSetting } from "@/features/Settings/types";
 import { auth } from "@/najm.auth";
 import { kafilApp, kafilLocation } from "@/najm.config";
 import { kafilI18n } from "@kafil/server/locales";
@@ -19,7 +18,6 @@ const locationConfig = kafilLocation.resolve(process.env, {
 }).config;
 
 export interface KafilPublicUiSettings {
-  formFill: FormFillSetting;
   locationConfig: typeof locationConfig;
 }
 
@@ -32,15 +30,8 @@ export const najmServer = createNajmNextServerApp({
     basePath: "/api",
   },
   preferences: kafilPreferences,
-  readSettings: async (): Promise<KafilPublicUiSettings> => {
-    const { readFormFillEnabled } = await import("@kafil/server/settings-bootstrap");
-    return {
-      formFill: { enabled: await readFormFillEnabled() },
-      locationConfig,
-    };
-  },
+  readSettings: async (): Promise<KafilPublicUiSettings> => ({ locationConfig }),
   fallbackSettings: {
-    formFill: { enabled: false },
     locationConfig,
   },
   onDiagnostic: (diagnostic) => {

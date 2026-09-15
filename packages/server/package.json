@@ -5,7 +5,6 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./settings-bootstrap": "./src/modules/settings/settingBootstrap.ts",
     "./theme": "./theme/index.ts",
     "./config": "./src/config/index.ts",
     "./database": "./src/database/index.ts",

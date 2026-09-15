@@ -60,13 +60,6 @@ export function ApplicantForm({
           password: "",
         }}
         onSubmit={handleSubmit}
-        devTools={{
-          overrides: {
-            phone: "+212612345678",
-            password: "KafilDev123",
-            gender: "female",
-          },
-        }}
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="sm:col-span-2">

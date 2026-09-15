@@ -1,3 +1,185 @@
+diff --git a/node_modules/najm-next/.bun-tag-452dad26082ca2e b/.bun-tag-452dad26082ca2e
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/najm-next/.bun-tag-cb8998d48397b176 b/.bun-tag-cb8998d48397b176
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/najm-next/.bun-tag-d331e7c4d1f7141 b/.bun-tag-d331e7c4d1f7141
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/node_modules/najm-next/dist/app/client.d.ts b/dist/app/client.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb71e8a12fb06953ed7371167f4d1607fc901a6f
+--- /dev/null
++++ b/dist/app/client.d.ts
+@@ -0,0 +1,46 @@
++import { QueryClient } from '@tanstack/react-query';
++import { HydrateSession, NajmAuthClient } from 'najm-auth/client';
++import { NajmAppSnapshot, NajmAppProviderProps } from 'najm-kit/app';
++import { PublicBranding } from 'najm-theme';
++import * as React from 'react';
++import { NajmNextQueryIntegration } from './react.js';
++
++interface NajmClientAppSnapshot extends NajmAppSnapshot {
++    readonly session: HydrateSession | null;
++    readonly branding: PublicBranding;
++}
++type NajmClientUiProps = Omit<NajmAppProviderProps, "children" | "snapshot">;
++interface NajmClientAppContext<TSnapshot extends NajmClientAppSnapshot> {
++    readonly snapshot: TSnapshot;
++}
++interface NajmClientLocationIntegration<TSnapshot extends NajmClientAppSnapshot, TProps extends object> {
++    readonly Provider: React.ComponentType<Readonly<TProps & {
++        children: React.ReactNode;
++    }>>;
++    readonly selectProps: (snapshot: TSnapshot) => TProps;
++}
++interface CreateNajmAppProviderOptions<TSnapshot extends NajmClientAppSnapshot, TLocationProps extends object = Record<string, never>> {
++    readonly authClient: NajmAuthClient;
++    /** Uses Najm's TanStack defaults when omitted; pass false for no query layer. */
++    readonly query?: NajmNextQueryIntegration<QueryClient> | false;
++    readonly location?: NajmClientLocationIntegration<TSnapshot, TLocationProps>;
++    /**
++     * App-owned reactive UI values resolved inside Auth and Query. The hook is
++     * called once, unconditionally, by the generated provider's UI layer.
++     */
++    readonly useUiProps?: (context: NajmClientAppContext<TSnapshot>) => Partial<NajmClientUiProps>;
++}
++type NajmClientAppProviderProps<TSnapshot extends NajmClientAppSnapshot> = Omit<NajmAppProviderProps, "children" | "snapshot"> & {
++    readonly snapshot: TSnapshot;
++    readonly children: React.ReactNode;
++};
++/**
++ * Creates the single client provider an application mounts.
++ *
++ * Define it once at module scope. The returned `NajmAppProvider` owns Auth,
++ * Query, Kit UI, Theme branding and the optional location adapter while still
++ * accepting Kit's normal UI props directly.
++ */
++declare function createNajmAppProvider<TSnapshot extends NajmClientAppSnapshot, TLocationProps extends object = Record<string, never>>(options: CreateNajmAppProviderOptions<TSnapshot, TLocationProps>): React.ComponentType<NajmClientAppProviderProps<TSnapshot>>;
++
++export { type CreateNajmAppProviderOptions, type NajmClientAppContext, type NajmClientAppProviderProps, type NajmClientAppSnapshot, type NajmClientLocationIntegration, createNajmAppProvider };
+diff --git a/node_modules/najm-next/dist/app/client.js b/dist/app/client.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..45bded287383f3760f0c271e2efe55933878d995
+--- /dev/null
++++ b/dist/app/client.js
+@@ -0,0 +1,115 @@
++'use client';
++import { AuthProvider } from 'najm-auth/client/react';
++import { NajmAppProvider } from 'najm-kit/app';
++import { NThemeBrandingProvider } from 'najm-theme/react';
++import * as React from 'react';
++import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
++import { jsx } from 'react/jsx-runtime';
++
++var __defProp = Object.defineProperty;
++var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
++function isRecord(value) {
++  return typeof value === "object" && value !== null;
++}
++__name(isRecord, "isRecord");
++function getHttpErrorStatus(error) {
++  if (!isRecord(error)) return void 0;
++  if (typeof error.status === "number") return error.status;
++  const response = error.response;
++  return isRecord(response) && typeof response.status === "number" ? response.status : void 0;
++}
++__name(getHttpErrorStatus, "getHttpErrorStatus");
++function retryServerErrors(options = {}) {
++  const attempts = options.attempts ?? 1;
++  if (!Number.isInteger(attempts) || attempts < 0) {
++    throw new TypeError(
++      "najm-next/query/tanstack: attempts must be a non-negative integer"
++    );
++  }
++  const getStatus = options.getStatus ?? getHttpErrorStatus;
++  return (failureCount, error) => {
++    if (failureCount >= attempts) return false;
++    const status = getStatus(error);
++    return status === void 0 || status >= 500;
++  };
++}
++__name(retryServerErrors, "retryServerErrors");
++var NAJM_TANSTACK_QUERY_DEFAULTS = Object.freeze({
++  queries: Object.freeze({
++    staleTime: 6e4,
++    gcTime: 10 * 6e4,
++    refetchOnWindowFocus: false,
++    retry: retryServerErrors({ attempts: 1 })
++  }),
++  mutations: Object.freeze({ retry: false })
++});
++function defineNajmTanStackQuery(options = {}) {
++  return Object.freeze({
++    createClient: /* @__PURE__ */ __name(() => new QueryClient({
++      ...options.client,
++      defaultOptions: {
++        queries: {
++          ...NAJM_TANSTACK_QUERY_DEFAULTS.queries,
++          ...options.queries
++        },
++        mutations: {
++          ...NAJM_TANSTACK_QUERY_DEFAULTS.mutations,
++          ...options.mutations
++        }
++      }
++    }), "createClient"),
++    Provider: QueryClientProvider
++  });
++}
++__name(defineNajmTanStackQuery, "defineNajmTanStackQuery");
++function useEmptyUiProps() {
++  return {};
++}
++__name(useEmptyUiProps, "useEmptyUiProps");
++function createNajmAppProvider(options) {
++  const query = options.query === false ? void 0 : options.query ?? defineNajmTanStackQuery();
++  const useUiProps = options.useUiProps ?? useEmptyUiProps;
++  const location = options.location;
++  function UiLayer({
++    children,
++    snapshot,
++    uiProps
++  }) {
++    const resolvedUiProps = useUiProps({ snapshot });
++    let tree = children;
++    if (location) {
++      const LocationProvider = location.Provider;
++      tree = /* @__PURE__ */ jsx(LocationProvider, { ...location.selectProps(snapshot), children: tree });
++    }
++    tree = /* @__PURE__ */ jsx(NThemeBrandingProvider, { branding: snapshot.branding, children: tree });
++    return /* @__PURE__ */ jsx(
++      NajmAppProvider,
++      {
++        snapshot,
++        ...resolvedUiProps,
++        ...uiProps,
++        children: tree
++      }
++    );
++  }
++  __name(UiLayer, "UiLayer");
++  function NajmAppProvider$1({
++    children,
++    snapshot,
++    ...uiProps
++  }) {
++    const [queryClient] = React.useState(() => query?.createClient());
++    let tree = /* @__PURE__ */ jsx(UiLayer, { snapshot, uiProps, children });
++    if (query && queryClient !== void 0) {
++      const QueryProvider = query.Provider;
++      tree = /* @__PURE__ */ jsx(QueryProvider, { client: queryClient, children: tree });
++    }
++    return /* @__PURE__ */ jsx(AuthProvider, { client: options.authClient, initialSession: snapshot.session, children: tree });
++  }
++  __name(NajmAppProvider$1, "NajmAppProvider");
++  NajmAppProvider$1.displayName = "NajmAppProvider";
++  return NajmAppProvider$1;
++}
++__name(createNajmAppProvider, "createNajmAppProvider");
++
++export { createNajmAppProvider };
 diff --git a/node_modules/najm-next/dist/app/next.d.ts b/dist/app/next.d.ts
 new file mode 100644
 index 0000000000000000000000000000000000000000..e4c012f0428e796262daeb9d862e82c6284932d9
@@ -348,6 +530,89 @@ index 0000000000000000000000000000000000000000..12415c6bf253b5a6efd49878f0752cff
 +__name(createNajmNextServerApp, "createNajmNextServerApp");
 +
 +export { createNajmNextServerApp };
+diff --git a/dist/app/react.d.ts b/dist/app/react.d.ts
+index af45d28c7219d75dc61a79262a5ef4d6326ee11f..cca92473b3e6891072af577f1d9018722b07db89 100644
+--- a/dist/app/react.d.ts
++++ b/dist/app/react.d.ts
+@@ -33,12 +33,26 @@ interface NajmNextProviderSet<TSnapshot, TQueryClient = unknown> {
+     readonly branding?: NajmNextProviderBinding<TSnapshot, TQueryClient>;
+     readonly location?: NajmNextProviderBinding<TSnapshot, TQueryClient>;
+ }
++/**
++ * Optional state/cache integration that owns one client and its matching
++ * provider. Leaf adapters can implement this without making their dependency
++ * part of the generic Najm Next client entrypoint.
++ */
++interface NajmNextQueryIntegration<TQueryClient> {
++    readonly createClient: () => TQueryClient;
++    readonly Provider: React.ComponentType<Readonly<{
++        client: TQueryClient;
++        children: React.ReactNode;
++    }>>;
++}
+ interface NajmNextAppProviderProps<TSnapshot, TQueryClient = unknown> {
+     /** Public, serializable request snapshot only. */
+     readonly snapshot: TSnapshot;
+-    /** App-created QueryClient. Mutually exclusive with `createQueryClient`. */
++    /** Optional query integration. Mutually exclusive with the legacy query props. */
++    readonly query?: NajmNextQueryIntegration<TQueryClient>;
++    /** @deprecated Prefer a leaf query integration through `query`. */
+     readonly queryClient?: TQueryClient;
+-    /** Called once for this mounted application, never on the server globally. */
++    /** @deprecated Prefer a leaf query integration through `query`. */
+     readonly createQueryClient?: () => TQueryClient;
+     readonly providers: NajmNextProviderSet<TSnapshot, TQueryClient>;
+     readonly extensions?: NajmNextExtension<TSnapshot, TQueryClient>;
+@@ -63,6 +77,6 @@ declare function bindNajmNextProvider<TSnapshot, TQueryClient, TProps extends ob
+  * consume the UI i18n provider. Kafil can keep its reactive settings
+  * subscription in a bound UI component, where Query is already available.
+  */
+-declare function NajmNextAppProvider<TSnapshot, TQueryClient = unknown>({ snapshot, queryClient, createQueryClient, providers, extensions, children, }: NajmNextAppProviderProps<TSnapshot, TQueryClient>): React.JSX.Element;
++declare function NajmNextAppProvider<TSnapshot, TQueryClient = unknown>({ snapshot, query, queryClient, createQueryClient, providers, extensions, children, }: NajmNextAppProviderProps<TSnapshot, TQueryClient>): React.JSX.Element;
+ 
+-export { NajmNextAppProvider, type NajmNextAppProviderProps, type NajmNextExtension, type NajmNextProviderBinding, type NajmNextProviderContext, type NajmNextProviderSet, bindNajmNextProvider };
++export { NajmNextAppProvider, type NajmNextAppProviderProps, type NajmNextExtension, type NajmNextProviderBinding, type NajmNextProviderContext, type NajmNextProviderSet, type NajmNextQueryIntegration, bindNajmNextProvider };
+diff --git a/dist/app/react.js b/dist/app/react.js
+index 2578c7f4b8b141b75964be8cadc4260c09aa101f..7f20ad5bbd9ec3d6989ac1e711af65360a523a41 100644
+--- a/dist/app/react.js
++++ b/dist/app/react.js
+@@ -29,14 +29,21 @@ function wrap(binding, context, children) {
+ __name(wrap, "wrap");
+ function NajmNextAppProvider({
+   snapshot,
++  query,
+   queryClient,
+   createQueryClient,
+   providers,
+   extensions,
+   children
+ }) {
++  if (query !== void 0 && (queryClient !== void 0 || createQueryClient !== void 0 || providers.query !== void 0)) {
++    throw new TypeError(
++      "najm-next/app/react: pass query integration or legacy query props, not both"
++    );
++  }
++  const createOwnedQueryClient = query?.createClient ?? createQueryClient;
+   const [ownedQueryClient] = React.useState(
+-    () => queryClient === void 0 ? createQueryClient?.() : void 0
++    () => queryClient === void 0 ? createOwnedQueryClient?.() : void 0
+   );
+   if (queryClient !== void 0 && createQueryClient !== void 0) {
+     throw new TypeError(
+@@ -54,7 +61,12 @@ function NajmNextAppProvider({
+   tree = wrap(providers.branding, context, tree);
+   tree = wrap(providers.ui, context, tree);
+   tree = wrap(extensions?.beforeUi, context, tree);
+-  tree = wrap(providers.query, context, tree);
++  if (query !== void 0 && activeQueryClient !== void 0) {
++    const QueryProvider = query.Provider;
++    tree = /* @__PURE__ */ jsx(QueryProvider, { client: activeQueryClient, children: tree });
++  } else {
++    tree = wrap(providers.query, context, tree);
++  }
+   tree = wrap(providers.auth, context, tree);
+   return /* @__PURE__ */ jsx(Fragment, { children: tree });
+ }
 diff --git a/dist/app/server.d.ts b/dist/app/server.d.ts
 index 3acbf081ad4300e7cbb19fc7469ad1fc87baf435..a2807c255b3bd5bb2bab9b0dbcaba34ebd98c5b3 100644
 --- a/dist/app/server.d.ts
@@ -442,7 +707,7 @@ index 3acbf081ad4300e7cbb19fc7469ad1fc87baf435..a2807c255b3bd5bb2bab9b0dbcaba34e
   */
 -declare function createNajmServerApp<TSettings, TPreferences, TAppearance, TBranding>(options: CreateNajmServerAppOptions<TSettings, TPreferences, TAppearance, TBranding>): NajmServerApp<TSettings, TPreferences, TAppearance, TBranding>;
 +declare function createNajmServerApp<TSettings, TPreferences, TAppearance, TBranding, TSession extends NajmServerSession = NajmServerSession>(options: CreateNajmServerAppOptions<TSettings, TPreferences, TAppearance, TBranding, TSession>): NajmServerApp<TSettings, TPreferences, TAppearance, TBranding, TSession>;
-
+ 
  export { type CreateNajmServerAppOptions, type NajmPublicSettingsReader, type NajmResolvePreferences, type NajmResolvePreferencesInput, type NajmServerApp, type NajmServerAuth, type NajmServerCookieReader, type NajmServerDiagnostic, type NajmServerHeaderReader, type NajmServerSession, type NajmServerTheme, type NajmServerUiSnapshot, createNajmServerApp };
 diff --git a/dist/location/server.d.ts b/dist/location/server.d.ts
 index 4229b62edec887bc74c25074b28b511653d8a68c..9c1da319669b57825932edef10197b9ffa4aac36 100644
@@ -481,10 +746,123 @@ index 4229b62edec887bc74c25074b28b511653d8a68c..9c1da319669b57825932edef10197b9f
 +    allowedProviders: readonly TProvider[];
 +}): NajmLocationRuntimeDefinition<TProvider>;
  declare function defineNajmLocationRuntime(options: NajmLocationRuntimeDefinitionOptions): NajmLocationRuntimeDefinition;
-
+ 
  export { type NajmLocationMapProvider, type NajmLocationRuntimeDefinition, type NajmLocationRuntimeDefinitionOptions, type NajmLocationRuntimeIssue, type NajmLocationRuntimeResolution, type NajmResolvedDisabledLocationConfig, type NajmResolvedGoogleLocationConfig, type NajmResolvedLeafletLocationConfig, type NajmResolvedLocationBaseConfig, type NajmResolvedLocationConfig, defineNajmLocationRuntime };
+diff --git a/node_modules/najm-next/dist/tanstackQuery.d.ts b/dist/tanstackQuery.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..9b6dbbdb30bc34aef3fe9fa9088737334ca4179e
+--- /dev/null
++++ b/dist/tanstackQuery.d.ts
+@@ -0,0 +1,40 @@
++import { DefaultOptions, QueryClientConfig, QueryClient } from '@tanstack/react-query';
++import { NajmNextQueryIntegration } from './app/react.js';
++import 'react';
++
++interface RetryServerErrorsOptions {
++    /** Number of retries after the initial failed request. */
++    readonly attempts?: number;
++    /** Optional status reader for application-specific error shapes. */
++    readonly getStatus?: (error: unknown) => number | undefined;
++}
++declare function getHttpErrorStatus(error: unknown): number | undefined;
++/** Retries network/unknown failures and 5xx responses, never 4xx responses. */
++declare function retryServerErrors(options?: RetryServerErrorsOptions): (failureCount: number, error: unknown) => boolean;
++declare const NAJM_TANSTACK_QUERY_DEFAULTS: Readonly<{
++    queries: Readonly<{
++        staleTime: 60000;
++        gcTime: number;
++        refetchOnWindowFocus: false;
++        retry: (failureCount: number, error: unknown) => boolean;
++    }>;
++    mutations: Readonly<{
++        retry: false;
++    }>;
++}>;
++interface DefineNajmTanStackQueryOptions {
++    /** Partial query-default overrides; unspecified Najm defaults are retained. */
++    readonly queries?: DefaultOptions["queries"];
++    /** Partial mutation-default overrides; unspecified Najm defaults are retained. */
++    readonly mutations?: DefaultOptions["mutations"];
++    /** Advanced cache instances. `defaultOptions` is composed by this adapter. */
++    readonly client?: Omit<QueryClientConfig, "defaultOptions">;
++}
++/**
++ * Enables TanStack Query with one stable client per mounted Najm application.
++ * The zero-config path uses Najm's balanced defaults; applications declare
++ * only their differences.
++ */
++declare function defineNajmTanStackQuery(options?: DefineNajmTanStackQueryOptions): NajmNextQueryIntegration<QueryClient>;
++
++export { type DefineNajmTanStackQueryOptions, NAJM_TANSTACK_QUERY_DEFAULTS, type RetryServerErrorsOptions, defineNajmTanStackQuery, getHttpErrorStatus, retryServerErrors };
+diff --git a/node_modules/najm-next/dist/tanstackQuery.js b/dist/tanstackQuery.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..973c9abc3b898f8a1993d26a89e8894478e126db
+--- /dev/null
++++ b/dist/tanstackQuery.js
+@@ -0,0 +1,61 @@
++'use client';
++import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
++
++var __defProp = Object.defineProperty;
++var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
++function isRecord(value) {
++  return typeof value === "object" && value !== null;
++}
++__name(isRecord, "isRecord");
++function getHttpErrorStatus(error) {
++  if (!isRecord(error)) return void 0;
++  if (typeof error.status === "number") return error.status;
++  const response = error.response;
++  return isRecord(response) && typeof response.status === "number" ? response.status : void 0;
++}
++__name(getHttpErrorStatus, "getHttpErrorStatus");
++function retryServerErrors(options = {}) {
++  const attempts = options.attempts ?? 1;
++  if (!Number.isInteger(attempts) || attempts < 0) {
++    throw new TypeError(
++      "najm-next/query/tanstack: attempts must be a non-negative integer"
++    );
++  }
++  const getStatus = options.getStatus ?? getHttpErrorStatus;
++  return (failureCount, error) => {
++    if (failureCount >= attempts) return false;
++    const status = getStatus(error);
++    return status === void 0 || status >= 500;
++  };
++}
++__name(retryServerErrors, "retryServerErrors");
++var NAJM_TANSTACK_QUERY_DEFAULTS = Object.freeze({
++  queries: Object.freeze({
++    staleTime: 6e4,
++    gcTime: 10 * 6e4,
++    refetchOnWindowFocus: false,
++    retry: retryServerErrors({ attempts: 1 })
++  }),
++  mutations: Object.freeze({ retry: false })
++});
++function defineNajmTanStackQuery(options = {}) {
++  return Object.freeze({
++    createClient: /* @__PURE__ */ __name(() => new QueryClient({
++      ...options.client,
++      defaultOptions: {
++        queries: {
++          ...NAJM_TANSTACK_QUERY_DEFAULTS.queries,
++          ...options.queries
++        },
++        mutations: {
++          ...NAJM_TANSTACK_QUERY_DEFAULTS.mutations,
++          ...options.mutations
++        }
++      }
++    }), "createClient"),
++    Provider: QueryClientProvider
++  });
++}
++__name(defineNajmTanStackQuery, "defineNajmTanStackQuery");
++
++export { NAJM_TANSTACK_QUERY_DEFAULTS, defineNajmTanStackQuery, getHttpErrorStatus, retryServerErrors };
 diff --git a/package.json b/package.json
-index 2d4d025cf324a5d3dd4355afaf7412a81ddd4ebe..6bea92518110cb232193195df363b2fcfb98bd00 100644
+index 2d4d025cf324a5d3dd4355afaf7412a81ddd4ebe..acaf04e848c782bac3bc584a31e9f42f079de1d4 100644
 --- a/package.json
 +++ b/package.json
 @@ -3,7 +3,7 @@
@@ -496,7 +874,24 @@ index 2d4d025cf324a5d3dd4355afaf7412a81ddd4ebe..6bea92518110cb232193195df363b2fc
    "files": [
      "dist",
      "README.md",
-@@ -72,7 +72,12 @@
+@@ -42,6 +42,16 @@
+       "import": "./dist/app/react.js",
+       "default": "./dist/app/react.js"
+     },
++    "./app/client": {
++      "types": "./dist/app/client.d.ts",
++      "import": "./dist/app/client.js",
++      "default": "./dist/app/client.js"
++    },
++    "./query/tanstack": {
++      "types": "./dist/tanstackQuery.d.ts",
++      "import": "./dist/tanstackQuery.js",
++      "default": "./dist/tanstackQuery.js"
++    },
+     "./security": {
+       "types": "./dist/security.d.ts",
+       "import": "./dist/security.js",
+@@ -72,7 +82,12 @@
        "import": "./dist/pwaReact.js",
        "default": "./dist/pwaReact.js"
      },
@@ -510,9 +905,11 @@ index 2d4d025cf324a5d3dd4355afaf7412a81ddd4ebe..6bea92518110cb232193195df363b2fc
    },
    "scripts": {
      "build": "rimraf dist && tsup",
-@@ -96,7 +101,10 @@
+@@ -95,8 +110,12 @@
+   ],
    "author": "Hicham Jebara",
    "peerDependencies": {
++    "@tanstack/react-query": "^5",
      "next": ">=15.3.0 <17",
 -    "react": ">=18.2.0 <20"
 +    "react": ">=18.2.0 <20",
@@ -522,12 +919,15 @@ index 2d4d025cf324a5d3dd4355afaf7412a81ddd4ebe..6bea92518110cb232193195df363b2fc
    },
    "devDependencies": {
      "@types/react": "^19.2.14",
-@@ -106,5 +114,16 @@
+@@ -106,5 +125,19 @@
      "rimraf": "^6.0.1",
      "tsup": "^8.5.1",
      "typescript": "^5.9.3"
 +  },
 +  "peerDependenciesMeta": {
++    "@tanstack/react-query": {
++      "optional": true
++    },
 +    "najm-auth": {
 +      "optional": true
 +    },

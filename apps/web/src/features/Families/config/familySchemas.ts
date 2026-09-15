@@ -55,9 +55,7 @@ const optionalMadAmountInput = z
   .string()
   .trim()
   .refine((value) => {
-    // F8 form-fill generates "Test <field>" placeholders for unknown strings;
-    // treat them as empty (inherit global) so dev fills stay schema-valid.
-    if (value === "" || value.startsWith("Test ")) return true;
+    if (value === "") return true;
     const minor = parseMadAmount(value);
     return minor !== null && minor > 0 && Number.isSafeInteger(minor);
   }, "Enter a positive MAD amount or leave empty for the global default");
@@ -66,7 +64,7 @@ const optionalOrderCountInput = z
   .string()
   .trim()
   .refine((value) => {
-    if (value === "" || value.startsWith("Test ")) return true;
+    if (value === "") return true;
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed >= 1 && parsed <= 31;
   }, "Enter 1 to 31 or leave empty for the global default");
