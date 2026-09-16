@@ -53,3 +53,12 @@ School passed:
 
 No Playwright, browser, or visual acceptance was run, as explicitly requested.
 Deployment was not requested and remains separate.
+
+## Git publication
+
+The implementation/adoption revisions published to their tracked branches are:
+
+- Najm `master`: `9a8424b6f4022bfa51a98c481cb2cf2178be36f7`
+- School `feat/trusted-proxy-rate-limit-hardening`:
+  `299b44c199f026245b012fba03259c2b551b0e1d`
+- Kafil `main`: `70e24946fb818a8bbf4fb08f71460ee7bb5b7467`
