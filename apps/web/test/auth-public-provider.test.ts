@@ -9,15 +9,16 @@ describe("public auth page provider boundaries", () => {
   test("keeps authentication available on public forms", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
 
-    expect(provider).toContain("authClient: auth.client,");
+    expect(provider).toContain("authClient={auth.client}");
     expect(provider).not.toContain("enabled: isAuthenticated,");
   });
 
   test("uses Najm's single app provider with its default Query integration", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
 
-    expect(provider).toContain("createNajmAppProvider");
+    expect(provider).toContain('import { NajmAppProvider } from "najm-next/app/client"');
     expect(provider).toContain("<NajmAppProvider");
+    expect(provider).not.toContain("createNajmAppProvider");
     expect(provider).not.toContain("NajmNextAppProvider");
     expect(provider).not.toContain("bindNajmNextProvider");
     expect(provider).not.toContain("QueryClientProvider");

@@ -4,6 +4,10 @@ Kafil uses task-specific root plans. There is no single root `PLAN.md`.
 
 ## Root plans
 
+- [`NAJM-APP-PROVIDER-UNIFICATION-PLAN.md`](../../NAJM-APP-PROVIDER-UNIFICATION-PLAN.md)
+  - in-progress direct Najm app provider: shared source, compatibility aliases,
+    Playground/CLI work, packed candidates, and Kafil label reuse are verified;
+    package publication, consumer adoption, and browser acceptance remain.
 - [`NAJM-APP-INTEGRATION-DX-PLAN.md`](../../NAJM-APP-INTEGRATION-DX-PLAN.md)
   - planned shared Najm CSP/reporting, server bootstrap, preferences, provider
     and location integration, with independent Kafil and School migrations,

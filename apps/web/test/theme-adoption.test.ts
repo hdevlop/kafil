@@ -287,7 +287,8 @@ describe("najm-theme adoption — Kafil boundary", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
 
     expect(provider).toContain('from "najm-next/app/client"');
-    expect(provider).toContain("createNajmAppProvider");
+    expect(provider).toContain("<NajmAppProvider");
+    expect(provider).not.toContain("createNajmAppProvider");
     expect(provider).not.toContain("NThemeBrandingProvider");
     expect(provider).not.toContain("branding: snapshot.branding");
   });
