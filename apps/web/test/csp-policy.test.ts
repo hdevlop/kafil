@@ -4,15 +4,17 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createNajmCsp, createNajmNonce } from "najm-next/security";
+import { defineNajmAppLocationRuntime } from "najm-next/location/server";
 import {
   readNajmBoundedJson,
   sanitizeNajmCspReports,
 } from "najm-next/security/reports";
-import { kafilApp, kafilLocation } from "../src/najm.config";
+import { kafilApp } from "../src/najm.config";
 import { POST } from "../src/app/api/csp-report/route";
 
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..", "..");
 const read = (path: string) => readFileSync(join(repoRoot, path), "utf8");
+const kafilLocation = defineNajmAppLocationRuntime(kafilApp)!;
 
 const SOURCES = [
   "deploy/Caddyfile",
@@ -119,7 +121,7 @@ describe("strict-CSP client initialization", () => {
     const instrumentation = read("apps/web/src/instrumentation-client.ts");
 
     expect(proxy).toContain("composeNajmProxy");
-    expect(proxy).toContain("resolveLocationCsp");
+    expect(proxy).not.toContain("resolveLocationCsp");
     expect(instrumentation).toContain('import "najm-next/instrumentation/client"');
     expect(instrumentation).not.toContain("console.");
   });

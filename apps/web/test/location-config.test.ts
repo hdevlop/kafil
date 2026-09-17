@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { kafilLocation } from "../src/najm.config";
+import { defineNajmAppLocationRuntime } from "najm-next/location/server";
+import { kafilApp } from "../src/najm.config";
+
+const kafilLocation = defineNajmAppLocationRuntime(kafilApp)!;
 
 describe("family location runtime config", () => {
   test("defaults to the Leaflet provider and Morocco center", () => {

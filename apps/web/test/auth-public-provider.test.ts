@@ -13,11 +13,12 @@ describe("public auth page provider boundaries", () => {
     expect(provider).not.toContain("enabled: isAuthenticated,");
   });
 
-  test("uses Najm's single app provider with its default Query integration", () => {
+  test("uses Najm's single app provider with explicit Query integration", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
 
     expect(provider).toContain('import { NajmAppProvider } from "najm-next/app/client"');
     expect(provider).toContain("<NajmAppProvider");
+    expect(provider).toContain("query={true}");
     expect(provider).not.toContain("createNajmAppProvider");
     expect(provider).not.toContain("NajmNextAppProvider");
     expect(provider).not.toContain("bindNajmNextProvider");

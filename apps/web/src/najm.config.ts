@@ -1,5 +1,4 @@
 import { defineNajmApp } from "najm-next/app";
-import { defineNajmLocationRuntime } from "najm-next/location/server";
 
 export const kafilApp = defineNajmApp({
   id: "kafil",
@@ -65,19 +64,7 @@ export const kafilApp = defineNajmApp({
     extraImgSrc: ["https://cdnjs.cloudflare.com"],
     frameSrc: ["'none'"],
   },
-  location: { environmentPrefix: "KAFIL_LOCATION" },
-});
-
-export const kafilLocation = defineNajmLocationRuntime({
-  environmentPrefix: kafilApp.location.environmentPrefix,
-  allowedProviders: ["leaflet"],
-  defaults: {
-    provider: "leaflet",
-    center: { latitude: 33.5731, longitude: -7.5898 },
-    zoom: 12,
-    leaflet: {
-      tileUrl: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      attribution: "&copy; OpenStreetMap contributors",
-    },
-  },
+  theme: true,
+  branding: true,
+  location: true,
 });

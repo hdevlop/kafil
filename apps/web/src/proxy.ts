@@ -1,14 +1,10 @@
 import { auth } from "@/najm.auth";
 import { composeNajmProxy } from "najm-next/security";
-import { kafilApp, kafilLocation } from "@/najm.config";
+import { kafilApp } from "@/najm.config";
 
 export default composeNajmProxy({
   auth,
   app: kafilApp,
-  resolveLocationCsp: (env) =>
-    kafilLocation.resolve(env, {
-      isDevelopment: env.NODE_ENV === "development",
-    }).csp,
 });
 
 export const config = {

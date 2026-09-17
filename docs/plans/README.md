@@ -1,71 +1,36 @@
-# Kafil Plan Index
+# Kafil Plans and Archive
 
-Kafil uses task-specific root plans. There is no single root `PLAN.md`.
+Earlier root-level task plans were retired on 2026-09-17. Their content remains
+available in Git history. There is no generic root `PLAN.md`; newly requested
+task-specific plans are indexed below.
 
-## Root plans
+The former connected four-account acceptance plan was preserved and split into
+purpose-specific test documents under
+[`docs/tests/connected-four-account/`](../tests/connected-four-account/README.md).
 
-- [`NAJM-APP-PROVIDER-UNIFICATION-PLAN.md`](../../NAJM-APP-PROVIDER-UNIFICATION-PLAN.md)
-  - in-progress direct Najm app provider: shared source, compatibility aliases,
-    Playground/CLI work, packed candidates, and Kafil label reuse are verified;
-    package publication, consumer adoption, and browser acceptance remain.
-- [`NAJM-APP-INTEGRATION-DX-PLAN.md`](../../NAJM-APP-INTEGRATION-DX-PLAN.md)
-  - planned shared Najm CSP/reporting, server bootstrap, preferences, provider
-    and location integration, with independent Kafil and School migrations,
-    validation, package release, and future-app scaffolding.
-- [`DELIVERY-STAFF-DASHBOARD-PLAN.md`](../../DELIVERY-STAFF-DASHBOARD-PLAN.md)
-  - planned real-data, assignment-scoped Delivery dashboard with scheduling,
-    issue tracking, family-address mapping, staff-owned commands, responsive
-    browser acceptance, and the existing Operator dashboard preserved.
-- [`LANDING-PAGE-PLAN.md`](../../LANDING-PAGE-PLAN.md)
-  - deployed static public landing-page baseline with truthful illustrative
-    content, one locale-aware hero image, an existing `/mascots`-powered CTA,
-    four-locale responsive/RTL acceptance, and live-data or newsletter behavior
-    explicitly deferred.
-- [`LANDING-PAGE-SECTIONS-PLAN.md`](../../LANDING-PAGE-SECTIONS-PLAN.md)
-  - implementation-ready extension for the process, illustrative transparency
-    order and receipt dialog, dignity, and FAQ sections, with generated public
-    assets plus responsive, localized, RTL, keyboard, and browser acceptance.
-- [`FAMILY-ORDER-LIMITS-PLAN.md`](../../FAMILY-ORDER-LIMITS-PLAN.md)
-  - implemented nullable global defaults, per-family order policy overrides,
-    monthly inheritance/reset, and enforcement; browser acceptance is deferred.
-- [`FAMILY-EDIT-WIZARD-PLAN.md`](../../FAMILY-EDIT-WIZARD-PLAN.md)
-  - implementation-ready parity of the family edit dialog with the create
-    wizard (2-step guardian/household, bounded scrollable dialog, dead policy
-    inputs removed from edit).
-- [`NAJM-LOCATION-PICKER-PLAN.md`](../../NAJM-LOCATION-PICKER-PLAN.md)
-  - proposed provider-neutral Najm location/form input with Leaflet and Google
-    adapters, runtime consumer configuration, privacy-safe Kafil family-form
-    adoption, and responsive/RTL/keyboard browser acceptance.
-- [`CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md`](../../CONNECTED-FOUR-ACCOUNT-ACCEPTANCE-PLAN.md)
-  - completed guarded VPS four-account baseline and evidence record, plus the
-    pending dedicated notification connected-acceptance extension.
-- [`NOTIFICATION-SYSTEM-PLAN.md`](../../NOTIFICATION-SYSTEM-PLAN.md)
-  - implemented in-app + email + push source/database contract; production
-    rollout is pending and real-service acceptance is delegated to the
-    connected four-account plan.
+## Active root plans
+
+- [`NAJM-OPTIONAL-PROVIDER-DX-PLAN.md`](../../NAJM-OPTIONAL-PROVIDER-DX-PLAN.md)
+  - implemented optional integration composition through the existing Najm app
+    provider, default `location: true` in Kafil, automatic snapshot/CSP wiring,
+    shared location labels, package validation and independent consumer adoption.
+    Packages and source migrations are released; browser/manual acceptance remains open.
 
 ## Supporting documents
 
 - [`Auth security evidence`](../evidence/auth-security/2026-09-05-local/README.md)
   - completed Auth 4 remediation, publication, deployment, connected lifecycle,
-    CSP matrix, and manual Google OAuth acceptance record. The completed root
-    implementation plan was removed after School adopted the same shared Auth
-    and CSP contracts.
+    CSP matrix, and manual Google OAuth acceptance record.
 - [`NAJM-STACK.md`](NAJM-STACK.md) - installed framework contracts to reuse.
   Treat its version list as indicative only; the workspace `package.json` files
-  and the installed declarations under `node_modules/` are authoritative.
+  and installed declarations under `node_modules/` are authoritative.
 
-Earlier planning documents (`DECISIONS.md`, `IMAGE-DELIVERY-OPTIMIZATION.md`,
-`OPERATOR-SPONSOR-DETAIL-OVERVIEW.md`, `SECTION-TEMPLATE.md`,
-`SPONSOR-DASHBOARD-REDESIGN.md`, `APPLICANT-CREATION.md`,
-`VPS-DOCKER-DEPLOYMENT.md`, and `sections/01`-`07`) covered work that has since
-shipped and were removed. Their content remains in git history.
+Earlier planning documents remain available in Git history.
 
-## Planning rules
+## Documentation rules
 
-- Follow the task-specific plan that owns the current slice.
-- Do not infer project-wide phase status from a task-specific plan.
 - Keep implementation, package publication, Git publication, deployment, and
   browser acceptance as separate completion boundaries.
-- Completed phases must cite real test, browser, and migration evidence.
-  Screenshots and browser evidence live in [`../evidence/`](../evidence/).
+- Completed work must cite real test, browser, and migration evidence.
+- Screenshots and browser evidence live in [`../evidence/`](../evidence/).
+- New plans, when explicitly requested, must be task-specific and indexed here.

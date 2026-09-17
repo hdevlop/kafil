@@ -302,7 +302,6 @@ describe("najm-theme adoption — Kafil boundary", () => {
       "../src/app/(auth)/layout.tsx",
       "../src/app/(first-login)/layout.tsx",
       "../src/providers/AppProviders.tsx",
-      "../src/providers/KafilLocationProvider.tsx",
       "../src/najm.server.ts",
     ]) {
       const source = readSource(path);

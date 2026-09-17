@@ -1,0 +1,1426 @@
+# Dedicated auth lifecycle acceptance
+
+This document preserves the 10-test auth matrix and the historical work that
+led to the accepted auth and 20-test four-account baselines. Shared safety and
+runtime rules live in [`02-safety-and-runtime.md`](02-safety-and-runtime.md).
+
+## 11. Dedicated auth lifecycle isolation plan
+
+### 11.1 Reason and latest complete-attempt evidence
+
+The latest freshly authorized complete attempt ran once against the same
+healthy deployed application revision
+`8334f4c6478ec90565ca31f45eab7fdc29d101cb`:
+
+- guarded preflight passed all 11 booleans plus SSH identity, system Chrome,
+  forwarding-port availability, authenticated Mailpit, verified TLS,
+  `/login`, `/apply`, health, and readiness;
+- Playwright selected exactly `18` tests with one worker and zero retries;
+- steps 01 and 02 passed in `9.1s` and `20.7s`;
+- step 03 failed in `25.4s` at Sponsor A's first real logout after email login;
+- the exact `POST /api/auth/logout` returned `200` and navigation reached
+  `/login`, but the value-free cookie assertion found only the recognized
+  `session` kind still present; the browser-visible auth-boundary response list
+  contained only `/api/auth/logout:200`;
+- steps 04-16, the responsive unit, and diagnostics did not run;
+- terminal: `1 failed, 15 did not run, 2 passed (57.5s)`, native exit `1`;
+- the runner reported `MANAGED SSH TUNNEL CLOSED`, the forwarding port was
+  independently free, and the sole retained artifact was the value-free failed
+  `.last-run.json` marker with one failed test ID;
+- no error context was retained, and configured-secret plus
+  runtime-sensitive-pattern scans found zero matches;
+- step 16 did not run, so this attempt's disposable graph may remain.
+
+This is classified `PRODUCT`, currently suspected at the Najm session-recovery
+and logout ordering boundary. It is not yet a proved package root cause. The
+signature is consistent with a protected response that began with the old
+refresh cookie, recovered a signed `najm.session` server-side, and delivered
+that cookie after the successful logout response deleted the refresh cookie.
+Because middleware recovery is server-to-server, the browser may not expose a
+separate `/api/auth/session/recover` request. The isolated logout-response test
+proves deletion headers on that response only; it does not prove that no older
+response can write the session cookie afterward.
+
+Do not start another complete 18-test journey to investigate this hypothesis.
+First implement and pass the smallest dedicated auth lifecycle slice below.
+
+### 11.2 Value-free causal instrumentation
+
+Extend the auth diagnostic before changing product behavior. From immediately
+before the one logout click through the protected-denial assertion, retain only:
+
+- monotonically increasing event order;
+- browser-visible response method, pathname, and status;
+- whether a response contains a `najm.session` `set` or `delete` directive;
+- the remaining recognized cookie kind plus domain and path;
+- the final pathname and protected endpoint status.
+
+Parse cookie headers in memory and discard their values. Never retain or print
+cookie values, credentials, identities, tokens, response bodies, or raw
+`Set-Cookie` headers. Observe every browser-visible response in the interval,
+not only `/api/auth/logout`, `/api/auth/refresh`, and
+`/api/auth/session/recover`. Register observers before the action and remove
+them in `finally`.
+
+The diagnostic must distinguish these outcomes:
+
+1. logout omitted or scoped the `najm.session` deletion incorrectly;
+2. logout deleted it and a later browser-visible response reissued it;
+3. the remaining cookie has a different domain/path and was never targeted;
+4. no response-level writer is visible, which leaves server-side middleware
+   recovery or browser cookie-application ordering as the narrowed boundary.
+
+No retry, sleep, longer timeout, `clearCookies()`, forced click, mock,
+`page.route()`, raw header logging, or direct state mutation may be added.
+
+### 11.3 Source and package regression ladder
+
+Before any remote browser attempt:
+
+1. Add a red source contract for the value-free diagnostic and its exact event
+   fields.
+2. Add a package-boundary regression that overlaps a protected session
+   recovery with logout and completes the recovery response after logout. The
+   assertion must prove the final cookie contract, not only the contents of the
+   logout response.
+3. Keep the existing sequential `withAuthCookiePersistence()` regression; it
+   remains useful but is insufficient by itself.
+4. Exercise the real Next.js 16 proxy integration with `verifyAlways: true`, a
+   protected request, real logout, and the public `/login` navigation.
+5. Fix the narrowest owning layer only after the red regression identifies it.
+   If ownership is Najm, validate and publish the Najm package before updating
+   Kafil. If ownership is Kafil integration, keep the correction in the
+   existing auth/proxy boundary without adding a parallel auth system.
+6. Run the owning package gate, Kafil's focused auth tests, targeted lint and
+   typecheck, the root gate in section 9, and `db:generate` with no schema
+   change.
+
+### 11.4 Dedicated browser matrix
+
+Implement a separate serial remote auth spec rather than embedding these
+diagnostics in the financial journey. Reuse the guarded runner's exact-origin,
+one-worker, zero-retry, verified-TLS, no-artifact, and owned-tunnel contracts.
+The runner must select this spec explicitly and fail closed if it would also
+select the connected financial spec.
+
+The planned exact titles are:
+
+```text
+remote auth 01 - guarded setup and Admin lifecycle
+remote auth 02 - Family first-login and lifecycle
+remote auth 03 - Sponsor email lifecycle
+remote auth 04 - Sponsor phone lifecycle
+remote auth 05 - Sponsor same-context email-phone sequence
+remote auth 06 - cross-tab logout propagation
+remote auth 07 - in-flight protected response logout overlap
+remote auth 08 - stale session without refresh is denied and cleared
+remote auth 09 - supported cleanup and closure
+remote auth diagnostics - final context and cookie-writer assertions
+```
+
+Discovery-only listing must report exactly **10 tests in one file** before the
+first remote instruction is requested.
+
+Every principal lifecycle must use a fresh isolated context except the two
+tests whose contract intentionally requires same-context or same-context
+cross-tab behavior. Each applicable lifecycle must assert:
+
+- no recognized auth cookie before login;
+- one exact hydrated `POST /api/auth/login` with success;
+- the correct role surface and one protected read succeed;
+- one real UI logout produces one exact successful
+  `POST /api/auth/logout`;
+- navigation reaches `/login`;
+- `refreshToken` and `najm.session` are both absent;
+- the role's protected endpoint returns one exact `401`;
+- a real re-login succeeds when the matrix title includes a repeated or
+  alternate-identifier lifecycle.
+
+Specific boundaries:
+
+- Admin uses the configured existing account and proves logout/re-login without
+  creating a second Admin.
+- Family is provisioned through the deployed Admin UI, completes credential
+  setup, proves the temporary credential is rejected, then proves normal
+  login/logout/re-login.
+- Sponsor is created through the public application, exact OTP, approval, and
+  replay contracts, then proves email and normalized-phone login separately.
+- The same-context sequence performs email login/logout followed by phone
+  login/logout for the same Sponsor without replacing or clearing the context.
+- The cross-tab unit uses two pages in one context, proves package tab-sync
+  logout propagation, and proves the second page cannot refresh or restore the
+  authenticated state.
+- The overlap unit registers the protected request before triggering the one
+  logout action, proves the observed ordering without arbitrary delay, and
+  fails if any later response restores `najm.session`.
+- The stale-session unit begins only through an authorized product flow. It
+  must prove that `najm.session` without `refreshToken` cannot authenticate a
+  protected request and that the normal middleware response clears it. It must
+  not manufacture cookies or mutate browser state directly.
+
+The setup creates only the minimum disposable Family, Sponsor, applicant, and
+mailbox records required by these auth paths. The cleanup unit removes them
+through supported authenticated application APIs and exact-recipient Mailpit
+deletion, reports counts only, performs real logout, and closes every page and
+context. Database-only guarantees remain `NOT VERIFIED`.
+
+### 11.5 Promotion and one-attempt rule
+
+After the source/package correction is committed, published, deployed when
+required, and the exact new image is confirmed healthy:
+
+1. Obtain one fresh user instruction for the dedicated 10-test auth matrix.
+2. Run it once with one worker and zero retries; verify the header says exactly
+   `10` tests before interpreting results.
+3. On failure, preserve the native exit and sanitized last-writer fingerprint,
+   classify ownership, confirm tunnel/port cleanup, audit artifacts, and stop
+   without editing or rerunning.
+4. On success, require all nine auth units plus diagnostics to pass, supported
+   cleanup counts to be zero, the tunnel and artifact audit to be clean, and
+   the accepted evidence to be committed and pushed.
+5. Only then obtain a separate fresh instruction for one complete 18-test
+   four-account attempt. The auth-matrix authorization must never be reused for
+   the financial journey.
+
+### 11.6 Local correction evidence (2026-08-28)
+
+The deterministic package-boundary regression identifies Kafil's proxy
+configuration as the narrow owning layer:
+
+- installed `najm-auth@3.1.5` intentionally performs session recovery and
+  reissues `najm.session` on every protected request when `verifyAlways: true`;
+- the regression starts that recovery, applies the logout deletion first, then
+  completes the older protected response and proves that the final simulated
+  browser cookie state contains `najm.session`;
+- the corrected `verifyAlways: false` branch accepts the same valid signed
+  snapshot without recovery, emits no session-cookie directive, applies the
+  logout deletion, and proves the final session-cookie state is absent;
+- Kafil's API authorization remains authoritative, while missing, invalid, or
+  expired proxy snapshots still use Najm recovery.
+
+The removed Proxy prefetch detector was not a valid Next.js 16 boundary:
+internal Flight headers such as `next-router-prefetch` and
+`next-router-state-tree` are stripped before the Proxy function receives its
+`Request`. The Proxy now delegates directly to `auth.middleware(request)`.
+
+Value-free browser diagnostics now classify only recognized cookie kind,
+domain, and path, and record only response order, method, pathname, status, and
+the `najm.session` set/delete directive scope. Cookie values and raw
+`Set-Cookie` headers are discarded in memory and cannot enter an assertion or
+artifact.
+
+Local verification:
+
+- focused auth/proxy/runner/session tests: `34 passed`, `0 failed`;
+- root lint: passed;
+- root typecheck: passed;
+- root tests: web `314 passed`; server `336 passed`, `53` database-opt-in tests
+  skipped; seed `85 passed`; no failures;
+- production build: passed with the Dockerfile's documented throwaway
+  build-only environment after the ordinary local environment lacked
+  `EMAIL_PROVIDER` during page-data collection;
+- `db:generate`: passed with `No schema changes, nothing to migrate`.
+
+No remote browser test was run under the implementation instruction. The
+separate 10-test spec and fail-closed runner in section 11.4 are implemented as
+recorded below; a fresh explicit instruction is still required for their one
+remote execution.
+
+### 11.7 Dedicated auth-matrix implementation evidence (2026-08-28)
+
+The remote auth lifecycle is now a separate serial spec with the exact ten
+titles in section 11.4. Its dedicated command can select only
+`test/e2e/auth-lifecycle.remote.ts`; it accepts no grep and cannot co-select the
+connected financial spec. Both remote commands reuse one guarded preflight and
+owned-tunnel implementation, preserving the exact origin, verified TLS, system
+Chrome, one worker, zero retries, disabled browser artifacts, authenticated
+loopback Mailpit, and tunnel cleanup contracts.
+
+The matrix creates only one disposable Family and one Sponsor/applicant. It
+proves Admin logout/re-login, Family credential setup and temporary-credential
+denial, Sponsor email and normalized-phone lifecycles, the same-context
+email/phone sequence, cross-tab logout propagation, an authenticated protected
+request initiated before logout, post-logout protected denial, supported
+Family/applicant cleanup, exact-recipient mailbox cleanup, and counts-only
+closure diagnostics.
+
+Each real logout starts the value-free response recorder before the click and
+keeps it active until one exact protected `401` is consumed. The retained
+in-memory evidence contains only alias, final pathname, protected status, event
+order, method, pathname, response status, and `najm.session` set/delete scope.
+Every unit fails if a session writer is observed after the logout deletion or
+if any recognized auth cookie remains.
+
+An exact “session cookie present while only the HttpOnly refresh cookie is
+removed” state cannot be reached through a supported browser product action:
+logout clears both, and manufacturing or filtering HttpOnly cookies would be
+direct browser-state mutation forbidden by this plan. Therefore the exact
+session-only construction remains covered by the deterministic package-boundary
+regression, while remote auth unit 08 proves the reachable black-box boundary:
+after real logout, protected API and route access are denied and no stale auth
+cookie can survive or recover the session.
+
+Local source evidence before the final root gate:
+
+- the new source contract was red with `0 passed, 3 failed` before the auth spec
+  and runner existed;
+- focused auth/runner regressions pass with `27 passed, 0 failed`;
+- targeted ESLint and the web typecheck pass;
+- discovery-only Playwright listing with non-secret placeholders reports
+  exactly `10 tests in 1 file` without launching Chrome, opening an SSH tunnel,
+  or contacting the VPS.
+
+The complete local gate also passes: root lint and typecheck; web `317 passed`;
+server `336 passed` with `53` database-opt-in tests skipped; seed `85 passed`;
+the production build with Dockerfile-equivalent command-scoped throwaway
+values; and `db:generate` with `No schema changes, nothing to migrate`.
+
+No remote preflight or browser attempt was executed. The next remote action is
+exactly one dedicated auth-matrix command after the application correction is
+committed, published, deployed, and the exact revision is confirmed healthy,
+followed by a fresh explicit user instruction.
+
+### 11.8 First dedicated auth attempt and test-harness correction (2026-08-28)
+
+Application revision `ff6a84d750ed5654cdda151894dcf9f82775db79` was
+committed, pushed, published, deployed, confirmed as the exact live OCI
+revision, and healthy before the authorized attempt. All eleven guarded
+preflight checks passed, including exact target/origin, SSH, system Chrome,
+owned Mailpit forwarding, `/login`, `/apply`, health, and readiness. Playwright
+then reported exactly `10 tests using 1 worker` with zero configured retries.
+
+The attempt stopped natively after Admin passed and Family failed while looking
+up the newly provisioned Family: `1 failed`, `8 did not run`, `1 passed` in
+`19.0s`, exit `1`. The owned tunnel closed and the forwarding port was free.
+The only retained artifact was Playwright's value-free failed-run marker; it
+contained no configured secret, credential, identity, cookie, token, database
+URL, screenshot, trace, video, or browser payload. Cleanup had not yet run, so
+the disposable Family from this attempt may remain for later supported cleanup.
+
+The failure was a deterministic test-harness defect, not evidence of a product
+search failure. The helper first unwrapped Najm's normal `{ data: [...] }` list
+envelope with `responseRecord()` and then tried to read `.data` from the
+resulting array, always returning zero rows. It also discarded the Family-list
+HTTP status before asserting the lookup. Server source confirms that Family
+search includes name, guardian name, email, and phone.
+
+The correction now parses exactly one direct Najm list envelope and retains
+explicit `200` assertions for both Family and applicant lookups. A focused
+auth-only grep variable was added so promotion can exercise the smallest
+prerequisite title range without allowing the financial spec to be selected;
+the complete auth command still selects all ten titles. Final diagnostics are
+strict about cleanup for a complete run and validate only the logout evidence
+actually produced by an intentionally focused range.
+
+Correction evidence:
+
+- the response-envelope regression and missing-status source contract were red
+  with `2 passed`, `2 failed`, and `1 error` before the correction;
+- focused response/runner regressions pass with `5 passed`, `0 failed`;
+- the response, auth-runner, and shared-runner regressions pass with `24
+  passed`, `0 failed` and `448` assertions;
+- targeted ESLint and the web typecheck pass;
+- discovery-only listing reports exactly `3 tests in 1 file` for the focused
+  Admin/Family/diagnostics range and exactly `10 tests in 1 file` for the
+  complete matrix without opening Chrome, SSH, or the VPS;
+- the root lint, typecheck, and test stages pass; the production build passes
+  with the Dockerfile's documented command-scoped build-only values; and
+  `db:generate` reports `No schema changes, nothing to migrate`.
+
+This correction changes only the Playwright spec, guarded runner, tests, and
+this plan. It does not change the deployed application runtime, so section 8's
+test-only promotion path may validate it against the already healthy exact
+deployment before the accepted browser evidence is committed and pushed.
+
+### 11.9 Focused promotion and cross-tab integration correction (2026-08-28)
+
+The first focused promotion selected Admin, Family, and passive diagnostics:
+exactly `3 tests using 1 worker`, zero retries. Admin and Family both passed,
+proving the corrected list-envelope parser and the complete Family
+first-login/logout/re-login lifecycle. Passive diagnostics then found one
+unexpected Admin `console-error`; the attempt ended `2 passed`, `1 failed` in
+`58.0s`, exit `1`. The tunnel closed, the forwarding port was free, and the
+sole failed-run marker had zero configured-secret or auth-token matches.
+
+Because the original diagnostic intentionally discarded all console content,
+it could not distinguish an HTTP resource failure from another console class.
+A red/green helper now converts unexpected console messages into a bounded,
+value-free fingerprint containing only a known category, optional HTTP status,
+and URL pathname. It discards arbitrary text, query values, origins, and all
+console arguments. The narrower Admin-plus-diagnostics range then passed
+exactly `2 tests using 1 worker` in `15.8s`; its closure and artifact audits
+were clean.
+
+The complete matrix was then invoked with no grep. Its header was exactly `10
+tests using 1 worker`, zero retries. Auth units 01 through 05 passed: Admin,
+Family, Sponsor email, Sponsor phone, and the same-context email/phone sequence.
+Unit 06 failed because logout in the first Sponsor tab left the second tab on
+`/dashboard` for the full 30-second assertion interval. Units 07 through 09
+and diagnostics did not run. The native result was `5 passed`, `1 failed`, `4
+did not run` in `2.1m`, exit `1`; the tunnel, port, marker, and secret audits
+were clean. Supported cleanup had not run, so the attempt's disposable Family,
+Sponsor, applicant, and exact-recipient mailbox records may remain for the next
+supported cleanup.
+
+Installed `najm-auth@3.1.5` owns BroadcastChannel synchronization: on remote
+logout it clears the receiving tab's client auth state, blocks authenticated
+requests, notifies subscribers, and emits the logout event. Navigation is an
+application integration responsibility. Kafil's protected dashboard shell did
+not subscribe with Najm's documented required-session redirect hook, so the
+server-rendered shell remained visible after the receiving state became
+unauthenticated.
+
+The narrow correction mounts `useSession({ required: true, redirectTo:
+"/login" })` inside `DashboardShellBody`, which exists only under the
+server-protected dashboard layout. Public routes therefore remain unaffected,
+while a local or cross-tab Najm logout moves every mounted protected dashboard
+to `/login`. The integration source contract was red with `0 passed`, `1
+failed`, then the combined auth response, diagnostic, runner, shared-runner,
+and tab-sync regressions passed with `27 passed`, `0 failed`, and `454`
+assertions. Targeted ESLint and web typecheck also pass. Because this correction
+changes runtime frontend behavior, it must pass the root gate and be committed,
+published, deployed, and confirmed healthy before remote auth unit 06 is
+re-entered.
+
+The complete correction gate passes: root lint and typecheck; web `322 passed`;
+server `336 passed` with `53` database-opt-in tests skipped; seed `85 passed`;
+production build with the Dockerfile-equivalent command-scoped build values;
+and `db:generate` with `No schema changes, nothing to migrate`.
+
+### 11.10 Published cross-tab proof and residue-safe cleanup (2026-08-29)
+
+The runtime correction was committed and pushed as full revision
+`cf87a29e30b4e302ba58327133333c0320916038`. GitHub verification, production
+image publication, and the Dokploy trigger passed. A separate value-free,
+read-only Docker check observed the old healthy revision during the asynchronous
+handoff, then required exactly one Compose `service=app` container at the full
+target OCI revision with Docker health `healthy` before browser promotion.
+
+The smallest state-complete auth 06 prerequisite then ran once on that exact
+healthy revision. Guarded preflight passed every boolean, SSH, system Chrome,
+owned Mailpit forwarding, TLS page, health, and readiness boundary. Playwright
+reported exactly `7 tests using 1 worker`, zero retries: auth units 01 through
+06 plus passive diagnostics all passed in `2.0m`; cross-tab logout itself
+passed in `7.6s`. The tunnel closed, the forwarding port was free, and the sole
+passed-run marker had zero configured-secret or auth-token matches.
+
+Interrupted earlier attempts left disposable auth-matrix records before unit 09
+could run. The supported cleanup now selects residue only when both the exact
+reserved `Auth Family auth-...` or `Auth Sponsor auth-...` name shape and its
+matching `c4a-family.test` or `c4a-sponsor.test` email shape are present. It
+deletes those records through authenticated Family and Applicant application
+APIs, whose approved-Applicant deletion owns the linked Sponsor graph. Mailpit
+cleanup searches the reserved Sponsor test domain, loads message details, and
+deletes only exact auth-matrix recipient shapes. It retains and reports counts
+only. Near-match identities and other `.test` records are excluded by a red/
+green predicate regression. The focused cleanup, diagnostic, response, runner,
+shared-runner, and tab-sync range passes with `29 passed`, `0 failed`, and `462`
+assertions; targeted ESLint and web typecheck pass. This is test/spec/plan-only
+and requires no new application deployment before the final complete matrix.
+
+The complete ten-test command then ran once against the same exact healthy
+revision. Auth units 01 through 09 all passed, including overlap, stale-session
+denial, accumulated residue deletion, counts-only closure, and Admin logout.
+Final diagnostics alone failed with the new bounded fingerprint
+`resource-http;status=401;path=/api/presets`; the native result was `9 passed`,
+`1 failed` in `1.9m`, exit `1`. The cleanup unit had already completed, the
+tunnel closed, the port was free, and the sole failed-run marker had zero
+configured-secret or auth-token matches.
+
+The fingerprint identified a Kafil UI lifecycle defect rather than an auth
+denial defect. `AdminThemeSettingsSheets` mounted Najm's query-owning
+`NThemeSettingsProvider` whenever the role was Admin, even while both Theme and
+Branding sheets were closed. Its unnecessary protected Presets read could
+therefore overlap the final logout and correctly receive `401`. The narrow
+correction keeps the one shared provider mounted while either Theme or Branding
+is active—preserving drafts across sheet-to-sheet switching—but returns `null`
+while both are closed. A red source contract identified the idle mount; the
+focused tab-sync, cleanup, auth-runner, and theme-adoption range then passed
+with `20 passed`, `0 failed`, followed by targeted ESLint and web typecheck.
+Because this changes runtime query lifecycle, it requires a new complete root
+gate, commit, image, deployment, and exact healthy-revision check before the
+next complete auth proof.
+
+### 11.11 Idle-query deployment and overlap-route correction (2026-08-29)
+
+The idle theme-query correction was committed and pushed as full revision
+`2f9c6da86d13fd0483e525aeafd7e01c7480d23e`. GitHub verification, production
+image publication, and the Dokploy trigger passed. A separate read-only Docker
+check then required exactly one Compose `service=app` container at that full
+OCI revision with Docker health `healthy`.
+
+The complete auth matrix ran against that exact healthy revision with the
+guarded preflight fully green, exactly `10 tests using 1 worker`, and zero
+retries. Auth units 01 through 09 all passed, including supported cleanup and
+Admin logout. The prior `/api/presets` fingerprint did not recur. Diagnostics
+alone failed with `resource-http;status=404;path=/sponsor`; the native result
+was `9 passed`, `1 failed` in `1.6m`, exit `1`. The tunnel closed, the forwarding
+port was free, and the sole failed-run marker had zero configured-secret or
+auth-token matches.
+
+This was a browser-contract defect in auth unit 07. `/sponsor` is protected by
+the proxy but has no application page, while `/sponsor/support` is the deployed
+Sponsor surface. The overlap unit now starts its observed request against that
+real route and requires the completed response to be exactly `200`; its source
+contract forbids returning to the nonexistent root route. The regression was
+red before the change and passes afterward. The complete local gate passes:
+root lint and typecheck; web `325 passed`; server `336 passed` with `53`
+database-opt-in tests skipped; seed `85 passed`; the production build with
+Dockerfile-equivalent command-scoped build values; and `db:generate` with `No
+schema changes, nothing to migrate`.
+
+The real route exposed one additional safe race outcome: when the protected
+render completed after logout, the client attempted one `POST
+/api/auth/refresh`, which the deployed server correctly denied with `401`.
+Unit 07 now registers that exact denial before starting the overlap and treats
+its occurrence as timing-dependent; it neither permits another method, path,
+or status nor weakens the required logout, cookie absence, protected-read
+denial, and no-late-writer assertions. The source contract was red before this
+registration and passes afterward. The complete local gate was rerun with the
+same green counts and no schema drift.
+
+The smallest state-complete promotion range then passed exactly `5 tests using
+1 worker` in `1.3m`: auth units 01 through 03, auth unit 07, and passive final
+diagnostics. The guarded preflight was fully green; the managed tunnel closed;
+the forwarding port was free; and the sole passed-run marker contained no
+configured-secret or auth-token match.
+
+The unfiltered dedicated auth command then passed exactly `10 tests using 1
+worker`, zero retries, in `2.6m` against the same sole healthy deployed
+revision `2f9c6da86d13fd0483e525aeafd7e01c7480d23e`. All nine auth units and final
+diagnostics passed. Supported application and exact-recipient mailbox cleanup
+retained zero matrix records, every context closed, every logout ended at
+`/login` with both recognized auth cookies absent, every protected denial was
+`401`, and no response set `najm.session` after its logout deletion. The runner
+reported `MANAGED SSH TUNNEL CLOSED`; local port `8025` was free; the artifact
+directory contained only the passed `.last-run.json` marker; and the final
+secret/token scan found zero matches. The dedicated remote auth lifecycle is
+accepted. The separate 18-test financial four-account journey was not run.
+
+### 11.12 Najm Auth 3.2.0 DX rollout and renewed remote proof (2026-08-29)
+
+Najm Auth `3.2.0` was published from attributable release commit
+`ed095c8a15a95c8bcc5d795b529985dd1fc6c7a6` after its package tests, API
+surface check, and a real Next.js 16 production fixture passed. The release
+adds the composed `auth.proxy` and `auth.routeHandlers` integration, explicit
+`proxySessionMode`, all supported route-handler verbs, cookie persistence, and
+dynamic route-context forwarding. Kafil now pins that registry release and
+uses the shared composition without app-owned auth cookie plumbing.
+
+Kafil revision `94727ccc3c81847880583a11a029b61de0149f84` was committed and
+pushed. GitHub Actions run `33254307709` passed exact-revision verification,
+published the production image, and triggered Dokploy. A separate value-free,
+read-only Docker check then observed exactly one running Kafil container whose
+OCI revision was the full target SHA and whose Docker status was `healthy`.
+
+The first post-deploy auth attempt exposed a cold login-hydration timeout in
+Family setup. A stabilized rerun cleared that boundary, then proved a bounded
+cross-tab race where the receiving tab may issue one correctly denied `POST
+/api/auth/refresh` with status `401`. Unit 06 now permits only that exact
+optional denial and includes the receiving tab in the no-late-cookie-writer
+observation. Subsequent interrupted attempts made two further browser-contract
+boundaries explicit: successful document login waits for destination
+`DOMContentLoaded`, and unit 07 starts a `keepalive` read against the direct
+Sponsor-accessible protected `/family` surface. The overlap accepts only an
+authenticated `200` or a post-logout `307` whose exact destination is
+`/login`; both remain subject to cookie-deletion, protected-denial, and
+no-session-rewrite assertions. Focused runner/diagnostic tests, ESLint, and web
+typecheck passed after each correction.
+
+The final unfiltered command `bun run --cwd apps/web test:e2e:auth:remote`
+passed exactly `10 tests using 1 worker`, zero retries, in `2.2m` against the
+same healthy deployed revision. All nine auth units and passive diagnostics
+passed, including Admin and Family lifecycle, Sponsor email and phone login,
+same-context identity switching, cross-tab logout, response/logout overlap,
+stale-session denial, supported application/mailbox cleanup, context closure,
+cookie absence, protected `401` responses, and no late `najm.session` writer.
+
+The managed SSH tunnel closed and local Mailpit port `8025` was free. The
+artifact directory retained only the passed `.last-run.json` marker;
+screenshots, traces, and videos were disabled, and a configured-secret scan
+found zero matches. The final repository gate passed with web `325 passed`,
+server `336 passed` plus `53` database-opt-in skips, seed `85 passed`, a
+production build using the documented build-only values, and `db:generate`
+reporting `No schema changes, nothing to migrate`. The dedicated remote auth
+lifecycle remains accepted on Najm Auth `3.2.0`. The separate 18-test financial
+four-account journey was not run.
+
+### 11.13 Financial attempt transport failure and supervised-tunnel correction (2026-08-30)
+
+The next freshly authorized financial attempt invoked the unfiltered dedicated
+command once. Guarded preflight passed all eleven boolean contracts, SSH
+identity, system Chrome, forwarding-port availability, authenticated Mailpit,
+verified TLS, `/login`, `/apply`, health, and readiness. Playwright then
+reported exactly `18 tests using 1 worker` with zero retries.
+
+Remote steps 01 and 02 passed in `11.7s` and `29.9s`. Step 03 failed in `44.8s`
+when its concurrently handled Sponsor A OTP read could no longer connect to the
+runner-owned loopback Mailpit forward: `ECONNREFUSED`. Steps 04 through 16, the
+responsive unit, and diagnostics did not run. The native result was `1 failed`,
+`15 did not run`, and `2 passed` in `1.5m`, exit `1`. The runner reported
+`MANAGED SSH TUNNEL CLOSED`; the forwarding port was free; no matching owned
+SSH process remained; and the only retained artifact was the failed
+`.last-run.json` marker with one failed test ID. The referenced error context
+was not retained. No screenshot, trace, video, configured-secret match, or
+runtime-sensitive-pattern match remained. Supported cleanup did not run, so
+this attempt's disposable Family may remain.
+
+This is classified `ENVIRONMENT`, at the managed SSH-forward lifecycle. The
+application result beyond step 02 is not classified. Preflight proved the
+forward was initially reachable, but the previous runner checked the SSH
+process only while waiting for initial Mailpit readiness, discarded SSH
+stderr, and then awaited Playwright alone. It could therefore surface a later
+forward loss only as the mailbox fetch failure.
+
+The narrow test/runner correction now supervises the SSH and Playwright exit
+promises as one lifecycle. If the tunnel exits first, it stops only the owned
+Playwright process and emits a bounded value-free `ENVIRONMENT` fingerprint
+containing only an allowlisted reason and numeric SSH exit code. SSH stderr is
+drained into an in-memory tail capped at 8192 characters, classified as one of
+the fixed transport/authentication/forwarding categories, and otherwise
+discarded; raw stderr is never printed or retained. A stderr-reader error maps
+to `unknown` without producing an unhandled rejection. The SSH keepalive
+interval remains 15 seconds while the missed-reply allowance increases from
+two to four, tolerating a short network stall without adding a browser retry,
+mailbox mutation retry, sleep, timeout increase, or journey replay.
+
+Local correction evidence:
+
+- the focused runner regression was red with `0 passed`, `1 failed`, and `1`
+  load error because the supervision and classifier exports did not exist;
+- the same focused regression is green with `21 passed`, `0 failed`, and `409`
+  assertions;
+- the combined financial/auth runner range passes with `24 passed`, `0 failed`,
+  and `467` assertions;
+- web typecheck and targeted ESLint pass;
+- the complete root lint and typecheck gates pass; web tests pass with `327`,
+  server tests with `336` plus `53` database-opt-in skips, and seed tests with
+  `85`;
+- the first ordinary production-build command reached successful compilation
+  and TypeScript but stopped during page-data collection because the local
+  `.env` lacks `EMAIL_PROVIDER`; the documented Dockerfile-equivalent,
+  command-scoped build-only values then produced a successful build without
+  modifying `.env`;
+- `db:generate` reports `No schema changes, nothing to migrate`.
+
+This runner-only correction does not change the deployed Kafil application and
+cannot guarantee that an external SSH connection never fails. It makes a
+tunnel loss immediate and attributable and reduces sensitivity to brief missed
+keepalives while preserving fail-closed acceptance. No remote preflight or
+browser attempt was run after the correction. A new remote invocation requires
+a fresh user instruction under the one-attempt rule.
+
+That fresh instruction then authorized the smallest state-complete promotion
+range: remote steps 01 through 03 plus passive diagnostics. The corrected
+runner's guarded preflight passed all eleven boolean contracts, SSH identity,
+system Chrome, forwarding-port availability, authenticated Mailpit, verified
+TLS, `/login`, `/apply`, health, and readiness. Playwright reported exactly `4
+tests using 1 worker` with zero retries.
+
+Step 01 passed in `8.6s`, step 02 in `23.4s`, and step 03 in `28.9s`. Step 03
+completed Sponsor A's exact OTP lookup/deletion, pending-login denial,
+approval/replay, email and normalized-phone login, real logout, recognized
+cookie absence, and protected denial without another tunnel interruption.
+Passive diagnostics passed in `42ms` with no unexpected page errors, console
+errors, failed requests, or unexplained HTTP errors. Steps 04 through 16 and
+the responsive unit were excluded by the focused grep; supported cleanup did
+not run, so disposable records from this and interrupted earlier attempts may
+remain.
+
+The terminal result was `4 passed (1.1m)`, native exit `0`. The runner reported
+`MANAGED SSH TUNNEL CLOSED`; the configured forwarding port was free; no owned
+SSH-forward process remained; and the temporary grep was restored. The only
+artifact was a passed `.last-run.json` marker with zero failed test IDs. No
+error context, screenshot, trace, video, configured-secret match, or runtime-
+sensitive-pattern match remained.
+
+The supervised-tunnel correction and focused Sponsor A boundary are accepted.
+Promotion now requires the accepted test/plan evidence to be committed and
+pushed, followed by a separate fresh instruction for one complete unfiltered
+18-test attempt. This focused authorization must not be reused for that run.
+
+### 11.14 Second transport reset and private-mailbox migration (2026-08-30)
+
+After revision `3e25610e86e11d012d3cdb1ac2d026a96940e676` was pushed and the
+deployed Kafil application was confirmed at that exact healthy revision, one
+freshly authorized unfiltered attempt started. Guarded preflight passed, and
+remote steps 01 through 04 passed. During the remaining serial journey, the
+managed SSH process exited with code `255` and the bounded classification
+`connection-reset`. The runner stopped its owned Playwright process, so there
+was no terminal Playwright summary and no application classification after
+step 04. The tunnel closed, no runner-owned process or forwarding port
+remained, and the value-free artifact audit was clean. Supported step-16
+cleanup did not run, so disposable application/mailbox residue may remain.
+
+This is the second independent loss of an SSH forward after initial Mailpit
+preflight. Keeping more SSH supervision would improve attribution but would
+not remove the transport dependency. The active runner therefore no longer
+opens SSH at all. Its replacement contract is:
+
+- the public browser target remains exactly `https://kafala360.ma` with normal
+  TLS verification;
+- the mailbox endpoint is exact private HTTPS on a MagicDNS `*.ts.net` host and
+  a required explicit port;
+- the separately configured private hostname must exactly match the endpoint;
+- every legacy SSH/forwarding environment name must be absent;
+- `tailscale status --json` must report backend `Running` before any mailbox or
+  browser operation;
+- unauthenticated Mailpit stays `401`, authenticated Mailpit stays `200`, and
+  mailbox credentials remain app-specific;
+- `KAFIL_E2E_TAILSCALE_DISCONNECT_AFTER=true` makes the runner execute
+  `tailscale down` after success or failure and fail the run if disconnecting
+  fails. It disconnects only the local test device; the VPS node and its
+  tailnet-only Serve declaration remain available.
+
+The reusable VPS helper accepts an app name, the app's loopback Mailpit port,
+and its dedicated tailnet HTTPS port. It refuses a Mailpit API that does not
+deny unauthenticated access, then configures persistent tailnet-only Tailscale
+Serve to `http://127.0.0.1:<mailpit-port>`. The grants example permits only TCP
+`18025` to the Kafil mailbox tag and TCP `28025` to the School mailbox tag. It
+does not grant SSH, database, Redis, Docker, or public application access.
+School must run a separate Mailpit process and volume; credentials alone are
+not a data-isolation boundary.
+
+A value-free audit found Tailscale absent on both the Windows test machine and
+the VPS. Repository implementation can therefore be verified locally, but the
+route cannot be activated without the tailnet owner's external enrollment.
+Activation requires, in order:
+
+1. install Tailscale on the Windows test machine and VPS and enroll both in the
+   same tailnet;
+2. apply the least-privilege identities/grants from
+   `deploy/tailscale-grants.example.hujson` with real tailnet identities;
+3. tag the VPS for Kafil and run
+   `bash scripts/configurePrivateMailboxVps.sh kafil 18025 18025` on it;
+4. remove all legacy SSH/forwarding names from the ignored root `.env`, set the
+   exact private hostname and HTTPS URL, retain Kafil's Mailpit credentials,
+   and choose the explicit disconnect value;
+5. run the guarded remote preflight once and audit the disconnect postcondition.
+
+No browser journey is authorized by this infrastructure migration. After the
+private preflight passes and the same application revision remains healthy,
+the next unfiltered 18-test attempt still needs its own fresh instruction under
+the one-attempt rule.
+
+Local migration verification is green: the combined financial/auth runner
+range passes with `23 passed`, `0 failed`, and `475` assertions; targeted
+ESLint, web typecheck, and Bash syntax validation pass; root lint, typecheck,
+and every standard web/server/seed test pass; the production build passes with
+the documented command-scoped build-only values; and `db:generate` reports `No
+schema changes, nothing to migrate`. No remote preflight or browser test was
+run.
+
+### 11.15 Standalone Mailpit hub migration (2026-08-30)
+
+The tailnet route in section 11.14 was not activated. The user selected a
+reusable standalone mail-test service that can support Kafil, School, and later
+VPS applications without installing a client VPN or opening an SSH session for
+normal browser tests. This section supersedes only section 11.14's proposed
+Tailscale activation; it does not rewrite the earlier SSH failure evidence.
+
+The hub is independent from the Kafil application image:
+
+- `deploy/mail-test-hub/compose.yml` runs pinned Mailpit `v1.30.0`, its
+  persistent volume, and a small Bun gateway;
+- Mailpit supplies its existing human dashboard with a strong Admin Basic-auth
+  credential;
+- the gateway accepts a distinct bearer token per application and permits only
+  authenticated info, search, detail, and exact batch deletion;
+- each token has exclusive recipient domains. A search outside the scope is
+  denied, and a detail or delete is hidden unless every recipient on the
+  message belongs to the authenticated app;
+- Mailpit's send, relay, tag, global list, and administrative APIs are not
+  exposed by the gateway;
+- SMTP, Mailpit HTTP, and gateway HTTP remain on the internal
+  `mail-test-hub` Docker network. Host bindings are loopback-only. The new
+  default ports `59025`, `59026`, and `59027` intentionally avoid the existing
+  Kafil Mailpit HTTP binding on `58025` during migration;
+- the existing host HTTPS proxy publishes separate dashboard and gateway
+  hostnames on normal port `443`. No raw Mailpit, SMTP, gateway, SSH, or VPN
+  port becomes public;
+- Mailpit prunes messages by both count and age. The service stays running;
+  there is deliberately no public start/stop endpoint.
+
+The remote runner now requires exact `https://<configured-api-host>` with no
+custom port or path, a Kafil token of at least 32 characters, and absence of
+all legacy SSH/forwarding/Tailscale names. Preflight proves unauthenticated
+`401`, authenticated gateway identity `mail-test-gateway`, exact app scope
+`kafil`, system Chrome, target TLS, pages, health, and readiness. It forwards
+only the bearer token to Playwright and always reports
+`NO MANAGED MAILBOX TRANSPORT`; it starts and stops no SSH, Tailscale, forward,
+Docker, or Mailpit process.
+
+VPS activation requires external infrastructure authority and remains pending:
+
+1. create dashboard and API DNS names for the VPS;
+2. create `/opt/mail-test-hub/hub.env` from the committed example, generate
+   independent dashboard, Kafil, and School credentials, and set mode `0600`;
+3. run `bash scripts/configureMailTestHubVps.sh` from the deployed repository
+   release; this validates Compose, starts the isolated hub, and proves both
+   loopback authentication boundaries without printing credentials;
+4. merge `deploy/mail-test-hub/Caddyfile.host.example` into the existing host
+   proxy with the real DNS names, validate, reload, and prove normal TLS;
+5. configure each acceptance application to use the standalone hub's unique
+   alias on its existing Docker network and SMTP port `1025`; for Kafil on
+   Dokploy this is `najmstack-mailpit`. Keep the old Kafil Mailpit running until
+   the new delivery and dashboard are proved;
+6. replace the ignored local remote-runner mailbox settings with the exact API
+   hostname, HTTPS origin, and Kafil token; remove legacy SSH, forwarding,
+   private-host, and Tailscale names;
+7. run guarded preflight once. Do not run the browser journey under this
+   infrastructure instruction.
+
+The gateway source test was red before the service module existed, then passed
+with `4 passed`, `0 failed`, covering strict configuration, unauthenticated
+denial, Kafil/School search and detail isolation, and exact scoped deletion.
+The remote runner contract was then observed red against its former Tailscale
+implementation. The combined gateway, financial-runner, and auth-runner source
+range passes with `27 passed`, `0 failed`, and `503` assertions. Targeted ESLint
+and the web typecheck pass. The full root lint and typecheck gates pass; standard
+tests pass with web `330`, server `336` plus `53` database-opt-in skips, and seed
+`85`. The ordinary production build reached successful compilation and
+TypeScript before the documented missing local `EMAIL_PROVIDER` condition; the
+Dockerfile-equivalent command-scoped build-only values then produced a complete
+production build without modifying `.env`. A final unchanged gate repeat hit
+one transient Google Fonts fetch failure; its single unchanged retry completed
+the production build. `db:generate` reports `No schema changes, nothing to
+migrate`.
+
+This Windows verification host has neither Bash nor Docker installed, so local
+`bash -n` and `docker compose config` execution were unavailable. The source
+contracts pin loopback bindings, the internal Docker network, both unauthenticated
+`401` boundaries, and the no-SSH/no-Tailscale runner lifecycle, but the VPS must
+still perform native Bash and Compose validation before activation. No VPS
+command, remote preflight, or browser journey has been run for this migration.
+
+An external edge probe on 2026-08-30 confirmed that the proposed dashboard
+name `mail.kafala360.ma` resolves to the VPS, but verified HTTPS fails because
+the presented certificate chain is not publicly trusted; an explicitly
+insecure diagnostic request reaches the edge and returns `404`. The proposed
+gateway name `mail-api.kafala360.ma` does not resolve. Activation is therefore
+blocked before Compose or guarded preflight: create the API DNS record, install
+both host routes in the existing proxy, and obtain publicly trusted certificates.
+The insecure request is diagnostic evidence only and is forbidden in the
+runner, which must retain normal TLS verification.
+
+On 2026-08-31 the user adopted the neutral infrastructure domain
+`najmstack.com`. Its root and wildcard `A` records resolve publicly to the same
+VPS, including `mail.najmstack.com`, `mail-api.najmstack.com`, and
+`deploy.najmstack.com`. The first two names replace the earlier proposed Kafala
+mail hostnames; `deploy.najmstack.com` is also the intended replacement for the
+existing Dokploy management hostname. Migration must be additive: configure
+and verify the new Dokploy route, publicly trusted TLS, and authenticated login
+before removing any old Dokploy DNS or proxy route. Likewise, retain the old
+Mailpit instance and old application SMTP settings until the shared hub proves
+authenticated dashboard/API access and application delivery. DNS removal is a
+separate cleanup step after those proofs, not part of initial activation. No
+guarded preflight or browser journey was run for the DNS change.
+
+The first VPS activation handoff on 2026-08-31 made no changes because its
+mandated checkout path `/opt/kafil/current` existed but was empty. It reported
+the three new hostnames as failed, but independent queries through both
+`1.1.1.1` and `8.8.8.8` resolved `deploy.najmstack.com`,
+`mail.najmstack.com`, and `mail-api.najmstack.com` to the intended VPS. Those
+DNS failures are therefore unaccepted probe output, not a public DNS blocker.
+The next VPS action is read-only discovery of the real Dokploy installation,
+edge owner, deployed Kafil artifact, and repository/release location. It must
+not run guarded preflight or change infrastructure until the actual paths and
+deployment owner are known.
+
+Read-only VPS discovery then established the actual topology: Dokploy
+`v0.29.13` runs in Swarm mode; `dokploy-traefik` owns ports `80` and `443`, and
+the Dokploy service owns port `3000`. Its current management hostname is
+`deploy.kafala360.ma`. Kafil is a Dokploy Compose deployment whose runtime code
+is materialized at `/etc/dokploy/compose/kafil-demo-vdadlv/code`, without a Git
+checkout. The existing Kafil Mailpit remains running with a loopback binding.
+The deployed code does not contain the mail-hub files because the completed
+hub/runner migration is still an uncommitted local change on `main` at
+`3e25610`; `origin/main` is at the same pre-migration revision. Consequently,
+no VPS prompt can safely activate the committed design yet. Publication of the
+audited local change is the next boundary and may trigger Dokploy, so it
+requires explicit authorization before commit/push. No VPS state, SMTP setting,
+remote preflight, browser journey, or old DNS record changed during discovery.
+
+The audited migration was published to `origin/main` as `2997879`. Because the
+discovered edge is Dokploy Traefik rather than host Caddy, a follow-up source
+contract adds an optional Compose override for the existing Dokploy edge
+network, stable authenticated dashboard/gateway aliases, and a matching
+Traefik dynamic-file example. The base deployment retains loopback-only host
+bindings and its isolated network; the override publishes no raw port. Kafil
+and School remain distinct gateway scopes. SMTP migration remains deferred
+until public dashboard/API authentication passes and the durable client-network
+attachment for each Dokploy Compose application is known.
+
+The hub was then activated from exact source commit `f3522b3` on the discovered
+Dokploy edge. Native Bash and merged Compose validation passed;
+`dokploy-network` provides Traefik reachability; hub bindings remain
+loopback-only; and the listed raw ports are blocked publicly. Normal public TLS
+returns the required unauthenticated `401` for both `mail.najmstack.com` and
+`mail-api.najmstack.com/api/v1/info`. Authenticated identity checks passed for
+the distinct `kafil` and `school` gateway scopes. The existing Kafil Mailpit
+remains running and neither application's SMTP configuration changed. School
+was identified as Dokploy Compose runtime `school-school-lghkg3`, on the edge
+network with a discoverable SMTP contract. `deploy.najmstack.com` remains the
+only infrastructure blocker because assigning the Dokploy server domain needs
+an authenticated administrator action; its TLS is not ready. No remote
+preflight or browser journey was run, and no old DNS record is safe to remove
+yet.
+
+The authenticated Dokploy administrator then assigned
+`deploy.najmstack.com` with HTTPS and Let's Encrypt. Interactive login passed,
+and an independent normal-TLS probe returned `200`. The mail dashboard and API
+continued to return their required unauthenticated `401` responses. The former
+`deploy.kafala360.ma` route now returns `404`; its DNS record is retained only
+until Kafil and School deployment integrations are audited for references to
+the old management hostname. Kafil has no installed Dokploy GitHub App and no
+repository webhook. SMTP remains unchanged for both applications, the old
+Mailpit remains running, and guarded preflight/browser acceptance remains
+unspent.
+
+The SMTP readiness audit passed network name resolution and TCP port `1025`
+from both Kafil and School. It also found one configuration mismatch before any
+application mutation: School's verified recipient namespace is `school.test`,
+while the first hub environment used `school-e2e.test`. The committed hub
+example, Mailpit SMTP allowlist, and gateway isolation regression are corrected
+together to `school.test`. The live hub must receive the same value-preserving
+configuration update and controlled hub-only restart before either application
+SMTP setting changes.
+
+The first live correction instruction terminated at its pre-mutation validator
+and restored the environment because it did not distinguish the JSON domain
+`school-e2e.test` from the SMTP-regex form `school-e2e\.test`. Independent
+normal-TLS probes immediately afterward still returned Dokploy `200` and both
+mail boundaries `401`, so the shared hub remained available; the report's later
+forced `FAIL` fields were not executed health evidence. A deterministic
+one-time updater now requires both exact legacy fragments, derives and compares
+the complete expected environment without exposing it, preserves credentials,
+verifies every configured app token, enforces finite timeouts, retains the old
+Mailpit, and automatically restores the prior environment on failure.
+
+A resumed read-only audit on 2026-09-02 found the correction already applied,
+so the one-time updater was not rerun. The live environment contained neither
+legacy School fragment and contained both exact `school.test` forms. Compose
+validation passed; the dashboard and gateway loopback endpoints both denied
+unauthenticated access with `401`; the two configured gateway entries
+authenticated as the exact `kafil`/`c4a-sponsor.test` and
+`school`/`school.test` scopes; both hub containers and the retained old Kafil
+Mailpit were running. One updater backup existed, and the VPS updater hash
+matched the committed script. No credential or environment value was printed.
+
+The committed package preflight first failed closed against the ignored local
+`.env` because that file still contains the retired SSH/forwarding names. No
+browser started. The same committed runner entrypoint was then invoked with
+Bun automatic environment-file loading disabled and only validated values held
+in process memory. All seven boolean contracts, system Chrome, the app-scoped
+verified-HTTPS gateway, `/login`, `/apply`, health, and readiness passed; the
+runner reported `PREFLIGHT PASS remote connected acceptance` and
+`NO MANAGED MAILBOX TRANSPORT`, exit `0`. This proves gateway and application
+readiness only; it does not prove SMTP delivery.
+
+Kafil currently uses `EMAIL_PROVIDER=resend` in its Docker runtime. The user
+will deliberately switch the test deployment to `EMAIL_PROVIDER=smtp` before
+acceptance continues. This resumption made no Kafil,
+School, Dokploy, container-environment, SMTP, or browser mutation. Before a
+remote browser attempt, verify without printing values that Kafil uses the SMTP
+provider and reaches the standalone hub through its unique configured host on
+port `1025`, with live delivery disabled. Then provide the guarded runner only
+the exact HTTPS API host/origin and Kafil bearer token, remove every retired
+transport name, and run the committed guarded preflight. The complete 18-test
+journey still requires its own fresh instruction after those checks pass.
+
+The resumed plan/testing-skill documentation slice passed the focused guarded-
+runner source contract with `20 passed`, `0 failed`, and `430` assertions. The
+skill frontmatter sanity check and `git diff --check` passed. The complete root
+lint, typecheck, standard test, production build, and `db:generate` gate also
+passed; Drizzle reported `No schema changes, nothing to migrate`. No remote
+browser journey ran during this slice.
+
+After the user reported the SMTP switch complete, a value-free read-only audit
+on 2026-09-02 found exactly one running, healthy Kafil app container at full
+OCI revision `18fa3fce6df0705655dd6bdc3e97589aefb6df0e`. It confirmed
+`EMAIL_PROVIDER=smtp`, `SMTP_PORT=1025`, and successful DNS/TCP reachability to
+both the legacy service name and the standalone hub's unique
+`najmstack-mailpit` alias. The configured SMTP host selects that unique alias
+over the existing `dokploy-network`; this is the intended working test route
+and avoids collision with Kafil's retained legacy `mailpit` service name. The
+SMTP cutover is therefore ready. No guarded preflight or Playwright test ran,
+and no VPS or environment mutation was made.
+
+The next action is guarded preflight with only the exact HTTPS mailbox gateway
+configuration and no retired managed-transport names. The complete 18-test
+journey still needs a separately authorized invocation after preflight.
+
+A private-network repository correction was then implemented and verified, but
+it was based on an unnecessarily strict interpretation of the hub boundary.
+The already deployed unique alias is functional and plan-safe for this test.
+The Compose attachment and its source assertion are reverted; the standalone
+gateway, SMTP cutover, and value-free runtime evidence remain accepted.
+
+The correction was committed and pushed as full revision
+`0918ce3629d898c5f2e98fd5224250955ce4654c`. GitHub Actions run
+`33669424694` passed exact-revision verification and published the SHA/main
+image. Its Dokploy job then called the configured secret endpoint four times
+under the workflow's existing curl retry policy; every call returned `404`, and
+the job exited `22`. A read-only VPS check afterward proved the sole Kafil app
+container remained healthy at the prior revision `18fa3fce6df0705655dd6bdc3e97589aefb6df0e`
+on the already accepted SMTP route. Image publication is therefore accepted,
+but the unnecessary Compose-only deployment was not observed. No browser
+preflight or Playwright test ran.
+
+This matches the management-host migration: the retired Dokploy hostname now
+returns `404`, while `deploy.najmstack.com` owns the authenticated management
+route. A narrow workflow correction accepts only webhook secrets beginning
+with the old or new known HTTPS origin, preserves the opaque path in process
+memory, canonicalizes the old origin to `deploy.najmstack.com`, and sends curl
+only to that value. It never prints or persists the webhook. The new source
+contract was red at `19 passed`, `1 failed`; after implementation it is green
+at `20 passed`, `0 failed`, and `436` assertions. Targeted ESLint passes;
+`actionlint` is unavailable on this host. The correction needs the complete
+local gate, a new commit/push, and a successful exact-revision workflow before
+guarded preflight. Do not rerun the failed job unchanged.
+
+The complete correction gate then passed: root lint, typecheck, every standard
+web/server/seed test, the production build, and `db:generate` with no schema
+change. The exact workflow/test/plan diff passed whitespace and sensitive-data
+review before publication.
+
+The webhook-origin correction was committed and pushed as full revision
+`1a30370dda6340e26d3bb7dc123e9656c0c35e86`. GitHub Actions run
+`33670416376` then passed exact-revision verification in `2m11s`, published the
+image in `2m31s`, and received `{"message":"Compose deployed successfully"}`
+from the canonical Dokploy webhook. This accepts the workflow origin
+correction, but a webhook success is not deployment evidence.
+
+Read-only VPS checks after that response found exactly one healthy Kafil app
+container still at revision `18fa3fce6df0705655dd6bdc3e97589aefb6df0e`,
+with its original start time and no container lifecycle event around the
+webhook. The runtime remains `EMAIL_PROVIDER=smtp`, uses the unique
+`najmstack-mailpit` alias, and reaches port `1025`. The Dokploy-owned file at
+`/etc/dokploy/compose/kafil-demo-vdadlv/code/docker-compose.yml` was rewritten
+at the webhook time, yet it contains no `mail-test-hub` reference and differs
+from the then-published repository `compose.production.yml`. This explains why
+the unnecessary network edit did not replace the container; it does not
+invalidate the working SMTP route. A value-free Dokploy database query confirms
+`sourceType=raw`,
+`composeType=docker-compose`, empty repository/owner/branch fields,
+`composePath=./docker-compose.yml`, and `hasMailHub=false` for
+`kafil-demo-vdadlv`.
+
+The private-network requirement and `SMTP_HOST=mailpit` instruction are
+superseded. They would risk selecting Kafil's retained legacy Mailpit service
+instead of the standalone hub. Keep the verified unique
+`najmstack-mailpit:1025` route, revert the repository-only network detour, and
+resume with guarded preflight. No preflight or Playwright browser test ran in
+this work unit.
+
+The corrected resumption then ran the committed guarded runner in preflight-
+only mode with Bun automatic `.env` loading disabled. The existing Kafil
+gateway token was held only in child-process memory; no value was printed or
+persisted. All seven boolean contracts passed, including exact target origin,
+explicit destructive authorization, present Admin credentials, absence of
+every retired managed-transport name, exact verified-HTTPS mailbox origin, and
+strong app token. System Chrome, the authenticated Kafil-scoped gateway,
+`/login`, `/apply`, health, and readiness all passed. The command reported
+`PREFLIGHT PASS remote connected acceptance` and
+`NO MANAGED MAILBOX TRANSPORT`, exit `0`. No browser started and no application
+record was mutated. The next remote invocation is the separately authorized
+complete selection of all 16 numbered steps, the responsive unit, and passive
+diagnostics—exactly `18` tests, one worker, and zero retries.
+
+The topology correction restored `compose.production.yml` and its focused
+source contract to the pre-detour behavior. The focused guarded-runner test
+passes with `20 passed`, `0 failed`, and `434` assertions. The complete root
+lint, typecheck, standard web/server/seed tests, and production build pass;
+`db:generate` reports `No schema changes, nothing to migrate`. These checks do
+not substitute for the pending complete remote browser attempt.
+
+### 11.16 Accepted complete 18-test remote attempt (2026-09-02)
+
+The user's fresh instruction authorized one complete attempt. It passed.
+
+Pre-attempt state differed from the previous checkpoint in one material way.
+Section 11.15 last recorded the sole healthy app container at revision
+`18fa3fce6df0705655dd6bdc3e97589aefb6df0e`. A value-free read-only check before
+this attempt found exactly one `kafil-demo-vdadlv-app-1` container, Docker
+health `healthy`, up 39 minutes, at full OCI revision
+`1a30370dda6340e26d3bb7dc123e9656c0c35e86` — the same revision as local `HEAD`.
+The canonical Dokploy webhook deployment therefore did complete container
+replacement after the earlier observation window. Both mail-hub containers and
+the retained legacy Kafil Mailpit were running.
+
+Because the container had been replaced, the SMTP route was re-verified
+value-free before the attempt rather than reused from section 11.15:
+`EMAIL_PROVIDER` is `smtp`, `SMTP_HOST` is exactly the unique
+`najmstack-mailpit` alias, `SMTP_PORT` is `1025`, no live-delivery variable is
+set, and DNS resolution plus TCP connection to that host and port succeeded
+from inside the app container. No value was printed.
+
+The ignored root `.env` is still in its pre-migration state: it lacks
+`KAFIL_E2E_MAILBOX_API_HOST` and `KAFIL_E2E_MAILBOX_TOKEN` and still carries
+the retired `KAFIL_E2E_SSH_HOST`, `KAFIL_E2E_SSH_USER`, `KAFIL_E2E_SSH_PORT`,
+`KAFIL_E2E_MAILBOX_LOCAL_PORT`, and `KAFIL_E2E_MAILBOX_REMOTE_PORT` names.
+Activation step 6 of section 11.15 remains undone. The attempt therefore used
+the same discipline as the preceding preflights: the committed runner
+entrypoint was invoked from `apps/web`, where Bun's automatic environment-file
+loading resolves no `.env` (verified empirically before the run), with the
+retired names explicitly unset and the exact HTTPS gateway host/origin plus the
+Kafil bearer token held only in process memory. No credential was written to
+disk or printed. Replacing the local `.env` contents remains outstanding
+housekeeping, not a blocker.
+
+The focused guarded-runner source contract was green immediately before the
+attempt with `20 passed`, `0 failed`, and `434` assertions. The remote spec was
+clean against `HEAD`, its declared titles were exactly the 18 in section 5, and
+`playwright.remote.config.ts` retained `retries: 0`, `workers: 1`, and
+screenshot/trace/video `off`.
+
+The attempt:
+
+- guarded preflight passed all seven booleans, including
+  `LEGACY_MANAGED_TRANSPORT_CONFIG_ABSENT` and `MAILBOX_API_HTTPS_EXACT`, plus
+  system Chrome, the app-scoped HTTPS mail-test gateway, `/login`, `/apply`,
+  health, and readiness;
+- Playwright reported `Running 18 tests using 1 worker` with zero retries;
+- steps 01-15, the responsive unit, step 16, and diagnostics all passed in
+  serial order;
+- terminal: `18 passed (3.5m)`, native exit `0`;
+- the runner reported `NO MANAGED MAILBOX TRANSPORT`; it started and stopped no
+  SSH, Tailscale, Docker, Mailpit, or local forward;
+- the only artifact this run wrote was the value-free
+  `apps/web/test-results/connected-four-account-remote/.last-run.json` marker
+  with `status: passed` and an empty `failedTests` array.
+
+Step 03 is also the first evidence that application mail actually traverses the
+new topology end to end: Kafil SMTP to `najmstack-mailpit`, into the standalone
+hub's Mailpit, and back out through the scoped HTTPS gateway. Earlier preflight
+passes proved gateway readiness only.
+
+Diagnostics asserted the counts-only cleanup summary directly:
+`applicationRowsRetained` `0`, `evidenceFilesRetained` `0`,
+`mailboxMessagesRetained` `0`, `evidenceFilesDeleted` exactly `2`,
+`mailboxMessagesDeleted` a safe non-negative integer, `reporting` `counts-only`,
+and `databaseOnlyGuarantees` `NOT VERIFIED`. All four attached contexts had
+empty page-error, console-error, failed-request, and unexplained-response
+collections. There were no unexpected HTTP errors; the run did intentionally
+assert exact negative `401`, `404`, and `409` responses.
+
+Artifact audit of the run output and the retained marker: zero matches for the
+exact configured gateway token, Admin password, and Admin email, and zero
+matches for email-address, bearer/JWT, auth-cookie, Moroccan-phone, and
+six-digit-OTP patterns. Two unrelated stale artifacts dated 2026-08-13 remain
+under `apps/web/test-results/` from the local connected suite
+(`.last-run.json` and one `error-context.md`); they predate and are unaffected
+by this attempt.
+
+Complete-attempt traceability:
+
+| Checked plan item | Exact acceptance assertion | Retained artifact |
+| --- | --- | --- |
+| Steps 01-15 | Each numbered step passed its section 5 contract in serial order on revision `1a30370d` | `apps/web/test/e2e/connected-four-account.remote.ts:1256`-`:3527`; passed runner marker |
+| Responsive | Tablet Admin Staff, phone Family Products, protected-image decode, keyboard-only View dialog, phone Sponsor RTL Orders, and no horizontal overflow | `apps/web/test/e2e/connected-four-account.remote.ts:3561`; passed runner marker |
+| Step 16 | Desktop viewports restored, four real logouts, supported deletion of the Family graph, two evidence files, two Staff profiles, and exact-recipient mailbox messages | `apps/web/test/e2e/connected-four-account.remote.ts:3653`; passed runner marker |
+| Diagnostics | Counts-only cleanup summary with `NOT VERIFIED` database boundary, and clean page-error/console-error/failed-request/unexplained-response collections for all four contexts | `apps/web/test/e2e/connected-four-account.remote.ts:3792`; passed runner marker |
+
+This satisfies every browser condition in section 10. Database-only guarantees
+remain explicitly `NOT VERIFIED`. The commit containing this section publishes
+the accepted evidence under section 8; no application deployment is required
+for the browser verdict.
+
+### 11.17 Repeat complete 18-test remote attempt (2026-09-04)
+
+A fresh user instruction authorized one complete attempt. It passed.
+
+Root `.env` state changed materially since section 11.16. Activation step 6 of
+section 11.15 is now done: the ignored root `.env` carries
+`KAFIL_E2E_MAILBOX_API_HOST`, `KAFIL_E2E_MAILBOX_API_URL`, and
+`KAFIL_E2E_MAILBOX_TOKEN`, and carries none of the retired
+`KAFIL_E2E_SSH_HOST`, `KAFIL_E2E_SSH_USER`, `KAFIL_E2E_SSH_PORT`,
+`KAFIL_E2E_MAILBOX_LOCAL_PORT`, or `KAFIL_E2E_MAILBOX_REMOTE_PORT` names.
+`LEGACY_MANAGED_TRANSPORT_CONFIG_ABSENT` therefore passed against the file
+itself rather than against an explicitly unset process environment, and the
+committed root package script was invoked directly. Presence and value length
+were checked without printing any secret.
+
+No `KAFIL_E2E_REMOTE_GREP` was set, so the runner selected the full declared
+set. Expected selected-test count `18`; actual `18`. Playwright reported
+`Running 18 tests using 1 worker` with zero retries, and
+`playwright.remote.config.ts` retained `retries: 0`, `workers: 1`, and
+screenshot/trace/video `off`.
+
+The attempt:
+
+- guarded preflight passed all seven booleans, including
+  `LEGACY_MANAGED_TRANSPORT_CONFIG_ABSENT` and `MAILBOX_API_HTTPS_EXACT`, plus
+  system Chrome, the app-scoped HTTPS mail-test gateway, `/login`, `/apply`,
+  health, and readiness;
+- steps 01-15, the responsive unit, step 16, and diagnostics all passed in
+  serial order; no unit was `NOT RUN` and none was `EXCLUDED BY GREP`;
+- terminal: `18 passed (2.0m)`, native exit `0`;
+- the runner reported `NO MANAGED MAILBOX TRANSPORT`; it started and stopped no
+  SSH, Tailscale, Docker, Mailpit, or local forward;
+- the only artifact this run wrote was the value-free
+  `apps/web/test-results/connected-four-account-remote/.last-run.json` marker,
+  dated 2026-09-04, with `status: passed` and an empty `failedTests` array.
+
+Step 16 populated `cleanupSummary`, so the guarded diagnostics assertions
+executed rather than being skipped: `applicationRowsRetained` `0`,
+`evidenceFilesRetained` `0`, `mailboxMessagesRetained` `0`,
+`evidenceFilesDeleted` exactly `2`, `mailboxMessagesDeleted` a safe
+non-negative integer, `reporting` `counts-only`, and `databaseOnlyGuarantees`
+`NOT VERIFIED`. All four attached contexts had empty page-error,
+console-error, failed-request, and unexplained-response collections. There were
+no unexpected HTTP errors; the run did intentionally assert exact negative-path
+responses.
+
+Artifact audit of the run output and the retained marker returned zero matches
+for email-address, bearer, JWT, Moroccan-phone, six-digit-OTP, and
+credential-word patterns. The same two unrelated stale artifacts dated
+2026-08-13 remain under `apps/web/test-results/` from the local connected suite
+(`.last-run.json` and one `error-context.md`); they predate and are unaffected
+by this attempt.
+
+**Deployed revision is `NOT CONFIRMED` for this attempt.** Unlike section
+11.16, this attempt did not repeat the value-free read-only container check.
+Reading the VPS SSH target from the ignored root `.env` was blocked in the
+session that ran the attempt, so no `docker ps` observation was made and no
+container revision is recorded. Bounded behavioral evidence was collected
+instead, and it is explicitly weaker than container evidence:
+
+- `/api/system/readiness` returned `checks.cache` `ok` and `checks.database`
+  `ok` at HTTP `200`;
+- the `cache` key did not exist before `75528da3`, whose predecessor exported
+  `databaseReadinessResponse` and emitted only `{database}`, so the running
+  image contains that change;
+- `SystemController.readiness()` overrides the permissive default probe with
+  `() => this.cache.verifyReady()`, so `cache: "ok"` reflects a real probe
+  against the injected `CacheService`, not the `async () => undefined` default
+  in `systemReadinessResponse`;
+- that probe requires the Redis runtime driver from `77130715` and the explicit
+  client injection from `27c07fd`, without which readiness answers
+  `cache: "unavailable"` and `503`.
+
+This establishes only that the running image contains the cache-readiness
+behavior those commits introduced. Feature presence is not Git ancestry: any
+build whose tree carries those changes answers identically, whether or not it
+descends from them or from `origin/main` at all. This evidence therefore cannot
+identify the deployed revision and cannot bound it at `27c07fd`; the earlier
+wording that it did was withdrawn. Deployment-revision acceptance for this
+attempt is outstanding, and the value-free container revision check must be
+restored before any checkpoint claim rests on it. Local `HEAD` at the time of
+the attempt was `17c41db`, which is `origin/main` plus a docs-only planning
+change that was later removed.
+
+Complete-attempt traceability:
+
+| Checked plan item | Exact acceptance assertion | Retained artifact |
+| --- | --- | --- |
+| Steps 01-15 | Each numbered step passed its section 5 contract in serial order | `apps/web/test/e2e/connected-four-account.remote.ts:1256`-`:3527`; passed runner marker |
+| Responsive | Tablet Admin Staff, phone Family Products, protected-image decode, keyboard-only View dialog, phone Sponsor RTL Orders, and no horizontal overflow | `apps/web/test/e2e/connected-four-account.remote.ts:3561`; passed runner marker |
+| Step 16 | Desktop viewports restored, four real logouts, supported deletion of the Family graph, two evidence files, two Staff profiles, and exact-recipient mailbox messages | `apps/web/test/e2e/connected-four-account.remote.ts:3653`; passed runner marker |
+| Diagnostics | Counts-only cleanup summary with `NOT VERIFIED` database boundary, and clean page-error/console-error/failed-request/unexplained-response collections for all four contexts | `apps/web/test/e2e/connected-four-account.remote.ts:3792`; passed runner marker |
+
+Three verdicts:
+
+1. **Command result** — `18 passed (2.0m)`, native exit `0`, transport
+   postcondition `NO MANAGED MAILBOX TRANSPORT` reported.
+2. **Work-unit result** — all 18 declared units `PASS`, each traceable to the
+   assertions above.
+3. **Plan result** — the browser conditions in section 10 are satisfied again.
+   Database-only guarantees remain explicitly `NOT VERIFIED`, and the running
+   container revision is `NOT CONFIRMED` for this attempt.
+
+### 11.18 Family order-limit extension (2026-09-06)
+
+The Family order-limit acceptance is part of the existing connected journey,
+not a second disposable graph or another authenticated login sequence:
+
+- step 02 creates the disposable Family with an explicit `2`-orders/month cap
+  and a monthly budget equal to the connected funding target. It proves the
+  operator's override/default/effective/source projection, the Family's
+  effective-only projection, and the inherited-or-unlimited per-order fallback;
+- step 07 keeps two submitted orders active simultaneously, proves
+  `ordersUsed = 2` and `ordersRemaining = 0`, then requires the third exact
+  `POST /api/orders/submit` to return `409` with
+  `Monthly order count limit reached`. It proves no third order or budget
+  mutation occurred, then proves cancellation releases one count slot. With
+  that slot free, it tightens the monthly limit to current usage and requires
+  the next submit to return exact `409` with
+  `Order total exceeds the remaining monthly limit`, again without an order or
+  budget mutation. Rejection releases the active count from `1` to `0`, monthly
+  usage returns to `0`, and the original monthly limit is restored;
+- step 08 sets the Family per-order ceiling to Order 3's requested total, then
+  requires a `+1` purchase top-up to return exact `409` with
+  `Order total exceeds the per-order limit`. It proves the denied command added
+  no purchase or status event and changed no budget aggregate, raises the
+  ceiling to the exact resulting total, reuses the same purchase command
+  successfully, and verifies the Family's effective count, per-order, monthly
+  limit, and monthly-used values.
+
+The source-contract test was first observed red with `20 passed, 2 failed` and
+the missing step 02/07 assertions. After implementing the journey and correcting
+two whitespace-brittle source assertions, it passed after the final count,
+monthly, fallback, and per-order coverage with `22 passed, 0 failed` and `498`
+assertions. The full local verification gate then passed: lint,
+typecheck, web `370 passed`, server `357 passed` with `59` opt-in database tests
+skipped, seed `88 passed`, and the production build. `bun run db:generate`
+reported `No schema changes, nothing to migrate`.
+
+A discovery-only Playwright listing used non-secret placeholders, opened no
+browser, contacted no VPS endpoint, and reported exactly `20 tests in 1 file`.
+That count is the 16 numbered steps, upload, CSP, responsive, and diagnostics.
+The Family order-limit coverage adds assertions inside steps 02, 07, and 08 and
+does not increase the count.
+
+No local or production browser journey was run under this implementation
+instruction. The historical 18-test evidence in sections 11.16 and 11.17 does
+not prove these new assertions. One fresh instruction must authorize a single
+unfiltered 20-test remote attempt against a confirmed healthy revision; the
+runner must stop and classify after that attempt whether it passes or fails.
+Database concurrency and constraint guarantees remain owned by the opt-in
+PostgreSQL suite and are not claimed by this black-box plan.
+
+### 11.19 Authorized complete 20-test remote attempt (2026-09-06)
+
+A fresh user instruction authorized exactly one complete unfiltered guarded
+production attempt. It passed. No local/dev Playwright ran under this
+authorization, and the browser journey was not repeated afterward.
+
+Source verification (before commit, value-free):
+
+- `bun run --cwd apps/web test test/connected-four-account-remote-runner.test.ts`:
+  `22 pass, 0 fail, 498 expect() calls`;
+- `bun run check` (lint, typecheck, test, build): green — web `370 passed`,
+  server `357 passed` with `59` opt-in database integrations skipped, seed
+  `88 passed`, production build green;
+- `bun run db:generate`: `No schema changes, nothing to migrate`;
+- `git diff --check`: clean; value-free secret/scope audit of the three
+  acceptance files: zero sensitive-pattern matches; no untracked files;
+- connected spec declares exactly 20 tests: 16 numbered steps plus upload,
+  CSP, responsive, and diagnostics. The Family order-limit coverage adds
+  assertions inside steps 02, 07, and 08 and adds no test title.
+
+Publication:
+
+- committed only the three acceptance files as
+  `adee9c9d5c0276e3871ace6c142f6f1a229e4aac` with message
+  `test(e2e): connected four-account 20-test selection with family
+  order-limit coverage`; two unrelated Sponsor responsive-layout files were
+  left uncommitted and preserved;
+- pushed `0ceb0b5..adee9c9` to `origin/main`;
+- GitHub Actions run `34046517949` (`Verify, publish, and deploy demo`):
+  Verify passed in `2m20s`, Build and publish image passed in `2m27s`, Deploy
+  through Dokploy passed in `3s` with
+  `{"message":"Compose deployed successfully"}`. The webhook response alone
+  was not treated as deployment proof.
+
+Deployed-revision confirmation (value-free, no values printed):
+
+- running container `kafil-demo-vdadlv-app-1`: `Up healthy`, inspect
+  `healthy`/`running`, created `2026-09-06T16:53:07Z`, after the
+  `16:46:27Z` push and the `16:49:15Z` image build;
+- its `org.opencontainers.image.revision` label is exactly the pushed commit
+  `adee9c9d5c0276e3871ace6c142f6f1a229e4aac`. Tested commit SHA and confirmed
+  container SHA are therefore identical;
+- `kafil-demo-vdadlv-migrate-1` and `kafil-demo-vdadlv-storage-init-1` both
+  `Exited (0)`; redis, postgres, and the retained legacy Mailpit all
+  `healthy`;
+- public `GET /login` `200`, `GET /apply` `200`,
+  `GET /api/system/health` `200` (`status: ok`),
+  `GET /api/system/readiness` `200` with `checks.cache: ok` and
+  `checks.database: ok`;
+- ignored root `.env` carries all seven required remote names (presence and
+  lengths only, exact-URL/destructive/token-strength booleans true) and none
+  of the nine retired SSH/Tailscale/local-forward names;
+- the Windows OpenSSH host config pins a `RemoteCommand` for the VPS address,
+  which rejects any command-line remote command; read-only `docker` checks
+  used `-o RemoteCommand=none` and printed no secret or identity value.
+
+Production browser command (the single authorized attempt):
+
+```powershell
+Remove-Item Env:KAFIL_E2E_REMOTE_GREP -ErrorAction SilentlyContinue
+bun run --cwd apps/web test:e2e:connected:remote
+```
+
+- guarded preflight: all seven booleans plus system Chrome, app-scoped HTTPS
+  mail-test gateway, `/login`, `/apply`, health, and readiness passed;
+- Playwright header: `Running 20 tests using 1 worker`, zero retries;
+  `playwright.remote.config.ts` retains `retries: 0`, `workers: 1`,
+  screenshot/trace/video `off`, and `webServer: undefined`, so no local
+  Next.js server launched;
+- runner reported `NO MANAGED MAILBOX TRANSPORT`; it started and stopped no
+  SSH, Tailscale, Docker, Mailpit, or forwarding lifecycle;
+- terminal: `20 passed (2.9m)`, native exit `0`.
+
+Per-unit verdict (all `PASS`, serial order, no unit `NOT RUN`):
+
+| Unit | Result and duration |
+| --- | --- |
+| remote upload - generated product image round trip and cleanup | PASS (`5.8s`) |
+| remote CSP matrix - authenticated routes, locales, branding, PWA, and hydration | PASS (`23.5s`) |
+| remote step 01 - guarded admin smoke | PASS (`5.0s`) |
+| remote step 02 - Family provisioning and first login (explicit `2`-orders/month cap, monthly budget, operator source projection, Family effective-only projection, per-order fallback) | PASS (`20.8s`) |
+| remote step 03 - Sponsor A application and approval | PASS (`18.1s`) |
+| remote step 04 - Sponsor B application and approval | PASS (`15.7s`) |
+| remote step 05 - assignments and sponsor privacy | PASS (`22.5s`) |
+| remote step 06 - contributions and exact funding | PASS (`18.9s`) |
+| remote step 07 - delivery staff and reversible orders (count-limit and monthly-limit `409` denials, no denied-command side effects, slot recovery after cancellation/rejection) | PASS (`24.2s`) |
+| remote step 08 - purchase and delivery lifecycle (resulting-total per-order `409` denial with no mutation, then success after raising the ceiling) | PASS (`5.6s`) |
+| remote step 09 - Family order projection | PASS (`185ms`) |
+| remote step 10 - Sponsor A order privacy | PASS (`273ms`) |
+| remote step 11 - Sponsor B order privacy | PASS (`191ms`) |
+| remote step 12 - Admin order projection | PASS (`142ms`) |
+| remote step 13 - Family delivery assignment denial (one exact `401`) | PASS (`86ms`) |
+| remote step 14 - Sponsor A approval denial (one exact `401`) | PASS (`173ms`) |
+| remote step 15 - Sponsor B delivery confirmation denial (one exact `401`) | PASS (`82ms`) |
+| remote responsive - phone, tablet, RTL, keyboard, and protected images | PASS (`6.7s`) |
+| remote step 16 - supported cleanup, role logout, and closure | PASS (`5.8s`) |
+| remote diagnostics - final context assertions | PASS (`46ms`) |
+
+Cleanup and sanitized artifact audit:
+
+- step 16 passed: supported deletion of the disposable Family graph, two
+  evidence files, two Staff profiles, two approved applicants, and
+  exact-recipient mailbox messages; all four roles completed real logout with
+  recognized auth cookies absent and pages closed;
+- diagnostics passed: counts-only cleanup summary with zero retained
+  API-visible runtime rows, evidence files, and mailbox messages; every
+  attached context had empty unexpected page-error, console-error,
+  failed-request, and unexplained-response collections; all expected negative
+  `401`/`404`/`409` responses were consumed exactly once; there were no
+  unexpected HTTP errors;
+- sole retained artifact is the value-free
+  `apps/web/test-results/connected-four-account-remote/.last-run.json`
+  marker with `status: passed` and an empty `failedTests` array; zero
+  screenshot, video, trace, or error-context files were written;
+- value-free scan of the retained marker: zero matches across email-address,
+  bearer/JWT, Moroccan-phone, six-digit-OTP, and credential-word patterns;
+  the run transcript contains only test titles, durations, and the
+  `NO MANAGED MAILBOX TRANSPORT` postcondition — no environment values,
+  credentials, OTPs, tokens, emails, phone numbers, or sensitive response
+  data.
+
+Three verdicts:
+
+1. **Command result** — `20 passed (2.9m)`, native exit `0`, transport
+   postcondition `NO MANAGED MAILBOX TRANSPORT` reported.
+2. **Work-unit result** — all 20 declared units `PASS`, each traceable to the
+   assertions above, including the Family order-limit denials and recovery in
+   steps 02, 07, and 08.
+3. **Plan result** — every browser condition in section 10 is satisfied again
+   on the confirmed revision, now with upload, CSP, responsive, supported
+   cleanup, and the order-limit extension browser-proven.
+
+Browser-proven versus database-only boundary:
+
+- browser-proven: deployed UI/API behavior; role and ownership boundaries;
+  sponsor-safe projections; visible/API integer-minor aggregates; effective
+  Family order-count/per-order/monthly-budget projections; exact `409`
+  denials with no denied-command side effects and slot recovery; order,
+  purchase, and delivery lifecycle; real logout, cookie removal, diagnostics,
+  and mailbox-transport isolation;
+- explicitly `NOT VERIFIED` by this black-box journey: physical row counts or
+  uniqueness constraints; password hashes or seed idempotency; transaction
+  locks and append-only storage; audit/outbox payloads; migration state on
+  the VPS. Those guarantees remain owned by the opt-in PostgreSQL suite and
+  server tests, not claimed here.
