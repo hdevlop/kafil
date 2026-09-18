@@ -1,5 +1,4 @@
-export { NotificationBell } from "./components/NotificationBell";
-export { NotificationsMenu } from "./components/NotificationPopover";
+export { NotificationsMenu } from "./components/NotificationsMenu";
 export { NotificationCard } from "./components/NotificationCard";
 export { NotificationsPage } from "./components/NotificationsPage";
 export { PushOptIn } from "./components/PushOptIn";
@@ -18,9 +17,10 @@ export {
 } from "./hooks/useNotificationCommands";
 export {
   buildNotificationViewModel,
-  formatBadgeCount,
   normalizeLocale,
 } from "./lib/buildNotificationViewModel";
+export { buildNotifyItem } from "./lib/buildNotifyItem";
+export { useNotifyLabels } from "./hooks/useNotifyLabels";
 export { synchronizeNotificationLocale } from "./lib/synchronizeNotificationLocale";
 export { useNotificationTableColumns } from "./config/notificationColumns";
 export type {

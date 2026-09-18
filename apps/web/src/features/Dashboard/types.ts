@@ -8,6 +8,18 @@ export type DeliveryDashboardCategory =
   | "delivered"
   | "needs_attention";
 
+/**
+ * Lifecycle presentation for the assigned worker. Independent of
+ * `DeliveryDashboardCategory`, which carries operational warnings.
+ */
+export type DeliveryWorkflowState =
+  | "waiting_approval"
+  | "purchase_required"
+  | "ready_for_delivery"
+  | "out_for_delivery"
+  | "delivered"
+  | "needs_operator_action";
+
 export interface DeliveryDashboardItem {
   attemptId: string;
   orderId: string;
@@ -17,6 +29,8 @@ export interface DeliveryDashboardItem {
   familyImage: string | null;
   category: DeliveryDashboardCategory;
   attemptStatus: "assigned" | "in_progress" | "failed" | "delivered";
+  orderStatus: string;
+  workflowState: DeliveryWorkflowState;
   address: string;
   phone: string | null;
   coordinates: { latitude: number; longitude: number } | null;
@@ -30,6 +44,52 @@ export interface DeliveryDashboardItem {
     kind: "address_confirmation" | "family_unreachable" | "missing_proof";
     note: string | null;
   }>;
+  canPurchase: boolean;
+  canStart: boolean;
+  canConfirm: boolean;
+  canReportIssue: boolean;
+}
+
+export interface DeliveryOrderItem {
+  id: string;
+  productId: string;
+  productNameSnapshot: string;
+  skuSnapshot: string;
+  quantity: number;
+  unitPriceMinor: number;
+  lineTotalMinor: number;
+}
+
+/** The Delivery-safe order projection behind the assigned worker's sheet. */
+export interface DeliveryOrderDetail {
+  id: string;
+  orderNumber: string;
+  status: string;
+  currency: string;
+  requestedTotalMinor: number;
+  actualTotalMinor: number | null;
+  receiptRecorded: boolean;
+  familyName: string;
+  familyImage: string | null;
+  deliveryAddressSnapshot: string;
+  deliveryPhoneSnapshot: string | null;
+  coordinates: { latitude: number; longitude: number } | null;
+  items: DeliveryOrderItem[];
+  attempt: {
+    id: string;
+    status: "assigned" | "in_progress" | "failed" | "delivered" | "cancelled";
+    scheduledDate: string | null;
+    windowStartMinute: number | null;
+    windowEndMinute: number | null;
+    packageCount: number | null;
+  };
+  openIssues: Array<{
+    id: string;
+    kind: "address_confirmation" | "family_unreachable" | "missing_proof";
+    note: string | null;
+  }>;
+  workflowState: DeliveryWorkflowState;
+  canPurchase: boolean;
   canStart: boolean;
   canConfirm: boolean;
   canReportIssue: boolean;

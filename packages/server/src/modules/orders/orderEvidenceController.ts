@@ -10,7 +10,7 @@ import {
 } from "najm-core";
 import { McpTool, ToolGroup } from "najm-mcp";
 
-import { isOperator } from "../../config/authConfig";
+import { isDeliveryStaff, isOperator } from "../../config/authConfig";
 import {
   OrderEvidenceService,
   type OrderEvidenceKind,
@@ -31,6 +31,29 @@ export class OrderEvidenceController {
     @ContentType() contentType: string | undefined,
   ) {
     return this.evidence.upload(kind, fileName, body, contentType);
+  }
+
+  /**
+   * The assigned Delivery worker may stage and discard its own receipt
+   * candidate, and nothing else. Serving, delivery proofs, arbitrary `kind`
+   * selection, and the maintenance routes stay operator-only.
+   */
+  @Post("/me/receipts/:fileName")
+  @isDeliveryStaff()
+  @ResMsg("orders.success.evidenceUploaded")
+  uploadOwnReceipt(
+    @Params("fileName") fileName: string,
+    @ArrayBufferBody() body: ArrayBuffer,
+    @ContentType() contentType: string | undefined,
+  ) {
+    return this.evidence.upload("receipts", fileName, body, contentType);
+  }
+
+  @Delete("/me/receipts/:fileName")
+  @isDeliveryStaff()
+  @ResMsg("orders.success.evidenceDeleted")
+  removeOwnReceiptCandidate(@Params("fileName") fileName: string) {
+    return this.evidence.removeCandidate("receipts", fileName);
   }
 
   @Get("/:kind/serve/:fileName")

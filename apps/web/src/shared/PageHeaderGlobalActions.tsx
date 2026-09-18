@@ -1,24 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Languages, Loader2, Maximize, Moon, Sun } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  NButton,
+  NFullscreenToggle,
+  NGlobalActions,
+  NLanguageMenu,
+  NThemeToggle,
   toast,
-  useNajmTheme,
+  type NLanguageOption,
 } from "najm-kit";
-import screenfull from "screenfull";
 
 import { useTranslation } from "najm-i18n/react";
 import type { KafilLocale } from "@kafil/server/locales";
 import { NotificationsMenu } from "@/features/Notifications";
 import { updateNotificationSettings } from "@/services/notificationsApi";
-
-const actionButtonClass = "text-foreground hover:text-foreground [&_svg]:text-foreground [&_svg]:opacity-100";
 
 const languageFlags: Record<KafilLocale, { country: string; label: string }> = {
   ar: { country: "ma", label: "Morocco" },
@@ -27,102 +21,68 @@ const languageFlags: Record<KafilLocale, { country: string; label: string }> = {
   fr: { country: "fr", label: "France" },
 };
 
+function flag(locale: KafilLocale) {
+  return (
+    <span
+      className={`fi fi-${languageFlags[locale].country} fis inline-block h-3.5 w-5 rounded-[2px] shadow-sm ring-1 ring-black/5`}
+    />
+  );
+}
+
 export default function PageHeaderGlobalActions() {
   const { language, changeLanguage, t } = useTranslation();
-  const { theme, setTheme } = useNajmTheme();
-  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
 
-  const languages: Array<{ label: string; value: KafilLocale }> = [
-    { label: t("language.english"), value: "en" },
-    { label: t("language.french"), value: "fr" },
-    { label: t("language.arabic"), value: "ar" },
-    { label: t("language.spanish"), value: "es" },
-  ];
+  const languages: Array<NLanguageOption<KafilLocale>> = (
+    [
+      ["en", "language.english"],
+      ["fr", "language.french"],
+      ["ar", "language.arabic"],
+      ["es", "language.spanish"],
+    ] as const
+  ).map(([value, key]) => ({
+    value,
+    label: t(key),
+    icon: flag(value),
+    iconLabel: languageFlags[value].label,
+  }));
 
   async function handleLanguageChange(nextLanguage: KafilLocale) {
-    setIsChangingLanguage(true);
+    await changeLanguage(nextLanguage);
+    // External-channel locale follows the UI language as an explicit
+    // command. A sync failure never blocks the UI change; the notifications
+    // surface retries it on entry.
     try {
-      await changeLanguage(nextLanguage);
-      // External-channel locale follows the UI language as an explicit
-      // command. A sync failure never blocks the UI change; the
-      // notifications surface retries it on entry.
-      try {
-        await updateNotificationSettings(nextLanguage);
-      } catch {
-        // Surfaced again from the notifications inbox; see NotificationsPage.
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update language preference.");
-    } finally {
-      setIsChangingLanguage(false);
+      await updateNotificationSettings(nextLanguage);
+    } catch {
+      // Surfaced again from the notifications inbox; see NotificationsPage.
     }
   }
 
-  const isDark = theme === "dark";
-  const ThemeIcon = isDark ? Sun : Moon;
-
   return (
-    <>
+    <NGlobalActions>
       <NotificationsMenu />
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <NButton
-            aria-label={t("language.label")}
-            className={actionButtonClass}
-            disabled={isChangingLanguage}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            {isChangingLanguage ? <Loader2 className="animate-spin" size={18} /> : <Languages size={18} />}
-          </NButton>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          {languages.map((item) => {
-            const flag = languageFlags[item.value];
-            const isSelected = language === item.value;
-            return (
-              <DropdownMenuItem
-                className={`cursor-pointer ${isSelected ? "bg-primary text-primary-foreground" : ""}`}
-                key={item.value}
-                onSelect={() => void handleLanguageChange(item.value)}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`fi fi-${flag.country} fis mr-2 inline-block h-3.5 w-5 rounded-[2px] shadow-sm ring-1 ring-black/5`}
-                />
-                <span className="sr-only">{flag.label}</span>
-                {item.label}
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <NButton
-        aria-label="Toggle color theme"
-        className={actionButtonClass}
-        onClick={() => void setTheme(isDark ? "light" : "dark")}
-        size="icon"
-        type="button"
-        variant="ghost"
-      >
-        <ThemeIcon size={18} />
-      </NButton>
-
-      <NButton
-        aria-label="Toggle fullscreen"
-        className={`hidden sm:inline-flex ${actionButtonClass}`}
-        onClick={() => {
-          if (screenfull.isEnabled) void screenfull.toggle();
-        }}
-        size="icon"
-        type="button"
-        variant="ghost"
-      >
-        <Maximize size={18} />
-      </NButton>
-    </>
+      <NLanguageMenu
+        label={t("language.label")}
+        onChange={handleLanguageChange}
+        onError={(error) =>
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Could not update language preference.",
+          )
+        }
+        options={languages}
+        value={(language ?? "en") as KafilLocale}
+      />
+      <NThemeToggle
+        label={t("common.toggleTheme")}
+        onError={(error) =>
+          toast.error(
+            error instanceof Error ? error.message : "Could not update color theme.",
+          )
+        }
+      />
+      <NFullscreenToggle label={t("common.toggleFullscreen")} />
+    </NGlobalActions>
   );
 }

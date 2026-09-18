@@ -1,4 +1,11 @@
 export { OrderController } from "./orderController";
+export {
+  deliveryWorkflowCapabilities,
+  deliveryWorkflowState,
+  type DeliveryWorkflowCapabilities,
+  type DeliveryWorkflowInput,
+  type DeliveryWorkflowState,
+} from "./deliveryWorkflow";
 export * from "./orderDto";
 export { OrderEvidenceController } from "./orderEvidenceController";
 export {

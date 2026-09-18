@@ -7,7 +7,7 @@ import { NSpinner, useDialog, WizardForm } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 import { minorUnitsToMadInput } from "@/features/Budgets/config/budgetSchemas";
 import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityQuery } from "najm-kit/query";
 import { getBudgetSummary } from "@/services/budgetApi";
 import {
   deleteFamilyImage,

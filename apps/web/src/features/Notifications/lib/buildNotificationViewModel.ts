@@ -196,14 +196,4 @@ export function buildNotificationViewModel(
   };
 }
 
-export function formatBadgeCount(count: number, locale: string): string {
-  if (count <= 0) return "";
-  if (count > 99) return "99+";
-  try {
-    return new Intl.NumberFormat(locale).format(count);
-  } catch {
-    return String(count);
-  }
-}
-
 export { CheckCircle2, XCircle };

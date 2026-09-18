@@ -1,4 +1,4 @@
-import { entityKeys } from "@/hooks/queryKeys";
+import { entityKeys } from "najm-kit/query/keys";
 
 export const sponsorProfileKeys = {
   all: entityKeys.all("sponsor-profile"),

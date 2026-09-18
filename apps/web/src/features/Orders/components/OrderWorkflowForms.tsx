@@ -20,12 +20,24 @@ import { useProducts } from "@/features/Products/hooks/useProducts";
 import { useTranslation } from "najm-i18n/react";
 import {
   deleteOrderEvidenceCandidate,
+  deleteOwnOrderReceiptCandidate,
+  recordOwnOrderPurchase,
   uploadOrderEvidence,
+  uploadOwnOrderReceipt,
 } from "@/services/orderApi";
 
+import { getLocalizedOrderLimitError } from "@/features/Budgets/lib/orderLimitErrors";
+import { useEntityCommand } from "najm-kit/query";
+import { dashboardKeys } from "@/features/Dashboard/shared/dashboardKeys";
+import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
+import { familyBudgetKeys } from "@/features/Budgets/hooks/familyBudgetKeys";
+import { familyOrderingKeys } from "@/features/Orders/hooks/familyOrderingKeys";
+
+import { deliveryOrderKeys } from "../hooks/deliveryOrderKeys";
+import { orderKeys } from "../hooks/orderKeys";
 import { useOrderCommands } from "../hooks/useOrders";
 import { useDeliveryStaffOptions, useOrder } from "../hooks/useOrders";
-import type { OrderDetail, OrderRecord } from "../types";
+import type { OrderDetail, OrderRecord, RecordPurchaseInput } from "../types";
 
 const assistedOrderSchema = z.object({
   familyProfileId: z.string().uuid(),
@@ -261,15 +273,40 @@ export function CreateAssistedOrderDialogContent() {
   );
 }
 
-export function PurchaseOrderDialogContent({
+/** The order facts the shared purchase body needs, from any role projection. */
+export interface PurchaseFormOrder {
+  id: string;
+  requestedTotalMinor: number;
+  defaultMerchantName?: string | null;
+  defaultActualTotalMinor?: number | null;
+}
+
+/**
+ * The one purchase form body. Roles differ only in which mutation runs, which
+ * receipt-candidate routes stage the evidence, and whether replacement is
+ * offered — never in the schema, fields, amount conversion, upload lifecycle,
+ * or higher-amount confirmation.
+ */
+export function PurchaseOrderForm({
   order,
   replace = false,
-}: Readonly<{ order: OrderDetail; replace?: boolean }>) {
-  const { pop } = useDialog();
+  pending,
+  evidence,
+  onSubmit,
+}: Readonly<{
+  order: PurchaseFormOrder;
+  replace?: boolean;
+  pending: boolean;
+  evidence: {
+    upload: (file: File) => Promise<{ path: string; mediaType: string; byteSize: number }>;
+    removeCandidate: (path: string) => Promise<unknown>;
+  };
+  onSubmit: (
+    input: Omit<RecordPurchaseInput, "id"> & { reason?: string },
+  ) => Promise<void>;
+}>) {
   const { t } = useTranslation();
   const fmt = useNajmFormat();
-  const commands = useOrderCommands();
-  const command = replace ? commands.replacePurchase : commands.purchase;
   const [receipt, setReceipt] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
 
@@ -278,32 +315,23 @@ export function PurchaseOrderDialogContent({
       setFileError(t("operator.orders.workflow.receiptRequired"));
       return;
     }
-    const evidence = await uploadOrderEvidence("receipts", receipt);
+    const uploaded = await evidence.upload(receipt);
     try {
       const actualTotalMinor = parseMadMinor(values.actualTotalMad);
-      const common = {
-        id: order.id,
+      await onSubmit({
         merchantName: values.merchantName,
         receiptNumber: values.receiptNumber || undefined,
         purchasedAt: new Date(values.purchasedAt).toISOString(),
         actualTotalMinor,
-        receiptStoragePath: evidence.path,
-        receiptMediaType: evidence.mediaType,
-        receiptByteSize: evidence.byteSize,
-        confirmHigherAmount: actualTotalMinor > order.totalMinor,
+        receiptStoragePath: uploaded.path,
+        receiptMediaType: uploaded.mediaType,
+        receiptByteSize: uploaded.byteSize,
+        confirmHigherAmount: actualTotalMinor > order.requestedTotalMinor,
         idempotencyKey: crypto.randomUUID(),
-      };
-      if (replace) {
-        await commands.replacePurchase.mutateAsync({
-          ...common,
-          reason: values.reason || "Correct purchase evidence",
-        });
-      } else {
-        await commands.purchase.mutateAsync(common);
-      }
-      await pop();
+        ...(replace ? { reason: values.reason || "Correct purchase evidence" } : {}),
+      });
     } catch (error) {
-      await deleteOrderEvidenceCandidate(evidence.path).catch(() => undefined);
+      await evidence.removeCandidate(uploaded.path).catch(() => undefined);
       throw error;
     }
   }
@@ -313,11 +341,11 @@ export function PurchaseOrderDialogContent({
       id={replace ? "replace-order-purchase" : "record-order-purchase"}
       schema={purchaseSchema}
       defaultValues={{
-        merchantName: order.activePurchase?.merchantName ?? "Marjane",
+        merchantName: order.defaultMerchantName ?? "Marjane",
         receiptNumber: "",
         purchasedAt: new Date().toISOString().slice(0, 10),
         actualTotalMad: (
-          (order.activePurchase?.actualTotalMinor ?? order.totalMinor) / 100
+          (order.defaultActualTotalMinor ?? order.requestedTotalMinor) / 100
         ).toFixed(2),
         reason: "",
       }}
@@ -358,11 +386,11 @@ export function PurchaseOrderDialogContent({
         ) : null}
       </div>
       <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-        {t("operator.orders.workflow.purchaseNotice", { amount: fmt.money(order.totalMinor) })}
+        {t("operator.orders.workflow.purchaseNotice", { amount: fmt.money(order.requestedTotalMinor) })}
       </p>
       <div className="flex justify-end">
-        <NButton type="submit" disabled={command.isPending}>
-          {command.isPending
+        <NButton type="submit" disabled={pending}>
+          {pending
             ? t("operator.orders.workflow.saving")
             : replace
               ? t("operator.orders.workflow.replacePurchase")
@@ -370,6 +398,94 @@ export function PurchaseOrderDialogContent({
         </NButton>
       </div>
     </NForm>
+  );
+}
+
+export function PurchaseOrderDialogContent({
+  order,
+  replace = false,
+}: Readonly<{ order: OrderDetail; replace?: boolean }>) {
+  const { pop } = useDialog();
+  const commands = useOrderCommands();
+  const command = replace ? commands.replacePurchase : commands.purchase;
+
+  return (
+    <PurchaseOrderForm
+      order={{
+        id: order.id,
+        requestedTotalMinor: order.totalMinor,
+        defaultMerchantName: order.activePurchase?.merchantName,
+        defaultActualTotalMinor: order.activePurchase?.actualTotalMinor,
+      }}
+      replace={replace}
+      pending={command.isPending}
+      evidence={{
+        upload: (file) => uploadOrderEvidence("receipts", file),
+        removeCandidate: deleteOrderEvidenceCandidate,
+      }}
+      onSubmit={async ({ reason, ...input }) => {
+        if (replace) {
+          await commands.replacePurchase.mutateAsync({
+            ...input,
+            id: order.id,
+            reason: reason!,
+          });
+        } else {
+          await commands.purchase.mutateAsync({ ...input, id: order.id });
+        }
+        await pop();
+      }}
+    />
+  );
+}
+
+/**
+ * The assigned Delivery worker records the first purchase only. Replacement
+ * stays operator-only, so neither the reason field nor the replace endpoint is
+ * reachable here.
+ */
+export function DeliveryPurchaseDialogContent({
+  order,
+  date,
+}: Readonly<{
+  order: { id: string; requestedTotalMinor: number };
+  date: string;
+}>) {
+  const { pop } = useDialog();
+  const { t } = useTranslation();
+  const purchase = useEntityCommand({
+    mutationFn: recordOwnOrderPurchase,
+    invalidate: [
+      dashboardKeys.delivery(date),
+      dashboardKeys.deliveryFamilies,
+      deliveryOrderKeys.detail(order.id),
+      orderKeys.all,
+      familyOrderingKeys.all,
+      budgetKeys.all,
+      familyBudgetKeys.all,
+    ],
+    successMessage: t("dashboard.delivery.purchaseRecorded"),
+    errorMessage: (error: unknown) =>
+      getLocalizedOrderLimitError(
+        error,
+        (key) => t(key),
+        t("dashboard.delivery.purchaseFailed"),
+      ),
+  });
+
+  return (
+    <PurchaseOrderForm
+      order={order}
+      pending={purchase.isPending}
+      evidence={{
+        upload: uploadOwnOrderReceipt,
+        removeCandidate: deleteOwnOrderReceiptCandidate,
+      }}
+      onSubmit={async (input) => {
+        await purchase.mutateAsync({ ...input, id: order.id });
+        await pop();
+      }}
+    />
   );
 }
 

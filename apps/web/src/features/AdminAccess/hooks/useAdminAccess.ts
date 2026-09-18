@@ -1,8 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityCommand, useEntityQuery } from "najm-kit/query";
 import { useCardViewport } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 import {

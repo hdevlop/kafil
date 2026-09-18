@@ -1,10 +1,9 @@
 "use client";
 
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityQuery, type EntityQueryOptions } from "najm-kit/query";
 import { getOwnFamilyBudgetSummary } from "@/services/familyBudgetApi";
 
 import { familyBudgetKeys } from "./familyBudgetKeys";
-import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 import type { FamilyBudgetSummary } from "../familyTypes";
 
 export function useOwnFamilyBudgetSummary(

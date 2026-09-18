@@ -378,7 +378,26 @@ describe("Kafil auth definitions", () => {
     expect(guardName("reportOwnDeliveryIssue")).toBe(
       "DeliveryStaffRoleGuard",
     );
+    expect(guardName("getOwnDelivery")).toBe("DeliveryStaffRoleGuard");
+    expect(guardName("recordOwnPurchase")).toBe("DeliveryStaffRoleGuard");
     expect(guardName("confirmDelivery")).toBe("OperatorRoleGuard");
+
+    // The Delivery role never widens into operator order management, generic
+    // order reading, or purchase replacement.
+    for (const operatorOnly of [
+      "approve",
+      "reject",
+      "cancel",
+      "recordPurchase",
+      "replacePurchase",
+      "assignDelivery",
+      "reassignDelivery",
+      "failDelivery",
+    ]) {
+      expect(guardName(operatorOnly)).toBe("OperatorRoleGuard");
+    }
+    expect(guardName("list")).toBe("OrderReaderRoleGuard");
+    expect(guardName("get")).toBe("OrderReaderRoleGuard");
   });
 
   it("keeps image routes on their explicit public and protected boundaries", () => {

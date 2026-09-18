@@ -15,7 +15,6 @@ import {
   useNajmFormat,
 } from "najm-kit";
 
-import { OrderConfirmationStep } from "@/features/OrderCart/components/OrderCartDialog";
 import { formatStatusLabel } from "@/features/StatusLabels";
 import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
@@ -26,6 +25,7 @@ import { useSponsorOrder } from "../hooks/useSponsorOrders";
 import type { SharedOrderRecord } from "../sharedTypes";
 import type { FamilyOrderDetail } from "../familyTypes";
 import { DeliveryAssignmentCard, DeliveryPersonCard } from "./DeliveryDetailsSheet";
+import { OrderSummarySections } from "./OrderSummarySections";
 
 export function OrderDetailsSheet({ open, order, sponsor = false, onOpenChange }: Readonly<{
   open: boolean;
@@ -147,29 +147,7 @@ function FamilyOrderDetails({ data }: Readonly<{ data: FamilyOrderDetail }>) {
   const { t } = useTranslation();
 
   return (
-    <OrderConfirmationStep
-      family={{
-        name: data.guardianLegalNameSnapshot,
-        image: data.familyImage,
-        exactAddress: data.deliveryAddressSnapshot,
-        phone: data.deliveryPhoneSnapshot,
-        availableMinor: null,
-      }}
-      familyMode
-      familyStatus={<NBadge status={data.status} />}
-      separateSections
-      showNotice={false}
-      totalMinor={data.requestedTotalMinor}
-      items={data.items.map((item) => ({
-        productId: item.productId,
-        productName: item.productNameSnapshot,
-        sku: item.skuSnapshot,
-        quantity: item.quantity,
-        estimatedUnitPriceMinor: item.unitPriceMinor,
-        currency: data.currency,
-        available: true,
-      }))}
-    >
+    <OrderSummarySections familyMode order={data}>
       <section aria-labelledby="family-order-delivery-title" className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <Truck aria-hidden className="size-4 text-primary" />
@@ -183,7 +161,7 @@ function FamilyOrderDetails({ data }: Readonly<{ data: FamilyOrderDetail }>) {
           emptyDescription={t("operator.orders.delivery.assignToContinue")}
         />
       </section>
-    </OrderConfirmationStep>
+    </OrderSummarySections>
   );
 }
 
@@ -215,29 +193,7 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
   );
 
   return (
-    <OrderConfirmationStep
-        family={{
-          name: data.guardianLegalNameSnapshot,
-          image: data.familyImage ?? null,
-          exactAddress: data.deliveryAddressSnapshot,
-          phone: data.deliveryPhoneSnapshot,
-          availableMinor: null,
-        }}
-        familyMode={false}
-        familyStatus={<NBadge status={data.status} />}
-        separateSections
-        showNotice={false}
-        totalMinor={data.requestedTotalMinor}
-        items={data.items.map((item) => ({
-          productId: item.productId,
-          productName: item.productNameSnapshot,
-          sku: item.skuSnapshot,
-          quantity: item.quantity,
-          estimatedUnitPriceMinor: item.unitPriceMinor,
-          currency: data.currency,
-          available: true,
-        }))}
-      >
+    <OrderSummarySections order={{ ...data, familyImage: data.familyImage ?? null }}>
       {data.purchasingStaffNameSnapshot ? (
         <section
           aria-labelledby="order-purchasing-title"
@@ -284,6 +240,6 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
           </NCard>
         </section>
       ) : null}
-    </OrderConfirmationStep>
+    </OrderSummarySections>
   );
 }

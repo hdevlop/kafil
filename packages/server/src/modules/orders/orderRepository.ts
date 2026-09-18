@@ -364,6 +364,17 @@ export class OrderRepository {
     return order;
   }
 
+  async findFamilyImage(orderId: string) {
+    const [row] = await this.db
+      .select({ familyImage: usersTable.image })
+      .from(orders)
+      .innerJoin(familyProfiles, eq(orders.familyProfileId, familyProfiles.id))
+      .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    return row?.familyImage ?? null;
+  }
+
   async lockById(id: string) {
     const [order] = await this.db
       .select()
@@ -524,6 +535,53 @@ export class OrderDeliveryRepository {
       )
       .limit(1);
     return attempt;
+  }
+
+  /**
+   * The attempt that authorizes an assigned worker's own commands. The order's
+   * active attempt decides first, so a reassigned worker loses the order the
+   * moment somebody else holds it. Only once no attempt is active does that
+   * worker's own completed attempt keep rendering its history; a cancelled
+   * attempt never authorizes anything.
+   */
+  async findOwnedByOrderId(orderId: string, staffProfileId: string) {
+    const active = await this.findActiveByOrderId(orderId);
+    if (active) {
+      return active.staffProfileId === staffProfileId ? active : undefined;
+    }
+    const [attempt] = await this.db
+      .select()
+      .from(orderDeliveryAttempts)
+      .where(
+        and(
+          eq(orderDeliveryAttempts.orderId, orderId),
+          eq(orderDeliveryAttempts.staffProfileId, staffProfileId),
+          inArray(orderDeliveryAttempts.status, ["delivered", "failed"]),
+        ),
+      )
+      .orderBy(
+        desc(orderDeliveryAttempts.assignedAt),
+        desc(orderDeliveryAttempts.id),
+      )
+      .limit(1);
+    return attempt;
+  }
+
+  listOpenIssues(attemptId: string) {
+    return this.db
+      .select({
+        id: orderDeliveryIssues.id,
+        kind: orderDeliveryIssues.kind,
+        note: orderDeliveryIssues.note,
+      })
+      .from(orderDeliveryIssues)
+      .where(
+        and(
+          eq(orderDeliveryIssues.attemptId, attemptId),
+          isNull(orderDeliveryIssues.resolvedAt),
+        ),
+      )
+      .orderBy(asc(orderDeliveryIssues.createdAt), asc(orderDeliveryIssues.id));
   }
 
   async findByAssignmentIdempotencyKey(assignmentIdempotencyKey: string) {

@@ -2,8 +2,9 @@
  * Connected four-account acceptance harness.
  *
  * One serial Playwright `describe` block. Four isolated browser contexts
- * (adminContext, familyContext, sponsorAContext, sponsorBContext) drive a
- * real data graph through eight work units (A → H). No `page.route()`
+ * (adminContext, familyContext, sponsorAContext, sponsorBContext, and the
+ * two Delivery worker contexts) drive a
+ * real data graph through nine work units (A → I). No `page.route()`
  * mocking is allowed; every API request goes to the local Next.js server
  * which proxies into the authorized local-demo PostgreSQL database and
  * the local Mailpit capture service.
@@ -46,6 +47,8 @@ const familyRuntimePassword = process.env.KAFIL_E2E_FAMILY_PASSWORD ?? "";
 const sponsorAPassword = process.env.KAFIL_E2E_SPONSOR_A_PASSWORD ?? "";
 const sponsorBRuntimePassword = process.env.KAFIL_E2E_SPONSOR_B_PASSWORD ?? "";
 const sponsorAEmail = process.env.KAFIL_E2E_SPONSOR_A_EMAIL ?? "";
+const deliveryARuntimePassword = process.env.KAFIL_E2E_DELIVERY_A_PASSWORD ?? "";
+const deliveryBRuntimePassword = process.env.KAFIL_E2E_DELIVERY_B_PASSWORD ?? "";
 const sponsorAPhone = process.env.KAFIL_E2E_SPONSOR_A_PHONE ?? "";
 const runLabel = process.env.KAFIL_E2E_RUN_LABEL ?? CONNECTED_RUN_FIXTURE.maskedLabel;
 
@@ -89,6 +92,14 @@ interface RunState {
   planAId: string;
   staffAId: string;
   staffBId: string;
+  deliveryAEmail: string;
+  deliveryAStaffId: string;
+  deliveryAUserId: string;
+  deliveryBEmail: string;
+  deliveryBStaffId: string;
+  deliveryOrderId: string;
+  deliveryOrderNumber: string;
+  deliveryAttemptId: string;
 }
 
 interface CapturedFailure {
@@ -792,20 +803,28 @@ test.describe.serial("connected four-account acceptance", () => {
   let familyContext: BrowserContext | undefined;
   let sponsorAContext: BrowserContext | undefined;
   let sponsorBContext: BrowserContext | undefined;
+  let deliveryAContext: BrowserContext | undefined;
+  let deliveryBContext: BrowserContext | undefined;
   let adminDiagnostics: ContextDiagnostics | undefined;
   let familyDiagnostics: ContextDiagnostics | undefined;
   let sponsorADiagnostics: ContextDiagnostics | undefined;
   let sponsorBDiagnostics: ContextDiagnostics | undefined;
+  let deliveryADiagnostics: ContextDiagnostics | undefined;
+  let deliveryBDiagnostics: ContextDiagnostics | undefined;
 
   test.beforeAll(async ({ browser }) => {
     adminContext = await browser.newContext();
     familyContext = await browser.newContext();
     sponsorAContext = await browser.newContext();
     sponsorBContext = await browser.newContext();
+    deliveryAContext = await browser.newContext();
+    deliveryBContext = await browser.newContext();
     adminDiagnostics = makeDiagnostics();
     familyDiagnostics = makeDiagnostics();
     sponsorADiagnostics = makeDiagnostics();
     sponsorBDiagnostics = makeDiagnostics();
+    deliveryADiagnostics = makeDiagnostics();
+    deliveryBDiagnostics = makeDiagnostics();
 
     state.label = runLabel;
     state.fixture = CONNECTED_RUN_FIXTURE;
@@ -835,6 +854,8 @@ test.describe.serial("connected four-account acceptance", () => {
       await familyContext?.close();
       await sponsorAContext?.close();
       await sponsorBContext?.close();
+      await deliveryAContext?.close();
+      await deliveryBContext?.close();
     }
   });
 
@@ -2282,12 +2303,392 @@ test.describe.serial("connected four-account acceptance", () => {
     await adminPage.close();
   });
 
+  test("work unit I — Delivery-owned purchase, start, and confirm", async () => {
+    if (
+      !adminContext || !adminDiagnostics ||
+      !familyContext || !familyDiagnostics ||
+      !deliveryAContext || !deliveryADiagnostics ||
+      !deliveryBContext || !deliveryBDiagnostics
+    ) {
+      throw new Error("Required browser contexts missing");
+    }
+    console.log("C4A STEP I START");
+    const fixture = state.fixture!;
+    const scheduledDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Africa/Casablanca",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    // ---- Sara (Admin/Operator) provisions two internal Delivery accounts ----
+    const adminPage = await adminContext.newPage();
+    attachDiagnostics(adminPage, adminDiagnostics);
+    await setLanguage(adminContext, "en");
+    const adminRefresh = await login(adminPage, adminEmail, adminPassword);
+    await expect(adminPage).toHaveURL(/\/dashboard$/);
+    await adminRefresh;
+
+    const deliveryAEmail = buildRunEmail(state.label ?? "", "deliveryA");
+    const deliveryBEmail = buildRunEmail(state.label ?? "", "deliveryB");
+    state.deliveryAEmail = deliveryAEmail;
+    state.deliveryBEmail = deliveryBEmail;
+
+    const createStaff = async (name: string, email: string, alias: "deliveryA" | "deliveryB") => {
+      const inviteStart = Date.now();
+      const created = await browserJsonRequest(adminPage, "POST", "/api/staff", {
+        name,
+        contactEmail: email,
+        phone: buildRunPhone(state.label ?? "", alias),
+        affiliation: "internal",
+        functions: ["delivery"],
+        cin: buildRunCin(state.label ?? "", alias),
+        dateOfBirth: "1990-05-04",
+      });
+      expect(created.status).toBeLessThan(400);
+      const record = responseData(created.body) as { id: string; userId: string | null };
+      expect(record.id).toBeTruthy();
+      return { record, inviteStart };
+    };
+
+    const ahmed = await createStaff(`Connected Delivery A ${state.label}`, deliveryAEmail, "deliveryA");
+    const youssef = await createStaff(`Connected Delivery B ${state.label}`, deliveryBEmail, "deliveryB");
+    state.deliveryAStaffId = ahmed.record.id;
+    state.deliveryBStaffId = youssef.record.id;
+
+    const deliveryUsers = await dbQuery<{ id: string; email: string; role_name: string }>(
+      `SELECT u.id, u.email, r.name AS role_name
+       FROM users u INNER JOIN roles r ON r.id = u.role_id
+       WHERE u.email = ANY($1::text[])`,
+      [[deliveryAEmail, deliveryBEmail]],
+    );
+    expect(deliveryUsers.length).toBe(2);
+    for (const row of deliveryUsers) expect(row.role_name).toBe("delivery");
+    state.deliveryAUserId = deliveryUsers.find((row) => row.email === deliveryAEmail)!.id;
+
+    // ---- Each worker activates its invitation and signs in ----
+    const activate = async (
+      context: BrowserContext,
+      diagnostics: ContextDiagnostics,
+      email: string,
+      password: string,
+      since: number,
+    ) => {
+      const page = await context.newPage();
+      attachDiagnostics(page, diagnostics);
+      await setLanguage(context, "en");
+      const invitation = await pollMailbox(email, since, 30);
+      const link = extractResetLink(invitation, baseUrl);
+      await deleteMailboxMessage(invitation.ID);
+      await page.goto(link);
+      await page.getByPlaceholder("At least 8 characters").fill(password);
+      await page.getByPlaceholder("Repeat the new password").fill(password);
+      const saved = page.waitForResponse((response) =>
+        new URL(response.url()).pathname === "/api/auth/reset-password" &&
+        response.request().method() === "POST",
+      );
+      await page.getByRole("button", { name: "Save password" }).click();
+      expect((await saved).status()).toBeLessThan(400);
+      await expect.poll(() => new URL(page.url()).pathname, { timeout: 120_000 }).toBe("/login");
+      await page.close();
+    };
+
+    await activate(deliveryAContext, deliveryADiagnostics, deliveryAEmail, deliveryARuntimePassword, ahmed.inviteStart);
+    await activate(deliveryBContext, deliveryBDiagnostics, deliveryBEmail, deliveryBRuntimePassword, youssef.inviteStart);
+
+    // ---- Fatima submits a funded cart through her own session ----
+    const familyPage = await familyContext.newPage();
+    attachDiagnostics(familyPage, familyDiagnostics);
+    await setLanguage(familyContext, "en");
+    const familyRefresh = await login(familyPage, state.familyEmail!, familyRuntimePassword);
+    await expect(familyPage).toHaveURL(/\/dashboard$/);
+    await familyRefresh;
+
+    const products = await dbQuery<{ id: string; price_minor: string }>(
+      `SELECT p.id, p.price_minor FROM products p
+       INNER JOIN categories c ON c.id = p.category_id
+       WHERE p.status = 'active' AND c.status = 'active'
+         AND p.price_minor > 0 AND ${fixture.order4EstimatedMinor} % p.price_minor = 0
+       ORDER BY p.price_minor DESC LIMIT 1`,
+    );
+    expect(products.length, "an active product must divide the order 4 estimate").toBe(1);
+    const unitPriceMinor = Number(products[0]!.price_minor);
+    const quantity = fixture.order4EstimatedMinor / unitPriceMinor;
+    expect(Number.isInteger(quantity)).toBe(true);
+
+    await browserJsonRequest(familyPage, "POST", "/api/orders/cart/clear");
+    const added = await browserJsonRequest(familyPage, "POST", "/api/orders/cart/items", {
+      productId: products[0]!.id,
+      quantity,
+    });
+    expect(added.status).toBeLessThan(400);
+    const submitted = await browserJsonRequest(familyPage, "POST", "/api/orders/submit", {
+      idempotencyKey: `c4a-${state.label}-order4-submit`,
+    });
+    expect(submitted.status).toBeLessThan(400);
+    const submittedOrder = responseData(submitted.body) as {
+      id: string;
+      orderNumber: string;
+      status: string;
+      requestedTotalMinor: number;
+    };
+    expect(submittedOrder.status).toBe("pending");
+    expect(submittedOrder.requestedTotalMinor).toBe(fixture.order4EstimatedMinor);
+    state.deliveryOrderId = submittedOrder.id;
+    state.deliveryOrderNumber = submittedOrder.orderNumber;
+    await signOut(familyPage);
+    await familyPage.close();
+
+    // ---- Sara approves and assigns Ahmed for the scheduled date ----
+    const approved = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${state.deliveryOrderId}/approve`,
+    );
+    expect(approved.status).toBeLessThan(400);
+    expect(responseData(approved.body)).toMatchObject({ status: "approved" });
+
+    const assigned = await browserJsonRequest(
+      adminPage,
+      "POST",
+      `/api/orders/${state.deliveryOrderId}/delivery/assign`,
+      {
+        staffProfileId: state.deliveryAStaffId,
+        scheduledDate,
+        windowStartMinute: 10 * 60,
+        windowEndMinute: 12 * 60,
+        packageCount: 2,
+        idempotencyKey: `c4a-${state.label}-order4-assign`,
+      },
+    );
+    expect(assigned.status).toBeLessThan(400);
+    const attempts = await dbQuery<{ id: string; staff_profile_id: string; status: string }>(
+      "SELECT id, staff_profile_id, status FROM order_delivery_attempts WHERE order_id = $1",
+      [state.deliveryOrderId],
+    );
+    expect(attempts.length).toBe(1);
+    expect(attempts[0]).toMatchObject({
+      staff_profile_id: state.deliveryAStaffId,
+      status: "assigned",
+    });
+    state.deliveryAttemptId = attempts[0]!.id;
+    await signOut(adminPage);
+    await adminPage.close();
+
+    // ---- Youssef is denied the order he is not assigned to ----
+    console.log("C4A STEP I DENIED_WORKER");
+    const youssefPage = await deliveryBContext.newPage();
+    attachDiagnostics(youssefPage, deliveryBDiagnostics);
+    const youssefRefresh = await login(youssefPage, deliveryBEmail, deliveryBRuntimePassword);
+    await expect(youssefPage).toHaveURL(/\/dashboard$/);
+    await youssefRefresh;
+
+    const { result: deniedRead } = await expectExactNegativeResponse(
+      youssefPage,
+      deliveryBDiagnostics,
+      { method: "GET", path: `/api/orders/${state.deliveryOrderId}/delivery/me`, status: 403 },
+      () => browserJsonRequest(youssefPage, "GET", `/api/orders/${state.deliveryOrderId}/delivery/me`),
+    );
+    expect(deniedRead.status).toBe(403);
+    expect(JSON.stringify(deniedRead.body)).not.toContain(state.deliveryOrderNumber!);
+
+    const { result: deniedPurchase } = await expectExactNegativeResponse(
+      youssefPage,
+      deliveryBDiagnostics,
+      { method: "POST", path: `/api/orders/${state.deliveryOrderId}/purchase/me`, status: 403 },
+      () => browserJsonRequest(youssefPage, "POST", `/api/orders/${state.deliveryOrderId}/purchase/me`, {
+        merchantName: "Marjane",
+        purchasedAt: new Date().toISOString(),
+        actualTotalMinor: fixture.order4ActualMinor,
+        receiptStoragePath: `/api/order-evidence/receipts/serve/${crypto.randomUUID()}.pdf`,
+        receiptMediaType: "application/pdf",
+        receiptByteSize: 64,
+        idempotencyKey: `c4a-${state.label}-order4-denied`,
+      }),
+    );
+    expect(deniedPurchase.status).toBe(403);
+    const afterDenial = await dbQuery<{ count: string }>(
+      "SELECT count(*)::text AS count FROM order_purchase_records WHERE order_id = $1",
+      [state.deliveryOrderId],
+    );
+    expect(afterDenial[0]?.count).toBe("0");
+    await signOut(youssefPage);
+    await youssefPage.close();
+
+    // ---- Ahmed works the assignment on a phone viewport ----
+    console.log("C4A STEP I ASSIGNED_WORKER");
+    const ahmedPage = await deliveryAContext.newPage();
+    attachDiagnostics(ahmedPage, deliveryADiagnostics);
+    await ahmedPage.setViewportSize(VIEWPORTS.phone);
+    const ahmedRefresh = await login(ahmedPage, deliveryAEmail, deliveryARuntimePassword);
+    await expect(ahmedPage).toHaveURL(/\/dashboard$/);
+    await ahmedRefresh;
+
+    const map = ahmedPage.locator('[aria-label="Delivery map"]');
+    await expect(map).toBeVisible({ timeout: 120_000 });
+    const mapBox = (await map.boundingBox())!;
+    for (const later of ["Assigned today", "Delivery overview", "Quick actions"]) {
+      const box = await ahmedPage.getByText(later, { exact: true }).first().boundingBox();
+      expect(box!.y, `${later} must follow the map`).toBeGreaterThan(mapBox.y);
+    }
+    // No persistent card covers the markers before a selection is made.
+    await expect(ahmedPage.getByRole("button", { name: "Validate purchase" })).toHaveCount(0);
+
+    const openSheet = async () => {
+      const detail = ahmedPage.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname ===
+          `/api/orders/${state.deliveryOrderId}/delivery/me`,
+      );
+      const row = await onlyVisible(
+        ahmedPage.getByRole("button", { name: new RegExp(`Connected Family ${state.label}`) }),
+      );
+      await row.click();
+      expect((await detail).status()).toBeLessThan(400);
+      const sheet = ahmedPage.getByRole("dialog");
+      await expect(sheet).toBeVisible();
+      return sheet;
+    };
+
+    let sheet = await openSheet();
+    await expect(sheet.getByText(`Connected Family ${state.label}`, { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Purchase required", { exact: true })).toBeVisible();
+    await expect(sheet.getByText(state.familyCin!, { exact: true })).toHaveCount(0);
+
+    // The sheet opens from the right and does not overflow a 390px phone.
+    const sheetBox = (await sheet.boundingBox())!;
+    expect(sheetBox.x + sheetBox.width).toBeGreaterThan(VIEWPORTS.phone.width - 4);
+    const phoneOverflow = await ahmedPage.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(phoneOverflow.documentWidth).toBeLessThanOrEqual(phoneOverflow.viewportWidth);
+
+    // ---- Validate purchase through the shared dialog ----
+    await sheet.getByRole("button", { name: "Validate purchase" }).click();
+    const purchaseDialog = ahmedPage.getByRole("dialog", { name: "Validate purchase" });
+    await expect(purchaseDialog).toBeVisible();
+    await expect(purchaseDialog.getByLabel("Replacement reason")).toHaveCount(0);
+    await purchaseDialog.getByLabel("Merchant").fill("Marjane");
+    await purchaseDialog
+      .getByLabel("Actual amount")
+      .fill(formatMadFromMinor(fixture.order4ActualMinor));
+    await purchaseDialog.getByLabel("Protected receipt").setInputFiles({
+      name: "receipt.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from(`%PDF-1.4\n% connected receipt ${state.label}\n`),
+    });
+
+    const uploadResponse = ahmedPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname.startsWith("/api/order-evidence/me/receipts/"),
+    );
+    const purchaseResponse = ahmedPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname ===
+          `/api/orders/${state.deliveryOrderId}/purchase/me`,
+    );
+    await purchaseDialog.getByRole("button", { name: "Record purchase" }).click();
+    expect((await uploadResponse).status()).toBeLessThan(400);
+    expect((await purchaseResponse).status()).toBeLessThan(400);
+    await expect(purchaseDialog).toBeHidden({ timeout: 60_000 });
+
+    // ---- Persisted financial effect ----
+    const purchases = await dbQuery<{
+      actual_total_minor: string;
+      recorded_by_user_id: string;
+      merchant_name: string;
+    }>(
+      "SELECT actual_total_minor, recorded_by_user_id, merchant_name FROM order_purchase_records WHERE order_id = $1",
+      [state.deliveryOrderId],
+    );
+    expect(purchases.length).toBe(1);
+    expect(purchases[0]).toMatchObject({
+      actual_total_minor: String(fixture.order4ActualMinor),
+      recorded_by_user_id: state.deliveryAUserId,
+      merchant_name: "Marjane",
+    });
+    const orderRows = await dbQuery<{ status: string }>(
+      "SELECT status FROM orders WHERE id = $1",
+      [state.deliveryOrderId],
+    );
+    expect(orderRows[0]?.status).toBe("purchased");
+    const ledgerRows = await dbQuery<{ entry_type: string; amount_minor: string }>(
+      `SELECT entry_type, amount_minor FROM budget_ledger_entries
+       WHERE source_type = 'order_purchase'
+         AND source_id = (SELECT id FROM order_purchase_records WHERE order_id = $1)
+       ORDER BY created_at ASC`,
+      [state.deliveryOrderId],
+    );
+    expect(ledgerRows.map((row) => row.entry_type)).toEqual([
+      "order_capture",
+      "order_release",
+    ]);
+    expect(ledgerRows[0]?.amount_minor).toBe(String(-fixture.order4ActualMinor));
+    expect(ledgerRows[1]?.amount_minor).toBe(
+      String(fixture.order4EstimatedMinor - fixture.order4ActualMinor),
+    );
+
+    // ---- The sheet refreshes from server state, not from local optimism ----
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole("button", { name: "Start delivery" })).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(sheet.getByRole("button", { name: "Validate purchase" })).toHaveCount(0);
+
+    const startResponse = ahmedPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname ===
+          `/api/orders/${state.deliveryOrderId}/delivery/me/start`,
+    );
+    await sheet.getByRole("button", { name: "Start delivery" }).click();
+    expect((await startResponse).status()).toBeLessThan(400);
+    await expect(sheet.getByRole("button", { name: "Confirm delivery" })).toBeVisible({
+      timeout: 60_000,
+    });
+
+    const confirmResponse = ahmedPage.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname ===
+          `/api/orders/${state.deliveryOrderId}/delivery/me/confirm`,
+    );
+    await sheet.getByRole("button", { name: "Confirm delivery" }).click();
+    expect((await confirmResponse).status()).toBeLessThan(400);
+
+    const terminal = await dbQuery<{ status: string; attempt_status: string }>(
+      `SELECT o.status, a.status AS attempt_status
+       FROM orders o INNER JOIN order_delivery_attempts a ON a.order_id = o.id
+       WHERE o.id = $1`,
+      [state.deliveryOrderId],
+    );
+    expect(terminal[0]).toMatchObject({ status: "delivered", attempt_status: "delivered" });
+    await expect(sheet.getByRole("button", { name: "Start delivery" })).toHaveCount(0);
+    await expect(sheet.getByRole("button", { name: "Confirm delivery" })).toHaveCount(0);
+
+    // ---- Closing returns focus, and the marker reopens the same order ----
+    await ahmedPage.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    sheet = await openSheet();
+    await expect(sheet.getByText(state.deliveryOrderNumber!, { exact: false }).first()).toBeVisible();
+    await ahmedPage.keyboard.press("Escape");
+
+    await ahmedPage.setViewportSize(VIEWPORTS.desktop);
+    await signOut(ahmedPage);
+    await ahmedPage.close();
+  });
+
   test("diagnostics — final context assertions contain no unexplained errors", async () => {
     for (const [alias, diagnostics] of [
       ["admin", adminDiagnostics],
       ["family", familyDiagnostics],
       ["sponsorA", sponsorADiagnostics],
       ["sponsorB", sponsorBDiagnostics],
+      ["deliveryA", deliveryADiagnostics],
+      ["deliveryB", deliveryBDiagnostics],
     ] as Array<[string, ContextDiagnostics | undefined]>) {
       if (!diagnostics) continue;
       await assertDiagnosticsClean(alias, diagnostics);

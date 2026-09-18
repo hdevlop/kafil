@@ -1,8 +1,6 @@
 "use client";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useOffsetInfiniteQuery } from "najm-kit/query";
+import { useEntityCommand, useEntityQuery, useOffsetInfiniteQuery } from "najm-kit/query";
 import {
   changeSponsorPlan,
   createSponsorPlan,

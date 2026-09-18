@@ -1,6 +1,6 @@
 "use client";
 
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityQuery } from "najm-kit/query";
 import { getOperatorDashboard } from "@/services/dashboardApi";
 
 import { dashboardKeys } from "../../shared/dashboardKeys";

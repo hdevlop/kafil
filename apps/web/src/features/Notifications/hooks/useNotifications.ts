@@ -1,6 +1,6 @@
 "use client";
 
-import { useEntityQuery, type EntityQueryOptions } from "@/hooks/useEntityQuery";
+import { useEntityQuery, type EntityQueryOptions } from "najm-kit/query";
 import {
   getPushConfig,
   getUnreadCount,

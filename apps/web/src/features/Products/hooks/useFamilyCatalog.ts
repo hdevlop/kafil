@@ -1,6 +1,6 @@
 "use client";
 
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityQuery, type EntityQueryOptions } from "najm-kit/query";
 import {
   listFamilyCatalogCategories,
   listFamilyCatalogProducts,
@@ -8,7 +8,6 @@ import {
 
 import { familyCatalogKeys } from "./familyCatalogKeys";
 import type { FamilyCatalogCategory, FamilyCatalogProduct, FamilyCatalogQuery } from "../familyCatalogTypes";
-import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 
 export function useFamilyCatalogCategories(
   options: Partial<EntityQueryOptions<FamilyCatalogCategory[]>> = {},

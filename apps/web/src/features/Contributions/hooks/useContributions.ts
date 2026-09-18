@@ -2,9 +2,7 @@
 
 import { useUser } from "najm-auth/client/react";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "najm-kit/query";
+import { useEntityCommand, useEntityQuery, useResponsiveOffsetList } from "najm-kit/query";
 import { useTranslation } from "najm-i18n/react";
 import {
   bulkDeleteContributions,

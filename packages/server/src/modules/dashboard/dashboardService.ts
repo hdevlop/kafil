@@ -14,6 +14,10 @@ import type {
   SponsorDashboard,
   SponsorMetrics,
 } from "./dashboardTypes";
+import {
+  deliveryWorkflowCapabilities,
+  deliveryWorkflowState,
+} from "../orders/deliveryWorkflow";
 import { deliveryFamiliesQuery, type DeliveryFamiliesQuery } from "./dashboardDto";
 import { sponsorFamilyReference } from "../supportAssignments/supportAssignmentProjection";
 import { casablancaClock, isDeliveryDelayed } from "./deliveryTiming";
@@ -140,6 +144,13 @@ export class DashboardService {
         row.latitude <= 90 &&
         row.longitude >= -180 &&
         row.longitude <= 180;
+      // Lifecycle and operational warnings stay independent: a row may be
+      // "purchase_required" and "needs_attention" at the same time.
+      const workflow = {
+        orderStatus: row.orderStatus,
+        attemptStatus: row.attemptStatus,
+        hasActivePurchase: Boolean(row.hasActivePurchase),
+      };
 
       return {
         attemptId: row.attemptId,
@@ -161,12 +172,9 @@ export class DashboardService {
         packageCount: row.packageCount ?? 0,
         delayed,
         openIssues,
-        canStart:
-          row.attemptStatus === "assigned" && row.orderStatus === "purchased",
-        canConfirm:
-          row.attemptStatus === "in_progress" &&
-          row.orderStatus === "out_for_delivery",
-        canReportIssue: row.attemptStatus !== "delivered",
+        orderStatus: row.orderStatus,
+        workflowState: deliveryWorkflowState(workflow),
+        ...deliveryWorkflowCapabilities(workflow),
       };
     });
 

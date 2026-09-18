@@ -2,8 +2,8 @@
 
 import { keepPreviousData } from "@tanstack/react-query";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { deliveryOrderKeys } from "@/features/Orders/hooks/deliveryOrderKeys";
+import { useEntityCommand, useEntityQuery } from "najm-kit/query";
 import { getDeliveryDashboard } from "@/services/dashboardApi";
 import {
   confirmOwnOrderDelivery,
@@ -22,7 +22,11 @@ export function useDeliveryDashboard(date: string) {
 }
 
 export function useDeliveryDashboardCommands(date: string) {
-  const invalidate = [dashboardKeys.delivery(date), dashboardKeys.deliveryFamilies];
+  const invalidate = [
+    dashboardKeys.delivery(date),
+    dashboardKeys.deliveryFamilies,
+    deliveryOrderKeys.all,
+  ];
   return {
     start: useEntityCommand({ mutationFn: startOwnOrderDelivery, invalidate }),
     confirm: useEntityCommand({ mutationFn: confirmOwnOrderDelivery, invalidate }),

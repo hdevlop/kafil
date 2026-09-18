@@ -1,6 +1,6 @@
 "use client";
 
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityQuery } from "najm-kit/query";
 import { getSponsorDashboard } from "@/services/sponsorDashboardApi";
 
 import { sponsorDashboardKeys } from "./sponsorDashboardKeys";

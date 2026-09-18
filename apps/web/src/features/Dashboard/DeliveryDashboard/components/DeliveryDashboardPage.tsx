@@ -1,14 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
-  CalendarDays,
   CheckCircle2,
   ClockAlert,
   Clock3,
-  ExternalLink,
   FileWarning,
   MapPin,
   MapPinned,
@@ -16,7 +14,6 @@ import {
   PackageCheck,
   Phone,
   PhoneOff,
-  Play,
   Truck,
   UsersRound,
 } from "lucide-react";
@@ -31,7 +28,6 @@ import {
   NErrorState,
   NGrid,
   NGridItem,
-  NativeSelect,
   NPageHeader,
   NPageHeaderActions,
   NPageLayout,
@@ -50,6 +46,8 @@ import { DeliveryDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import { casablancaToday, minuteLabel } from "../../shared/deliveryTime";
 import type { DeliveryDashboardItem } from "../../types";
 import { useDeliveryDashboard, useDeliveryDashboardCommands } from "../hooks/useDeliveryDashboard";
+import type { MarkerFocusHandle } from "./DeliveryMap";
+import { DeliveryOrderSheet, workflowLabelKey } from "./DeliveryOrderSheet";
 
 const DeliveryMap = dynamic(() => import("./DeliveryMap").then((module) => module.DeliveryMap), {
   ssr: false,
@@ -73,7 +71,12 @@ export function DeliveryDashboardPage() {
   const commands = useDeliveryDashboardCommands(date);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const [issueKind, setIssueKind] = useState<"address_confirmation" | "family_unreachable" | "missing_proof">("address_confirmation");
+  // Focus returns to whichever control opened the sheet. A marker is not kept
+  // as an element: the map rebuilds its markers whenever the deliveries
+  // refetch, so the attempt id is resolved to a live element on close.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const markerTriggerRef = useRef<string | null>(null);
+  const mapHandleRef = useRef<MarkerFocusHandle | null>(null);
 
   useEffect(() => {
     const currentUrl = new URL(window.location.href);
@@ -87,36 +90,46 @@ export function DeliveryDashboardPage() {
   const items = dashboard.data?.deliveries ?? [];
   const selected = isDateTransition
     ? null
-    : items.find((item) => item.attemptId === selectedId) ?? items[0] ?? null;
+    : items.find((item) => item.attemptId === selectedId) ?? null;
   const effectiveSelectedId = selected?.attemptId ?? null;
-  const onSelect = useCallback((id: string) => setSelectedId(id), []);
+
+  // A marker and a planned-delivery row open exactly the same selection.
+  const openAttempt = useCallback((attemptId: string, trigger?: HTMLElement | null) => {
+    triggerRef.current = trigger ?? null;
+    markerTriggerRef.current = null;
+    setSelectedId(attemptId);
+  }, []);
+  const selectFromMap = useCallback((attemptId: string) => {
+    triggerRef.current = null;
+    markerTriggerRef.current = attemptId;
+    setSelectedId(attemptId);
+  }, []);
+  const markerLabel = useCallback(
+    (item: DeliveryDashboardItem) =>
+      `${t("dashboard.delivery.markerLabel", {
+        family: item.familyName,
+        order: item.orderNumber,
+        workflow: t(workflowLabelKey(item.workflowState)),
+      })}${item.delayed || item.openIssues.length ? ` · ${t(categoryKey(item.category))}` : ""}`,
+    [t],
+  );
+
+  function closeSheet(open: boolean) {
+    if (open) return;
+    setSelectedId(null);
+    const trigger = triggerRef.current;
+    const marker = markerTriggerRef.current;
+    triggerRef.current = null;
+    markerTriggerRef.current = null;
+    if (marker) mapHandleRef.current?.focusMarker(marker);
+    else trigger?.focus();
+  }
 
   function changeDate(next: string | undefined) {
     if (!next || next === date) return;
     setSelectedId(null);
     setShowAll(false);
     setDate(next);
-  }
-
-  async function start(item: DeliveryDashboardItem) {
-    await commands.start.mutateAsync({ id: item.orderId, idempotencyKey: crypto.randomUUID() });
-  }
-
-  async function confirm(item: DeliveryDashboardItem) {
-    await commands.confirm.mutateAsync({
-      id: item.orderId,
-      confirmationMethod: "operator_confirmation",
-      idempotencyKey: crypto.randomUUID(),
-    });
-  }
-
-  async function reportIssue(item: DeliveryDashboardItem) {
-    await commands.reportIssue.mutateAsync({
-      id: item.orderId,
-      attemptId: item.attemptId,
-      kind: issueKind,
-      idempotencyKey: crypto.randomUUID(),
-    });
   }
 
   if (dashboard.isError) {
@@ -174,7 +187,14 @@ export function DeliveryDashboardPage() {
       icon: CheckCircle2,
       id: "confirm-delivery",
       label: t("dashboard.delivery.confirmDelivery"),
-      onClick: () => { if (selected?.canConfirm) void confirm(selected); },
+      onClick: () => {
+        if (!selected?.canConfirm) return;
+        void commands.confirm.mutateAsync({
+          id: selected.orderId,
+          confirmationMethod: "operator_confirmation",
+          idempotencyKey: crypto.randomUUID(),
+        });
+      },
     },
     {
       description: t("dashboard.delivery.callFamilyHint"),
@@ -186,11 +206,11 @@ export function DeliveryDashboardPage() {
     },
     {
       description: t("dashboard.delivery.reportIssueHint"),
-      disabled: !selected?.canReportIssue || commands.reportIssue.isPending,
+      disabled: !selected,
       icon: AlertTriangle,
       id: "report-issue",
       label: t("dashboard.delivery.reportIssue"),
-      onClick: () => { if (selected?.canReportIssue) void reportIssue(selected); },
+      onClick: () => { if (selected) openAttempt(selected.attemptId, null); },
     },
   ];
 
@@ -199,6 +219,60 @@ export function DeliveryDashboardPage() {
       <NPageHeader card icon={Truck} title={t("dashboard.delivery.title")} subtitle={t("dashboard.delivery.subtitle")}>
         <NPageHeaderActions><PageHeaderGlobalActions /></NPageHeaderActions>
       </NPageHeader>
+
+      <NCard
+        classNames={{
+          content: "flex min-h-0 flex-col",
+          header: "flex-wrap gap-2",
+        }}
+        title={t("dashboard.delivery.mapTitle")}
+        description={t("dashboard.delivery.mapSubtitle")}
+        icon={MapPin}
+      >
+        <NCardAction>
+          <div className="flex items-center gap-2">
+            {isDateTransition ? (
+              <span className="inline-flex size-10 items-center justify-center" role="status">
+                <NSpinner aria-hidden="true" size={18} />
+                <span className="sr-only">{t("state.loading")}</span>
+              </span>
+            ) : null}
+            <NButton
+              aria-pressed={date === today}
+              className="h-10 px-3"
+              onClick={() => changeDate(today)}
+              size="lg"
+              type="button"
+              variant={date === today ? "secondary" : "outline"}
+            >
+              {t("dashboard.delivery.today")}
+            </NButton>
+            <DateInput
+              ariaLabel={t("dashboard.delivery.selectDate")}
+              className="w-32 sm:w-48"
+              onChange={changeDate}
+              value={new Date(`${date}T12:00:00`)}
+            />
+          </div>
+        </NCardAction>
+
+        {/* Nothing is layered over the markers: selection opens the sheet. */}
+        <div className="relative min-h-[26rem] flex-1 overflow-hidden rounded-xl border sm:min-h-[34rem]">
+          <DeliveryMap
+            handleRef={mapHandleRef}
+            items={items}
+            selectedId={effectiveSelectedId}
+            onSelect={selectFromMap}
+            ariaLabel={t("dashboard.delivery.mapTitle")}
+            errorTitle={t("operator.families.locationProviderError")}
+            markerLabel={markerLabel}
+          />
+        </div>
+
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          {chartItems.map((item) => <NBadge key={item.id} status={item.id}>{item.label} ({fmt.number(item.value)})</NBadge>)}
+        </div>
+      </NCard>
 
       <NGrid cols={2} lgCols={3} xlCols={6}>
         {statCards.map(({ icon: Icon, key, value }) => (
@@ -209,186 +283,87 @@ export function DeliveryDashboardPage() {
         ))}
       </NGrid>
 
-      <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-12">
-        <div className="grid content-stretch gap-4 md:grid-cols-2 xl:col-span-6">
-          <NPieChart
+      <div className="grid flex-1 content-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <NPieChart
+          className="h-full min-h-72"
+          title={t("dashboard.delivery.overview")}
+          icon={PackageCheck}
+          items={chartItems}
+          emptyLabel={<NEmptyState icon={PackageCheck} title={t("dashboard.delivery.noDeliveries")} />}
+          valueFormatter={fmt.number}
+        />
+
+        <div id="delivery-list" className="h-full">
+          <NCard
             className="h-full min-h-72"
-            title={t("dashboard.delivery.overview")}
-            icon={PackageCheck}
-            items={chartItems}
-            emptyLabel={<NEmptyState icon={PackageCheck} title={t("dashboard.delivery.noDeliveries")} />}
-            valueFormatter={fmt.number}
-          />
-
-          <div id="delivery-list" className="h-full">
-            <NCard
-              className="h-full min-h-72"
-              title={t("dashboard.delivery.todaysDeliveries")}
-              icon={Truck}
-            >
-              {items.length === 0 ? (
-                <NEmptyState
-                  className="min-h-40 py-8"
-                  icon={Truck}
-                  title={t("dashboard.delivery.noDeliveries")}
-                />
-              ) : (
-              <div className="space-y-1">
-                {(showAll ? items : items.slice(0, 5)).map((item) => (
-                  <NButton
-                    key={item.attemptId}
-                    variant={item.attemptId === effectiveSelectedId ? "secondary" : "ghost"}
-                    className="h-auto w-full justify-start gap-3 px-2 py-2 text-start"
-                    onClick={() => onSelect(item.attemptId)}
-                  >
-                    <NAvatar fallback={item.familyName} src={item.familyImage} size="sm" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{item.familyName}</span>
-                      {item.phone ? (
-                        <span dir="ltr" className="block truncate text-start text-xs font-normal text-muted-foreground">{item.phone}</span>
-                      ) : null}
-                      <span className="sr-only">{item.orderNumber}</span>
-                    </span>
-                    <span className="shrink-0 text-xs font-normal text-muted-foreground">
-                      {minuteLabel(item.windowStartMinute)}–{minuteLabel(item.windowEndMinute)}
-                    </span>
-                    <NBadge status={item.category}>{t(categoryKey(item.category))}</NBadge>
-                  </NButton>
-                ))}
-                {items.length > 5 ? (
-                  <NButton variant="outline" className="w-full" onClick={() => setShowAll((current) => !current)}>
-                    {showAll ? t("dashboard.delivery.showLess") : t("dashboard.delivery.viewAll")}
-                  </NButton>
-                ) : null}
-              </div>
-              )}
-            </NCard>
-          </div>
-
-          <DashboardAttentionCard
-            allClearLabel={t("dashboard.operator.allClear")}
-            icon={AlertTriangle}
-            items={attentionRows.map(({ key, ...item }) => ({
-              ...item,
-              label: t(`dashboard.delivery.${key}`),
-            }))}
-            title={t("dashboard.delivery.attentionTitle")}
-          />
-
-          <DashboardQuickActionsCard actions={quickActions} title={t("dashboard.delivery.quickActions")} />
+            title={t("dashboard.delivery.todaysDeliveries")}
+            icon={Truck}
+          >
+            {items.length === 0 ? (
+              <NEmptyState
+                className="min-h-40 py-8"
+                icon={Truck}
+                title={t("dashboard.delivery.noDeliveries")}
+              />
+            ) : (
+            <div className="space-y-1">
+              {(showAll ? items : items.slice(0, 5)).map((item) => (
+                <NButton
+                  key={item.attemptId}
+                  variant={item.attemptId === effectiveSelectedId ? "secondary" : "ghost"}
+                  className="h-auto w-full justify-start gap-3 px-2 py-2 text-start"
+                  onClick={(event) => openAttempt(item.attemptId, event.currentTarget)}
+                >
+                  <NAvatar fallback={item.familyName} src={item.familyImage} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{item.familyName}</span>
+                    {item.phone ? (
+                      <span dir="ltr" className="block truncate text-start text-xs font-normal text-muted-foreground">{item.phone}</span>
+                    ) : null}
+                    <span className="sr-only">{item.orderNumber}</span>
+                  </span>
+                  <span className="shrink-0 text-xs font-normal text-muted-foreground">
+                    {minuteLabel(item.windowStartMinute)}–{minuteLabel(item.windowEndMinute)}
+                  </span>
+                  <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                    <NBadge status={item.workflowState}>{t(workflowLabelKey(item.workflowState))}</NBadge>
+                    {item.delayed || item.openIssues.length ? (
+                      <NBadge status={item.category}>{t(categoryKey(item.category))}</NBadge>
+                    ) : null}
+                  </span>
+                </NButton>
+              ))}
+              {items.length > 5 ? (
+                <NButton variant="outline" className="w-full" onClick={() => setShowAll((current) => !current)}>
+                  {showAll ? t("dashboard.delivery.showLess") : t("dashboard.delivery.viewAll")}
+                </NButton>
+              ) : null}
+            </div>
+            )}
+          </NCard>
         </div>
 
-        <NCard
-          className="h-full xl:col-span-6"
-          classNames={{
-            content: "flex h-full min-h-0 flex-col",
-            header: "flex-wrap gap-2",
-          }}
-          title={t("dashboard.delivery.mapTitle")}
-          description={t("dashboard.delivery.mapSubtitle")}
-          icon={MapPin}
-        >
-          <NCardAction>
-            <div className="flex items-center gap-2">
-              {isDateTransition ? (
-                <span className="inline-flex size-10 items-center justify-center" role="status">
-                  <NSpinner aria-hidden="true" size={18} />
-                  <span className="sr-only">{t("state.loading")}</span>
-                </span>
-              ) : null}
-              <NButton
-                aria-pressed={date === today}
-                className="h-10 px-3"
-                onClick={() => changeDate(today)}
-                size="lg"
-                type="button"
-                variant={date === today ? "secondary" : "outline"}
-              >
-                {t("dashboard.delivery.today")}
-              </NButton>
-              <DateInput
-                ariaLabel={t("dashboard.delivery.selectDate")}
-                className="w-32 sm:w-48"
-                onChange={changeDate}
-                value={new Date(`${date}T12:00:00`)}
-              />
-            </div>
-          </NCardAction>
+        <DashboardAttentionCard
+          allClearLabel={t("dashboard.operator.allClear")}
+          icon={AlertTriangle}
+          items={attentionRows.map(({ key, ...item }) => ({
+            ...item,
+            label: t(`dashboard.delivery.${key}`),
+          }))}
+          title={t("dashboard.delivery.attentionTitle")}
+        />
 
-          <div className="relative min-h-[34rem] flex-1 overflow-hidden rounded-xl border">
-            <DeliveryMap
-              items={items}
-              selectedId={effectiveSelectedId}
-              onSelect={onSelect}
-              ariaLabel={t("dashboard.delivery.mapTitle")}
-              errorTitle={t("operator.families.locationProviderError")}
-            />
-
-            {selected ? (
-              <div className="absolute inset-x-3 bottom-3 z-[500] rounded-xl border bg-card/95 p-4 shadow-xl backdrop-blur md:left-1/2 md:right-auto md:w-[22rem] md:-translate-x-1/2">
-                <div className="flex items-start justify-between gap-3">
-                  <NAvatar title={selected.familyName} subtitle={selected.orderNumber} fallback={selected.familyName} src={selected.familyImage} size="sm" />
-                  <NBadge status={selected.category}>{t(categoryKey(selected.category))}</NBadge>
-                </div>
-                <div className="mt-3 grid gap-2 text-sm">
-                  <span><MapPin className="me-2 inline size-4" />{selected.address}</span>
-                  <span><CalendarDays className="me-2 inline size-4" />{selected.scheduledDate} · {minuteLabel(selected.windowStartMinute)}–{minuteLabel(selected.windowEndMinute)}</span>
-                  <span><Package className="me-2 inline size-4" />{fmt.number(selected.packageCount)} {t("dashboard.delivery.packages")}</span>
-                </div>
-                {!selected.coordinates ? <p className="mt-2 text-sm font-medium text-amber-600">{t("dashboard.delivery.locationUnavailable")}</p> : null}
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <NButton size="sm" variant="outline" disabled={!selected.phone} onClick={() => { if (selected.phone) window.location.href = `tel:${selected.phone}`; }}>
-                    <Phone className="size-4" />{t("dashboard.delivery.callFamily")}
-                  </NButton>
-                  <NButton
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const query = selected.coordinates ? `${selected.coordinates.latitude},${selected.coordinates.longitude}` : selected.address;
-                      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, "_blank", "noopener,noreferrer");
-                    }}
-                  >
-                    <ExternalLink className="size-4" />{t("dashboard.delivery.openMaps")}
-                  </NButton>
-                  {selected.canStart ? (
-                    <NButton size="sm" className="col-span-2" disabled={commands.start.isPending} onClick={() => void start(selected)}>
-                      <Play className="size-4" />{t("dashboard.delivery.startDelivery")}
-                    </NButton>
-                  ) : null}
-                  {selected.canConfirm ? (
-                    <NButton size="sm" className="col-span-2" disabled={commands.confirm.isPending} onClick={() => void confirm(selected)}>
-                      <CheckCircle2 className="size-4" />{t("dashboard.delivery.confirmDelivery")}
-                    </NButton>
-                  ) : null}
-                </div>
-                {selected.canReportIssue ? (
-                  <div className="mt-3 flex gap-2">
-                    <NativeSelect
-                      className="min-w-0 flex-1"
-                      value={issueKind}
-                      aria-label={t("dashboard.delivery.issueKind")}
-                      options={[
-                        { value: "address_confirmation", label: t("dashboard.delivery.addressToConfirm") },
-                        { value: "family_unreachable", label: t("dashboard.delivery.familyUnreachable") },
-                        { value: "missing_proof", label: t("dashboard.delivery.missingProof") },
-                      ]}
-                      onChange={(event) => setIssueKind(event.target.value as typeof issueKind)}
-                    />
-                    <NButton size="sm" variant="outline" disabled={commands.reportIssue.isPending} onClick={() => void reportIssue(selected)}>
-                      <AlertTriangle className="size-4" />
-                      <span className="sr-only">{t("dashboard.delivery.reportIssue")}</span>
-                    </NButton>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
-            {chartItems.map((item) => <NBadge key={item.id} status={item.id}>{item.label} ({fmt.number(item.value)})</NBadge>)}
-          </div>
-        </NCard>
+        <DashboardQuickActionsCard actions={quickActions} title={t("dashboard.delivery.quickActions")} />
       </div>
+
+      <DeliveryOrderSheet
+        open={Boolean(selected)}
+        orderId={selected?.orderId ?? null}
+        orderNumber={selected?.orderNumber ?? null}
+        date={date}
+        commands={commands}
+        onOpenChange={closeSheet}
+      />
     </NPageLayout>
   );
 }

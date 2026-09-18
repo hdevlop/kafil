@@ -16,13 +16,17 @@ export type RunRoleAlias =
   | "bootstrapAdmin"
   | "family"
   | "sponsorA"
-  | "sponsorB";
+  | "sponsorB"
+  | "deliveryA"
+  | "deliveryB";
 
 export const RUN_ROLE_ALIASES = [
   "bootstrapAdmin",
   "family",
   "sponsorA",
   "sponsorB",
+  "deliveryA",
+  "deliveryB",
 ] as const satisfies readonly RunRoleAlias[];
 
 export const CONTEXT_ALIAS_TO_INDEX: Record<RunRoleAlias, number> = {
@@ -30,6 +34,8 @@ export const CONTEXT_ALIAS_TO_INDEX: Record<RunRoleAlias, number> = {
   family: 1,
   sponsorA: 2,
   sponsorB: 3,
+  deliveryA: 4,
+  deliveryB: 5,
 };
 
 export interface RunFixture {
@@ -37,6 +43,7 @@ export interface RunFixture {
   adminEmailDomain: string;
   familyEmailDomain: string;
   sponsorEmailDomain: string;
+  deliveryEmailDomain: string;
   /** Family funding target in integer minor units (MAD). */
   fundingTargetMinor: number;
   /** Sponsor A's portion of the target in integer minor units (MAD). */
@@ -54,6 +61,9 @@ export interface RunFixture {
   /** Order 3 purchased with a different actual total. */
   order3EstimatedMinor: number;
   order3ActualMinor: number;
+  /** Order 4 is the Delivery-owned purchase: estimated, then actual. */
+  order4EstimatedMinor: number;
+  order4ActualMinor: number;
   /** Locale used by every context for stable selectors. */
   locale: "en";
 }
@@ -63,6 +73,7 @@ export const CONNECTED_RUN_FIXTURE: RunFixture = {
   adminEmailDomain: "c4a-admin.test",
   familyEmailDomain: "c4a-family.test",
   sponsorEmailDomain: "c4a-sponsor.test",
+  deliveryEmailDomain: "c4a-delivery.test",
   // The funding target and splits are chosen so that the integer-only
   // arithmetic never needs floating-point money. The split covers
   // Sponsor A's first contribution + Sponsor B's first contribution
@@ -76,6 +87,10 @@ export const CONNECTED_RUN_FIXTURE: RunFixture = {
   order2ReservedMinor: 18_400,
   order3EstimatedMinor: 32_900,
   order3ActualMinor: 31_400,
+  // The assigned worker records a lower actual total, so the release branch
+  // of the settlement is exercised without a higher-amount confirmation.
+  order4EstimatedMinor: 21_000,
+  order4ActualMinor: 19_500,
   locale: "en",
 };
 
@@ -133,6 +148,8 @@ export function buildRunEmail(label: string, alias: RunRoleAlias): string {
     family: CONNECTED_RUN_FIXTURE.familyEmailDomain,
     sponsorA: CONNECTED_RUN_FIXTURE.sponsorEmailDomain,
     sponsorB: CONNECTED_RUN_FIXTURE.sponsorEmailDomain,
+    deliveryA: CONNECTED_RUN_FIXTURE.deliveryEmailDomain,
+    deliveryB: CONNECTED_RUN_FIXTURE.deliveryEmailDomain,
   };
   return `${sanitized}-${alias.toLowerCase()}@${domains[alias]}`;
 }

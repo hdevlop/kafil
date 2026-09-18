@@ -13,6 +13,7 @@ import type {
   ReplacePurchaseInput,
   StartDeliveryInput,
 } from "@/features/Orders/types";
+import type { DeliveryOrderDetail } from "@/features/Dashboard/types";
 import { api } from "@/services/http";
 
 export function listOrders(query: OrderListQuery) {
@@ -71,11 +72,11 @@ export function confirmOrderDelivery({ id, ...input }: ConfirmDeliveryInput) {
 }
 
 export function startOwnOrderDelivery({ id, ...input }: StartDeliveryInput) {
-  return api.post<OrderDetail>(`/orders/${id}/delivery/me/start`, input);
+  return api.post<DeliveryOrderDetail>(`/orders/${id}/delivery/me/start`, input);
 }
 
 export function confirmOwnOrderDelivery({ id, ...input }: ConfirmDeliveryInput) {
-  return api.post<OrderDetail>(`/orders/${id}/delivery/me/confirm`, input);
+  return api.post<DeliveryOrderDetail>(`/orders/${id}/delivery/me/confirm`, input);
 }
 
 export function reportOwnOrderDeliveryIssue(input: {
@@ -89,21 +90,33 @@ export function reportOwnOrderDeliveryIssue(input: {
   return api.post(`/orders/${id}/delivery/me/issues`, body);
 }
 
+export function getOwnDeliveryOrder(id: string) {
+  return api.get<DeliveryOrderDetail>(`/orders/${id}/delivery/me`);
+}
+
+export function recordOwnOrderPurchase({ id, ...input }: RecordPurchaseInput) {
+  return api.post<DeliveryOrderDetail>(`/orders/${id}/purchase/me`, input);
+}
+
+const EVIDENCE_EXTENSIONS: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+function evidenceFileName(file: File) {
+  const extension = EVIDENCE_EXTENSIONS[file.type];
+  if (!extension) throw new Error("Unsupported evidence file type.");
+  return `${crypto.randomUUID()}.${extension}`;
+}
+
 export function uploadOrderEvidence(
   kind: "deliveries" | "receipts",
   file: File,
 ) {
-  const extensionByType: Record<string, string> = {
-    "application/pdf": "pdf",
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-  };
-  const extension = extensionByType[file.type];
-  if (!extension) throw new Error("Unsupported evidence file type.");
-  const fileName = `${crypto.randomUUID()}.${extension}`;
   return api.upload<EvidenceUpload>(
-    `/order-evidence/${kind}/${fileName}`,
+    `/order-evidence/${kind}/${evidenceFileName(file)}`,
     file,
   );
 }
@@ -111,6 +124,23 @@ export function uploadOrderEvidence(
 export function deleteOrderEvidenceCandidate(path: string) {
   const relative = path.replace("/api/order-evidence/", "/order-evidence/");
   return api.deleteFile(relative.replace("/serve/", "/"));
+}
+
+/**
+ * The assigned Delivery worker stages its receipt through the narrow own-
+ * candidate routes. Serving, delivery proofs, and maintenance stay operator-only.
+ */
+export function uploadOwnOrderReceipt(file: File) {
+  return api.upload<EvidenceUpload>(
+    `/order-evidence/me/receipts/${evidenceFileName(file)}`,
+    file,
+  );
+}
+
+export function deleteOwnOrderReceiptCandidate(path: string) {
+  const fileName = path.split("/").pop();
+  if (!fileName) throw new Error("Unsupported evidence reference.");
+  return api.deleteFile(`/order-evidence/me/receipts/${fileName}`);
 }
 
 export function rejectOrder({ id, reason }: OrderReasonInput) {

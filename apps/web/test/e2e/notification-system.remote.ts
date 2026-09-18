@@ -900,7 +900,7 @@ test.describe.serial("remote notification system acceptance", () => {
     });
     await openNotificationsPopover(bell, () => bell.click());
     const card = sponsorAPage.locator(
-      `[data-notification-id="${state.sponsorAValidatedNotificationId}"]`,
+      `[data-notify-item-id="${state.sponsorAValidatedNotificationId}"]`,
     );
     await expect(card).toBeVisible();
     await expect(card.getByText("Unread", { exact: true })).toBeVisible();
@@ -919,7 +919,7 @@ test.describe.serial("remote notification system acceptance", () => {
         new URL(response.url()).pathname ===
           `/api/notifications/${state.sponsorAValidatedNotificationId}/read`,
     );
-    await card.getByRole("link", { name: "View", exact: true }).click();
+    await card.getByRole("button", { name: "View", exact: true }).click();
     expect((await markResponse).status()).toBe(200);
     const persisted = await pollNotificationState(
       () => readNotifications(sponsorAPage, "?limit=100"),
@@ -1278,7 +1278,7 @@ test.describe.serial("remote notification system acceptance", () => {
     );
     await expect(sponsorAPage.getByText("الإشعارات", { exact: true }).first()).toBeVisible();
     const card = sponsorAPage.locator(
-      `[data-notification-id="${state.sponsorALaterNotificationId}"]`,
+      `[data-notify-item-id="${state.sponsorALaterNotificationId}"]`,
     );
     await expect(card).toBeVisible();
     await expectWithinViewport(

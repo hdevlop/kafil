@@ -130,14 +130,18 @@ describe("connected four-account production runner", () => {
     );
   });
 
+  /** One work unit's own source, bounded by the next unit rather than the file. */
+  function workUnitSource(header: string) {
+    const start = connectedSpecSource.indexOf(header);
+    expect(start).toBeGreaterThan(-1);
+    const nextUnit = connectedSpecSource.indexOf('  test("', start + header.length);
+    const end = nextUnit === -1 ? connectedSpecSource.length : nextUnit;
+    return connectedSpecSource.slice(start, end);
+  }
+
   test("makes work unit H prove its responsive, RTL, keyboard, and runtime claims", () => {
-    const workUnitH = connectedSpecSource.slice(
-      connectedSpecSource.indexOf(
-        'test("work unit H — responsive, RTL, keyboard, and state evidence"',
-      ),
-      connectedSpecSource.indexOf(
-        'test("diagnostics — final context assertions contain no unexplained errors"',
-      ),
+    const workUnitH = workUnitSource(
+      'test("work unit H — responsive, RTL, keyboard, and state evidence"',
     );
 
     expect(workUnitH).toContain("attachDiagnostics(adminPage, adminDiagnostics)");
@@ -158,5 +162,60 @@ describe("connected four-account production runner", () => {
       workUnitH.indexOf("await signOut(adminPage)"),
     );
     expect(workUnitH).toContain("await signOut(adminPage)");
+  });
+
+  test("makes work unit I prove the Delivery-owned purchase journey without mocks", () => {
+    const workUnitI = workUnitSource(
+      'test("work unit I — Delivery-owned purchase, start, and confirm"',
+    );
+
+    // Real identities, real transport: no route interception anywhere. The
+    // header comment names `page.route()` as forbidden, so match a call site
+    // rather than the prose.
+    const routeCallSites = connectedSpecSource
+      .split("\n")
+      .filter((line) => !line.trim().startsWith("*") && line.includes(".route("));
+    expect(routeCallSites).toEqual([]);
+    expect(workUnitI).toContain("attachDiagnostics(ahmedPage, deliveryADiagnostics)");
+    expect(workUnitI).toContain("attachDiagnostics(youssefPage, deliveryBDiagnostics)");
+    expect(workUnitI).toContain("setViewportSize(VIEWPORTS.phone)");
+
+    // Ahmed reaches the order only through the Delivery-owned endpoints.
+    expect(workUnitI).toContain("/delivery/me`");
+    expect(workUnitI).toContain("/purchase/me`");
+    expect(workUnitI).toContain("/api/order-evidence/me/receipts/");
+    expect(workUnitI).not.toContain("/api/orders/${state.deliveryOrderId}/purchase`");
+    expect(workUnitI).not.toContain("purchase/replace");
+
+    // Map first, nothing layered over the markers, one right-side sheet.
+    expect(workUnitI).toContain('must follow the map');
+    expect(workUnitI).toContain(
+      'expect(ahmedPage.getByRole("button", { name: "Validate purchase" })).toHaveCount(0)',
+    );
+    expect(workUnitI).toContain("sheetBox.x + sheetBox.width");
+    expect(workUnitI).toContain("documentWidth).toBeLessThanOrEqual");
+
+    // The denied worker is asserted as one exact negative response each.
+    expect(workUnitI).toContain('status: 403 }');
+    expect(workUnitI).toContain("expectExactNegativeResponse(");
+    expect(workUnitI).toContain('expect(afterDenial[0]?.count).toBe("0")');
+
+    // Exact persisted financial effect in integer minor units.
+    expect(workUnitI).toContain("recorded_by_user_id: state.deliveryAUserId");
+    expect(workUnitI).toContain('expect(orderRows[0]?.status).toBe("purchased")');
+    expect(workUnitI).toContain('"order_capture",');
+    expect(workUnitI).toContain('"order_release",');
+    expect(workUnitI).toContain("formatMadFromMinor(fixture.order4ActualMinor)");
+    expect(workUnitI).not.toContain("parseFloat");
+    expect(workUnitI).not.toContain("toFixed(");
+
+    // The footer advances only after a fresh server response.
+    expect(workUnitI.indexOf('name: "Start delivery" })).toBeVisible')).toBeGreaterThan(
+      workUnitI.indexOf("expect((await purchaseResponse).status())"),
+    );
+    expect(workUnitI).toContain('attempt_status: "delivered"');
+
+    // Family privacy holds inside the Delivery sheet.
+    expect(workUnitI).toContain("expect(sheet.getByText(state.familyCin!, { exact: true })).toHaveCount(0)");
   });
 });

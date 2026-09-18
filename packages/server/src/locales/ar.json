@@ -710,6 +710,8 @@
       "copyDetails": "نسخ التفاصيل",
       "copied": "تم النسخ",
       "copyError": "فشل النسخ",
+      "toggleTheme": "تبديل نمط الألوان",
+      "toggleFullscreen": "تبديل ملء الشاشة",
       "done": "تم",
       "phone": "الهاتف"
     },
@@ -919,6 +921,7 @@
       "stopped": "متوقف",
       "ended": "منتهٍ",
       "refunded": "مسترد",
+      "expired": "منتهي الصلاحية",
       "validated": "متحقق منه"
     },
     "dashboard": {
@@ -985,7 +988,8 @@
         "mapSubtitle": "عناوين الأسر المجدولة", "selectDate": "اختيار تاريخ التوصيل", "today": "اليوم", "tomorrow": "غدًا",
         "noMapLocations": "لا توجد عناوين على الخريطة", "noMapLocationsHint": "تبقى عمليات التوصيل المجدولة متاحة في القائمة.",
         "packages": "طرود", "openMaps": "فتح في خرائط Google", "startDelivery": "بدء التوصيل",
-        "confirmDelivery": "تأكيد التوصيل", "issueKind": "نوع المشكلة", "viewAll": "عرض الكل", "showLess": "عرض أقل", "locationUnavailable": "الموقع غير متاح", "familiesTitle": "العائلات المسندة", "familiesSubtitle": "العائلات التي لديها عمليات توصيل مسندة إليك في التاريخ المحدد.", "familiesSearch": "ابحث في العائلات المسندة", "familiesAccount": "العائلة", "familiesPhone": "الهاتف", "familiesOrders": "الطلبات", "familiesOrdersCount": "{count} طلبات", "familiesStatus": "الحالة", "familiesNextWindow": "النافذة التالية", "familiesEmpty": "لا توجد عائلات مسندة لهذا التاريخ.", "familiesEmptyHint": "تظهر العائلات هنا بمجرد إسناد عمليات توصيل إليك.", "familiesNoData": "لا توجد عائلات مسندة لهذا التاريخ.", "familiesLoading": "جارٍ تحميل العائلات المسندة"
+        "confirmDelivery": "تأكيد التوصيل", "issueKind": "نوع المشكلة", "viewAll": "عرض الكل", "showLess": "عرض أقل", "locationUnavailable": "الموقع غير متاح", "familiesTitle": "العائلات المسندة", "familiesSubtitle": "العائلات التي لديها عمليات توصيل مسندة إليك في التاريخ المحدد.", "familiesSearch": "ابحث في العائلات المسندة", "familiesAccount": "العائلة", "familiesPhone": "الهاتف", "familiesOrders": "الطلبات", "familiesOrdersCount": "{count} طلبات", "familiesStatus": "الحالة", "familiesNextWindow": "النافذة التالية", "familiesEmpty": "لا توجد عائلات مسندة لهذا التاريخ.", "familiesEmptyHint": "تظهر العائلات هنا بمجرد إسناد عمليات توصيل إليك.", "familiesNoData": "لا توجد عائلات مسندة لهذا التاريخ.", "familiesLoading": "جارٍ تحميل العائلات المسندة",
+        "orderSheetDescription": "التوصيل المسند إليك لهذا الطلب.", "loadOrderError": "تعذر تحميل طلب التوصيل هذا", "validatePurchase": "تأكيد الشراء", "recordPurchase": "تسجيل الشراء", "purchaseRecorded": "تم تسجيل الشراء وتسوية ميزانية العائلة.", "purchaseFailed": "تعذر تسجيل هذا الشراء.", "noAvailableAction": "لا يوجد إجراء متاح لهذا التوصيل بعد.", "orderSchedule": "الموعد", "orderWarnings": "التنبيهات", "workflowWaitingApproval": "في انتظار الموافقة", "workflowPurchaseRequired": "الشراء مطلوب", "workflowReadyForDelivery": "جاهز للتوصيل", "workflowOutForDelivery": "قيد التوصيل", "workflowDelivered": "تم التوصيل", "workflowNeedsOperatorAction": "يتطلب إجراء من المشغّل", "markerLabel": "{family}، الطلب {order}، {workflow}"
       },
       "family": {
         "welcome": "مرحبًا، {name}",

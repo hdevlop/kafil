@@ -221,6 +221,8 @@ describe("Kafil server", () => {
       "orders_reassign_delivery",
       "orders_fail_delivery",
       "orders_confirm_delivery",
+      "orders_get_own_delivery",
+      "orders_record_own_purchase",
       "orders_start_own_delivery",
       "orders_confirm_own_delivery",
       "orders_report_own_delivery_issue",

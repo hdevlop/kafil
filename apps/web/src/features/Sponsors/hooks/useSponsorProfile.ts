@@ -1,7 +1,6 @@
 "use client";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityCommand, useEntityQuery } from "najm-kit/query";
 import {
   createOwnSponsorProfile,
   getOwnSponsorProfile,

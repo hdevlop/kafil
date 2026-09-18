@@ -1,8 +1,7 @@
 "use client";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { entityKeys } from "@/hooks/queryKeys";
+import { useEntityCommand, useEntityQuery } from "najm-kit/query";
+import { entityKeys } from "najm-kit/query/keys";
 import { useTranslation } from "najm-i18n/react";
 import { getSettings, updateSettings } from "@/services/settingApi";
 import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";

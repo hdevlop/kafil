@@ -215,6 +215,8 @@ function buildRunLabel(): string {
 const familyRuntimePassword = generateRuntimeSecret();
 const sponsorARuntimePassword = generateRuntimeSecret();
 const sponsorBRuntimePassword = generateRuntimeSecret();
+const deliveryARuntimePassword = generateRuntimeSecret();
+const deliveryBRuntimePassword = generateRuntimeSecret();
 const sponsorAEmail = `c4a-sponsorA-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@c4a-sponsor.test`;
 const sponsorAPhone = `+2126000${Math.floor(Math.random() * 9000 + 1000)}`;
 const familyEmail = `c4a-family-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@c4a-family.test`;
@@ -231,6 +233,8 @@ const childEnv: Record<string, string> = {
   KAFIL_E2E_SPONSOR_A_PHONE: sponsorAPhone,
   KAFIL_E2E_SPONSOR_A_PASSWORD: sponsorARuntimePassword,
   KAFIL_E2E_SPONSOR_B_PASSWORD: sponsorBRuntimePassword,
+  KAFIL_E2E_DELIVERY_A_PASSWORD: deliveryARuntimePassword,
+  KAFIL_E2E_DELIVERY_B_PASSWORD: deliveryBRuntimePassword,
 };
 
 for (const key of runtimeEnvironmentAllowlist) {

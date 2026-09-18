@@ -3,8 +3,7 @@
 import { budgetKeys } from "@/features/Budgets/hooks/budgetKeys";
 import { familyBudgetKeys } from "@/features/Budgets/hooks/familyBudgetKeys";
 import { familyOrderingKeys } from "@/features/Orders/hooks/familyOrderingKeys";
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityCommand, useEntityQuery, type EntityQueryOptions } from "najm-kit/query";
 import {
   approveOrder,
   assignOrderDelivery,
@@ -29,7 +28,6 @@ import {
 
 import { orderKeys } from "./orderKeys";
 import type { OrderDetail, OrderListQuery, OrderRecord } from "../types";
-import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
 import { useTranslation } from "najm-i18n/react";
 import { getLocalizedOrderLimitError } from "@/features/Budgets/lib/orderLimitErrors";
 

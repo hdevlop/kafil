@@ -700,6 +700,345 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     )).rejects.toMatchObject({ status: 403 });
   });
 
+  it("lets the assigned worker read only a Delivery-safe projection of an owned order", async () => {
+    const { service, state } = orderService({
+      status: "approved",
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+      orderItems: [orderItemRecord()],
+    });
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-detail-0001" },
+      "operator-user",
+    );
+
+    const detail = await service.getOwnDeliveryDetail(orderId, "delivery-user");
+
+    expect(detail).toMatchObject({
+      id: orderId,
+      orderNumber: "KAF-20260716-TEST0001",
+      status: "approved",
+      requestedTotalMinor: 600,
+      actualTotalMinor: null,
+      receiptRecorded: false,
+      familyName: "Family guardian",
+      deliveryAddressSnapshot: "Private address",
+      workflowState: "purchase_required",
+      canPurchase: true,
+      canStart: false,
+      canConfirm: false,
+      canReportIssue: true,
+    });
+    expect(detail.attempt).toMatchObject({
+      id: state.deliveryAttempts[0].id,
+      status: "assigned",
+      packageCount: deliverySchedule.packageCount,
+      scheduledDate: deliverySchedule.scheduledDate,
+    });
+    expect(detail.items[0]).toMatchObject({
+      skuSnapshot: "RICE-5KG",
+      quantity: 2,
+    });
+
+    const keys = Object.keys(detail);
+    for (const forbidden of [
+      "statusEvents",
+      "purchases",
+      "activePurchase",
+      "deliveryAttempts",
+      "currentDelivery",
+      "placedByUserId",
+      "approvedByUserId",
+      "purchasingStaffProfileId",
+      "purchasingStaffNameSnapshot",
+      "assistanceNote",
+      "deliveryNote",
+      "deliveryProofStoragePath",
+      "submissionIdempotencyKey",
+    ]) {
+      expect(keys).not.toContain(forbidden);
+    }
+    expect(JSON.stringify(detail)).not.toContain("order-evidence");
+  });
+
+  it("denies own detail for an order assigned to another Delivery worker", async () => {
+    const { service, state } = orderService({ status: "approved" });
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-detail-0002" },
+      "operator-user",
+    );
+    state.deliveryAttempts[0].staffProfileId = "another-staff";
+
+    await expect(
+      service.getOwnDeliveryDetail(orderId, "delivery-user"),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("answers the worker's own start and confirm with the Delivery projection", async () => {
+    const { service, state } = orderService({
+      status: "purchased",
+      orderItems: [orderItemRecord()],
+    });
+    state.activePurchase = purchaseRecord();
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-projection-assign" },
+      "operator-user",
+    );
+
+    const started = await service.startOwnDelivery(
+      orderId,
+      { idempotencyKey: "delivery-own-projection-start" },
+      "delivery-user",
+    );
+    expect(started).toMatchObject({
+      status: "out_for_delivery",
+      workflowState: "out_for_delivery",
+      canConfirm: true,
+    });
+    expect(started.attempt).toMatchObject({ status: "in_progress" });
+
+    const delivered = await service.confirmOwnDelivery(
+      orderId,
+      {
+        confirmationMethod: "operator_confirmation",
+        deliveryNote: "Handed to the guardian",
+        idempotencyKey: "delivery-own-projection-confirm",
+      },
+      "delivery-user",
+    );
+    expect(delivered).toMatchObject({
+      status: "delivered",
+      workflowState: "delivered",
+      canConfirm: false,
+    });
+    expect(delivered.attempt).toMatchObject({ status: "delivered" });
+
+    for (const detail of [started, delivered]) {
+      const keys = Object.keys(detail);
+      for (const operatorOnly of [
+        "statusEvents",
+        "purchases",
+        "activePurchase",
+        "deliveryAttempts",
+        "currentDelivery",
+        "deliveryNote",
+        "deliveryProofStoragePath",
+        "deliveredByUserId",
+        "placedByUserId",
+        "submissionIdempotencyKey",
+      ]) {
+        expect(keys).not.toContain(operatorOnly);
+      }
+      expect(JSON.stringify(detail)).not.toContain("order-evidence");
+    }
+
+    // The completed attempt is the worker's own history: still readable while
+    // no other attempt is active.
+    const history = await service.getOwnDeliveryDetail(orderId, "delivery-user");
+    expect(history).toMatchObject({ workflowState: "delivered" });
+  });
+
+  it("revokes own delivery access once the order is reassigned to another worker", async () => {
+    const { service, state } = orderService({ status: "purchased" });
+    state.activePurchase = purchaseRecord();
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-revoke-assign" },
+      "operator-user",
+    );
+    await service.reassignDelivery(
+      orderId,
+      {
+        ...deliverySchedule,
+        staffProfileId: "00000000-0000-4000-8000-000000000086",
+        reason: "Courier shift changed",
+        idempotencyKey: "delivery-own-revoke-reassign",
+      },
+      "operator-user",
+    );
+
+    expect(state.deliveryAttempts[0]).toMatchObject({
+      status: "cancelled",
+      staffProfileId: deliveryStaffId,
+    });
+    await expect(
+      service.getOwnDeliveryDetail(orderId, "delivery-user"),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      service.recordOwnPurchase(
+        orderId,
+        purchaseInput({ idempotencyKey: "delivery-own-revoke-purchase" }),
+        "delivery-user",
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("settles the assigned worker own first purchase exactly like the operator command", async () => {
+    const { service, state } = orderService({
+      status: "approved",
+      availableMinor: 400,
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+      orderItems: [orderItemRecord()],
+    });
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-purchase-assign" },
+      "operator-user",
+    );
+
+    const detail = await service.recordOwnPurchase(
+      orderId,
+      purchaseInput({ actualTotalMinor: 550, idempotencyKey: "delivery-own-purchase-0001" }),
+      "delivery-user",
+    );
+
+    expect(state.order.status).toBe("purchased");
+    expect(state.activePurchase).toMatchObject({
+      actualTotalMinor: 550,
+      recordedByUserId: "delivery-user",
+      merchantName: "Marjane",
+    });
+    expect(state.ledger.map((entry) => entry.entryType)).toEqual([
+      "order_capture",
+      "order_release",
+    ]);
+    expect(state.balanceUpdates.at(-1)).toMatchObject({
+      availableMinor: 450,
+      reservedMinor: 0,
+      spentMinor: 550,
+    });
+    expect(detail).toMatchObject({
+      status: "purchased",
+      actualTotalMinor: 550,
+      receiptRecorded: true,
+      workflowState: "ready_for_delivery",
+      canPurchase: false,
+      canStart: true,
+    });
+    expect(state.events.at(-1)).toMatchObject({
+      toStatus: "purchased",
+      actorUserId: "delivery-user",
+    });
+  });
+
+  it("refuses an own purchase before approval, after reassignment, and without an assignment", async () => {
+    const pending = orderService({ status: "pending" });
+    await pending.service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-purchase-pending" },
+      "operator-user",
+    );
+    await expect(
+      pending.service.recordOwnPurchase(
+        orderId,
+        purchaseInput({ idempotencyKey: "delivery-own-purchase-0002" }),
+        "delivery-user",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(pending.state.activePurchase).toBeUndefined();
+    expect(pending.state.balanceUpdates).toEqual([]);
+    expect(pending.state.ledger).toEqual([]);
+    expect(pending.state.order.status).toBe("pending");
+
+    const reassigned = orderService({
+      status: "approved",
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+    await reassigned.service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-purchase-reassign" },
+      "operator-user",
+    );
+    reassigned.state.deliveryAttempts[0].staffProfileId = "another-staff";
+    await expect(
+      reassigned.service.recordOwnPurchase(
+        orderId,
+        purchaseInput({ idempotencyKey: "delivery-own-purchase-0003" }),
+        "delivery-user",
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(reassigned.state.activePurchase).toBeUndefined();
+    expect(reassigned.state.balanceUpdates).toEqual([]);
+    expect(reassigned.state.ledger).toEqual([]);
+
+    const unassigned = orderService({
+      status: "approved",
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+    await expect(
+      unassigned.service.recordOwnPurchase(
+        orderId,
+        purchaseInput({ idempotencyKey: "delivery-own-purchase-0004" }),
+        "delivery-user",
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(unassigned.state.activePurchase).toBeUndefined();
+    expect(unassigned.state.ledger).toEqual([]);
+  });
+
+  it("replays an own purchase for the same actor and rejects a key another actor spent", async () => {
+    const { service, state } = orderService({
+      status: "approved",
+      availableMinor: 400,
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-own-replay-assign" },
+      "operator-user",
+    );
+    const input = purchaseInput({ idempotencyKey: "delivery-own-replay-0001" });
+    await service.recordOwnPurchase(orderId, input, "delivery-user");
+    const ledgerLength = state.ledger.length;
+    const balanceLength = state.balanceUpdates.length;
+
+    const replay = await service.recordOwnPurchase(orderId, input, "delivery-user");
+
+    expect(replay).toMatchObject({ status: "purchased", workflowState: "ready_for_delivery" });
+    expect(state.ledger).toHaveLength(ledgerLength);
+    expect(state.balanceUpdates).toHaveLength(balanceLength);
+
+    await expect(
+      service.recordOwnPurchase(orderId, input, "another-delivery-user"),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(state.ledger).toHaveLength(ledgerLength);
+  });
+
+  it("keeps the operator purchase response and order-scoped replay contract unchanged", async () => {
+    const { service, state } = orderService({
+      status: "approved",
+      availableMinor: 400,
+      reservedMinor: 600,
+      reserveLedger: { id: "reserve-ledger" },
+    });
+    const input = purchaseInput({ idempotencyKey: "operator-purchase-0001" });
+
+    const detail = await service.recordPurchase(orderId, input, "operator-user") as {
+      status: string;
+      activePurchase: { recordedByUserId: string } | null;
+      deliveryAttempts: unknown[];
+      statusEvents: unknown[];
+    };
+
+    expect(detail.status).toBe("purchased");
+    expect(detail.activePurchase).toMatchObject({ recordedByUserId: "operator-user" });
+    expect(detail.deliveryAttempts).toEqual([]);
+    expect(Array.isArray(detail.statusEvents)).toBe(true);
+
+    const replay = await service.recordPurchase(orderId, input, "second-operator") as {
+      status: string;
+    };
+    expect(replay.status).toBe("purchased");
+    expect(state.ledger.filter((entry) => entry.entryType === "order_capture")).toHaveLength(1);
+  });
+
   it("rejects assignment to inactive Delivery staff", async () => {
     const { service } = orderService({
       status: "purchased",
@@ -1018,6 +1357,8 @@ function orderService(options: {
       state.events.push(input);
       return input;
     },
+    findById: async () => state.order,
+    findFamilyImage: async () => "/api/family-images/files/serve/fatima.webp",
     lockById: async () => state.order,
     update: async (_id: string, input: Record<string, unknown>) => {
       state.order = orderRecord({ ...state.order, ...input });
@@ -1029,7 +1370,10 @@ function orderService(options: {
     },
   } as unknown as OrderRepository;
   const purchases = {
-    findByIdempotencyKey: async () => undefined,
+    findByIdempotencyKey: async (key: string) =>
+      state.activePurchase?.idempotencyKey === key
+        ? state.activePurchase
+        : undefined,
     findActiveByOrderId: async () => state.activePurchase,
     create: async (input: Record<string, unknown>) => {
       state.activePurchase = purchaseRecord(input);
@@ -1069,6 +1413,23 @@ function orderService(options: {
       state.deliveryAttempts.find((attempt) =>
         ["assigned", "in_progress"].includes(String(attempt.status)),
       ),
+    findOwnedByOrderId: async (_orderId: string, staffProfileId: string) => {
+      const active = state.deliveryAttempts.find((attempt) =>
+        ["assigned", "in_progress"].includes(String(attempt.status)),
+      );
+      if (active) {
+        return active.staffProfileId === staffProfileId ? active : undefined;
+      }
+      return state.deliveryAttempts.find(
+        (attempt) =>
+          attempt.staffProfileId === staffProfileId &&
+          ["delivered", "failed"].includes(String(attempt.status)),
+      );
+    },
+    listOpenIssues: async (attemptId: string) =>
+      state.deliveryIssues
+        .filter((issue) => issue.attemptId === attemptId)
+        .map(({ id, kind, note }) => ({ id, kind, note })),
     create: async (input: Record<string, unknown>) => {
       const attempt = {
         id: `00000000-0000-4000-8000-00000000009${state.deliveryAttempts.length + 1}`,

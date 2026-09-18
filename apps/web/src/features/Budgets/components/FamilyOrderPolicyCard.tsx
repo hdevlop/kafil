@@ -4,7 +4,7 @@ import { useState } from "react";
 import { NButton, NCard, useNajmFormat } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 
-import { useEntityQuery } from "@/hooks/useEntityQuery";
+import { useEntityQuery } from "najm-kit/query";
 import { getBudgetSummary } from "@/services/budgetApi";
 import { getSettings } from "@/services/settingApi";
 import { parseMadAmount } from "@/features/Budgets/config/budgetSchemas";

@@ -1,9 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
-type ProductRole = "admin" | "operator" | "family" | "sponsor";
+type ProductRole = "admin" | "operator" | "family" | "sponsor" | "delivery";
 
 const browserUsers: Record<ProductRole, string> = {
   admin: "phase6-browser-admin@example.test",
+  delivery: "phase6-browser-delivery@example.test",
   operator: "phase6-browser-operator@example.test",
   family: "phase6-browser-family@example.test",
   sponsor: "phase6-browser-sponsor@example.test",
@@ -380,3 +381,284 @@ function sponsorSafeOrder() {
     items: [{ productName: "Rice", sku: "RICE", quantity: 1, unitPriceMinor: 2500, lineTotalMinor: 2500 }],
   };
 }
+
+
+const deliveryOrderId = "40000000-0000-4000-8000-000000000001";
+const deliveryAttemptId = "50000000-0000-4000-8000-000000000001";
+
+function dashboardItem(overrides: Record<string, unknown> = {}) {
+  return {
+    attemptId: deliveryAttemptId,
+    orderId: deliveryOrderId,
+    orderNumber: "KAF-HFQCHE",
+    familyProfileId: "family-1",
+    familyName: "Fatima Household",
+    familyImage: null,
+    category: "needs_attention",
+    attemptStatus: "assigned",
+    orderStatus: "approved",
+    workflowState: "purchase_required",
+    address: "Protected address",
+    phone: "+212600001122",
+    coordinates: { latitude: 33.5731, longitude: -7.5898 },
+    scheduledDate: "2026-09-18",
+    windowStartMinute: 600,
+    windowEndMinute: 720,
+    packageCount: 2,
+    delayed: false,
+    openIssues: [
+      { id: "issue-1", kind: "address_confirmation", note: null },
+    ],
+    canPurchase: true,
+    canStart: false,
+    canConfirm: false,
+    canReportIssue: true,
+    ...overrides,
+  };
+}
+
+function deliveryDashboard(item: Record<string, unknown>) {
+  return {
+    selectedDate: String(item.scheduledDate),
+    timezone: "Africa/Casablanca",
+    counts: {
+      assigned: 1,
+      pending: 0,
+      delivered: 0,
+      needsAttention: 1,
+      families: 1,
+      packagesRemaining: 2,
+    },
+    issueCounts: {
+      addressToConfirm: 1,
+      familyUnreachable: 0,
+      missingProof: 0,
+      delayed: 0,
+    },
+    deliveries: [item],
+  };
+}
+
+function deliveryDetail(overrides: Record<string, unknown> = {}) {
+  return {
+    id: deliveryOrderId,
+    orderNumber: "KAF-HFQCHE",
+    status: "approved",
+    currency: "MAD",
+    requestedTotalMinor: 32_900,
+    actualTotalMinor: null,
+    receiptRecorded: false,
+    familyName: "Fatima Household",
+    familyImage: null,
+    deliveryAddressSnapshot: "Protected address",
+    deliveryPhoneSnapshot: "+212600001122",
+    coordinates: { latitude: 33.5731, longitude: -7.5898 },
+    items: [
+      {
+        id: "order-item-1",
+        productId: "product-1",
+        productNameSnapshot: "Rice 5kg",
+        skuSnapshot: "RICE-5KG",
+        quantity: 2,
+        unitPriceMinor: 16_450,
+        lineTotalMinor: 32_900,
+      },
+    ],
+    attempt: {
+      id: deliveryAttemptId,
+      status: "assigned",
+      scheduledDate: "2026-09-18",
+      windowStartMinute: 600,
+      windowEndMinute: 720,
+      packageCount: 2,
+    },
+    openIssues: [{ id: "issue-1", kind: "address_confirmation", note: null }],
+    workflowState: "purchase_required",
+    canPurchase: true,
+    canStart: false,
+    canConfirm: false,
+    canReportIssue: true,
+    ...overrides,
+  };
+}
+
+test.describe("Delivery purchase workflow", () => {
+  test("shows the map first with no overlay and one right sheet from row or marker", async ({ page }) => {
+    await useRole(page, "delivery");
+    await page.route("**/api/dashboard/delivery?**", (route) =>
+      json(route, deliveryDashboard(dashboardItem())),
+    );
+    await page.route(`**/api/orders/${deliveryOrderId}/delivery/me`, (route) =>
+      json(route, deliveryDetail()),
+    );
+
+    await page.goto("/dashboard");
+    const map = page.locator('[aria-label="Delivery map"]');
+    await expect(map).toBeVisible();
+
+    // The map card precedes every other dashboard section in the document.
+    const mapTop = (await map.boundingBox())!.y;
+    for (const later of ["Assigned today", "Delivery overview", "Issues / Attention", "Quick actions"]) {
+      const box = await page.getByText(later, { exact: true }).first().boundingBox();
+      expect(box!.y, `${later} must follow the map`).toBeGreaterThan(mapTop);
+    }
+
+    // Nothing is layered over the markers before a selection is made.
+    await expect(page.getByRole("button", { name: "Validate purchase" })).toHaveCount(0);
+    await expect(page.getByText("Protected address", { exact: true })).toHaveCount(0);
+
+    // The planned-delivery row opens the sheet.
+    const detailResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === `/api/orders/${deliveryOrderId}/delivery/me`,
+    );
+    await page.getByRole("button", { name: /Fatima Household/ }).first().click();
+    expect((await detailResponse).status()).toBeLessThan(400);
+
+    const sheet = page.getByRole("dialog");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText("Fatima Household", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Rice 5kg", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Protected address")).toBeVisible();
+
+    // Workflow state and warning state are independent badges.
+    await expect(sheet.getByText("Purchase required", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Address to confirm", { exact: true })).toBeVisible();
+
+    // No Delivery-person card: the reader is the assignee.
+    await expect(sheet.getByText("Delivery person", { exact: true })).toHaveCount(0);
+
+    // The sheet opens from the right.
+    const sheetBox = (await sheet.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(sheetBox.x + sheetBox.width).toBeGreaterThan(viewport.width - 4);
+
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+  });
+
+  test("records the first purchase through the shared form and refreshes from server state", async ({ page }) => {
+    await useRole(page, "delivery");
+    let purchased = false;
+    let purchaseBody: Record<string, unknown> | null = null;
+
+    await page.route("**/api/dashboard/delivery?**", (route) =>
+      json(
+        route,
+        deliveryDashboard(
+          purchased
+            ? dashboardItem({
+                orderStatus: "purchased",
+                workflowState: "ready_for_delivery",
+                canPurchase: false,
+                canStart: true,
+              })
+            : dashboardItem(),
+        ),
+      ),
+    );
+    await page.route(`**/api/orders/${deliveryOrderId}/delivery/me`, (route) =>
+      json(
+        route,
+        purchased
+          ? deliveryDetail({
+              status: "purchased",
+              actualTotalMinor: 31_400,
+              receiptRecorded: true,
+              workflowState: "ready_for_delivery",
+              canPurchase: false,
+              canStart: true,
+            })
+          : deliveryDetail(),
+      ),
+    );
+    await page.route("**/api/order-evidence/me/receipts/*", (route) =>
+      json(route, {
+        path: "/api/order-evidence/receipts/serve/00000000-0000-4000-8000-0000000000aa.pdf",
+        mediaType: "application/pdf",
+        byteSize: 64,
+      }),
+    );
+    await page.route(`**/api/orders/${deliveryOrderId}/purchase/me`, async (route) => {
+      purchaseBody = JSON.parse(route.request().postData() ?? "{}");
+      purchased = true;
+      return json(route, deliveryDetail({ status: "purchased", workflowState: "ready_for_delivery" }));
+    });
+
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: /Fatima Household/ }).first().click();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet).toBeVisible();
+
+    await sheet.getByRole("button", { name: "Validate purchase" }).click();
+    const purchaseDialog = page.getByRole("dialog", { name: "Validate purchase" });
+    await expect(purchaseDialog).toBeVisible();
+
+    // The shared operator form body, without the operator-only replacement field.
+    await expect(purchaseDialog.getByLabel("Merchant")).toBeVisible();
+    await expect(purchaseDialog.getByLabel("Actual amount")).toHaveValue("329.00");
+    await expect(purchaseDialog.getByLabel("Replacement reason")).toHaveCount(0);
+
+    await purchaseDialog.getByLabel("Actual amount").fill("314.00");
+    await purchaseDialog
+      .getByLabel("Protected receipt")
+      .setInputFiles({
+        name: "receipt.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from("%PDF-1.4 delivery receipt"),
+      });
+
+    const purchaseResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === `/api/orders/${deliveryOrderId}/purchase/me`,
+    );
+    await purchaseDialog.getByRole("button", { name: "Record purchase" }).click();
+    expect((await purchaseResponse).status()).toBeLessThan(400);
+
+    // Integer minor units only, and the estimate is not silently confirmed up.
+    expect(purchaseBody).toMatchObject({
+      actualTotalMinor: 31_400,
+      confirmHigherAmount: false,
+      merchantName: "Marjane",
+    });
+    expect(
+      Number.isInteger(
+        (purchaseBody as unknown as { actualTotalMinor: number }).actualTotalMinor,
+      ),
+    ).toBe(true);
+
+    // The sheet stays open and advances only from the refreshed server state.
+    await expect(purchaseDialog).toBeHidden();
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole("button", { name: "Start delivery" })).toBeVisible();
+    await expect(sheet.getByRole("button", { name: "Validate purchase" })).toHaveCount(0);
+  });
+
+  test("keeps the Arabic sheet on the right without horizontal overflow at 320px", async ({ page }) => {
+    await useRole(page, "delivery", "ar");
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.route("**/api/dashboard/delivery?**", (route) =>
+      json(route, deliveryDashboard(dashboardItem())),
+    );
+    await page.route(`**/api/orders/${deliveryOrderId}/delivery/me`, (route) =>
+      json(route, deliveryDetail()),
+    );
+
+    await page.goto("/dashboard");
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await page.getByRole("button", { name: /Fatima Household/ }).first().click();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet).toBeVisible();
+
+    const sheetBox = (await sheet.boundingBox())!;
+    expect(sheetBox.x + sheetBox.width).toBeGreaterThan(316);
+    await expect(sheet.getByText("الشراء مطلوب", { exact: true })).toBeVisible();
+
+    const overflow = await page.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(overflow.documentWidth).toBeLessThanOrEqual(overflow.viewportWidth);
+  });
+});

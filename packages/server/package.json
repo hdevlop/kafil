@@ -12,6 +12,7 @@
     "./managed-images": "./src/storage/managedImages.ts",
     "./locales": "./src/locales/index.ts",
     "./money": "./src/modules/budgets/money.ts",
+    "./money/constants": "./src/modules/budgets/moneyConstants.ts",
     "./modules": "./src/modules/index.ts"
   },
   "scripts": {

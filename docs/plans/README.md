@@ -10,11 +10,28 @@ purpose-specific test documents under
 
 ## Active root plans
 
+- [`NAJM-QUERY-DX-PLAN.md`](../../NAJM-QUERY-DX-PLAN.md)
+  - adds shared Najm Kit query keys, reads, commands, invalidation, feedback,
+    and a School CRUD compatibility bridge; then removes duplicate Kafil and
+    School hooks after a published package is installed. Package implementation,
+    registry release, and source-level consumer adoption are complete; Git,
+    browser, deployment, and production acceptance remain separate.
+- [`DELIVERY-PURCHASE-WORKFLOW-PLAN.md`](../../DELIVERY-PURCHASE-WORKFLOW-PLAN.md)
+  - implemented Delivery-owned purchase workflow for Family-created, Operator-approved
+    assigned orders; reuses the existing Delivery dashboard, order summary,
+    purchase form, evidence storage, financial transaction, and delivery commands.
+    Source, package, database, build, and no-schema-drift checks are recorded;
+    browser acceptance, publication, and deployment remain separate.
 - [`NAJM-OPTIONAL-PROVIDER-DX-PLAN.md`](../../NAJM-OPTIONAL-PROVIDER-DX-PLAN.md)
   - implemented optional integration composition through the existing Najm app
     provider, default `location: true` in Kafil, automatic snapshot/CSP wiring,
     shared location labels, package validation and independent consumer adoption.
-    Packages and source migrations are released; browser/manual acceptance remains open.
+    Initial packages and source migrations are released. The phase 6 follow-up
+    moves app name/currency into config and makes Query mandatory by default in
+    the full provider; it is implemented, published, and source-validated.
+    Phase 7 implements common Najm Kit badge colors/translations/style defaults
+    and removes Kafil's badge-defaults wiring. Its package and source-level
+    consumer checks are recorded; browser/manual acceptance remains open.
 
 ## Supporting documents
 

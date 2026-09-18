@@ -14,6 +14,8 @@ import {
   orderDeliveryAttempts,
   orderDeliveryIssues,
   orderItems,
+  orderPurchaseRecords,
+  orderPurchaseReversals,
 } from "../orders/orderSchema";
 import { dominantOrderCategoryField } from "../orders/orderQueries";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
@@ -22,6 +24,17 @@ import { supportAssignments } from "../supportAssignments/supportAssignmentSchem
 
 const monthExpression = (column: typeof contributions.submittedAt | typeof orders.createdAt) =>
   sql<string>`to_char(date_trunc('month', ${column}), 'YYYY-MM')`;
+
+// One correlated EXISTS per selected-date row rather than a detail read per
+// delivery: an order counts as purchased while it holds an unreversed record.
+const activeOrderPurchaseExists = sql<boolean>`exists (
+    select 1
+    from ${orderPurchaseRecords}
+    left join ${orderPurchaseReversals}
+      on ${orderPurchaseReversals.purchaseId} = ${orderPurchaseRecords.id}
+    where ${orderPurchaseRecords.orderId} = ${orders.id}
+      and ${orderPurchaseReversals.id} is null
+  )`;
 
 const isLivePending = (now: Date) =>
   sql`${contributions.status} = 'pending' AND ${contributions.expiresAt} > ${now.toISOString()}::timestamptz`;
@@ -194,6 +207,7 @@ export class DashboardRepository {
         windowStartMinute: orderDeliveryAttempts.windowStartMinute,
         windowEndMinute: orderDeliveryAttempts.windowEndMinute,
         packageCount: orderDeliveryAttempts.packageCount,
+        hasActivePurchase: activeOrderPurchaseExists,
       })
       .from(orderDeliveryAttempts)
       .innerJoin(orders, eq(orderDeliveryAttempts.orderId, orders.id))

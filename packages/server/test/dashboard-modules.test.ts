@@ -117,6 +117,67 @@ describe("Phase 7 dashboard report boundaries", () => {
     expect(result.deliveries[1]).toMatchObject({ category: "delivered", coordinates: null, canConfirm: false });
   });
 
+  it("derives workflow state and canPurchase independently of the warning category", async () => {
+    const row = (overrides: Record<string, unknown>) => ({
+      attemptId: "attempt-1", attemptStatus: "assigned", orderId: "order-1", orderNumber: "KAF-1",
+      orderStatus: "approved", familyProfileId: "family-1", familyName: "Atlas Family", familyImage: null,
+      address: "Address 1", phone: null, latitude: null, longitude: null,
+      scheduledDate: "2026-09-09", windowStartMinute: null, windowEndMinute: null, packageCount: 1,
+      hasActivePurchase: false,
+      ...overrides,
+    });
+    const service = (rows: Array<Record<string, unknown>>, issues: Array<Record<string, unknown>> = []) =>
+      new DashboardService({
+        deliveryStaffIdentity: async () => ({ id: "staff-1", name: "Courier", status: "active" }),
+        deliveryRows: async () => rows,
+        openDeliveryIssues: async () => issues,
+      } as unknown as DashboardRepository);
+    const first = async (rows: Array<Record<string, unknown>>, issues: Array<Record<string, unknown>> = []) =>
+      (await service(rows, issues).getDelivery(
+        "delivery-user",
+        "2026-09-09",
+        new Date("2026-09-09T09:00:00.000Z"),
+      )).deliveries[0];
+
+    expect(await first([row({ orderStatus: "pending" })])).toMatchObject({
+      workflowState: "waiting_approval", canPurchase: false, canStart: false, canConfirm: false,
+    });
+    expect(await first([row({})])).toMatchObject({
+      workflowState: "purchase_required", canPurchase: true, canStart: false,
+    });
+    expect(await first([row({ orderStatus: "purchased" })])).toMatchObject({
+      workflowState: "ready_for_delivery", canPurchase: false, canStart: true,
+    });
+    expect(await first([row({ attemptStatus: "in_progress", orderStatus: "out_for_delivery" })])).toMatchObject({
+      workflowState: "out_for_delivery", canPurchase: false, canStart: false, canConfirm: true,
+    });
+    expect(await first([row({ attemptStatus: "delivered", orderStatus: "delivered" })])).toMatchObject({
+      workflowState: "delivered", canPurchase: false, canConfirm: false, canReportIssue: false,
+    });
+    expect(await first([row({ attemptStatus: "failed", orderStatus: "purchased" })])).toMatchObject({
+      workflowState: "needs_operator_action", canPurchase: false, canStart: false, canConfirm: false,
+    });
+
+    // An already-settled approved order never re-offers the purchase action.
+    expect(await first([row({ hasActivePurchase: true })])).toMatchObject({
+      workflowState: "needs_operator_action", canPurchase: false,
+    });
+
+    // Warning state and workflow state are independent signals.
+    const flagged = await first(
+      [row({})],
+      [{ id: "issue-1", attemptId: "attempt-1", kind: "address_confirmation", note: null }],
+    );
+    expect(flagged).toMatchObject({
+      category: "needs_attention",
+      workflowState: "purchase_required",
+      canPurchase: true,
+    });
+    expect(flagged.openIssues).toEqual([
+      { id: "issue-1", kind: "address_confirmation", note: null },
+    ]);
+  });
+
   it("groups one selected-date directory entry per family with distinct order counts", async () => {
     const dashboard = new DashboardService({
       deliveryStaffIdentity: async () => ({ id: "staff-1", name: "Courier", status: "active" }),

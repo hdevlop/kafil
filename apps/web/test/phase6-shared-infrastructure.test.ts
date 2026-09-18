@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import { entityKeys } from "../src/hooks/queryKeys";
+import { entityKeys } from "najm-kit/query/keys";
 import {
   cleanQuery,
   createOffsetPagination,
@@ -22,6 +22,7 @@ import {
   toApiError,
 } from "../src/services/apiError";
 import { buildApiPath, unwrapApiResponse } from "../src/services/http";
+import { getEntityCommandErrorMessage } from "najm-kit/query";
 
 describe("Phase 6B API infrastructure", () => {
   test("builds encoded API query strings without empty values", () => {
@@ -165,5 +166,38 @@ describe("Phase 6B pagination helpers", () => {
     );
     expect(page.rows).toHaveLength(100);
     expect(page.hasNextPage).toBe(true);
+  });
+});
+
+describe("shared query layer boundary", () => {
+  test("no feature imports a local query key, read, or command wrapper", async () => {
+    const sources = new Bun.Glob("**/*.{ts,tsx}").scan({ cwd: "src" });
+    const offenders: string[] = [];
+
+    for await (const file of sources) {
+      const source = await Bun.file(`src/${file}`).text();
+      if (/@\/hooks\/(queryKeys|useEntityQuery|useEntityCommand)/.test(source)) {
+        offenders.push(file);
+      }
+    }
+
+    expect(offenders).toEqual([]);
+    expect(await Bun.file("src/hooks/catalogWriteKeys.ts").exists()).toBe(true);
+    for (const removed of ["queryKeys", "useEntityQuery", "useEntityCommand"]) {
+      expect(await Bun.file(`src/hooks/${removed}.ts`).exists()).toBe(false);
+    }
+  });
+
+  test("the package resolver reads Kafil error shapes exactly as Kafil does", () => {
+    const shapes: unknown[] = [
+      { status: 409, body: { code: "CONFLICT", message: "Family already exists" } },
+      { response: { data: { message: "Access denied" } } },
+      Object.assign(new Error("Not Found"), { body: { error: "Unknown family" } }),
+      new Error("Network request failed"),
+    ];
+
+    for (const shape of shapes) {
+      expect(getEntityCommandErrorMessage(shape)).toBe(getApiErrorMessage(shape));
+    }
   });
 });

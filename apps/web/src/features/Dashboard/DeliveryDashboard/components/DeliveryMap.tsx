@@ -3,14 +3,16 @@
 import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 
 import type { DeliveryDashboardItem } from "../../types";
 import styles from "./DeliveryMap.module.css";
 
 const CASABLANCA: L.LatLngExpression = [33.5731, -7.5898];
 
-function markerIcon(item: DeliveryDashboardItem, selected: boolean) {
+export type MarkerFocusHandle = { focusMarker: (attemptId: string) => void };
+
+function markerIcon(item: DeliveryDashboardItem) {
   const tone = item.category === "delivered"
     ? styles.delivered
     : item.category === "needs_attention"
@@ -20,22 +22,26 @@ function markerIcon(item: DeliveryDashboardItem, selected: boolean) {
 
   return L.divIcon({
     className: "",
-    html: `<div class="${styles.marker} ${tone} ${selected ? styles.selected : ""}"><span>${symbol}</span></div>`,
+    html: `<div class="${styles.marker} ${tone}"><span>${symbol}</span></div>`,
     iconSize: [34, 42],
     iconAnchor: [17, 42],
   });
 }
 
-export function DeliveryMap({ items, selectedId, onSelect, ariaLabel, errorTitle }: Readonly<{
+export function DeliveryMap({ items, selectedId, onSelect, ariaLabel, errorTitle, markerLabel, handleRef }: Readonly<{
   items: DeliveryDashboardItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   ariaLabel: string;
   errorTitle: string;
+  /** Family, order number, and workflow/warning state — never the address. */
+  markerLabel: (item: DeliveryDashboardItem) => string;
+  /** Lets the closing sheet hand focus back to the marker that opened it. */
+  handleRef?: RefObject<MarkerFocusHandle | null>;
 }>) {
   const elementRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
+  const markersRef = useRef(new Map<string, L.Marker>());
   const [tileError, setTileError] = useState(false);
   const mappedItems = useMemo(() => items.filter((item) => item.coordinates), [items]);
 
@@ -64,23 +70,42 @@ export function DeliveryMap({ items, selectedId, onSelect, ariaLabel, errorTitle
   }, []);
 
   useEffect(() => {
+    if (!handleRef) return;
+    handleRef.current = {
+      focusMarker: (attemptId) =>
+        markersRef.current.get(attemptId)?.getElement()?.focus(),
+    };
+    return () => {
+      handleRef.current = null;
+    };
+  }, [handleRef]);
+
+  // Markers are rebuilt only when the plotted deliveries change. Selection is
+  // deliberately absent here: recreating a marker would destroy the element a
+  // closing sheet needs to return focus to.
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    markersRef.current.forEach((marker) => marker.remove());
-    const markers = mappedItems.map((item) => {
+    const markers = new Map<string, L.Marker>();
+    for (const item of mappedItems) {
       const coordinates = item.coordinates!;
       const position: L.LatLngExpression = [coordinates.latitude, coordinates.longitude];
+      const label = markerLabel(item);
       const marker = L.marker(position, {
-        icon: markerIcon(item, item.attemptId === selectedId),
+        icon: markerIcon(item),
         keyboard: true,
-        title: `${item.familyName} — ${item.address}`,
-        alt: item.familyName,
-        zIndexOffset: item.attemptId === selectedId ? 1000 : 0,
+        title: label,
+        alt: label,
       }).addTo(map);
       marker.on("click", () => onSelect(item.attemptId));
-      return marker;
-    });
+      marker.on("keypress", (event) => {
+        const key = (event as unknown as { originalEvent?: KeyboardEvent })
+          .originalEvent?.key;
+        if (key === "Enter" || key === " ") onSelect(item.attemptId);
+      });
+      markers.set(item.attemptId, marker);
+    }
     markersRef.current = markers;
 
     const points = mappedItems.map((item) => [item.coordinates!.latitude, item.coordinates!.longitude] as L.LatLngTuple);
@@ -89,7 +114,21 @@ export function DeliveryMap({ items, selectedId, onSelect, ariaLabel, errorTitle
     } else {
       map.setView(CASABLANCA, 12);
     }
-  }, [mappedItems, onSelect, selectedId]);
+
+    return () => {
+      for (const marker of markers.values()) marker.remove();
+      markersRef.current = new Map();
+    };
+  }, [mappedItems, markerLabel, onSelect]);
+
+  // Selection restyles the live marker elements instead of replacing them.
+  useEffect(() => {
+    for (const [attemptId, marker] of markersRef.current) {
+      const selected = attemptId === selectedId;
+      marker.getElement()?.firstElementChild?.classList.toggle(styles.selected, selected);
+      marker.setZIndexOffset(selected ? 1000 : 0);
+    }
+  }, [mappedItems, selectedId]);
 
   return (
     <div className={styles.root}>

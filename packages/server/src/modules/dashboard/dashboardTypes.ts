@@ -1,3 +1,5 @@
+import type { DeliveryWorkflowState } from "../orders/deliveryWorkflow";
+
 export interface DashboardStatusCount {
   status: string;
   count: number;
@@ -17,6 +19,8 @@ export interface DeliveryDashboardItem {
   familyImage: string | null;
   category: DeliveryDashboardCategory;
   attemptStatus: "assigned" | "in_progress" | "failed" | "delivered";
+  orderStatus: string;
+  workflowState: DeliveryWorkflowState;
   address: string;
   phone: string | null;
   coordinates: { latitude: number; longitude: number } | null;
@@ -30,6 +34,7 @@ export interface DeliveryDashboardItem {
     kind: "address_confirmation" | "family_unreachable" | "missing_proof";
     note: string | null;
   }>;
+  canPurchase: boolean;
   canStart: boolean;
   canConfirm: boolean;
   canReportIssue: boolean;

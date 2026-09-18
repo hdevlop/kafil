@@ -706,6 +706,8 @@
       "copyDetails": "Copiar detalles",
       "copied": "Copiado",
       "copyError": "Error al copiar",
+      "toggleTheme": "Cambiar el tema de color",
+      "toggleFullscreen": "Alternar pantalla completa",
       "done": "Listo",
       "phone": "Teléfono"
     },
@@ -982,7 +984,8 @@
         "mapSubtitle": "Direcciones familiares programadas", "selectDate": "Seleccionar fecha de entrega", "today": "Hoy", "tomorrow": "Mañana",
         "noMapLocations": "No hay direcciones en el mapa", "noMapLocationsHint": "Las entregas programadas siguen disponibles en la lista.",
         "packages": "paquetes", "openMaps": "Abrir en Google Maps", "startDelivery": "Iniciar entrega",
-        "confirmDelivery": "Confirmar entrega", "issueKind": "Tipo de problema", "viewAll": "Ver todo", "showLess": "Ver menos", "locationUnavailable": "Ubicación no disponible", "familiesTitle": "Familias asignadas", "familiesSubtitle": "Familias con entregas asignadas a ti para la fecha seleccionada.", "familiesSearch": "Buscar familias asignadas", "familiesAccount": "Familia", "familiesPhone": "Teléfono", "familiesOrders": "Pedidos", "familiesOrdersCount": "{count} pedidos", "familiesStatus": "Estado", "familiesNextWindow": "Próxima ventana", "familiesEmpty": "No hay familias asignadas para esta fecha.", "familiesEmptyHint": "Las familias aparecen aquí una vez que se te asignen entregas.", "familiesNoData": "No hay familias asignadas para esta fecha.", "familiesLoading": "Cargando familias asignadas"
+        "confirmDelivery": "Confirmar entrega", "issueKind": "Tipo de problema", "viewAll": "Ver todo", "showLess": "Ver menos", "locationUnavailable": "Ubicación no disponible", "familiesTitle": "Familias asignadas", "familiesSubtitle": "Familias con entregas asignadas a ti para la fecha seleccionada.", "familiesSearch": "Buscar familias asignadas", "familiesAccount": "Familia", "familiesPhone": "Teléfono", "familiesOrders": "Pedidos", "familiesOrdersCount": "{count} pedidos", "familiesStatus": "Estado", "familiesNextWindow": "Próxima ventana", "familiesEmpty": "No hay familias asignadas para esta fecha.", "familiesEmptyHint": "Las familias aparecen aquí una vez que se te asignen entregas.", "familiesNoData": "No hay familias asignadas para esta fecha.", "familiesLoading": "Cargando familias asignadas",
+        "orderSheetDescription": "Tu entrega asignada para este pedido.", "loadOrderError": "No pudimos cargar este pedido de entrega", "validatePurchase": "Validar compra", "recordPurchase": "Registrar compra", "purchaseRecorded": "Compra registrada y presupuesto de la familia liquidado.", "purchaseFailed": "No se pudo registrar esta compra.", "noAvailableAction": "Todavía no hay ninguna acción disponible para esta entrega.", "orderSchedule": "Horario", "orderWarnings": "Avisos", "workflowWaitingApproval": "Esperando aprobación", "workflowPurchaseRequired": "Compra requerida", "workflowReadyForDelivery": "Listo para entregar", "workflowOutForDelivery": "En reparto", "workflowDelivered": "Entregado", "workflowNeedsOperatorAction": "Requiere acción del operador", "markerLabel": "{family}, pedido {order}, {workflow}"
       },
       "family": {
         "welcome": "Bienvenido, {name}",

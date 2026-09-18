@@ -1,7 +1,6 @@
 "use client";
 
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import type { EntityQueryOptions } from "@/hooks/useEntityQuery";
+import { useEntityQuery, type EntityQueryOptions } from "najm-kit/query";
 import { getFamilyDashboard } from "@/services/dashboardApi";
 import {
   getOwnFamilyProfile,

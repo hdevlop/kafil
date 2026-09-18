@@ -1,6 +1,6 @@
 "use client";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
+import { useEntityCommand } from "najm-kit/query";
 import {
   resetMonthlyLimit,
   setFamilyOrderPolicy,

@@ -1,12 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { formatNotifyCount } from "najm-kit";
 
+import { kafilUiI18n } from "@kafil/server/locales";
 import { getDashboardNavigation } from "../src/shared/DashboardShell/navigation";
 import {
   buildNotificationViewModel,
-  formatBadgeCount,
   normalizeLocale,
 } from "../src/features/Notifications/lib/buildNotificationViewModel";
+import { buildNotifyItem } from "../src/features/Notifications/lib/buildNotifyItem";
+import type { NotificationRecord } from "../src/features/Notifications/types";
 import { notificationKeys } from "../src/features/Notifications/hooks/notificationKeys";
 import { synchronizeNotificationLocale } from "../src/features/Notifications/lib/synchronizeNotificationLocale";
 import { canOpenPersonalSettings } from "../src/features/Settings/components/PersonalSettingsSheet";
@@ -59,13 +62,13 @@ describe("Phase B notification query contracts", () => {
   });
 
   test("only the unread-count query polls at 30 seconds", async () => {
-    const [queries, commands, popover] = await Promise.all([
+    const [queries, commands, menu] = await Promise.all([
       readSource("../src/features/Notifications/hooks/useNotifications.ts"),
       readSource(
         "../src/features/Notifications/hooks/useNotificationCommands.ts",
       ),
       readSource(
-        "../src/features/Notifications/components/NotificationPopover.tsx",
+        "../src/features/Notifications/components/NotificationsMenu.tsx",
       ),
     ]);
 
@@ -73,12 +76,12 @@ describe("Phase B notification query contracts", () => {
     const polling = queries.match(/refetchInterval:/g) ?? [];
     expect(polling).toHaveLength(1);
     expect(queries).toContain("refetchIntervalInBackground: false");
-    // The controlled popover remounts its query body on every open, so
-    // refetchOnMount is an actual open-time contract instead of a stale cache.
-    expect(popover).toContain('refetchOnMount: "always"');
-    expect(popover).toContain("{open ? (");
-    expect(popover).toContain("<NotificationPopoverBody");
-    expect(popover).toContain(") : null}");
+    // NNotifyContent renders nothing while the menu is closed, so the
+    // connected body remounts on every open and refetchOnMount is a real
+    // open-time contract instead of a stale cache.
+    expect(menu).toContain('refetchOnMount: "always"');
+    expect(menu).toContain("<NNotifyContent>");
+    expect(menu).toContain("<NotificationsMenuBody");
     const page = readSource(
       "../src/features/Notifications/components/NotificationsPage.tsx",
     );
@@ -111,25 +114,33 @@ describe("Phase B notification shell and navigation", () => {
     }
   });
 
-  test("the page-global action group owns one themed bell", async () => {
-    const [shell, globalActions] = await Promise.all([
+  test("the page-global action group owns one packaged bell", async () => {
+    const [shell, globalActions, menu] = await Promise.all([
       readSource("../src/shared/DashboardShell/index.tsx"),
       readSource("../src/shared/PageHeaderGlobalActions.tsx"),
+      readSource(
+        "../src/features/Notifications/components/NotificationsMenu.tsx",
+      ),
     ]);
     expect(shell).not.toContain("NotificationsMenu");
-    expect(
-      (shell.match(/<NotificationBell/g) ?? []).length,
-    ).toBe(0);
-    expect(
-      (globalActions.match(/<NotificationsMenu/g) ?? []).length,
-    ).toBe(1);
-    expect(globalActions).not.toContain("NotificationBell");
+    expect((globalActions.match(/<NotificationsMenu/g) ?? []).length).toBe(1);
 
-    const bell = await readSource(
-      "../src/features/Notifications/components/NotificationBell.tsx",
-    );
-    expect(bell).toContain("text-foreground");
-    expect(bell).toContain("[&_svg]:text-foreground");
+    // The bell, the badge, the popover and the four header controls are Najm
+    // Kit's. Kafil keeps the data, the queries, the topics and the router.
+    expect((menu.match(/<NNotifyTrigger/g) ?? []).length).toBe(1);
+    expect(menu).toContain("<NNotifyRoot");
+    expect(menu).not.toContain("<Popover");
+    expect(menu).not.toContain("<NIndicator");
+    for (const control of [
+      "<NGlobalActions>",
+      "<NLanguageMenu",
+      "<NThemeToggle",
+      "<NFullscreenToggle",
+    ]) {
+      expect(globalActions).toContain(control);
+    }
+    expect(globalActions).not.toContain("DropdownMenu");
+    expect(globalActions).not.toContain("screenfull");
   });
 
   test("auth guards the inbox route for every role", async () => {
@@ -140,13 +151,13 @@ describe("Phase B notification shell and navigation", () => {
 });
 
 describe("Phase B notification view models", () => {
-  test("badge hides at zero, localizes 1-99, and caps at 99+", () => {
-    expect(formatBadgeCount(0, "en")).toBe("");
-    expect(formatBadgeCount(-3, "en")).toBe("");
-    expect(formatBadgeCount(99, "en")).not.toBe("");
-    expect(formatBadgeCount(99, "en")).not.toBe("99+");
-    expect(formatBadgeCount(100, "en")).toBe("99+");
-    expect(formatBadgeCount(1000, "en")).toBe("99+");
+  test("the packaged badge rule still hides at zero and caps at 99+", () => {
+    expect(formatNotifyCount(0, "en")).toBe("");
+    expect(formatNotifyCount(-3, "en")).toBe("");
+    expect(formatNotifyCount(99, "en")).not.toBe("");
+    expect(formatNotifyCount(99, "en")).not.toBe("99+");
+    expect(formatNotifyCount(100, "en")).toBe("99+");
+    expect(formatNotifyCount(1000, "en")).toBe("99+");
   });
 
   test("every registry topic renders localized copy in all four locales", () => {
@@ -177,6 +188,78 @@ describe("Phase B notification view models", () => {
     expect(source).not.toContain("http://");
     expect(source).not.toContain("https://");
     expect(source).toContain("Unknown topics render a generic safe row");
+  });
+
+  test("maps a record to the packaged row without leaking domain data", () => {
+    const record: NotificationRecord = {
+      id: "n-1",
+      topic: "contribution.validated",
+      aggregateType: "contribution",
+      aggregateId: "c-1",
+      locale: "fr",
+      payload: { guardianCin: "AB123456", amountMinor: 5000 },
+      readAt: null,
+      createdAt: "2026-09-18T10:00:00.000Z",
+      updatedAt: "2026-09-18T10:00:00.000Z",
+    };
+
+    const item = buildNotifyItem(record, "fr", FALLBACK);
+
+    expect(item.id).toBe("n-1");
+    expect(item.title).toBe(
+      buildNotificationViewModel("contribution.validated", "fr", FALLBACK).title,
+    );
+    expect(item.read).toBe(false);
+    expect(item.href).toBe("/contribution?focus=n-1");
+    expect(item.tone).toBe("success");
+    expect(item.icon).toBeDefined();
+    expect(item.createdAt).toBe(record.createdAt);
+
+    const serialized = JSON.stringify({ ...item, icon: undefined });
+    expect(serialized).not.toContain("AB123456");
+    expect(serialized).not.toContain("contribution.validated");
+    expect(serialized).not.toContain("aggregateId");
+  });
+
+  test("a read row maps to read, and an unknown topic stays safe", () => {
+    const base: NotificationRecord = {
+      id: "n-2",
+      topic: "order.something-new",
+      aggregateType: "order",
+      aggregateId: "o-1",
+      locale: "en",
+      payload: {},
+      readAt: "2026-09-18T11:00:00.000Z",
+      createdAt: "2026-09-18T10:00:00.000Z",
+      updatedAt: "2026-09-18T11:00:00.000Z",
+    };
+
+    const item = buildNotifyItem(base, "en", FALLBACK);
+    expect(item.read).toBe(true);
+    expect(item.title).toBe(FALLBACK.unknownTitle);
+    expect(item.body).toBe(FALLBACK.unknownBody);
+    expect(item.href).toBe("/dashboard?focus=n-2");
+  });
+
+  test("the UI language wins over the stored row locale", () => {
+    const record: NotificationRecord = {
+      id: "n-3",
+      topic: "order.delivered",
+      aggregateType: "order",
+      aggregateId: "o-2",
+      locale: "fr",
+      payload: {},
+      readAt: null,
+      createdAt: "2026-09-18T10:00:00.000Z",
+      updatedAt: "2026-09-18T10:00:00.000Z",
+    };
+
+    expect(buildNotifyItem(record, "ar", FALLBACK).title).toBe(
+      buildNotificationViewModel("order.delivered", "ar", FALLBACK).title,
+    );
+    expect(buildNotifyItem(record, null, FALLBACK).title).toBe(
+      buildNotificationViewModel("order.delivered", "fr", FALLBACK).title,
+    );
   });
 
   test("locale normalization falls back to English", () => {
@@ -264,25 +347,61 @@ describe("Phase B notification locale sync", () => {
 });
 
 describe("Phase B notification accessibility", () => {
-  test("bell announces count changes and popover keeps keyboard focus", async () => {
-    const [bell, popover, card] = await Promise.all([
-      readSource("../src/features/Notifications/components/NotificationBell.tsx"),
-      readSource(
-        "../src/features/Notifications/components/NotificationPopover.tsx",
-      ),
+  test("the connected menu supplies every label the packaged menu announces", async () => {
+    const labels = readSource(
+      "../src/features/Notifications/hooks/useNotifyLabels.ts",
+    );
+    // `unread` is the politely announced count; `open` is the bell's name.
+    for (const key of [
+      "notifications.openInbox",
+      "notifications.unreadBadge",
+      "notifications.inboxTitle",
+      "notifications.loading",
+      "notifications.loadError",
+      "notifications.retry",
+      "notifications.markRead",
+      "notifications.marking",
+      "notifications.markAllRead",
+      "notifications.markingAll",
+      "notifications.viewAll",
+      "notifications.stateUnread",
+      "notifications.justNow",
+    ]) {
+      expect(labels).toContain(key);
+    }
+
+    for (const language of kafilUiI18n.supportedLanguages) {
+      for (const key of [
+        "notifications.openInbox",
+        "notifications.unreadBadge",
+        "notifications.markAllRead",
+        "common.toggleTheme",
+        "common.toggleFullscreen",
+      ] as const) {
+        expect(kafilUiI18n.translate(language, key)).not.toBe(key);
+      }
+    }
+  });
+
+  test("opening a row goes through the packaged item, never a bare router push", async () => {
+    const [card, menu] = await Promise.all([
       readSource("../src/features/Notifications/components/NotificationCard.tsx"),
+      readSource(
+        "../src/features/Notifications/components/NotificationsMenu.tsx",
+      ),
     ]);
-    expect(bell).toContain('aria-live="polite"');
-    expect(bell).toContain("aria-label");
-    expect(bell).toContain("ComponentPropsWithoutRef<typeof NButton>");
-    expect(bell).toContain("...buttonProps");
-    expect(bell).not.toContain("onClick={onOpen}");
-    expect(popover).toContain("Popover");
-    expect(popover).toContain("returns focus to the trigger");
-    expect(card).toContain("markRead");
-    expect(card).toContain("onNavigate=");
-    expect(card).not.toContain("mutateAsync(notification.id).then");
-    expect(popover).toContain("Opening the popover never marks rows read");
+    for (const source of [card, menu]) {
+      // The package awaits the read command before it hands the item back,
+      // so navigation cannot outrun or hide a failed read.
+      expect(source).toContain("onMarkRead=");
+      expect(source).toContain("onOpenItem=");
+      expect(source).toContain("router.push");
+      expect(source.indexOf("onMarkRead=")).toBeLessThan(
+        source.indexOf("onOpenItem="),
+      );
+    }
+    expect(card).not.toContain("<Card");
+    expect(card).not.toContain("<NBadge");
   });
 
   test("the local development runner excludes production notification acceptance", () => {

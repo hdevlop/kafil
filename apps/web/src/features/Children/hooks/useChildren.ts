@@ -2,9 +2,7 @@
 
 import { useUser } from "najm-auth/client/react";
 
-import { useEntityCommand } from "@/hooks/useEntityCommand";
-import { useEntityQuery } from "@/hooks/useEntityQuery";
-import { useResponsiveOffsetList } from "najm-kit/query";
+import { useEntityCommand, useEntityQuery, useResponsiveOffsetList } from "najm-kit/query";
 import type { OffsetPagination } from "najm-kit/pagination";
 import { bulkDeleteChildren, createChild, deactivateChild, deleteChild, listChildren, listChildFamilies, reactivateChild, updateChild, type ListChildrenFilters } from "@/services/childApi";
 

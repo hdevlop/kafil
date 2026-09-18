@@ -1,44 +1,18 @@
-import { normalizeStatusToken, type NBadgeDefaults } from "najm-kit";
-import { humanizeToken } from "najm-kit/format";
+import { formatStatusLabel as formatNajmStatusLabel } from "najm-kit/format";
 
-import { kafilUiI18n, type UiTranslationKey } from "@kafil/server/locales";
-import type { KafilLocale } from "@kafil/server/locales";
+import { kafilUiI18n, type KafilLocale, type UiTranslationKey } from "@kafil/server/locales";
 
-export const statusTranslationKeys: Record<string, UiTranslationKey> = {
-  active: "status.active",
-  approved: "status.approved",
-  cancelled: "status.cancelled",
-  delivered: "status.delivered",
-  ended: "status.ended",
-  inactive: "status.inactive",
-  in_preparation: "status.in_preparation",
-  purchased: "status.purchased",
-  out_for_delivery: "status.out_for_delivery",
-  paused: "status.paused",
-  pending: "status.pending",
-  pending_funding: "status.pending_funding",
-  rejected: "status.rejected",
-  refunded: "status.refunded",
-  stopped: "status.stopped",
-  validated: "status.validated",
-};
-
-export const KAFIL_BADGE_DEFAULTS = {
-  look: "soft",
-  shape: "pill",
-  statusLabelKeys: statusTranslationKeys,
-} satisfies NBadgeDefaults;
-
-export function getStatusTranslationKey(status: string): UiTranslationKey | null {
-  return statusTranslationKeys[normalizeStatusToken(status)] ?? null;
-}
-
-export function formatStatusLabel(
-  status: string,
-  language: KafilLocale = "en",
-): string {
-  const translationKey = getStatusTranslationKey(status);
-  if (translationKey) return kafilUiI18n.translate(language, translationKey);
-
-  return humanizeToken(status);
+/**
+ * Plain-text status label, resolved by the same code the badges use.
+ *
+ * Najm Kit owns the vocabulary, the four-language labels and the
+ * `status.<token>` catalog convention, so this is only the binding that hands
+ * it our translator — the app's own wording in `ui.status.*` still wins, and a
+ * token neither side knows humanizes.
+ */
+export function formatStatusLabel(status: string, language: KafilLocale = "en"): string {
+  return formatNajmStatusLabel(status, {
+    language,
+    t: (key) => kafilUiI18n.translate(language, key as UiTranslationKey),
+  });
 }

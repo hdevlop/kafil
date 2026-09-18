@@ -59,6 +59,10 @@ import {
   startDeliveryDto,
   type StartDeliveryDto,
 } from "./orderDto";
+import {
+  deliveryWorkflowCapabilities,
+  deliveryWorkflowState,
+} from "./deliveryWorkflow";
 import { OrderEvidenceService } from "./orderEvidenceService";
 import {
   CartRepository,
@@ -546,18 +550,52 @@ export class OrderService {
 
   @Transaction({ retries: 2 })
   async recordPurchase(id: string, data: RecordPurchaseDto, actorUserId: string) {
+    const result = await this.applyInitialPurchase(id, data, actorUserId, null);
+    if (result.replayed) return this.get(id);
+    return this.orderDetail(result.order, "operator");
+  }
+
+  /**
+   * The one initial-purchase settlement. The operator command and the assigned
+   * delivery worker's own command both run it inside their own transaction;
+   * only the ownership precondition and the returned projection differ.
+   */
+  private async applyInitialPurchase(
+    id: string,
+    data: RecordPurchaseDto,
+    actorUserId: string,
+    ownedStaffProfileId: string | null,
+  ): Promise<
+    | { replayed: true; order: Order }
+    | { replayed: false; order: Order; attempt?: OrderDeliveryAttempt }
+  > {
     const input = recordPurchaseDto.parse(data);
     const existing = await this.purchases.findByIdempotencyKey(
       input.idempotencyKey,
     );
     if (existing) {
-      if (existing.orderId !== id) {
+      // The operator route keeps its existing order-scoped replay contract.
+      // The owned command additionally refuses a key another actor already
+      // spent, so one worker can never replay into another's settlement.
+      if (
+        existing.orderId !== id ||
+        (ownedStaffProfileId !== null &&
+          existing.recordedByUserId !== actorUserId)
+      ) {
         HttpError.conflict("Purchase idempotency key was already used");
       }
-      return this.get(id);
+      const replayedOrder = await this.orders.findById(id);
+      if (!replayedOrder) HttpError.notFound("Order not found");
+      return { replayed: true, order: replayedOrder };
     }
 
     const order = await this.lockOrder(id);
+    // Assignment and reassignment lock the order first, so an ownership check
+    // taken under the same lock cannot be raced past: either this worker still
+    // owns the active attempt, or reassignment won and no money moves.
+    const attempt = ownedStaffProfileId
+      ? await this.requireAssignedOwnedAttempt(order.id, ownedStaffProfileId)
+      : undefined;
     this.validator.ensureStatus(order, "approved");
     if (await this.purchases.findActiveByOrderId(order.id)) {
       HttpError.conflict("Order already has an active purchase");
@@ -603,7 +641,61 @@ export class OrderService {
       "purchase_recorded",
       purchaseMetadata(order, purchase),
     );
-    return this.orderDetail(purchased, "operator");
+    return { replayed: false, order: purchased, attempt };
+  }
+
+  @Transaction({ retries: 2 })
+  async recordOwnPurchase(
+    id: string,
+    data: RecordPurchaseDto,
+    actorUserId: string,
+  ) {
+    const staff = await this.requireDeliveryStaff(actorUserId);
+    const result = await this.applyInitialPurchase(
+      id,
+      data,
+      actorUserId,
+      staff.id,
+    );
+    const attempt =
+      (!result.replayed && result.attempt) ||
+      (await this.requireOwnedAttempt(result.order.id, staff.id));
+    return this.deliveryOrderDetail(result.order, attempt);
+  }
+
+  async getOwnDeliveryDetail(id: string, actorUserId: string) {
+    const staff = await this.requireDeliveryStaff(actorUserId);
+    const order = await this.orders.findById(id);
+    if (!order) HttpError.notFound("Order not found");
+    const attempt = await this.requireOwnedAttempt(order.id, staff.id);
+    return this.deliveryOrderDetail(order, attempt);
+  }
+
+  private async requireOwnedAttempt(orderId: string, staffProfileId: string) {
+    const attempt = await this.deliveries.findOwnedByOrderId(
+      orderId,
+      staffProfileId,
+    );
+    if (!attempt) HttpError.forbidden("Delivery assignment access denied");
+    return attempt;
+  }
+
+  private async requireAssignedOwnedAttempt(
+    orderId: string,
+    staffProfileId: string,
+  ) {
+    const attempt = await this.deliveries.findActiveByOrderId(orderId, true);
+    if (
+      !attempt ||
+      attempt.orderId !== orderId ||
+      attempt.staffProfileId !== staffProfileId
+    ) {
+      HttpError.forbidden("Delivery assignment access denied");
+    }
+    if (attempt.status !== "assigned") {
+      HttpError.conflict("Delivery attempt is no longer awaiting purchase");
+    }
+    return attempt;
   }
 
   @Transaction({ retries: 2 })
@@ -786,8 +878,38 @@ export class OrderService {
     id: string,
     data: StartDeliveryDto,
     actorUserId: string,
-    requiredStaffProfileId?: string,
   ) {
+    const { order } = await this.applyDeliveryStart(id, data, actorUserId, null);
+    return this.orderDetail(order, "operator");
+  }
+
+  @Transaction({ retries: 2 })
+  async startOwnDelivery(
+    id: string,
+    data: StartDeliveryDto,
+    actorUserId: string,
+  ) {
+    const staff = await this.requireDeliveryStaff(actorUserId);
+    const { order, attempt } = await this.applyDeliveryStart(
+      id,
+      data,
+      actorUserId,
+      staff.id,
+    );
+    return this.deliveryOrderDetail(order, attempt);
+  }
+
+  /**
+   * The one delivery-start transition. The operator command and the assigned
+   * worker's own command both run it inside their own transaction; only the
+   * ownership precondition and the returned projection differ.
+   */
+  private async applyDeliveryStart(
+    id: string,
+    data: StartDeliveryDto,
+    actorUserId: string,
+    ownedStaffProfileId: string | null,
+  ): Promise<{ order: Order; attempt: OrderDeliveryAttempt }> {
     const input = startDeliveryDto.parse(data);
     const order = await this.lockOrder(id);
     const repeated = await this.deliveries.findByStartIdempotencyKey(
@@ -796,12 +918,12 @@ export class OrderService {
     if (repeated) {
       this.ensureDeliveryIdempotencyContext(repeated, order.id);
       if (
-        requiredStaffProfileId &&
-        repeated.staffProfileId !== requiredStaffProfileId
+        ownedStaffProfileId &&
+        repeated.staffProfileId !== ownedStaffProfileId
       ) {
         HttpError.forbidden("Delivery assignment access denied");
       }
-      return this.orderDetail(order, "operator");
+      return { order, attempt: repeated };
     }
     this.validator.ensureStatus(order, "purchased");
     if (!(await this.purchases.findActiveByOrderId(order.id))) {
@@ -812,28 +934,32 @@ export class OrderService {
       HttpError.conflict("An active delivery assignment is required");
     }
     if (
-      requiredStaffProfileId &&
-      attempt.staffProfileId !== requiredStaffProfileId
+      ownedStaffProfileId &&
+      attempt.staffProfileId !== ownedStaffProfileId
     ) {
       HttpError.forbidden("Delivery assignment access denied");
     }
     await this.ensureAssignableDeliveryStaff(attempt.staffProfileId);
     const startedAt = new Date();
-    await this.deliveries.start(attempt.id, input.idempotencyKey, startedAt);
-    const started = await this.orders.update(order.id, {
+    const started = await this.deliveries.start(
+      attempt.id,
+      input.idempotencyKey,
+      startedAt,
+    );
+    const updated = await this.orders.update(order.id, {
       status: "out_for_delivery",
       deliveryStartedAt: startedAt,
       deliveryStartedByUserId: actorUserId,
     });
     await this.recordTransition(
       order,
-      started,
+      updated,
       actorUserId,
       null,
       "delivery_started",
       { attemptId: attempt.id, staffProfileId: attempt.staffProfileId },
     );
-    return this.orderDetail(started, "operator");
+    return { order: updated, attempt: started ?? attempt };
   }
 
   @Transaction({ retries: 2 })
@@ -884,8 +1010,46 @@ export class OrderService {
     id: string,
     data: ConfirmDeliveryDto,
     actorUserId: string,
-    requiredStaffProfileId?: string,
   ) {
+    const { order } = await this.applyDeliveryConfirmation(
+      id,
+      data,
+      actorUserId,
+      null,
+    );
+    return this.orderDetail(order, "operator");
+  }
+
+  @Transaction({ retries: 2 })
+  async confirmOwnDelivery(
+    id: string,
+    data: ConfirmDeliveryDto,
+    actorUserId: string,
+  ) {
+    const staff = await this.requireDeliveryStaff(actorUserId);
+    const { order, attempt } = await this.applyDeliveryConfirmation(
+      id,
+      data,
+      actorUserId,
+      staff.id,
+    );
+    return this.deliveryOrderDetail(
+      order,
+      attempt ?? (await this.requireOwnedAttempt(order.id, staff.id)),
+    );
+  }
+
+  /**
+   * The one delivery-confirmation transition. The operator command and the
+   * assigned worker's own command both run it inside their own transaction;
+   * only the ownership precondition and the returned projection differ.
+   */
+  private async applyDeliveryConfirmation(
+    id: string,
+    data: ConfirmDeliveryDto,
+    actorUserId: string,
+    ownedStaffProfileId: string | null,
+  ): Promise<{ order: Order; attempt?: OrderDeliveryAttempt }> {
     const input = confirmDeliveryDto.parse(data);
     const order = await this.lockOrder(id);
     if (order.status === "delivered") {
@@ -895,12 +1059,12 @@ export class OrderService {
             input.idempotencyKey,
           );
         if (
-          requiredStaffProfileId &&
-          repeatedAttempt?.staffProfileId !== requiredStaffProfileId
+          ownedStaffProfileId &&
+          repeatedAttempt?.staffProfileId !== ownedStaffProfileId
         ) {
           HttpError.forbidden("Delivery assignment access denied");
         }
-        return this.orderDetail(order, "operator");
+        return { order, attempt: repeatedAttempt };
       }
       HttpError.conflict("Order is already delivered");
     }
@@ -911,12 +1075,12 @@ export class OrderService {
     if (repeatedAttempt) {
       this.ensureDeliveryIdempotencyContext(repeatedAttempt, order.id);
       if (
-        requiredStaffProfileId &&
-        repeatedAttempt.staffProfileId !== requiredStaffProfileId
+        ownedStaffProfileId &&
+        repeatedAttempt.staffProfileId !== ownedStaffProfileId
       ) {
         HttpError.forbidden("Delivery assignment access denied");
       }
-      return this.orderDetail(order, "operator");
+      return { order, attempt: repeatedAttempt };
     }
     this.validator.ensureStatus(order, "out_for_delivery");
     const attempt = await this.deliveries.findActiveByOrderId(order.id, true);
@@ -924,8 +1088,8 @@ export class OrderService {
       HttpError.conflict("An in-progress delivery attempt is required");
     }
     if (
-      requiredStaffProfileId &&
-      attempt.staffProfileId !== requiredStaffProfileId
+      ownedStaffProfileId &&
+      attempt.staffProfileId !== ownedStaffProfileId
     ) {
       HttpError.forbidden("Delivery assignment access denied");
     }
@@ -938,7 +1102,7 @@ export class OrderService {
       );
     }
     const deliveredAt = new Date();
-    await this.deliveries.complete(
+    const completed = await this.deliveries.complete(
       attempt.id,
       input.idempotencyKey,
       deliveredAt,
@@ -966,25 +1130,7 @@ export class OrderService {
         evidenceRecorded: Boolean(input.proofStoragePath),
       },
     );
-    return this.orderDetail(delivered, "operator");
-  }
-
-  async startOwnDelivery(
-    id: string,
-    data: StartDeliveryDto,
-    actorUserId: string,
-  ) {
-    const staff = await this.requireDeliveryStaff(actorUserId);
-    return this.startDelivery(id, data, actorUserId, staff.id);
-  }
-
-  async confirmOwnDelivery(
-    id: string,
-    data: ConfirmDeliveryDto,
-    actorUserId: string,
-  ) {
-    const staff = await this.requireDeliveryStaff(actorUserId);
-    return this.confirmDelivery(id, data, actorUserId, staff.id);
+    return { order: delivered, attempt: completed ?? attempt };
   }
 
   @Transaction({ retries: 2 })
@@ -1997,6 +2143,70 @@ export class OrderService {
         void actorUserId;
         return event;
       }),
+    };
+  }
+
+  /**
+   * Delivery-safe order detail. It carries only what the assigned worker's
+   * sheet renders: no operator IDs, receipt paths, purchase history,
+   * correction reasons, status-event actors, other attempts, or private Staff
+   * fields. The delivery-person card is omitted because the reader is the
+   * assignee.
+   */
+  private async deliveryOrderDetail(
+    order: Order,
+    attempt: OrderDeliveryAttempt,
+  ) {
+    const items = await this.orders.listItems(order.id);
+    const purchase = await this.purchases.findActiveByOrderId(order.id);
+    const openIssues = await this.deliveries.listOpenIssues(attempt.id);
+    const familyImage = await this.orders.findFamilyImage(order.id);
+    const workflow = {
+      orderStatus: order.status,
+      attemptStatus: attempt.status,
+      hasActivePurchase: Boolean(purchase),
+    };
+
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      currency: order.currency,
+      requestedTotalMinor: order.totalMinor,
+      actualTotalMinor: purchase?.actualTotalMinor ?? null,
+      receiptRecorded: Boolean(purchase),
+      familyName: order.guardianLegalNameSnapshot,
+      familyImage,
+      deliveryAddressSnapshot: order.deliveryAddressSnapshot,
+      deliveryPhoneSnapshot: order.deliveryPhoneSnapshot,
+      coordinates:
+        order.deliveryLatitudeSnapshot != null &&
+        order.deliveryLongitudeSnapshot != null
+          ? {
+              latitude: order.deliveryLatitudeSnapshot,
+              longitude: order.deliveryLongitudeSnapshot,
+            }
+          : null,
+      items: items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        productNameSnapshot: item.productNameSnapshot,
+        skuSnapshot: item.skuSnapshot,
+        quantity: item.quantity,
+        unitPriceMinor: item.unitPriceMinor,
+        lineTotalMinor: item.lineTotalMinor,
+      })),
+      attempt: {
+        id: attempt.id,
+        status: attempt.status,
+        scheduledDate: attempt.scheduledDate,
+        windowStartMinute: attempt.windowStartMinute,
+        windowEndMinute: attempt.windowEndMinute,
+        packageCount: attempt.packageCount,
+      },
+      openIssues,
+      workflowState: deliveryWorkflowState(workflow),
+      ...deliveryWorkflowCapabilities(workflow),
     };
   }
 

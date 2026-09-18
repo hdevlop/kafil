@@ -712,6 +712,8 @@
       "copyDetails": "Copier les détails",
       "copied": "Copié",
       "copyError": "Échec de la copie",
+      "toggleTheme": "Changer le thème de couleur",
+      "toggleFullscreen": "Basculer en plein écran",
       "done": "Terminé",
       "phone": "Téléphone"
     },
@@ -988,7 +990,8 @@
         "mapSubtitle": "Adresses familiales planifiées", "selectDate": "Sélectionner la date de livraison", "today": "Aujourd’hui", "tomorrow": "Demain",
         "noMapLocations": "Aucune adresse cartographiée", "noMapLocationsHint": "Les livraisons planifiées restent disponibles dans la liste.",
         "packages": "colis", "openMaps": "Ouvrir dans Google Maps", "startDelivery": "Démarrer la livraison",
-        "confirmDelivery": "Confirmer la livraison", "issueKind": "Type de problème", "viewAll": "Tout afficher", "showLess": "Afficher moins", "locationUnavailable": "Localisation indisponible", "familiesTitle": "Familles assignées", "familiesSubtitle": "Familles avec des livraisons qui vous sont assignées pour la date sélectionnée.", "familiesSearch": "Rechercher des familles assignées", "familiesAccount": "Famille", "familiesPhone": "Téléphone", "familiesOrders": "Commandes", "familiesOrdersCount": "{count} commandes", "familiesStatus": "Statut", "familiesNextWindow": "Prochain créneau", "familiesEmpty": "Aucune famille assignée pour cette date.", "familiesEmptyHint": "Les familles apparaissent ici une fois que des livraisons vous sont assignées.", "familiesNoData": "Aucune famille assignée pour cette date.", "familiesLoading": "Chargement des familles assignées"
+        "confirmDelivery": "Confirmer la livraison", "issueKind": "Type de problème", "viewAll": "Tout afficher", "showLess": "Afficher moins", "locationUnavailable": "Localisation indisponible", "familiesTitle": "Familles assignées", "familiesSubtitle": "Familles avec des livraisons qui vous sont assignées pour la date sélectionnée.", "familiesSearch": "Rechercher des familles assignées", "familiesAccount": "Famille", "familiesPhone": "Téléphone", "familiesOrders": "Commandes", "familiesOrdersCount": "{count} commandes", "familiesStatus": "Statut", "familiesNextWindow": "Prochain créneau", "familiesEmpty": "Aucune famille assignée pour cette date.", "familiesEmptyHint": "Les familles apparaissent ici une fois que des livraisons vous sont assignées.", "familiesNoData": "Aucune famille assignée pour cette date.", "familiesLoading": "Chargement des familles assignées",
+        "orderSheetDescription": "Votre livraison assignée pour cette commande.", "loadOrderError": "Nous n'avons pas pu charger cette commande de livraison", "validatePurchase": "Valider l'achat", "recordPurchase": "Enregistrer l'achat", "purchaseRecorded": "Achat enregistré et budget de la famille régularisé.", "purchaseFailed": "Impossible d'enregistrer cet achat.", "noAvailableAction": "Aucune action n'est encore disponible pour cette livraison.", "orderSchedule": "Créneau", "orderWarnings": "Alertes", "workflowWaitingApproval": "En attente d'approbation", "workflowPurchaseRequired": "Achat requis", "workflowReadyForDelivery": "Prêt pour la livraison", "workflowOutForDelivery": "En cours de livraison", "workflowDelivered": "Livré", "workflowNeedsOperatorAction": "Action de l'opérateur requise", "markerLabel": "{family}, commande {order}, {workflow}"
       },
       "family": {
         "welcome": "Bienvenue, {name}",

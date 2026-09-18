@@ -1,7 +1,11 @@
 import { defineNajmApp } from "najm-next/app";
+import { APP_NAME } from "@/types/branding";
+import { KAFIL_CURRENCY } from "@kafil/server/money/constants";
 
 export const kafilApp = defineNajmApp({
   id: "kafil",
+  appName: APP_NAME,
+  currency: KAFIL_CURRENCY,
   auth: {
     apiBaseURL: "/api",
     authPrefix: "/auth",

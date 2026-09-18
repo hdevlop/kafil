@@ -267,9 +267,16 @@ describe("najm-theme adoption — Kafil boundary", () => {
 
   test("the kit receives the package branding registry without an app adapter", () => {
     const provider = readSource("../src/providers/AppProviders.tsx");
+    const appConfig = readSource("../src/najm.config.ts");
 
     expect(provider).toContain("NajmAppProvider");
-    expect(provider).toContain("appName={APP_NAME}");
+    expect(provider).not.toContain("appName={APP_NAME}");
+    expect(provider).not.toContain("currency={KAFIL_CURRENCY}");
+    expect(appConfig).toContain(
+      'import { KAFIL_CURRENCY } from "@kafil/server/money/constants"',
+    );
+    expect(appConfig).toContain("appName: APP_NAME");
+    expect(appConfig).toContain("currency: KAFIL_CURRENCY");
     // Najm Kit projects the package payload from the snapshot. Kafil does not
     // rename, resolve, inherit, or drop consumer-defined slots.
     expect(provider).toContain("snapshot={snapshot}");

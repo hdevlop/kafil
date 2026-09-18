@@ -3,8 +3,12 @@ import { mkdir, mkdtemp, rm, utimes } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { getGuardMetadata } from "najm-guard";
+import { getRoutes } from "najm-core";
+
 import {
   evidenceReference,
+  OrderEvidenceController,
   OrderEvidenceService,
   OrderPurchaseRepository,
   confirmDeliveryDto,
@@ -87,6 +91,59 @@ describe("protected order evidence", () => {
     expect((await evidence.read("receipts", referencedName)).fileName).toBe(
       referencedName,
     );
+  });
+
+  it("gives Delivery accounts receipt candidates only and keeps every other evidence route operator-only", () => {
+    const guardName = (method: string) =>
+      getGuardMetadata(OrderEvidenceController, method)[0]?.guardClass.name;
+
+    expect(guardName("uploadOwnReceipt")).toBe("DeliveryStaffRoleGuard");
+    expect(guardName("removeOwnReceiptCandidate")).toBe("DeliveryStaffRoleGuard");
+    for (const operatorOnly of [
+      "upload",
+      "serve",
+      "removeCandidate",
+      "listOrphans",
+      "cleanupOrphans",
+    ]) {
+      expect(guardName(operatorOnly)).toBe("OperatorRoleGuard");
+    }
+
+    const deliveryRoutes = getRoutes(OrderEvidenceController).filter(
+      (route) =>
+        getGuardMetadata(OrderEvidenceController, String(route.methodName))[0]
+          ?.guardClass.name === "DeliveryStaffRoleGuard",
+    );
+    expect(deliveryRoutes.map((route) => `${route.method} ${route.path}`).sort()).toEqual([
+      "delete /me/receipts/:fileName",
+      "post /me/receipts/:fileName",
+    ]);
+  });
+
+  it("stages and discards a Delivery receipt candidate through the same managed service", async () => {
+    const evidence = evidenceService();
+    const controller = new OrderEvidenceController(evidence);
+    const fileName = `${crypto.randomUUID()}.pdf`;
+    created.push(join(receiptsDirectory(), fileName));
+
+    const bytes = Uint8Array.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]).buffer;
+    const uploaded = await controller.uploadOwnReceipt(
+      fileName,
+      bytes,
+      "application/pdf",
+    );
+
+    expect(uploaded).toEqual({
+      path: evidenceReference("receipts", fileName),
+      mediaType: "application/pdf",
+      byteSize: 6,
+    });
+    expect(recordPurchaseDto.shape.receiptStoragePath.safeParse(uploaded.path).success)
+      .toBe(true);
+
+    expect(await controller.removeOwnReceiptCandidate(fileName)).toEqual({
+      deleted: true,
+    });
   });
 
   it("requires complete receipt and delivery proof metadata", () => {

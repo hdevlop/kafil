@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEntityQuery,
-  type EntityQueryOptions,
-} from "@/hooks/useEntityQuery";
+import { useEntityQuery, type EntityQueryOptions } from "najm-kit/query";
 import { getSponsorOrder, listSponsorOrders } from "@/services/sponsorOrdersApi";
 
 import { sponsorOrderKeys } from "./sponsorOrderKeys";

@@ -385,6 +385,40 @@ export class OrderController {
     return this.orders.confirmDelivery(id, body, userId);
   }
 
+  @Get("/:id/delivery/me")
+  @isDeliveryStaff()
+  @Validate({ params: orderIdParams })
+  @McpTool({
+    description:
+      "Read the authenticated Staff member's own assigned delivery order",
+    readOnly: true,
+  })
+  @ResMsg("orders.success.retrieved")
+  getOwnDelivery(@Params("id") id: string, @User("id") userId: string) {
+    return this.orders.getOwnDeliveryDetail(id, userId);
+  }
+
+  @Post("/:id/purchase/me")
+  @isDeliveryStaff()
+  @Validate({ params: orderIdParams, body: recordPurchaseDto })
+  @McpTool({
+    description:
+      "Record the first purchase for the authenticated Staff member's own assigned order",
+    idempotent: true,
+    confirm: {
+      level: "danger",
+      message: "Record this purchase and settle the family budget?",
+    },
+  })
+  @ResMsg("orders.success.purchaseRecorded")
+  recordOwnPurchase(
+    @Params("id") id: string,
+    @Body() body: RecordPurchaseDto,
+    @User("id") userId: string,
+  ) {
+    return this.orders.recordOwnPurchase(id, body, userId);
+  }
+
   @Post("/:id/delivery/me/start")
   @isDeliveryStaff()
   @Validate({ params: orderIdParams, body: startDeliveryDto })
