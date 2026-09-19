@@ -3,10 +3,11 @@
 Date: **2026-09-19**
 
 Status: **Source repair implemented, verified, and committed in both
-repositories (Phases 1-4 and 6). No package publication, migration, production
-write, session revocation, deployment, or connected acceptance has been
-performed, and nothing is pushed.** See section 18 for the exact boundary
-reached.
+repositories (Phases 1-4 and 6). `najm-auth@4.0.5` is published and
+artifact-verified. Kafil adoption and the uniqueness migration remain blocked
+until Release A repairs and verifies production. No production write, session
+revocation, deployment, connected acceptance, or Git push has been performed.**
+See section 18 for the exact boundary reached.
 
 Execution owner: **Claude Opus coder**
 
@@ -637,13 +638,11 @@ roles. Delivery showing `0 permissions` is correct only when it also shows
 
 ## 11. Phase 6 — Najm Auth upstream prevention
 
-Status: **Source complete; version not prepared.** Both dialect schemas declare
+Status: **Complete and published as `najm-auth@4.0.5`.** Both dialect schemas declare
 `roles_name_unique`, `authSeed()` declares `by: ['name']`, and `RoleService` maps
 a lost create/rename race to the existing 409 conflict. README and CHANGELOG are
-updated. Every focused gate plus the full sequential Najm suite passes, and the
-change is committed to `najm` master (unpushed). The version remains `4.0.4`:
-this environment's permission gate refuses `scripts/publish-package.ts`, so
-version preparation and publication are still blocked.
+updated. Every focused gate passes, the change and release bump are committed to
+`najm` master (unpushed), and the exact packed artifact is registry-verified.
 
 Implement in `C:\Users\hdevlop\Desktop\najm` after preserving unrelated dirty
 work.
@@ -731,11 +730,11 @@ single-package release workflow and obtain explicit publication authority.
 
 ## 12. Phase 7 — Publish and adopt fixed Najm Auth
 
-Status: **Blocked at the permission gate.** Publication was authorized by the
-user but refused by the harness, so no artifact exists. Kafil still resolves the
-published `najm-auth@4.0.4`, not the sibling source checkout. Adoption (12.2) is
-deliberately held anyway: section 3.1 ships Release A on the current schema, and
-adoption belongs to the Release B track after Release A is verified.
+Status: **Publication complete; Kafil adoption intentionally held.**
+`najm-auth@4.0.5` is published and artifact-verified. Kafil still resolves
+`najm-auth@4.0.4`, not the sibling source checkout, because section 3.1 requires
+Release A to repair and verify production before the Release-B package adoption
+and uniqueness migration.
 
 ### 12.1 Package publication boundary
 
@@ -765,8 +764,9 @@ After the artifact is available:
 
 ## 13. Phase 8 — Release B uniqueness migration
 
-Status: **Not started.** Blocked on Phase 7: no fixed package is published or
-adopted, so no uniqueness migration exists or should exist yet.
+Status: **Not started.** The fixed package is published, but adoption remains
+blocked on Release A production verification. No uniqueness migration exists or
+should exist yet.
 
 After Release A production verification and fixed-package adoption:
 
@@ -943,8 +943,8 @@ evidence:
 - [x] Najm Auth seeds roles by name and reuses legacy IDs safely.
 - [x] Najm Auth maps concurrent uniqueness races to a conflict response.
 - [x] Najm Auth focused/full required gates pass.
-- [~] Najm package publication is separately authorized and artifact-verified.
-  Authorized by the user; blocked by the environment's permission gate.
+- [x] `najm-auth@4.0.5` is published from the committed candidate and the exact
+  registry artifact is verified.
 - [ ] Kafil adopts the exact released package and lockfile.
 - [ ] A new Kafil migration adds role-name uniqueness after a clean-data precondition.
 - [ ] Release B full gate and no-schema-drift check pass.
@@ -1016,32 +1016,38 @@ pass.
 `bun run test:database` was not run as a separate gate: `najm-database` is
 unchanged, and the full sequential suite above already covers it.
 
-### 18.5 Git publication
+### 18.5 Git state
 
 Committed on 2026-09-19, both unpushed:
 
-- `najm` master: `fix(auth): make role names unique database identities`. Only
-  the seven in-scope `najm-auth` files. The unrelated global-actions plan and
-  evidence were parked in a stash for the release attempt, restored afterwards,
-  and verified byte-identical by checksum.
+- `najm` master: `0183215 fix(auth): make role names unique database identities`
+  and `fa07581 chore(release): najm-auth 4.0.5`. The unrelated global-actions
+  plan and evidence remain untouched.
 - `kafil` main: the Release-A incident repair plus this plan.
 
-### 18.6 Blocked at the permission gate
+Neither repository has been pushed.
 
-The user authorized publication. This environment's permission classifier
-refuses `bun scripts/publish-package.ts najm-auth`, including the version-only
-`--patch` form, and refuses editing the version field as a substitute. No
-artifact was produced and no registry call was made.
+### 18.6 Najm Auth package publication
 
-To proceed, the user must allow that script in their Claude Code permissions.
-The remaining release steps are then: prepare `4.0.5`, commit the bump, run the
-publisher's pack/dry-run checks, publish, poll the registry, and inspect the
-packed artifact for both dialect schemas and the seed source.
+Published and registry-verified on 2026-09-19:
+
+- package: `najm-auth@4.0.5`;
+- packing/release commit: `fa075815322e0e25e40aff0b681b70247b39f2f0`;
+- exact tarball SHA-256:
+  `dc648d06204559b3be67e3798da3cb0813bea31c3f36dd2dc05a82d42c678d34`;
+- registry integrity:
+  `sha512-+uK3Ni+zOuSHQMtJwv6ct6n2KRxp0XrLJICnjXwJvwf1xU5JoFSu2A3/5c2Ki2uphX61RmR/89qUulF0DLAcIg==`;
+- registry shasum: `c5db5929987e531e98d0eecf4f425f71a91e4f16`.
+
+The packed artifact was inspected before publication and contains the
+PostgreSQL and SQLite `roles_name_unique` indexes plus `authSeed()` role
+reconciliation by name. The registry was polled until `4.0.5` resolved, then the
+published integrity, shasum, and tarball URL were fetched successfully.
 
 ### 18.7 Unperformed, authorization-gated work
 
 - No production backup, inventory, database write, or session revocation.
 - No push in either repository.
-- No `najm-auth` version preparation and no package publication.
-- No Kafil adoption of a fixed package, no Release-B uniqueness migration.
+- No Kafil adoption of `najm-auth@4.0.5` and no Release-B uniqueness migration;
+  both intentionally wait for Release A production verification.
 - No image publication, deployment, or connected API/browser acceptance.
