@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ExternalLink, Package, Phone, PhoneOff } from "lucide-react";
+import { ExternalLink, Package, Phone, PhoneOff } from "lucide-react";
 import {
   NAvatar,
   NBadge,
@@ -15,7 +15,6 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 import { useTranslation } from "najm-i18n/react";
 
-import { minuteLabel } from "@/features/Dashboard/shared/deliveryTime";
 import { mapsUrlForFamily } from "../hooks/useDeliveryFamiliesTableColumns";
 import type { DeliveryFamilyView } from "../types";
 
@@ -56,15 +55,6 @@ export function DeliveryFamilyCard({ data }: Readonly<{ data: DeliveryFamilyView
           icon={Package}
           label={t("dashboard.delivery.familiesOrders")}
           value={fmt.number(data.orderCount)}
-        />
-        <NCardInfo
-          icon={CalendarDays}
-          label={t("dashboard.delivery.familiesNextWindow")}
-          value={
-            data.nextWindowStartMinute == null
-              ? "—"
-              : `${minuteLabel(data.nextWindowStartMinute)}–${minuteLabel(data.nextWindowEndMinute)}`
-          }
         />
         <NCardInfo
           label={t("dashboard.delivery.familiesStatus")}

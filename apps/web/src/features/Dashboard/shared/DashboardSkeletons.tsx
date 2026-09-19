@@ -115,7 +115,7 @@ export function DeliveryDashboardSkeleton({
   title,
 }: Readonly<{ loadingLabel: string; title: string }>) {
   return (
-    <NPageLayout className="flex min-h-full flex-col gap-4">
+    <NPageLayout className="flex min-h-full flex-col gap-4 xl:h-full xl:min-h-0">
       <NPageHeader icon={Truck} subtitle={loadingLabel} title={title} />
       <StatSkeletonGrid count={6} xlColumns={6} />
       <div className="grid flex-1 items-stretch gap-4 xl:grid-cols-12">

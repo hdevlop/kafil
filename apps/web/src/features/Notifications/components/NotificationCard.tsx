@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { NNotifyItem } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
+import { useKafilRole } from "@/shared/Authorization";
 
 import { useMarkNotificationRead } from "../hooks/useNotificationCommands";
 import { useNotifyLabels } from "../hooks/useNotifyLabels";
@@ -19,13 +20,14 @@ export function NotificationCard({
   notification,
 }: Readonly<{ notification: NotificationRecord }>) {
   const { t, language } = useTranslation();
+  const { exact } = useKafilRole();
   const router = useRouter();
   const markRead = useMarkNotificationRead();
   const labels = useNotifyLabels();
   const item = buildNotifyItem(notification, language, {
     unknownTitle: t("notifications.unknownTitle"),
     unknownBody: t("notifications.unknownBody"),
-  });
+  }, exact);
 
   return (
     <NNotifyItem

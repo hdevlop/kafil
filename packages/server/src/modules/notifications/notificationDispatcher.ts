@@ -53,6 +53,7 @@ export class NotificationDispatcher {
       event.aggregateType,
       event.aggregateId,
       event.createdAt ?? at,
+      rawPayload,
     );
     if (resolved.all.length === 0) {
       await this.notifications.markConsumerDead(job.id, "no_recipients", at);

@@ -1197,7 +1197,7 @@ function childRecord(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("family guardian CIN boundary (ma-cin, stricter than sponsor/staff)", () => {
+describe("family guardian CIN boundary (ma-cin)", () => {
   const validFamily = {
     name: "Amina El Amrani",
     email: "family@example.test",
@@ -1217,20 +1217,25 @@ describe("family guardian CIN boundary (ma-cin, stricter than sponsor/staff)", (
     "AB123456",
     `ABC${"1".repeat(17)}`,
     "BC10110",
+    "bb46123",
+    "A123456",
+    "A12345",
     `ABC${"1".repeat(18)}`,
     "12345678",
     "ABCD1234",
   ];
 
-  it("accepts the 8 and 20 character boundaries", () => {
+  it("accepts the 7 and 20 character boundaries", () => {
+    expect(parseCin("BC10110").success).toBe(true);
+    expect(parseCin("bb46123").success).toBe(true);
     expect(parseCin("AB123456").success).toBe(true);
     expect(parseCin(`ABC${"1".repeat(17)}`).success).toBe(true);
   });
 
-  it("rejects the 7-character CIN that sponsor and staff DTOs accept", () => {
-    expect(parseCin("BC10110").success).toBe(false);
+  it("rejects a 6-character CIN", () => {
+    expect(parseCin("A12345").success).toBe(false);
     expect(
-      updateFamilyDto.safeParse({ guardianCin: "BC10110" }).success,
+      updateFamilyDto.safeParse({ guardianCin: "A12345" }).success,
     ).toBe(false);
   });
 

@@ -20,12 +20,13 @@ export class NotificationRecipientResolver {
     aggregateType: string,
     aggregateId: string,
     eventTime: Date,
+    eventPayload: Record<string, string | number | boolean | null> = {},
   ): Promise<ResolvedRecipients> {
     if (topic.startsWith("contribution.")) {
       return this.forContribution(aggregateId);
     }
     if (topic.startsWith("order.")) {
-      return this.forOrder(aggregateId, eventTime);
+      return this.forOrder(topic, aggregateId, eventTime, eventPayload);
     }
     if (topic === "family.fundingActivated") {
       return this.forFamily(aggregateId, eventTime);
@@ -46,7 +47,12 @@ export class NotificationRecipientResolver {
     };
   }
 
-  private async forOrder(orderId: string, eventTime: Date) {
+  private async forOrder(
+    topic: NotificationTopic,
+    orderId: string,
+    eventTime: Date,
+    eventPayload: Record<string, string | number | boolean | null>,
+  ) {
     const order = await this.notifications.findOrderFamily(orderId);
     if (!order) {
       return { familyUserId: null, sponsorUserIds: [], applicantUserId: null, all: [] };
@@ -55,7 +61,14 @@ export class NotificationRecipientResolver {
       order.familyProfileId,
       eventTime,
     );
-    const all = [order.familyUserId, ...sponsors].filter(Boolean);
+    const attemptId = eventPayload["attemptId"];
+    const deliveryUserId =
+      (topic === "order.delivery_assigned" || topic === "order.delivery_reassigned") &&
+      typeof attemptId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attemptId)
+        ? await this.notifications.findDeliveryUserForAttempt(orderId, attemptId)
+        : null;
+    const all = [order.familyUserId, ...sponsors, deliveryUserId].filter(Boolean);
     return {
       familyUserId: order.familyUserId,
       sponsorUserIds: sponsors,

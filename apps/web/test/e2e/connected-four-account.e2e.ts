@@ -2534,11 +2534,36 @@ test.describe.serial("connected four-account acceptance", () => {
 
     const map = ahmedPage.locator('[aria-label="Delivery map"]');
     await expect(map).toBeVisible({ timeout: 120_000 });
-    const mapBox = (await map.boundingBox())!;
-    for (const later of ["Assigned today", "Delivery overview", "Quick actions"]) {
+    const mapCard = ahmedPage
+      .locator('[data-slot="card"]')
+      .filter({ has: ahmedPage.getByText("Delivery map", { exact: true }) })
+      .first();
+    const scheduledCard = ahmedPage.locator("#delivery-list");
+    const mapBox = (await mapCard.boundingBox())!;
+
+    // Statistics lead the phone layout; the map and the plan follow in order.
+    for (const stat of [
+      "Assigned today",
+      "Pending",
+      "Delivered",
+      "Needs attention",
+      "Families today",
+      "Packages remaining",
+    ]) {
+      const box = await ahmedPage.getByText(stat, { exact: true }).first().boundingBox();
+      expect(box!.y, `${stat} must precede the map`).toBeLessThan(mapBox.y);
+    }
+    expect((await scheduledCard.boundingBox())!.y, "plan must follow the map")
+      .toBeGreaterThan(mapBox.y);
+    for (const later of ["Delivery overview", "Quick actions"]) {
       const box = await ahmedPage.getByText(later, { exact: true }).first().boundingBox();
       expect(box!.y, `${later} must follow the map`).toBeGreaterThan(mapBox.y);
     }
+    const stackedOverflow = await ahmedPage.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(stackedOverflow.documentWidth).toBeLessThanOrEqual(stackedOverflow.viewportWidth);
     // No persistent card covers the markers before a selection is made.
     await expect(ahmedPage.getByRole("button", { name: "Validate purchase" })).toHaveCount(0);
 
@@ -2560,7 +2585,7 @@ test.describe.serial("connected four-account acceptance", () => {
 
     let sheet = await openSheet();
     await expect(sheet.getByText(`Connected Family ${state.label}`, { exact: true })).toBeVisible();
-    await expect(sheet.getByText("Purchase required", { exact: true })).toBeVisible();
+    await expect(sheet.getByText("Purchase required", { exact: true })).toHaveCount(0);
     await expect(sheet.getByText(state.familyCin!, { exact: true })).toHaveCount(0);
 
     // The sheet opens from the right and does not overflow a 390px phone.
@@ -2571,6 +2596,58 @@ test.describe.serial("connected four-account acceptance", () => {
       viewportWidth: window.innerWidth,
     }));
     expect(phoneOverflow.documentWidth).toBeLessThanOrEqual(phoneOverflow.viewportWidth);
+
+    // ---- Wide 50/50 full-height workspace with real data, before any mutation ----
+    await ahmedPage.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await map.evaluate((node) => {
+      (node as HTMLElement).dataset.resizeProbe = "1";
+    });
+    await ahmedPage.setViewportSize(VIEWPORTS.desktop);
+
+    const wideMap = (await mapCard.boundingBox())!;
+    const widePlan = (await scheduledCard.boundingBox())!;
+    const wideSide = (await ahmedPage.getByTestId("delivery-workspace-side").boundingBox())!;
+    expect(Math.abs(wideMap.y - widePlan.y), "workspace tops align").toBeLessThanOrEqual(2);
+    expect(Math.abs(wideMap.height - wideSide.height), "workspace columns match in height")
+      .toBeLessThanOrEqual(2);
+    expect(wideMap.x, "map leads the workspace").toBeLessThan(widePlan.x);
+    const wideGap = wideSide.x - (wideMap.x + wideMap.width);
+    expect(wideGap, "one inter-column gap").toBeGreaterThan(0);
+    const wideContent = wideMap.width + wideSide.width;
+    expect(wideMap.width / wideContent, "map is one half").toBeCloseTo(0.5, 2);
+    expect(wideSide.width / wideContent, "side is one half").toBeCloseTo(0.5, 2);
+    const wideOverflow = await ahmedPage.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(wideOverflow.documentWidth).toBeLessThanOrEqual(wideOverflow.viewportWidth);
+
+    // The same Leaflet instance redraws into the wider column.
+    await expect(map).toHaveAttribute("data-resize-probe", "1");
+    await expect
+      .poll(async () =>
+        map.evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          const tiles = Array.from(node.querySelectorAll(".leaflet-tile-loaded"));
+          if (tiles.length === 0) return 0;
+          const covered = tiles.reduce((widest, tile) => {
+            const box = tile.getBoundingClientRect();
+            return Math.max(widest, box.right - rect.left);
+          }, 0);
+          return Math.round((covered / rect.width) * 100);
+        }),
+      )
+      .toBeGreaterThanOrEqual(95);
+
+    // The scheduled row still opens the same sheet at the wide viewport.
+    sheet = await openSheet();
+    await expect(sheet).toBeVisible();
+    await ahmedPage.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+
+    await ahmedPage.setViewportSize(VIEWPORTS.phone);
+    sheet = await openSheet();
 
     // ---- Validate purchase through the shared dialog ----
     await sheet.getByRole("button", { name: "Validate purchase" }).click();

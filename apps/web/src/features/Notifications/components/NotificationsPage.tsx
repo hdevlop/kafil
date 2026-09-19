@@ -14,6 +14,7 @@ import {
   useDesktopTableMode,
 } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
+import { useKafilRole } from "@/shared/Authorization";
 
 import PageHeaderGlobalActions from "@/shared/PageHeaderGlobalActions";
 import {
@@ -39,6 +40,7 @@ const PAGE_SIZE = 20;
 
 export function NotificationsPage() {
   const { t, language } = useTranslation();
+  const { exact } = useKafilRole();
   const router = useRouter();
   const searchParams = useSearchParams();
   const focusId = searchParams.get("focus");
@@ -114,7 +116,7 @@ export function NotificationsPage() {
     const vm = buildNotificationViewModel(notification.topic, locale, {
       unknownTitle: t("notifications.unknownTitle"),
       unknownBody: t("notifications.unknownBody"),
-    });
+    }, exact);
     router.push(`${vm.href}?focus=${notification.id}`);
     if (notification.readAt === null) {
       try {

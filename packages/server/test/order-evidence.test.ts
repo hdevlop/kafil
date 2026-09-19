@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { getGuardMetadata } from "najm-guard";
 import { getRoutes } from "najm-core";
 
+import { KafilRoleGuard, ROLES } from "../src/config/authConfig";
 import {
   evidenceReference,
   OrderEvidenceController,
@@ -118,6 +119,29 @@ describe("protected order evidence", () => {
       "delete /me/receipts/:fileName",
       "post /me/receipts/:fileName",
     ]);
+  });
+
+  it("serves receipt bytes to admin and operator and to nobody else", async () => {
+    const [serveGuard] = getGuardMetadata(OrderEvidenceController, "serve");
+    const GuardClass = serveGuard.guardClass as new (
+      roles: KafilRoleGuard,
+    ) => {
+      canActivate(
+        user?: { id: string; role?: string | null },
+      ): Promise<unknown> | unknown;
+    };
+    const guard = new GuardClass(new KafilRoleGuard({} as never));
+
+    for (const role of [ROLES.ADMIN, ROLES.OPERATOR]) {
+      expect(await guard.canActivate({ id: `${role}-1`, role })).toMatchObject({
+        role,
+      });
+    }
+    for (const role of [ROLES.DELIVERY, ROLES.FAMILY, ROLES.SPONSOR]) {
+      expect(await guard.canActivate({ id: `${role}-1`, role })).toBe(false);
+    }
+    // No principal at all is denied without consulting a token service.
+    expect(await guard.canActivate()).toBe(false);
   });
 
   it("stages and discards a Delivery receipt candidate through the same managed service", async () => {

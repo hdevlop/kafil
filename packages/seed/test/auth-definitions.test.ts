@@ -103,7 +103,10 @@ expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:catalog");
     expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("read:operators");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("read:notifications");
     expect(AUTH_ROLE_PERMISSIONS.operator).toContain("update:notifications");
-    expect(AUTH_ROLE_PERMISSIONS.delivery).toEqual([]);
+    expect(AUTH_ROLE_PERMISSIONS.delivery).toEqual([
+      "read:notifications",
+      "update:notifications",
+    ]);
     expect(AUTH_ROLE_PERMISSIONS.family).toEqual([
       "read:families",
       "read:children",

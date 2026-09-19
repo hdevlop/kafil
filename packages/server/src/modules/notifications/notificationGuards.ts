@@ -20,6 +20,7 @@ export const Notification = definePolicy(notifications, "notifications", {
 })
   .for(ROLES.ADMIN, where(notifications.recipientUserId))
   .for(ROLES.OPERATOR, where(notifications.recipientUserId))
+  .for(ROLES.DELIVERY, where(notifications.recipientUserId))
   .for(ROLES.FAMILY, where(notifications.recipientUserId))
   .for(ROLES.SPONSOR, where(notifications.recipientUserId));
 

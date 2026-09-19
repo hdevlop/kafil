@@ -483,7 +483,7 @@ function deliveryDetail(overrides: Record<string, unknown> = {}) {
 }
 
 test.describe("Delivery purchase workflow", () => {
-  test("shows the map first with no overlay and one right sheet from row or marker", async ({ page }) => {
+  test("shows statistics first with no overlay and one right sheet from row or marker", async ({ page }) => {
     await useRole(page, "delivery");
     await page.route("**/api/dashboard/delivery?**", (route) =>
       json(route, deliveryDashboard(dashboardItem())),
@@ -496,9 +496,11 @@ test.describe("Delivery purchase workflow", () => {
     const map = page.locator('[aria-label="Delivery map"]');
     await expect(map).toBeVisible();
 
-    // The map card precedes every other dashboard section in the document.
+    // Statistics come first; the remaining panels follow the map.
     const mapTop = (await map.boundingBox())!.y;
-    for (const later of ["Assigned today", "Delivery overview", "Issues / Attention", "Quick actions"]) {
+    const assigned = await page.getByText("Assigned today", { exact: true }).first().boundingBox();
+    expect(assigned!.y, "statistics must precede the map").toBeLessThan(mapTop);
+    for (const later of ["Delivery overview", "Issues / Attention", "Quick actions"]) {
       const box = await page.getByText(later, { exact: true }).first().boundingBox();
       expect(box!.y, `${later} must follow the map`).toBeGreaterThan(mapTop);
     }
@@ -521,9 +523,9 @@ test.describe("Delivery purchase workflow", () => {
     await expect(sheet.getByText("Rice 5kg", { exact: true })).toBeVisible();
     await expect(sheet.getByText("Protected address")).toBeVisible();
 
-    // Workflow state and warning state are independent badges.
-    await expect(sheet.getByText("Purchase required", { exact: true })).toBeVisible();
-    await expect(sheet.getByText("Address to confirm", { exact: true })).toBeVisible();
+    // The compact workflow tag is omitted; warning state remains visible.
+    await expect(sheet.getByText("Purchase required", { exact: true })).toHaveCount(0);
+    await expect(sheet.getByText("Address to confirm", { exact: true })).toHaveCount(0);
 
     // No Delivery-person card: the reader is the assignee.
     await expect(sheet.getByText("Delivery person", { exact: true })).toHaveCount(0);
@@ -660,5 +662,403 @@ test.describe("Delivery purchase workflow", () => {
       viewportWidth: window.innerWidth,
     }));
     expect(overflow.documentWidth).toBeLessThanOrEqual(overflow.viewportWidth);
+  });
+});
+
+type Box = { x: number; y: number; width: number; height: number };
+
+const layoutLabels = {
+  en: {
+    map: "Delivery map",
+    today: "Today",
+    date: "Select delivery date",
+    assigned: "Assigned today",
+    overview: "Delivery overview",
+    stats: [
+      "Assigned today",
+      "Pending",
+      "Delivered",
+      "Needs attention",
+      "Families today",
+      "Packages remaining",
+    ],
+  },
+  fr: {
+    map: "Carte des livraisons",
+    today: "Aujourd’hui",
+    date: "Sélectionner la date de livraison",
+  },
+  es: {
+    map: "Mapa de entregas",
+    today: "Hoy",
+    date: "Seleccionar fecha de entrega",
+  },
+  ar: {
+    map: "خريطة التوصيل",
+    today: "اليوم",
+    date: "اختيار تاريخ التوصيل",
+  },
+} as const;
+
+function overlapsVertically(a: Box, b: Box) {
+  return Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 0;
+}
+
+function overlaps(a: Box, b: Box) {
+  return (
+    overlapsVertically(a, b) &&
+    Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 0
+  );
+}
+
+function documentOverflow(page: Page) {
+  return page.evaluate(() => ({
+    documentWidth: document.documentElement.scrollWidth,
+    viewportWidth: window.innerWidth,
+  }));
+}
+
+/** Serves the deterministic dashboard, optionally after a controlled delay. */
+function serveDeliveryDashboard(page: Page, delayMs = 0) {
+  return page.route("**/api/dashboard/delivery?**", async (route) => {
+    if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    const date = new URL(route.request().url()).searchParams.get("date");
+    return json(
+      route,
+      deliveryDashboard(dashboardItem(date ? { scheduledDate: date } : {})),
+    );
+  });
+}
+
+function mapCardOf(page: Page, title: string) {
+  return page
+    .locator('[data-slot="card"]')
+    .filter({ has: page.getByText(title, { exact: true }) })
+    .first();
+}
+
+test.describe("Delivery dashboard layout", () => {
+  test("keeps the map title, Today, and the date picker on one header row", async ({ page }) => {
+    await useRole(page, "delivery");
+    await serveDeliveryDashboard(page);
+    await page.goto("/dashboard");
+
+    const title = page.getByText(layoutLabels.en.map, { exact: true }).first();
+    const today = page.getByRole("button", { name: layoutLabels.en.today, exact: true });
+    const date = page.getByRole("button", { name: layoutLabels.en.date });
+    await expect(title).toBeVisible();
+    await expect(today).toBeVisible();
+    await expect(date).toBeVisible();
+
+    for (const width of [320, 390, 430, 768, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      const titleBox = (await title.boundingBox())!;
+      const todayBox = (await today.boundingBox())!;
+      const dateBox = (await date.boundingBox())!;
+
+      // One row: both controls share vertical space with the title.
+      expect(overlapsVertically(titleBox, todayBox), `${width}px Today row`).toBe(true);
+      expect(overlapsVertically(titleBox, dateBox), `${width}px date row`).toBe(true);
+      // Nothing collides.
+      expect(overlaps(titleBox, todayBox), `${width}px title/Today overlap`).toBe(false);
+      expect(overlaps(titleBox, dateBox), `${width}px title/date overlap`).toBe(false);
+      expect(overlaps(todayBox, dateBox), `${width}px Today/date overlap`).toBe(false);
+      // Both controls keep their 40-pixel target.
+      expect(todayBox.height, `${width}px Today height`).toBeGreaterThanOrEqual(40);
+      expect(dateBox.height, `${width}px date height`).toBeGreaterThanOrEqual(40);
+
+      // Both controls stay inside the map card.
+      const card = (await mapCardOf(page, layoutLabels.en.map).boundingBox())!;
+      for (const [name, box] of [["Today", todayBox], ["date", dateBox]] as const) {
+        expect(box.x, `${width}px ${name} inside card start`).toBeGreaterThanOrEqual(card.x - 1);
+        expect(box.x + box.width, `${width}px ${name} inside card end`)
+          .toBeLessThanOrEqual(card.x + card.width + 1);
+      }
+
+      const overflow = await documentOverflow(page);
+      expect(overflow.documentWidth, `${width}px document overflow`)
+        .toBeLessThanOrEqual(overflow.viewportWidth);
+    }
+  });
+
+  test("does not reflow the header while the next date loads", async ({ page }) => {
+    await useRole(page, "delivery");
+    await serveDeliveryDashboard(page, 1_500);
+    await page.goto("/dashboard");
+    await page.setViewportSize({ width: 390, height: 800 });
+
+    const today = page.getByRole("button", { name: layoutLabels.en.today, exact: true });
+    const date = page.getByRole("button", { name: layoutLabels.en.date });
+    const map = page.locator('[aria-label="Delivery map"]');
+    await expect(map).toBeVisible();
+
+    const before = { today: (await today.boundingBox())!, date: (await date.boundingBox())! };
+    // Marks the live element so a remount, not merely a re-render, is visible.
+    await map.evaluate((node) => {
+      (node as HTMLElement).dataset.layoutProbe = "1";
+    });
+
+    const response = page.waitForResponse(
+      (candidate) =>
+        new URL(candidate.url()).pathname === "/api/dashboard/delivery" && candidate.ok(),
+    );
+    await date.click();
+    const calendar = page.getByRole("dialog").getByRole("grid");
+    await expect(calendar).toBeVisible();
+    // Any day other than the currently selected one produces exactly one request.
+    const target = new Date().getDate() === 15 ? "16" : "15";
+    await calendar.getByRole("button", { name: target, exact: true }).first().click();
+
+    // While the request is in flight the indicator occupies the field's own
+    // icon slot: same widths, same position, and the map is never unmounted.
+    const loading = page.getByRole("status").first();
+    await expect(loading).toBeVisible();
+    const during = { today: (await today.boundingBox())!, date: (await date.boundingBox())! };
+    expect(during.today.width).toBeCloseTo(before.today.width, 0);
+    expect(during.date.width).toBeCloseTo(before.date.width, 0);
+    expect(during.date.height).toBeCloseTo(before.date.height, 0);
+    expect(during.date.y).toBeCloseTo(before.date.y, 0);
+    await expect(map).toHaveAttribute("data-layout-probe", "1");
+    // The overlay does not intercept the picker trigger.
+    await expect(date).toBeEnabled();
+
+    await response;
+    await expect(loading).toBeHidden();
+    const after = { today: (await today.boundingBox())!, date: (await date.boundingBox())! };
+    expect(after.date.width).toBeCloseTo(before.date.width, 0);
+    expect(after.date.height).toBeCloseTo(before.date.height, 0);
+    expect(after.date.y).toBeCloseTo(before.date.y, 0);
+    await expect(map).toHaveAttribute("data-layout-probe", "1");
+    expect(new URL(page.url()).searchParams.has("date")).toBe(false);
+  });
+
+  test("keeps the header on one row in French, Spanish, and Arabic RTL", async ({ page }) => {
+    await useRole(page, "delivery");
+    await serveDeliveryDashboard(page);
+
+    for (const locale of ["fr", "es", "ar"] as const) {
+      await page.context().addCookies([{
+        name: "kafil-ui-language",
+        value: locale,
+        url: process.env.KAFIL_E2E_BASE_URL ?? "http://127.0.0.1:3210",
+      }]);
+      await page.goto("/dashboard");
+
+      const labels = layoutLabels[locale];
+      const title = page.getByText(labels.map, { exact: true }).first();
+      const today = page.getByRole("button", { name: labels.today, exact: true });
+      const date = page.getByRole("button", { name: labels.date });
+      await expect(title).toBeVisible();
+      if (locale === "ar") {
+        await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+      }
+
+      for (const width of [320, 390, 768]) {
+        await page.setViewportSize({ width, height: 800 });
+        const titleBox = (await title.boundingBox())!;
+        const todayBox = (await today.boundingBox())!;
+        const dateBox = (await date.boundingBox())!;
+
+        expect(overlapsVertically(titleBox, todayBox), `${locale} ${width}px Today row`).toBe(true);
+        expect(overlapsVertically(titleBox, dateBox), `${locale} ${width}px date row`).toBe(true);
+        expect(overlaps(todayBox, dateBox), `${locale} ${width}px control overlap`).toBe(false);
+        expect(overlaps(titleBox, todayBox), `${locale} ${width}px title overlap`).toBe(false);
+
+        // RTL mirrors the row: the action side moves to the physical left.
+        if (locale === "ar") {
+          expect(todayBox.x, `ar ${width}px mirrored action side`).toBeLessThan(titleBox.x);
+        } else {
+          expect(todayBox.x, `${locale} ${width}px action side`).toBeGreaterThan(titleBox.x);
+        }
+
+        const overflow = await documentOverflow(page);
+        expect(overflow.documentWidth, `${locale} ${width}px overflow`)
+          .toBeLessThanOrEqual(overflow.viewportWidth);
+      }
+    }
+  });
+
+  test("puts statistics first and gives the map half of the full-height workspace", async ({ page }) => {
+    await useRole(page, "delivery");
+    await serveDeliveryDashboard(page);
+    await page.goto("/dashboard");
+
+    const mapCard = mapCardOf(page, layoutLabels.en.map);
+    const listCard = page.locator("#delivery-list");
+    const workspaceSide = page.getByTestId("delivery-workspace-side");
+    const map = page.locator('[aria-label="Delivery map"]');
+    await expect(map).toBeVisible();
+
+    for (const width of [1280, 1440, 1600]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const mapBox = (await mapCard.boundingBox())!;
+      const mapCanvasBox = (await map.boundingBox())!;
+      const listBox = (await listCard.boundingBox())!;
+      const sideBox = (await workspaceSide.boundingBox())!;
+
+      // A visible card is not enough: the absolutely positioned Leaflet
+      // canvas must receive real height from the card's flex content.
+      expect(mapCanvasBox.height, `${width}px Leaflet height`).toBeGreaterThan(300);
+
+      // Every statistic sits above both workspace cards, on one row.
+      const statBoxes: Box[] = [];
+      for (const stat of layoutLabels.en.stats) {
+        const box = (await page.getByText(stat, { exact: true }).first().boundingBox())!;
+        statBoxes.push(box);
+        expect(box.y, `${width}px ${stat} above the map`).toBeLessThan(mapBox.y);
+        expect(box.y, `${width}px ${stat} above the plan`).toBeLessThan(listBox.y);
+      }
+      for (const box of statBoxes.slice(1)) {
+        expect(overlapsVertically(statBoxes[0], box), `${width}px stats on one row`).toBe(true);
+      }
+
+      // Tops align, map on the left, plan on the right, no overlap.
+      expect(Math.abs(mapBox.y - listBox.y), `${width}px workspace top alignment`)
+        .toBeLessThanOrEqual(2);
+      // The map spans the full height of the complete right-hand workspace.
+      expect(Math.abs(mapBox.height - sideBox.height), `${width}px workspace equal height`)
+        .toBeLessThanOrEqual(2);
+      expect(mapBox.x, `${width}px map is first`).toBeLessThan(listBox.x);
+      expect(overlaps(mapBox, listBox), `${width}px workspace overlap`).toBe(false);
+
+      // Content widths are equal once the single inter-column gap is excluded.
+      const gap = sideBox.x - (mapBox.x + mapBox.width);
+      const content = mapBox.width + sideBox.width;
+      expect(gap, `${width}px column gap`).toBeGreaterThan(0);
+      expect(mapBox.width / content, `${width}px map share`).toBeCloseTo(0.5, 2);
+      expect(sideBox.width / content, `${width}px side share`).toBeCloseTo(0.5, 2);
+
+      // The secondary row begins below both workspace cards.
+      const overview = (await page
+        .getByText(layoutLabels.en.overview, { exact: true })
+        .first()
+        .boundingBox())!;
+      expect(overview.y, `${width}px supporting panels follow the plan`)
+        .toBeGreaterThan(listBox.y + listBox.height - 2);
+      expect(overview.y + overview.height, `${width}px supporting panels stay beside map`)
+        .toBeLessThanOrEqual(mapBox.y + mapBox.height + 2);
+
+      const overflow = await documentOverflow(page);
+      expect(overflow.documentWidth, `${width}px overflow`)
+        .toBeLessThanOrEqual(overflow.viewportWidth);
+
+      // The whole dashboard fits one screen: no page scroll at xl and above.
+      const vertical = await page.evaluate(() => {
+        const scroller = document.querySelector("main")?.closest("[data-radix-scroll-area-viewport]")
+          ?? document.scrollingElement!;
+        return { scrollHeight: scroller.scrollHeight, clientHeight: scroller.clientHeight };
+      });
+      expect(vertical.scrollHeight, `${width}px vertical fit`)
+        .toBeLessThanOrEqual(vertical.clientHeight + 2);
+    }
+  });
+
+  test("stacks statistics, map, and plan in reading order on narrow viewports", async ({ page }) => {
+    await useRole(page, "delivery");
+    await serveDeliveryDashboard(page);
+    await page.goto("/dashboard");
+
+    const mapCard = mapCardOf(page, layoutLabels.en.map);
+    const listCard = page.locator("#delivery-list");
+    await expect(page.locator('[aria-label="Delivery map"]')).toBeVisible();
+
+    for (const width of [320, 390, 768, 1024]) {
+      await page.setViewportSize({ width, height: 900 });
+      const assigned = (await page
+        .getByText(layoutLabels.en.assigned, { exact: true })
+        .first()
+        .boundingBox())!;
+      const mapBox = (await mapCard.boundingBox())!;
+      const listBox = (await listCard.boundingBox())!;
+
+      expect(assigned.y, `${width}px statistics first`).toBeLessThan(mapBox.y);
+      // Stacked, not squeezed side by side.
+      expect(listBox.y, `${width}px plan below the map`)
+        .toBeGreaterThanOrEqual(mapBox.y + mapBox.height - 2);
+      expect(overlapsVertically(mapBox, listBox), `${width}px side by side`).toBe(false);
+
+      for (const box of [mapBox, listBox]) {
+        expect(box.x, `${width}px card start`).toBeGreaterThanOrEqual(-1);
+        expect(box.x + box.width, `${width}px card end`).toBeLessThanOrEqual(width + 1);
+      }
+      const overflow = await documentOverflow(page);
+      expect(overflow.documentWidth, `${width}px overflow`)
+        .toBeLessThanOrEqual(overflow.viewportWidth);
+    }
+  });
+
+  test("redraws the same Leaflet map across the xl breakpoint and keeps both triggers", async ({ page }) => {
+    await useRole(page, "delivery");
+    await serveDeliveryDashboard(page);
+    await page.route(`**/api/orders/${deliveryOrderId}/delivery/me`, (route) =>
+      json(route, deliveryDetail()),
+    );
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto("/dashboard");
+
+    const map = page.locator('[aria-label="Delivery map"]');
+    await expect(map).toBeVisible();
+    await map.evaluate((node) => {
+      (node as HTMLElement).dataset.resizeProbe = "1";
+    });
+    const zoomBefore = await map.evaluate(
+      (node) => node.querySelector(".leaflet-proxy")?.getAttribute("style") ?? "",
+    );
+
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      // The same element, never recreated by the column change.
+      await expect(map).toHaveAttribute("data-resize-probe", "1");
+
+      // Loaded tiles cover the resized container instead of leaving a blank strip.
+      await expect
+        .poll(
+          async () =>
+            map.evaluate((node) => {
+              const rect = node.getBoundingClientRect();
+              const tiles = Array.from(node.querySelectorAll(".leaflet-tile-loaded"));
+              if (tiles.length === 0) return 0;
+              const covered = tiles.reduce((widest, tile) => {
+                const box = tile.getBoundingClientRect();
+                return Math.max(widest, box.right - rect.left);
+              }, 0);
+              return Math.round((covered / rect.width) * 100);
+            }),
+          { message: `${width}px tile coverage` },
+        )
+        .toBeGreaterThanOrEqual(95);
+
+      // Controls and attribution stay inside the map.
+      const mapBox = (await map.boundingBox())!;
+      for (const selector of [".leaflet-control-zoom", ".leaflet-control-attribution"]) {
+        const control = (await map.locator(selector).first().boundingBox())!;
+        expect(control.x, `${width}px ${selector} start`).toBeGreaterThanOrEqual(mapBox.x - 1);
+        expect(control.x + control.width, `${width}px ${selector} end`)
+          .toBeLessThanOrEqual(mapBox.x + mapBox.width + 1);
+      }
+    }
+
+    // The resize alone does not reset the user's centre or zoom.
+    expect(
+      await map.evaluate(
+        (node) => node.querySelector(".leaflet-proxy")?.getAttribute("style") ?? "",
+      ),
+    ).toBe(zoomBefore);
+
+    // A marker and a plan row still open the same single sheet.
+    for (const open of [
+      () => map.locator(".leaflet-marker-icon").first().click(),
+      () => page.getByRole("button", { name: /Fatima Household/ }).first().click(),
+    ]) {
+      const detail = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === `/api/orders/${deliveryOrderId}/delivery/me`,
+      );
+      await open();
+      expect((await detail).status()).toBeLessThan(400);
+      await expect(page.getByRole("dialog")).toHaveCount(1);
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toBeHidden();
+    }
   });
 });

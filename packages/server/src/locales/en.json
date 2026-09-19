@@ -1007,7 +1007,7 @@
         "noMapLocations": "No mapped delivery addresses", "noMapLocationsHint": "The scheduled deliveries remain available in the list.",
         "packages": "packages", "openMaps": "Open in Google Maps", "startDelivery": "Start delivery",
         "confirmDelivery": "Confirm delivery", "issueKind": "Issue type", "viewAll": "View all", "showLess": "Show less", "locationUnavailable": "Location unavailable", "familiesTitle": "Assigned families", "familiesSubtitle": "Families with deliveries assigned to you for the selected date.", "familiesSearch": "Search assigned families", "familiesAccount": "Family", "familiesPhone": "Phone", "familiesOrders": "Orders", "familiesOrdersCount": "{count} orders", "familiesStatus": "Status", "familiesNextWindow": "Next window", "familiesEmpty": "No assigned families for this date.", "familiesEmptyHint": "Families appear here once deliveries are assigned to you.", "familiesNoData": "No assigned families for this date.", "familiesLoading": "Loading assigned families",
-        "orderSheetDescription": "Your assigned delivery for this order.", "loadOrderError": "We could not load this delivery order", "validatePurchase": "Validate purchase", "recordPurchase": "Record purchase", "purchaseRecorded": "Purchase recorded and the family budget settled.", "purchaseFailed": "Could not record this purchase.", "noAvailableAction": "No action is available for this delivery yet.", "orderSchedule": "Schedule", "orderWarnings": "Warnings", "workflowWaitingApproval": "Waiting for approval", "workflowPurchaseRequired": "Purchase required", "workflowReadyForDelivery": "Ready for delivery", "workflowOutForDelivery": "Out for delivery", "workflowDelivered": "Delivered", "workflowNeedsOperatorAction": "Needs operator action", "markerLabel": "{family}, order {order}, {workflow}"
+        "orderSheetDescription": "Your assigned delivery for this order.", "loadOrderError": "We could not load this delivery order", "validatePurchase": "Validate purchase", "recordPurchase": "Record purchase", "purchaseRecorded": "Purchase recorded and the family budget settled.", "purchaseFailed": "Could not record this purchase.", "noAvailableAction": "No action is available for this delivery yet.", "orderSchedule": "Schedule", "scheduleDate": "Date", "scheduleTime": "Time", "orderWarnings": "Warnings", "workflowWaitingApproval": "Waiting for approval", "workflowPurchaseRequired": "Purchase required", "workflowReadyForDelivery": "Ready for delivery", "workflowOutForDelivery": "Out for delivery", "workflowDelivered": "Delivered", "workflowNeedsOperatorAction": "Needs operator action", "markerLabel": "{family}, order {order}, {workflow}"
       },
       "family": {
         "welcome": "Welcome, {name}",
@@ -1453,7 +1453,19 @@
         "chooseDeliveryStaffDescription": "Choose from active Staff records with the Delivery role.",
         "sourceColumn": "Source",
         "sourceAssisted": "Assisted",
-        "sourceSelfService": "Self-service"
+        "sourceSelfService": "Self-service",
+        "receipt": {
+          "title": "Purchase & receipt",
+          "merchant": "Merchant",
+          "purchaseDate": "Purchase date",
+          "receiptNumber": "Receipt number",
+          "actualTotal": "Actual total",
+          "view": "View receipt",
+          "emptyTitle": "Receipt not recorded yet",
+          "emptyDescription": "Available after the purchase is recorded.",
+          "notProvided": "Not provided",
+          "openError": "Receipt could not be opened."
+        }
       },
       "families": {
         "title": "Families",

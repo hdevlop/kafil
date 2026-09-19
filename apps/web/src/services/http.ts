@@ -39,6 +39,12 @@ export interface ApiPage<T> {
   total: number | null;
 }
 
+/** Protected bytes plus the type the server actually labelled them with. */
+export interface ApiFile {
+  blob: Blob;
+  mediaType: string;
+}
+
 let pendingAccessTokenRefresh: Promise<void> | null = null;
 
 export function unwrapApiResponse<T>(response: T | ApiResponseEnvelope<T>): T {
@@ -146,6 +152,44 @@ async function binaryRequest<T = void>(
   return payload === undefined ? (undefined as T) : unwrapApiResponse(payload);
 }
 
+/**
+ * GET protected bytes from an application-relative `/api/...` path.
+ *
+ * Separate from `request()` because the body is a file, not an envelope:
+ * handing it to `auth.api.get()` would parse a PDF as JSON. The caller passes
+ * a path a feature adapter has already validated; nothing here builds one, and
+ * the bytes are never cached or persisted.
+ */
+async function fileRequest(path: string, retried = false): Promise<ApiFile> {
+  await ensureAccessToken("get", path);
+
+  const token = auth.client.getState().accessToken;
+  const response = await fetch(path, {
+    method: "GET",
+    cache: "no-store",
+    credentials: "include",
+    headers: token ? { authorization: `Bearer ${token}` } : {},
+  });
+
+  if (response.status === 401 && !retried) {
+    await auth.client.refresh();
+    return fileRequest(path, true);
+  }
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+    throw new Error(payload?.message ?? `File request failed (${response.status})`);
+  }
+
+  const blob = await response.blob();
+  return {
+    blob,
+    mediaType: blob.type || response.headers.get("content-type") || "",
+  };
+}
+
 async function request<T>(
   method: "delete" | "get" | "patch" | "post" | "put",
   path: string,
@@ -215,6 +259,9 @@ export const api = {
   },
   delete<T>(path: string, body?: unknown) {
     return request<T>("delete", path, body);
+  },
+  getFile(path: string) {
+    return fileRequest(path);
   },
   upload<T = void>(path: string, file: File) {
     return binaryRequest<T>("POST", path, file);

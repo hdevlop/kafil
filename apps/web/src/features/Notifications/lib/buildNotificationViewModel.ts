@@ -158,8 +158,9 @@ function tokenForTopic(topic: string): NotificationViewModel["token"] {
   return "default";
 }
 
-function hrefForTopic(topic: string): string {
+function hrefForTopic(topic: string, role?: string | null): string {
   if (topic.startsWith("contribution.")) return "/contribution";
+  if (topic.startsWith("order.") && role === "delivery") return "/delivery";
   if (topic.startsWith("order.")) return "/orders";
   return "/dashboard";
 }
@@ -173,6 +174,7 @@ export function buildNotificationViewModel(
   topic: string,
   locale: string | null | undefined,
   fallback: { unknownTitle: string; unknownBody: string },
+  role?: string | null,
 ): NotificationViewModel {
   const normalized = normalizeLocale(locale);
   const copy = COPIES[topic];
@@ -192,7 +194,7 @@ export function buildNotificationViewModel(
     body: copy.body[normalized],
     icon: iconForTopic(topic),
     token: tokenForTopic(topic),
-    href: hrefForTopic(topic),
+    href: hrefForTopic(topic, role),
   };
 }
 

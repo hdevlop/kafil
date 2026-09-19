@@ -7,10 +7,11 @@ import type { KafilDatabase } from "../../database/types";
 import { applicants } from "../applicants/applicantSchema";
 import { contributions } from "../contributions/contributionSchema";
 import { familyProfiles } from "../families/familySchema";
-import { orders } from "../orders/orderSchema";
+import { orderDeliveryAttempts, orders } from "../orders/orderSchema";
 import { outboxEvents } from "../outbox/outboxSchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
+import { staffProfiles } from "../staff/staffSchema";
 import {
   notificationDeliveries,
   notificationSettings,
@@ -606,6 +607,16 @@ export class NotificationRepository {
       .where(eq(orders.id, orderId))
       .limit(1);
     return order;
+  }
+
+  async findDeliveryUserForAttempt(orderId: string, attemptId: string) {
+    const [row] = await this.db
+      .select({ userId: staffProfiles.userId })
+      .from(orderDeliveryAttempts)
+      .innerJoin(staffProfiles, eq(orderDeliveryAttempts.staffProfileId, staffProfiles.id))
+      .where(and(eq(orderDeliveryAttempts.id, attemptId), eq(orderDeliveryAttempts.orderId, orderId)))
+      .limit(1);
+    return row?.userId ?? null;
   }
 
   async findFamilyUser(familyProfileId: string) {

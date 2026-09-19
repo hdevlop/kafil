@@ -501,7 +501,7 @@ describe("family edit wizard parity", () => {
   });
 });
 
-describe("family guardian CIN boundary (8..20 ma-cin, stricter than sponsor/staff)", () => {
+describe("family guardian CIN boundary (7..20 ma-cin)", () => {
   const guardian = {
     name: "Amina Guardian",
     email: "amina@example.com",
@@ -529,7 +529,13 @@ describe("family guardian CIN boundary (8..20 ma-cin, stricter than sponsor/staf
     notes: "",
   };
 
-  test("accepts the 8-character lower boundary", () => {
+  test("accepts the 7-character lower boundary", () => {
+    // Real cards are one or two letters plus five or six digits. "BC10110" also
+    // passes createSponsorFormSchema and createStaffFormSchema; since najm-auth
+    // 4.0.6 the family form no longer has to be stricter than they are.
+    expect(parseCin("BC10110").success).toBe(true);
+    expect(parseCin("bb46123").success).toBe(true);
+    expect(parseCin("A123456").success).toBe(true);
     expect(parseCin("AB123456").success).toBe(true);
   });
 
@@ -537,19 +543,18 @@ describe("family guardian CIN boundary (8..20 ma-cin, stricter than sponsor/staf
     expect(parseCin(`ABC${"1".repeat(17)}`).success).toBe(true);
   });
 
-  test("rejects the 7-character CIN that sponsor and staff forms accept", () => {
-    // "BC10110" passes createSponsorFormSchema and createStaffFormSchema. It must
-    // not pass here: the guardian CIN is the family's first-login credential and
-    // familyService provisions it through najm-auth's
-    // moroccanCinTemporaryCredential, whose isMoroccanCin guard throws below 8.
-    expect(parseCin("BC10110").success).toBe(false);
+  test("rejects a 6-character CIN", () => {
+    // The guardian CIN is the family's first-login credential and familyService
+    // provisions it through najm-auth's moroccanCinTemporaryCredential, whose
+    // isMoroccanCin guard throws below 7.
+    expect(parseCin("A12345").success).toBe(false);
   });
 
   test("rejects a 21-character CIN", () => {
     expect(parseCin(`ABC${"1".repeat(18)}`).success).toBe(false);
   });
 
-  test("rejects an 8-character value that is not ma-cin shaped", () => {
+  test("rejects a value that is not ma-cin shaped", () => {
     expect(parseCin("12345678").success).toBe(false);
     expect(parseCin("ABCD1234").success).toBe(false);
     expect(parseCin("AB12345X").success).toBe(false);
@@ -559,9 +564,9 @@ describe("family guardian CIN boundary (8..20 ma-cin, stricter than sponsor/staf
     expect(createFamilyFormSchema.safeParse(validFamilyForm).success).toBe(true);
     expect(updateFamilyFormSchema.safeParse(validFamilyForm).success).toBe(true);
 
-    const sevenCharacter = { ...validFamilyForm, guardianCin: "BC10110" };
-    expect(createFamilyFormSchema.safeParse(sevenCharacter).success).toBe(false);
-    expect(updateFamilyFormSchema.safeParse(sevenCharacter).success).toBe(false);
+    const sixCharacter = { ...validFamilyForm, guardianCin: "A12345" };
+    expect(createFamilyFormSchema.safeParse(sixCharacter).success).toBe(false);
+    expect(updateFamilyFormSchema.safeParse(sixCharacter).success).toBe(false);
   });
 });
 

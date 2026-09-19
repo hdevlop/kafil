@@ -107,7 +107,7 @@ describe("Phase B notification query contracts", () => {
 
 describe("Phase B notification shell and navigation", () => {
   test("every role has the inbox route", () => {
-    for (const role of ["admin", "operator", "family", "sponsor"] as const) {
+    for (const role of ["admin", "operator", "delivery", "family", "sponsor"] as const) {
       expect(
         getDashboardNavigation(role).map((item) => item.href),
       ).toContain("/notifications");
@@ -149,7 +149,7 @@ describe("Phase B notification shell and navigation", () => {
   test("auth guards the inbox route for every role", async () => {
     const auth = await readSource("../src/najm.config.ts");
     expect(auth).toContain('"/notifications"');
-    expect(auth).toContain('"admin", "operator", "family", "sponsor"');
+    expect(auth).toContain('"admin", "operator", "delivery", "family", "sponsor"');
   });
 });
 
@@ -180,6 +180,14 @@ describe("Phase B notification view models", () => {
     expect(vm.title).toBe(FALLBACK.unknownTitle);
     expect(vm.body).toBe(FALLBACK.unknownBody);
     expect(vm.href).toBe("/dashboard");
+  });
+
+  test("delivery order notifications open the delivery workspace", () => {
+    const vm = buildNotificationViewModel(
+      "order.delivery_assigned", "en", FALLBACK, "delivery",
+    );
+    expect(vm.href).toBe("/delivery");
+    expect(buildNotificationViewModel("order.delivery_assigned", "en", FALLBACK, "family").href).toBe("/orders");
   });
 
   test("view models never interpolate raw payloads or external links", async () => {

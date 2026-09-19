@@ -46,7 +46,7 @@ export const kafilApp = defineNajmApp({
       "/orders": ["admin", "operator", "family", "sponsor"],
       "/contribution": ["admin", "operator", "family", "sponsor"],
       "/applicants": ["admin"],
-      "/notifications": ["admin", "operator", "family", "sponsor"],
+      "/notifications": ["admin", "operator", "delivery", "family", "sponsor"],
     },
     loginRoute: "/login",
     forbiddenRoute: "/forbidden",

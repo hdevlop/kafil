@@ -43,7 +43,7 @@ import { getPublicApiErrorMessage } from "@/services/apiError";
 import { DashboardAttentionCard } from "../../shared/DashboardAttentionCard";
 import { DashboardQuickActionsCard } from "../../shared/DashboardQuickActionsCard";
 import { DeliveryDashboardSkeleton } from "../../shared/DashboardSkeletons";
-import { casablancaToday, minuteLabel } from "../../shared/deliveryTime";
+import { casablancaToday } from "../../shared/deliveryTime";
 import type { DeliveryDashboardItem } from "../../types";
 import { useDeliveryDashboard, useDeliveryDashboardCommands } from "../hooks/useDeliveryDashboard";
 import type { MarkerFocusHandle } from "./DeliveryMap";
@@ -215,66 +215,12 @@ export function DeliveryDashboardPage() {
   ];
 
   return (
-    <NPageLayout className="flex min-h-full flex-col gap-4">
+    <NPageLayout className="flex min-h-full flex-col gap-4 xl:h-full xl:min-h-0">
       <NPageHeader card icon={Truck} title={t("dashboard.delivery.title")} subtitle={t("dashboard.delivery.subtitle")}>
         <NPageHeaderActions><PageHeaderGlobalActions /></NPageHeaderActions>
       </NPageHeader>
 
-      <NCard
-        classNames={{
-          content: "flex min-h-0 flex-col",
-          header: "flex-wrap gap-2",
-        }}
-        title={t("dashboard.delivery.mapTitle")}
-        description={t("dashboard.delivery.mapSubtitle")}
-        icon={MapPin}
-      >
-        <NCardAction>
-          <div className="flex items-center gap-2">
-            {isDateTransition ? (
-              <span className="inline-flex size-10 items-center justify-center" role="status">
-                <NSpinner aria-hidden="true" size={18} />
-                <span className="sr-only">{t("state.loading")}</span>
-              </span>
-            ) : null}
-            <NButton
-              aria-pressed={date === today}
-              className="h-10 px-3"
-              onClick={() => changeDate(today)}
-              size="lg"
-              type="button"
-              variant={date === today ? "secondary" : "outline"}
-            >
-              {t("dashboard.delivery.today")}
-            </NButton>
-            <DateInput
-              ariaLabel={t("dashboard.delivery.selectDate")}
-              className="w-32 sm:w-48"
-              onChange={changeDate}
-              value={new Date(`${date}T12:00:00`)}
-            />
-          </div>
-        </NCardAction>
-
-        {/* Nothing is layered over the markers: selection opens the sheet. */}
-        <div className="relative min-h-[26rem] flex-1 overflow-hidden rounded-xl border sm:min-h-[34rem]">
-          <DeliveryMap
-            handleRef={mapHandleRef}
-            items={items}
-            selectedId={effectiveSelectedId}
-            onSelect={selectFromMap}
-            ariaLabel={t("dashboard.delivery.mapTitle")}
-            errorTitle={t("operator.families.locationProviderError")}
-            markerLabel={markerLabel}
-          />
-        </div>
-
-        <div className="mt-3 flex flex-wrap justify-center gap-2">
-          {chartItems.map((item) => <NBadge key={item.id} status={item.id}>{item.label} ({fmt.number(item.value)})</NBadge>)}
-        </div>
-      </NCard>
-
-      <NGrid cols={2} lgCols={3} xlCols={6}>
+      <NGrid className="shrink-0" cols={2} lgCols={3} xlCols={6}>
         {statCards.map(({ icon: Icon, key, value }) => (
           <NGridItem key={key} span={1}>
             <NStatCard variant="compact" icon={Icon} label={t(`dashboard.delivery.${key}`)} value={fmt.number(value)} className="sm:hidden" />
@@ -283,78 +229,160 @@ export function DeliveryDashboardPage() {
         ))}
       </NGrid>
 
-      <div className="grid flex-1 content-stretch gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <NPieChart
-          className="h-full min-h-72"
-          title={t("dashboard.delivery.overview")}
-          icon={PackageCheck}
-          items={chartItems}
-          emptyLabel={<NEmptyState icon={PackageCheck} title={t("dashboard.delivery.noDeliveries")} />}
-          valueFormatter={fmt.number}
-        />
-
-        <div id="delivery-list" className="h-full">
+      {/* One workspace: the map owns the full-height left half at xl. The
+          delivery plan and supporting panels share the right half; below xl
+          everything stays in reading order. */}
+      <NGrid className="xl:min-h-0 xl:flex-1" cols={1} xlCols={2}>
+        <NGridItem className="min-w-0 xl:min-h-0" span={1} xlSpan={1}>
           <NCard
-            className="h-full min-h-72"
-            title={t("dashboard.delivery.todaysDeliveries")}
-            icon={Truck}
+            className="h-full xl:min-h-0"
+            classNames={{
+              // No `flex-wrap`: the installed header is one row whose title side is
+              // already `min-w-0`, so Today and the date field stay beside the
+              // title at every width instead of dropping to a second row.
+              content: "flex min-h-0 flex-col xl:flex-1",
+              description: "truncate",
+              header: "gap-2",
+            }}
+            title={t("dashboard.delivery.mapTitle")}
+            description={t("dashboard.delivery.mapSubtitle")}
+            icon={MapPin}
           >
-            {items.length === 0 ? (
-              <NEmptyState
-                className="min-h-40 py-8"
-                icon={Truck}
-                title={t("dashboard.delivery.noDeliveries")}
-              />
-            ) : (
-            <div className="space-y-1">
-              {(showAll ? items : items.slice(0, 5)).map((item) => (
+            <NCardAction>
+              <div aria-busy={isDateTransition} className="flex items-center gap-2">
                 <NButton
-                  key={item.attemptId}
-                  variant={item.attemptId === effectiveSelectedId ? "secondary" : "ghost"}
-                  className="h-auto w-full justify-start gap-3 px-2 py-2 text-start"
-                  onClick={(event) => openAttempt(item.attemptId, event.currentTarget)}
+                  aria-pressed={date === today}
+                  className="h-10 px-3"
+                  onClick={() => changeDate(today)}
+                  size="lg"
+                  type="button"
+                  variant={date === today ? "secondary" : "outline"}
                 >
-                  <NAvatar fallback={item.familyName} src={item.familyImage} size="sm" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{item.familyName}</span>
-                    {item.phone ? (
-                      <span dir="ltr" className="block truncate text-start text-xs font-normal text-muted-foreground">{item.phone}</span>
-                    ) : null}
-                    <span className="sr-only">{item.orderNumber}</span>
-                  </span>
-                  <span className="shrink-0 text-xs font-normal text-muted-foreground">
-                    {minuteLabel(item.windowStartMinute)}–{minuteLabel(item.windowEndMinute)}
-                  </span>
-                  <span className="flex shrink-0 flex-wrap justify-end gap-1">
-                    <NBadge status={item.workflowState}>{t(workflowLabelKey(item.workflowState))}</NBadge>
-                    {item.delayed || item.openIssues.length ? (
-                      <NBadge status={item.category}>{t(categoryKey(item.category))}</NBadge>
-                    ) : null}
-                  </span>
+                  {t("dashboard.delivery.today")}
                 </NButton>
-              ))}
-              {items.length > 5 ? (
-                <NButton variant="outline" className="w-full" onClick={() => setShowAll((current) => !current)}>
-                  {showAll ? t("dashboard.delivery.showLess") : t("dashboard.delivery.viewAll")}
-                </NButton>
-              ) : null}
+                {/* The transition indicator takes over the date field's own icon
+                    slot rather than standing beside it, so the header keeps the
+                    same width and height while the next date loads. */}
+                <div className="relative w-32 sm:w-48">
+                  <DateInput
+                    ariaLabel={t("dashboard.delivery.selectDate")}
+                    className="w-full"
+                    onChange={changeDate}
+                    showIcon={!isDateTransition}
+                    value={new Date(`${date}T12:00:00`)}
+                  />
+                  {isDateTransition ? (
+                    <span
+                      className="pointer-events-none absolute inset-y-0 end-2 flex items-center"
+                      role="status"
+                    >
+                      <NSpinner aria-hidden="true" size={16} />
+                      <span className="sr-only">{t("state.loading")}</span>
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </NCardAction>
+
+            {/* Nothing is layered over the markers: selection opens the sheet. */}
+            <div className="relative min-h-[26rem] flex-1 overflow-hidden rounded-xl border sm:min-h-[34rem] xl:min-h-0">
+              <DeliveryMap
+                handleRef={mapHandleRef}
+                items={items}
+                selectedId={effectiveSelectedId}
+                onSelect={selectFromMap}
+                ariaLabel={t("dashboard.delivery.mapTitle")}
+                errorTitle={t("operator.families.locationProviderError")}
+                markerLabel={markerLabel}
+              />
             </div>
-            )}
+
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {chartItems.map((item) => <NBadge key={item.id} status={item.id}>{item.label} ({fmt.number(item.value)})</NBadge>)}
+            </div>
           </NCard>
-        </div>
+        </NGridItem>
+        <NGridItem className="min-w-0 xl:min-h-0" span={1} xlSpan={1}>
+          <div data-testid="delivery-workspace-side" className="flex h-full min-h-0 flex-col gap-4">
+          <div className="grid min-h-0 gap-4 md:grid-cols-2 xl:flex-1">
+          <div id="delivery-list" className="min-h-72 xl:min-h-0">
+            <NCard
+              className="h-full xl:min-h-0"
+              classNames={{ content: "xl:min-h-0 xl:flex-1" }}
+              title={t("dashboard.delivery.todaysDeliveries")}
+              icon={Truck}
+            >
+              {items.length === 0 ? (
+                <NEmptyState
+                  className="min-h-40 py-8"
+                  icon={Truck}
+                  title={t("dashboard.delivery.noDeliveries")}
+                />
+              ) : (
+              <div className="flex min-h-0 flex-1 flex-col gap-1">
+                {/* Only the rows scroll at xl, where the card is bound to the
+                    workspace height; Show all stays reachable. */}
+                <div className="space-y-1 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+                  {(showAll ? items : items.slice(0, 5)).map((item) => (
+                    <NButton
+                      key={item.attemptId}
+                      variant="outline"
+                      className={`h-auto w-full justify-start gap-3 px-2 py-2 text-start ${item.attemptId === effectiveSelectedId ? "border-primary bg-secondary" : ""}`}
+                      onClick={(event) => openAttempt(item.attemptId, event.currentTarget)}
+                    >
+                      <NAvatar fallback={item.familyName} src={item.familyImage} size="sm" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold">{item.familyName}</span>
+                        {item.phone ? (
+                          <span dir="ltr" className="block truncate text-start text-xs font-normal text-muted-foreground">{item.phone}</span>
+                        ) : null}
+                        <span className="sr-only">{item.orderNumber}</span>
+                      </span>
+                      <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                        <NBadge status={item.workflowState}>{t(workflowLabelKey(item.workflowState))}</NBadge>
+                        {item.delayed || item.openIssues.length ? (
+                          <NBadge status={item.category}>{t(categoryKey(item.category))}</NBadge>
+                        ) : null}
+                      </span>
+                    </NButton>
+                  ))}
+                </div>
+                {items.length > 5 ? (
+                  <NButton variant="outline" className="w-full shrink-0" onClick={() => setShowAll((current) => !current)}>
+                    {showAll ? t("dashboard.delivery.showLess") : t("dashboard.delivery.viewAll")}
+                  </NButton>
+                ) : null}
+              </div>
+              )}
+            </NCard>
+          </div>
 
-        <DashboardAttentionCard
-          allClearLabel={t("dashboard.operator.allClear")}
-          icon={AlertTriangle}
-          items={attentionRows.map(({ key, ...item }) => ({
-            ...item,
-            label: t(`dashboard.delivery.${key}`),
-          }))}
-          title={t("dashboard.delivery.attentionTitle")}
-        />
+          <NPieChart
+            className="h-full min-h-72 xl:min-h-0"
+            title={t("dashboard.delivery.overview")}
+            icon={PackageCheck}
+            items={chartItems}
+            emptyLabel={<NEmptyState icon={PackageCheck} title={t("dashboard.delivery.noDeliveries")} />}
+            valueFormatter={fmt.number}
+          />
+          </div>
 
-        <DashboardQuickActionsCard actions={quickActions} title={t("dashboard.delivery.quickActions")} />
-      </div>
+          <div className="grid min-h-0 gap-4 md:grid-cols-2 xl:flex-1">
+            <DashboardAttentionCard
+              allClearLabel={t("dashboard.operator.allClear")}
+              icon={AlertTriangle}
+              items={attentionRows.map(({ key, ...item }) => ({
+                ...item,
+                label: t(`dashboard.delivery.${key}`),
+              }))}
+              title={t("dashboard.delivery.attentionTitle")}
+            />
+
+            <DashboardQuickActionsCard actions={quickActions} title={t("dashboard.delivery.quickActions")} />
+          </div>
+          </div>
+        </NGridItem>
+      </NGrid>
 
       <DeliveryOrderSheet
         open={Boolean(selected)}

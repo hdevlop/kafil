@@ -1,4 +1,5 @@
 import { createUserDto, updateUserDto } from "najm-auth";
+import { isMoroccanCin } from "najm-auth/identity/ma";
 import { z } from "zod";
 
 import { positiveMinorAmountDto } from "../budgets/money";
@@ -59,16 +60,12 @@ const updateFamilyHousingSituationDto = familyHousingSituationDto
   });
 
 const familyIdentityFields = z.object({
-  // The CIN is the family's first-login credential, so it must satisfy Najm's
-  // `ma-cin` shape here rather than failing inside provisioning. The 8 floor is
-  // najm-auth's `isMoroccanCin` guard, not a style choice — do not relax it to
-  // the 7 sponsor and staff CINs use; those never reach provisioning.
+  // The CIN is the family's first-login credential, so validate with the same
+  // Najm Auth contract that provisioning enforces instead of copying its shape.
   guardianCin: z
     .string()
     .trim()
-    .min(8)
-    .max(20)
-    .regex(/^[a-z]{1,3}\d{5,17}$/i, "Enter a valid CIN, such as AB123456.")
+    .refine(isMoroccanCin, "Enter a valid CIN, such as AB123456.")
     .toUpperCase(),
   guardianDateOfBirth: z.iso.date(),
   exactAddress: z.string().trim().min(5).max(1_000),

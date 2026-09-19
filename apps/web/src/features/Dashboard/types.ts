@@ -55,6 +55,7 @@ export interface DeliveryOrderItem {
   productId: string;
   productNameSnapshot: string;
   skuSnapshot: string;
+  imageUrl: string | null;
   quantity: number;
   unitPriceMinor: number;
   lineTotalMinor: number;

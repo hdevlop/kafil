@@ -13,6 +13,7 @@ import {
   type NNotifyLabels,
 } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
+import { useKafilRole } from "@/shared/Authorization";
 
 import {
   useMarkAllNotificationsRead,
@@ -34,6 +35,7 @@ function NotificationsMenuBody({
   onClose,
 }: Readonly<{ labels: NNotifyLabels; onClose: () => void }>) {
   const { t, language } = useTranslation();
+  const { exact } = useKafilRole();
   const router = useRouter();
   const [markAllError, setMarkAllError] = useState<string | null>(null);
   const list = useNotifications({ limit: 5 }, { refetchOnMount: "always" });
@@ -47,9 +49,9 @@ function NotificationsMenuBody({
         buildNotifyItem(row, language, {
           unknownTitle: t("notifications.unknownTitle"),
           unknownBody: t("notifications.unknownBody"),
-        }),
+        }, exact),
       ),
-    [list.data, language, t],
+    [list.data, language, t, exact],
   );
 
   return (

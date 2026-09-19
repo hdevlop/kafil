@@ -26,6 +26,7 @@ import type { SharedOrderRecord } from "../sharedTypes";
 import type { FamilyOrderDetail } from "../familyTypes";
 import { DeliveryAssignmentCard, DeliveryPersonCard } from "./DeliveryDetailsSheet";
 import { OrderSummarySections } from "./OrderSummarySections";
+import { PurchaseReceiptSection } from "./PurchaseReceiptSection";
 
 export function OrderDetailsSheet({ open, order, sponsor = false, onOpenChange }: Readonly<{
   open: boolean;
@@ -194,6 +195,7 @@ export function OrderDetails({ orderId }: Readonly<{ orderId: string }>) {
 
   return (
     <OrderSummarySections order={{ ...data, familyImage: data.familyImage ?? null }}>
+      <PurchaseReceiptSection purchase={data.activePurchase} />
       {data.purchasingStaffNameSnapshot ? (
         <section
           aria-labelledby="order-purchasing-title"

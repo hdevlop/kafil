@@ -1,11 +1,9 @@
 "use client";
 
 import {
-  AlertTriangle,
   CalendarDays,
   CheckCircle2,
   ExternalLink,
-  Package,
   Phone,
   Play,
   ReceiptText,
@@ -17,23 +15,17 @@ import {
   NCard,
   NErrorState,
   NSheet,
-  NativeSelect,
   useDialog,
-  useNajmFormat,
 } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
-import { useState } from "react";
 
 import { DeliveryPurchaseDialogContent } from "@/features/Orders/components/OrderWorkflowForms";
 import { OrderSummarySections } from "@/features/Orders/components/OrderSummarySections";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
-import { minuteLabel } from "../../shared/deliveryTime";
 import type { DeliveryOrderDetail, DeliveryWorkflowState } from "../../types";
 import { useDeliveryOrder } from "../hooks/useDeliveryOrder";
 import type { useDeliveryDashboardCommands } from "../hooks/useDeliveryDashboard";
-
-type IssueKind = "address_confirmation" | "family_unreachable" | "missing_proof";
 
 export function workflowLabelKey(state: DeliveryWorkflowState) {
   return (
@@ -91,7 +83,12 @@ export function DeliveryOrderSheet({
       }}
       footer={
         order.data ? (
-          <DeliverySheetFooter data={order.data} date={date} commands={commands} />
+          <div className="flex w-full items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <DeliverySheetFooter data={order.data} date={date} commands={commands} />
+            </div>
+            <DeliveryContactActions data={order.data} />
+          </div>
         ) : null
       }
     >
@@ -107,7 +104,7 @@ export function DeliveryOrderSheet({
         />
       ) : null}
       {order.data ? (
-        <DeliveryOrderBody data={order.data} commands={commands} />
+        <DeliveryOrderBody data={order.data} />
       ) : null}
     </NSheet>
   );
@@ -115,14 +112,20 @@ export function DeliveryOrderSheet({
 
 function DeliveryOrderBody({
   data,
-  commands,
 }: Readonly<{
   data: DeliveryOrderDetail;
-  commands: ReturnType<typeof useDeliveryDashboardCommands>;
 }>) {
   const { t } = useTranslation();
-  const fmt = useNajmFormat();
-  const [issueKind, setIssueKind] = useState<IssueKind>("address_confirmation");
+
+  const scheduleDetails = (
+    <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+      <div className="flex items-center gap-2">
+        <CalendarDays aria-hidden className="size-4 shrink-0 text-primary" />
+        <span className="text-muted-foreground">{t("dashboard.delivery.scheduleDate")}</span>
+        <span className="font-medium">{data.attempt.scheduledDate ?? "—"}</span>
+      </div>
+    </div>
+  );
 
   return (
     <OrderSummarySections
@@ -136,106 +139,64 @@ function DeliveryOrderBody({
         deliveryPhoneSnapshot: data.deliveryPhoneSnapshot,
         items: data.items,
       }}
+      familyDetails={scheduleDetails}
+      showProductsDivider={false}
     >
-      <section aria-labelledby="delivery-order-schedule" className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <CalendarDays aria-hidden className="size-4 text-primary" />
-          <h3 id="delivery-order-schedule" className="text-sm font-semibold">
-            {t("dashboard.delivery.orderSchedule")}
-          </h3>
-        </div>
-        <NCard embedded>
-          <div className="grid gap-2 text-sm">
-            <span>
-              <CalendarDays aria-hidden className="me-2 inline size-4" />
-              {data.attempt.scheduledDate ?? "—"} ·{" "}
-              {minuteLabel(data.attempt.windowStartMinute)}–
-              {minuteLabel(data.attempt.windowEndMinute)}
-            </span>
-            <span>
-              <Package aria-hidden className="me-2 inline size-4" />
-              {fmt.number(data.attempt.packageCount ?? 0)}{" "}
-              {t("dashboard.delivery.packages")}
-            </span>
-          </div>
-          {/* A command refreshes the sheet in place, so the new workflow state
-              and any open issue are announced rather than silently redrawn. */}
+      {data.openIssues.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          {/* A command refreshes the sheet in place, so open issues are
+              announced rather than silently redrawn. */}
           <div className="mt-3 flex flex-wrap gap-2" role="status">
-            <NBadge status={data.workflowState}>
-              {t(workflowLabelKey(data.workflowState))}
-            </NBadge>
             {data.openIssues.map((issue) => (
               <NBadge key={issue.id} status="needs_attention">
                 {t(issueLabelKey(issue.kind))}
               </NBadge>
             ))}
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <NButton
-              size="sm"
-              variant="outline"
-              disabled={!data.deliveryPhoneSnapshot}
-              onClick={() => {
-                if (data.deliveryPhoneSnapshot) {
-                  window.location.href = `tel:${data.deliveryPhoneSnapshot}`;
-                }
-              }}
-            >
-              <Phone className="size-4" />
-              {t("dashboard.delivery.callFamily")}
-            </NButton>
-            <NButton
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const query = data.coordinates
-                  ? `${data.coordinates.latitude},${data.coordinates.longitude}`
-                  : data.deliveryAddressSnapshot;
-                window.open(
-                  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
-                  "_blank",
-                  "noopener,noreferrer",
-                );
-              }}
-            >
-              <ExternalLink className="size-4" />
-              {t("dashboard.delivery.openMaps")}
-            </NButton>
-          </div>
-          {data.canReportIssue ? (
-            <div className="mt-3 flex gap-2">
-              <NativeSelect
-                className="min-w-0 flex-1"
-                value={issueKind}
-                aria-label={t("dashboard.delivery.issueKind")}
-                options={[
-                  { value: "address_confirmation", label: t("dashboard.delivery.addressToConfirm") },
-                  { value: "family_unreachable", label: t("dashboard.delivery.familyUnreachable") },
-                  { value: "missing_proof", label: t("dashboard.delivery.missingProof") },
-                ]}
-                onChange={(event) => setIssueKind(event.target.value as IssueKind)}
-              />
-              <NButton
-                size="sm"
-                variant="outline"
-                disabled={commands.reportIssue.isPending}
-                onClick={() =>
-                  void commands.reportIssue.mutateAsync({
-                    id: data.id,
-                    attemptId: data.attempt.id,
-                    kind: issueKind,
-                    idempotencyKey: crypto.randomUUID(),
-                  })
-                }
-              >
-                <AlertTriangle className="size-4" />
-                <span className="sr-only">{t("dashboard.delivery.reportIssue")}</span>
-              </NButton>
-            </div>
-          ) : null}
-        </NCard>
-      </section>
+        </section>
+      ) : null}
     </OrderSummarySections>
+  );
+}
+
+function DeliveryContactActions({ data }: Readonly<{ data: DeliveryOrderDetail }>) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <NButton
+        className="size-10 p-0"
+        size="sm"
+        variant="outline"
+        aria-label={t("dashboard.delivery.callFamily")}
+        disabled={!data.deliveryPhoneSnapshot}
+        onClick={() => {
+          if (data.deliveryPhoneSnapshot) {
+            window.location.href = `tel:${data.deliveryPhoneSnapshot}`;
+          }
+        }}
+      >
+        <Phone className="size-4" />
+      </NButton>
+      <NButton
+        className="size-10 p-0"
+        size="sm"
+        variant="outline"
+        aria-label={t("dashboard.delivery.openMaps")}
+        onClick={() => {
+          const query = data.coordinates
+            ? `${data.coordinates.latitude},${data.coordinates.longitude}`
+            : data.deliveryAddressSnapshot;
+          window.open(
+            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
+            "_blank",
+            "noopener,noreferrer",
+          );
+        }}
+      >
+        <ExternalLink className="size-4" />
+      </NButton>
+    </div>
   );
 }
 
@@ -330,7 +291,7 @@ function DeliverySheetFooter({
   );
 }
 
-function issueLabelKey(kind: IssueKind) {
+function issueLabelKey(kind: DeliveryOrderDetail["openIssues"][number]["kind"]) {
   return (
     {
       address_confirmation: "dashboard.delivery.addressToConfirm",

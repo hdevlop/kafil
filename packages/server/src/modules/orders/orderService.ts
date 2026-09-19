@@ -1387,6 +1387,9 @@ export class OrderService {
         placementSource: input.placementSource,
       },
     });
+    if (deliveryAttempt) {
+      await this.recordDeliveryEvent("assigned", order, deliveryAttempt, input.placedByUserId);
+    }
     return order;
   }
 
@@ -2192,6 +2195,7 @@ export class OrderService {
         productId: item.productId,
         productNameSnapshot: item.productNameSnapshot,
         skuSnapshot: item.skuSnapshot,
+        imageUrl: item.imageUrl,
         quantity: item.quantity,
         unitPriceMinor: item.unitPriceMinor,
         lineTotalMinor: item.lineTotalMinor,

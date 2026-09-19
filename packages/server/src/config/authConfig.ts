@@ -329,7 +329,7 @@ class NotificationReaderRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR] },
+      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR, ROLES.DELIVERY] },
       user, context,
     );
   }

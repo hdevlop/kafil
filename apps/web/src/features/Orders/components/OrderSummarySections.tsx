@@ -9,6 +9,7 @@ export interface OrderSummaryItem {
   productId: string;
   productNameSnapshot: string;
   skuSnapshot: string;
+  imageUrl: string | null;
   quantity: number;
   unitPriceMinor: number;
 }
@@ -33,10 +34,18 @@ export interface OrderSummaryOrder {
 export function OrderSummarySections({
   order,
   familyMode = false,
+  familyDetails,
+  leadingContent,
+  afterFamily,
+  showProductsDivider,
   children,
 }: Readonly<{
   order: OrderSummaryOrder;
   familyMode?: boolean;
+  familyDetails?: ReactNode;
+  leadingContent?: ReactNode;
+  afterFamily?: ReactNode;
+  showProductsDivider?: boolean;
   children?: ReactNode;
 }>) {
   return (
@@ -50,6 +59,10 @@ export function OrderSummarySections({
       }}
       familyMode={familyMode}
       familyStatus={<NBadge status={order.status} />}
+      familyDetails={familyDetails}
+      leadingContent={leadingContent}
+      afterFamily={afterFamily}
+      showProductsDivider={showProductsDivider}
       separateSections
       showNotice={false}
       totalMinor={order.requestedTotalMinor}
@@ -57,6 +70,7 @@ export function OrderSummarySections({
         productId: item.productId,
         productName: item.productNameSnapshot,
         sku: item.skuSnapshot,
+        imageUrl: item.imageUrl,
         quantity: item.quantity,
         estimatedUnitPriceMinor: item.unitPriceMinor,
         currency: order.currency,

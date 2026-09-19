@@ -95,7 +95,7 @@ function OrderCartLine({
         : await getProduct(item.productId);
       return product.imageUrl;
     },
-    enabled: !item.imageUrl,
+    enabled: item.imageUrl === undefined,
     staleTime: 5 * 60 * 1_000,
   });
   const imageUrl = item.imageUrl ?? productImage.data ?? null;
@@ -286,6 +286,10 @@ export function OrderConfirmationStep({
   totalMinor,
   separateSections = true,
   familyStatus,
+  familyDetails,
+  leadingContent,
+  afterFamily,
+  showProductsDivider = true,
   children,
 }: Readonly<{
   family: OrderConfirmationFamily;
@@ -295,6 +299,10 @@ export function OrderConfirmationStep({
   totalMinor?: number;
   separateSections?: boolean;
   familyStatus?: ReactNode;
+  familyDetails?: ReactNode;
+  leadingContent?: ReactNode;
+  afterFamily?: ReactNode;
+  showProductsDivider?: boolean;
   children?: ReactNode;
 }>) {
   const { t } = useTranslation();
@@ -302,6 +310,8 @@ export function OrderConfirmationStep({
 
   return (
     <div className="flex flex-col gap-5">
+      {leadingContent}
+
       <section
         className={`flex flex-col gap-2 ${separateSections ? "border-b border-border pb-5" : ""}`}
         aria-labelledby="order-confirmation-family"
@@ -337,13 +347,16 @@ export function OrderConfirmationStep({
                 <span dir="ltr">{family.phone}</span>
               </div>
             ) : null}
+            {familyDetails}
           </div>
         </div>
       </section>
 
+      {afterFamily}
+
       <section
         aria-labelledby="order-confirmation-products"
-        className={`flex flex-col gap-2 ${separateSections ? "border-b border-border pb-5" : ""}`}
+        className={`flex flex-col gap-2 ${separateSections && showProductsDivider ? "border-b border-border pb-5" : ""}`}
       >
         <div className="flex items-center gap-2">
           <ShoppingBag aria-hidden className="size-4 text-primary" />
@@ -364,8 +377,8 @@ export function OrderConfirmationStep({
             ))}
           </div>
           {totalMinor !== undefined ? (
-            <div className="flex items-center justify-between px-3 pb-3 pt-1 text-sm">
-              <span className="text-muted-foreground">{t("family.cart.total")}</span>
+            <div className="flex items-center justify-between border-t border-border px-3 py-3 text-sm">
+              <span className="font-semibold text-primary">{t("family.cart.total")}</span>
               <span className="font-semibold text-foreground">{fmt.money(totalMinor)}</span>
             </div>
           ) : null}

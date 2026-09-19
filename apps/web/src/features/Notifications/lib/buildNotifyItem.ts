@@ -21,9 +21,10 @@ export function buildNotifyItem(
   notification: NotificationRecord,
   language: string | null | undefined,
   fallback: NotificationFallbackCopy,
+  role?: string | null,
 ): NNotifyItemData {
   const locale = normalizeLocale(language ?? notification.locale);
-  const vm = buildNotificationViewModel(notification.topic, locale, fallback);
+  const vm = buildNotificationViewModel(notification.topic, locale, fallback, role);
   return {
     id: notification.id,
     title: vm.title,

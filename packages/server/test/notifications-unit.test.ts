@@ -233,6 +233,37 @@ describe("notifications locale resolution", () => {
 });
 
 describe("notifications recipient resolution", () => {
+  it("targets the exact assigned delivery account for assignment events", async () => {
+    const attemptId = "11111111-1111-4111-8111-111111111111";
+    const lookedUp: Array<[string, string]> = [];
+    const repo = {
+      findOrderFamily: async () => ({ familyProfileId: "family-profile-1", familyUserId: "family-1" }),
+      findSponsorUsersCoveringFamily: async () => ["sponsor-1"],
+      findDeliveryUserForAttempt: async (orderId: string, id: string) => {
+        lookedUp.push([orderId, id]);
+        return "delivery-1";
+      },
+    } as unknown as import("../src/modules/notifications/notificationRepository").NotificationRepository;
+    const resolver = new NotificationRecipientResolver(repo);
+    const assigned = await resolver.resolve(
+      "order.delivery_assigned", "order", "order-1", new Date(), { attemptId },
+    );
+    expect(assigned.all).toEqual(["family-1", "sponsor-1", "delivery-1"]);
+    expect(lookedUp).toEqual([["order-1", attemptId]]);
+
+    const reassigned = await resolver.resolve(
+      "order.delivery_reassigned", "order", "order-1", new Date(), { attemptId },
+    );
+    expect(reassigned.all).toContain("delivery-1");
+    expect(lookedUp).toHaveLength(2);
+
+    const unrelated = await resolver.resolve(
+      "order.delivered", "order", "order-1", new Date(), { attemptId },
+    );
+    expect(unrelated.all).toEqual(["family-1", "sponsor-1"]);
+    expect(lookedUp).toHaveLength(2);
+  });
+
   it("resolves exact sets with temporal assignment coverage", async () => {
     const repo = {
       findContributionParties: async () => ({
@@ -281,7 +312,7 @@ describe("notifications authorization and MCP", () => {
     const names = AUTH_PERMISSIONS.map((p) => p.name);
     expect(names).toContain("read:notifications");
     expect(names).toContain("update:notifications");
-    for (const role of ["admin", "operator", "family", "sponsor"] as const) {
+    for (const role of ["admin", "operator", "delivery", "family", "sponsor"] as const) {
       expect(AUTH_ROLE_PERMISSIONS[role]).toContain("read:notifications");
       expect(AUTH_ROLE_PERMISSIONS[role]).toContain("update:notifications");
     }

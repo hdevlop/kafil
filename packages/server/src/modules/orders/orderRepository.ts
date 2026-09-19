@@ -69,6 +69,11 @@ const cartItemSelection = {
 
 const cartSelection = getTableColumns(carts);
 
+const orderItemSelection = {
+  ...getTableColumns(orderItems),
+  imageUrl: products.imageUrl,
+};
+
 const orderArticleCount = sql<number>`coalesce((
     select sum(${orderItems.quantity})
     from ${orderItems}
@@ -396,8 +401,9 @@ export class OrderRepository {
 
   listItems(orderId: string) {
     return this.db
-      .select()
+      .select(orderItemSelection)
       .from(orderItems)
+      .innerJoin(products, eq(orderItems.productId, products.id))
       .where(eq(orderItems.orderId, orderId))
       .orderBy(orderItems.createdAt);
   }

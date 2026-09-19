@@ -121,6 +121,33 @@ export function uploadOrderEvidence(
   );
 }
 
+/**
+ * The one managed form a receipt reference may take. Anything else -- an
+ * absolute URL, `..`, another evidence kind, a maintenance route, a malformed
+ * id, an extension the storage layer does not serve -- is refused before it
+ * can reach the transport.
+ */
+const RECEIPT_REFERENCE =
+  /^\/api\/order-evidence\/receipts\/serve\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpeg|jpg|pdf|png|webp)$/i;
+
+/** Normalizes and validates the server-provided receipt reference. */
+export function receiptViewPath(reference: string) {
+  if (!RECEIPT_REFERENCE.test(reference)) {
+    throw new Error("Unsupported receipt reference.");
+  }
+  return reference;
+}
+
+/**
+ * Read one purchase receipt as bytes for Operator/Admin preview.
+ *
+ * The reference is already same-origin and `/api`-prefixed, so it goes to the
+ * binary helper unchanged -- prefixing it again would produce `/api/api/...`.
+ */
+export function viewOrderReceipt(reference: string) {
+  return api.getFile(receiptViewPath(reference));
+}
+
 export function deleteOrderEvidenceCandidate(path: string) {
   const relative = path.replace("/api/order-evidence/", "/order-evidence/");
   return api.deleteFile(relative.replace("/serve/", "/"));

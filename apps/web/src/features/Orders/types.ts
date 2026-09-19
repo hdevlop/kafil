@@ -103,6 +103,7 @@ export interface OrderItem {
   productId: string;
   productNameSnapshot: string;
   skuSnapshot: string;
+  imageUrl: string | null;
   unitPriceMinor: number;
   quantity: number;
   lineTotalMinor: number;

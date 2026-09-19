@@ -68,6 +68,34 @@ describe("Phase 5 cart and route contracts", () => {
     ]);
   });
 
+  it("loads the current product image with order items", async () => {
+    let selectedKeys: string[] = [];
+    let joinedProducts = false;
+    const repository = new OrderRepository();
+    (repository as unknown as { db: unknown }).db = {
+      select(selection: Record<string, unknown>) {
+        selectedKeys = Object.keys(selection).sort();
+        return {
+          from: () => ({
+            innerJoin: () => {
+              joinedProducts = true;
+              return {
+                where: () => ({
+                  orderBy: async () => [],
+                }),
+              };
+            },
+          }),
+        };
+      },
+    };
+
+    await repository.listItems(orderId);
+
+    expect(joinedProducts).toBe(true);
+    expect(selectedKeys).toContain("imageUrl");
+  });
+
   it("ranks dominant categories by quantity with deterministic tie breakers", () => {
     const query = new PgDialect().sqlToQuery(dominantOrderCategoryField("name"));
     expect(query.sql).toContain("SUM(dominant_order_items.\"quantity\") DESC");
@@ -738,6 +766,7 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
     });
     expect(detail.items[0]).toMatchObject({
       skuSnapshot: "RICE-5KG",
+      imageUrl: "/api/product-images/files/serve/rice.webp",
       quantity: 2,
     });
 
@@ -1734,6 +1763,7 @@ function orderItemRecord(overrides: Record<string, unknown> = {}) {
     productId,
     productNameSnapshot: "Rice 5kg current price",
     skuSnapshot: "RICE-5KG",
+    imageUrl: "/api/product-images/files/serve/rice.webp",
     unitPriceMinor: 300,
     quantity: 2,
     lineTotalMinor: 600,

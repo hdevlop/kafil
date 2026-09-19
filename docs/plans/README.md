@@ -10,6 +10,10 @@ purpose-specific test documents under
 
 ## Active root plans
 
+- [`GLOBAL-FIXES-PLAN.md`](../../GLOBAL-FIXES-PLAN.md)
+  - tracks independently testable user-visible fixes. Fix 1 adds the missing
+    Admin/Operator purchase metadata and authenticated protected-receipt view
+    to the existing order-details sheet without broadening evidence access.
 - [`AUTH-ROLE-INTEGRITY-PLAN.md`](../../AUTH-ROLE-INTEGRITY-PLAN.md)
   - repairs duplicate fixed-role rows and missing production grants without
     losing users or custom permissions, makes Kafil seeding failure-safe, then

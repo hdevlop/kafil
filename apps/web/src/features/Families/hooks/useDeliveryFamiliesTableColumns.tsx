@@ -9,7 +9,6 @@ import {
 } from "najm-kit";
 import { getPersonImage } from "najm-kit/person-images";
 
-import { minuteLabel } from "@/features/Dashboard/shared/deliveryTime";
 import { useTranslation } from "najm-i18n/react";
 
 import type { DeliveryFamilyView } from "../types";
@@ -68,14 +67,6 @@ export function useDeliveryFamiliesTableColumns() {
             )}
           </NBadge>
         ),
-      },
-      {
-        id: "nextWindow",
-        header: t("dashboard.delivery.familiesNextWindow"),
-        cell: ({ row }) =>
-          row.original.nextWindowStartMinute == null
-            ? "—"
-            : `${minuteLabel(row.original.nextWindowStartMinute)}–${minuteLabel(row.original.nextWindowEndMinute)}`,
       },
     ];
   }, [fmt, t]);

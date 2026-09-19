@@ -102,7 +102,7 @@ export const AUTH_ROLE_PERMISSIONS: Record<
     "read:notifications",
     "update:notifications",
   ],
-  delivery: [],
+  delivery: ["read:notifications", "update:notifications"],
   family: ["read:families", "read:children", "read:budgets", "read:contributions", "read:notifications", "update:notifications"],
   sponsor: [
     "read:sponsors",

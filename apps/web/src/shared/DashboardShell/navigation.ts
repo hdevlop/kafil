@@ -142,7 +142,7 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       href: "/notifications",
       labelKey: "nav.notifications",
       icon: Bell,
-      roles: FULL_APP_ROLES,
+      roles: DASHBOARD_ROLES,
    },
    {
       href: "/users",
