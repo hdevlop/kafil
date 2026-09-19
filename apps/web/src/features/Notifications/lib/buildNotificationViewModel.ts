@@ -159,6 +159,7 @@ function tokenForTopic(topic: string): NotificationViewModel["token"] {
 }
 
 function hrefForTopic(topic: string, role?: string | null): string {
+  if (topic.startsWith("contribution.") && role === "family") return "/dashboard";
   if (topic.startsWith("contribution.")) return "/contribution";
   if (topic.startsWith("order.") && role === "delivery") return "/delivery";
   if (topic.startsWith("order.")) return "/orders";

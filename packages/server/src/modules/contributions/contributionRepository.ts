@@ -8,6 +8,7 @@ import type { KafilDatabase } from "../../database/types";
 import { budgetAccounts } from "../budgets/budgetSchema";
 import { familyProfiles } from "../families/familySchema";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
+import { familyVisibleSponsorFirstName, familyVisibleSponsorName } from "../sponsors/sponsorNameProjection";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
 import {
   contributionPlans,
@@ -68,7 +69,7 @@ function buildFamilyContributionConditions(
     eq(familyProfiles.userId, userId),
     filters.status ? eq(contributions.status, filters.status) : undefined,
     filters.paymentMethod ? eq(contributions.paymentMethod, filters.paymentMethod) : undefined,
-    filters.search ? ilike(usersTable.name, `%${filters.search}%`) : undefined,
+    filters.search ? ilike(familyVisibleSponsorFirstName, `%${filters.search}%`) : undefined,
   );
 }
 
@@ -109,8 +110,8 @@ export const sponsorContributionSelection = {
 
 export const familyContributionSelection = {
   id: contributions.id,
-  sponsorName: usersTable.name,
-  sponsorImage: usersTable.image,
+  sponsorName: familyVisibleSponsorName,
+  sponsorImage: sql<string | null>`null`,
   sponsorGender: sponsorProfiles.gender,
   amountMinor: contributions.amountMinor,
   currency: contributions.currency,

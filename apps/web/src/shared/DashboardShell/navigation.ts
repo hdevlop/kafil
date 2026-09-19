@@ -107,10 +107,10 @@ const DASHBOARD_NAV: readonly DashboardNavRow[] = [
       href: "/contribution",
       labelKey: "nav.contributions",
       icon: HandCoins,
-      roles: FULL_APP_ROLES,
+      roles: ["admin", "operator", "sponsor"],
       // Sponsor is absent on purpose: contributions stay inside the sponsor's
       // single "Support" group instead of opening a Finance heading.
-      section: { admin: "finance", operator: "finance", family: "finance" },
+      section: { admin: "finance", operator: "finance" },
    },
    {
       href: "/assignments",

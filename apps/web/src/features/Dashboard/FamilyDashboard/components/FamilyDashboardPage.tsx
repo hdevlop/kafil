@@ -3,13 +3,11 @@
 import {
   Baby,
   ClipboardCheck,
-  HandHeart,
   House,
   ShoppingBag,
   WalletCards,
 } from "lucide-react";
 import {
-  NAvatar,
   NBadge,
   NPageHeader,
   NBarChart,
@@ -23,10 +21,8 @@ import {
   NPageLayout,
   NStatCard,
   NStatusBreakdown,
-  statusTextClass,
   useNajmFormat,
 } from "najm-kit";
-import { getPersonImage } from "najm-kit/person-images";
 import Link from "next/link";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
@@ -39,6 +35,8 @@ import { toChartData } from "../../shared/chartData";
 import { FamilyDashboardSkeleton } from "../../shared/DashboardSkeletons";
 import { retainOrderPipelineStages } from "../../shared/orderPipeline";
 import { useFamilyDashboard, useOwnFamilyChildren, useOwnFamilyProfile } from "../hooks/useFamilyDashboard";
+import { FamilyAttentionCard } from "./FamilyAttentionCard";
+import { FamilyQuickActionsCard } from "./FamilyQuickActionsCard";
 import { MyFamilyCard } from "./MyFamilyCard";
 
 export function FamilyDashboardPage() {
@@ -65,6 +63,7 @@ export function FamilyDashboardPage() {
   const data = dashboard.data;
   const number = (value: number) => fmt.number(value);
   const money = (value: number) => fmt.money(value);
+  const maskedAvailableAmount = "********";
   const budgetTotalMinor =
     data.budget.availableMinor +
     data.budget.reservedMinor +
@@ -84,8 +83,8 @@ export function FamilyDashboardPage() {
 
       <NGrid cols={2} lgCols={3} xlCols={6}>
         <NGridItem span={1}>
-          <NStatCard variant="compact" icon={WalletCards} label={t("dashboard.common.available")} value={money(data.budget.availableMinor)} className="sm:hidden" />
-          <NStatCard icon={WalletCards} label={t("dashboard.common.available")} value={money(data.budget.availableMinor)} className="hidden sm:block" />
+          <NStatCard variant="compact" icon={WalletCards} label={t("dashboard.common.available")} value={maskedAvailableAmount} className="sm:hidden" />
+          <NStatCard icon={WalletCards} label={t("dashboard.common.available")} value={maskedAvailableAmount} className="hidden sm:block" />
         </NGridItem>
         <NGridItem span={1}>
           <NStatCard variant="compact" icon={WalletCards} label={t("dashboard.common.reserved")} value={money(data.budget.reservedMinor)} className="sm:hidden" />
@@ -156,7 +155,7 @@ export function FamilyDashboardPage() {
         </NGridItem>
       </NGrid>
 
-      <NGrid cols={1} lgCols={3} className="flex-1">
+      <NGrid cols={1} lgCols={2} xlCols={4} className="flex-1">
         <NGridItem span={1}>
           <NStatusBreakdown
             className="h-full"
@@ -172,36 +171,10 @@ export function FamilyDashboardPage() {
           />
         </NGridItem>
         <NGridItem className="h-full" span={1}>
-          <NCard className="h-full" icon={HandHeart} title={t("dashboard.family.recentSponsors")}>
-            <div className="space-y-2">
-              {data.recentSponsorContributions.length ? data.recentSponsorContributions.map((contribution) => (
-                <div className="flex items-center gap-3 rounded-xl border border-border/70 p-3" key={contribution.id}>
-                  <NAvatar
-                    alt={contribution.name}
-                    classNames={{ avatar: "shrink-0 bg-muted" }}
-                    fallbackSrc={getPersonImage({ image: null, role: "adult", gender: contribution.gender })}
-                    size="lg"
-                    src={contribution.image}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{contribution.name}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {fmt.date(contribution.paidAt ?? contribution.submittedAt)}
-                    </span>
-                  </span>
-                  <strong className={`shrink-0 text-sm ${statusTextClass(contribution.status)}`}>
-                    +{money(contribution.amountMinor)}
-                  </strong>
-                </div>
-              )) : (
-                <NEmptyState
-                  className="min-h-40 py-8"
-                  icon={HandHeart}
-                  title={t("dashboard.family.noSponsors")}
-                />
-              )}
-            </div>
-          </NCard>
+          <FamilyAttentionCard orderStatuses={data.orderStatuses} />
+        </NGridItem>
+        <NGridItem className="h-full" span={1}>
+          <FamilyQuickActionsCard />
         </NGridItem>
         <NGridItem className="h-full" span={1}>
           <NCard className="h-full" icon={ClipboardCheck} title={t("dashboard.family.recentOrders")}>

@@ -144,7 +144,6 @@ describe("Phase 7 dashboard presentation contracts", () => {
     expect(navigation.map((item) => item.id)).toEqual([
       "/dashboard",
       "/children",
-      "/contribution",
       "/categories",
       "/products",
       "/orders",
@@ -152,7 +151,6 @@ describe("Phase 7 dashboard presentation contracts", () => {
     ]);
     expect(navigation.filter((item) => item.sectionLabel).map((item) => item.sectionLabel)).toEqual([
       "nav.household",
-      "nav.finance",
       "nav.catalogOperations",
     ]);
   });
@@ -321,20 +319,47 @@ describe("Phase 7 dashboard presentation contracts", () => {
     );
   });
 
-  test("shows recent active sponsors on the family dashboard", async () => {
+  test("masks the available budget amount on both family dashboard stat variants", async () => {
     const pageSource = await Bun.file(
       new URL("../src/features/Dashboard/FamilyDashboard/components/FamilyDashboardPage.tsx", import.meta.url),
     ).text();
 
-    expect(pageSource).toContain('title={t("dashboard.family.recentSponsors")}');
-    expect(pageSource).toContain("data.recentSponsorContributions");
-    expect(pageSource).toContain('fallbackSrc={getPersonImage({ image: null, role: "adult", gender: contribution.gender })}');
-    expect(pageSource).toContain("statusTextClass(contribution.status)");
-    expect(pageSource).toContain("+{money(contribution.amountMinor)}");
-    expect(pageSource).not.toContain('title={contribution.name}');
-    expect(pageSource).toContain('icon={HandHeart}');
+    expect(pageSource).toContain('const maskedAvailableAmount = "********"');
+    expect(pageSource.match(/value=\{maskedAvailableAmount\}/g)).toHaveLength(2);
+    expect(pageSource).not.toContain('value={money(data.budget.availableMinor)}');
+  });
+
+  test("does not expose recent sponsor contributions on the family dashboard", async () => {
+    const pageSource = await Bun.file(
+      new URL("../src/features/Dashboard/FamilyDashboard/components/FamilyDashboardPage.tsx", import.meta.url),
+    ).text();
+
+    expect(pageSource).not.toContain('title={t("dashboard.family.recentSponsors")}');
+    expect(pageSource).not.toContain("data.recentSponsorContributions");
+    expect(pageSource).not.toContain("familySponsorName");
+    expect(pageSource).not.toContain("contribution.amountMinor");
+    expect(pageSource).not.toContain("icon={HandHeart}");
+    expect(pageSource).toContain("<FamilyAttentionCard");
+    expect(pageSource).toContain("<FamilyQuickActionsCard />");
     expect(pageSource).toContain('icon={ShoppingBag}');
-    expect(pageSource).not.toContain('<p className="py-10 text-center text-sm text-muted-foreground">');
+  });
+
+  test("keeps family attention and quick actions limited to family-accessible order and household routes", async () => {
+    const [attentionSource, quickActionsSource] = await Promise.all([
+      Bun.file(new URL("../src/features/Dashboard/FamilyDashboard/components/FamilyAttentionCard.tsx", import.meta.url)).text(),
+      Bun.file(new URL("../src/features/Dashboard/FamilyDashboard/components/FamilyQuickActionsCard.tsx", import.meta.url)).text(),
+    ]);
+
+    expect(attentionSource).toContain("<DashboardAttentionCard");
+    expect(attentionSource).toContain('href: "/orders"');
+    expect(quickActionsSource).toContain("<DashboardQuickActionsCard");
+    for (const href of ["/products", "/orders", "/children", "/notifications"]) {
+      expect(quickActionsSource).toContain(`href: "${href}"`);
+    }
+    for (const forbiddenHref of ["/contribution", "/applicants", "/operator/families"]) {
+      expect(attentionSource).not.toContain(forbiddenHref);
+      expect(quickActionsSource).not.toContain(forbiddenHref);
+    }
   });
 
   test("uses icon-backed feedback states for empty dashboard and overview cards", async () => {

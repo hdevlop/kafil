@@ -62,28 +62,12 @@ export class ContributionService {
    * One page of the contributions this principal may read, with the result
    * total for its own scope.
    *
-   * Each branch counts through the same scope it lists through, so a family
-   * never learns how many contributions exist beyond its own and a sponsor
-   * never learns how many exist beyond theirs. A shared total here would leak
-   * the size of the whole ledger to every reader of a slice of it.
+   * The sponsor branch counts through the same scope it lists through, so a
+   * sponsor never learns how many contributions exist beyond theirs. A shared
+   * total here would leak the size of the whole ledger to a scoped reader.
    */
   async listForPrincipal(userId: string, role: string, query: ContributionListQuery) {
     const parsed = contributionListQuery.parse(query ?? {});
-    if (role === "family") {
-      if (parsed.familyProfileId) {
-        HttpError.forbidden("Family contribution scope cannot be selected by the client");
-      }
-      const scope = {
-        status: parsed.status,
-        search: parsed.search,
-        paymentMethod: parsed.paymentMethod,
-      };
-      const [rows, total] = await Promise.all([
-        this.contributions.listFamily(userId, parsed.limit, parsed.offset, scope),
-        this.contributions.countFamily(userId, scope),
-      ]);
-      return listPage(rows, { limit: parsed.limit, offset: parsed.offset, total });
-    }
     if (role === "sponsor") {
       if (parsed.familyProfileId) {
         HttpError.forbidden("Sponsor contribution scope cannot be selected by the client");
@@ -119,12 +103,7 @@ export class ContributionService {
     return this.validator.ensureContributionExists(id);
   }
 
-async getForPrincipal(id: string, userId: string, role: string) {
-    if (role === "family") {
-      const contribution = await this.contributions.findFamilyById(id, userId);
-      if (!contribution) HttpError.notFound("Contribution not found");
-      return contribution;
-    }
+  async getForPrincipal(id: string, userId: string, role: string) {
     if (role === "sponsor") {
       const contribution = await this.contributions.findOwnById(id, userId);
       if (!contribution) HttpError.notFound("Contribution not found");

@@ -78,10 +78,11 @@ export function FamilyDashboardSkeleton({ loadingLabel }: Readonly<{ loadingLabe
         <NGridItem span={1} xlSpan={6}><ChartSkeletonCard loadingLabel={loadingLabel} variant="bar" /></NGridItem>
         <NGridItem span={1} xlSpan={3}><ChartSkeletonCard loadingLabel={loadingLabel} variant="pie" /></NGridItem>
       </NGrid>
-      <NGrid className="flex-1" cols={1} lgCols={3}>
+      <NGrid className="flex-1" cols={1} lgCols={2} xlCols={4}>
         <ChartSkeletonCard loadingLabel={loadingLabel} variant="status" />
-        <ListSkeletonCard loadingLabel={loadingLabel} />
-        <ListSkeletonCard loadingLabel={loadingLabel} />
+        {Array.from({ length: 3 }, (_, index) => (
+          <ListSkeletonCard key={index} loadingLabel={loadingLabel} />
+        ))}
       </NGrid>
     </NPageLayout>
   );

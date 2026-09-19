@@ -19,6 +19,7 @@ import {
 } from "../orders/orderSchema";
 import { dominantOrderCategoryField } from "../orders/orderQueries";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
+import { familyVisibleSponsorName } from "../sponsors/sponsorNameProjection";
 import { staffFunctions, staffProfiles } from "../staff/staffSchema";
 import { supportAssignments } from "../supportAssignments/supportAssignmentSchema";
 
@@ -323,8 +324,8 @@ export class DashboardRepository {
     return this.db
       .select({
         id: contributions.id,
-        name: usersTable.name,
-        image: usersTable.image,
+        name: familyVisibleSponsorName,
+        image: sql<string | null>`null`,
         gender: sponsorProfiles.gender,
         status: contributions.status,
         amountMinor: contributions.amountMinor,

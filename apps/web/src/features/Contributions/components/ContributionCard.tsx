@@ -18,6 +18,7 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useTranslation } from "najm-i18n/react";
+import { familySponsorName } from "@/lib/familySponsorName";
 import { useKafilRole } from "@/shared/Authorization";
 
 export interface ContributionCardData {
@@ -40,18 +41,24 @@ export function ContributionCard({
 }: Readonly<{ data: ContributionCardData }>) {
   const { t } = useTranslation();
   const fmt = useNajmFormat();
-  const { isExactSponsor } = useKafilRole();
+  const { isExactFamily, isExactSponsor } = useKafilRole();
+  const rawSponsorName = isExactSponsor
+    ? t("common.you")
+    : data.sponsorName || t("operator.contributions.sponsor");
+  const sponsorName = isExactFamily
+    ? familySponsorName(data.sponsorName) || t("operator.contributions.sponsor")
+    : rawSponsorName;
   const isPending = data.status === "pending";
   return (
     <NCard
       embedded
-      title={isExactSponsor ? t("common.you") : data.sponsorName}
+      title={sponsorName}
       description={fmt.money(data.amountMinor)}
     >
       <NCardMedia variant="avatar" placement="header" size="sm">
         <NAvatar
-          src={getPersonImage({ image: data.sponsorImage ?? null, role: "adult", gender: data.sponsorGender ?? null })}
-          alt={data.sponsorName ?? t("common.you")}
+          src={getPersonImage({ image: isExactFamily ? null : data.sponsorImage ?? null, role: "adult", gender: data.sponsorGender ?? null })}
+          alt={sponsorName}
           size="xl"
           classNames={{ avatar: "bg-muted" }}
         />

@@ -10,6 +10,7 @@ import {
 import { getPersonImage } from "najm-kit/person-images";
 
 import { useTranslation } from "najm-i18n/react";
+import { familySponsorName } from "@/lib/familySponsorName";
 
 import type { ContributionAudience, ContributionListRecord } from "../types";
 
@@ -29,14 +30,17 @@ export function useContributionsTableColumns(
         header: t("operator.assignments.sponsor"),
         cell: ({ row }) => {
           const record = row.original;
-          const sponsorName =
+          const rawSponsorName =
             "sponsorName" in record && record.sponsorName
               ? record.sponsorName
               : audience === "sponsor"
                 ? t("common.you")
-                : "";
+                : t("operator.contributions.sponsor");
+          const sponsorName = audience === "family"
+            ? familySponsorName("sponsorName" in record ? record.sponsorName : null) || t("operator.contributions.sponsor")
+            : rawSponsorName;
           const sponsorImage =
-            "sponsorImage" in record ? record.sponsorImage ?? null : null;
+            audience !== "family" && "sponsorImage" in record ? record.sponsorImage ?? null : null;
           const sponsorGender =
             "sponsorGender" in record ? record.sponsorGender ?? null : null;
           return (

@@ -52,8 +52,8 @@ describe("root PLAN shared UI contracts", () => {
     // server that fills it.
     expect(api).toContain('api.getPage<TRecord>("/contributions"');
     expect(service).toContain("this.contributions.count(filters)");
-    expect(service).toContain("this.contributions.countFamily(userId, scope)");
     expect(service).toContain("this.contributions.countOwn(userId, scope)");
+    expect(service).not.toContain('role === "family"');
 
     // The probe request that used to stand in for a total is gone.
     expect(api).not.toContain("offset: query.offset + query.limit");

@@ -179,7 +179,6 @@ export function AdminDashboardPage() {
         <NGridItem span={1} xlSpan={3}>
           <QuickActionsCard />
         </NGridItem>
-        
       </NGrid>
     </NPageLayout>
   );

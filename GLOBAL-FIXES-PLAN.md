@@ -2,7 +2,7 @@
 
 Date: **2026-09-19**
 
-Status: **Fixes 1, 2, 3, and 4 are implemented. Source and focused tests pass;
+Status: **Fixes 1, 2, 3, 4, and 5 are implemented. Source and focused tests pass;
 the repository gate result is recorded per fix. Fixes 1-3 previously passed the
 repository gate, and `db:generate` reported no schema change. Automated browser
 acceptance has not been run: the user verified the Delivery layout manually and
@@ -54,6 +54,7 @@ Before implementing any fix:
 | 2 | Keep the Delivery map date controls on the same header row as the card title | Implemented; focused tests and root gate pass | Specs written; automated run not performed | Not deployed |
 | 3 | Put Delivery statistics first, then pair the map and Scheduled deliveries in a 60/40 workspace | Implemented; focused tests and root gate pass | Specs written; manual user check of the stats-first 60/40 layout; automated run not performed | Not deployed |
 | 4 | Reorder the Delivery order sheet and remove redundant status/package details | Implemented; focused test and typecheck pass | Automated run not performed | Not deployed |
+| 5 | Remove Family contribution/sponsor visibility and replace the dashboard card with Family-safe attention and quick actions | Implemented; focused web/server/seed tests pass | Not run by explicit user instruction | Pending deployment |
 
 Deviation from this plan, on explicit user instruction: section 24.4 asked the
 Scheduled deliveries card to take its natural content height. The user reviewed
@@ -1285,7 +1286,51 @@ Do not change workflow derivation, package-count APIs, translations, order
 summary content for other roles, or any backend authorization as part of this
 fix. Do not commit, push, or deploy without separate authorization.
 
-## 35. Template for the next fix
+# Fix 5 - Family contribution privacy and dashboard actions
+
+## 35. User-visible outcome
+
+Family accounts no longer receive contribution records, sponsor names, sponsor
+images, the Contributions route, navigation item, or the Recent sponsors
+dashboard card. The dashboard replaces that card with Family-safe Issues /
+Attention and Quick actions cards limited to Orders, Products, Children, and
+Notifications. The top Available statistic is masked as `********`.
+
+## 36. Authorization and implementation boundary
+
+- Remove Family from the contribution-reader and sponsor-image-viewer roles and
+  from the seeded `read:contributions` grant.
+- Deny Family contribution list/detail reads before repository access.
+- Remove recent sponsor contributions from the Family dashboard response and
+  frontend type.
+- Keep Admin, Operator, and Sponsor contribution behavior unchanged.
+- Keep operator dashboard attention/actions unchanged.
+- Do not expose contribution, applicant, operator-family, or sponsor routes
+  through the new Family quick actions.
+- No schema, migration, storage, or financial-ledger behavior changes.
+
+## 37. Verification and acceptance
+
+Focused non-browser evidence:
+
+- web dashboard, privacy fallback, and shared-plan contracts: 29 passed;
+- server contribution, dashboard, and image-access contracts: 36 passed; and
+- seed authorization contracts: 3 passed.
+
+Local lint and production build were skipped on explicit user instruction.
+The GitHub publication workflow remains responsible for lint, typecheck, full
+tests, production build, image publication, and deployment. Browser tests were
+explicitly excluded and must not be claimed.
+
+## 38. Rollback and out of scope
+
+Rollback restores the prior Family contribution grant, route/navigation,
+family-owned contribution policy, sponsor-image relationship check, dashboard
+response/card, and tests together. Do not roll back Admin, Operator, or Sponsor
+contribution access independently. Browser acceptance and production visual
+acceptance remain outside this publication request.
+
+## 39. Template for the next fix
 
 Append each future fix with these headings:
 

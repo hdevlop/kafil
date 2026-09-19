@@ -260,7 +260,7 @@ class SponsorImageViewerRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR, ROLES.ADMIN] },
+      { allowedRoles: [ROLES.OPERATOR, ROLES.SPONSOR, ROLES.ADMIN] },
       user,
       context,
     );
@@ -293,7 +293,7 @@ class ContributionReaderRoleGuard {
 
   canActivate(@User() user?: KafilAuthPrincipal, @Ctx() context?: KafilGuardContext) {
     return this.guard.canActivate(
-      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.FAMILY, ROLES.SPONSOR] },
+      { allowedRoles: [ROLES.ADMIN, ROLES.OPERATOR, ROLES.SPONSOR] },
       user, context,
     );
   }

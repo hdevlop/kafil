@@ -111,7 +111,6 @@ expect(AUTH_ROLE_PERMISSIONS.operator).not.toContain("delete:catalog");
       "read:families",
       "read:children",
       "read:budgets",
-      "read:contributions",
       "read:notifications",
       "update:notifications",
     ]);

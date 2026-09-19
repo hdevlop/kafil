@@ -19,6 +19,7 @@ import { getPersonImage } from "najm-kit/person-images";
 import { useTranslation } from "najm-i18n/react";
 import { NNextImage } from "najm-kit/next";
 import { useKafilRole } from "@/shared/Authorization";
+import { familySponsorName } from "@/lib/familySponsorName";
 
 import type { ContributionListRecord, ContributionRecord } from "../types";
 
@@ -72,7 +73,7 @@ export function ContributionDetailsSheet({
 export function ContributionDetails({ contribution }: Readonly<{ contribution: ContributionListRecord }>) {
   const { t } = useTranslation();
   const fmt = useNajmFormat();
-  const { isExactSponsor } = useKafilRole();
+  const { isExactFamily, isExactSponsor } = useKafilRole();
   const [nowMs, setNowMs] = useState<number | null>(null);
 
   useEffect(() => {
@@ -87,8 +88,13 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
   const isExpired = contribution.status === "expired" ||
     (isPending && Boolean(contribution.expiresAt) && nowMs !== null && new Date(contribution.expiresAt!).getTime() <= nowMs);
   const visibleStatus = isExpired && isPending ? "expired" : contribution.status;
-  const sponsorName =
-    "sponsorName" in contribution ? contribution.sponsorName : t("common.you");
+  const rawSponsorName =
+    ("sponsorName" in contribution && contribution.sponsorName)
+      ? contribution.sponsorName
+      : isExactSponsor ? t("common.you") : t("operator.contributions.sponsor");
+  const sponsorName = isExactFamily
+    ? familySponsorName("sponsorName" in contribution ? contribution.sponsorName : null) || t("operator.contributions.sponsor")
+    : rawSponsorName;
   const sponsorImage =
     "sponsorImage" in contribution ? contribution.sponsorImage : null;
   const sponsorGender =
@@ -146,7 +152,7 @@ export function ContributionDetails({ contribution }: Readonly<{ contribution: C
       >
         <NCardMedia variant="avatar" placement="header" size="sm">
           <NAvatar
-            src={getPersonImage({ image: sponsorImage, role: "adult", gender: sponsorGender })}
+            src={getPersonImage({ image: isExactFamily ? null : sponsorImage, role: "adult", gender: sponsorGender })}
             alt={sponsorName}
             size="xl"
             classNames={{ avatar: "bg-muted" }}

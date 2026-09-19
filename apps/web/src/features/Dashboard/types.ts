@@ -171,16 +171,6 @@ export interface FamilyDashboardData {
     dominantCategoryName: string | null;
     dominantCategoryImage: string | null;
   }>;
-  recentSponsorContributions: Array<{
-    id: string;
-    name: string;
-    image: string | null;
-    gender: "F" | "M" | null;
-    status: "pending" | "validated" | "rejected" | "refunded" | "expired";
-    amountMinor: number;
-    submittedAt: string;
-    paidAt: string | null;
-  }>;
 }
 
 

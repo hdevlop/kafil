@@ -108,11 +108,11 @@ describe("Phase 3 contribution contracts", () => {
     ]);
   });
 
-  it("scopes family reads by authenticated ownership and returns only safe fields", async () => {
+  it("denies family contribution reads before repository access", async () => {
     const calls: unknown[][] = [];
     const safeContribution = {
       id: contributionId,
-      sponsorName: "Sponsor One",
+      sponsorName: "Abderrahman ***",
       sponsorImage: null,
       sponsorGender: "M" as const,
       amountMinor: 500,
@@ -153,25 +153,17 @@ describe("Phase 3 contribution contracts", () => {
       {} as never,
     );
 
-    const familyPage = await service.listForPrincipal("family-user", "family", {
+    await expect(service.listForPrincipal("family-user", "family", {
       limit: 25,
       offset: 0,
       status: "validated",
-    });
-    expect(familyPage.data).toEqual([safeContribution]);
-    // The total is counted through the family's own scope, so it describes the
-    // rows this family may read and never the size of the whole ledger.
-    expect(familyPage.pagination).toEqual({ page: 1, limit: 25, total: 1 });
+    })).rejects.toThrow("Contribution access denied");
     await expect(service.getForPrincipal(contributionId, "family-user", "family"))
-      .resolves.toEqual(safeContribution);
-    expect(calls).toEqual([
-      ["listFamily", "family-user", 25, 0, { status: "validated" }],
-      ["countFamily", "family-user", { status: "validated" }],
-      ["findFamilyById", contributionId, "family-user"],
-    ]);
+      .rejects.toThrow("Contribution access denied");
+    expect(calls).toEqual([]);
     await expect(service.listForPrincipal("family-user", "family", {
       familyProfileId: householdId,
-    })).rejects.toThrow("Family contribution scope cannot be selected by the client");
+    })).rejects.toThrow("Contribution access denied");
     expect(Object.keys(familyContributionSelection)).toEqual([
       "id",
       "sponsorName",
@@ -189,6 +181,20 @@ describe("Phase 3 contribution contracts", () => {
       "rejectedAt",
       "createdAt",
     ]);
+
+    const database = drizzle(
+      new pg.Pool({ connectionString: "postgresql://localhost/not-used" }),
+    );
+    const repository = new ContributionRepository();
+    Object.assign(repository, { db: database });
+    const familyQuery = repository.listFamily("family-user", 25, 0, { search: "Abderrahman" }).toSQL();
+    expect(familyQuery.sql).toContain("regexp_split_to_array(btrim(");
+    expect(familyQuery.sql).toContain("[1]");
+    expect(familyQuery.sql).toContain("[1], '') || ' ***'");
+    expect(familyQuery.sql).not.toContain('"users"."image"');
+    expect(familyQuery.sql).toContain("ilike");
+    expect(familyQuery.params).toContain("%Abderrahman%");
+    await database.$client.end();
   });
 
   it("keeps sponsor contribution rows owner-scoped with safe shared-table fields", async () => {

@@ -345,16 +345,6 @@ describe("Phase 7 dashboard report boundaries", () => {
         dominantCategoryName: "Fresh Produce",
         dominantCategoryImage: "/api/category-images/files/serve/fresh-produce.webp",
       }],
-      familyRecentSponsorContributions: async () => [{
-        id: "contribution-1",
-        name: "Sponsor One",
-        image: null,
-        gender: "F",
-        status: "pending",
-        amountMinor: "700000",
-        submittedAt: new Date("2026-07-10"),
-        paidAt: null,
-      }],
     } as unknown as DashboardRepository);
 
     const result = await dashboard.getFamily("family-user");
@@ -368,16 +358,7 @@ describe("Phase 7 dashboard report boundaries", () => {
       dominantCategoryName: "Fresh Produce",
       dominantCategoryImage: "/api/category-images/files/serve/fresh-produce.webp",
     }]);
-    expect(result.recentSponsorContributions).toEqual([{
-      id: "contribution-1",
-      name: "Sponsor One",
-      image: null,
-      gender: "F",
-      status: "pending",
-      amountMinor: 700000,
-      submittedAt: new Date("2026-07-10"),
-      paidAt: null,
-    }]);
+    expect(result).not.toHaveProperty("recentSponsorContributions");
   });
 
   it("returns the family's latest sponsor contributions with their statuses", () => {
@@ -389,6 +370,9 @@ describe("Phase 7 dashboard report boundaries", () => {
     ).toSQL();
 
     expect(query.sql).toContain('"contributions"."family_profile_id" = $1');
+    expect(query.sql).toContain("regexp_split_to_array(btrim(");
+    expect(query.sql).toContain("[1], '') || ' ***'");
+    expect(query.sql).not.toContain('"users"."image"');
     expect(query.sql).toContain('"contributions"."status"');
     expect(query.sql).toContain('"contributions"."amount_minor"');
     expect(query.sql).toContain('order by "contributions"."submitted_at" desc');
