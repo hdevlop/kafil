@@ -1108,7 +1108,15 @@ test.describe.serial("connected four-account acceptance", () => {
     await dialog.getByLabel(/CIN/i).fill(familyCin);
     await dialog.getByLabel(/Email address|Email|E-mail|البريد الإلكتروني/i).fill(familyEmail);
     await selectDate(adminPage, dialog, "1985-04-12");
-    await dialog.getByLabel(/Phone|Téléphone|الهاتف/i).fill(familyPhone);
+    const householdPhone = dialog.getByLabel(
+      /Household phone|Téléphone du foyer|هاتف الأسرة|Teléfono del hogar/i,
+    );
+    await householdPhone.click();
+    await householdPhone.press("End");
+    await adminPage.keyboard.type(familyPhone.replace(/^\+212/, ""));
+    expect(
+      (await householdPhone.inputValue()).replace(/[\s().-]+/g, ""),
+    ).toBe(familyPhone);
     await dialog.getByRole("button", { name: /Next|Continuer|التالي/i }).click();
 
     await dialog.getByLabel(/Housing situation|Situation de logement|الحالة السكنية/i).click();

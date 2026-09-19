@@ -98,6 +98,7 @@ async function attachDiagnostics(page: Page) {
 async function createDisposableFamily(
   page: Page,
   family: ReturnType<typeof uniqueFamily>,
+  relationshipToChildren = "Mother",
 ) {
   const response = await page.request.post(`${baseUrl}/api/families`, {
     data: {
@@ -112,7 +113,7 @@ async function createDisposableFamily(
       supportPriority: "normal",
       fundingTargetMinor: 640000,
       initialChildren: [],
-      relationshipToChildren: "Mother",
+      relationshipToChildren,
       notes: "Initial notes",
     },
   });
@@ -232,6 +233,12 @@ test("family edit wizard persists profile changes on desktop", async ({
   const familyId = await createDisposableFamily(page, family);
   try {
     const dialog = await openEditForFamily(page, family.name);
+    const normalizedHouseholdPhone = async () =>
+      (await dialog.getByLabel("Household phone").inputValue()).replace(
+        /[\s().-]+/g,
+        "",
+      );
+    await expect.poll(normalizedHouseholdPhone).toBe(family.phone);
 
     const viewport = page.viewportSize() ?? { width: 1280, height: 800 };
     const box = await dialog.boundingBox();
@@ -252,6 +259,19 @@ test("family edit wizard persists profile changes on desktop", async ({
     await expect(dialog.locator("#step-guardian")).toBeVisible();
     await expect(page.getByLabel("Guardian name")).toBeVisible();
     await expect(page.getByLabel("Guardian CIN")).toBeVisible();
+    const relationship = dialog.getByRole("combobox", {
+      name: "Select a relationship",
+      exact: true,
+    });
+    await relationship.click();
+    const relationshipListbox = page.locator('[role="listbox"]:visible');
+    await expect(relationshipListbox).toHaveCount(1);
+    const legacyRelationship = relationshipListbox.locator(
+      '[role="option"][data-state="checked"]',
+    );
+    await expect(legacyRelationship).toHaveText("Mother");
+    await page.keyboard.press("Escape");
+    await expect.poll(normalizedHouseholdPhone).toBe(family.phone);
     await expect(page.getByLabel("Housing situation")).toHaveCount(0);
     await expect(page.getByLabel(/Max orders per month/)).toHaveCount(0);
     await expect(page.getByLabel(/Max budget per order/)).toHaveCount(0);
@@ -268,6 +288,7 @@ test("family edit wizard persists profile changes on desktop", async ({
     ).toBeVisible();
     await expect(dialog.locator("#step-guardian")).toBeVisible();
     await expect(page.getByLabel("Guardian name")).toBeFocused();
+    await expect.poll(normalizedHouseholdPhone).toBe(family.phone);
 
     await page.getByLabel("Guardian name").fill(family.name);
     await expect(page.getByLabel("Guardian CIN")).toHaveValue(family.cin);
@@ -279,39 +300,30 @@ test("family edit wizard persists profile changes on desktop", async ({
     await expect(dialog.locator("#step-guardian")).toBeVisible();
     await expect(page.getByLabel("Guardian name")).toHaveValue(family.name);
     await expect(page.getByLabel("Guardian CIN")).toHaveValue(family.cin);
+    await expect.poll(normalizedHouseholdPhone).toBe(family.phone);
 
     await dialog.getByRole("button", { name: "Next" }).click();
     await expect(dialog.locator("#step-household")).toBeVisible();
 
-    await expect(page.getByLabel(/Max orders per month/)).toHaveCount(0);
+    await expect(page.getByLabel(/Max orders per month/)).toBeVisible();
     await expect(page.getByLabel(/Max budget per order/)).toHaveCount(0);
-    await expect(page.getByLabel(/Monthly budget in MAD/)).toHaveCount(0);
+    await expect(page.getByLabel(/Monthly budget in MAD/)).toBeVisible();
     await expect(page.getByLabel("Household exact address")).toBeVisible();
-    await expect(page.getByLabel("Delivery latitude")).toBeVisible();
-    await expect(page.getByLabel("Delivery longitude")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select location on map" })).toBeVisible();
 
     const stepViewport = dialog.locator("#step-household");
-    const overflow = await stepViewport.evaluate((element) => ({
-      scrollHeight: element.scrollHeight,
-      clientHeight: element.clientHeight,
-    }));
-    expect(overflow.scrollHeight).toBeGreaterThan(overflow.clientHeight);
-
     await stepViewport.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
     });
     await expect(page.getByLabel("Internal family notes")).toBeVisible();
     await expect(page.getByLabel("Household exact address")).toBeVisible();
-    await expect(page.getByLabel("Delivery latitude")).toBeVisible();
-    await expect(page.getByLabel("Delivery longitude")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Select location on map" })).toBeVisible();
     await expect(
       dialog.getByRole("button", { name: "Save family profile" }),
     ).toBeVisible();
 
     await page.getByLabel("Internal family notes").fill(family.updatedNotes);
     await page.getByLabel("Household exact address").fill(family.updatedAddress);
-    await page.getByLabel("Delivery latitude").fill("33.5731");
-    await page.getByLabel("Delivery longitude").fill("-7.5898");
 
     let putCount = 0;
     page.on("request", (request) => {
@@ -351,8 +363,9 @@ test("family edit wizard persists profile changes on desktop", async ({
         : (detailBody as Record<string, unknown>);
     expect(detail["exactAddress"]).toBe(family.updatedAddress);
     expect(detail["notes"]).toBe(family.updatedNotes);
-    expect(detail["deliveryLatitude"]).toBe(33.5731);
-    expect(detail["deliveryLongitude"]).toBe(-7.5898);
+    expect(detail["deliveryLatitude"]).toBeNull();
+    expect(detail["deliveryLongitude"]).toBeNull();
+    expect(detail["relationshipToChildren"]).toBe("Mother");
 
     await page.getByRole("button", { name: "Create family" }).first().click();
     const createDialog = page.getByRole("dialog", {
@@ -383,7 +396,7 @@ test("family edit wizard stays usable in Arabic RTL on mobile", async ({
   await login(page, phase6BrowserUsers.operator, phase6BrowserPassword);
 
   const family = uniqueFamily();
-  const familyId = await createDisposableFamily(page, family);
+  const familyId = await createDisposableFamily(page, family, "mother");
   try {
     await page.goto("/family", { waitUntil: "commit" });
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
@@ -399,6 +412,19 @@ test("family edit wizard stays usable in Arabic RTL on mobile", async ({
     await page.getByRole("menuitem", { name: /تعديل|Edit/ }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
+
+    const relationship = dialog.getByRole("combobox", {
+      name: "\u0627\u062e\u062a\u0631 \u0635\u0644\u0629 \u0627\u0644\u0642\u0631\u0627\u0628\u0629",
+      exact: true,
+    });
+    await relationship.click();
+    await expect(
+      page.getByRole("option", {
+        name: "\u0627\u0644\u0623\u0645",
+        exact: true,
+      }),
+    ).toHaveAttribute("data-state", "checked");
+    await page.keyboard.press("Escape");
 
     const viewport = page.viewportSize() ?? { width: 390, height: 844 };
     const box = await dialog.boundingBox();

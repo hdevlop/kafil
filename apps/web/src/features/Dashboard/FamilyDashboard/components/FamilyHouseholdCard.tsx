@@ -11,6 +11,7 @@ import {
 
 
 import { useTranslation } from "najm-i18n/react";
+import { familyRelationshipLabel } from "@/features/Families/config/relationshipOptions";
 import type { FamilyDashboardProfile } from "../types";
 
 export function FamilyHouseholdCard({
@@ -43,7 +44,9 @@ export function FamilyHouseholdCard({
             items={[
               {
                 label: t("dashboard.family.relationshipLabel"),
-                value: profile.relationshipToChildren || t("dashboard.family.notProvided"),
+                value:
+                  familyRelationshipLabel(profile.relationshipToChildren, t) ??
+                  t("dashboard.family.notProvided"),
               },
             ]}
           />

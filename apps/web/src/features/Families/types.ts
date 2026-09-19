@@ -11,11 +11,23 @@ export const FAMILY_STORED_HOUSING_SITUATIONS = [
   "unknown",
 ] as const;
 export const FAMILY_SUPPORT_PRIORITIES = ["normal", "high", "urgent"] as const;
+export const FAMILY_RELATIONSHIPS = [
+  "mother",
+  "father",
+  "grandmother",
+  "grandfather",
+  "aunt",
+  "uncle",
+  "sibling",
+  "legalGuardian",
+  "other",
+] as const;
 
 export type FamilyHousingSituation = (typeof FAMILY_HOUSING_SITUATIONS)[number];
 export type FamilyStoredHousingSituation =
   (typeof FAMILY_STORED_HOUSING_SITUATIONS)[number];
 export type FamilySupportPriority = (typeof FAMILY_SUPPORT_PRIORITIES)[number];
+export type FamilyRelationship = (typeof FAMILY_RELATIONSHIPS)[number];
 
 export interface FamilyRecord {
   id: string;

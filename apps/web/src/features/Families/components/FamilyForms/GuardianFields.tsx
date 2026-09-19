@@ -2,8 +2,10 @@
 
 import { UserRoundPlus } from "lucide-react";
 import { FormInput, NFormSectionHeader } from "najm-kit";
+import { useWatch } from "react-hook-form";
 
 import { useTranslation } from "najm-i18n/react";
+import { familyRelationshipItems } from "../../config/relationshipOptions";
 
 export function FamilyGuardianFields({
   disabled,
@@ -21,6 +23,10 @@ export function FamilyGuardianFields({
   showSectionHeader?: boolean;
 }>) {
   const { t } = useTranslation();
+  const relationship = useWatch({ name: "relationshipToChildren" }) as
+    | string
+    | undefined;
+  const relationshipItems = familyRelationshipItems(relationship, t);
 
   return (
     <div className="space-y-4">
@@ -83,16 +89,18 @@ export function FamilyGuardianFields({
         />
         <FormInput
           name="relationshipToChildren"
-          type="text"
+          type="select"
           formLabel={t("operator.families.relationship")}
-          placeholder={t("operator.families.relationshipExample")}
+          placeholder={t("operator.families.chooseRelationship")}
+          items={relationshipItems}
           icon="HeartHandshake"
         />
         <FormInput
           name="phone"
-          type="text"
+          type="phone"
           formLabel={t("operator.families.householdPhone")}
-          placeholder={t("operator.families.optional")}
+          placeholder={t("operator.families.phoneExample")}
+          defaultCountry="ma"
           icon="Phone"
           required
         />

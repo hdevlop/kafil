@@ -606,7 +606,15 @@ test.describe.serial("remote auth lifecycle", () => {
     await dialog.getByLabel(/CIN/i).fill(familyCin);
     await dialog.getByLabel(/^Email\s*\*?$/).fill(familyEmail);
     await selectDate(adminPage, dialog, "1985-04-12");
-    await dialog.getByLabel(/^Household phone\s*\*?$/).fill(familyPhone);
+    const householdPhone = dialog.getByLabel("Household phone", {
+      exact: true,
+    });
+    await householdPhone.click();
+    await householdPhone.press("End");
+    await adminPage.keyboard.type(familyPhone.replace(/^\+212/, ""));
+    expect(
+      (await householdPhone.inputValue()).replace(/[\s().-]+/g, ""),
+    ).toBe(familyPhone);
     await dialog.getByRole("button", { name: "Next", exact: true }).click();
     await dialog
       .getByRole("combobox", { name: "Choose a housing situation", exact: true })

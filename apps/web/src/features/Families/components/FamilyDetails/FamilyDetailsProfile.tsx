@@ -6,6 +6,7 @@ import { NDetailItem, NSection, useNajmFormat } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
 import { OnlySponsor, Operator } from "@/shared/Authorization";
 
+import { familyRelationshipLabel } from "../../config/relationshipOptions";
 import type { FamilyRecord } from "../../types";
 import {
   DETAIL_MAX_CHARS,
@@ -77,7 +78,7 @@ export function FamilyDetailsProfile({
           <NDetailItem
             label={t("operator.families.relationship")}
             maxChars={DETAIL_MAX_CHARS}
-            value={family.relationshipToChildren || notProvided}
+            value={familyRelationshipLabel(family.relationshipToChildren, t) ?? notProvided}
           />
           <NDetailItem
             label={t("operator.families.notes")}

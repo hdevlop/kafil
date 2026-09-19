@@ -977,6 +977,15 @@ describe("connected four-account remote runner", () => {
       expect(specSource).toContain(requiredLabelMatcher);
     }
 
+    // Najm Kit names the composite phone textbox from FormInput's form label.
+    // Keep real keystrokes because the control still reparses each keypress.
+    expect(specSource).not.toContain(
+      'getByPlaceholder("For example: +212 6 12 34 56 78"',
+    );
+    expect(specSource).toContain(
+      "await adminPage.keyboard.type(familyPhone.replace(",
+    );
+
     for (const staleExactSelector of [
       'getByLabel("Guardian name", { exact: true })',
       'getByLabel("Email", { exact: true })',

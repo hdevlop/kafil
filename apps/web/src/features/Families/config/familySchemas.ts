@@ -1,3 +1,4 @@
+import { normalizePhone } from "@kafil/server/phone";
 import { localDateInput } from "najm-kit/format";
 import { z } from "zod";
 
@@ -14,6 +15,20 @@ import {
 
 const optionalText = (maximum: number) =>
   z.string().trim().max(maximum).optional();
+
+// Runs the backend's own `normalizePhone` rather than a copy of it, so a value
+// the server would accept is never rejected here. That matters for the Moroccan
+// local form: the phone input emits E.164, but a row written before it did can
+// still hold `06...`, and a private rule would make that family uneditable.
+// The dial-code prefill alone still fails.
+const phoneField = z
+  .string()
+  .trim()
+  .max(40)
+  .refine(
+    (value) => normalizePhone(value) !== null,
+    "Enter a valid phone number with a country code",
+  );
 
 const positiveMadAmount = z
   .string()
@@ -48,7 +63,7 @@ const guardianFieldsSchema = z.object({
     .toUpperCase(),
   guardianDateOfBirth: z.iso.date("Enter the guardian's date of birth"),
   relationshipToChildren: optionalText(120),
-  phone: z.string().trim().min(1, "Enter a phone number").max(40),
+  phone: phoneField,
 });
 
 const optionalMadAmountInput = z

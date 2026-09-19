@@ -22,7 +22,7 @@
     "najm-database": "2.0.4",
     "najm-email": "2.0.4",
     "najm-i18n": "2.1.2",
-    "najm-kit": "2.16.4",
+    "najm-kit": "2.16.6",
     "najm-mcp": "2.1.2",
     "najm-next": "0.8.0",
     "najm-rate": "2.1.1",
@@ -85,7 +85,7 @@
     "@clack/prompts": "^1.7.0",
     "ioredis": "5.11.1",
     "najm-core": "^2.0.6",
-    "najm-kit": "2.16.4"
+    "najm-kit": "2.16.6"
   },
   "patchedDependencies": {
     "najm-email@2.0.4": "patches/najm-email@2.0.4.patch"

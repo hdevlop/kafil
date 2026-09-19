@@ -13,6 +13,7 @@ import { FundingProgressBar } from "@/shared/FundingProgressCard";
 import { useTranslation } from "najm-i18n/react";
 import { Operator } from "@/shared/Authorization";
 
+import { familyRelationshipLabel } from "../config/relationshipOptions";
 import type { FamilyRecord } from "../types";
 
 export function useFamiliesTableColumns() {
@@ -58,7 +59,9 @@ export function useFamiliesTableColumns() {
         accessorKey: "relationshipToChildren",
         header: t("operator.families.relationship"),
         cell: ({ getValue }) => (
-          <Operator fallback="—">{getValue<string | null>() || "—"}</Operator>
+          <Operator fallback="—">
+            {familyRelationshipLabel(getValue<string | null>(), t) ?? "—"}
+          </Operator>
         ),
         meta: {
           hiddenBelow: "lg",

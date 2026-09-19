@@ -14,6 +14,7 @@ import Link from "next/link";
 
 import { useTranslation } from "najm-i18n/react";
 
+import { familyRelationshipLabel } from "@/features/Families/config/relationshipOptions";
 import { parentGenderFromRelationship } from "../lib/parentGenderFromRelationship";
 import type { FamilyChildRecord, FamilyDashboardProfile } from "../types";
 
@@ -38,6 +39,10 @@ export function MyFamilyCard({
 }>) {
   const { t } = useTranslation();
   const fmt = useNajmFormat();
+  const relationship = familyRelationshipLabel(
+    profile.relationshipToChildren,
+    t,
+  );
 
   return (
     <NCard className="h-full" icon={UsersRound} title={t("dashboard.family.myFamily")}>
@@ -56,8 +61,8 @@ export function MyFamilyCard({
               gender: parentGenderFromRelationship(profile.relationshipToChildren),
             })}
             title={profile.name}
-            subtitle={profile.relationshipToChildren
-              ? `${t("dashboard.family.guardian")} · ${profile.relationshipToChildren}`
+            subtitle={relationship
+              ? `${t("dashboard.family.guardian")} · ${relationship}`
               : t("dashboard.family.guardian")}
             size="lg"
             className="min-w-0 flex-1"

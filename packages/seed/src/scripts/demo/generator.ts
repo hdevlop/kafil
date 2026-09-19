@@ -819,7 +819,7 @@ function family(
       ["normal", "high", "urgent"],
     ),
     phone: seedPhone(30, index),
-    relationshipToChildren: guardianGender === "F" ? "Mother" : "Father",
+    relationshipToChildren: guardianGender === "F" ? "mother" : "father",
     notes: "Generated Kafil demo family.",
     fundingTargetMinor: 700_000 + (index % 5) * 50_000,
     initialChildren: Array.from({ length: childCount }, (_, childIndex) =>

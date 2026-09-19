@@ -1606,7 +1606,13 @@ test.describe.serial("connected VPS acceptance", () => {
     await dialog.getByLabel(/CIN/i).fill(familyCin);
     await dialog.getByLabel(/^Email\s*\*?$/).fill(familyEmail);
     await selectDate(adminPage, dialog, "1985-04-12");
-    await dialog.getByLabel(/^Household phone\s*\*?$/).fill(familyPhone);
+    const householdPhone = dialog.getByLabel(/^Household phone\s*\*?$/);
+    await householdPhone.click();
+    await householdPhone.press("End");
+    await adminPage.keyboard.type(familyPhone.replace(/^\+212/, ""));
+    expect(
+      (await householdPhone.inputValue()).replace(/[\s().-]+/g, ""),
+    ).toBe(familyPhone);
     await dialog.getByRole("button", { name: "Next", exact: true }).click();
     await expect(dialog.locator("#step-household")).toBeVisible({ timeout: 5_000 });
 
