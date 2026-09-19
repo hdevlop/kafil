@@ -9,7 +9,7 @@ export function FamilyQuickActionsCard() {
   const { t } = useTranslation();
   const actions = [
     {
-      description: t("catalog.categoriesForHousehold"),
+      description: t("common.categoriesForHousehold"),
       href: "/products",
       icon: ShoppingBag,
       id: "browse-products",
