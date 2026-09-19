@@ -10,6 +10,11 @@ purpose-specific test documents under
 
 ## Active root plans
 
+- [`AUTH-ROLE-INTEGRITY-PLAN.md`](../../AUTH-ROLE-INTEGRITY-PLAN.md)
+  - repairs duplicate fixed-role rows and missing production grants without
+    losing users or custom permissions, makes Kafil seeding failure-safe, then
+    prevents recurrence through a separately released Najm Auth uniqueness
+    contract and a second Kafil migration/deployment boundary.
 - [`NAJM-QUERY-DX-PLAN.md`](../../NAJM-QUERY-DX-PLAN.md)
   - adds shared Najm Kit query keys, reads, commands, invalidation, feedback,
     and a School CRUD compatibility bridge; then removes duplicate Kafil and

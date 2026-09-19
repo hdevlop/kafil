@@ -1,3 +1,4 @@
+import { describeRepair } from "../authorization-reconciliation";
 import { printVerification, runSeedCommand } from "../run-seed";
 import { readSeedConfig } from "../seed-config";
 import { seedAuthentication } from "../seed-auth";
@@ -7,6 +8,7 @@ await runSeedCommand("Kafil admin and role seed", async () => {
   const {
     adminEmailChanged,
     adminPasswordChanged,
+    repair,
     result,
     verification,
   } = await seedAuthentication(config.adminEmail, config.adminPassword);
@@ -23,6 +25,7 @@ await runSeedCommand("Kafil admin and role seed", async () => {
       "Database credentials updated. Update your protected environment secret source before running a future non-interactive admin seed.",
     );
   }
+  console.log(`Authorization repair: ${describeRepair(repair)}.`);
   printVerification(verification);
 });
 

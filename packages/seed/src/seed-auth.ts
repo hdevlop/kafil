@@ -1,23 +1,29 @@
 import {
   db,
-  permissionsTable,
-  rolePermissionsTable,
   rolesTable,
   tokensTable,
   usersTable,
 } from "@kafil/server/database";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { EncryptionService, seedAuthData } from "najm-auth";
 
 import {
-  AUTH_PERMISSIONS,
-  AUTH_ROLE_PERMISSIONS,
-  AUTH_ROLES,
-  type AuthRoleName,
-} from "./auth-definitions";
+  reconcileAuthorizationSeed,
+  verifyAuthorizationSeed,
+  type AuthorizationReconciliationOptions,
+  type AuthorizationSeedVerification,
+} from "./authorization-reconciliation";
+import { AUTH_PERMISSIONS, AUTH_ROLES } from "./auth-definitions";
 import { reconcileAdminIdentity } from "./admin-identity";
+import { stableSeedId } from "./seed-ids";
 
-export interface AuthSeedVerification {
+export {
+  reconcileAuthorizationSeed,
+  verifyAuthorizationSeed,
+  type AuthorizationSeedVerification,
+};
+
+export interface AuthSeedVerification extends AuthorizationSeedVerification {
   admin: {
     email: string;
     emailVerified: boolean;
@@ -25,25 +31,21 @@ export interface AuthSeedVerification {
     role: "admin";
     status: "active";
   };
-  permissionCount: number;
-  roles: Array<{
-    name: AuthRoleName;
-    permissionCount: number;
-  }>;
 }
-
-export type AuthorizationSeedVerification = Pick<
-  AuthSeedVerification,
-  "permissionCount" | "roles"
->;
 
 export async function seedAuthentication(
   adminEmail: string,
   adminPassword: string,
-  options: { verbose?: boolean } = {},
+  options: {
+    reconciliation?: AuthorizationReconciliationOptions;
+    verbose?: boolean;
+  } = {},
 ) {
+  // Najm's auth seed is not transactional: a duplicate role discovered part-way
+  // through used to leave Admin reseeded and every other role stripped.
+  await reconcileAuthorizationSeed(options.reconciliation);
+
   const adminEmailChanged = await reconcileBootstrapAdminEmail(adminEmail);
-  await clearManagedRolePermissions();
 
   const result = await seedAuthData({
     adminEmail,
@@ -62,123 +64,18 @@ export async function seedAuthentication(
     adminEmail,
     adminPassword,
   );
-  await syncRolePermissions();
+
+  // Najm's seed grants Admin every permission it was handed; reconcile again so
+  // the final managed grants are exact.
+  const { repair } = await reconcileAuthorizationSeed(options.reconciliation);
 
   return {
     adminEmailChanged,
     adminPasswordChanged,
+    repair,
     result,
     verification: await verifyAuthenticationSeed(adminEmail),
   };
-}
-
-/**
- * Reconcile only code-managed authorization data.
- *
- * Deployment must not infer or mutate the bootstrap administrator identity:
- * production acceptance credentials may intentionally belong to a non-admin
- * account. Full setup continues to use seedAuthentication(), while releases
- * use this narrower, identity-free operation before replacing app processes.
- */
-export async function reconcileAuthorizationSeed() {
-  await db.transaction(async (tx) => {
-    await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtext('kafil:authorization-seed'))`,
-    );
-
-    const existingRoles = await tx
-      .select({ id: rolesTable.id, name: rolesTable.name })
-      .from(rolesTable)
-      .where(inArray(rolesTable.name, AUTH_ROLES.map((role) => role.name)));
-
-    for (const role of AUTH_ROLES) {
-      const matches = existingRoles.filter((row) => row.name === role.name);
-      if (matches.length > 1) {
-        throw new Error(
-          `Expected at most one role named '${role.name}', found ${matches.length}.`,
-        );
-      }
-
-      if (matches.length === 0) {
-        await tx.insert(rolesTable).values(role);
-      } else {
-        await tx
-          .update(rolesTable)
-          .set({ description: role.description })
-          .where(eq(rolesTable.id, matches[0]!.id));
-      }
-    }
-
-    for (const permission of AUTH_PERMISSIONS) {
-      await tx
-        .insert(permissionsTable)
-        .values({
-          id: stableSeedId("permission", permission.name),
-          ...permission,
-        })
-        .onConflictDoUpdate({
-          target: permissionsTable.name,
-          set: {
-            action: permission.action,
-            description: permission.description,
-            resource: permission.resource,
-          },
-        });
-    }
-
-    const roleRows = await tx
-      .select({ id: rolesTable.id, name: rolesTable.name })
-      .from(rolesTable)
-      .where(inArray(rolesTable.name, AUTH_ROLES.map((role) => role.name)));
-    const permissionRows = await tx
-      .select({ id: permissionsTable.id, name: permissionsTable.name })
-      .from(permissionsTable)
-      .where(
-        inArray(
-          permissionsTable.name,
-          AUTH_PERMISSIONS.map((permission) => permission.name),
-        ),
-      );
-    const rolesByName = uniqueRowsByName(
-      roleRows,
-      AUTH_ROLES.map((role) => role.name),
-      "role",
-    );
-    const permissionsByName = uniqueRowsByName(
-      permissionRows,
-      AUTH_PERMISSIONS.map((permission) => permission.name),
-      "permission",
-    );
-
-    await tx.delete(rolePermissionsTable).where(
-      and(
-        inArray(
-          rolePermissionsTable.roleId,
-          roleRows.map((role) => role.id),
-        ),
-        inArray(
-          rolePermissionsTable.permissionId,
-          permissionRows.map((permission) => permission.id),
-        ),
-      ),
-    );
-
-    for (const roleName of Object.keys(
-      AUTH_ROLE_PERMISSIONS,
-    ) as AuthRoleName[]) {
-      const permissionNames = AUTH_ROLE_PERMISSIONS[roleName];
-      if (permissionNames.length === 0) continue;
-
-      await tx.insert(rolePermissionsTable).values(
-        permissionNames.map((permissionName) => ({
-          permissionId: permissionsByName.get(permissionName)!.id,
-          roleId: rolesByName.get(roleName)!.id,
-        })),
-      );
-    }
-  });
-
-  return verifyAuthorizationSeed();
 }
 
 async function reconcileBootstrapAdminEmail(desiredEmail: string) {
@@ -297,104 +194,6 @@ async function syncAdminCredentials(adminEmail: string, adminPassword: string) {
   return !passwordMatches;
 }
 
-async function clearManagedRolePermissions() {
-  const roleRows = await db
-    .select({ id: rolesTable.id })
-    .from(rolesTable)
-    .where(inArray(rolesTable.name, AUTH_ROLES.map((role) => role.name)));
-  const permissionRows = await db
-    .select({ id: permissionsTable.id })
-    .from(permissionsTable)
-    .where(
-      inArray(
-        permissionsTable.name,
-        AUTH_PERMISSIONS.map((permission) => permission.name),
-      ),
-    );
-
-  if (roleRows.length > 0 && permissionRows.length > 0) {
-    await db
-      .delete(rolePermissionsTable)
-      .where(
-        and(
-          inArray(
-            rolePermissionsTable.roleId,
-            roleRows.map((role) => role.id),
-          ),
-          inArray(
-            rolePermissionsTable.permissionId,
-            permissionRows.map((permission) => permission.id),
-          ),
-        ),
-      );
-  }
-}
-
-export async function syncRolePermissions() {
-  const roleRows = await db
-    .select({
-      id: rolesTable.id,
-      name: rolesTable.name,
-    })
-    .from(rolesTable)
-    .where(inArray(rolesTable.name, AUTH_ROLES.map((role) => role.name)));
-  const permissionRows = await db
-    .select({
-      id: permissionsTable.id,
-      name: permissionsTable.name,
-    })
-    .from(permissionsTable)
-    .where(
-      inArray(
-        permissionsTable.name,
-        AUTH_PERMISSIONS.map((permission) => permission.name),
-      ),
-    );
-
-  const rolesByName = uniqueRowsByName(
-    roleRows,
-    AUTH_ROLES.map((role) => role.name),
-    "role",
-  );
-  const permissionsByName = uniqueRowsByName(
-    permissionRows,
-    AUTH_PERMISSIONS.map((permission) => permission.name),
-    "permission",
-  );
-
-  await db.transaction(async (tx) => {
-    for (const roleName of Object.keys(
-      AUTH_ROLE_PERMISSIONS,
-    ) as AuthRoleName[]) {
-      const role = rolesByName.get(roleName)!;
-      const permissionNames = AUTH_ROLE_PERMISSIONS[roleName];
-
-      await tx
-        .delete(rolePermissionsTable)
-        .where(
-          and(
-            eq(rolePermissionsTable.roleId, role.id),
-            inArray(
-              rolePermissionsTable.permissionId,
-              permissionNames.map(
-                (permissionName) => permissionsByName.get(permissionName)!.id,
-              ),
-            ),
-          ),
-        );
-
-      if (permissionNames.length > 0) {
-        await tx.insert(rolePermissionsTable).values(
-          permissionNames.map((permissionName) => ({
-            permissionId: permissionsByName.get(permissionName)!.id,
-            roleId: role.id,
-          })),
-        );
-      }
-    }
-  });
-}
-
 export async function verifyAuthenticationSeed(
   adminEmail: string,
 ): Promise<AuthSeedVerification> {
@@ -436,127 +235,4 @@ export async function verifyAuthenticationSeed(
     },
     ...authorization,
   };
-}
-
-export async function verifyAuthorizationSeed(): Promise<AuthorizationSeedVerification> {
-  const requiredRoleNames = AUTH_ROLES.map((role) => role.name);
-  const roleRows = await db
-    .select({
-      id: rolesTable.id,
-      name: rolesTable.name,
-    })
-    .from(rolesTable)
-    .where(inArray(rolesTable.name, requiredRoleNames));
-  const rolesByName = uniqueRowsByName(
-    roleRows,
-    requiredRoleNames,
-    "role",
-  );
-  const permissionRows = await db
-    .select({
-      id: permissionsTable.id,
-      name: permissionsTable.name,
-    })
-    .from(permissionsTable)
-    .where(
-      inArray(
-        permissionsTable.name,
-        AUTH_PERMISSIONS.map((permission) => permission.name),
-      ),
-    );
-  uniqueRowsByName(
-    permissionRows,
-    AUTH_PERMISSIONS.map((permission) => permission.name),
-    "permission",
-  );
-
-  const assignments = await db
-    .select({
-      permissionName: permissionsTable.name,
-      roleId: rolePermissionsTable.roleId,
-    })
-    .from(rolePermissionsTable)
-    .innerJoin(
-      permissionsTable,
-      eq(rolePermissionsTable.permissionId, permissionsTable.id),
-    )
-    .where(
-      and(
-        inArray(
-          rolePermissionsTable.roleId,
-          roleRows.map((role) => role.id),
-        ),
-        inArray(
-          permissionsTable.name,
-          AUTH_PERMISSIONS.map((permission) => permission.name),
-        ),
-      ),
-    );
-
-  const roles = requiredRoleNames.map((roleName) => {
-    const role = rolesByName.get(roleName)!;
-    const actualPermissions = assignments
-      .filter((assignment) => assignment.roleId === role.id)
-      .map((assignment) => assignment.permissionName)
-      .sort();
-    const expectedPermissions = [...AUTH_ROLE_PERMISSIONS[roleName]].sort();
-
-    if (
-      actualPermissions.length !== expectedPermissions.length ||
-      actualPermissions.some(
-        (permission, index) => permission !== expectedPermissions[index],
-      )
-    ) {
-      throw new Error(
-        `Role '${roleName}' permissions do not match the seed definition.`,
-      );
-    }
-
-    return {
-      name: roleName,
-      permissionCount: actualPermissions.length,
-    };
-  });
-
-  return {
-    permissionCount: permissionRows.length,
-    roles,
-  };
-}
-
-function uniqueRowsByName<TName extends string>(
-  rows: Array<{ id: string; name: string }>,
-  expectedNames: readonly TName[],
-  label: string,
-) {
-  const grouped = new Map<string, Array<{ id: string; name: string }>>();
-
-  for (const row of rows) {
-    const current = grouped.get(row.name) ?? [];
-    current.push(row);
-    grouped.set(row.name, current);
-  }
-
-  const result = new Map<TName, { id: string; name: string }>();
-  for (const name of expectedNames) {
-    const matches = grouped.get(name) ?? [];
-    if (matches.length !== 1) {
-      throw new Error(
-        `Expected exactly one ${label} named '${name}', found ${matches.length}.`,
-      );
-    }
-    result.set(name, matches[0]!);
-  }
-
-  return result;
-}
-
-function stableSeedId(prefix: string, value: string) {
-  const normalized = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 48);
-
-  return `${prefix}_${normalized || "item"}`;
 }

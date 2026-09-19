@@ -55,12 +55,17 @@ services:
 
   # Code-managed roles, permissions, and grants are deployment data, not
   # schema. This intentionally does not read or mutate an admin identity.
+  # Repairing a role does not rewrite tokens already issued, so this also
+  # invalidates the affected sessions - hence the Redis dependency. Backend
+  # network only: it serves no HTTP and must never join the frontend network.
   auth-reconcile:
     <<: *app
     profiles: [tools]
     restart: "no"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     command: ["bun", "run", "seed:reconcile-auth"]
     volumes: []

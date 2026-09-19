@@ -1,5 +1,6 @@
 import { clearSeedData, clearSeedStorage } from "./clear-seed-data";
 import { migrateDatabase } from "./migrate-database";
+import { describeRepair } from "./authorization-reconciliation";
 import { printVerification, runSeedCommand } from "./run-seed";
 import { readSeedConfig } from "./seed-config";
 import { seedAuthentication } from "./seed-auth";
@@ -21,6 +22,7 @@ await runSeedCommand("Kafil database setup", async () => {
   const {
     adminEmailChanged,
     adminPasswordChanged,
+    repair,
     result,
     verification,
   } = await seedAuthentication(config.adminEmail, config.adminPassword);
@@ -32,6 +34,7 @@ await runSeedCommand("Kafil database setup", async () => {
       ? "Admin credentials synchronized; existing sessions were revoked when credentials changed."
       : "Admin email and password already match.",
   );
+  console.log(`Authorization repair: ${describeRepair(repair)}.`);
   printVerification(verification);
 
   console.log("Seeding built-in theme presets...");

@@ -24,7 +24,8 @@
     "theme:backfill": "bun src/scripts/backfill-theme.ts",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "test:db": "bun --env-file=../../.env test test/authorization-reconciliation-database.test.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
@@ -35,6 +36,8 @@
     "najm-theme": "0.2.1"
   },
   "devDependencies": {
+    "@types/pg": "8.15.5",
+    "pg": "8.22.0",
     "zod": "4.4.3"
   }
 }

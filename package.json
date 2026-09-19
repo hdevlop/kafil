@@ -40,7 +40,7 @@
     "typecheck": "bun run --cwd apps/web typecheck && bun run --cwd packages/server typecheck && bun run --cwd packages/seed typecheck",
     "test": "bun run --cwd apps/web test && bun run --cwd packages/server test && bun run --cwd packages/seed test",
     "test:rate-proxy-acceptance": "bun scripts/runLocalRateProxyAcceptance.ts",
-    "test:db": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/server','test:db'],env:{...process.env,KAFIL_RUN_DB_INTEGRATION:'1'},stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
+    "test:db": "bun --env-file=.env -e \"const env={...process.env,KAFIL_RUN_DB_INTEGRATION:'1'}; for (const cwd of ['packages/server','packages/seed']) { const child=Bun.spawnSync({cmd:['bun','run','--cwd',cwd,'test:db'],env,stdout:'inherit',stderr:'inherit'}); if (child.exitCode!==0) process.exit(child.exitCode); }\"",
     "check": "bun run lint && bun run typecheck && bun run test && bun run build",
     "db:generate": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/server','db:generate'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
     "db:migrate": "bun --env-file=.env -e \"const child=Bun.spawnSync({cmd:['bun','run','--cwd','packages/server','db:migrate'],stdout:'inherit',stderr:'inherit'}); process.exit(child.exitCode);\"",
