@@ -27,9 +27,23 @@ export function printVerification(
     roles: Array<{ name: string; permissionCount: number }>;
   },
 ) {
-  console.log(`Admin: ${verification.admin.email}`);
-  console.log(`Permissions: ${verification.permissionCount}`);
-  for (const role of verification.roles) {
-    console.log(`Role ${role.name}: ${role.permissionCount} permissions`);
+  for (const line of verificationLines(verification)) {
+    console.log(line);
   }
+}
+
+export function verificationLines(
+  verification: {
+    admin: { email: string };
+    permissionCount: number;
+    roles: Array<{ name: string; permissionCount: number }>;
+  },
+) {
+  return [
+    "Admin: active verified admin",
+    `Permissions: ${verification.permissionCount}`,
+    ...verification.roles.map(
+      (role) => `Role ${role.name}: ${role.permissionCount} permissions`,
+    ),
+  ];
 }

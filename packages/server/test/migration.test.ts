@@ -618,6 +618,26 @@ it("adds assisted procurement, immutable purchases, and delivery without destruc
     );
   });
 
+  it("fails clearly on duplicate role names before adding role-name uniqueness", async () => {
+    const migration = await Bun.file(
+      join(migrationsDirectory, "0048_breezy_bloodscream.sql"),
+    ).text();
+
+    const precondition = migration.indexOf(
+      "Cannot create roles_name_unique; duplicate role names:",
+    );
+    const uniqueIndex = migration.indexOf(
+      'CREATE UNIQUE INDEX "roles_name_unique"',
+    );
+
+    expect(precondition).toBeGreaterThan(-1);
+    expect(uniqueIndex).toBeGreaterThan(precondition);
+    expect(migration).toContain('GROUP BY "name"');
+    expect(migration).toContain("HAVING count(*) > 1");
+    expect(migration).not.toContain('DELETE FROM "roles"');
+    expect(migration).not.toContain('UPDATE "roles"');
+  });
+
   it("prevents OAuth links from persisting for non-active identities", async () => {
     const migration = await Bun.file(
       join(migrationsDirectory, "0038_active_oauth_links.sql"),

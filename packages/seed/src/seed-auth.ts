@@ -148,7 +148,7 @@ async function syncAdminCredentials(adminEmail: string, adminPassword: string) {
     .where(eq(usersTable.email, adminEmail))
     .limit(1);
   if (!admin) {
-    throw new Error(`Seed admin '${adminEmail}' was not found.`);
+    throw new Error("Configured seed admin was not found.");
   }
 
   const encryption = new EncryptionService();
@@ -220,9 +220,7 @@ export async function verifyAuthenticationSeed(
     admin.status !== "active" ||
     admin.emailVerified !== true
   ) {
-    throw new Error(
-      `Seed admin '${adminEmail}' is not an active, verified admin.`,
-    );
+    throw new Error("Configured seed admin is not an active, verified admin.");
   }
 
   return {

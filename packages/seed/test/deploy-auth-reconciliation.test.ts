@@ -184,7 +184,7 @@ describe("VPS auth grant reconciliation", () => {
     expect(reconciliationSource).not.toContain("JSON.stringify");
   });
 
-  it("ships Release A without a role-name uniqueness migration", () => {
+  it("ships Release B with a fail-closed role-name uniqueness migration", () => {
     const statements = readdirSync(migrationsDirectory)
       .filter((file) => file.endsWith(".sql"))
       .map((file) =>
@@ -192,7 +192,14 @@ describe("VPS auth grant reconciliation", () => {
       )
       .join("\n");
 
-    expect(statements).not.toContain("roles_name_unique");
-    expect(statements).not.toMatch(/unique[\s\S]{0,80}on\s+"?roles"?\s*\(\s*"?name/);
+    expect(statements).toContain(
+      "cannot create roles_name_unique; duplicate role names:",
+    );
+    expect(statements).toContain(
+      'create unique index "roles_name_unique" on "roles" using btree ("name")',
+    );
+    expect(statements.indexOf("cannot create roles_name_unique")).toBeLessThan(
+      statements.indexOf('create unique index "roles_name_unique"'),
+    );
   });
 });

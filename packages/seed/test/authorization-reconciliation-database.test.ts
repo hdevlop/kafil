@@ -52,6 +52,11 @@ async function createHarness() {
   const { migrateDatabase } = await import("../src/migrate-database");
   await migrateDatabase();
 
+  // These tests exercise the Release-A repair against the pre-Release-B
+  // schema. Individual migration-proof cases apply the new index only after
+  // they have established the intended dirty or reconciled state.
+  await database.pool.query('DROP INDEX IF EXISTS "roles_name_unique"');
+
   const reconciliation = await import("../src/authorization-reconciliation");
   const { seedAuthentication } = await import("../src/seed-auth");
 
@@ -198,10 +203,77 @@ async function seedProductionIncident() {
 }
 
 if (enabled) {
-  beforeEach(reset);
+  beforeEach(async () => {
+    await harness!.pool.query('DROP INDEX IF EXISTS "roles_name_unique"');
+    await reset();
+  });
+}
+
+async function roleNameUniquenessMigration() {
+  return Bun.file(
+    new URL(
+      "../../server/migrations/0048_breezy_bloodscream.sql",
+      import.meta.url,
+    ),
+  ).text();
 }
 
 describe("authorization repair on real PostgreSQL", () => {
+  databaseTest(
+    "blocks the uniqueness migration with a sanitized duplicate-name summary",
+    async () => {
+      await seedProductionIncident();
+
+      expect(
+        await rejectionMessage(async () => {
+          await harness!.pool.query(await roleNameUniquenessMigration());
+        }),
+      ).toContain(
+        "Cannot create roles_name_unique; duplicate role names: delivery (2)",
+      );
+
+      const { rows } = await harness!.pool.query<{ count: string }>(
+        `SELECT count(*)::text AS count
+         FROM pg_indexes
+         WHERE schemaname = 'public' AND indexname = 'roles_name_unique'`,
+      );
+      expect(rows[0]!.count).toBe("0");
+    },
+  );
+
+  databaseTest(
+    "adds role-name uniqueness after repair without changing references or grants",
+    async () => {
+      await seedProductionIncident();
+      await harness!.reconcileAuthorizationSeed();
+
+      const deliveryRoleBefore = await roleIdsNamed("delivery");
+      const legacyUserRoleBefore = await roleIdOf("legacy.driver@example.test");
+      const grantsBefore = await grantedPermissionNames("delivery");
+
+      try {
+        await harness!.pool.query(await roleNameUniquenessMigration());
+
+        expect(
+          await rejectionMessage(() =>
+            insertRole(
+              "duplicate_delivery",
+              "delivery",
+              "2026-09-19T00:00:00.000Z",
+            ),
+          ),
+        ).toContain('duplicate key value violates unique constraint "roles_name_unique"');
+        expect(await roleIdsNamed("delivery")).toEqual(deliveryRoleBefore);
+        expect(await roleIdOf("legacy.driver@example.test")).toBe(
+          legacyUserRoleBefore,
+        );
+        expect(await grantedPermissionNames("delivery")).toEqual(grantsBefore);
+      } finally {
+        await harness!.pool.query('DROP INDEX IF EXISTS "roles_name_unique"');
+      }
+    },
+  );
+
   databaseTest(
     "consolidates a legacy and a deterministic Delivery row into one",
     async () => {

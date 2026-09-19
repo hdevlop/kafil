@@ -581,9 +581,10 @@ migration, stop and investigate rather than shipping it with the repair.
 
 ## 10. Phase 5 — Release A production recovery
 
-Status: **Authorized / publication in progress.** The user authorized completion
-on 2026-09-19. The Release A source commits and Phase-0 evidence are ready for
-publication; no production reconciliation has run yet.
+Status: **Complete.** Release A was published as
+`667bbb198eb74fc14da2edf8ce5d593b55c7d313`, the exact workflow passed, and the
+healthy app and worker now run that OCI revision. The fail-closed reconciliation
+job exited zero before replacement and production verification passes.
 
 Source completion does not authorize Git publication, image publication,
 deployment, database repair, or session revocation. Obtain explicit authority
@@ -732,11 +733,10 @@ single-package release workflow and obtain explicit publication authority.
 
 ## 12. Phase 7 — Publish and adopt fixed Najm Auth
 
-Status: **Publication complete; Kafil adoption intentionally held.**
-`najm-auth@4.0.5` is published and artifact-verified. Kafil still resolves
-`najm-auth@4.0.4`, not the sibling source checkout, because section 3.1 requires
-Release A to repair and verify production before the Release-B package adoption
-and uniqueness migration.
+Status: **Publication and Kafil adoption complete.** `najm-auth@4.0.5` is
+published and artifact-verified. Kafil's override, direct manifests, and
+lockfile resolve that registry artifact; the obsolete 4.0.4 consumer patch was
+removed because its contracts are present upstream in 4.0.5.
 
 ### 12.1 Package publication boundary
 
@@ -766,9 +766,10 @@ After the artifact is available:
 
 ## 13. Phase 8 — Release B uniqueness migration
 
-Status: **Not started.** The fixed package is published, but adoption remains
-blocked on Release A production verification. No uniqueness migration exists or
-should exist yet.
+Status: **Candidate complete; deployment pending.** Migration
+`0048_breezy_bloodscream.sql` adds the generated `roles_name_unique` index only
+after a sanitized duplicate-name/count precondition. Content and real-PostgreSQL
+success/failure proofs pass.
 
 After Release A production verification and fixed-package adoption:
 
@@ -939,17 +940,17 @@ evidence:
   `apps/web/src/shared/PageHeaderGlobalActions.tsx`, which this slice must not
   touch. Every package this slice owns passes its own lint and tests.
 - [x] Release A `db:generate` reports no schema change.
-- [ ] Release A is separately authorized, published, deployed, and verified.
-- [ ] Production has one row per fixed role and exact 45/27/0/6/10 managed grants.
+- [x] Release A is separately authorized, published, deployed, and verified.
+- [x] Production has one row per fixed role and exact 45/27/0/6/10 managed grants.
 - [x] Najm Auth enforces unique role names in PostgreSQL and SQLite.
 - [x] Najm Auth seeds roles by name and reuses legacy IDs safely.
 - [x] Najm Auth maps concurrent uniqueness races to a conflict response.
 - [x] Najm Auth focused/full required gates pass.
 - [x] `najm-auth@4.0.5` is published from the committed candidate and the exact
   registry artifact is verified.
-- [ ] Kafil adopts the exact released package and lockfile.
-- [ ] A new Kafil migration adds role-name uniqueness after a clean-data precondition.
-- [ ] Release B full gate and no-schema-drift check pass.
+- [x] Kafil adopts the exact released package and lockfile.
+- [x] A new Kafil migration adds role-name uniqueness after a clean-data precondition.
+- [x] Release B full gate and no-schema-drift check pass.
 - [ ] Release B is separately authorized, deployed, and verified.
 - [ ] Fresh Admin, Operator, Family, Sponsor, and Delivery API acceptance passes.
 - [ ] Browser/UI acceptance is either passed with evidence or explicitly recorded unperformed.
@@ -1081,11 +1082,60 @@ was retained in this evidence.
 
 ### 18.8 Remaining authorized work
 
-- No production database write or session revocation has run yet.
-- No Kafil push has run yet.
 - Najm Git commits remain unpushed because local master also contains unrelated
   Kit commits; the independently published registry artifact is verified in
   section 18.6.
-- No Kafil adoption of `najm-auth@4.0.5` and no Release-B uniqueness migration;
-  both intentionally wait for Release A production verification.
-- No image publication, deployment, or connected API/browser acceptance.
+- Release B publication/deployment and connected API/browser acceptance remain.
+
+### 18.9 Release A production recovery
+
+Kafil main was pushed through `667bbb198eb74fc14da2edf8ce5d593b55c7d313`.
+GitHub Actions run `35434337462` passed clean-checkout lint, typecheck, tests,
+production build, image publication, and the Dokploy trigger. The actual app and
+notifications-worker containers were then independently verified healthy on
+that exact OCI revision and the same image content.
+
+The one-shot `auth-reconcile` container exited zero before app replacement and
+reported one Delivery duplicate removed, zero users moved, 43 managed grants
+added, zero removed, and zero sessions invalidated. Direct database comparison
+against the complete code-owned permission map found:
+
+- Admin: 45 of 45;
+- Operator: 27 of 27;
+- Delivery: 0 of 0;
+- Family: 6 of 6;
+- Sponsor: 10 of 10;
+- no missing expected grants, unexpected grants, or duplicate fixed roles.
+
+Delivery's zero generic grants are intentional. Its dashboard, assigned-family,
+assigned-order, purchase, start, confirmation, issue, and evidence paths use the
+Delivery role guard and authenticated Staff assignment checks rather than broad
+resource permissions.
+
+The deployed bootstrap-admin setting was stale relative to the one existing
+Admin account. The Dokploy-owned environment source and active protected env
+were aligned without logging the identity, protected pre-change copies were
+retained, and app/worker were recreated healthy on the same Release A image.
+`bun run seed:verify` then passed all authorization counts and five of five
+built-in themes. The verifier's identity-bearing status/error text was removed
+and regression-tested for Release B so future evidence remains sanitized.
+
+### 18.10 Release B source candidate
+
+Kafil resolves `najm-auth@4.0.5` from the registry in each consuming workspace;
+the lockfile integrity matches the artifact recorded in section 18.6. Generated
+migration `0048_breezy_bloodscream.sql` reports only duplicated role names and
+counts and aborts before creating `roles_name_unique`; it does not merge or
+rewrite data.
+
+The real-PostgreSQL gate now proves both that dirty duplicate data is rejected
+with `delivery (2)` and that, after the Release-A repair, the index is created,
+an exact duplicate insert is rejected, and existing user role references plus
+managed/custom grants remain unchanged. Root typecheck, server tests, seed
+tests, DB integration (61 server plus 13 seed tests), build, and the final
+no-schema-drift generation pass. A detached clean worktree at the committed
+candidate also passed root lint, typecheck, tests, build, and `db:generate`,
+while the user's unrelated local PageHeader edit remained preserved.
+
+Dropping `roles_name_unique` is the schema rollback. It does not recreate the
+removed duplicate row, undo repaired grants, or restore revoked sessions.
