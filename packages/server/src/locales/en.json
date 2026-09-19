@@ -807,11 +807,13 @@
       "english": "English",
       "french": "French",
       "arabic": "Arabic",
-      "spanish": "Spanish"
+      "spanish": "Spanish",
+      "updateFailed": "Could not update language preference."
     },
     "display": {
       "title": "Display preferences",
       "subtitle": "Customize how dates, times, and currency are formatted for you.",
+      "themeSaveFailed": "Could not update color theme.",
       "timeZone": {
         "label": "Time zone",
         "helper": "Used to render dates and times across the dashboard. Currency stays in MAD.",

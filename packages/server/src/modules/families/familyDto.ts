@@ -60,7 +60,9 @@ const updateFamilyHousingSituationDto = familyHousingSituationDto
 
 const familyIdentityFields = z.object({
   // The CIN is the family's first-login credential, so it must satisfy Najm's
-  // `ma-cin` shape here rather than failing inside provisioning.
+  // `ma-cin` shape here rather than failing inside provisioning. The 8 floor is
+  // najm-auth's `isMoroccanCin` guard, not a style choice — do not relax it to
+  // the 7 sponsor and staff CINs use; those never reach provisioning.
   guardianCin: z
     .string()
     .trim()

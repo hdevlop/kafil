@@ -4,6 +4,7 @@ import type {
   UserRepository,
   UserService,
 } from "najm-auth";
+import { isMoroccanCin } from "najm-auth";
 import { db } from "../src/config/databaseConfig";
 import { server } from "../src/server";
 import { getMcpTools } from "najm-mcp";
@@ -1195,3 +1196,60 @@ function childRecord(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 }
+
+describe("family guardian CIN boundary (ma-cin, stricter than sponsor/staff)", () => {
+  const validFamily = {
+    name: "Amina El Amrani",
+    email: "family@example.test",
+    guardianCin: "AB123456",
+    guardianDateOfBirth: "1987-03-12",
+    exactAddress: "Private address in Rabat",
+    housingSituation: "rented",
+    registrationDate: "2026-01-15",
+    supportPriority: "normal",
+    phone: "+212600000001",
+  };
+
+  const parseCin = (guardianCin: string) =>
+    createFamilyDto.safeParse({ ...validFamily, guardianCin });
+
+  const cases = [
+    "AB123456",
+    `ABC${"1".repeat(17)}`,
+    "BC10110",
+    `ABC${"1".repeat(18)}`,
+    "12345678",
+    "ABCD1234",
+  ];
+
+  it("accepts the 8 and 20 character boundaries", () => {
+    expect(parseCin("AB123456").success).toBe(true);
+    expect(parseCin(`ABC${"1".repeat(17)}`).success).toBe(true);
+  });
+
+  it("rejects the 7-character CIN that sponsor and staff DTOs accept", () => {
+    expect(parseCin("BC10110").success).toBe(false);
+    expect(
+      updateFamilyDto.safeParse({ guardianCin: "BC10110" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a 21-character CIN", () => {
+    expect(parseCin(`ABC${"1".repeat(18)}`).success).toBe(false);
+  });
+
+  it("rejects values of a legal length that are not ma-cin shaped", () => {
+    expect(parseCin("12345678").success).toBe(false);
+    expect(parseCin("ABCD1234").success).toBe(false);
+  });
+
+  it("agrees with najm-auth's isMoroccanCin, which provisioning throws below", () => {
+    // familyService passes the guardian CIN to moroccanCinTemporaryCredential,
+    // which throws a plain Error when isMoroccanCin is false — a 500 on family
+    // creation rather than a validation error. The DTO has to reject first, so
+    // these two rules must not drift apart across a najm-auth upgrade.
+    for (const candidate of cases) {
+      expect(parseCin(candidate).success).toBe(isMoroccanCin(candidate));
+    }
+  });
+});

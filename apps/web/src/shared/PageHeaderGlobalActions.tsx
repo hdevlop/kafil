@@ -64,23 +64,13 @@ export default function PageHeaderGlobalActions() {
       <NLanguageMenu
         label={t("language.label")}
         onChange={handleLanguageChange}
-        onError={(error) =>
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Could not update language preference.",
-          )
-        }
+        onError={() => toast.error(t("language.updateFailed"))}
         options={languages}
         value={(language ?? "en") as KafilLocale}
       />
       <NThemeToggle
         label={t("common.toggleTheme")}
-        onError={(error) =>
-          toast.error(
-            error instanceof Error ? error.message : "Could not update color theme.",
-          )
-        }
+        onError={() => toast.error(t("display.themeSaveFailed"))}
       />
       <NFullscreenToggle label={t("common.toggleFullscreen")} />
     </NGlobalActions>

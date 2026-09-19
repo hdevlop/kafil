@@ -787,11 +787,13 @@
       "english": "Inglés",
       "french": "Francés",
       "arabic": "Árabe",
-      "spanish": "Español"
+      "spanish": "Español",
+      "updateFailed": "No se pudo actualizar la preferencia de idioma."
     },
     "display": {
       "title": "Preferencias de visualización",
       "subtitle": "Personaliza el formato de fechas, horas e importes.",
+      "themeSaveFailed": "No se pudo actualizar el tema de color.",
       "timeZone": {
         "label": "Zona horaria",
         "helper": "Se usa para mostrar fechas y horas. La moneda sigue siendo MAD.",

@@ -793,11 +793,13 @@
       "english": "Anglais",
       "french": "Français",
       "arabic": "Arabe",
-      "spanish": "Espagnol"
+      "spanish": "Espagnol",
+      "updateFailed": "Impossible de mettre à jour la préférence de langue."
     },
     "display": {
       "title": "Préférences d'affichage",
       "subtitle": "Personnalisez le format des dates, heures et montants.",
+      "themeSaveFailed": "Impossible de mettre à jour le thème de couleur.",
       "timeZone": {
         "label": "Fuseau horaire",
         "helper": "Utilisé pour afficher les dates et heures. La devise reste en MAD.",

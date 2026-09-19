@@ -15,12 +15,6 @@ purpose-specific test documents under
     losing users or custom permissions, makes Kafil seeding failure-safe, then
     prevents recurrence through a separately released Najm Auth uniqueness
     contract and a second Kafil migration/deployment boundary.
-- [`NAJM-QUERY-DX-PLAN.md`](../../NAJM-QUERY-DX-PLAN.md)
-  - adds shared Najm Kit query keys, reads, commands, invalidation, feedback,
-    and a School CRUD compatibility bridge; then removes duplicate Kafil and
-    School hooks after a published package is installed. Package implementation,
-    registry release, and source-level consumer adoption are complete; Git,
-    browser, deployment, and production acceptance remain separate.
 - [`DELIVERY-PURCHASE-WORKFLOW-PLAN.md`](../../DELIVERY-PURCHASE-WORKFLOW-PLAN.md)
   - implemented Delivery-owned purchase workflow for Family-created, Operator-approved
     assigned orders; reuses the existing Delivery dashboard, order summary,
@@ -39,6 +33,11 @@ purpose-specific test documents under
     consumer checks are recorded; browser/manual acceptance remains open.
 
 ## Supporting documents
+
+- [`Najm Query DX completion evidence`](../evidence/najm-query-dx/2026-09-19/README.md)
+  - records the retired Query plan's shared package contract, Kafil and School
+    adoption, source validation, registry release, and still-separate Git,
+    browser, and deployment boundaries.
 
 - [`Auth security evidence`](../evidence/auth-security/2026-09-05-local/README.md)
   - completed Auth 4 remediation, publication, deployment, connected lifecycle,

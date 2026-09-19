@@ -55,11 +55,14 @@ const initialChildSchema = z.object({
 const guardianFieldsSchema = z.object({
   name: z.string().trim().min(2, "Enter the account holder's name").max(200),
   email: z.email("Enter a valid email address"),
+  // 8 is najm-auth's `isMoroccanCin` floor, not a style choice: the guardian CIN
+  // is the family's first-login credential and provisioning throws below it.
   guardianCin: z
     .string()
     .trim()
     .min(8, "Enter a valid CIN")
     .max(20)
+    .regex(/^[a-z]{1,3}\d{5,17}$/i, "Enter a valid CIN, such as AB123456.")
     .toUpperCase(),
   guardianDateOfBirth: z.iso.date("Enter the guardian's date of birth"),
   relationshipToChildren: optionalText(120),

@@ -141,6 +141,9 @@ describe("Phase B notification shell and navigation", () => {
     }
     expect(globalActions).not.toContain("DropdownMenu");
     expect(globalActions).not.toContain("screenfull");
+    expect((globalActions.match(/onError=/g) ?? []).length).toBe(2);
+    expect(globalActions).toContain('t("language.updateFailed")');
+    expect(globalActions).toContain('t("display.themeSaveFailed")');
   });
 
   test("auth guards the inbox route for every role", async () => {
@@ -377,6 +380,8 @@ describe("Phase B notification accessibility", () => {
         "notifications.markAllRead",
         "common.toggleTheme",
         "common.toggleFullscreen",
+        "language.updateFailed",
+        "display.themeSaveFailed",
       ] as const) {
         expect(kafilUiI18n.translate(language, key)).not.toBe(key);
       }

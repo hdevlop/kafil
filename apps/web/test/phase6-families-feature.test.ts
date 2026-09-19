@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import {
   createFamilyFormSchema,
+  createFamilyGuardianStepSchema,
   familyStatusFormSchema,
   maskGuardianCin,
   toCreateFamilyInput,
@@ -11,7 +12,12 @@ import {
   updateFamilyHouseholdStepSchema,
 } from "../src/features/Families/config/familySchemas";
 import { familyHousingItems } from "../src/features/Families/config/housingOptions";
+import {
+  familyRelationshipItems,
+  familyRelationshipLabel,
+} from "../src/features/Families/config/relationshipOptions";
 import { createFamilyDefaultValues } from "../src/features/Families/components/FamilyForms";
+import { normalizePhone } from "@kafil/server/phone";
 import { localDateInput } from "najm-kit/format";
 import { familyKeys } from "../src/features/Families/hooks/familyKeys";
 
@@ -492,5 +498,169 @@ describe("family edit wizard parity", () => {
     expect(dialog).toContain("pointer-events-none select-none");
     expect(dialog).toContain('step: "min-h-0 flex-1 pb-4"');
     expect(dialog).not.toContain("overflow-y-hidden");
+  });
+});
+
+describe("family guardian CIN boundary (8..20 ma-cin, stricter than sponsor/staff)", () => {
+  const guardian = {
+    name: "Amina Guardian",
+    email: "amina@example.com",
+    guardianCin: "AB123456",
+    guardianDateOfBirth: "1987-03-12",
+    phone: "+212600000001",
+  };
+
+  const parseCin = (guardianCin: string) =>
+    createFamilyGuardianStepSchema.safeParse({ ...guardian, guardianCin });
+
+  const validFamilyForm = {
+    ...guardian,
+    deliveryLocation: {
+      address: "12 Example Street, Casablanca",
+      latitude: null,
+      longitude: null,
+    },
+    housingSituation: "rented",
+    registrationDate: "2026-01-15",
+    supportPriority: "normal",
+    activationTargetMad: "7200",
+    initialChildren: [],
+    relationshipToChildren: "Mother",
+    notes: "",
+  };
+
+  test("accepts the 8-character lower boundary", () => {
+    expect(parseCin("AB123456").success).toBe(true);
+  });
+
+  test("accepts the 20-character upper boundary", () => {
+    expect(parseCin(`ABC${"1".repeat(17)}`).success).toBe(true);
+  });
+
+  test("rejects the 7-character CIN that sponsor and staff forms accept", () => {
+    // "BC10110" passes createSponsorFormSchema and createStaffFormSchema. It must
+    // not pass here: the guardian CIN is the family's first-login credential and
+    // familyService provisions it through najm-auth's
+    // moroccanCinTemporaryCredential, whose isMoroccanCin guard throws below 8.
+    expect(parseCin("BC10110").success).toBe(false);
+  });
+
+  test("rejects a 21-character CIN", () => {
+    expect(parseCin(`ABC${"1".repeat(18)}`).success).toBe(false);
+  });
+
+  test("rejects an 8-character value that is not ma-cin shaped", () => {
+    expect(parseCin("12345678").success).toBe(false);
+    expect(parseCin("ABCD1234").success).toBe(false);
+    expect(parseCin("AB12345X").success).toBe(false);
+  });
+
+  test("applies the rule to both the create and update family forms", () => {
+    expect(createFamilyFormSchema.safeParse(validFamilyForm).success).toBe(true);
+    expect(updateFamilyFormSchema.safeParse(validFamilyForm).success).toBe(true);
+
+    const sevenCharacter = { ...validFamilyForm, guardianCin: "BC10110" };
+    expect(createFamilyFormSchema.safeParse(sevenCharacter).success).toBe(false);
+    expect(updateFamilyFormSchema.safeParse(sevenCharacter).success).toBe(false);
+  });
+});
+
+describe("family guardian relationship and phone inputs", () => {
+  const guardian = {
+    name: "Amina Guardian",
+    email: "amina@example.com",
+    guardianCin: "AB123456",
+    guardianDateOfBirth: "1987-03-12",
+    relationshipToChildren: "mother",
+    phone: "+212600000001",
+  };
+
+  const parsePhone = (phone: string) =>
+    createFamilyGuardianStepSchema.safeParse({ ...guardian, phone });
+
+  const translate = (key: string) => key;
+
+  test("rejects the dial-code prefill and accepts every form the backend takes", () => {
+    expect(parsePhone("+212").success).toBe(false);
+    expect(parsePhone("").success).toBe(false);
+    expect(parsePhone("+212600000001").success).toBe(true);
+    expect(parsePhone("+212 600 000 001").success).toBe(true);
+  });
+
+  // The form rule delegates to the backend `normalizePhone`, so a stored
+  // Moroccan local number stays editable instead of failing a stricter
+  // frontend-only rule the server would never have applied.
+  test("accepts exactly what the backend normalizer accepts", () => {
+    for (const value of ["0600000001", "212600000001", "+212600000001", "+33612345678"]) {
+      expect(parsePhone(value).success).toBe(normalizePhone(value) !== null);
+      expect(parsePhone(value).success).toBe(true);
+    }
+    for (const value of ["+212", "", "0600", "not-a-phone"]) {
+      expect(parsePhone(value).success).toBe(normalizePhone(value) !== null);
+      expect(parsePhone(value).success).toBe(false);
+    }
+  });
+
+  test("offers the canonical relationships and keeps a legacy stored value", () => {
+    const items = familyRelationshipItems(undefined, translate);
+    expect(items.map((item) => item.value)).toEqual([
+      "",
+      "mother",
+      "father",
+      "grandmother",
+      "grandfather",
+      "aunt",
+      "uncle",
+      "sibling",
+      "legalGuardian",
+      "other",
+    ]);
+
+    const legacy = familyRelationshipItems("Step-mother", translate);
+    expect(legacy.at(-1)).toEqual({
+      value: "Step-mother",
+      label: "Step-mother",
+    });
+    expect(familyRelationshipItems("mother", translate)).toHaveLength(
+      items.length,
+    );
+  });
+
+  test("leads with a localized empty choice that is not `other`", () => {
+    const [first] = familyRelationshipItems(undefined, translate);
+    expect(first.value).toBe("");
+    expect(first.label).toBe(
+      "operator.families.relationshipOptions.notProvided",
+    );
+
+    const other = familyRelationshipItems(undefined, translate).find(
+      (item) => item.value === "other",
+    );
+    expect(other?.label).toBe("operator.families.relationshipOptions.other");
+    expect(other?.label).not.toBe(first.label);
+  });
+
+  test("translates a canonical relationship and passes free text through", () => {
+    expect(familyRelationshipLabel("legalGuardian", translate)).toBe(
+      "operator.families.relationshipOptions.legalGuardian",
+    );
+    expect(familyRelationshipLabel("Step-mother", translate)).toBe(
+      "Step-mother",
+    );
+    expect(familyRelationshipLabel("", translate)).toBeNull();
+    expect(familyRelationshipLabel(null, translate)).toBeNull();
+  });
+
+  test("renders relationship as a select and phone as the phone input", () => {
+    const fields = readSource(
+      "../src/features/Families/components/FamilyForms/GuardianFields.tsx",
+    );
+
+    expect(fields).toContain('name="relationshipToChildren"');
+    expect(fields).toContain('type="select"');
+    expect(fields).toContain("items={relationshipItems}");
+    expect(fields).toContain('name="phone"');
+    expect(fields).toContain('type="phone"');
+    expect(fields).toContain('defaultCountry="ma"');
   });
 });
