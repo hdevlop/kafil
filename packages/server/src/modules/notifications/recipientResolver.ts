@@ -68,7 +68,9 @@ export class NotificationRecipientResolver {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attemptId)
         ? await this.notifications.findDeliveryUserForAttempt(orderId, attemptId)
         : null;
-    const all = [order.familyUserId, ...sponsors, deliveryUserId].filter(Boolean);
+    const all = [order.familyUserId, ...sponsors, deliveryUserId].filter(
+      (userId): userId is string => Boolean(userId),
+    );
     return {
       familyUserId: order.familyUserId,
       sponsorUserIds: sponsors,
