@@ -122,7 +122,7 @@ describe("exact managed-grant comparison", () => {
 
     expect(counts.get("admin")).toBe(AUTH_ROLE_PERMISSIONS.admin.length);
     expect(counts.get("operator")).toBe(AUTH_ROLE_PERMISSIONS.operator.length);
-    expect(counts.get("delivery")).toBeUndefined();
+    expect(counts.get("delivery")).toBe(AUTH_ROLE_PERMISSIONS.delivery.length);
     expect(counts.get("family")).toBe(AUTH_ROLE_PERMISSIONS.family.length);
     expect(counts.get("sponsor")).toBe(AUTH_ROLE_PERMISSIONS.sponsor.length);
   });
@@ -164,11 +164,14 @@ describe("exact managed-grant comparison", () => {
     expect(add).toHaveLength(AUTH_ROLE_PERMISSIONS.sponsor.length);
   });
 
-  it("keeps Delivery at zero generic grants", () => {
+  it("grants Delivery only its own notification inbox", () => {
     const deliveryGrants = [...desiredManagedGrants()].filter(
       (key) => parseGrantKey(key).roleName === "delivery",
     );
-    expect(deliveryGrants).toEqual([]);
+    expect(deliveryGrants.map((key) => parseGrantKey(key).permissionName)).toEqual([
+      "read:notifications",
+      "update:notifications",
+    ]);
   });
 });
 

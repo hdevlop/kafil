@@ -12,6 +12,7 @@ const enabled = process.env.KAFIL_RUN_DB_INTEGRATION === "1";
 const databaseTest = enabled ? it : it.skip;
 
 const OPERATOR_GRANTS = 27;
+const DELIVERY_GRANTS = 2;
 const FAMILY_GRANTS = 6;
 const SPONSOR_GRANTS = 10;
 
@@ -307,13 +308,15 @@ describe("authorization repair on real PostgreSQL", () => {
 
       expect(await grantedPermissionNames("delivery")).toEqual([
         "read:legacyDispatch",
+        "read:notifications",
         "read:seededDispatch",
+        "update:notifications",
       ]);
     },
   );
 
   databaseTest(
-    "restores exact managed grants and leaves Delivery with none of them",
+    "restores exact managed grants while retaining Delivery's custom links",
     async () => {
       await seedProductionIncident();
 
@@ -322,16 +325,18 @@ describe("authorization repair on real PostgreSQL", () => {
       expect(verification.roles).toEqual([
         { name: "admin", permissionCount: verification.permissionCount },
         { name: "operator", permissionCount: OPERATOR_GRANTS },
-        { name: "delivery", permissionCount: 0 },
+        { name: "delivery", permissionCount: DELIVERY_GRANTS },
         { name: "family", permissionCount: FAMILY_GRANTS },
         { name: "sponsor", permissionCount: SPONSOR_GRANTS },
       ]);
 
-      // Delivery's only links are the two custom ones; it holds no managed grant.
+      // Delivery keeps its custom grants alongside the two inbox permissions.
       const deliveryGrants = await grantedPermissionNames("delivery");
       expect(deliveryGrants).toEqual([
         "read:legacyDispatch",
+        "read:notifications",
         "read:seededDispatch",
+        "update:notifications",
       ]);
     },
   );
