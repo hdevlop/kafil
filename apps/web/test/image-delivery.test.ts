@@ -72,14 +72,14 @@ describe("published media contract integration", () => {
     const contribution = source(
       "features/Contributions/components/ContributionDetails.tsx",
     );
-    const familyDashboard = source(
-      "features/Dashboard/FamilyDashboard/components/FamilyDashboardPage.tsx",
+    const familyCard = source(
+      "features/Dashboard/FamilyDashboard/components/MyFamilyCard.tsx",
     );
 
     expect(contribution).toContain("<NAvatar");
     expect(contribution).toContain("fallbackSrc={getPersonImage");
-    expect(familyDashboard).toContain("<NAvatar");
-    expect(familyDashboard).toContain("fallbackSrc={getPersonImage");
+    expect(familyCard).toContain("<NAvatar");
+    expect(familyCard).toContain("src={getPersonImage");
   });
 
   test("delegates branding delivery to najm-theme", () => {
