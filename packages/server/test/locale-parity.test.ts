@@ -47,6 +47,7 @@ const SHARED_WITH_ENGLISH: Record<string, ReadonlySet<string>> = {
     "ui.nav.budgets",
     "ui.nav.finance",
     "ui.dashboard.operator.budgetPosition",
+    "ui.dashboard.delivery.scheduleDate",
     "ui.operator.categories.description",
     "ui.operator.contributions.title",
     "ui.operator.orders.delivery.affiliation",
