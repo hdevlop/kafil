@@ -5,9 +5,9 @@ import { getDashboardNavigation } from "../src/shared/DashboardShell/navigation"
 import { dashboardKeys } from "../src/features/Dashboard/shared/dashboardKeys";
 
 describe("delivery dashboard source contracts", () => {
-  test("gives every account role one dashboard navigation entry", () => {
+  test("gives Delivery its dashboard, family list, and notification inbox", () => {
     expect(getDashboardNavigation("operator").map((item) => item.href)).toContain("/dashboard");
-    expect(getDashboardNavigation("delivery").map((item) => item.href)).toEqual(["/dashboard", "/family"]);
+    expect(getDashboardNavigation("delivery").map((item) => item.href)).toEqual(["/dashboard", "/family", "/notifications"]);
     expect(getDashboardNavigation("admin").map((item) => item.href)).not.toContain("/delivery");
     expect(getDashboardNavigation("operator").map((item) => item.href)).not.toContain("/delivery");
   });
