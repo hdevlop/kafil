@@ -15,12 +15,12 @@ export function FamilyDetails({ family }: Readonly<{ family: FamilyRecord }>) {
         <Operator>
           <FamilyDetailsContributions family={family} />
         </Operator>
-        <Operator>
-          <FamilyOrderPolicyCard familyProfileId={family.id} />
-        </Operator>
       </div>
       <div className="space-y-3 lg:pl-4">
         <FamilyDetailsProfile family={family} />
+        <Operator>
+          <FamilyOrderPolicyCard familyProfileId={family.id} />
+        </Operator>
       </div>
     </div>
   );
