@@ -224,7 +224,8 @@ Primary Najm owners:
 
 ## 5. Phase 0 — Preserve and diagnose production state
 
-Status: **Not started. Requires production and deployment authority.**
+Status: **Complete.** A verified protected backup and sanitized read-only
+inventory were captured on 2026-09-19 before Release A publication.
 
 This phase is read-only except for creating the protected database backup.
 Production access and backup operations require explicit deployment authority.
@@ -580,8 +581,9 @@ migration, stop and investigate rather than shipping it with the repair.
 
 ## 10. Phase 5 — Release A production recovery
 
-Status: **Not authorized / not started.** No commit, push, image, deployment,
-production write, or session revocation has been performed.
+Status: **Authorized / publication in progress.** The user authorized completion
+on 2026-09-19. The Release A source commits and Phase-0 evidence are ready for
+publication; no production reconciliation has run yet.
 
 Source completion does not authorize Git publication, image publication,
 deployment, database repair, or session revocation. Obtain explicit authority
@@ -923,8 +925,8 @@ Do not promote one category as proof of another.
 The plan is complete only when every applicable item below has recorded
 evidence:
 
-- [ ] Protected production backup exists and is verified.
-- [ ] Read-only duplicate/grant inventory is captured without secrets.
+- [x] Protected production backup exists and is verified.
+- [x] Read-only duplicate/grant inventory is captured without secrets.
 - [x] Kafil consolidates duplicate fixed roles transactionally.
 - [x] Users and custom permission grants survive consolidation.
 - [x] Full auth seeding no longer clears grants before a fallible seed step.
@@ -1044,10 +1046,46 @@ PostgreSQL and SQLite `roles_name_unique` indexes plus `authSeed()` role
 reconciliation by name. The registry was polled until `4.0.5` resolved, then the
 published integrity, shasum, and tarball URL were fetched successfully.
 
-### 18.7 Unperformed, authorization-gated work
+### 18.7 Production backup and read-only incident inventory
 
-- No production backup, inventory, database write, or session revocation.
-- No push in either repository.
+Before any authorization mutation, a restricted (`0700`) backup was created at
+`/var/backups/kafil/auth-role-integrity-20260919T091652Z`. The database custom
+archive is 183,856 bytes with SHA-256
+`c5f26dda5e2febc5af42931b24683dc1aaa77b64253cdb541b187bfac3bf599f`;
+the storage archive is 8,403,028 bytes with SHA-256
+`3a2d6f28a32d4fb2c09daf1963bd0b80c460c6d41a3be2eb5048c07249a2ec2b`.
+`sha256sum -c`, `pg_restore --list`, and `tar -tzf` all passed, and the deployed
+restore-rehearsal procedure is present.
+
+The established Restic wrapper could not run because the VPS has neither the
+Restic binary nor `/opt/kafil/env/backup.env`, and Dokploy has no configured
+backup destination. The verified protected VPS backup above is therefore the
+rollback artifact for this incident; an off-VPS copy remains an operational
+hardening gap, not claimed evidence.
+
+The sanitized baseline is:
+
+| Role | Rows | Deterministic row | Users | Managed grants | Custom grants | Expected |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| Admin | 1 | yes | 1 | 45 | 0 | 45 |
+| Operator | 1 | yes | 0 | 0 | 0 | 27 |
+| Delivery | 2 | yes, plus one duplicate | 0 | 0 | 0 | 0 |
+| Family | 1 | yes | 0 | 0 | 0 | 6 |
+| Sponsor | 1 | yes | 0 | 0 | 0 | 10 |
+
+All 45 code-managed permission rows exist. There are no other duplicated role
+names and no custom grants on fixed roles. One active session family belongs to
+the affected Admin user; the other fixed roles have zero affected active
+session families. No identity, role ID, credential, token, or environment value
+was retained in this evidence.
+
+### 18.8 Remaining authorized work
+
+- No production database write or session revocation has run yet.
+- No Kafil push has run yet.
+- Najm Git commits remain unpushed because local master also contains unrelated
+  Kit commits; the independently published registry artifact is verified in
+  section 18.6.
 - No Kafil adoption of `najm-auth@4.0.5` and no Release-B uniqueness migration;
   both intentionally wait for Release A production verification.
 - No image publication, deployment, or connected API/browser acceptance.
