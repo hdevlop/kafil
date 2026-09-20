@@ -226,3 +226,12 @@ stranded link.
 
 Still owed, unchanged by this follow-up: `bun run test:db`, the connected
 browser journeys, and deployment.
+
+### Follow-up publication
+
+- najm: `43ac5c1` (the auth fix) and `3d3cb64` (the 4.0.8 bump) on `master`, pushed `e742184..3d3cb64`.
+- Kafil: `7b1a54f` on `main`, pushed `1f45a64..7b1a54f`. 13 files, the review fixes only — the unrelated in-progress work in the checkout, including a rename already staged before this change, was left out.
+- Both working trees match their upstream HEAD.
+
+Deployment is still not done. The target must pull `najm-auth@4.0.8` before the
+Kafil revision carrying this commit runs there.
