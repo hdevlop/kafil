@@ -12,10 +12,11 @@ import {
   listAccessRoles,
   listAccessUsers,
   reactivateAccessUser,
+  resetAccessUser,
   revokeAccessUserSessions,
 } from "@/services/adminAccessApi";
 
-import type { AccessUserListQuery } from "../types";
+import type { AccessResetResult, AccessUserListQuery } from "../types";
 
 export const adminAccessKeys = {
   all: ["admin-access"] as const,
@@ -127,7 +128,31 @@ export function useAccessUserCommands() {
     successMessage: t("adminAccess.messages.sessionsRevoked"),
     errorMessage: t("adminAccess.messages.sessionsError"),
   });
-  return { deactivate, reactivate, revokeSessions };
+  const resetAccess = useEntityCommand({
+    mutationFn: resetAccessUser,
+    invalidate,
+    // Only the backend-confirmed outcome is announced. A message the provider
+    // never delivered gets no success toast at all — the dialog keeps itself
+    // open and says so instead.
+    successMessage: (result: AccessResetResult) =>
+      result.delivery === "not_sent"
+        ? undefined
+        : t(resetSuccessKey(result)),
+    errorMessage: t("adminAccess.messages.resetError"),
+  });
+  return { deactivate, reactivate, resetAccess, revokeSessions };
+}
+
+function resetSuccessKey(result: AccessResetResult) {
+  if (result.mode === "family_credential_setup") {
+    return "adminAccess.messages.resetToCin";
+  }
+  if (result.delivery === "simulated") {
+    return "adminAccess.messages.resetSimulated";
+  }
+  return result.mode === "invitation_resent"
+    ? "adminAccess.messages.invitationResent"
+    : "adminAccess.messages.resetEmailSent";
 }
 
 export function useAdminAccessCreateCommands() {

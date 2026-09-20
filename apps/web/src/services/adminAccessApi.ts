@@ -1,6 +1,7 @@
 import type {
   AccessPermissionView,
   AccessReasonCommand,
+  AccessResetResult,
   AccessRole,
   AccessUserDetail,
   AccessUserListQuery,
@@ -35,6 +36,18 @@ export function reactivateAccessUser({
 }: AccessReasonCommand) {
   return api.post<AccessUserDetail>(
     `/admin/access/users/${userId}/reactivate`,
+    { reason },
+  );
+}
+
+/**
+ * One request for all three recovery workflows. The body carries the reason and
+ * nothing else — the server reads the account and picks the mode, and the
+ * response names which one ran and whether mail actually left.
+ */
+export function resetAccessUser({ userId, reason }: AccessReasonCommand) {
+  return api.post<AccessResetResult>(
+    `/admin/access/users/${userId}/reset-access`,
     { reason },
   );
 }

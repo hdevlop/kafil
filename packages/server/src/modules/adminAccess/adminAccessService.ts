@@ -1,4 +1,9 @@
-import { TokenService, UserService } from "najm-auth";
+import { AuthService, TokenService, UserService } from "najm-auth";
+import {
+  isMoroccanCin,
+  moroccanCinTemporaryCredential,
+} from "najm-auth/identity/ma";
+import { EmailService } from "najm-email";
 import { HttpError, Service } from "najm-core";
 import { Transaction } from "najm-database";
 
@@ -12,12 +17,64 @@ import { AuditService } from "../audit/auditService";
 import {
   accessReasonDto,
   type AccessReasonDto,
+  type AccessResetDelivery,
+  type AccessResetMode,
+  type AccessResetResult,
   createAccessPermissionDto,
   type CreateAccessPermissionDto,
   accessUserListQuery,
   type AccessUserListQuery,
 } from "./adminAccessDto";
 import { AdminAccessRepository } from "./adminAccessRepository";
+
+type AccessUserRow = NonNullable<
+  Awaited<ReturnType<AdminAccessRepository["findUser"]>>
+>;
+
+const STAFF_ROLES = new Set(["operator", "delivery"]);
+const RESETTABLE_ROLES = new Set([...STAFF_ROLES, "sponsor", "family"]);
+
+/**
+ * Which recovery an account gets, decided from the row this command just
+ * reloaded: its role, its status, and whether the matching Kafil profile
+ * actually exists. Nothing the client sent takes part, so a table left open
+ * since before an approval or a deactivation cannot select a workflow the
+ * account is no longer entitled to.
+ *
+ * The linked-profile requirement is also what keeps a sponsor application out:
+ * an applicant identity is a pending user with no sponsor profile, and
+ * approving it is the applicant workflow's job, not this command's.
+ */
+function resolveResetMode(user: AccessUserRow): AccessResetMode {
+  const role = user.role ?? "";
+  if (!RESETTABLE_ROLES.has(role)) {
+    HttpError.conflict("This account has no Kafil role that supports an access reset");
+  }
+
+  const linkedProfileId = STAFF_ROLES.has(role)
+    ? user.staffProfileId
+    : role === "sponsor"
+      ? user.sponsorProfileId
+      : user.familyProfileId;
+  if (!linkedProfileId) {
+    HttpError.conflict("This account has no linked Kafil profile to reset access for");
+  }
+
+  if (user.status === "inactive") {
+    HttpError.conflict("Reactivate this account before resetting its access");
+  }
+
+  if (user.status === "pending") {
+    if (role === "family") {
+      // Families are provisioned active with a CIN they must replace; there is
+      // no invitation to resend, so this is a conflict rather than a reset.
+      HttpError.conflict("Family accounts are provisioned active and have no invitation to resend");
+    }
+    return "invitation_resent";
+  }
+
+  return role === "family" ? "family_credential_setup" : "reset_email_sent";
+}
 
 @Service()
 export class AdminAccessService {
@@ -26,6 +83,8 @@ export class AdminAccessService {
     private readonly users: UserService,
     private readonly tokens: TokenService,
     private readonly audits: AuditService,
+    private readonly auth: AuthService,
+    private readonly emails: EmailService,
   ) {}
 
   async listUsers(query: AccessUserListQuery) {
@@ -224,6 +283,89 @@ export class AdminAccessService {
     return this.getUser(user.id);
   }
 
+  /**
+   * One administrative recovery command for an account that already exists.
+   * The client sends a target id and a reason; everything else — which of the
+   * three workflows runs, whose mailbox it reaches, which credential replaces
+   * which — is decided here from freshly reloaded state.
+   *
+   * The caller learns the mode and whether mail really left. It never learns
+   * the guardian identity number, a password, a token, or a link.
+   */
+  async resetAccess(
+    userId: string,
+    data: AccessReasonDto,
+    actorUserId: string,
+  ): Promise<AccessResetResult> {
+    const { reason } = accessReasonDto.parse(data);
+    const user = await this.requireUser(userId);
+    this.ensureSafeTarget(user, actorUserId, "reset access for");
+    const mode = resolveResetMode(user);
+
+    if (mode === "family_credential_setup") {
+      await this.resetFamilyCredential(user.id, actorUserId, reason);
+      return { userId: user.id, mode, delivery: "not_applicable" };
+    }
+
+    // Sending is irreversible, so it happens outside any transaction and the
+    // audit entry afterwards records what actually happened rather than what
+    // was intended. An audit failure here surfaces as an error on a request
+    // whose mail already left — visible and recoverable, never silent.
+    const { emailSent } = mode === "invitation_resent"
+      ? await this.auth.resendInvitation(user.id)
+      : await this.auth.sendPasswordReset(user.id);
+    const delivery = this.deliveryOutcome(emailSent);
+    await this.record("access.user_access_reset", actorUserId, user.id, reason, {
+      mode,
+      delivery,
+    });
+    return { userId: user.id, mode, delivery };
+  }
+
+  /**
+   * The guardian CIN is read here, handed straight to Najm, and never returned,
+   * audited, or logged. Najm replaces the credential, records the durable
+   * password-setup requirement, and revokes every session in one transaction,
+   * and this audit entry joins it — so a family is never left holding a CIN
+   * that nothing forces them to replace, or an audit trail for a reset that
+   * rolled back.
+   */
+  @Transaction({ retries: 2 })
+  private async resetFamilyCredential(
+    userId: string,
+    actorUserId: string,
+    reason: string,
+  ) {
+    const guardianCin = await this.repository.findFamilyGuardianCin(userId);
+    // A profile predating the current identity rules can hold a value the Najm
+    // helper refuses. Conflict before any mutation, and say so without echoing
+    // the stored value back.
+    if (!guardianCin || !isMoroccanCin(guardianCin)) {
+      HttpError.conflict(
+        "This family profile has no usable guardian identity number to reset to",
+      );
+    }
+    await this.auth.resetToTemporaryCredential(
+      userId,
+      moroccanCinTemporaryCredential(guardianCin),
+    );
+    await this.record("access.user_access_reset", actorUserId, userId, reason, {
+      mode: "family_credential_setup",
+      delivery: "not_applicable",
+    });
+  }
+
+  /**
+   * The console and memory providers answer `success` for a message that was
+   * never sent anywhere. An administrator must not read that as delivery, so it
+   * is reported as its own outcome.
+   */
+  private deliveryOutcome(emailSent: boolean): AccessResetDelivery {
+    if (!emailSent) return "not_sent";
+    const provider = this.emails.getProviderName().trim().toLowerCase();
+    return provider === "console" || provider === "memory" ? "simulated" : "sent";
+  }
+
   @Transaction({ retries: 2 })
   async revokeSessions(userId: string, actorUserId: string) {
     const user = await this.requireUser(userId);
@@ -247,7 +389,7 @@ export class AdminAccessService {
   }
 
   private ensureSafeTarget(
-    user: Awaited<ReturnType<AdminAccessRepository["findUser"]>> & {},
+    user: AccessUserRow,
     actorUserId: string,
     command: string,
   ) {
@@ -269,11 +411,14 @@ export class AdminAccessService {
     actorUserId: string,
     targetUserId: string,
     reason: string | null,
+    details: Record<string, string> = {},
   ) {
     return this.audits.record({
       action,
       actorUserId,
-      metadata: reason ? { reason } : {},
+      // Only the administrator's own words and the value-free outcome. Never a
+      // credential, a token, a link, a recipient, or family data.
+      metadata: { ...(reason ? { reason } : {}), ...details },
       resource: "users",
       resourceId: targetUserId,
     });

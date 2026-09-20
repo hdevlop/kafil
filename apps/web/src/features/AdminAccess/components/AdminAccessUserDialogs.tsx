@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { z } from "zod";
 import {
+  NAlert,
   NBadge,
   FormInput,
   NButton,
@@ -17,6 +19,7 @@ import { useTranslation } from "najm-i18n/react";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useAccessUser, useAccessUserCommands } from "../hooks/useAdminAccess";
+import { expectedResetMode } from "../lib/accessReset";
 import type { AccessUser } from "../types";
 
 const reasonSchema = z.object({
@@ -131,6 +134,84 @@ export function AdminAccessReasonDialog({
             : action === "deactivate"
               ? t("adminAccess.dialogs.deactivateTitle")
               : t("adminAccess.dialogs.reactivateTitle")}
+        </NButton>
+      </div>
+    </NForm>
+  );
+}
+
+/**
+ * The one confirmation for all three recovery workflows.
+ *
+ * The copy names the consequence for this specific account before the
+ * administrator commits to it, because "reset access" means three different
+ * things depending on who the account belongs to. It never renders the
+ * guardian identity number, a password, a token, or a link — the server does
+ * not return any of them, and this dialog asks for none.
+ */
+export function AdminAccessResetDialog({
+  user,
+}: Readonly<{ user: AccessUser }>) {
+  const { t } = useTranslation();
+  const { pop } = useDialog();
+  const { resetAccess } = useAccessUserCommands();
+  const [undelivered, setUndelivered] = useState(false);
+  const expected = expectedResetMode(user);
+
+  async function submit(values: z.infer<typeof reasonSchema>) {
+    setUndelivered(false);
+    const result = await resetAccess.mutateAsync({
+      userId: user.id,
+      reason: values.reason,
+    });
+    // The account changed either way, and the list has been invalidated. What
+    // is still unresolved is the message, so the dialog stays open and says so
+    // rather than closing on a success the recipient never received.
+    if (result.delivery === "not_sent") {
+      setUndelivered(true);
+      return;
+    }
+    await pop();
+  }
+
+  return (
+    <NForm
+      id="reset-access-user"
+      schema={reasonSchema}
+      defaultValues={{ reason: "" }}
+      onSubmit={submit}
+      className="space-y-5"
+    >
+      <div className="rounded-xl bg-muted/60 p-4">
+        <p className="font-semibold">{user.name || user.email}</p>
+        <p className="text-sm text-muted-foreground">{user.email}</p>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {t(`adminAccess.dialogs.reset.${expected}`)}
+      </p>
+      {undelivered ? (
+        <NAlert
+          description={t("adminAccess.dialogs.reset.notSent")}
+          role="alert"
+          tone="error"
+        />
+      ) : null}
+      <FormInput
+        name="reason"
+        type="textarea"
+        formLabel={t("adminAccess.dialogs.reason")}
+        icon="MessageSquareText"
+        required
+      />
+      <div className="flex justify-end">
+        <NButton
+          type="submit"
+          variant="destructive"
+          disabled={resetAccess.isPending || expected === "unsupported"}
+        >
+          {resetAccess.isPending
+            ? t("adminAccess.dialogs.saving")
+            : t("adminAccess.dialogs.resetConfirm")}
         </NButton>
       </div>
     </NForm>

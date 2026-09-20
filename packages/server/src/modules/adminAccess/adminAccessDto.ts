@@ -48,3 +48,36 @@ export type AccessReasonDto = z.input<typeof accessReasonDto>;
 export type CreateAccessPermissionDto = z.input<
   typeof createAccessPermissionDto
 >;
+
+/**
+ * The server picks the workflow from the account's current state; the client
+ * sends only the target id and a reason, and reads the mode back. Keeping the
+ * three outcomes on one discriminant is what stops a second "which reset?"
+ * endpoint from appearing later.
+ */
+export const ACCESS_RESET_MODES = [
+  "family_credential_setup",
+  "reset_email_sent",
+  "invitation_resent",
+] as const;
+
+export type AccessResetMode = (typeof ACCESS_RESET_MODES)[number];
+
+/**
+ * `simulated` is the console/memory provider answering success for a message
+ * nobody received. It is not `sent`, and the UI must not say it was.
+ */
+export const ACCESS_RESET_DELIVERIES = [
+  "not_applicable",
+  "sent",
+  "simulated",
+  "not_sent",
+] as const;
+
+export type AccessResetDelivery = (typeof ACCESS_RESET_DELIVERIES)[number];
+
+export interface AccessResetResult {
+  userId: string;
+  mode: AccessResetMode;
+  delivery: AccessResetDelivery;
+}

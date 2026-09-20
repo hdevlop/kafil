@@ -58,8 +58,9 @@ it("assigns a direct, domain-specific response key to every controller endpoint"
 
     // The retired public browser-helper endpoint reduces the current route
     // surface by one; the Delivery-owned order read, own-purchase command, and
-    // the two narrow Delivery receipt-candidate routes add four.
-    expect(routes).toHaveLength(200);
+    // the two narrow Delivery receipt-candidate routes add four, and the
+    // admin-only access reset adds one.
+    expect(routes).toHaveLength(201);
 
     for (const { controller: current, route } of routes) {
       const response = getResponseMessage(current, String(route.methodName));

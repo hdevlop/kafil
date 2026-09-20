@@ -74,6 +74,21 @@ export class AdminAccessRepository {
     return user;
   }
 
+  /**
+   * The guardian CIN, for the one account being reset. Deliberately not part of
+   * `userDirectory()`: it is sensitive family data that must never travel with
+   * a user row into a response, an audit entry, or a log, so it is read here
+   * alone and handed straight to Najm.
+   */
+  async findFamilyGuardianCin(userId: string) {
+    const [row] = await this.db
+      .select({ guardianCin: familyProfiles.guardianCin })
+      .from(familyProfiles)
+      .where(eq(familyProfiles.userId, userId))
+      .limit(1);
+    return row?.guardianCin;
+  }
+
   async countActiveAdmins() {
     const [result] = await this.db
       .select({ value: count() })

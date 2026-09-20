@@ -9,6 +9,7 @@ import {
   User,
 } from "najm-core";
 import { McpTool, ToolGroup } from "najm-mcp";
+import { RateLimit } from "najm-rate";
 import { Validate } from "najm-validation";
 
 import { isAdmin } from "../../config/authConfig";
@@ -22,7 +23,13 @@ import {
   type AccessUserListQuery,
   accessUserListQuery,
 } from "./adminAccessDto";
+import {
+  accessResetRateLimitKey,
+  resolveAccessResetRateLimitConfig,
+} from "./adminAccessRateLimitConfig";
 import { AdminAccessService } from "./adminAccessService";
+
+const accessResetRateLimit = resolveAccessResetRateLimitConfig();
 
 @ToolGroup("admin-access")
 @Controller("/admin/access")
@@ -94,6 +101,26 @@ export class AdminAccessController {
     @User("id") actorUserId: string,
   ) {
     return this.access.revokeSessions(userId, actorUserId);
+  }
+
+  /**
+   * Deliberately not an MCP tool. The other lifecycle commands are reversible
+   * or inspectable; this one replaces a credential or sends mail a person then
+   * acts on, so it stays on the authenticated admin surface where a human
+   * confirmed it. Exposing it to a tool caller is a separate decision that
+   * needs its own authorization and denial tests.
+   */
+  @Post("/users/:userId/reset-access")
+  @isAdmin()
+  @RateLimit({ ...accessResetRateLimit, key: accessResetRateLimitKey })
+  @Validate({ params: accessUserIdParams, body: accessReasonDto })
+  @ResMsg("adminAccess.success.accessReset")
+  resetAccess(
+    @Params("userId") userId: string,
+    @Body() body: AccessReasonDto,
+    @User("id") actorUserId: string,
+  ) {
+    return this.access.resetAccess(userId, body, actorUserId);
   }
 
   @Get("/roles")

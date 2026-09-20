@@ -469,6 +469,7 @@
       "deactivated": "Usuario desactivado y sesiones revocadas correctamente",
       "reactivated": "Usuario reactivado correctamente",
       "sessionsRevoked": "Sesiones del usuario revocadas correctamente",
+      "accessReset": "Acceso de la cuenta restablecido correctamente",
       "permissionCreated": "Permiso personalizado creado correctamente"
     }
   },
@@ -2251,6 +2252,7 @@
         "deactivate": "Desactivar",
         "reactivate": "Reactivar",
         "revokeSessions": "Revocar sesiones",
+        "resetAccess": "Restablecer acceso",
         "create": "Agregar usuario",
         "createTitle": "Crear usuario",
         "createDescription": "Elige el tipo de cuenta Kafil y completa su perfil requerido.",
@@ -2317,6 +2319,15 @@
         "deactivateTitle": "Desactivar usuario",
         "reactivateTitle": "Reactivar usuario",
         "revokeTitle": "Revocar todas las sesiones",
+        "resetTitle": "Restablecer el acceso a la cuenta",
+        "resetConfirm": "Restablecer acceso",
+        "reset": {
+          "family_credential_setup": "La familia inicia sesión con su correo y el número de identidad del tutor, y después debe elegir una contraseña nueva antes que nada. Su contraseña actual deja de funcionar y se cierra la sesión en todos los dispositivos de inmediato.",
+          "reset_email_sent": "Se envía un enlace de restablecimiento de un solo uso al correo de esta cuenta. Su contraseña actual sigue funcionando hasta que elija una nueva, y guardarla cierra la sesión en todos los dispositivos.",
+          "invitation_resent": "La invitación se envía de nuevo al correo de esta cuenta. Cualquier enlace anterior deja de funcionar. No se crea una segunda cuenta.",
+          "unsupported": "Esta cuenta no se puede restablecer desde aquí. Usa el flujo de perfil, solicitud o activación que le corresponde.",
+          "notSent": "La cuenta no cambió y ningún mensaje salió del servidor. Revisa la configuración de correo y vuelve a intentarlo."
+        },
         "deactivateDescription": "La desactivación invalida inmediatamente el acceso y las sesiones.",
         "reactivateDescription": "La reactivación requiere que el perfil Kafil vinculado siga siendo válido.",
         "reason": "Motivo",
@@ -2330,6 +2341,11 @@
         "reactivateError": "No se pudo reactivar este usuario.",
         "sessionsRevoked": "Se revocaron todas las sesiones.",
         "sessionsError": "No se pudieron revocar las sesiones de este usuario.",
+        "resetToCin": "Acceso restablecido. La familia inicia sesión con su número de identidad y debe establecer una contraseña nueva.",
+        "resetEmailSent": "Se envió un enlace de restablecimiento a esta cuenta.",
+        "resetSimulated": "Acceso restablecido, pero el proveedor configurado solo simula el envío. Ningún mensaje llegó a esta cuenta.",
+        "invitationResent": "La invitación se envió de nuevo a esta cuenta.",
+        "resetError": "No se pudo restablecer el acceso de esta cuenta.",
         "userCreated": "Cuenta creada e invitada.",
         "userCreateError": "No se pudo crear esta cuenta.",
         "permissionCreated": "Permiso personalizado creado.",

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   Eye,
   KeyRound,
+  KeySquare,
   UserCheck,
   UserRoundX,
   Users,
@@ -29,8 +30,9 @@ import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { useResponsiveAccessUsers } from "../hooks/useAdminAccess";
 import { useAdminUsersTableFilters } from "../hooks/useAdminUsersTableFilters";
+import { canResetAccess } from "../lib/accessReset";
 import type { AccessUser, AccessUserListQuery } from "../types";
-import { AdminAccessReasonDialog, AdminAccessUserDetails, RevokeSessionsDialog } from "./AdminAccessUserDialogs";
+import { AdminAccessReasonDialog, AdminAccessResetDialog, AdminAccessUserDetails, RevokeSessionsDialog } from "./AdminAccessUserDialogs";
 import { CreateAccessUserDialogContent } from "./AdminAccessCreateDialogs";
 import { AdminUserCard } from "./AdminAccessCards";
 
@@ -96,6 +98,16 @@ export function AdminUsersPage() {
     });
   }
 
+  function reset(user: AccessUser) {
+    void dialog.openDialog({
+      title: t("adminAccess.dialogs.resetTitle"),
+      description: user.email,
+      children: <AdminAccessResetDialog user={user} />,
+      showButtons: false,
+      size: "sm",
+    });
+  }
+
   function revoke(user: AccessUser) {
     void dialog.openDialog({
       title: t("adminAccess.dialogs.revokeTitle"),
@@ -155,6 +167,16 @@ export function AdminUsersPage() {
                 disabled: user.role === "admin",
                 separatorBefore: true,
                 onSelect: () => status(user),
+              },
+              {
+                label: t("adminAccess.users.resetAccess"),
+                icon: KeySquare,
+                danger: true,
+                // Presentation only. The server reloads the account and
+                // refuses an ineligible target regardless of what this row
+                // said when the table was rendered.
+                disabled: !canResetAccess(user),
+                onSelect: () => reset(user),
               },
               {
                 label: t("adminAccess.users.revokeSessions"),

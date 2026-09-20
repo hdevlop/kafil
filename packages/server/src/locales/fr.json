@@ -472,6 +472,7 @@
       "deactivated": "Utilisateur désactivé et sessions révoquées avec succès",
       "reactivated": "Utilisateur réactivé avec succès",
       "sessionsRevoked": "Sessions utilisateur révoquées avec succès",
+      "accessReset": "Accès du compte réinitialisé avec succès",
       "permissionCreated": "Autorisation personnalisée créée avec succès"
     }
   },
@@ -2345,6 +2346,7 @@
         "deactivate": "Désactiver",
         "reactivate": "Réactiver",
         "revokeSessions": "Révoquer les sessions",
+        "resetAccess": "Réinitialiser l'accès",
         "create": "Ajouter un utilisateur",
         "createTitle": "Créer un utilisateur",
         "createDescription": "Choisissez le type de compte Kafil et complétez son profil requis.",
@@ -2411,6 +2413,15 @@
         "deactivateTitle": "Désactiver l'utilisateur",
         "reactivateTitle": "Réactiver l'utilisateur",
         "revokeTitle": "Révoquer toutes les sessions",
+        "resetTitle": "Réinitialiser l'accès au compte",
+        "resetConfirm": "Réinitialiser l'accès",
+        "reset": {
+          "family_credential_setup": "La famille se connecte avec son e-mail et le numéro d'identité du tuteur, puis doit choisir un nouveau mot de passe avant toute autre action. Son mot de passe actuel cesse de fonctionner et tous les appareils sont déconnectés immédiatement.",
+          "reset_email_sent": "Un lien de réinitialisation à usage unique est envoyé à l'adresse e-mail de ce compte. Le mot de passe actuel reste valable jusqu'à ce qu'un nouveau soit choisi, et l'enregistrer déconnecte tous les appareils.",
+          "invitation_resent": "L'invitation est renvoyée à l'adresse e-mail de ce compte. Tout lien précédent cesse de fonctionner. Aucun second compte n'est créé.",
+          "unsupported": "Ce compte ne peut pas être réinitialisé ici. Utilisez le flux de profil, de candidature ou d'activation correspondant.",
+          "notSent": "Le compte n'a pas été modifié et aucun message n'est parti du serveur. Vérifiez la configuration e-mail, puis réessayez."
+        },
         "deactivateDescription": "La désactivation invalide immédiatement les accès et les sessions.",
         "reactivateDescription": "La réactivation exige que le profil Kafil lié reste valide.",
         "reason": "Motif",
@@ -2424,6 +2435,11 @@
         "reactivateError": "Impossible de réactiver cet utilisateur.",
         "sessionsRevoked": "Toutes les sessions ont été révoquées.",
         "sessionsError": "Impossible de révoquer les sessions de cet utilisateur.",
+        "resetToCin": "Accès réinitialisé. La famille se connecte avec son numéro d'identité et doit définir un nouveau mot de passe.",
+        "resetEmailSent": "Un lien de réinitialisation a été envoyé à ce compte.",
+        "resetSimulated": "Accès réinitialisé, mais le fournisseur configuré ne fait que simuler l'envoi. Aucun message n'est parvenu à ce compte.",
+        "invitationResent": "L'invitation a été renvoyée à ce compte.",
+        "resetError": "Impossible de réinitialiser l'accès de ce compte.",
         "userCreated": "Compte utilisateur créé et invité.",
         "userCreateError": "Impossible de créer ce compte utilisateur.",
         "permissionCreated": "Autorisation personnalisée créée.",

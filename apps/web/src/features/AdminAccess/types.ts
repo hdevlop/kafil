@@ -85,3 +85,28 @@ export interface CreateAccessPermissionInput {
   description?: string;
   roles: AccessRoleName[];
 }
+
+/**
+ * The server chooses the workflow and reports it back. The client sends only
+ * the target and a reason, so these are read, never written.
+ */
+export type AccessResetMode =
+  | "family_credential_setup"
+  | "reset_email_sent"
+  | "invitation_resent";
+
+/**
+ * `simulated` means the configured provider accepted a message it never
+ * delivered — the console or memory provider. It is not success.
+ */
+export type AccessResetDelivery =
+  | "not_applicable"
+  | "sent"
+  | "simulated"
+  | "not_sent";
+
+export interface AccessResetResult {
+  userId: string;
+  mode: AccessResetMode;
+  delivery: AccessResetDelivery;
+}

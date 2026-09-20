@@ -484,6 +484,7 @@
       "deactivated": "User deactivated and sessions revoked successfully",
       "reactivated": "User reactivated successfully",
       "sessionsRevoked": "User sessions revoked successfully",
+      "accessReset": "Account access reset successfully",
       "permissionCreated": "Custom permission created successfully"
     }
   },
@@ -2419,6 +2420,7 @@
         "deactivate": "Deactivate",
         "reactivate": "Reactivate",
         "revokeSessions": "Revoke sessions",
+        "resetAccess": "Reset access",
         "create": "Add user",
         "createTitle": "Create user",
         "createDescription": "Choose the Kafil account type and complete its required profile.",
@@ -2485,6 +2487,15 @@
         "deactivateTitle": "Deactivate user",
         "reactivateTitle": "Reactivate user",
         "revokeTitle": "Revoke all sessions",
+        "resetTitle": "Reset account access",
+        "resetConfirm": "Reset access",
+        "reset": {
+          "family_credential_setup": "The family signs in with their email and their guardian identity number, then must choose a new password before anything else. Their current password stops working and every device is signed out immediately.",
+          "reset_email_sent": "A single-use password reset link is sent to this account's email address. Their current password keeps working until they choose a new one, and saving it signs every device out.",
+          "invitation_resent": "The invitation is sent again to this account's email address. Any earlier link stops working. No second account is created.",
+          "unsupported": "This account cannot be reset from here. Use the profile, application, or activation workflow it belongs to.",
+          "notSent": "The account was not changed and no message left the server. Check the email configuration, then try again."
+        },
         "deactivateDescription": "Deactivation immediately invalidates access and refresh sessions.",
         "reactivateDescription": "Reactivation is allowed only when the linked Kafil profile remains valid.",
         "reason": "Reason",
@@ -2498,6 +2509,11 @@
         "reactivateError": "Could not reactivate this user.",
         "sessionsRevoked": "All user sessions were revoked.",
         "sessionsError": "Could not revoke this user's sessions.",
+        "resetToCin": "Access reset. The family signs in with their identity number and must set a new password.",
+        "resetEmailSent": "A password reset link was sent to this account.",
+        "resetSimulated": "Access reset, but the configured provider only simulates delivery. No message reached this account.",
+        "invitationResent": "The invitation was sent again to this account.",
+        "resetError": "Could not reset this account's access.",
         "userCreated": "User account created and invited.",
         "userCreateError": "Could not create this user account.",
         "permissionCreated": "Custom permission created.",
