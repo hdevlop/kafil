@@ -5,9 +5,9 @@ Date: 2026-09-20. Sanitized: no credentials, tokens, links, or CIN values appear
 here or in any test fixture.
 
 The verdicts below are kept separate on purpose, as the plan requires. **Source
-complete**, **package complete**, and **database complete** are reached.
-**Git publication**, **deployment**, and **connected/browser acceptance** are
-not, and nothing here should be read as claiming them.
+complete**, **package complete**, **database complete**, and **git publication**
+are reached. **Deployment** and **connected/browser acceptance** are not, and
+nothing here should be read as claiming them.
 
 ## Phase 1 — shared Najm Auth contracts
 
@@ -133,9 +133,14 @@ carrying this entire change set also built fine. The cause was local — a
 treat as absolute. Reinstalling from an uppercase-drive cwd fixed it. No source
 change was involved.
 
+## Git publication
+
+- Kafil: `e40a3e5` on `main`, pushed to `origin/main` (`8c7b91a..e40a3e5`). 23 files, the reset slice only — unrelated in-progress work in the checkout was deliberately left out of the commit.
+- najm: `33d3823` (the auth operations) and `e742184` (the 4.0.7 version bump) on `master`, pushed to `origin/master` (`bc47abc..e742184`, which also carried five earlier unpushed commits).
+- Both working trees match their upstream HEAD.
+
 ## Not done, and not claimed
 
-- **Git publication.** The Kafil work is uncommitted at the time of writing; the najm work is committed on `master` but not pushed.
 - **Deployment.** Nothing deployed. Deploying requires the `najm-auth@4.0.7` pin to be live on the target and the email transport verified there.
 - **Connected / browser acceptance (phase 4.1–4.4).** Not run. It needs a local PostgreSQL and Mailpit, seeded isolated accounts, and the Playwright runner on `127.0.0.1:3210`; none of that was available in this environment. Specifically still owed:
   - the family journey end to end (old password denied, CIN returns `credential_setup` with no normal session, `/change-password` replaces it, CIN then fails, replay denied);
