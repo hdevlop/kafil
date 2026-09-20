@@ -108,11 +108,17 @@ directory remains at the workspace root. It is not referenced by `bun.lock`,
 no workspace resolves through it, and every consumer has its own `4.0.6`. A
 `bun install --force` or removing the directory clears it.
 
-### Git publication state — releases pass; retirement patch unpublished
+### Git publication state — historical snapshot and retirement update
+
+The paragraphs below record the worktree when this evidence was first written.
+The retirement patch was subsequently committed in Kafil `1287d66`: the plan
+was moved into this directory, the grant-count test was corrected, the remaining
+acceptance was moved to `docs/tests/`, and the existing remote-runner edits were
+published without a browser run. The earlier "unpublished" verdict is historical.
 
 **Release publication: pass.**
 
-- Kafil `main` and `origin/main` are both `8c7b91a`, with no unpushed commits.
+- At the original acceptance snapshot, Kafil `main` and `origin/main` were both `8c7b91a`, with no unpushed commits.
 - Release A `667bbb19` and Release B `6ee9eaf` are both published.
 - Najm's `najm-auth@4.0.5` source and release commits, `0183215` and
   `fa07581`, are ancestors of `origin/master`. This corrects the plan's
@@ -122,9 +128,9 @@ no workspace resolves through it, and every consumer has its own `4.0.6`. A
   is verified independently above, so Kafil's dependency is not affected. This
   is a Najm repository obligation, not a Kafil one.
 
-**Retirement patch: local, uncommitted, and unpublished.** The work that
-produced this record is a working-tree change at the time of writing. It is not
-covered by the pass above:
+**Retirement patch at the original snapshot: local and unpublished.** The work
+that produced this record was a working-tree change at the time of writing. It
+was not covered by the release-publication pass above:
 
 - the rename of the root plan into this directory is staged;
 - the archived plan's reconciliation edits and the
@@ -135,14 +141,15 @@ covered by the pass above:
   are untracked;
 - the two unrelated connected-acceptance edits below remain modified.
 
-Nothing was committed or pushed. Until that patch is published, a clean
-checkout of `8c7b91a` still carries `AUTH-ROLE-INTEGRITY-PLAN.md` at the root
-with its 2026-09-19 status text.
+At that snapshot nothing in the retirement patch was committed or pushed, and
+a clean checkout of `8c7b91a` still carried `AUTH-ROLE-INTEGRITY-PLAN.md` at the
+root with its 2026-09-19 status text. Commit `1287d66` supersedes that state.
 
-Preserved untouched throughout: the user's uncommitted edits to
+Preserved untouched during the retirement analysis: the user's uncommitted edits to
 `apps/web/test/connected-four-account-remote-runner.test.ts` and
 `apps/web/test/e2e/connected-four-account.remote.ts`, which belong to the staff
-creation UI, not to this work.
+creation UI, not to that analysis. They were published together with the
+retirement patch at the user's later request; browser acceptance was skipped.
 
 ### Deployment and live revision — deployed; exact revision bounded, not pinned
 

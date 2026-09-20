@@ -18,11 +18,13 @@ directions. These are the proofs that result does not, by itself, provide.
 Do not redo these. The evidence record holds the detail.
 
 - Source gate, real-PostgreSQL gate, and no-schema-drift check all pass.
-- `najm-auth@4.0.6` is resolved in all three workspaces with registry-matching
-  integrity, and it carries the `roles_name_unique` indexes and `by: ["name"]`
-  seeding.
-- Kafil `main` equals `origin/main` at `8c7b91a`; Release A and Release B are
-  both published and both deployed through GitHub Actions.
+- At the original acceptance snapshot, `najm-auth@4.0.6` resolved in all three
+  workspaces with registry-matching integrity and carried the
+  `roles_name_unique` indexes and `by: ["name"]` seeding. Kafil now resolves
+  `najm-auth@4.0.8`; the role-name contract is unchanged.
+- At that snapshot, Kafil `main` equalled `origin/main` at `8c7b91a`; Release A
+  and Release B were both published and deployed through GitHub Actions. The
+  later retirement patch was committed in `1287d66` without browser acceptance.
 - Live production grants equal the code-owned matrix exactly.
 - The Admin Access roles page was visually accepted on a desktop browser on
   2026-09-20.
