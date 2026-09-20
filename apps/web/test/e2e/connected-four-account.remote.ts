@@ -996,10 +996,8 @@ async function createDeliveryStaffThroughUi(
   await expect(dialog).toBeVisible();
   const form = dialog.locator("#create-staff-form");
   await expect(form).toBeVisible({ timeout: 5_000 });
-  // Date of birth is deliberately absent. `createStaffFormSchema` only requires it
-  // when the operator function is selected, and these fixtures are delivery-only.
-  // Its control is a calendar popover with no text field, so a typed value could
-  // not reach it anyway.
+  // Gender, date of birth, and affiliation keep their form defaults; `role` is the
+  // only control this fixture must change.
   const fields: Array<[Locator, string]> = [
     [form.getByLabel(/^Full name\s*\*?$/), fixture.name],
     [form.getByLabel(/^CIN\s*\*?$/), fixture.cin],
@@ -1014,30 +1012,18 @@ async function createDeliveryStaffThroughUi(
     await field.fill(value);
   }
 
-  // Resolve the portal through the trigger's own `aria-controls`, the same contract
-  // The assignment step uses the same portal contract. A global open-popover locator matches every
-  // visible portal on the page, which is how the first combined A-E attempt failed.
-  const capabilities = form.getByRole("combobox", { name: /^Capabilities\s*\*?$/ });
-  await capabilities.click();
-  await expect(capabilities).toHaveAttribute("aria-expanded", "true");
-  const capabilitiesPopoverId = await capabilities.getAttribute("aria-controls");
-  expect(
-    capabilitiesPopoverId,
-    "open capabilities combobox must identify its portal",
-  ).toBeTruthy();
-  const capabilitiesPopover = page.locator(
-    `[data-slot="popover-content"][id=${JSON.stringify(capabilitiesPopoverId)}]`,
-  );
-  await expect(capabilitiesPopover).toHaveAttribute("data-state", "open");
-  await expect(capabilitiesPopover).toBeVisible();
-  // The form defaults `functions` to ["operator"], so the first click deselects it
-  // and the second selects Delivery, leaving exactly the delivery-only capability.
-  await capabilitiesPopover.getByText("Operator", { exact: true }).click();
-  await capabilitiesPopover.getByText("Delivery", { exact: true }).click();
-  await page.keyboard.press("Escape");
-  await expect(capabilities).toHaveAttribute("aria-expanded", "false");
-  await expect(capabilities).toContainText("Delivery");
-  await expect(capabilities).not.toContainText("Operator");
+  // Gender and role are najm-kit `select` inputs. That type is excluded from the
+  // kit's label-named composite types, so both reach the accessibility tree as the
+  // literal fallback name "Select". Pin the count so the ordinal cannot drift
+  // silently if the form gains another select. The trigger renders no text for a
+  // value carrying no placeholder, so the selected role is proven by the create
+  // response below, never by reading the trigger.
+  const selects = form.getByRole("combobox", { name: "Select", exact: true });
+  await expect(selects).toHaveCount(2);
+  const role = selects.nth(1);
+  await expect(role).toBeVisible();
+  await role.click();
+  await page.getByRole("option", { name: "Delivery", exact: true }).click();
 
   const submit = form.getByRole("button", {
     name: "Create staff record",

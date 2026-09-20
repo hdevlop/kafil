@@ -694,15 +694,15 @@ artifacts and unresolved limitations. Separate package source, publication,
 Kafil adoption, School adoption, browser acceptance, Git publication and deployment.
 Do not store secrets, real family locations, auth cookies or raw provider data.
 
-Execution evidence: [`docs/evidence/najm-optional-provider-dx/2026-09-17/README.md`](docs/evidence/najm-optional-provider-dx/2026-09-17/README.md).
+Execution evidence: [`docs/evidence/najm-optional-provider-dx/2026-09-17/README.md`](../evidence/najm-optional-provider-dx/2026-09-17/README.md).
 
-Phase 6 follow-up evidence: [`docs/evidence/najm-optional-provider-dx/2026-09-17-phase-6/README.md`](docs/evidence/najm-optional-provider-dx/2026-09-17-phase-6/README.md).
+Phase 6 follow-up evidence: [`docs/evidence/najm-optional-provider-dx/2026-09-17-phase-6/README.md`](../evidence/najm-optional-provider-dx/2026-09-17-phase-6/README.md).
 
 That ledger covers the initial execution. Phases 6 and 7 have distinct follow-up
 entries with their own package versions and checks; historical results remain
 intact.
 
-Phase 7 evidence: [`docs/evidence/najm-optional-provider-dx/2026-09-18-phase-7/README.md`](docs/evidence/najm-optional-provider-dx/2026-09-18-phase-7/README.md).
+Phase 7 evidence: [`docs/evidence/najm-optional-provider-dx/2026-09-18-phase-7/README.md`](../evidence/najm-optional-provider-dx/2026-09-18-phase-7/README.md).
 
 Phase 7 establishes the badge implementation, release and source-level consumer
 adoption. It does not establish visual acceptance; that checkbox remains open.
@@ -749,5 +749,5 @@ deployment and real browser acceptance remain separately reported boundaries.
 
 This plan replaces none of the user's retired root plans. Existing connected
 acceptance documentation remains under
-[`docs/tests/connected-four-account/`](docs/tests/connected-four-account/README.md).
-The active plan index is [`docs/plans/README.md`](docs/plans/README.md).
+[`docs/tests/connected-four-account/`](../tests/connected-four-account/README.md).
+The active plan index is [`docs/plans/README.md`](README.md).

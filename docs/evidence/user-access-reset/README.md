@@ -4,6 +4,11 @@ Scope: `USER-ACCESS-RESET-PLAN.md`, phases 1–3 plus the root gate from phase 4
 Date: 2026-09-20. Sanitized: no credentials, tokens, links, or CIN values appear
 here or in any test fixture.
 
+The phase 1–3 sections below record the initial `najm-auth@4.0.7` release. The
+review follow-up at the end records the current `4.0.8` package and request
+contract. Historical version and commit references in the earlier sections are
+retained as evidence of that first release.
+
 The verdicts below are kept separate on purpose, as the plan requires. **Source
 complete**, **package complete**, **database complete**, and **git publication**
 are reached. **Deployment** and **connected/browser acceptance** are not, and
@@ -49,11 +54,14 @@ the review follow-up at the end of this record.
 ## Phase 2 — Kafil server command
 
 `POST /api/admin/access/users/:userId/reset-access`, `@isAdmin()`, params and
-body validated, body is `{ reason }` (trimmed, 3–500).
+body validated. The current body is `{ reason, expectedMode? }`: `reason` is
+trimmed to 3–500 characters, and `expectedMode` confirms the mode explained by
+the dialog without selecting the server workflow.
 
 The server picks the mode from state it reloads inside the command — role,
-status, and whether the matching profile row exists. Nothing the client sends
-takes part beyond the target id and the reason.
+status, and whether the matching profile row exists. The target ID and reason
+identify the command; `expectedMode`, when present, only causes a 409 if it
+disagrees with the server-selected mode.
 
 | Account | Mode |
 | --- | --- |
@@ -142,19 +150,20 @@ change was involved.
 
 ## Not done, and not claimed
 
-- **Deployment.** Nothing deployed. Deploying requires the `najm-auth@4.0.7` pin to be live on the target and the email transport verified there.
-- **Connected / browser acceptance (phase 4.1–4.4).** Not run. It needs a local PostgreSQL and Mailpit, seeded isolated accounts, and the Playwright runner on `127.0.0.1:3210`; none of that was available in this environment. Specifically still owed:
+- **Deployment.** Nothing deployed. Deploying requires the current `najm-auth@4.0.8` pin to be live on the target and the email transport verified there.
+- **Connected / browser acceptance (phase 4.1–4.4).** Not run. It needs isolated seeded accounts, Mailpit, and the Playwright runner on `127.0.0.1:3210`. Specifically still owed:
   - the family journey end to end (old password denied, CIN returns `credential_setup` with no normal session, `/change-password` replaces it, CIN then fails, replay denied);
   - the staff and sponsor journeys with exactly one mail in the local mailbox, single-use and recipient-bound, sessions revoked only after the new password is saved;
   - pending re-invite creating no duplicate user or profile, and an applicant refused;
   - the denial matrix by exact response, plus desktop/mobile/keyboard/RTL coverage and a clean console/network capture;
-  - `bun run test:db` for the transactional and concurrency contract.
+  - reset-specific real-PostgreSQL transaction and concurrency proof. The repository `bun run test:db` command passed on 2026-09-20 (61 server and 13 seed tests), but no test in that gate exercises this reset command.
 - **Production reset execution and remote mailbox tests.** Require a separate, explicitly authorized operations step.
 
 ## Review follow-up (2026-09-20, after publication)
 
-A review of the published slice found two behaviour gaps. Both are fixed in the
-working tree; neither is committed or released yet.
+A review of the initial published slice found two behaviour gaps. Both
+follow-up fixes were committed and pushed, and the Najm change was released
+as `najm-auth@4.0.8`.
 
 ### 1. A stale confirmation could authorize a different action
 
@@ -224,8 +233,9 @@ stranded link.
 | `bun run build` | pass |
 | `bun run db:generate` | **No schema changes, nothing to migrate** |
 
-Still owed, unchanged by this follow-up: `bun run test:db`, the connected
-browser journeys, and deployment.
+The repository `bun run test:db` gate passed on 2026-09-20. Reset-specific
+real-PostgreSQL proof, the connected browser journeys, and deployment remain
+open.
 
 ### Follow-up publication
 

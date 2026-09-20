@@ -750,24 +750,30 @@ describe("connected four-account remote runner", () => {
     expect(deliveryStaffHelper).not.toMatch(
       /locator\(['"](?:input|textarea)\[name=/,
     );
-    // Date of birth is a calendar popover, not a text field, and the schema only
-    // requires it for operator staff. Typing into it is what timed out the first
-    // The delivery-staff attempt's successor; it must not come back as a filled field.
+    // Date of birth is optional in `createStaffFormSchema` and its control is a
+    // calendar popover with no text field; it must not come back as a filled field.
     expect(deliveryStaffHelper).not.toMatch(/getByLabel\(\/\^Date of birth/);
-    // The capabilities portal is resolved through the trigger, never by a global
-    // open-popover match — the selector defect that stopped the first A-E attempt.
+    // The create-staff form replaced the multi-select capabilities control with a
+    // single `role` select. najm-kit excludes `select` from its label-named composite
+    // types, so gender and role both reach the tree as the literal name "Select";
+    // the ordinal is only safe while the count stays pinned.
     expect(deliveryStaffHelper).toContain(
-      'toHaveAttribute("aria-expanded", "true")',
+      'form.getByRole("combobox", { name: "Select", exact: true })',
     );
+    expect(deliveryStaffHelper).toContain("expect(selects).toHaveCount(2)");
+    expect(deliveryStaffHelper).toContain("const role = selects.nth(1)");
+    // The trigger renders no text for a placeholder-less value, so the selected
+    // role is proven by the create response, never by reading the trigger.
+    expect(deliveryStaffHelper).not.toMatch(/expect\(role\)[\s\S]{0,40}toContainText/);
     expect(deliveryStaffHelper).toContain(
-      'capabilities.getAttribute("aria-controls")',
+      'page.getByRole("option", { name: "Delivery", exact: true })',
     );
-    expect(deliveryStaffHelper).toContain(
-      'toHaveAttribute("aria-expanded", "false")',
-    );
-    expect(deliveryStaffHelper).not.toContain(
-      '[data-slot="popover-content"][data-state="open"]',
-    );
+    // Radix hides background content from the accessibility tree while the select
+    // portal is open, so the trigger stops resolving the moment it is clicked. The
+    // helper must click the option straight after opening and assert nothing between.
+    expect(deliveryStaffHelper).not.toMatch(/aria-expanded/);
+    expect(deliveryStaffHelper).not.toMatch(/Capabilities/);
+    expect(deliveryStaffHelper).not.toContain('[data-slot="popover-content"]');
     expect(specSource).toContain('type OrderJourneyState =');
     expect(specSource).toContain('phase: "not-started"');
     expect(specSource).toContain('phase: "reversible-orders-complete"');

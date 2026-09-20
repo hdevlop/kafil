@@ -11,11 +11,6 @@ import { Client } from "pg";
 const enabled = process.env.KAFIL_RUN_DB_INTEGRATION === "1";
 const databaseTest = enabled ? it : it.skip;
 
-const OPERATOR_GRANTS = 27;
-const DELIVERY_GRANTS = 2;
-const FAMILY_GRANTS = 6;
-const SPONSOR_GRANTS = 10;
-
 type Harness = Awaited<ReturnType<typeof createHarness>>;
 
 const originalDatabaseUrl = process.env.DATABASE_URL ?? "";
@@ -24,6 +19,18 @@ const disposableName = `kafil_auth_repair_${Date.now().toString(36)}_${Math.rand
   .slice(2, 8)}`;
 
 const harness: Harness | null = enabled ? await createHarness() : null;
+
+// Expected counts are read from the code-owned map, never copied. A copy is
+// what let `family` keep a stale 6 after `read:contributions` was withdrawn.
+// The import has to follow the harness: `auth-definitions` reaches the config
+// barrel, which builds the pool from DATABASE_URL.
+const managed = enabled
+  ? (await import("../src/auth-definitions")).AUTH_ROLE_PERMISSIONS
+  : null;
+const OPERATOR_GRANTS = managed?.operator.length ?? 0;
+const DELIVERY_GRANTS = managed?.delivery.length ?? 0;
+const FAMILY_GRANTS = managed?.family.length ?? 0;
+const SPONSOR_GRANTS = managed?.sponsor.length ?? 0;
 
 function withDatabase(url: string, database: string) {
   const parsed = new URL(url);

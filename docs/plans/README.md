@@ -8,24 +8,22 @@ The former connected four-account acceptance plan was preserved and split into
 purpose-specific test documents under
 [`docs/tests/connected-four-account/`](../tests/connected-four-account/README.md).
 
-## Active root plans
+## Current plans
 
-- [`GLOBAL-FIXES-PLAN.md`](../../GLOBAL-FIXES-PLAN.md)
+- [`USER-ACCESS-RESET-PLAN.md`](../../USER-ACCESS-RESET-PLAN.md)
+  - implemented and published Admin Users-table access reset. Database,
+    connected browser, and deployment acceptance remain separate.
+- [`GLOBAL-FIXES-PLAN.md`](GLOBAL-FIXES-PLAN.md)
   - tracks independently testable user-visible fixes. Fix 1 adds the missing
     Admin/Operator purchase metadata and authenticated protected-receipt view
     to the existing order-details sheet without broadening evidence access.
-- [`AUTH-ROLE-INTEGRITY-PLAN.md`](../../AUTH-ROLE-INTEGRITY-PLAN.md)
-  - repairs duplicate fixed-role rows and missing production grants without
-    losing users or custom permissions, makes Kafil seeding failure-safe, then
-    prevents recurrence through a separately released Najm Auth uniqueness
-    contract and a second Kafil migration/deployment boundary.
-- [`DELIVERY-PURCHASE-WORKFLOW-PLAN.md`](../../DELIVERY-PURCHASE-WORKFLOW-PLAN.md)
+- [`DELIVERY-PURCHASE-WORKFLOW-PLAN.md`](DELIVERY-PURCHASE-WORKFLOW-PLAN.md)
   - implemented Delivery-owned purchase workflow for Family-created, Operator-approved
     assigned orders; reuses the existing Delivery dashboard, order summary,
     purchase form, evidence storage, financial transaction, and delivery commands.
     Source, package, database, build, and no-schema-drift checks are recorded;
     browser acceptance, publication, and deployment remain separate.
-- [`NAJM-OPTIONAL-PROVIDER-DX-PLAN.md`](../../NAJM-OPTIONAL-PROVIDER-DX-PLAN.md)
+- [`NAJM-OPTIONAL-PROVIDER-DX-PLAN.md`](NAJM-OPTIONAL-PROVIDER-DX-PLAN.md)
   - implemented optional integration composition through the existing Najm app
     provider, default `location: true` in Kafil, automatic snapshot/CSP wiring,
     shared location labels, package validation and independent consumer adoption.
@@ -37,6 +35,15 @@ purpose-specific test documents under
     consumer checks are recorded; browser/manual acceptance remains open.
 
 ## Supporting documents
+
+- [`Auth role integrity completion evidence`](../evidence/auth-role-integrity/2026-09-20/README.md)
+  - records the retired auth role integrity plan's two-release production
+    repair, the published Najm Auth uniqueness contract, and the authorized
+    read-only Admin API confirmation of live grants. The `roles_name_unique`
+    migration is published and its application is inferred from the deployment
+    chain; direct confirmation from the production catalog remains open. Its
+    still-open acceptance work is carried by
+    [`docs/tests/auth-role-acceptance.md`](../tests/auth-role-acceptance.md).
 
 - [`Najm Query DX completion evidence`](../evidence/najm-query-dx/2026-09-19/README.md)
   - records the retired Query plan's shared package contract, Kafil and School

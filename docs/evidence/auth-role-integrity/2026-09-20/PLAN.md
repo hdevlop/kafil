@@ -1,13 +1,18 @@
-# Auth role integrity and production grant recovery
+# Auth role integrity and production grant recovery (archived)
 
-Date: **2026-09-19**
+Date: **2026-09-19**. Archived and reconciled: **2026-09-20**.
 
-Status: **Source repair implemented, verified, and committed in both
-repositories (Phases 1-4 and 6). `najm-auth@4.0.5` is published and
-artifact-verified. Kafil adoption and the uniqueness migration remain blocked
-until Release A repairs and verifies production. No production write, session
-revocation, deployment, connected acceptance, or Git push has been performed.**
-See section 18 for the exact boundary reached.
+Status: **Retired from the repository root on 2026-09-20.** Every phase this
+plan owned is closed. Release A and Release B source are published on `main`,
+deployed, and confirmed against production by an authorized read-only Admin
+API read. The remaining acceptance obligations this plan did not close are
+carried by
+[`docs/tests/auth-role-acceptance.md`](../../../tests/auth-role-acceptance.md).
+
+**Read the reconciled record first:** [`README.md`](README.md). It is
+authoritative wherever this document disagrees with it. Status lines and
+counts below were true when written; section 19 lists every statement that
+production has since superseded.
 
 Execution owner: **Claude Opus coder**
 
@@ -358,6 +363,11 @@ The expected current managed counts are:
 
 Counts are evidence, not the source of truth. The named arrays in
 `AUTH_ROLE_PERMISSIONS` remain authoritative.
+
+> **Superseded 2026-09-20.** This table records the matrix as it stood during
+> the incident. Commits `e25b752` and `4fe0c74` have since moved Delivery to
+> `2` and Family to `5`. The current matrix is `45/27/2/5/10`; see section 19.
+> The sentence above is exactly why: read the arrays, never this table.
 
 ### 6.5 Reconciliation result
 
@@ -766,10 +776,13 @@ After the artifact is available:
 
 ## 13. Phase 8 — Release B uniqueness migration
 
-Status: **Candidate complete; deployment pending.** Migration
-`0048_breezy_bloodscream.sql` adds the generated `roles_name_unique` index only
-after a sanitized duplicate-name/count precondition. Content and real-PostgreSQL
-success/failure proofs pass.
+Status: **Complete.** Migration `0048_breezy_bloodscream.sql` adds the
+generated `roles_name_unique` index only after a sanitized
+duplicate-name/count precondition. Content and real-PostgreSQL
+success/failure proofs pass. It was published in `6ee9eaf` and deployed by
+GitHub Actions run `35436500341` on 2026-09-19. Direct confirmation that the
+index exists in the production catalog needs VPS authority and is carried by
+[`docs/tests/auth-role-acceptance.md`](../../../tests/auth-role-acceptance.md).
 
 After Release A production verification and fixed-package adoption:
 
@@ -823,8 +836,14 @@ no additional schema changes.
 
 ## 14. Phase 9 — Connected authorization acceptance
 
-Status: **Not authorized / not started.** No browser or connected API acceptance
-has been run against any environment.
+Status: **Partially complete; the remainder is carried forward.** Admin API
+acceptance passed against production on 2026-09-20 under an explicit
+read-only authorization, and the user accepted the Admin roles page visually
+the same day. The Operator, Family, Sponsor, and Delivery rows of the matrix
+below, every negative proof, and the rest of the browser matrix were not run.
+They are carried by
+[`docs/tests/auth-role-acceptance.md`](../../../tests/auth-role-acceptance.md),
+not abandoned.
 
 Read `.agents/skills/kafil-playwright-testing/SKILL.md` completely before any
 browser implementation or connected acceptance. Do not run production browser
@@ -934,14 +953,18 @@ evidence:
 - [x] Reconciliation is idempotent and concurrency-safe.
 - [x] Affected sessions are invalidated through Najm Auth with crash-safe retry.
 - [x] Kafil unit and real-PostgreSQL regression suites pass.
-- [~] Release A root lint/typecheck/test/build pass. Typecheck, build, and
-  `db:generate` pass. Root `lint` and root `test` each fail only inside the
-  user's pre-existing dirty edit to
-  `apps/web/src/shared/PageHeaderGlobalActions.tsx`, which this slice must not
-  touch. Every package this slice owns passes its own lint and tests.
+- [x] Release A root lint/typecheck/test/build pass. At the time of writing,
+  root `lint` and root `test` each failed only inside the user's pre-existing
+  dirty edit to `apps/web/src/shared/PageHeaderGlobalActions.tsx`, which this
+  slice must not touch. That edit is no longer in the working tree, and the
+  complete root gate passed on 2026-09-20.
 - [x] Release A `db:generate` reports no schema change.
 - [x] Release A is separately authorized, published, deployed, and verified.
-- [x] Production has one row per fixed role and exact 45/27/0/6/10 managed grants.
+- [x] Production has one row per fixed role and exact managed grants.
+  **Historical value:** Release A verified `45/27/0/6/10`, which was the
+  code-owned matrix on 2026-09-19. Commits `e25b752` and `4fe0c74` have
+  since moved it to `45/27/2/5/10`, and production was re-confirmed at that
+  matrix on 2026-09-20. See section 19.1.
 - [x] Najm Auth enforces unique role names in PostgreSQL and SQLite.
 - [x] Najm Auth seeds roles by name and reuses legacy IDs safely.
 - [x] Najm Auth maps concurrent uniqueness races to a conflict response.
@@ -951,9 +974,17 @@ evidence:
 - [x] Kafil adopts the exact released package and lockfile.
 - [x] A new Kafil migration adds role-name uniqueness after a clean-data precondition.
 - [x] Release B full gate and no-schema-drift check pass.
-- [ ] Release B is separately authorized, deployed, and verified.
-- [ ] Fresh Admin, Operator, Family, Sponsor, and Delivery API acceptance passes.
-- [ ] Browser/UI acceptance is either passed with evidence or explicitly recorded unperformed.
+- [x] Release B is separately authorized, deployed, and verified. Published in
+  `6ee9eaf`, deployed by run `35436500341`, and confirmed by the live grant
+  state on 2026-09-20. The one residual check - reading `roles_name_unique`
+  out of the production catalog directly - needs VPS authority and is carried
+  forward.
+- [~] Fresh Admin, Operator, Family, Sponsor, and Delivery API acceptance
+  passes. Admin passed on 2026-09-20. The other four roles and every negative
+  proof are carried forward.
+- [~] Browser/UI acceptance is either passed with evidence or explicitly
+  recorded unperformed. The Admin roles page is accepted; the rest is recorded
+  unperformed and carried forward.
 - [x] Existing unrelated dirty work remains untouched.
 
 Until all authorized phases are complete, report the exact boundary reached.
@@ -1087,6 +1118,10 @@ was retained in this evidence.
   section 18.6.
 - Release B publication/deployment and connected API/browser acceptance remain.
 
+> **Superseded 2026-09-20.** The `najm-auth@4.0.5` commits `0183215` and
+> `fa07581` are now ancestors of `origin/master` and are published. Release B
+> is published and deployed. See section 19.
+
 ### 18.9 Release A production recovery
 
 Kafil main was pushed through `667bbb198eb74fc14da2edf8ce5d593b55c7d313`.
@@ -1139,3 +1174,55 @@ while the user's unrelated local PageHeader edit remained preserved.
 
 Dropping `roles_name_unique` is the schema rollback. It does not recreate the
 removed duplicate row, undo repaired grants, or restore revoked sessions.
+
+## 19. Reconciliation at retirement — 2026-09-20
+
+This plan was written on 2026-09-19 and its status text stopped tracking
+reality the moment the next slices landed. Every statement below corrects a
+specific claim above. [`README.md`](README.md) holds the full evidence.
+
+### 19.1 The managed grant matrix moved
+
+`45/27/0/6/10` appears throughout this document and is no longer the expected
+matrix. Two later commits changed the code-owned definition:
+
+- `e25b752` gave Delivery `read:notifications` and `update:notifications`, so
+  Delivery is `2`, not `0`. Section 3.5's rule still holds: those two are inbox
+  permissions, not generic order/family/budget access, and Delivery's workflow
+  authority still comes from its role guard plus assigned-Staff checks.
+- `4fe0c74` withdrew `read:contributions` from Family, so Family is `5`, not
+  `6`.
+
+The current matrix is **45/27/2/5/10**, and production matches it exactly.
+
+### 19.2 Release B is published and deployed
+
+Section 13's "deployment pending" and section 18.8's "Release B
+publication/deployment ... remain" are both stale. `6ee9eaf` was pushed and
+GitHub Actions run `35436500341` completed verify, image publication, and the
+Dokploy trigger on 2026-09-19. Twelve commits have landed on `main` since
+Release A; `main` and `origin/main` are both at `8c7b91a` with nothing
+unpushed.
+
+### 19.3 The Najm dependency moved past 4.0.5
+
+Kafil now pins and resolves `najm-auth@4.0.6` in all three workspaces. `4.0.6`
+is `4.0.5` plus an unrelated 7-character Moroccan CIN fix; it keeps the
+`roles_name_unique` indexes in both dialects and `authSeed()`'s `by: ["name"]`.
+The `4.0.5` source and release commits are now ancestors of `origin/master`,
+correcting section 18.8.
+
+### 19.4 A real defect was found while closing this plan
+
+`packages/seed/test/authorization-reconciliation-database.test.ts` still
+asserted `FAMILY_GRANTS = 6` after `4fe0c74` removed the sixth grant. The suite
+is opt-in, so neither CI nor `bun run test` ran it and the drift stayed hidden
+for a day. It is fixed by deriving all four counts from `AUTH_ROLE_PERMISSIONS`
+instead of copying them, which is the same rule section 6.4 already stated.
+
+### 19.5 What this plan did not close
+
+Operator, Family, Sponsor, and Delivery API acceptance, every negative proof in
+section 14.1, and the section 14.2 browser matrix beyond the Admin roles page.
+They are carried by
+[`docs/tests/auth-role-acceptance.md`](../../../tests/auth-role-acceptance.md).
