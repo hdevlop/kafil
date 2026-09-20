@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useEntityCommand, useEntityQuery } from "najm-kit/query";
 import { useCardViewport } from "najm-kit";
 import { useTranslation } from "najm-i18n/react";
@@ -109,6 +109,7 @@ export function useAccessPermissions() {
 
 export function useAccessUserCommands() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const invalidate = [adminAccessKeys.all];
   const deactivate = useEntityCommand({
     mutationFn: deactivateAccessUser,
@@ -131,6 +132,12 @@ export function useAccessUserCommands() {
   const resetAccess = useEntityCommand({
     mutationFn: resetAccessUser,
     invalidate,
+    // A refusal is usually the account having moved on since the table loaded,
+    // so the rows are refetched on failure too — the next attempt confirms
+    // against the account as it now is.
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: adminAccessKeys.all });
+    },
     // Only the backend-confirmed outcome is announced. A message the provider
     // never delivered gets no success toast at all — the dialog keeps itself
     // open and says so instead.

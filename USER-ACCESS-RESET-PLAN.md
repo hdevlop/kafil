@@ -1,8 +1,11 @@
 # User access reset from the Admin Users table
 
-Status: **implemented through phase 3, root gate green** (2026-09-20). Phase 4's
-connected/browser acceptance, git publication, and deployment are **not** done and
-are not claimed. Evidence, including what is still owed, is in
+Status: **implemented through phase 3, root gate green, published** (2026-09-20).
+The phase 1–3 slice is committed and pushed — Kafil `e40a3e5` on `main`, najm
+`e742184` on `master`, both matching upstream. Phase 4's connected/browser
+acceptance and deployment are **not** done and are not claimed. A later review
+found two behaviour gaps; both are fixed, and the Najm half is released as
+`najm-auth@4.0.8`. Evidence, including what is still owed, is in
 `docs/evidence/user-access-reset/README.md`.
 
 ## Goal and product contract
@@ -80,4 +83,6 @@ Scope excludes changing a user's email, changing the guardian CIN, editing the a
 - [x] One Users-table/card action and mode-specific accessible dialog localized in en/fr/ar/es.
 - [~] Focused package/frontend/backend tests and the full root gate pass; schema result documented (`db:generate` produced no migration). **Real-DB transaction tests (`bun run test:db`) not run** — no PostgreSQL available.
 - [ ] Connected family, staff, sponsor, pending-invite, and negative journeys pass with sanitized evidence.
-- [ ] Publication, deployment, and live acceptance reported separately; none is inferred from this document.
+- [x] Phase 1–3 publication: clean intended commits, local and upstream HEAD matching, in both repositories.
+- [x] Review follow-up: the stale-confirmation refusal in Kafil, and the undelivered-link report released as `najm-auth@4.0.8`, installed through the root override, and recorded in the reset audit.
+- [ ] Deployment and live acceptance reported separately; neither is inferred from this document.

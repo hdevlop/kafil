@@ -159,10 +159,15 @@ export function AdminAccessResetDialog({
   const expected = expectedResetMode(user);
 
   async function submit(values: z.infer<typeof reasonSchema>) {
+    if (expected === "unsupported") return;
     setUndelivered(false);
+    // The mode travels with the command so the server can refuse a
+    // confirmation the account has outgrown: what is explained above is what
+    // runs, or nothing runs.
     const result = await resetAccess.mutateAsync({
       userId: user.id,
       reason: values.reason,
+      expectedMode: expected,
     });
     // The account changed either way, and the list has been invalidated. What
     // is still unresolved is the message, so the dialog stays open and says so

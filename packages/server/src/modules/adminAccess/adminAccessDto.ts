@@ -64,6 +64,20 @@ export const ACCESS_RESET_MODES = [
 export type AccessResetMode = (typeof ACCESS_RESET_MODES)[number];
 
 /**
+ * What the dialog told the administrator would happen, echoed back so the
+ * command can check it. It selects nothing — the server still reloads the
+ * account and decides — but a value that no longer matches means the copy the
+ * administrator read named a different consequence, and the command refuses
+ * rather than performing the one they never confirmed. A caller that claims
+ * nothing is held to nothing.
+ */
+export const accessResetDto = accessReasonDto.extend({
+  expectedMode: z.enum(ACCESS_RESET_MODES).optional(),
+});
+
+export type AccessResetDto = z.input<typeof accessResetDto>;
+
+/**
  * `simulated` is the console/memory provider answering success for a message
  * nobody received. It is not `sent`, and the UI must not say it was.
  */

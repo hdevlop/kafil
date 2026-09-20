@@ -271,6 +271,11 @@ describe("admin access reset action", () => {
     // command before it closes.
     expect(resetDialog).toContain("adminAccess.dialogs.reset.${expected}");
     expect(resetDialog).toContain("await resetAccess.mutateAsync");
+    // What the copy above explained is what the command claims, so a row that
+    // went stale is refused by the server instead of running the other
+    // workflow behind the administrator.
+    expect(resetDialog).toContain("expectedMode: expected");
+    expect(resetDialog).toContain('if (expected === "unsupported") return;');
     expect(resetDialog).toContain("await pop()");
     // An undelivered message keeps the dialog open and says so.
     expect(resetDialog).toContain('result.delivery === "not_sent"');
@@ -279,7 +284,7 @@ describe("admin access reset action", () => {
     expect(resetDialog).toContain('t("adminAccess.dialogs.reset.notSent")');
   });
 
-  test("sends only the target and a reason, and refreshes the account rows", async () => {
+  test("sends the target, the reason, and the mode it explained", async () => {
     const [api, hooks] = await Promise.all([
       Bun.file(new URL("../src/services/adminAccessApi.ts", import.meta.url)).text(),
       Bun.file(
@@ -288,9 +293,14 @@ describe("admin access reset action", () => {
     ]);
 
     expect(api).toContain("/admin/access/users/${userId}/reset-access");
-    expect(api).toContain("{ reason }");
+    // The mode is a confirmation the server checks, never a selector.
+    expect(api).toContain("{ reason, expectedMode }");
     expect(hooks).toContain("mutationFn: resetAccessUser");
     expect(hooks).toContain("invalidate,");
+    // A refused command refreshes the rows too, so the next attempt confirms
+    // against the account as it now is.
+    expect(hooks).toContain("onError: () => {");
+    expect(hooks).toContain("queryClient.invalidateQueries({ queryKey: adminAccessKeys.all })");
     // The toast is derived from what the backend confirmed, and an undelivered
     // message gets no success toast at all.
     expect(hooks).toContain("successMessage: (result: AccessResetResult)");

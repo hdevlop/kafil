@@ -1,6 +1,7 @@
 import type {
   AccessPermissionView,
   AccessReasonCommand,
+  AccessResetCommand,
   AccessResetResult,
   AccessRole,
   AccessUserDetail,
@@ -41,14 +42,19 @@ export function reactivateAccessUser({
 }
 
 /**
- * One request for all three recovery workflows. The body carries the reason and
- * nothing else — the server reads the account and picks the mode, and the
- * response names which one ran and whether mail actually left.
+ * One request for all three recovery workflows. The server reads the account
+ * and picks the mode; `expectedMode` is only what the dialog explained, sent so
+ * the server can refuse a confirmation that no longer describes the account.
+ * The response names which workflow ran and whether mail actually left.
  */
-export function resetAccessUser({ userId, reason }: AccessReasonCommand) {
+export function resetAccessUser({
+  userId,
+  reason,
+  expectedMode,
+}: AccessResetCommand) {
   return api.post<AccessResetResult>(
     `/admin/access/users/${userId}/reset-access`,
-    { reason },
+    { reason, expectedMode },
   );
 }
 

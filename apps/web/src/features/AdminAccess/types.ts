@@ -87,8 +87,8 @@ export interface CreateAccessPermissionInput {
 }
 
 /**
- * The server chooses the workflow and reports it back. The client sends only
- * the target and a reason, so these are read, never written.
+ * The server chooses the workflow and reports it back. The client sends the one
+ * its dialog named as a confirmation only — it never selects the workflow.
  */
 export type AccessResetMode =
   | "family_credential_setup"
@@ -104,6 +104,15 @@ export type AccessResetDelivery =
   | "sent"
   | "simulated"
   | "not_sent";
+
+/**
+ * Carries the mode the dialog explained, so a row that went stale while the
+ * table was open is refused by the server instead of silently receiving the
+ * other workflow.
+ */
+export interface AccessResetCommand extends AccessReasonCommand {
+  expectedMode: AccessResetMode;
+}
 
 export interface AccessResetResult {
   userId: string;

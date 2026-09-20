@@ -20,6 +20,8 @@ import {
   type AccessResetDelivery,
   type AccessResetMode,
   type AccessResetResult,
+  accessResetDto,
+  type AccessResetDto,
   createAccessPermissionDto,
   type CreateAccessPermissionDto,
   accessUserListQuery,
@@ -285,22 +287,33 @@ export class AdminAccessService {
 
   /**
    * One administrative recovery command for an account that already exists.
-   * The client sends a target id and a reason; everything else — which of the
-   * three workflows runs, whose mailbox it reaches, which credential replaces
-   * which — is decided here from freshly reloaded state.
+   * The client sends a target id, a reason, and the workflow its dialog named;
+   * everything else — which of the three workflows runs, whose mailbox it
+   * reaches, which credential replaces which — is decided here from freshly
+   * reloaded state, and the named workflow only has to agree with it.
    *
    * The caller learns the mode and whether mail really left. It never learns
    * the guardian identity number, a password, a token, or a link.
    */
   async resetAccess(
     userId: string,
-    data: AccessReasonDto,
+    data: AccessResetDto,
     actorUserId: string,
   ): Promise<AccessResetResult> {
-    const { reason } = accessReasonDto.parse(data);
+    const { reason, expectedMode } = accessResetDto.parse(data);
     const user = await this.requireUser(userId);
     this.ensureSafeTarget(user, actorUserId, "reset access for");
     const mode = resolveResetMode(user);
+    // The client's mode is a confirmation, never a selector. A row that went
+    // stale while the table was open — a pending account that has since been
+    // activated, say — still resolves to a workflow here, but not the one the
+    // administrator read before confirming. Refuse it; they can reload and
+    // decide again against the account as it now is.
+    if (expectedMode && expectedMode !== mode) {
+      HttpError.conflict(
+        "This account changed since it was loaded; reload it and confirm the action that now applies",
+      );
+    }
 
     if (mode === "family_credential_setup") {
       await this.resetFamilyCredential(user.id, actorUserId, reason);
@@ -311,13 +324,19 @@ export class AdminAccessService {
     // audit entry afterwards records what actually happened rather than what
     // was intended. An audit failure here surfaces as an error on a request
     // whose mail already left — visible and recoverable, never silent.
-    const { emailSent } = mode === "invitation_resent"
+    const { emailSent, undeliveredLinkLive } = mode === "invitation_resent"
       ? await this.auth.resendInvitation(user.id)
       : await this.auth.sendPasswordReset(user.id);
     const delivery = this.deliveryOutcome(emailSent);
+    // Najm mints a link before it sends and retires it when the send fails.
+    // When it could not, a usable link exists that nobody received. The next
+    // successful send supersedes it, so there is nothing for the administrator
+    // to do differently — but it is an anomaly in the token store and belongs
+    // in the trail. It is value-free: no token, no link, no address.
     await this.record("access.user_access_reset", actorUserId, user.id, reason, {
       mode,
       delivery,
+      ...(undeliveredLinkLive ? { undeliveredLinkLive: "true" } : {}),
     });
     return { userId: user.id, mode, delivery };
   }

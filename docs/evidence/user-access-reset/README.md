@@ -30,9 +30,10 @@ jti)` compare-and-deletes it. `UserService.update` takes the same
 
 **Token supersession decision, tested explicitly:** minting writes one cache key
 per user, so a new link supersedes any earlier one the moment it is minted. When
-delivery then fails, the fresh token is discarded too — a failed send never
-leaves a live link nobody received. The discard is compare-and-delete, so a late
-failure from an older send cannot revoke a newer link.
+delivery then fails, the fresh token is discarded too. The discard is
+compare-and-delete, so a late failure from an older send cannot revoke a newer
+link. As shipped in 4.0.7 the discard could itself fail without saying so — see
+the review follow-up at the end of this record.
 
 - Tests: `packages/najm-auth/test/administrative-account-recovery.test.ts`, 29 new tests.
 - Package gate: `bun run --cwd packages/najm-auth test` → 506 pass, 13 skip, 0 fail (plus 13 pass under `--conditions react-server`). `build` clean. `bun run api:check` → snapshot current.
@@ -149,3 +150,79 @@ change was involved.
   - the denial matrix by exact response, plus desktop/mobile/keyboard/RTL coverage and a clean console/network capture;
   - `bun run test:db` for the transactional and concurrency contract.
 - **Production reset execution and remote mailbox tests.** Require a separate, explicitly authorized operations step.
+
+## Review follow-up (2026-09-20, after publication)
+
+A review of the published slice found two behaviour gaps. Both are fixed in the
+working tree; neither is committed or released yet.
+
+### 1. A stale confirmation could authorize a different action
+
+The dialog computed the workflow from the table row and explained it; the server
+independently resolved the workflow from freshly reloaded state and ran that.
+The two could disagree — a pending account activated while the table sat open
+would take a password-reset mail after the administrator confirmed *resend
+invitation* — and nothing detected the divergence.
+
+The mode the dialog explained now travels with the command as `expectedMode`,
+and `AdminAccessService.resetAccess` refuses with a 409 when it does not match
+the mode it resolved. It remains a confirmation, never a selector: the server
+still decides, and a claim that disagrees stops the command rather than steering
+it. The field is optional, so a caller that claims nothing is held to nothing.
+A refused command now also invalidates the account rows, so the next attempt is
+confirmed against the account as it then is.
+
+- `packages/server/src/modules/adminAccess/adminAccessDto.ts` — `accessResetDto`.
+- `packages/server/src/modules/adminAccess/adminAccessService.ts` — the mismatch refusal.
+- `apps/web/src/services/adminAccessApi.ts`, `.../AdminAccessUserDialogs.tsx`, `.../hooks/useAdminAccess.ts`.
+- Tests: 3 new cases in `packages/server/test/admin-access-modules.test.ts` (mismatch refused with no mail and no audit; matching confirmation proceeds; a family account with an operator-shaped claim is refused rather than mailed), plus tightened assertions in `apps/web/test/admin-access-feature.test.ts`.
+
+The refusal message is the module's existing English conflict style, surfaced by
+the command hook's toast like every other reset conflict. It is not a new
+localized string.
+
+### 2. A failed send could leave a link nobody could account for
+
+`najm-auth@4.0.7` discards the token it just minted when the mail does not
+leave, but swallowed a failure of that discard: the caller was told
+`emailSent: false` while a usable link remained live in the token store. The
+package test suite asserted exactly that outcome.
+
+`AdministrativeDelivery` now carries `undeliveredLinkLive`. A `false` from
+compare-and-delete is not a failure — it means a newer mint already superseded
+the link, which therefore cannot be consumed — so only a throw from the token
+store sets the flag, and it is logged at error level rather than warn.
+
+- `packages/najm-auth/src/auth/AuthService.ts` in the sibling `najm` checkout.
+- Tests: `packages/najm-auth/test/administrative-account-recovery.test.ts` — the accepting test is replaced by one asserting the live link is reported, plus the superseded-link case and the same failure on the invitation path.
+- Package gate: `bun test` in `packages/najm-auth` → 508 pass, 13 skip, 0 fail. `tsc --noEmit` reports the same 35 pre-existing errors as before the change, none in the changed files.
+
+**Released as `najm-auth@4.0.8`.** Packed from commit `3d3cb64` under the
+repository's pack-then-publish gate (clean worktree, turbo build, turbo test,
+public-API snapshot current), tarball
+`najm-auth-4.0.8.tgz` sha256 `95f67b8f0bbe835bb138fb856187d987506c4c0a081c8e46448687315e4e879f`,
+published to the public registry and verified there — integrity
+`sha512-Wmq7bPchADz1jkToYlBD6BYr+WFHCo5KQJrjyLCYT0+bDaeYavwK/kWwlRDsReOQ/zqQdCxVrEAtNyc7MPNNSw==`,
+shasum `bff4aca7af75df1be7255550184a3c836ea2f023`. The installed declaration under
+`packages/server/node_modules/najm-auth` carries `undeliveredLinkLive`. Kafil's root `overrides` pin moves 4.0.7 →
+4.0.8.
+
+`AdminAccessService.resetAccess` now reads the flag and adds
+`undeliveredLinkLive: true` to the audit metadata when Najm reports it, and
+omits the key entirely otherwise. It is value-free — no token, no link, no
+address — and the response to the client is unchanged: the administrator's next
+step is the same retry either way, and the next successful send supersedes the
+stranded link.
+
+### Root gate, re-run with both fixes and `najm-auth@4.0.8` installed
+
+| Command | Result |
+| --- | --- |
+| `bun run lint` | pass |
+| `bun run typecheck` | pass |
+| `bun run test` | 513 + 454 + 120 pass, 96 skip, **0 fail** |
+| `bun run build` | pass |
+| `bun run db:generate` | **No schema changes, nothing to migrate** |
+
+Still owed, unchanged by this follow-up: `bun run test:db`, the connected
+browser journeys, and deployment.

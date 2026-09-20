@@ -16,6 +16,8 @@ import { isAdmin } from "../../config/authConfig";
 import {
   type AccessReasonDto,
   accessReasonDto,
+  type AccessResetDto,
+  accessResetDto,
   type CreateAccessPermissionDto,
   createAccessPermissionDto,
   accessRoleIdParams,
@@ -113,11 +115,11 @@ export class AdminAccessController {
   @Post("/users/:userId/reset-access")
   @isAdmin()
   @RateLimit({ ...accessResetRateLimit, key: accessResetRateLimitKey })
-  @Validate({ params: accessUserIdParams, body: accessReasonDto })
+  @Validate({ params: accessUserIdParams, body: accessResetDto })
   @ResMsg("adminAccess.success.accessReset")
   resetAccess(
     @Params("userId") userId: string,
-    @Body() body: AccessReasonDto,
+    @Body() body: AccessResetDto,
     @User("id") actorUserId: string,
   ) {
     return this.access.resetAccess(userId, body, actorUserId);

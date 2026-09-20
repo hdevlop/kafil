@@ -294,6 +294,89 @@ describe("admin access reset", () => {
     expect(state.audits).toEqual([]);
   });
 
+  it("refuses a confirmation the account has outgrown", async () => {
+    // The table listed this operator as pending, so the dialog explained a
+    // re-invitation. The account was activated in the meantime: an ordinary
+    // reset mail is eligible now, but it is not what the administrator read.
+    const { service, state } = accessService(operatorUser);
+
+    await expect(
+      service.resetAccess(
+        operatorUser.id,
+        { reason: "Invite expired", expectedMode: "invitation_resent" },
+        "admin-user",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(state.passwordResets).toEqual([]);
+    expect(state.invitations).toEqual([]);
+    expect(state.audits).toEqual([]);
+  });
+
+  it("proceeds when the confirmation still describes the account", async () => {
+    const { service, state } = accessService(operatorUser);
+
+    expect(
+      await service.resetAccess(
+        operatorUser.id,
+        { reason: "Operator locked out", expectedMode: "reset_email_sent" },
+        "admin-user",
+      ),
+    ).toMatchObject({ mode: "reset_email_sent", delivery: "sent" });
+    expect(state.passwordResets).toEqual([operatorUser.id]);
+  });
+
+  it("never lets the confirmation select the workflow", async () => {
+    // A family account with an operator-shaped claim still gets the family
+    // workflow refused into a conflict, not the mail the claim asked for.
+    const { service, state } = accessService(familyUser, { guardianCin: "AB123456" });
+
+    await expect(
+      service.resetAccess(
+        familyUser.id,
+        { reason: "Wrong claim", expectedMode: "reset_email_sent" },
+        "admin-user",
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(state.passwordResets).toEqual([]);
+    expect(state.temporaryResets).toEqual([]);
+  });
+
+  it("records a link Najm could not retire, and nothing about it", async () => {
+    // The send failed and the token store was unreachable, so a usable link
+    // exists that nobody received. The next successful send supersedes it; the
+    // trail still has to say it happened.
+    const { service, state } = accessService(operatorUser, {
+      emailSent: false,
+      undeliveredLinkLive: true,
+    });
+
+    expect(
+      await service.resetAccess(operatorUser.id, { reason: "Locked out" }, "admin-user"),
+    ).toMatchObject({ mode: "reset_email_sent", delivery: "not_sent" });
+    expect(state.audits[0]).toMatchObject({
+      action: "access.user_access_reset",
+      metadata: {
+        mode: "reset_email_sent",
+        delivery: "not_sent",
+        undeliveredLinkLive: "true",
+      },
+    });
+    expect(JSON.stringify(state.audits)).not.toMatch(/token|http|reset-password/i);
+  });
+
+  it("leaves the flag out entirely when nothing was stranded", async () => {
+    const { service, state } = accessService(operatorUser, { emailSent: false });
+
+    await service.resetAccess(operatorUser.id, { reason: "Locked out" }, "admin-user");
+
+    expect(state.audits[0]).toMatchObject({
+      metadata: { mode: "reset_email_sent", delivery: "not_sent" },
+    });
+    expect(
+      Object.keys((state.audits[0] as { metadata: Record<string, unknown> }).metadata),
+    ).not.toContain("undeliveredLinkLive");
+  });
+
   it("refuses an inactive account rather than quietly reactivating it", async () => {
     const { service, state } = accessService({ ...operatorUser, status: "inactive" });
 
@@ -539,6 +622,7 @@ function accessService(
     }>;
     guardianCin?: string;
     emailSent?: boolean;
+    undeliveredLinkLive?: boolean;
     provider?: string;
   } = {},
 ) {
@@ -606,6 +690,7 @@ function accessService(
     findFamilyGuardianCin: async () => options.guardianCin,
   } as unknown as AdminAccessRepository;
   const emailSent = options.emailSent ?? true;
+  const undeliveredLinkLive = options.undeliveredLinkLive ?? false;
   const service = new AdminAccessService(
     repository,
     {
@@ -635,11 +720,11 @@ function accessService(
       },
       sendPasswordReset: async (userId: string) => {
         state.passwordResets.push(userId);
-        return { userId, emailSent };
+        return { userId, emailSent, undeliveredLinkLive };
       },
       resendInvitation: async (userId: string) => {
         state.invitations.push(userId);
-        return { userId, emailSent };
+        return { userId, emailSent, undeliveredLinkLive };
       },
     } as unknown as AuthService,
     {
