@@ -10,9 +10,11 @@ purpose-specific test documents under
 
 ## Current plans
 
-- [`USER-ACCESS-RESET-PLAN.md`](../../USER-ACCESS-RESET-PLAN.md)
-  - implemented and published Admin Users-table access reset. Database,
-    connected browser, and deployment acceptance remain separate.
+- [`user-access-reset-implementation.md`](user-access-reset-implementation.md)
+  - archived implementation plan for the published Admin Users-table access
+    reset. Remaining browser work lives in the
+    [test contract](../tests/user-access-reset.md); reset-specific database
+    proof and deployment acceptance remain separate.
 - [`GLOBAL-FIXES-PLAN.md`](GLOBAL-FIXES-PLAN.md)
   - tracks independently testable user-visible fixes. Fix 1 adds the missing
     Admin/Operator purchase metadata and authenticated protected-receipt view

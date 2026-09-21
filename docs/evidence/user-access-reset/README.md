@@ -1,6 +1,6 @@
 # User access reset — implementation evidence
 
-Scope: `USER-ACCESS-RESET-PLAN.md`, phases 1–3 plus the root gate from phase 4.
+Scope: [`docs/plans/user-access-reset-implementation.md`](../../plans/user-access-reset-implementation.md), phases 1–3 plus the root gate from phase 4. Remaining browser work is in [`docs/tests/user-access-reset.md`](../../tests/user-access-reset.md).
 Date: 2026-09-20. Sanitized: no credentials, tokens, links, or CIN values appear
 here or in any test fixture.
 
