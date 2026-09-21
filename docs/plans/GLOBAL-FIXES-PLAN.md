@@ -2,7 +2,7 @@
 
 Date: **2026-09-19**
 
-Status: **Fixes 1, 2, 3, 4, and 5 are implemented. Source and focused tests pass;
+Status: **Fixes 1, 2, 3, 4, 5, and 6 are implemented. Source and focused tests pass;
 the repository gate result is recorded per fix. Fixes 1-3 previously passed the
 repository gate, and `db:generate` reported no schema change. Automated browser
 acceptance has not been run: the user verified the Delivery layout manually and
@@ -55,6 +55,7 @@ Before implementing any fix:
 | 3 | Put Delivery statistics first, then pair the map and Scheduled deliveries in a 60/40 workspace | Implemented; focused tests and root gate pass | Specs written; manual user check of the stats-first 60/40 layout; automated run not performed | Not deployed |
 | 4 | Reorder the Delivery order sheet and remove redundant status/package details | Implemented; focused test and typecheck pass | Automated run not performed | Not deployed |
 | 5 | Remove Family contribution/sponsor visibility and replace the dashboard card with Family-safe attention and quick actions | Implemented; focused web/server/seed tests pass | Not run by explicit user instruction | Pending deployment |
+| 6 | Show Family only the current month's budget allowance and usage, never lifetime account balances | Implemented; focused web/server/locale tests pass | Not run by explicit user instruction; manual visual check pending | Not deployed |
 
 Deviation from this plan, on explicit user instruction: section 24.4 asked the
 Scheduled deliveries card to take its natural content height. The user reviewed
@@ -1349,3 +1350,75 @@ Append each future fix with these headings:
 
 Update the register in section 3 whenever a fix is added or its evidence-backed
 status changes.
+
+# Fix 6 - Family monthly budget privacy
+
+## 40. User-visible outcome
+
+The Family dashboard and order cart show the current month's limit, usage, and
+remaining allowance. They no longer show or reconstruct the household's
+lifetime available, reserved, or spent balances. When no monthly limit is
+configured, the UI says so instead of presenting a synthetic zero budget.
+
+## 41. Confirmed current state
+
+The operator Family editor already writes `monthlyBudgetMinor` to the current
+UTC month's `monthly_budget_limits` row. The Family dashboard previously read
+the lifetime `budget_accounts` balance directly, while `/api/budgets/me` and
+the Family ledger projection also returned lifetime balance fields. A local
+read-only database check confirmed the reported Family has a September 2026
+limit of 100,000 minor units (MAD 1,000.00).
+
+## 42. Authorization and privacy contract
+
+- Operator budget summary, full ledger, reconciliation, and mutation behavior
+  remain unchanged.
+- `/api/dashboard/family` returns only `month`, `limitMinor`, `usedMinor`, and
+  `remainingMinor` for the authenticated Family.
+- `/api/budgets/me` omits lifetime balances and returns the resolved current
+  monthly policy and usage.
+- `/api/budgets/me/ledger` is limited to current-month order activity and omits
+  contribution/manual entries plus all after-balance snapshots.
+- Orders continue to enforce the real account balance and monthly policy on the
+  server; this change does not mutate the ledger or relax financial invariants.
+
+## 43. Owning files and implementation design
+
+`BudgetService` remains the single monthly-policy resolver. `DashboardService`
+uses its Family-safe projection instead of querying `budget_accounts` for the
+Family dashboard. The dashboard and Family cart consume distinct monthly
+types; operator consumers retain the full `BudgetSummary` contract. The Family
+UI treats a stale pre-change response as unavailable rather than rendering a
+false zero-value donut.
+
+## 44. Focused tests
+
+- Server dashboard, budget, family-order-limit, and locale contracts: 41 pass.
+- Web dashboard and family-order-limit contracts: 26 pass.
+- Full repository lint, typecheck, tests, production build, and the
+  no-schema-drift `db:generate` gate pass after the final stale-response guard.
+
+## 45. Browser acceptance
+
+Do not run automated browser tests for this fix. The user explicitly owns the
+manual visual check. Restart the root development server before that check so
+Next reloads the changed backend dependency graph and dashboard response.
+
+## 46. Completion gates
+
+- The full non-browser root gate passes.
+- Manual Family dashboard and cart review remains pending.
+- Git publication, deployment, and connected production acceptance remain
+  separate and are not authorized by this fix.
+
+## 47. Rollback
+
+Restore the prior Family dashboard, own-budget, and ledger response shapes
+together with their frontend types and cards. Do not change the operator
+accounting routes, stored monthly limits, or ledger rows during rollback.
+
+## 48. Out of scope
+
+No schema or migration change, no recalculation of historical orders, no
+change to operator/sponsor budget visibility, and no deployment or production
+data mutation.

@@ -132,9 +132,10 @@ export interface FamilyDashboard {
     deliveredOrders: number;
   };
   budget: {
-    availableMinor: number;
-    reservedMinor: number;
-    spentMinor: number;
+    month: string;
+    limitMinor: number | null;
+    usedMinor: number;
+    remainingMinor: number | null;
   };
   orderTrend: Array<{ month: string; spentMinor: number }>;
   orderStatuses: DashboardStatusCount[];

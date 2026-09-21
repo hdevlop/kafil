@@ -123,11 +123,14 @@ beforeAll(async () => {
   await pool.query(
     `INSERT INTO family_profiles
        (id, user_id, guardian_legal_name, guardian_cin, exact_address,
+        phone, delivery_latitude, delivery_longitude,
         housing_situation, registration_date, support_priority,
         created_by_user_id, funding_target_minor)
      VALUES ($1, $2, 'Directory Atlas Guardian', $3, 'Protected atlas address',
+             '+212600000001', 33.57, -7.59,
              'rented', '2026-01-15', 'normal', $4, 1000),
             ($5, $6, 'Directory Rif Guardian', $7, 'Protected rif address',
+             NULL, NULL, NULL,
              'rented', '2026-01-15', 'normal', $4, 1000)`,
     [ids.familyOne, ids.familyUserOne, `DFA${suffix}`, actorUserId, ids.familyTwo, ids.familyUserTwo, `DFR${suffix}`],
   );
@@ -258,5 +261,65 @@ databaseDescribe("delivery families directory PostgreSQL integration", () => {
     expect(json).not.toContain("guardian_cin");
     expect(json).not.toContain("cin");
     expect(json).not.toContain("documents");
+  });
+
+  it("uses the current family destination for open deliveries and snapshots for history", async () => {
+    try {
+      await pool.query(
+        `UPDATE family_profiles
+            SET exact_address = 'Updated active delivery address',
+                phone = '+212600000099',
+                delivery_latitude = 34.0209,
+                delivery_longitude = -6.8416
+          WHERE id = $1`,
+        [ids.familyTwo],
+      );
+
+      const courierB = await directory(ids.courierB, { date: selectedDate });
+      expect(courierB.data[0]).toMatchObject({
+        address: "Updated active delivery address",
+        phone: "+212600000099",
+        coordinates: { latitude: 34.0209, longitude: -6.8416 },
+      });
+      const courierA = await directory(ids.courierA, { date: selectedDate });
+      expect(
+        courierA.data.find(({ familyProfileId }) => familyProfileId === ids.familyTwo),
+      ).toMatchObject({
+        address: "Protected rif address",
+        phone: null,
+        coordinates: null,
+      });
+
+      const storedSnapshot = await pool.query<{
+        address: string;
+        phone: string | null;
+        latitude: number | null;
+        longitude: number | null;
+      }>(
+        `SELECT delivery_address_snapshot AS address,
+                delivery_phone_snapshot AS phone,
+                delivery_latitude_snapshot AS latitude,
+                delivery_longitude_snapshot AS longitude
+           FROM orders
+          WHERE id = $1`,
+        [ids.orderFour],
+      );
+      expect(storedSnapshot.rows[0]).toEqual({
+        address: "Protected rif address",
+        phone: "+212600000004",
+        latitude: null,
+        longitude: null,
+      });
+    } finally {
+      await pool.query(
+        `UPDATE family_profiles
+            SET exact_address = 'Protected rif address',
+                phone = NULL,
+                delivery_latitude = NULL,
+                delivery_longitude = NULL
+          WHERE id = $1`,
+        [ids.familyTwo],
+      );
+    }
   });
 });

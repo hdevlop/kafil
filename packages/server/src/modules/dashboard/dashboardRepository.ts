@@ -9,6 +9,7 @@ import { budgetAccounts } from "../budgets/budgetSchema";
 import { children } from "../children/childSchema";
 import { contributions, contributionPlans } from "../contributions/contributionSchema";
 import { familyProfiles } from "../families/familySchema";
+import { CURRENT_FAMILY_DESTINATION_ORDER_STATUSES } from "../orders/orderDeliveryDestination";
 import {
   orders,
   orderDeliveryAttempts,
@@ -200,10 +201,26 @@ export class DashboardRepository {
         familyProfileId: familyProfiles.id,
         familyName: usersTable.name,
         familyImage: usersTable.image,
-        address: orders.deliveryAddressSnapshot,
-        phone: orders.deliveryPhoneSnapshot,
-        latitude: orders.deliveryLatitudeSnapshot,
-        longitude: orders.deliveryLongitudeSnapshot,
+        address: sql<string>`case
+          when ${inArray(orders.status, [...CURRENT_FAMILY_DESTINATION_ORDER_STATUSES])}
+            then ${familyProfiles.exactAddress}
+          else ${orders.deliveryAddressSnapshot}
+        end`,
+        phone: sql<string | null>`case
+          when ${inArray(orders.status, [...CURRENT_FAMILY_DESTINATION_ORDER_STATUSES])}
+            then ${familyProfiles.phone}
+          else ${orders.deliveryPhoneSnapshot}
+        end`,
+        latitude: sql<number | null>`case
+          when ${inArray(orders.status, [...CURRENT_FAMILY_DESTINATION_ORDER_STATUSES])}
+            then ${familyProfiles.deliveryLatitude}
+          else ${orders.deliveryLatitudeSnapshot}
+        end`,
+        longitude: sql<number | null>`case
+          when ${inArray(orders.status, [...CURRENT_FAMILY_DESTINATION_ORDER_STATUSES])}
+            then ${familyProfiles.deliveryLongitude}
+          else ${orders.deliveryLongitudeSnapshot}
+        end`,
         scheduledDate: orderDeliveryAttempts.scheduledDate,
         windowStartMinute: orderDeliveryAttempts.windowStartMinute,
         windowEndMinute: orderDeliveryAttempts.windowEndMinute,
@@ -263,22 +280,17 @@ export class DashboardRepository {
   }
 
   async familySummary(familyProfileId: string) {
-    const [[childRows], [budgetRows], [orderRows]] = await Promise.all([
+    const [[childRows], [orderRows]] = await Promise.all([
       this.db.select({
         total: sql<number>`count(*)::int`,
         active: sql<number>`count(*) filter (where ${children.status} = 'active')::int`,
       }).from(children).where(eq(children.familyProfileId, familyProfileId)),
       this.db.select({
-        availableMinor: budgetAccounts.availableMinor,
-        reservedMinor: budgetAccounts.reservedMinor,
-        spentMinor: budgetAccounts.spentMinor,
-      }).from(budgetAccounts).where(eq(budgetAccounts.familyProfileId, familyProfileId)).limit(1),
-      this.db.select({
         open: sql<number>`count(*) filter (where ${orders.status} in ('pending', 'approved', 'in_preparation'))::int`,
         delivered: sql<number>`count(*) filter (where ${orders.status} = 'delivered')::int`,
       }).from(orders).where(eq(orders.familyProfileId, familyProfileId)),
     ]);
-    return { children: childRows, budget: budgetRows, orders: orderRows };
+    return { children: childRows, orders: orderRows };
   }
 
   familyOrderTrend(familyProfileId: string, since: Date) {

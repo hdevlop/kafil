@@ -94,17 +94,24 @@ describe("Phase 3 budget route boundaries", () => {
 });
 
 describe("Phase 3 budget mutation workflow", () => {
-  it("returns a family-safe ledger projection without internal operational fields", async () => {
+  it("returns only current-month order activity without lifetime balance snapshots", async () => {
+    let requestedMonth = "";
     const service = new BudgetService(
       {} as BudgetAccountRepository,
       {
-        listByAccountId: async () => [
-          ledgerRecord({
-            sponsorName: "Sponsor Name",
-            sponsorImage: "https://example.com/sponsor.png",
-            sponsorGender: "F",
-          }),
-        ],
+        listMonthlyOrderActivityByAccountId: async (
+          _accountId: string,
+          month: string,
+        ) => {
+          requestedMonth = month;
+          return [{
+            id: ledgerId,
+            entryType: "order_reserve",
+            amountMinor: 500,
+            sourceType: "order",
+            createdAt: new Date("2026-09-17T00:00:00.000Z"),
+          }];
+        },
       } as unknown as BudgetLedgerRepository,
       {} as MonthlyBudgetLimitRepository,
       {
@@ -127,9 +134,10 @@ describe("Phase 3 budget mutation workflow", () => {
 
     expect(entry).toMatchObject({
       id: ledgerId,
-      entryType: "manual_credit",
+      entryType: "order_reserve",
       amountMinor: 500,
     });
+    expect(requestedMonth).toMatch(/^\d{4}-\d{2}-01$/);
     expect(entry).not.toHaveProperty("actorUserId");
     expect(entry).not.toHaveProperty("budgetAccountId");
     expect(entry).not.toHaveProperty("idempotencyKey");
@@ -139,6 +147,53 @@ describe("Phase 3 budget mutation workflow", () => {
     expect(entry).not.toHaveProperty("sponsorName");
     expect(entry).not.toHaveProperty("sponsorImage");
     expect(entry).not.toHaveProperty("sponsorGender");
+    expect(entry).not.toHaveProperty("availableAfterMinor");
+    expect(entry).not.toHaveProperty("reservedAfterMinor");
+    expect(entry).not.toHaveProperty("spentAfterMinor");
+  });
+
+  it("returns a monthly-only family summary without lifetime balances", async () => {
+    const service = new BudgetService(
+      {} as BudgetAccountRepository,
+      {
+        monthlyOrderUsage: async () => 3_000,
+      } as unknown as BudgetLedgerRepository,
+      {
+        findByAccountAndMonth: async () => undefined,
+      } as unknown as MonthlyBudgetLimitRepository,
+      {
+        findByUserId: async () => ({ id: householdId, role: "family" }),
+      } as unknown as FamilyRepository,
+      {} as AuditService,
+      {
+        ensureAccountForFamily: async () => accountRecord({
+          availableMinor: 900_000,
+          reservedMinor: 40_000,
+          spentMinor: 60_000,
+        }),
+      } as unknown as BudgetValidator,
+      {
+        getProgress: async () => ({ status: "active" }),
+      } as unknown as FundingService,
+      {
+        find: async () => ({ defaultMonthlyBudgetMinor: 10_000 }),
+      } as never,
+      {
+        countActiveInRange: async () => 1,
+      } as never,
+    );
+
+    const summary = await service.getOwnSummary("family-user");
+
+    expect(summary).toMatchObject({
+      monthlyLimitMinor: 10_000,
+      monthlyUsedMinor: 3_000,
+      monthlyRemainingMinor: 7_000,
+    });
+    expect(summary).not.toHaveProperty("availableMinor");
+    expect(summary).not.toHaveProperty("reservedMinor");
+    expect(summary).not.toHaveProperty("spentMinor");
+    expect(summary).not.toHaveProperty("version");
   });
 
   it("keeps the contributing sponsor on the operator ledger", async () => {

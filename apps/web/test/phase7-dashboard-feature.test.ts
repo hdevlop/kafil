@@ -319,14 +319,30 @@ describe("Phase 7 dashboard presentation contracts", () => {
     );
   });
 
-  test("masks the available budget amount on both family dashboard stat variants", async () => {
-    const pageSource = await Bun.file(
-      new URL("../src/features/Dashboard/FamilyDashboard/components/FamilyDashboardPage.tsx", import.meta.url),
-    ).text();
+  test("shows only current-month budget values to families", async () => {
+    const [pageSource, cartSource, typeSource] = await Promise.all([
+      Bun.file(
+        new URL("../src/features/Dashboard/FamilyDashboard/components/FamilyDashboardPage.tsx", import.meta.url),
+      ).text(),
+      Bun.file(
+        new URL("../src/features/OrderCart/components/OrderCartDialog.tsx", import.meta.url),
+      ).text(),
+      Bun.file(
+        new URL("../src/features/Dashboard/types.ts", import.meta.url),
+      ).text(),
+    ]);
 
-    expect(pageSource).toContain('const maskedAvailableAmount = "********"');
-    expect(pageSource.match(/value=\{maskedAvailableAmount\}/g)).toHaveLength(2);
-    expect(pageSource).not.toContain('value={money(data.budget.availableMinor)}');
+    expect(pageSource).toContain("data.budget.remainingMinor");
+    expect(pageSource).toContain("data.budget.limitMinor");
+    expect(pageSource).toContain("data.budget.usedMinor");
+    expect(pageSource).not.toContain("data.budget.availableMinor");
+    expect(pageSource).not.toContain("data.budget.reservedMinor");
+    expect(pageSource).not.toContain("data.budget.spentMinor");
+    expect(cartSource).toContain("familyBudget.data.monthlyRemainingMinor");
+    expect(cartSource).toContain("familyBudget.data.monthlyUsedMinor");
+    expect(cartSource).not.toContain("familyBudget.data.availableMinor");
+    expect(cartSource).not.toContain("familyBudget.data.reservedMinor");
+    expect(typeSource).not.toContain("budget: { availableMinor:");
   });
 
   test("does not expose recent sponsor contributions on the family dashboard", async () => {

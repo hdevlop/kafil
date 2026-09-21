@@ -182,6 +182,46 @@ export class BudgetLedgerRepository {
       .offset(offset);
   }
 
+  listMonthlyOrderActivityByAccountId(
+    budgetAccountId: string,
+    month: string,
+    limit: number,
+    offset: number,
+  ) {
+    const startsAt = new Date(`${month}T00:00:00.000Z`);
+    const endsAt = new Date(
+      Date.UTC(startsAt.getUTCFullYear(), startsAt.getUTCMonth() + 1, 1),
+    );
+    return this.db
+      .select({
+        id: budgetLedgerEntries.id,
+        entryType: budgetLedgerEntries.entryType,
+        amountMinor: budgetLedgerEntries.amountMinor,
+        sourceType: budgetLedgerEntries.sourceType,
+        createdAt: budgetLedgerEntries.createdAt,
+      })
+      .from(budgetLedgerEntries)
+      .where(
+        and(
+          eq(budgetLedgerEntries.budgetAccountId, budgetAccountId),
+          inArray(budgetLedgerEntries.entryType, [
+            "order_reserve",
+            "order_capture",
+            "order_release",
+            "order_refund",
+          ]),
+          gte(budgetLedgerEntries.createdAt, startsAt),
+          lt(budgetLedgerEntries.createdAt, endsAt),
+        ),
+      )
+      .orderBy(
+        desc(budgetLedgerEntries.createdAt),
+        desc(budgetLedgerEntries.id),
+      )
+      .limit(limit)
+      .offset(offset);
+  }
+
   async findLatestByAccountId(budgetAccountId: string) {
     const [entry] = await this.db
       .select()

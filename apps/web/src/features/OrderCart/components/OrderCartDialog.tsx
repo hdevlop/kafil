@@ -390,7 +390,9 @@ export function OrderConfirmationStep({
           <div className="flex items-center justify-between gap-3 text-sm">
             <span className="flex items-center gap-2 text-muted-foreground">
               <Wallet aria-hidden className="size-4" />
-              {t("operator.budgets.available")}
+              {familyMode
+                ? t("dashboard.family.monthlyRemaining")
+                : t("operator.budgets.available")}
             </span>
             <span className="font-medium text-foreground">
               {fmt.money(family.availableMinor)}
@@ -582,7 +584,7 @@ export function OrderCartSheet({
           image: ownFamily.data.image,
           exactAddress: ownFamily.data.exactAddress,
           phone: ownFamily.data.phone,
-          availableMinor: familyBudget.data?.availableMinor ?? null,
+          availableMinor: familyBudget.data?.monthlyRemainingMinor ?? null,
         }
       : null
     : selectedFamilySummary
@@ -735,14 +737,18 @@ export function OrderCartSheet({
                 <NCard
                   embedded
                   icon={Wallet}
-                  title={t("operator.budgets.available")}
-                  description={fmt.money(familyBudget.data.availableMinor)}
+                  title={t("dashboard.family.monthlyRemaining")}
+                  description={
+                    familyBudget.data.monthlyRemainingMinor === null
+                      ? "—"
+                      : fmt.money(familyBudget.data.monthlyRemainingMinor)
+                  }
                 />
                 <NCard
                   embedded
                   icon={Wallet}
-                  title={t("operator.budgets.reserved")}
-                  description={fmt.money(familyBudget.data.reservedMinor)}
+                  title={t("dashboard.family.monthlyUsed")}
+                  description={fmt.money(familyBudget.data.monthlyUsedMinor)}
                 />
               </div>
               <p className="text-xs text-muted-foreground">

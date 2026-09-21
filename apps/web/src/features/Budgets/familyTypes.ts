@@ -7,14 +7,12 @@ export interface FamilyMonthlyBudgetLimit {
 
 export interface FamilyBudgetSummary {
   currency: "MAD" | string;
-  availableMinor: number;
-  reservedMinor: number;
-  spentMinor: number;
   monthlyLimit: FamilyMonthlyBudgetLimit | null;
   funding: FamilyFundingProgress;
-  month?: string;
-  monthlyUsedMinor?: number;
-  monthlyLimitMinor?: number | null;
+  month: string;
+  monthlyUsedMinor: number;
+  monthlyLimitMinor: number | null;
+  monthlyRemainingMinor: number | null;
   ordersUsed?: number;
   ordersLimit?: number | null;
   ordersRemaining?: number | null;

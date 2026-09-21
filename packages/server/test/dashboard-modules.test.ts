@@ -8,6 +8,7 @@ import {
   DashboardService,
   deliveryFamiliesQuery,
 } from "../src/modules/dashboard";
+import { BudgetService } from "../src/modules/budgets";
 
 describe("Phase 7 dashboard report boundaries", () => {
   it("exposes one read-only dashboard per product role", () => {
@@ -331,7 +332,6 @@ describe("Phase 7 dashboard report boundaries", () => {
       familyIdentity: async () => ({ familyProfileId: "family-1", displayName: "Atlas Family" }),
       familySummary: async () => ({
         children: { total: 1, active: 1 },
-        budget: { availableMinor: 5000, reservedMinor: 0, spentMinor: 1000 },
         orders: { open: 0, delivered: 1 },
       }),
       familyOrderTrend: async () => [],
@@ -345,7 +345,14 @@ describe("Phase 7 dashboard report boundaries", () => {
         dominantCategoryName: "Fresh Produce",
         dominantCategoryImage: "/api/category-images/files/serve/fresh-produce.webp",
       }],
-    } as unknown as DashboardRepository);
+    } as unknown as DashboardRepository, {
+      getOwnSummary: async () => ({
+        month: "2026-09-01",
+        monthlyLimitMinor: 5_000,
+        monthlyUsedMinor: 1_000,
+        monthlyRemainingMinor: 4_000,
+      }),
+    } as unknown as BudgetService);
 
     const result = await dashboard.getFamily("family-user");
 
@@ -359,6 +366,13 @@ describe("Phase 7 dashboard report boundaries", () => {
       dominantCategoryImage: "/api/category-images/files/serve/fresh-produce.webp",
     }]);
     expect(result).not.toHaveProperty("recentSponsorContributions");
+    expect(result.budget).toEqual({
+      month: "2026-09-01",
+      limitMinor: 5_000,
+      usedMinor: 1_000,
+      remainingMinor: 4_000,
+    });
+    expect(result.budget).not.toHaveProperty("availableMinor");
   });
 
   it("returns the family's latest sponsor contributions with their statuses", () => {

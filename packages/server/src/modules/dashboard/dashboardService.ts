@@ -21,6 +21,7 @@ import {
 import { deliveryFamiliesQuery, type DeliveryFamiliesQuery } from "./dashboardDto";
 import { sponsorFamilyReference } from "../supportAssignments/supportAssignmentProjection";
 import { casablancaClock, isDeliveryDelayed } from "./deliveryTiming";
+import { BudgetService } from "../budgets/budgetService";
 
 const numberValue = (value: unknown) => Number(value ?? 0);
 
@@ -49,7 +50,10 @@ function statusCounts(rows: Array<{ status: string; count: unknown }>): Dashboar
 
 @Service()
 export class DashboardService {
-  constructor(private readonly dashboard: DashboardRepository) {}
+  constructor(
+    private readonly dashboard: DashboardRepository,
+    private readonly budgets?: BudgetService,
+  ) {}
 
   async getOperator(): Promise<OperatorDashboard> {
     const { firstMonth } = monthWindow();
@@ -323,10 +327,14 @@ export class DashboardService {
   async getFamily(userId: string): Promise<FamilyDashboard> {
     const identity = await this.dashboard.familyIdentity(userId);
     if (!identity) HttpError.notFound("Family dashboard not found");
+    if (!this.budgets) {
+      throw new Error("BudgetService is required for the family dashboard");
+    }
 
     const { firstMonth } = monthWindow();
-    const [summary, trendRows, statusRows, recentOrders] = await Promise.all([
+    const [summary, monthlyBudget, trendRows, statusRows, recentOrders] = await Promise.all([
       this.dashboard.familySummary(identity.familyProfileId),
+      this.budgets.getOwnSummary(userId),
       this.dashboard.familyOrderTrend(identity.familyProfileId, firstMonth),
       this.dashboard.familyOrderStatuses(identity.familyProfileId),
       this.dashboard.familyRecentOrders(identity.familyProfileId),
@@ -341,9 +349,10 @@ export class DashboardService {
         deliveredOrders: numberValue(summary.orders?.delivered),
       },
       budget: {
-        availableMinor: numberValue(summary.budget?.availableMinor),
-        reservedMinor: numberValue(summary.budget?.reservedMinor),
-        spentMinor: numberValue(summary.budget?.spentMinor),
+        month: monthlyBudget.month,
+        limitMinor: monthlyBudget.monthlyLimitMinor,
+        usedMinor: monthlyBudget.monthlyUsedMinor,
+        remainingMinor: monthlyBudget.monthlyRemainingMinor,
       },
       orderTrend: fillMonths(
         trendRows.map((row) => ({ month: row.month, spentMinor: numberValue(row.spentMinor) })),

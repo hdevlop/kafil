@@ -159,7 +159,12 @@ export interface FamilyDashboardData {
     openOrders: number;
     deliveredOrders: number;
   };
-  budget: { availableMinor: number; reservedMinor: number; spentMinor: number };
+  budget: {
+    month: string;
+    limitMinor: number | null;
+    usedMinor: number;
+    remainingMinor: number | null;
+  };
   orderTrend: Array<{ month: string; spentMinor: number }>;
   orderStatuses: DashboardStatusCount[];
   recentOrders: Array<{

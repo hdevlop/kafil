@@ -751,7 +751,9 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
       actualTotalMinor: null,
       receiptRecorded: false,
       familyName: "Family guardian",
-      deliveryAddressSnapshot: "Private address",
+      deliveryAddressSnapshot: "Current family address",
+      deliveryPhoneSnapshot: "+212600000099",
+      coordinates: { latitude: 34.0209, longitude: -6.8416 },
       workflowState: "purchase_required",
       canPurchase: true,
       canStart: false,
@@ -789,6 +791,32 @@ describe("Phase 5 procurement-on-demand transactional order effects", () => {
       expect(keys).not.toContain(forbidden);
     }
     expect(JSON.stringify(detail)).not.toContain("order-evidence");
+  });
+
+  it("keeps the submitted destination in Delivery detail after completion", async () => {
+    const { service, state } = orderService({
+      status: "purchased",
+      orderItems: [orderItemRecord()],
+    });
+    await service.assignDelivery(
+      orderId,
+      { ...deliverySchedule, staffProfileId: deliveryStaffId, idempotencyKey: "delivery-history-0001" },
+      "operator-user",
+    );
+    state.order = orderRecord({
+      ...state.order,
+      status: "delivered",
+      deliveredAt: new Date("2026-09-09T12:00:00.000Z"),
+    });
+    state.deliveryAttempts[0].status = "delivered";
+
+    const detail = await service.getOwnDeliveryDetail(orderId, "delivery-user");
+
+    expect(detail).toMatchObject({
+      deliveryAddressSnapshot: "Private address",
+      deliveryPhoneSnapshot: "+212600000000",
+      coordinates: null,
+    });
   });
 
   it("denies own detail for an order assigned to another Delivery worker", async () => {
@@ -1387,7 +1415,13 @@ function orderService(options: {
       return input;
     },
     findById: async () => state.order,
-    findFamilyImage: async () => "/api/family-images/files/serve/fatima.webp",
+    findFamilyDeliveryProfile: async () => ({
+      familyImage: "/api/family-images/files/serve/fatima.webp",
+      exactAddress: "Current family address",
+      phone: "+212600000099",
+      deliveryLatitude: 34.0209,
+      deliveryLongitude: -6.8416,
+    }),
     lockById: async () => state.order,
     update: async (_id: string, input: Record<string, unknown>) => {
       state.order = orderRecord({ ...state.order, ...input });

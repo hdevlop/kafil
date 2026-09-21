@@ -44,7 +44,7 @@ export class BudgetController {
   @CanRead("budgets")
   @Validate({ query: budgetLedgerListQuery })
   @McpTool({
-    description: "Read the authenticated family's own budget ledger",
+    description: "Read the authenticated family's current-month order budget activity",
     readOnly: true,
   })
   @ResMsg("budgets.success.retrieved")

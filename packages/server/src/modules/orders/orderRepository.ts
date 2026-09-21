@@ -369,15 +369,21 @@ export class OrderRepository {
     return order;
   }
 
-  async findFamilyImage(orderId: string) {
+  async findFamilyDeliveryProfile(orderId: string) {
     const [row] = await this.db
-      .select({ familyImage: usersTable.image })
+      .select({
+        familyImage: usersTable.image,
+        exactAddress: familyProfiles.exactAddress,
+        phone: familyProfiles.phone,
+        deliveryLatitude: familyProfiles.deliveryLatitude,
+        deliveryLongitude: familyProfiles.deliveryLongitude,
+      })
       .from(orders)
       .innerJoin(familyProfiles, eq(orders.familyProfileId, familyProfiles.id))
       .innerJoin(usersTable, eq(familyProfiles.userId, usersTable.id))
       .where(eq(orders.id, orderId))
       .limit(1);
-    return row?.familyImage ?? null;
+    return row;
   }
 
   async lockById(id: string) {

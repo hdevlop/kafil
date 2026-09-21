@@ -63,6 +63,7 @@ import {
   deliveryWorkflowCapabilities,
   deliveryWorkflowState,
 } from "./deliveryWorkflow";
+import { usesCurrentFamilyDeliveryDestination } from "./orderDeliveryDestination";
 import { OrderEvidenceService } from "./orderEvidenceService";
 import {
   CartRepository,
@@ -2163,7 +2164,24 @@ export class OrderService {
     const items = await this.orders.listItems(order.id);
     const purchase = await this.purchases.findActiveByOrderId(order.id);
     const openIssues = await this.deliveries.listOpenIssues(attempt.id);
-    const familyImage = await this.orders.findFamilyImage(order.id);
+    const family = await this.orders.findFamilyDeliveryProfile(order.id);
+    const useCurrentDestination = usesCurrentFamilyDeliveryDestination(order.status);
+    const deliveryAddress =
+      useCurrentDestination && family
+        ? family.exactAddress
+        : order.deliveryAddressSnapshot;
+    const deliveryPhone =
+      useCurrentDestination && family
+        ? family.phone
+        : order.deliveryPhoneSnapshot;
+    const deliveryLatitude =
+      useCurrentDestination && family
+        ? family.deliveryLatitude
+        : order.deliveryLatitudeSnapshot;
+    const deliveryLongitude =
+      useCurrentDestination && family
+        ? family.deliveryLongitude
+        : order.deliveryLongitudeSnapshot;
     const workflow = {
       orderStatus: order.status,
       attemptStatus: attempt.status,
@@ -2179,15 +2197,15 @@ export class OrderService {
       actualTotalMinor: purchase?.actualTotalMinor ?? null,
       receiptRecorded: Boolean(purchase),
       familyName: order.guardianLegalNameSnapshot,
-      familyImage,
-      deliveryAddressSnapshot: order.deliveryAddressSnapshot,
-      deliveryPhoneSnapshot: order.deliveryPhoneSnapshot,
+      familyImage: family?.familyImage ?? null,
+      deliveryAddressSnapshot: deliveryAddress,
+      deliveryPhoneSnapshot: deliveryPhone,
       coordinates:
-        order.deliveryLatitudeSnapshot != null &&
-        order.deliveryLongitudeSnapshot != null
+        deliveryLatitude != null &&
+        deliveryLongitude != null
           ? {
-              latitude: order.deliveryLatitudeSnapshot,
-              longitude: order.deliveryLongitudeSnapshot,
+              latitude: deliveryLatitude,
+              longitude: deliveryLongitude,
             }
           : null,
       items: items.map((item) => ({

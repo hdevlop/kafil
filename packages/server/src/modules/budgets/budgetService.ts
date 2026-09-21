@@ -23,7 +23,7 @@ import {
   BudgetLedgerRepository,
   MonthlyBudgetLimitRepository,
 } from "./budgetRepository";
-import type { BudgetAccount, BudgetLedgerEntry } from "./budgetSchema";
+import type { BudgetAccount } from "./budgetSchema";
 import { applyBudgetBalanceDelta } from "./money";
 import { BudgetValidator } from "./budgetValidator";
 import {
@@ -228,17 +228,18 @@ export class BudgetService {
     const monthlyLimit = ctx.monthlyOverride
       ? { month: ctx.monthlyOverride.month, limitMinor: ctx.monthlyOverride.limitMinor }
       : null;
+    const monthlyLimitMinor = ctx.policy.monthlyLimitMinor;
+    const monthlyRemainingMinor = monthlyLimitMinor === null
+      ? null
+      : Math.max(0, monthlyLimitMinor - ctx.monthlyUsedMinor);
     return {
       currency: account.currency,
-      availableMinor: account.availableMinor,
-      reservedMinor: account.reservedMinor,
-      spentMinor: account.spentMinor,
-      version: account.version,
       monthlyLimit,
       funding,
       month,
       monthlyUsedMinor: ctx.monthlyUsedMinor,
-      monthlyLimitMinor: ctx.policy.monthlyLimitMinor,
+      monthlyLimitMinor,
+      monthlyRemainingMinor,
       ordersUsed: ctx.ordersUsed,
       ordersLimit: ctx.policy.maxOrders,
       ordersRemaining: ctx.ordersRemaining,
@@ -259,8 +260,14 @@ export class BudgetService {
     if (!family || family.role !== "family") {
       HttpError.notFound("Family budget not found");
     }
-    const entries = await this.listLedger(family.id, query);
-    return entries.map(toFamilyBudgetLedgerProjection);
+    const { limit, offset } = budgetLedgerListQuery.parse(query ?? {});
+    const account = await this.validator.ensureAccountForFamily(family.id);
+    return this.ledger.listMonthlyOrderActivityByAccountId(
+      account.id,
+      currentMonth(),
+      limit,
+      offset,
+    );
   }
 
   async reconcile(familyProfileId: string) {
@@ -480,17 +487,4 @@ export class BudgetService {
     });
     return entry;
   }
-}
-
-function toFamilyBudgetLedgerProjection(entry: BudgetLedgerEntry) {
-  return {
-    id: entry.id,
-    entryType: entry.entryType,
-    amountMinor: entry.amountMinor,
-    availableAfterMinor: entry.availableAfterMinor,
-    reservedAfterMinor: entry.reservedAfterMinor,
-    spentAfterMinor: entry.spentAfterMinor,
-    sourceType: entry.sourceType,
-    createdAt: entry.createdAt,
-  };
 }

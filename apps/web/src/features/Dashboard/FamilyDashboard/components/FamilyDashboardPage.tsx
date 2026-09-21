@@ -63,11 +63,16 @@ export function FamilyDashboardPage() {
   const data = dashboard.data;
   const number = (value: number) => fmt.number(value);
   const money = (value: number) => fmt.money(value);
-  const maskedAvailableAmount = "********";
-  const budgetTotalMinor =
-    data.budget.availableMinor +
-    data.budget.reservedMinor +
-    data.budget.spentMinor;
+  const monthlyLimit = typeof data.budget.limitMinor === "number"
+    ? data.budget.limitMinor
+    : null;
+  const monthlyRemaining = typeof data.budget.remainingMinor === "number"
+    ? data.budget.remainingMinor
+    : null;
+  const monthlyUsed = typeof data.budget.usedMinor === "number"
+    ? data.budget.usedMinor
+    : 0;
+  const unavailableMonthlyAmount = "—";
 
   return (
     <NPageLayout className="flex min-h-full flex-col gap-4">
@@ -83,16 +88,16 @@ export function FamilyDashboardPage() {
 
       <NGrid cols={2} lgCols={3} xlCols={6}>
         <NGridItem span={1}>
-          <NStatCard variant="compact" icon={WalletCards} label={t("dashboard.common.available")} value={maskedAvailableAmount} className="sm:hidden" />
-          <NStatCard icon={WalletCards} label={t("dashboard.common.available")} value={maskedAvailableAmount} className="hidden sm:block" />
+          <NStatCard variant="compact" icon={WalletCards} label={t("dashboard.family.monthlyRemaining")} value={monthlyRemaining === null ? unavailableMonthlyAmount : money(monthlyRemaining)} className="sm:hidden" />
+          <NStatCard icon={WalletCards} label={t("dashboard.family.monthlyRemaining")} value={monthlyRemaining === null ? unavailableMonthlyAmount : money(monthlyRemaining)} className="hidden sm:block" />
         </NGridItem>
         <NGridItem span={1}>
-          <NStatCard variant="compact" icon={WalletCards} label={t("dashboard.common.reserved")} value={money(data.budget.reservedMinor)} className="sm:hidden" />
-          <NStatCard icon={WalletCards} label={t("dashboard.common.reserved")} value={money(data.budget.reservedMinor)} className="hidden sm:block" />
+          <NStatCard variant="compact" icon={WalletCards} label={t("dashboard.family.monthlyLimit")} value={monthlyLimit === null ? unavailableMonthlyAmount : money(monthlyLimit)} className="sm:hidden" />
+          <NStatCard icon={WalletCards} label={t("dashboard.family.monthlyLimit")} value={monthlyLimit === null ? unavailableMonthlyAmount : money(monthlyLimit)} className="hidden sm:block" />
         </NGridItem>
         <NGridItem span={1}>
-          <NStatCard variant="compact" icon={ShoppingBag} label={t("dashboard.common.spent")} value={money(data.budget.spentMinor)} className="sm:hidden" />
-          <NStatCard icon={ShoppingBag} label={t("dashboard.common.spent")} value={money(data.budget.spentMinor)} className="hidden sm:block" />
+          <NStatCard variant="compact" icon={ShoppingBag} label={t("dashboard.family.monthlyUsed")} value={money(monthlyUsed)} className="sm:hidden" />
+          <NStatCard icon={ShoppingBag} label={t("dashboard.family.monthlyUsed")} value={money(monthlyUsed)} className="hidden sm:block" />
         </NGridItem>
         <NGridItem span={1}>
           <NStatCard variant="compact" icon={Baby} label={t("dashboard.family.children")} value={number(data.counts.children)} className="sm:hidden" />
@@ -126,29 +131,29 @@ export function FamilyDashboardPage() {
           />
         </NGridItem>
         <NGridItem span={1} xlSpan={3}>
-          {budgetTotalMinor > 0 ? (
+          {monthlyLimit !== null && monthlyRemaining !== null ? (
             <NDonutCard
               className="h-full"
               icon={WalletCards}
               items={[
-                { id: "available", label: t("dashboard.common.available"), value: data.budget.availableMinor },
-                { id: "reserved", label: t("dashboard.common.reserved"), value: data.budget.reservedMinor },
-                { id: "spent", label: t("dashboard.common.spent"), value: data.budget.spentMinor },
+                { id: "remaining", label: t("dashboard.family.monthlyRemaining"), value: monthlyRemaining },
+                { id: "used", label: t("dashboard.family.monthlyUsed"), value: monthlyUsed },
               ]}
-              title={t("dashboard.family.budgetPosition")}
-              totalLabel={t("family.cart.total")}
+              title={t("dashboard.family.monthlyBudget")}
+              totalLabel={t("dashboard.family.monthlyLimit")}
               valueFormatter={money}
             />
           ) : (
             <NCard
               className="h-full"
               icon={WalletCards}
-              title={t("dashboard.family.budgetPosition")}
+              title={t("dashboard.family.monthlyBudget")}
             >
               <NEmptyState
                 className="min-h-40 py-8"
                 icon={WalletCards}
-                title={t("state.empty")}
+                description={t("dashboard.family.monthlyUsedAmount", { amount: money(monthlyUsed) })}
+                title={t("dashboard.family.noMonthlyBudget")}
               />
             </NCard>
           )}
