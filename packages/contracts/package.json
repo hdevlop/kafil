@@ -1,0 +1,29 @@
+{
+  "name": "@kafil/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./locales": {
+      "types": "./src/locales/index.ts",
+      "default": "./src/locales/index.ts"
+    },
+    "./phone": {
+      "types": "./src/phone.ts",
+      "default": "./src/phone.ts"
+    },
+    "./money/constants": {
+      "types": "./src/money/constants.ts",
+      "default": "./src/money/constants.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "najm-i18n": "2.1.2"
+  }
+}

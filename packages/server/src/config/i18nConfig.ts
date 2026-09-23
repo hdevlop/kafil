@@ -1,6 +1,6 @@
 import { i18n } from "najm-i18n";
 
-import { kafilI18n } from "../locales";
+import { kafilI18n } from "@kafil/contracts/locales";
 
 export const KAFIL_SUPPORTED_LANGUAGES = kafilI18n.supportedLanguages;
 export const KAFIL_DEFAULT_LANGUAGE = kafilI18n.defaultLanguage;

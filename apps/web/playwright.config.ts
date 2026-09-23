@@ -33,7 +33,7 @@ export default defineConfig({
     ? undefined
     : {
         command:
-          "bun --env-file=../../.env run dev -- -p 3210 --experimental-https",
+          "bun --env-file=.env.local run dev -- -p 3210 --experimental-https",
         cwd: ".",
         reuseExistingServer: false,
         timeout: 60_000,

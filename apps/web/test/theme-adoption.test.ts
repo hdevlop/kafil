@@ -12,7 +12,7 @@ import {
   getDashboardNavigation,
   THEME_SETTINGS_NAV_ID,
 } from "../src/shared/DashboardShell";
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 
 const getUiTranslation = kafilUiI18n.translate;
 
@@ -273,7 +273,7 @@ describe("najm-theme adoption — Kafil boundary", () => {
     expect(provider).not.toContain("appName={APP_NAME}");
     expect(provider).not.toContain("currency={KAFIL_CURRENCY}");
     expect(appConfig).toContain(
-      'import { KAFIL_CURRENCY } from "@kafil/server/money/constants"',
+      'import { KAFIL_CURRENCY } from "@kafil/contracts/money/constants"',
     );
     expect(appConfig).toContain("appName: APP_NAME");
     expect(appConfig).toContain("currency: KAFIL_CURRENCY");

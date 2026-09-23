@@ -11,7 +11,7 @@ import {
 } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
-import type { KafilLocale } from "@kafil/server/locales";
+import type { KafilLocale } from "@kafil/contracts/locales";
 
 const languageOptions = [
   { country: "us", label: "English", value: "en" },

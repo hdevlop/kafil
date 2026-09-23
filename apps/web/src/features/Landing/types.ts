@@ -1,4 +1,4 @@
-import type { KafilLocale, UiTranslationKey } from "@kafil/server/locales";
+import type { KafilLocale, UiTranslationKey } from "@kafil/contracts/locales";
 import type { LucideIcon } from "lucide-react";
 
 export type HeroSlideAltKey = Extract<

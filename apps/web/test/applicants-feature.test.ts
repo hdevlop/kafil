@@ -12,7 +12,7 @@ import {
   getApplicantEmailOtpSetup,
   resendApplicantEmailOtp,
 } from "../src/features/Applicants";
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 
 const getUiTranslation = kafilUiI18n.translate;
 

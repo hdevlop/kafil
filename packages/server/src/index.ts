@@ -5,4 +5,4 @@ export {
   KAFIL_SUPPORTED_LANGUAGES,
 } from "./config/i18nConfig";
 export { mcpConfig } from "./config/mcpConfig";
-export { default as translations } from "./locales";
+export { default as translations } from "@kafil/contracts/locales";

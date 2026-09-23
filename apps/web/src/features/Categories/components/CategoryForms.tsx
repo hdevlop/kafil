@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { useTranslation } from "najm-i18n/react";
 import type { TFn } from "najm-i18n";
-import type { UiTranslationKey } from "@kafil/server/locales";
+import type { UiTranslationKey } from "@kafil/contracts/locales";
 
 import {
   categoryStatusFormSchema,

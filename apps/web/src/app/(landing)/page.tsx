@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 
 import { getSession, kafilPreferences } from "@/najm.server";
-import { kafilLocales, kafilUiI18n } from "@kafil/server/locales";
+import { kafilLocales, kafilUiI18n } from "@kafil/contracts/locales";
 import { LandingPage } from "@/features/Landing";
 
 // Localized per request from the same cookie, account preference, and browser

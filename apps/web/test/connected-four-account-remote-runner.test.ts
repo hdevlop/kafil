@@ -42,8 +42,8 @@ const specSource = readFileSync(
   new URL("e2e/connected-four-account.remote.ts", import.meta.url),
   "utf8",
 );
-const rootEnvExample = readFileSync(
-  new URL("../../../.env.example", import.meta.url),
+const appEnvExample = readFileSync(
+  new URL("../.env.local.example", import.meta.url),
   "utf8",
 );
 const mailTestHubVpsHelper = readFileSync(
@@ -159,10 +159,10 @@ describe("connected four-account remote runner", () => {
   });
 
   test("pins the reusable Mailpit dashboard and app-scoped gateway boundaries", () => {
-    expect(rootEnvExample).toContain(
+    expect(appEnvExample).toContain(
       "KAFIL_E2E_MAILBOX_API_HOST=mail-api.example.invalid",
     );
-    expect(rootEnvExample).toContain(
+    expect(appEnvExample).toContain(
       "KAFIL_E2E_MAILBOX_TOKEN=replace-with-the-kafil-gateway-token",
     );
     expect(mailTestHubCompose).toContain(

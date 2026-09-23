@@ -1,6 +1,6 @@
 import { defineNajmApp } from "najm-next/app";
 import { APP_NAME } from "@/types/branding";
-import { KAFIL_CURRENCY } from "@kafil/server/money/constants";
+import { KAFIL_CURRENCY } from "@kafil/contracts/money/constants";
 
 export const kafilApp = defineNajmApp({
   id: "kafil",

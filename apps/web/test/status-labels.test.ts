@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 import { formatStatusLabel } from "@/features/StatusLabels";
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 
 const LANGUAGES = ["en", "fr", "ar", "es"] as const;
 

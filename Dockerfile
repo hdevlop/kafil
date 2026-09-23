@@ -2,8 +2,11 @@
 FROM oven/bun:1.3.14 AS dependencies
 WORKDIR /app
 
+# Every workspace manifest is needed for a frozen install of the workspace
+# graph, including the contracts package the web and server both import.
 COPY package.json bun.lock ./
 COPY apps/web/package.json apps/web/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/server/package.json packages/server/package.json
 COPY packages/seed/package.json packages/seed/package.json
 COPY patches ./patches
@@ -15,10 +18,10 @@ WORKDIR /app
 ARG OCI_CREATED
 ARG OCI_REVISION
 
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=dependencies /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=dependencies /app/packages/server/node_modules ./packages/server/node_modules
-COPY --from=dependencies /app/packages/seed/node_modules ./packages/seed/node_modules
+# The installed tree — the root store and each workspace's own node_modules
+# links — then the source. Private workspaces are consumed as TypeScript
+# source; nothing is prebuilt.
+COPY --from=dependencies /app ./
 COPY . .
 RUN EMAIL_PROVIDER=console \
     EMAIL_DEFAULT_FROM=no-reply@example.invalid \
@@ -42,12 +45,18 @@ ENV HOSTNAME=0.0.0.0 \
     NODE_ENV=production \
     PORT=3000
 
+# What each image command reads:
+# - web (`bun run start`): the .next build, public assets, node_modules, and
+#   the server's source theme directory that najm-theme resolves at runtime;
+# - notifications worker, contribution expiry and migrations: server, seed and
+#   contracts source with their node_modules links and tsconfig.base.json.
 COPY --from=build --chown=bun:bun /app/package.json /app/bun.lock /app/tsconfig.base.json ./
 COPY --from=build --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=build --chown=bun:bun /app/apps/web/package.json /app/apps/web/next.config.ts ./apps/web/
 COPY --from=build --chown=bun:bun /app/apps/web/.next ./apps/web/.next
 COPY --from=build --chown=bun:bun /app/apps/web/public ./apps/web/public
 COPY --from=build --chown=bun:bun /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=build --chown=bun:bun /app/packages/contracts ./packages/contracts
 COPY --from=build --chown=bun:bun /app/packages/server ./packages/server
 COPY --from=build --chown=bun:bun /app/packages/seed ./packages/seed
 

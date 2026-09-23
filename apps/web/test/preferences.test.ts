@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
 
 import { NAJM_TIME_ZONES } from "najm-kit/server";
-import { kafilI18n, kafilLocales } from "@kafil/server/locales";
+import { kafilI18n, kafilLocales } from "@kafil/contracts/locales";
 
 mock.module("server-only", () => ({}));
 

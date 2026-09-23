@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { normalizePhone } from "@kafil/server/phone";
+import { normalizePhone } from "@kafil/contracts/phone";
 import { createFamilyGuardianStepSchema } from "../src/features/Families/config/familySchemas";
 import {
   familyRelationshipItems,

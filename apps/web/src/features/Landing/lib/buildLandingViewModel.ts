@@ -1,5 +1,5 @@
 import { getPersonImage } from "najm-kit/person-images";
-import type { UiTranslationKey } from "@kafil/server/locales";
+import type { UiTranslationKey } from "@kafil/contracts/locales";
 
 import { LANDING_FAMILY_EXAMPLES } from "../config/landingContent";
 import type { LandingFamilyExample } from "../types";

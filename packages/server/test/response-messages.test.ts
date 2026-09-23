@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { getResponseMessage, getRoutes } from "najm-core";
 
 import * as modules from "../src/modules";
-import translations from "../src/locales";
+import translations from "@kafil/contracts/locales";
 
 type ControllerConstructor = {
   name: string;

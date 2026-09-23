@@ -16,7 +16,7 @@ import { listPage } from "../../pagination";
 import { AuditService } from "../audit/auditService";
 import { OutboxService } from "../outbox/outboxService";
 import { SponsorRepository } from "../sponsors/sponsorRepository";
-import { normalizePhone } from "../../phone";
+import { normalizePhone } from "@kafil/contracts/phone";
 import {
   type ApplicantListQuery,
   type CreateApplicantDto,

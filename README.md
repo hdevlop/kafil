@@ -19,15 +19,15 @@ bun install
 bun run dev
 ```
 
-For phone testing over local HTTPS, keep using the root command so Kafil's
-explicit `.env` loader remains active:
+For phone testing over local HTTPS, use the same root interface:
 
 ```bash
 bun run dev:https
 ```
 
-Opening `next dev --experimental-https` directly inside `apps/web` bypasses the
-root `.env` loader and leaves required services such as email unconfigured.
+Next.js loads `apps/web/.env.local` directly. Root database, seed, worker, and
+acceptance commands resolve that same file explicitly so the caller's working
+directory does not change configuration.
 
 Available routes:
 
@@ -76,7 +76,7 @@ bun run preview:https
 
 Then open `https://192.168.1.13:3000` on a phone connected to the same Wi-Fi.
 The proxy keeps Next.js private on `127.0.0.1:3001`, forwards the original HTTPS
-host/protocol, and loads the root `.env`. `start:https` can be used without a
+host/protocol, and loads `apps/web/.env.local`. `start:https` can be used without a
 rebuild after the first successful `preview:https` run.
 
 The ignored files `certificates/local-wifi.pem` and
@@ -107,7 +107,7 @@ password policy.
 
 Local development can use `EMAIL_PROVIDER=console`. For production, set a real
 provider such as Resend or SMTP together with `EMAIL_DEFAULT_FROM`; the complete
-environment template is in `.env.example`.
+environment template is in `apps/web/.env.local.example`.
 
 ## Verification
 
@@ -124,9 +124,14 @@ Run every gate in sequence with:
 bun run check
 ```
 
+The root command contract and package/browser boundaries are documented in
+[`docs/architecture/workspace.md`](docs/architecture/workspace.md).
+
 ## Database and seed
 
-`packages/seed` is a command package, not a server. Copy `.env.example` to `.env`, configure PostgreSQL and the bootstrap administrator, then run the migration:
+`packages/seed` is a command package, not a server. Copy
+`apps/web/.env.local.example` to `apps/web/.env.local`, configure PostgreSQL and
+the bootstrap administrator, then run the migration:
 
 ```bash
 bun run db:migrate

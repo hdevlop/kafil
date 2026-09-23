@@ -10,7 +10,7 @@ import {
 } from "najm-kit";
 
 import { useTranslation } from "najm-i18n/react";
-import type { KafilLocale } from "@kafil/server/locales";
+import type { KafilLocale } from "@kafil/contracts/locales";
 import { NotificationsMenu } from "@/features/Notifications";
 import { updateNotificationSettings } from "@/services/notificationsApi";
 

@@ -10,7 +10,7 @@ import {
   updateCategoryFormSchema,
 } from "../src/features/Categories/config/categorySchemas";
 import { categoryKeys } from "../src/features/Categories/hooks/categoryKeys";
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 
 const getUiTranslation = kafilUiI18n.translate;
 

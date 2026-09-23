@@ -1,6 +1,6 @@
 import { formatStatusLabel as formatNajmStatusLabel } from "najm-kit/format";
 
-import { kafilUiI18n, type KafilLocale, type UiTranslationKey } from "@kafil/server/locales";
+import { kafilUiI18n, type KafilLocale, type UiTranslationKey } from "@kafil/contracts/locales";
 
 /**
  * Plain-text status label, resolved by the same code the badges use.

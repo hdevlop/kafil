@@ -12,7 +12,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..\..")).Path
-$envFile = Join-Path $repoRoot ".env"
+$envFile = Join-Path $repoRoot "apps\web\.env.local"
 $connectedPort = 3210
 $connectTimeoutMs = 1500
 $mailpitSmtpPort = 1025
@@ -34,9 +34,9 @@ function Test-LoopbackPort {
 
 function Assert-EnvironmentFile {
   if (-not (Test-Path -LiteralPath $envFile -PathType Leaf)) {
-    throw "Connected acceptance requires the ignored root .env file."
+    throw "Connected acceptance requires the ignored apps/web/.env.local file."
   }
-  Write-Output "PREFLIGHT OK root environment file present"
+  Write-Output "PREFLIGHT OK app-local environment file present"
 }
 
 function Assert-ConnectedPortFree {

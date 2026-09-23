@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { formatNotifyCount } from "najm-kit";
 
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 import { getDashboardNavigation } from "../src/shared/DashboardShell/navigation";
 import {
   buildNotificationViewModel,

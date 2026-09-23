@@ -10,8 +10,8 @@ import {
 import { formatCurrency, formatDate, formatNumber } from "najm-kit/format";
 import { resolveStatusColor } from "najm-kit";
 import { formatStatusLabel } from "../src/features/StatusLabels";
-import { kafilLocales, type KafilLocale } from "@kafil/server/locales";
-import { KAFIL_CURRENCY } from "@kafil/server/money";
+import { kafilLocales, type KafilLocale } from "@kafil/contracts/locales";
+import { KAFIL_CURRENCY } from "@kafil/contracts/money/constants";
 mock.module("server-only", () => ({}));
 
 const { kafilPreferences } = await import("../src/najm.server");

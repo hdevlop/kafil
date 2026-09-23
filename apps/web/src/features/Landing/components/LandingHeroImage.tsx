@@ -2,7 +2,7 @@
 
 import { NNextImage } from "najm-kit/next";
 import { useTranslation } from "najm-i18n/react";
-import type { KafilLocale } from "@kafil/server/locales";
+import type { KafilLocale } from "@kafil/contracts/locales";
 
 import { heroSlidesByLanguage } from "../config/landingHeroSlides";
 

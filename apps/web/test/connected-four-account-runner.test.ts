@@ -45,9 +45,9 @@ describe("connected four-account production runner", () => {
     expect(optionalDependencies?.["@img/sharp-libvips-linux-x64"]).toBe("1.3.2");
   });
 
-  test("uses one root env file and code-owned loopback acceptance overrides", () => {
+  test("uses one app-local env file and code-owned loopback acceptance overrides", () => {
     expect(webPackage.scripts["test:e2e:connected"]).toBe(
-      "bun --env-file=../../.env scripts/run-connected-four-account-e2e.ts",
+      "bun --env-file=.env.local scripts/run-connected-four-account-e2e.ts",
     );
     expect(runnerSource).toContain("const localAcceptanceOverrides");
     expect(runnerSource).toContain('SMTP_HOST: "127.0.0.1"');
@@ -55,6 +55,7 @@ describe("connected four-account production runner", () => {
       'KAFIL_E2E_MAILBOX_API_URL: "http://127.0.0.1:8025"',
     );
     expect(wrapperSource).not.toContain(".env.acceptance");
+    expect(wrapperSource).toContain('"apps\\web\\.env.local"');
     expect(wrapperSource).toContain("& bun --env-file=$envFile $probeScript");
     expect(preflightSource).toContain("const localAcceptanceOverrides");
   });

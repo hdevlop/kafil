@@ -2,19 +2,12 @@ import { describe, expect, it } from "bun:test";
 import { normalizeMoroccanCin } from "najm-auth/identity/ma";
 
 import { generateInitialPassword } from "../src/initialPassword";
-import { normalizePhone } from "../src/phone";
 
 // Login-identity normalization, the CIN temporary credential, and the
 // first-login replacement flow are owned and tested by najm-auth. What remains
-// here is the profile and provisioning helpers Kafil still owns.
+// here is the provisioning helpers Kafil still owns. Profile phone
+// normalization is shared and tested in @kafil/contracts.
 describe("Kafil credential helpers", () => {
-  it("normalizes Moroccan local numbers and preserves international numbers", () => {
-    expect(normalizePhone("06 12-34-56-78")).toBe("+212612345678");
-    expect(normalizePhone("212612345678")).toBe("+212612345678");
-    expect(normalizePhone("+33 6 12 34 56 78")).toBe("+33612345678");
-    expect(normalizePhone("not-a-phone")).toBeNull();
-  });
-
   it("adds unpredictable digits to the surname and birth-year password", () => {
     expect(generateInitialPassword("Amina El Amrani", "1987-03-12", 4721)).toBe(
       "Amrani1987!4721",

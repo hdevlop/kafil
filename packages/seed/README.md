@@ -6,7 +6,7 @@ subpath remains the shared development form generator.
 
 ## Environment
 
-Copy the root `.env.example` to `.env` and set:
+Copy `apps/web/.env.local.example` to `apps/web/.env.local` and set:
 
 - `DATABASE_URL`
 - `KAFIL_ADMIN_EMAIL`
@@ -76,7 +76,8 @@ truncate, or seed application/demo data. Do not use the destructive `setup` or
 `full` commands for credential changes.
 
 Interactive values update the database for that execution only. The CLI does
-not rewrite environment files. For local development, update `.env` separately
+not rewrite environment files. For local development, update
+`apps/web/.env.local` separately
 when it remains the desired secret source. On the VPS, update the protected
 `/opt/kafil/env/app.env` separately before a future non-interactive admin seed;
 otherwise the old environment credentials may be synchronized again. Do not

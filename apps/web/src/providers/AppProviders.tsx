@@ -3,7 +3,7 @@
 import { NajmAppProvider } from "najm-next/app/client";
 import { auth } from "@/najm.auth";
 import type { KafilUiSnapshot } from "@/najm.server";
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 
 export function AppProviders({  children,snapshot,}: Readonly<{ children: React.ReactNode; snapshot: KafilUiSnapshot;}>) {
   return (

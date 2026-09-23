@@ -94,7 +94,7 @@ describe("delivery families directory source contracts", () => {
   test("ships the directory copy in every locale", () => {
     for (const locale of ["en", "fr", "ar", "es"]) {
       const dictionary = JSON.parse(
-        readSource(`../../packages/server/src/locales/${locale}.json`),
+        readSource(`../../packages/contracts/src/locales/${locale}.json`),
       ) as { ui: { dashboard: { delivery: Record<string, string> } } };
       const delivery = dictionary.ui.dashboard.delivery;
 

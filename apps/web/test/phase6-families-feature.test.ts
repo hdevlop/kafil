@@ -17,7 +17,7 @@ import {
   familyRelationshipLabel,
 } from "../src/features/Families/config/relationshipOptions";
 import { createFamilyDefaultValues } from "../src/features/Families/components/FamilyForms";
-import { normalizePhone } from "@kafil/server/phone";
+import { normalizePhone } from "@kafil/contracts/phone";
 import { localDateInput } from "najm-kit/format";
 import { familyKeys } from "../src/features/Families/hooks/familyKeys";
 

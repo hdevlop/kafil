@@ -5,7 +5,7 @@ import {
   PackageCheck,
   ShieldCheck,
 } from "lucide-react";
-import type { UiTranslationKey } from "@kafil/server/locales";
+import type { UiTranslationKey } from "@kafil/contracts/locales";
 import type { LandingFamilyExample } from "../types";
 
 export const LANDING_ANCHORS = {

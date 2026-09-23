@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NEmptyState, NErrorState } from "najm-kit";
 
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 import {
   KafilApiError,
   getPublicApiErrorMessage,

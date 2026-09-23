@@ -39,7 +39,7 @@ Forbidden:
 
 ## 4. Runtime configuration
 
-The ignored root `.env` provides these names:
+The ignored `apps/web/.env.local` provides these names:
 
 ```text
 KAFIL_E2E_REMOTE_URL

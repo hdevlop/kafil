@@ -18,7 +18,8 @@ Build the smallest real browser proof first, preserve diagnostic integrity, and 
    exact test titles, remote runner, remote Playwright config, app locale, and
    deployed revision before constructing a command or diagnosing a selector.
 
-Use Bun only. Never start `next dev` directly inside `apps/web`; use the repository runner so `.env` loading, host, port, database, and cleanup behavior stay consistent.
+Use Bun only. Use the repository runner so app-local env loading, host, port,
+database, and cleanup behavior stay consistent.
 
 ## Select the smallest honest proof
 
@@ -176,7 +177,7 @@ Run a read-only fail-fast preflight before starting Next.js or Playwright:
 2. Confirm Mailpit's HTTP and SMTP endpoints accept loopback connections when
    the journey sends or reads mail.
 3. Confirm the local runner applies its fixed loopback Mailpit overrides after
-   loading the single ignored root `.env`.
+   loading the single ignored `apps/web/.env.local`.
 4. Confirm the database mode and target are explicitly authorized.
 5. Confirm live email delivery is disabled and SMTP/mailbox hosts are loopback.
 6. Confirm the runner's fixed port is free. For connected acceptance this is

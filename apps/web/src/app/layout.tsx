@@ -5,7 +5,7 @@ import { NajmClientRoot } from "@/components/NajmClientRoot";
 import { loadUiSnapshot } from "@/najm.server";
 import { AppProviders } from "@/providers/AppProviders";
 import { APP_NAME } from "@/types/branding";
-import { kafilI18n } from "@kafil/server/locales";
+import { kafilI18n } from "@kafil/contracts/locales";
 import "./globals.css";
 
 const cairo = Cairo({

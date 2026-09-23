@@ -5,7 +5,7 @@ import { createNajmNextServerApp } from "najm-next/app/next";
 
 import { auth } from "@/najm.auth";
 import { kafilApp } from "@/najm.config";
-import { kafilI18n } from "@kafil/server/locales";
+import { kafilI18n } from "@kafil/contracts/locales";
 import { kafilTheme } from "@kafil/server/theme";
 
 export const kafilPreferences = defineNajmPreferences({

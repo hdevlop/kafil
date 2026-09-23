@@ -1,4 +1,4 @@
-import { normalizePhone } from "@kafil/server/phone";
+import { normalizePhone } from "@kafil/contracts/phone";
 import { isMoroccanCin } from "najm-auth/identity/ma";
 import { localDateInput } from "najm-kit/format";
 import { z } from "zod";

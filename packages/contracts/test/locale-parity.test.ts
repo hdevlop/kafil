@@ -137,7 +137,7 @@ describe("locale catalog parity", () => {
       expect(dictionary.ui, `${language}.json is missing its ui catalog`)
         .toBeDefined();
       expect(
-        await Bun.file(`src/locales/ui.${language}.json`).exists(),
+        await Bun.file(new URL(`../src/locales/ui.${language}.json`, import.meta.url)).exists(),
         `ui.${language}.json must not split the locale catalog`,
       ).toBe(false);
     }

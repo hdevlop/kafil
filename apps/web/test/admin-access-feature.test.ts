@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { kafilUiI18n } from "@kafil/server/locales";
+import { kafilUiI18n } from "@kafil/contracts/locales";
 
 const getUiTranslation = kafilUiI18n.translate;
 import { getDashboardNavigation } from "../src/shared/DashboardShell";

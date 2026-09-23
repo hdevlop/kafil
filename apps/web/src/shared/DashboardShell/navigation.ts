@@ -16,7 +16,7 @@ import {  Baby,  Bell,  ClipboardCheck,  ClipboardList,  HandCoins,
 import type { NavItem } from "najm-kit";
 import type { ComponentType } from "react";
 
-import type { UiTranslationKey } from "@kafil/server/locales";
+import type { UiTranslationKey } from "@kafil/contracts/locales";
 import { UserShieldIcon } from "@/shared/icons/UserShieldIcon";
 
 export type DashboardRole =

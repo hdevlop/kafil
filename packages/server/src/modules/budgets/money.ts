@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-import { KAFIL_CURRENCY } from "./moneyConstants";
+import { KAFIL_CURRENCY } from "@kafil/contracts/money/constants";
 
-export { KAFIL_CURRENCY } from "./moneyConstants";
 export const MAX_MINOR_UNITS = Number.MAX_SAFE_INTEGER;
 
 export const currencyDto = z.literal(KAFIL_CURRENCY);

@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 
-import { ar, en, es, fr } from "@kafil/server/locales";
+import { ar, en, es, fr } from "@kafil/contracts/locales";
 import {
   LANDING_ANCHORS,
   LANDING_FAMILY_EXAMPLES,

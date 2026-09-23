@@ -1,4 +1,4 @@
-import type { KafilLocale, UiTranslationKey } from "@kafil/server/locales";
+import type { KafilLocale, UiTranslationKey } from "@kafil/contracts/locales";
 
 declare module "najm-i18n/react" {
   interface NajmI18nRegistry {

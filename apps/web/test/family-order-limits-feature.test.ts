@@ -135,7 +135,7 @@ describe("family order limits quota math", () => {
   test("does not append a second currency label to formatted money", async () => {
     for (const locale of ["en", "fr", "ar", "es"]) {
       const source = await Bun.file(
-        new URL(`../../../packages/server/src/locales/${locale}.json`, import.meta.url),
+        new URL(`../../../packages/contracts/src/locales/${locale}.json`, import.meta.url),
       ).text();
       const messages = JSON.parse(source);
       expect(messages.ui.operator.settings.evenSplitHint).not.toMatch(/MAD|درهم/);

@@ -22,8 +22,8 @@ import { getPersonImage } from "najm-kit/person-images";
 import { formatStatusLabel } from "@/features/StatusLabels";
 import type { TFn } from "najm-i18n";
 import { useTranslation } from "najm-i18n/react";
-import type { UiTranslationKey } from "@kafil/server/locales";
-import type { KafilLocale } from "@kafil/server/locales";
+import type { UiTranslationKey } from "@kafil/contracts/locales";
+import type { KafilLocale } from "@kafil/contracts/locales";
 import { getPublicApiErrorMessage } from "@/services/apiError";
 
 import { getOrderActions, type OrderCommand } from "../config/orderActions";

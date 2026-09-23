@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { QueryClient } from "@tanstack/react-query";
 
-import { kafilI18n } from "@kafil/server/locales";
+import { kafilI18n } from "@kafil/contracts/locales";
 import { familyOrderingKeys } from "../src/features/Orders/hooks/familyOrderingKeys";
 import { orderKeys } from "../src/features/Orders/hooks/orderKeys";
 

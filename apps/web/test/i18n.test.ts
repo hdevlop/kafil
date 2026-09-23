@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { kafilI18n, kafilUiI18n } from "@kafil/server/locales";
+import { kafilI18n, kafilUiI18n } from "@kafil/contracts/locales";
 
 describe("shared web locale definition", () => {
   test("hands the scoped definition to the kit and uses the package hook directly", () => {

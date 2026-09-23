@@ -34,7 +34,7 @@ which skill validation or convention was intentionally skipped.
 ## Toolchain
 
 - **Package manager:** `bun@1.3.14`. Use `bun install`, `bun run`, `bun test`. Never use npm/yarn/pnpm.
-- **`.env`** is loaded explicitly via `--env-file=.env` in root workspace scripts. Next.js does not auto-load it. The file is in `.gitignore`; the committed template beside it is the root **`.env.example`**, and `deploy/env/app.env.example` plus `deploy/env/infrastructure.env.example` cover deployment. Both are `bun --env-file=.env` wrappers, but a missing file is tolerated rather than fatal: `bun run db:generate` needs nothing from it (`drizzle.config.ts` falls back to a local URL and `generate` never connects), and `bun run build` only needs values — supply the same throwaway set the Dockerfile build stage uses and it completes offline. The guarded remote acceptance runner is the one path that genuinely requires a real root `.env`.
+- **`apps/web/.env.local`** is the single ignored local environment file. Next.js loads it from the app directory; database, seed, worker, and acceptance commands pass that same path explicitly. The committed template is `apps/web/.env.local.example`; deployment templates remain under `deploy/env`. Injected process values take precedence, and production/CI do not require a local file. The guarded remote acceptance runner is the one path that requires the ignored app-local file to exist.
 - **Runtime:** single Next.js process. There is no second API server.
 - **Next.js config:** `apps/web/next.config.ts` is one line, `export { default } from "najm-next/config"`. `najm-next` owns `distDir` (`NAJM_NEXT_DIST_DIR ?? ".next"`), the workspace root pinned for both `turbopack.root` and `outputFileTracingRoot` (a parent `bun.lock` otherwise wins automatic detection), the `/sw.js` headers, `poweredByHeader: false`, the image cache TTL, and `reflect-metadata` externalization. `allowedDevOrigins` is empty unless `NAJM_NEXT_DEV_ORIGINS` names hosts — that is the phone-testing knob. Do not add keys to the file; an app that genuinely diverges uses `defineNajmNextConfig` from `najm-next/configurable`, and deployment CSP/HSTS stays at the edge.
 - **UI library:** `najm-kit`. Najm packages are pinned by root `overrides` (`najm-core`, `najm-auth`, `najm-database`, `najm-mcp`, `najm-next`, `najm-storage`, `najm-theme`, `diject`). Read installed declarations for contracts — `docs/plans/NAJM-STACK.md` lists older versions and is not authoritative for version numbers.
@@ -42,32 +42,36 @@ which skill validation or convention was intentionally skipped.
 ## Workspace layout
 
 ```
-apps/web/          Next.js landing, dashboards, catch-all /api
-packages/server/   Najm backend (controllers, services, repos, Drizzle schema)
-packages/seed/     CLI for roles, permissions, admin, and demo fixtures
+apps/web/            Next.js landing, dashboards, catch-all /api
+packages/contracts/  Browser-safe shared code: locale catalog, phone normalization, currency
+packages/server/     Najm backend (controllers, services, repos, Drizzle schema)
+packages/seed/       CLI for roles, permissions, admin, and demo fixtures
 ```
 
-- `apps/web` depends on `@kafil/server` and `@kafil/seed` via `workspace:*`.
-- `packages/seed` depends on `@kafil/server` via `workspace:*`.
+- `apps/web` depends on `@kafil/contracts` and `@kafil/server` via `workspace:*`; it never depends on `@kafil/seed`.
+- `packages/server` depends on `@kafil/contracts`; `packages/seed` depends on `@kafil/server`.
+- Every private package exports TypeScript source through explicit `exports`. Browser code (every `"use client"` module and what it imports) reaches `@kafil/contracts` only; server entrypoints may also import `@kafil/server` exports; contracts imports no workspace package. `bun run test:boundaries` enforces this over the resolved import graph — see `docs/architecture/workspace.md`.
 
 ## Commands
 
 ```bash
-bun run dev          # Start Next.js dev server (loads .env)
+bun run dev          # Start Next.js dev server (loads apps/web/.env.local)
 bun run dev:https    # Same, with --experimental-https for phone testing
-bun run start        # Serve the production build (loads .env)
+bun run start        # Serve the production build (injected env or app-local file)
 bun run check        # lint → typecheck → test → build
-bun run lint         # eslint across all three packages
-bun run typecheck    # tsc --noEmit across all three packages
-bun run test         # bun test across all three packages
+bun run lint         # eslint across all four packages and the boundary checker
+bun run typecheck    # tsc --noEmit across all four packages
+bun run test         # bun test across all four packages, then test:boundaries
+bun run test:boundaries  # boundary-checker fixtures, then the real import graph
 bun run build        # production build (apps/web only)
 ```
 
 `check` does **not** run `db:generate`. Use the full gate at the bottom of this
 file to close an implementation slice.
 
-Never run `next dev` directly inside `apps/web` — it bypasses the root `.env`
-loader and leaves email and other services unconfigured.
+Prefer the root commands as the stable developer interface. A Next command run
+inside `apps/web` uses the same app-local environment, but operational commands
+must keep their explicit loader path.
 
 Run just one package's gate:
 
@@ -119,10 +123,10 @@ bun run db:studio     # opens Drizzle Studio
 `packages/server` tests compile first to `dist/`, then run from there:
 
 ```
-tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test
+rm -rf dist && tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test
 ```
 
-This means **`packages/server/dist/` is a build artifact** — don't edit files there. `tsconfig.test.json` emits to `outDir: "./dist"` with `rootDir: "."`, so test files end up at `dist/test/`.
+This means **`packages/server/dist/` is a test-only build artifact** — don't edit files there, and nothing at runtime reads it. `tsconfig.test.json` emits to `outDir: "./dist"` with `rootDir: "."`, so test files end up at `dist/test/`. The script clears `dist` first so a moved or deleted test cannot keep passing from stale output. Workspace imports such as `@kafil/contracts/locales` stay bare specifiers and resolve to source.
 
 ## Seed CLI
 
@@ -233,10 +237,10 @@ assignment and are managed by operators under the `staff` permissions.
 
 ### Localization
 
-Four locales: `en`, `fr`, `ar`, `es`. Server strings live in
-`packages/server/src/locales/*.json` and are covered by a parity test
-(`packages/server/test/locale-parity.test.ts`) — add a key to every locale or the
-suite fails. Arabic means RTL must be verified for any layout change.
+Four locales: `en`, `fr`, `ar`, `es`. Server and UI strings live in
+`packages/contracts/src/locales/*.json` (`@kafil/contracts/locales`) and are
+covered by a parity test (`packages/contracts/test/locale-parity.test.ts`) — add
+a key to every locale or the suite fails. Arabic means RTL must be verified for any layout change.
 
 ### Managed images and storage
 

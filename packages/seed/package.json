@@ -25,7 +25,7 @@
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "test:db": "bun --env-file=../../.env test test/authorization-reconciliation-database.test.ts"
+    "test:db": "bun --env-file=../../apps/web/.env.local test test/authorization-reconciliation-database.test.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",

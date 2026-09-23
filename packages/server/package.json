@@ -10,10 +10,6 @@
     "./database": "./src/database/index.ts",
     "./database/schema": "./src/database/schema.ts",
     "./managed-images": "./src/storage/managedImages.ts",
-    "./locales": "./src/locales/index.ts",
-    "./phone": "./src/phone.ts",
-    "./money": "./src/modules/budgets/money.ts",
-    "./money/constants": "./src/modules/budgets/moneyConstants.ts",
     "./modules": "./src/modules/index.ts"
   },
   "scripts": {
@@ -22,10 +18,11 @@
     "db:studio": "drizzle-kit studio",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test",
-    "test:db": "tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/order-delivery-database-concurrency.test.js ./dist/test/delivery-families-database.test.js ./dist/test/order-delete-integration.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/theme-adoption-database.test.js ./dist/test/family-recreate-integration.test.js ./dist/test/family-password-setup-integration.test.js ./dist/test/legacy-table-drop-integration.test.js ./dist/test/applicant-database-concurrency.test.js ./dist/test/applicant-decision-database.test.js ./dist/test/family-order-limits-concurrency.test.js ./dist/test/notifications-database.test.js"
+    "test": "rm -rf dist && tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test",
+    "test:db": "rm -rf dist && tsc -p tsconfig.test.json && bun test --preload ./dist/test/setup.js ./dist/test/phase5-database-concurrency.test.js ./dist/test/order-delivery-database-concurrency.test.js ./dist/test/delivery-families-database.test.js ./dist/test/order-delete-integration.test.js ./dist/test/catalog-delete-integration.test.js ./dist/test/funding-cap-database-concurrency.test.js ./dist/test/theme-adoption-database.test.js ./dist/test/family-recreate-integration.test.js ./dist/test/family-password-setup-integration.test.js ./dist/test/legacy-table-drop-integration.test.js ./dist/test/applicant-database-concurrency.test.js ./dist/test/applicant-decision-database.test.js ./dist/test/family-order-limits-concurrency.test.js ./dist/test/notifications-database.test.js"
   },
   "dependencies": {
+    "@kafil/contracts": "workspace:*",
     "drizzle-orm": "0.45.2",
     "ioredis": "5.11.1",
     "najm-auth": "4.0.6",
