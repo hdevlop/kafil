@@ -28,7 +28,7 @@
     "najm-rate": "2.1.1",
     "najm-storage": "2.2.0",
     "najm-theme": "0.2.1",
-    "diject": "0.1.8"
+    "diject": "0.1.9"
   },
   "scripts": {
     "dev": "bun run --cwd apps/web dev",

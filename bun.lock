@@ -131,7 +131,7 @@
     "najm-email@2.0.4": "patches/najm-email@2.0.4.patch",
   },
   "overrides": {
-    "diject": "0.1.8",
+    "diject": "0.1.9",
     "esbuild": "0.25.12",
     "fast-uri": "3.1.7",
     "hono": "4.12.34",
@@ -858,7 +858,7 @@
 
     "detect-node-es": ["detect-node-es@1.1.0", "", {}, "sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ=="],
 
-    "diject": ["diject@0.1.8", "", { "peerDependencies": { "reflect-metadata": "^0.2.0" } }, "sha512-tv2FFf7jEF14HJ1PSNb/KfEqFCwU7e7B4R2sVBaC5UfCSHA62lbhc+RGt6hP1/jMIiouQ+2JoRID3BqsQbyiGA=="],
+    "diject": ["diject@0.1.9", "", { "peerDependencies": { "reflect-metadata": "^0.2.0" } }, "sha512-wmQDpS798To4FI/tSb5wpzeMsLEz+Y4lL6iMgte7cVTh75DoIbo95nEIwUrmVTDP1hx8RRK79Mjof0lkOyBQGQ=="],
 
     "doctrine": ["doctrine@2.1.0", "", { "dependencies": { "esutils": "^2.0.2" } }, "sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw=="],
 
