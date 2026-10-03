@@ -42,7 +42,7 @@ const logger: LoggerConfig = {
 
 function createServer() {
   return new Server({ logger })
-    .use(database({ default: db }))
+    .use(database(db))
     .use(i18nConfig())
     .use(emailConfig())
     .use(emailDiagnosticsConfig())
