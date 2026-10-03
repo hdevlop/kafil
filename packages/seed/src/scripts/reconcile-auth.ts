@@ -33,6 +33,6 @@ try {
   // Release the Redis connection the invalidation contract opened, or this
   // one-shot deployment container never exits.
   await server.stop().catch(() => undefined);
-  // The database plugin closes the pool on stop; retain a fallback for failed boot.
+  // End the caller-owned pool unless automatic cleanup already started closing it.
   if (!pool.ending) await pool.end();
 }
