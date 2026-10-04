@@ -105,6 +105,7 @@ export function CategoryFilterSheet({
             classNames={{ cards: "grid grid-cols-3 gap-2" }}
             columns={columns}
             data={items}
+            dataActions={false}
             defaultMode="cards"
             dynamicHeight={false}
             getRowClassName={(item) =>

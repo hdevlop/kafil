@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { AuthService } from "najm-auth";
+import { AuthService, TokenService, type CookieManager, type TokenRepository } from "najm-auth";
+import { CacheService } from "najm-cache";
 
 describe("installed Najm Auth invitation activation contract", () => {
   it("verifies and activates a pending account when its invitation sets a password", async () => {
@@ -8,6 +9,14 @@ describe("installed Najm Auth invitation activation contract", () => {
     const revoked: string[] = [];
     const cleared: string[] = [];
     const auth = Object.create(AuthService.prototype) as AuthService;
+    const credential = { id: "pending-user", email: "pending@example.invalid",
+      password: "stored-test-hash", status: "pending" as const, emailVerified: false };
+    const config = { jwt: { refreshSecret: "invitation-test-secret-at-least-32-characters" } };
+    const cache = new CacheService({ driver: "memory", required: false, memory: {} });
+    const tokens = new TokenService({ getCredentialState: async () => credential } as unknown as TokenRepository,
+      {} as CookieManager, cache);
+    Object.assign(tokens, { config, t: (key: string) => key });
+    const invitation = await tokens.generateInviteToken(credential.id, credential.email);
 
     Object.assign(auth as unknown as Record<string, unknown>, {
       cookieManager: {
@@ -15,16 +24,14 @@ describe("installed Najm Auth invitation activation contract", () => {
         clearSessionCookie: () => cleared.push("session"),
       },
       t: (key: string) => key,
+      config,
       tokenService: {
-        consumeSetPasswordToken: async () => ({
-          type: "invite" as const,
-          userId: "pending-user",
-        }),
+        consumeSetPasswordToken: tokens.consumeSetPasswordToken.bind(tokens),
         invalidateUserAccessTokens: async (id: string) => invalidated.push(id),
         revokeAllForUser: async (id: string) => revoked.push(id),
       },
       userService: {
-        getById: async () => ({ id: "pending-user", status: "pending" }),
+        getAuthRecordById: async () => credential,
         update: async (id: string, data: Record<string, unknown>) => {
           updates.push({ id, data });
           return { id, ...data };
@@ -35,7 +42,12 @@ describe("installed Najm Auth invitation activation contract", () => {
       },
     });
 
-    await auth.resetPassword("one-time-invitation", "SafePassword2026");
+    try {
+      await auth.resetPassword(invitation.token, "SafePassword2026");
+      await expect(auth.resetPassword(invitation.token, "SafePassword2026")).rejects.toThrow();
+    } finally {
+      await cache.destroy();
+    }
 
     expect(updates).toEqual([
       {
