@@ -19,12 +19,24 @@ import {
 import {
   authConfig,
   hasRole,
+  isAdmin,
+  isChildImageViewer,
+  isChildReader,
+  isContributionReader,
+  isDeliveryStaff,
+  isFamily,
   isInGroup,
-  KafilRoleGuard,
+  isNotificationReader,
+  isOperator,
+  isOrderReader,
+  isSponsor,
+  isSponsorImageManager,
+  isSponsorImageViewer,
   ROLES,
 } from "../src/config/authConfig";
 import { cacheConfig } from "../src/config/cacheConfig";
 import { rateLimitConfig } from "../src/config/rateLimitConfig";
+import { ROLE_SET, routeRoles } from "./routeRoles";
 
 /** The config a plugin factory resolved for the current environment. */
 const cacheOptions = () => cacheConfig().config as CachePluginConfig & { driver: string };
@@ -299,61 +311,32 @@ describe("Kafil auth definitions", () => {
     }
   });
 
-  it("authorizes the canonical role from an already resolved user", async () => {
-    const guard = new KafilRoleGuard({} as never);
+  it("gives every route guard exactly its roles, admin excluded only from delivery", () => {
+    const guards = {
+      isAdmin, isOperator, isDeliveryStaff, isFamily, isSponsor, isNotificationReader,
+      isContributionReader, isChildReader, isOrderReader, isSponsorImageViewer,
+      isSponsorImageManager, isChildImageViewer,
+    };
+    class Probe {}
+    for (const [name, guard] of Object.entries(guards)) {
+      (guard() as MethodDecorator)(Probe.prototype, name, Object.getOwnPropertyDescriptor(Probe.prototype, "constructor")!);
+    }
+    const roles = Object.fromEntries(Object.keys(guards).map((name) => [name, routeRoles(Probe, name)]));
 
-    expect(
-      await guard.canActivate(
-        { allowedRoles: ["operator", "admin"] },
-        { id: "operator-1", role: "operator", permissions: ["families:list"] },
-      ),
-    ).toEqual({
-      user: {
-        id: "operator-1",
-        role: "operator",
-        permissions: ["families:list"],
-      },
-      role: "operator",
-      permissions: ["families:list"],
+    expect(roles).toEqual({
+      isAdmin: ROLE_SET.admin,
+      isOperator: ROLE_SET.operator,
+      isDeliveryStaff: ROLE_SET.delivery,
+      isFamily: ROLE_SET.family,
+      isSponsor: ROLE_SET.sponsor,
+      isNotificationReader: ROLE_SET.notificationReader,
+      isContributionReader: ROLE_SET.contributionReader,
+      isChildReader: ROLE_SET.childReader,
+      isOrderReader: ROLE_SET.orderReader,
+      isSponsorImageViewer: ROLE_SET.sponsorImage,
+      isSponsorImageManager: ROLE_SET.sponsorImage,
+      isChildImageViewer: ROLE_SET.childImageViewer,
     });
-    expect(
-      await guard.canActivate(
-        { allowedRoles: ["family", "admin"] },
-        { id: "operator-1", role: "operator" },
-      ),
-    ).toBe(false);
-  });
-
-  it("validates a bearer token when auth context is not populated", async () => {
-    const guard = new KafilRoleGuard({
-      getUser: async () => ({
-        id: "sponsor-1",
-        role: "sponsor",
-        permissions: ["contributions:create"],
-      }),
-    } as never);
-
-    expect(
-      await guard.canActivate(
-        { allowedRoles: ["sponsor", "admin"] },
-        undefined,
-        { req: { header: () => "Bearer signed-token" } },
-      ),
-    ).toMatchObject({ role: "sponsor" });
-  });
-
-  it("re-resolves a bearer token when middleware publishes partial claims", async () => {
-    const guard = new KafilRoleGuard({
-      getUser: async () => ({ id: "operator-1", role: "operator" }),
-    } as never);
-
-    expect(
-      await guard.canActivate(
-        { allowedRoles: ["operator", "admin"] },
-        { id: "operator-1" },
-        { req: { header: () => "Bearer signed-token" } },
-      ),
-    ).toMatchObject({ role: "operator" });
   });
 
   it("uses API resource names for policy permission resolution", () => {
@@ -363,29 +346,25 @@ describe("Kafil auth definitions", () => {
     expect(Document.name).toBe("documents");
   });
 
-  it("keeps each dashboard role on isolated guard metadata", () => {
-    const guardName = (method: string) =>
-      getGuardMetadata(DashboardController, method)[0]?.guardClass.name;
+  it("keeps each dashboard on its own role set", () => {
+    const guardName = (method: string) => routeRoles(DashboardController, method);
 
-    expect(guardName("getOperator")).toBe("OperatorRoleGuard");
-    expect(guardName("getDelivery")).toBe("DeliveryStaffRoleGuard");
-    expect(guardName("getDeliveryFamilies")).toBe("DeliveryStaffRoleGuard");
-    expect(guardName("getFamily")).toBe("FamilyRoleGuard");
-    expect(guardName("getSponsor")).toBe("SponsorRoleGuard");
+    expect(guardName("getOperator")).toEqual(ROLE_SET.operator);
+    expect(guardName("getDelivery")).toEqual(ROLE_SET.delivery);
+    expect(guardName("getDeliveryFamilies")).toEqual(ROLE_SET.delivery);
+    expect(guardName("getFamily")).toEqual(ROLE_SET.family);
+    expect(guardName("getSponsor")).toEqual(ROLE_SET.sponsor);
   });
 
   it("limits delivery accounts to Staff-owned delivery commands", () => {
-    const guardName = (method: string) =>
-      getGuardMetadata(OrderController, method)[0]?.guardClass.name;
+    const guardName = (method: string) => routeRoles(OrderController, method);
 
-    expect(guardName("startOwnDelivery")).toBe("DeliveryStaffRoleGuard");
-    expect(guardName("confirmOwnDelivery")).toBe("DeliveryStaffRoleGuard");
-    expect(guardName("reportOwnDeliveryIssue")).toBe(
-      "DeliveryStaffRoleGuard",
-    );
-    expect(guardName("getOwnDelivery")).toBe("DeliveryStaffRoleGuard");
-    expect(guardName("recordOwnPurchase")).toBe("DeliveryStaffRoleGuard");
-    expect(guardName("confirmDelivery")).toBe("OperatorRoleGuard");
+    expect(guardName("startOwnDelivery")).toEqual(ROLE_SET.delivery);
+    expect(guardName("confirmOwnDelivery")).toEqual(ROLE_SET.delivery);
+    expect(guardName("reportOwnDeliveryIssue")).toEqual(ROLE_SET.delivery);
+    expect(guardName("getOwnDelivery")).toEqual(ROLE_SET.delivery);
+    expect(guardName("recordOwnPurchase")).toEqual(ROLE_SET.delivery);
+    expect(guardName("confirmDelivery")).toEqual(ROLE_SET.operator);
 
     // The Delivery role never widens into operator order management, generic
     // order reading, or purchase replacement.
@@ -399,34 +378,25 @@ describe("Kafil auth definitions", () => {
       "reassignDelivery",
       "failDelivery",
     ]) {
-      expect(guardName(operatorOnly)).toBe("OperatorRoleGuard");
+      expect(guardName(operatorOnly)).toEqual(ROLE_SET.operator);
     }
-    expect(guardName("list")).toBe("OrderReaderRoleGuard");
-    expect(guardName("get")).toBe("OrderReaderRoleGuard");
+    expect(guardName("list")).toEqual(ROLE_SET.orderReader);
+    expect(guardName("get")).toEqual(ROLE_SET.orderReader);
   });
 
   it("keeps image routes on their explicit public and protected boundaries", () => {
-    const guardName = (controller: object, method: string) =>
-      getGuardMetadata(controller as never, method)[0]?.guardClass.name;
+    const guardName = (controller: object, method: string) => routeRoles(controller, method);
 
     expect(getGuardMetadata(CategoryImageController, "serve")).toEqual([]);
     expect(getGuardMetadata(ProductImageController, "serve")).toEqual([]);
-    expect(guardName(CategoryImageController, "upload")).toBe("OperatorRoleGuard");
-    expect(guardName(CategoryImageController, "remove")).toBe("OperatorRoleGuard");
-    expect(guardName(ProductImageController, "upload")).toBe("OperatorRoleGuard");
-    expect(guardName(ProductImageController, "remove")).toBe("OperatorRoleGuard");
-    expect(guardName(SponsorImageController, "serve")).toBe(
-      "SponsorImageViewerRoleGuard",
-    );
-    expect(guardName(ChildImageController, "serve")).toBe(
-      "ChildImageViewerRoleGuard",
-    );
+    expect(guardName(CategoryImageController, "upload")).toEqual(ROLE_SET.operator);
+    expect(guardName(CategoryImageController, "remove")).toEqual(ROLE_SET.operator);
+    expect(guardName(ProductImageController, "upload")).toEqual(ROLE_SET.operator);
+    expect(guardName(ProductImageController, "remove")).toEqual(ROLE_SET.operator);
+    expect(guardName(SponsorImageController, "serve")).toEqual(ROLE_SET.sponsorImage);
+    expect(guardName(ChildImageController, "serve")).toEqual(ROLE_SET.childImageViewer);
     expect(getGuardMetadata(FamilyImageController, "serve")).toEqual([]);
-    expect(guardName(FamilyImageController, "upload")).toBe(
-      "OperatorRoleGuard",
-    );
-    expect(guardName(FamilyImageController, "remove")).toBe(
-      "OperatorRoleGuard",
-    );
+    expect(guardName(FamilyImageController, "upload")).toEqual(ROLE_SET.operator);
+    expect(guardName(FamilyImageController, "remove")).toEqual(ROLE_SET.operator);
   });
 });

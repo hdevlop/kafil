@@ -47,7 +47,8 @@ describe("Phase 4 catalog contracts", () => {
     for (const method of ["deleteCategory", "deleteProduct"]) {
       const guards = getGuardMetadata(CatalogController, method);
       expect(guards.map(({ guardClass }) => guardClass.name)).toEqual([
-        "AdminRoleGuard",
+        "AuthGuard",
+        "RoleGuard",
         "AuthGuard",
         "PermissionGuard",
       ]);

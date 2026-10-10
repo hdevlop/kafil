@@ -283,7 +283,8 @@ describe("Phase 5 cart and route contracts", () => {
   it("requires the bootstrap admin role and delete:orders permission", () => {
     const guards = getGuardMetadata(OrderController, "delete");
     expect(guards.map(({ guardClass }) => guardClass.name)).toEqual([
-      "AdminRoleGuard",
+      "AuthGuard",
+      "RoleGuard",
       "AuthGuard",
       "PermissionGuard",
     ]);

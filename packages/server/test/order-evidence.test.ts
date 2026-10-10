@@ -6,7 +6,10 @@ import { join } from "node:path";
 import { getGuardMetadata } from "najm-guard";
 import { getRoutes } from "najm-core";
 
-import { KafilRoleGuard, ROLES } from "../src/config/authConfig";
+import { RoleGuard } from "najm-auth";
+
+import { ROLES } from "../src/config/authConfig";
+import { ROLE_SET, routeRoles } from "./routeRoles";
 import {
   evidenceReference,
   OrderEvidenceController,
@@ -95,11 +98,10 @@ describe("protected order evidence", () => {
   });
 
   it("gives Delivery accounts receipt candidates only and keeps every other evidence route operator-only", () => {
-    const guardName = (method: string) =>
-      getGuardMetadata(OrderEvidenceController, method)[0]?.guardClass.name;
+    const guardName = (method: string) => routeRoles(OrderEvidenceController, method);
 
-    expect(guardName("uploadOwnReceipt")).toBe("DeliveryStaffRoleGuard");
-    expect(guardName("removeOwnReceiptCandidate")).toBe("DeliveryStaffRoleGuard");
+    expect(guardName("uploadOwnReceipt")).toEqual(ROLE_SET.delivery);
+    expect(guardName("removeOwnReceiptCandidate")).toEqual(ROLE_SET.delivery);
     for (const operatorOnly of [
       "upload",
       "serve",
@@ -107,13 +109,11 @@ describe("protected order evidence", () => {
       "listOrphans",
       "cleanupOrphans",
     ]) {
-      expect(guardName(operatorOnly)).toBe("OperatorRoleGuard");
+      expect(guardName(operatorOnly)).toEqual(ROLE_SET.operator);
     }
 
-    const deliveryRoutes = getRoutes(OrderEvidenceController).filter(
-      (route) =>
-        getGuardMetadata(OrderEvidenceController, String(route.methodName))[0]
-          ?.guardClass.name === "DeliveryStaffRoleGuard",
+    const deliveryRoutes = getRoutes(OrderEvidenceController).filter((route) =>
+      routeRoles(OrderEvidenceController, String(route.methodName))?.includes(ROLES.DELIVERY),
     );
     expect(deliveryRoutes.map((route) => `${route.method} ${route.path}`).sort()).toEqual([
       "delete /me/receipts/:fileName",
@@ -122,26 +122,18 @@ describe("protected order evidence", () => {
   });
 
   it("serves receipt bytes to admin and operator and to nobody else", async () => {
-    const [serveGuard] = getGuardMetadata(OrderEvidenceController, "serve");
-    const GuardClass = serveGuard.guardClass as new (
-      roles: KafilRoleGuard,
-    ) => {
-      canActivate(
-        user?: { id: string; role?: string | null },
-      ): Promise<unknown> | unknown;
-    };
-    const guard = new GuardClass(new KafilRoleGuard({} as never));
+    const roleGuard = getGuardMetadata(OrderEvidenceController, "serve")
+      .find((guard) => guard.guardClass === RoleGuard)!;
+    const guard = new RoleGuard();
 
     for (const role of [ROLES.ADMIN, ROLES.OPERATOR]) {
-      expect(await guard.canActivate({ id: `${role}-1`, role })).toMatchObject({
-        role,
-      });
+      expect(guard.canActivate(roleGuard.params, role)).toMatchObject({ role });
     }
     for (const role of [ROLES.DELIVERY, ROLES.FAMILY, ROLES.SPONSOR]) {
-      expect(await guard.canActivate({ id: `${role}-1`, role })).toBe(false);
+      expect(guard.canActivate(roleGuard.params, role)).toBe(false);
     }
-    // No principal at all is denied without consulting a token service.
-    expect(await guard.canActivate()).toBe(false);
+    // No principal at all is denied.
+    expect(guard.canActivate(roleGuard.params, undefined as never)).toBe(false);
   });
 
   it("stages and discards a Delivery receipt candidate through the same managed service", async () => {

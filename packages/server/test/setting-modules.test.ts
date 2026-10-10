@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { getGuardMetadata } from "najm-guard";
 import { getMcpTools } from "najm-mcp";
 import { getValidationConfig } from "najm-validation";
+import { ROLE_SET, routeRoles } from "./routeRoles";
 
 import { AuditService } from "../src/modules/audit";
 import {
@@ -74,11 +74,7 @@ describe("configurable family funding contracts", () => {
     expect(
       getValidationConfig(SettingController.prototype, "updateSettings")?.body,
     ).toBe(updateSettingsDto);
-    expect(
-      getGuardMetadata(SettingController, "updateSettings").map(
-        (guard) => guard.guardClass.name,
-      ),
-    ).toContain("OperatorRoleGuard");
+    expect(routeRoles(SettingController, "updateSettings")).toEqual(ROLE_SET.operator);
   });
 });
 
