@@ -2,11 +2,13 @@ import { Server, plugin, type LoggerConfig } from "najm-core";
 import { database } from "najm-database";
 import {
   authConfig,
+  cacheConfig,
   db,
   emailConfig,
   emailDiagnosticsConfig,
   i18nConfig,
   mcpConfig,
+  rateLimitConfig,
   storageConfig,
   themeConfig,
 } from "./config";
@@ -44,6 +46,10 @@ function createServer() {
   return new Server({ logger })
     .use(database(db))
     .use(i18nConfig())
+    // Registered before authConfig(), so auth uses these instead of building
+    // its own; the cache comes first because rateLimit() depends on it.
+    .use(cacheConfig())
+    .use(rateLimitConfig())
     .use(emailConfig())
     .use(emailDiagnosticsConfig())
     .use(authConfig())

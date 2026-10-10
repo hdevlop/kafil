@@ -1,6 +1,5 @@
 import { describe, expect, it, spyOn } from "bun:test";
-import { cache as cachePlugin, type CachePluginConfig, CacheService } from "najm-cache";
-import { Server } from "najm-core";
+import { type CachePluginConfig, CacheService } from "najm-cache";
 import { getGuardMetadata } from "najm-guard";
 import { resolveClientAddress } from "najm-rate";
 
@@ -19,16 +18,24 @@ import {
 } from "../src/modules";
 import {
   authConfig,
-  authInfrastructureConfig,
   hasRole,
   isInGroup,
   KafilRoleGuard,
   ROLES,
 } from "../src/config/authConfig";
-import { envConfig } from "../src/config/envConfig";
+import { cacheConfig } from "../src/config/cacheConfig";
+import { rateLimitConfig } from "../src/config/rateLimitConfig";
+
+/** The config a plugin factory resolved for the current environment. */
+const cacheOptions = () => cacheConfig().config as CachePluginConfig & { driver: string };
+const rateOptions = () => rateLimitConfig().config as {
+  trustedProxyHops: number;
+  onUnresolvedClient: string;
+  skip?: unknown;
+};
 
 function withAuthEnvironment(
-  values: Partial<Record<"KAFIL_TRUSTED_PROXY_HOPS" | "NODE_ENV" | "REDIS_URL", string>>,
+  values: Partial<Record<"KAFIL_TRUSTED_PROXY_HOPS" | "NODE_ENV" | "REDIS_URL" | "NEXT_PHASE", string>>,
   run: () => void,
 ) {
   const names = Object.keys(values) as (keyof typeof values)[];
@@ -91,18 +98,16 @@ describe("Kafil auth definitions", () => {
         REDIS_URL: "rediss://:test-password@redis.internal:6379/0",
       },
       () => {
-        expect(authInfrastructureConfig()).toMatchObject({
-          cache: {
-            driver: "redis",
-            required: true,
-            redis: {
-              keyPrefix: "kafil:",
-              url: "rediss://:test-password@redis.internal:6379/0",
-            },
+        expect(cacheOptions()).toMatchObject({
+          driver: "redis",
+          required: true,
+          redis: {
+            keyPrefix: "kafil:",
+            url: "rediss://:test-password@redis.internal:6379/0",
           },
-          rateLimit: { trustedProxyHops: 1 },
         });
-        expect(authInfrastructureConfig().rateLimit.skip).toBeUndefined();
+        expect(rateOptions()).toMatchObject({ trustedProxyHops: 1, onUnresolvedClient: "shared" });
+        expect(rateOptions().skip).toBeUndefined();
       },
     );
   });
@@ -115,11 +120,10 @@ describe("Kafil auth definitions", () => {
         REDIS_URL: undefined,
       },
       () => {
-        expect(authInfrastructureConfig()).toMatchObject({
-          cache: { driver: "memory", required: false },
-          rateLimit: { trustedProxyHops: 0 },
-        });
-        expect(authInfrastructureConfig().rateLimit.skip?.()).toBe(true);
+        expect(cacheOptions()).toMatchObject({ driver: "memory", required: false });
+        // A direct local route handler exposes no socket peer: requests without
+        // a client address are not rate limited instead of sharing one bucket.
+        expect(rateOptions()).toMatchObject({ trustedProxyHops: 0, onUnresolvedClient: "skip" });
       },
     );
   });
@@ -135,44 +139,44 @@ describe("Kafil auth definitions", () => {
       () => {
         let message = "";
         try {
-          void envConfig.auth.cache;
+          cacheConfig();
         } catch (error) {
           message = String(error);
         }
         expect(message).toContain("REDIS_URL");
         expect(message).not.toContain(secret);
 
-        process.env.REDIS_URL = "redis://redis.internal:6379/0";
-        expect(() => envConfig.auth.trustedProxyHops).toThrow("from 0 to 8");
+        expect(() => rateLimitConfig()).toThrow("KAFIL_TRUSTED_PROXY_HOPS must be an integer from 0 to 8.");
       },
     );
   });
 
-  it("rejects a missing production Redis URL during server initialization", async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    const originalRedisUrl = process.env.REDIS_URL;
+  it("rejects a missing or passwordless production Redis URL without echoing it", () => {
+    withAuthEnvironment({ NODE_ENV: "production", REDIS_URL: undefined, NEXT_PHASE: undefined }, () => {
+      expect(() => cacheConfig()).toThrow("REDIS_URL is required.");
+    });
+    withAuthEnvironment(
+      { NODE_ENV: "production", REDIS_URL: "redis://redis.internal:6379/0", NEXT_PHASE: undefined },
+      () => {
+        let message = "";
+        try {
+          cacheConfig();
+        } catch (error) {
+          message = String(error);
+        }
+        expect(message).toContain("REDIS_URL must include a password.");
+        expect(message).not.toContain("redis://");
+      },
+    );
+  });
 
-    try {
-      process.env.NODE_ENV = "production";
-      delete process.env.REDIS_URL;
-      const isolated = new Server({ isolated: true }).use(
-        cachePlugin(authInfrastructureConfig().cache),
-      );
-
-      let message = "";
-      try {
-        await isolated.init();
-      } catch (error) {
-        message = String(error);
-      }
-      expect(message).toContain("requires a Redis URL");
-      expect(message).not.toContain("redis://");
-    } finally {
-      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
-      else process.env.NODE_ENV = originalNodeEnv;
-      if (originalRedisUrl === undefined) delete process.env.REDIS_URL;
-      else process.env.REDIS_URL = originalRedisUrl;
-    }
+  it("uses an unrequired memory cache while next build evaluates the server", () => {
+    withAuthEnvironment(
+      { NODE_ENV: "production", REDIS_URL: undefined, NEXT_PHASE: "phase-production-build" },
+      () => {
+        expect(cacheOptions()).toMatchObject({ driver: "memory", required: false });
+      },
+    );
   });
 
   it("selects the installed Redis CacheService contract for production", () => {
@@ -180,11 +184,12 @@ describe("Kafil auth definitions", () => {
       {
         NODE_ENV: "production",
         REDIS_URL: "redis://:test-password@redis.internal:6379/0",
+        NEXT_PHASE: undefined,
       },
       () => {
-        const config = authInfrastructureConfig().cache as CachePluginConfig;
+        const config = cacheOptions();
         const cache = new CacheService({
-          driver: config.driver ?? "auto",
+          driver: (config.driver ?? "auto") as "auto",
           memory: config.memory ?? {},
           redis: config.redis,
           required: config.required ?? false,
@@ -223,7 +228,7 @@ describe("Kafil auth definitions", () => {
           // Typed as `number`, not `number | undefined`: najm-rate reads an absent
           // hop count as "use the deprecated leftmost X-Forwarded-For value", so
           // widening this contract would silently restore the spoofable path.
-          const hops: number = authInfrastructureConfig().rateLimit.trustedProxyHops;
+          const hops: number = rateOptions().trustedProxyHops;
           expect(Number.isInteger(hops)).toBe(true);
 
           // A chain of exactly the declared length is what the real topology

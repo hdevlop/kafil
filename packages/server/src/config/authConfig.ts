@@ -12,8 +12,6 @@ import {
   Policy,
 } from "najm-auth";
 import { readFileSync } from "node:fs";
-import Redis from "ioredis";
-import type { CachePluginConfig } from "najm-cache";
 import { Ctx, Service, User } from "najm-core";
 import { composeGuards, createGuard } from "najm-guard";
 
@@ -53,52 +51,6 @@ function oauthConfig() {
   } as const;
 }
 
-function redisClient(
-  url: string,
-  keyPrefix: string,
-): NonNullable<CachePluginConfig["redis"]>["client"] {
-  const client = new Redis(url, {
-    keyPrefix,
-    lazyConnect: true,
-    maxRetriesPerRequest: 3,
-    retryStrategy: (times) => (times > 3 ? null : Math.min(times * 100, 2_000)),
-  });
-  client.on("error", () => void 0);
-  return client as unknown as NonNullable<CachePluginConfig["redis"]>["client"];
-}
-
-export const authInfrastructureConfig = () => {
-  const cacheConfig = envConfig.auth.cache;
-  const trustedProxyHops = envConfig.auth.trustedProxyHops;
-  const skipUnresolvableLocalRateLimits =
-    process.env.NODE_ENV !== "production" && trustedProxyHops === 0;
-
-  return {
-    cache: {
-      driver: cacheConfig.driver,
-      required: cacheConfig.required,
-      ...(cacheConfig.url
-        ? {
-            redis: {
-              client: redisClient(cacheConfig.url, cacheConfig.keyPrefix),
-              keyPrefix: cacheConfig.keyPrefix,
-              url: cacheConfig.url,
-            },
-          }
-        : {}),
-    },
-    rateLimit: {
-      trustedProxyHops,
-      // The Web Request passed through a direct local Next.js route handler
-      // does not expose its socket peer. With zero trusted proxies, Najm must
-      // reject forwarded headers, so there is no trustworthy per-client key.
-      // Skip request-rate middleware in that development-only topology rather
-      // than warning and placing every request in one accidental bucket.
-      ...(skipUnresolvableLocalRateLimits ? { skip: () => true } : {}),
-    },
-  } as const;
-};
-
 const authLogo = kafilTheme.asset("authLogo");
 if (!authLogo) {
   throw new Error("Kafil factory theme must define the authLogo asset.");
@@ -111,13 +63,13 @@ const accountInviteLogo = Object.freeze({
   filename: authLogo.fileName,
 });
 
-export const authConfig = () => {
-  const infrastructure = authInfrastructureConfig();
-
-  return auth({
+// Cache, rate limiting and email are registered before `authConfig()` in
+// `server.ts` (cacheConfig, rateLimitConfig, emailConfig), so auth uses those
+// plugins; config passed here for them would be ignored.
+export const authConfig = () =>
+  auth({
     appName: "Kafil",
     accountInviteLogo,
-    cache: infrastructure.cache,
     defaultRole: "sponsor",
     dialect: "pg",
     encryptionKey: envConfig.auth.encryptionKey,
@@ -126,13 +78,11 @@ export const authConfig = () => {
     publicRegistration: false,
     registrationMode: "pending",
     requireVerifiedEmail: true,
-    rateLimit: infrastructure.rateLimit,
     jwt: {
       accessSecret: envConfig.auth.jwtAccessSecret!,
       refreshSecret: envConfig.auth.jwtRefreshSecret!,
     },
   });
-};
 
 export const ROLES = {
   ADMIN: "admin",

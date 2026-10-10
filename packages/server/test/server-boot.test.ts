@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { server } from "../src";
+import { authConfig } from "../src/config/authConfig";
 import { FundingService } from "../src/modules/settings";
 import { SettingService } from "../src/modules/settings/settingService";
 
@@ -28,5 +29,25 @@ describe("Kafil server boot", () => {
     expect(productRoute).toBeGreaterThanOrEqual(0);
     expect(storageWildcard).toBeGreaterThanOrEqual(0);
     expect(productRoute).toBeLessThan(storageWildcard);
+  });
+
+  it("gives auth the cache, rate-limit and email plugins it registers, with nothing forwarded", () => {
+    const registry = (server as unknown as {
+      registry: {
+        plugins: Map<string, unknown>;
+      };
+    }).registry;
+    const order = [...registry.plugins.keys()];
+
+    for (const name of ["cache", "rate-limit", "email"]) {
+      expect(order.indexOf(name)).toBeGreaterThanOrEqual(0);
+      expect(order.indexOf(name)).toBeLessThan(order.indexOf("auth"));
+    }
+
+    // Nothing for those plugins is forwarded to auth(), so nothing is ignored.
+    const forwarded = ((authConfig() as { dependencies?: Array<{ forwardedConfig?: string }> }).dependencies ?? [])
+      .map((dependency) => dependency.forwardedConfig)
+      .filter(Boolean);
+    expect(forwarded).toEqual([]);
   });
 });
