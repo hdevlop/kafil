@@ -5,6 +5,8 @@
 // deliberately leaves unhydrated — a call from a server component would go out
 // unauthenticated.
 
+import { LANGUAGE_HEADER } from "@kafil/contracts/locales";
+
 import { auth } from "@/najm.auth";
 
 export type QueryValue = boolean | number | string | null | undefined;
@@ -46,6 +48,25 @@ export interface ApiFile {
 }
 
 let pendingAccessTokenRefresh: Promise<void> | null = null;
+
+/**
+ * The interface language as LANGUAGE_HEADER, read from `<html lang>`, which
+ * the root layout sets from the language preference and the app provider
+ * keeps current. Only the base language: the server's catalogs are `en`,
+ * `fr`, `ar` and `es`. Read per request, so a language change applies at once.
+ */
+export function languageHeaders(
+  root: { lang?: string } | undefined = globalThis.document?.documentElement,
+): Record<string, string> {
+  const language = root?.lang?.split("-")[0]?.toLowerCase();
+  return language ? { [LANGUAGE_HEADER]: language } : {};
+}
+
+/** `{ headers }` for an `auth.api` call when the page names a language. */
+function withLanguage(): { headers: Record<string, string> } | undefined {
+  const headers = languageHeaders();
+  return Object.keys(headers).length ? { headers } : undefined;
+}
 
 export function unwrapApiResponse<T>(response: T | ApiResponseEnvelope<T>): T {
   if (
@@ -128,6 +149,7 @@ async function binaryRequest<T = void>(
     body,
     credentials: "include",
     headers: {
+      ...languageHeaders(),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(body?.type ? { "content-type": body.type } : {}),
     },
@@ -168,7 +190,7 @@ async function fileRequest(path: string, retried = false): Promise<ApiFile> {
     method: "GET",
     cache: "no-store",
     credentials: "include",
-    headers: token ? { authorization: `Bearer ${token}` } : {},
+    headers: { ...languageHeaders(), ...(token ? { authorization: `Bearer ${token}` } : {}) },
   });
 
   if (response.status === 401 && !retried) {
@@ -197,11 +219,16 @@ async function request<T>(
 ) {
   await ensureAccessToken(method, path);
 
+  const language = withLanguage();
   if (method === "get") {
-    return unwrapApiResponse(await auth.api.get<T | ApiResponseEnvelope<T>>(path));
+    return unwrapApiResponse(
+      language
+        ? await auth.api.get<T | ApiResponseEnvelope<T>>(path, language)
+        : await auth.api.get<T | ApiResponseEnvelope<T>>(path),
+    );
   }
 
-  const options = body === undefined ? undefined : { body };
+  const options = body === undefined ? language : { body, ...language };
   return unwrapApiResponse(
     await auth.api[method]<T | ApiResponseEnvelope<T>>(path, options),
   );
@@ -216,7 +243,10 @@ async function request<T>(
 async function pageRequest<T>(path: string): Promise<ApiPage<T>> {
   await ensureAccessToken("get", path);
 
-  const response = await auth.api.get<T[] | PaginatedResponseEnvelope<T[]>>(path);
+  const language = withLanguage();
+  const response = language
+    ? await auth.api.get<T[] | PaginatedResponseEnvelope<T[]>>(path, language)
+    : await auth.api.get<T[] | PaginatedResponseEnvelope<T[]>>(path);
   return {
     rows: unwrapApiResponse(response),
     total: readTotal(response),

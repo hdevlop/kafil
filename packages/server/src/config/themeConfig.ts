@@ -1,4 +1,4 @@
-import { theme, type ThemeAuditSink, type ThemeDiagnostic } from "najm-theme/server";
+import { theme, type ThemeAuditSink } from "najm-theme/server";
 
 import { kafilTheme, KAFIL_HERO_MAX_BYTES, KAFIL_LOGO_MAX_BYTES } from "@kafil/server/theme";
 import { auditEvents } from "../modules/audit/auditSchema";
@@ -24,15 +24,6 @@ const themeAudit: ThemeAuditSink = {
 };
 
 
-function reportThemeDiagnostic(diagnostic: ThemeDiagnostic): void {
-  console.warn(
-    `[theme] ${diagnostic.code}${
-      diagnostic.scopeId ? ` (scope ${diagnostic.scopeId})` : ""
-    }${diagnostic.detail ? `: ${diagnostic.detail}` : ""}`,
-    diagnostic.error ?? "",
-  );
-}
-
 export const themeConfig = () =>
   theme(kafilTheme, {
     basePath: "",
@@ -42,8 +33,5 @@ export const themeConfig = () =>
       logoBytes: KAFIL_LOGO_MAX_BYTES,
       heroBytes: KAFIL_HERO_MAX_BYTES,
     },
-
-    storage: { namespace: "theme-branding" },
     audit: themeAudit,
-    diagnostics: reportThemeDiagnostic,
   });

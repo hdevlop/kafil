@@ -51,6 +51,20 @@ export const uiTranslations = kafilUiI18n.translations;
 export type KafilLocale = (typeof kafilI18n.supportedLanguages)[number];
 
 /**
+ * The header the web app names its interface language in on every API
+ * request. The server reads it first, so a refusal arrives in the language the
+ * page shows.
+ */
+export const LANGUAGE_HEADER = "X-Language";
+
+/**
+ * The cookie najm-next keeps the chosen interface language in. The server
+ * reads it for requests that carry no LANGUAGE_HEADER, such as the ones the
+ * auth client sends itself (sign-in, refresh), and never writes it.
+ */
+export const UI_LANGUAGE_COOKIE = "kafil-ui-language";
+
+/**
  * BCP 47 tag per language, derived from the definition's own metadata.
  *
  * Morocco-specific on purpose: `en-MA`, `fr-MA`, `ar-MA`, `es-MA` decide how

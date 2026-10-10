@@ -1,6 +1,7 @@
 import { defineNajmApp } from "najm-next/app";
 import { APP_NAME } from "@/types/branding";
 import { KAFIL_CURRENCY } from "@kafil/contracts/money/constants";
+import { UI_LANGUAGE_COOKIE } from "@kafil/contracts/locales";
 
 export const kafilApp = defineNajmApp({
   id: "kafil",
@@ -57,7 +58,7 @@ export const kafilApp = defineNajmApp({
   },
   preferences: {
     cookieNames: {
-      language: "kafil-ui-language",
+      language: UI_LANGUAGE_COOKIE,
       theme: "kafil-ui-theme",
       timeZone: "kafil-ui-timezone",
     },
