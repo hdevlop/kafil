@@ -9,7 +9,6 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/server/package.json packages/server/package.json
 COPY packages/seed/package.json packages/seed/package.json
-COPY patches ./patches
 RUN bun install --frozen-lockfile
 
 FROM oven/bun:1.3.14 AS build

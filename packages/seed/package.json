@@ -32,8 +32,8 @@
     "@faker-js/faker": "10.6.0",
     "@kafil/server": "workspace:*",
     "drizzle-orm": "0.45.2",
-    "najm-auth": "5.0.0",
-    "najm-theme": "0.2.3"
+    "najm-auth": "6.3.0",
+    "najm-theme": "0.3.1"
   },
   "devDependencies": {
     "@types/pg": "8.15.5",

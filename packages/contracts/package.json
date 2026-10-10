@@ -24,6 +24,6 @@
     "test": "bun test"
   },
   "dependencies": {
-    "najm-i18n": "2.1.2"
+    "najm-i18n": "2.2.0"
   }
 }
