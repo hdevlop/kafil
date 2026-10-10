@@ -5,7 +5,6 @@ import {
   cacheConfig,
   db,
   emailConfig,
-  emailDiagnosticsConfig,
   i18nConfig,
   mcpConfig,
   rateLimitConfig,
@@ -51,7 +50,6 @@ function createServer() {
     .use(cacheConfig())
     .use(rateLimitConfig())
     .use(emailConfig())
-    .use(emailDiagnosticsConfig())
     .use(authConfig())
     .use(mcpConfig())
     // Plugin services boot before application services. Register exact image
