@@ -1,13 +1,14 @@
 import {
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { platformSettings } from "./settingSchema";
 
-export const PlatformSettingPolicy = definePolicy(platformSettings, "settings", {
+export const PlatformSettingPolicy = own(platformSettings, {
+  name: "settings",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 });
 

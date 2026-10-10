@@ -4,13 +4,14 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { products } from "./catalogSchema";
 
-export const Catalog = definePolicy(products, "catalog", {
+export const Catalog = own(products, {
+  name: "catalog",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 });
 

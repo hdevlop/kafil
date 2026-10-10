@@ -6,9 +6,7 @@ import {
   CanRead,
   CanUpdate,
   TokenService,
-  type OwnershipTokenOptions,
   own,
-  type OwnershipToken,
   Policy,
 } from "najm-auth";
 import { readFileSync } from "node:fs";
@@ -18,6 +16,8 @@ import { composeGuards, createGuard } from "najm-guard";
 import { kafilTheme } from "@kafil/server/theme";
 import { envConfig } from "./envConfig";
 
+// `own(table, { name, adminRoles })` names the token after its resource, so
+// the permissions are read:<name>, update:<name>, ...
 export {
   auth,
   CanCreate,
@@ -25,6 +25,7 @@ export {
   CanList,
   CanRead,
   CanUpdate,
+  own,
   Policy,
 };
 
@@ -337,18 +338,3 @@ export const isInGroup = (
 export const isSponsorImageViewer = composeGuards(SponsorImageViewerRole());
 export const isSponsorImageManager = composeGuards(SponsorImageManagerRole());
 export const isChildImageViewer = composeGuards(ChildImageViewerRole());
-
-export function definePolicy(
-  table: unknown,
-  resource: string,
-  options?: OwnershipTokenOptions,
-): OwnershipToken {
-  const token = own(table, options);
-  Object.defineProperty(token, "name", {
-    configurable: false,
-    enumerable: true,
-    value: resource,
-    writable: false,
-  });
-  return token;
-}

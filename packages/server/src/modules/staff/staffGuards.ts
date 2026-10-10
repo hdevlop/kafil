@@ -4,23 +4,21 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { staffProfiles } from "./staffSchema";
 
-export const Staff = definePolicy(staffProfiles, "staff", {
+export const Staff = own(staffProfiles, {
+  name: "staff",
   adminRoles: [ROLES.ADMIN],
 });
 
-export const StaffDeliveryOptions = definePolicy(
-  staffProfiles,
-  "staffDeliveryOptions",
-  {
-    adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
-  },
-);
+export const StaffDeliveryOptions = own(staffProfiles, {
+  name: "staffDeliveryOptions",
+  adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
+});
 
 export {
   CanCreate,

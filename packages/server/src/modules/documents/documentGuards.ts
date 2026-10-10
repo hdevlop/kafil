@@ -4,13 +4,14 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { documentObjects } from "./documentSchema";
 
-export const Document = definePolicy(documentObjects, "documents", {
+export const Document = own(documentObjects, {
+  name: "documents",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 });
 

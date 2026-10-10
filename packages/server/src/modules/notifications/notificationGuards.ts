@@ -6,7 +6,7 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
@@ -15,7 +15,8 @@ import { notifications } from "./notificationSchema";
 // No admin override: every role, including admin, sees only its own inbox.
 // Admin therefore appears as an explicit personal recipient rule, not as a
 // bypass. The service re-scopes every read/update by recipient_user_id.
-export const Notification = definePolicy(notifications, "notifications", {
+export const Notification = own(notifications, {
+  name: "notifications",
   adminRoles: [],
 })
   .for(ROLES.ADMIN, where(notifications.recipientUserId))

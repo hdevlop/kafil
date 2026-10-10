@@ -6,13 +6,14 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { sponsorProfiles } from "./sponsorSchema";
 
-export const Sponsor = definePolicy(sponsorProfiles, "sponsors", {
+export const Sponsor = own(sponsorProfiles, {
+  name: "sponsors",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 }).for(ROLES.SPONSOR, where(sponsorProfiles.userId));
 

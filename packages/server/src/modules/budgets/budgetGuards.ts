@@ -3,14 +3,15 @@ import { join, where } from "najm-auth";
 import {
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { familyProfiles } from "../families/familySchema";
 import { budgetAccounts } from "./budgetSchema";
 
-export const Budget = definePolicy(budgetAccounts, "budgets", {
+export const Budget = own(budgetAccounts, {
+  name: "budgets",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 }).for(
   ROLES.FAMILY,

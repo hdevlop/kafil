@@ -1,7 +1,8 @@
-import { CanCreate, CanDelete, CanList, CanRead, CanUpdate, definePolicy, Policy, ROLES } from "../../config/authConfig";
+import { CanCreate, CanDelete, CanList, CanRead, CanUpdate, own, Policy, ROLES } from "../../config/authConfig";
 import { orders } from "./orderSchema";
 
-export const OrderResource = definePolicy(orders, "orders", {
+export const OrderResource = own(orders, {
+  name: "orders",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 });
 

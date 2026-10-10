@@ -6,12 +6,13 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   ROLES,
 } from "../../config/authConfig";
 import { familyProfiles } from "./familySchema";
 
-export const Family = definePolicy(familyProfiles, "families", {
+export const Family = own(familyProfiles, {
+  name: "families",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 }).for(ROLES.FAMILY, where(familyProfiles.userId));
 

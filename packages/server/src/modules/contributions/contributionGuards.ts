@@ -6,14 +6,15 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import { contributions } from "./contributionSchema";
 
-export const Contribution = definePolicy(contributions, "contributions", {
+export const Contribution = own(contributions, {
+  name: "contributions",
   adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
 }).for(
   ROLES.SPONSOR,

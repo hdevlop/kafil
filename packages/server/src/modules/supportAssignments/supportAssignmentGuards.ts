@@ -5,18 +5,17 @@ import {
   CanList,
   CanRead,
   CanUpdate,
-  definePolicy,
+  own,
   Policy,
   ROLES,
 } from "../../config/authConfig";
 import { sponsorProfiles } from "../sponsors/sponsorSchema";
 import { supportAssignments } from "./supportAssignmentSchema";
 
-export const SupportAssignment = definePolicy(
-  supportAssignments,
-  "supportAssignments",
-  { adminRoles: [ROLES.ADMIN, ROLES.OPERATOR] },
-).for(
+export const SupportAssignment = own(supportAssignments, {
+  name: "supportAssignments",
+  adminRoles: [ROLES.ADMIN, ROLES.OPERATOR],
+}).for(
   ROLES.SPONSOR,
   join(supportAssignments.sponsorProfileId, sponsorProfiles.id),
   where(sponsorProfiles.userId),
